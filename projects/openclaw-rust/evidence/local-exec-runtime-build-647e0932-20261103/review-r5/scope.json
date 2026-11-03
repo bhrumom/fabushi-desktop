@@ -1,0 +1,105 @@
+{
+  "schema": "ocrm-focused-integration-review-scope-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "review_round": 5,
+  "subject": {
+    "sha": "37690b7d4b82f08a89d345de0ce102ec19649ba4",
+    "tree": "aa1fc2b626aad951aec333dbd90d38bd7b1e633a",
+    "parent": "b93531cd419070b394e34ad9f4851318e6b5e980",
+    "files": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "c417dda9677b8da0a6c016e00e3565cc8e3f1aed",
+        "oldSha": "5090f82c57601e4a07972634483bf6068ac3a72d"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "sha": "d0c3081bba725956e5eb261150c6c57513dedaea",
+        "oldSha": "1c2f0dbe751c9395199d852816c8aabc3391bdd5"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+        "sha": "34045a386bb1372e96bebb82bf87454eb7318c2e",
+        "oldSha": "ef92d6384cbcf4b344f0864b030cff316c45d87d"
+      }
+    ],
+    "refMoved": false
+  },
+  "fix_carrier": {
+    "sha": "8dba13756ada5a5e78143c15217dcd8e70c74643",
+    "tree": "2d8ce9af15055e3ca0bf0691482dec51c468ced0",
+    "parent": "5dafe0ac8cfc18bd97dd9a743d30be54600f9227",
+    "role": "Exact one-file four-hunk diff only; not subject tree"
+  },
+  "full_scope_context": {
+    "packet_commit": "7c83e9c178679dc2824f2d4b1fa3b3c0273a98a3",
+    "scope_path": "../review-r4/scope.json",
+    "full_diff_path": "../review-r4/full.diff",
+    "complete_path_count": 38,
+    "reviewed_semantic_subject": "b5b556a375fdb8793ae0cf0e9040a200dced2814",
+    "integration_context": "Merged workflow and capture were checked at 5dafe0ac8cfc18bd97dd9a743d30be54600f9227; those blobs are unchanged in the actual focused subject. Concurrent RTM and BGC work are preserved, without transferring this review to their product behavior."
+  },
+  "mapping_contract": {
+    "path": "projects/openclaw-rust/parity-ledger.json",
+    "old_blob": "91a33c2584e8f19aaed7e95a3007b9eb17ef2dc2",
+    "new_blob": "d0c3081bba725956e5eb261150c6c57513dedaea",
+    "required_ids": [
+      "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
+      "OCRM-RESP-EXEC-PROCESS-SPAWN-001"
+    ],
+    "reference": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json",
+    "exact_reference_count_per_id": 1
+  },
+  "parent_preservation": {
+    "diffs": [
+      {
+        "path": [
+          "responsibilities",
+          "5",
+          "evidence_refs",
+          "12"
+        ],
+        "after": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
+      },
+      {
+        "path": [
+          "responsibilities",
+          "68",
+          "evidence_refs",
+          "12"
+        ],
+        "after": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
+      }
+    ],
+    "targetRows": [
+      {
+        "id": "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001",
+        "status": {
+          "acceptance": "pending",
+          "implementation": "implemented",
+          "mapping": "mapped",
+          "read": "read-complete",
+          "verification": "not-run",
+          "wiring": "wired"
+        },
+        "referenceCount": 1
+      },
+      {
+        "id": "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
+        "status": {
+          "acceptance": "pending",
+          "implementation": "implemented",
+          "mapping": "reviewed",
+          "read": "read-complete",
+          "verification": "not-run",
+          "wiring": "wired"
+        },
+        "referenceCount": 1
+      }
+    ],
+    "otherDataUnchanged": true
+  },
+  "runtime": "not-run",
+  "global_flags_promoted": false
+}

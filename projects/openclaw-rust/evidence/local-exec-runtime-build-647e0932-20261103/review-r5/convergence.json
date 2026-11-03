@@ -1,0 +1,147 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "repository": "bhrumom/fabushi-desktop",
+  "review_round": 5,
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+  "semantic_capture_subject": {
+    "sha": "b5b556a375fdb8793ae0cf0e9040a200dced2814",
+    "tree": "627f281ef0474e0ef290337f187541f567562ae1",
+    "parent": "f9a89c5b076e94387ce717aee1f855eb90dca3b2",
+    "files": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "d71518e3d265e05a9f782cb276f10e52818c5813",
+        "oldSha": "9574d29d4e494d0f3a30b6ffcad275e222b07275"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "sha": "26d437b4183990d0c07727db6da10b9e5aa5ff7c",
+        "oldSha": "f71af507d58480b12544b6ca756cbcffa7e06120"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+        "sha": "34045a386bb1372e96bebb82bf87454eb7318c2e",
+        "oldSha": "ef92d6384cbcf4b344f0864b030cff316c45d87d"
+      }
+    ],
+    "refMoved": false
+  },
+  "integration_subject": {
+    "sha": "37690b7d4b82f08a89d345de0ce102ec19649ba4",
+    "tree": "aa1fc2b626aad951aec333dbd90d38bd7b1e633a",
+    "parent": "b93531cd419070b394e34ad9f4851318e6b5e980",
+    "files": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "c417dda9677b8da0a6c016e00e3565cc8e3f1aed",
+        "oldSha": "5090f82c57601e4a07972634483bf6068ac3a72d"
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "sha": "d0c3081bba725956e5eb261150c6c57513dedaea",
+        "oldSha": "1c2f0dbe751c9395199d852816c8aabc3391bdd5"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+        "sha": "34045a386bb1372e96bebb82bf87454eb7318c2e",
+        "oldSha": "ef92d6384cbcf4b344f0864b030cff316c45d87d"
+      }
+    ],
+    "refMoved": false
+  },
+  "full_context_packet": "7c83e9c178679dc2824f2d4b1fa3b3c0273a98a3",
+  "fix_delta_carrier": {
+    "sha": "8dba13756ada5a5e78143c15217dcd8e70c74643",
+    "tree": "2d8ce9af15055e3ca0bf0691482dec51c468ced0",
+    "parent": "5dafe0ac8cfc18bd97dd9a743d30be54600f9227"
+  },
+  "reviews": [
+    {
+      "verdict": "NO_FINDINGS",
+      "subject": "b5b556a375fdb8793ae0cf0e9040a200dced2814",
+      "actor": "/root/ldb_r4_general",
+      "requestedEffort": "xhigh",
+      "requestedModel": "inherited configured model",
+      "toolAccepted": true,
+      "backendIntrospected": false,
+      "coverage": "Complete four-file fix delta and current capture/authority; all nine workflow selectors and entire selected Linux job, adjacent build/startup/launch/daemon/loader and required-name consumers. 38-path manifest/full diff retained as context; no new deep-read claim for all unchanged paths.",
+      "blind": true,
+      "runtimeAcceptance": false
+    },
+    {
+      "verdict": "NO_FINDINGS",
+      "subject": "b5b556a375fdb8793ae0cf0e9040a200dced2814",
+      "actor": "/root/ldb_r4_structure",
+      "requestedEffort": "xhigh",
+      "requestedModel": "gpt-6.1-sol",
+      "toolAccepted": true,
+      "backendIntrospected": false,
+      "coverage": "Focused complete four-file fix delta and 38-path manifest identities; current execution ownership, strict machine-channel assessment, source-binding and evidence consumers; all workflow predicates and selected Linux caller, original caller and renderer imports; unchanged required-name consumers. No new deep-read claim for all unchanged scope.",
+      "blind": true,
+      "runtimeAcceptance": false
+    },
+    {
+      "verdict": "NO_FINDINGS",
+      "actor": "/root/ldb_r5_general",
+      "subject": "37690b7d4b82f08a89d345de0ce102ec19649ba4",
+      "model": "inherited configured model",
+      "effort": "xhigh",
+      "coverage": "Complete four-hunk fix carrier; actual subject-to-parent ledger patch, complete intended responsibility rows, adjacent corrected rows, statuses, eight flags and concurrent BGC context; schema and validator consumer; full 38-path R4 context retained without new unchanged-path semantic claim.",
+      "runtime": false,
+      "blind": true
+    },
+    {
+      "verdict": "NO_FINDINGS",
+      "actor": "/root/ldb_r5_structure",
+      "subject": "37690b7d4b82f08a89d345de0ce102ec19649ba4",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "coverage": "Complete four-hunk focused delta; complete 242-row ledger and RTM text comparisons against actual parent, intended and adjacent responsibility rows, authority/source-accounting, schema and validation consumers; complete frozen R4 scope retained. No repeated semantic review of unchanged workflow/capture/product.",
+      "runtime": false,
+      "blind": true
+    }
+  ],
+  "decisions": [
+    {
+      "path": "../hf8e-capture-decisions.json",
+      "state": "FIX implemented in capture; exact-H execution pending"
+    },
+    {
+      "path": "../review-r4/integration-decisions.json",
+      "state": "FIX resolved by exact two-row reference correction; both fresh focused lenses NO_FINDINGS"
+    }
+  ],
+  "integration_check": {
+    "subject": "5dafe0ac8cfc18bd97dd9a743d30be54600f9227",
+    "workflow": "Both lenses found no selector/caller defect; new capture scope selects existing Linux job, preserves background custody and all prior/default selections.",
+    "ledger": "Two misplaced reference additions were found before publication; only corrected ledger d0c3081bba725956e5eb261150c6c57513dedaea is delivered.",
+    "capture": "34045a386bb1372e96bebb82bf87454eb7318c2e is identical to the semantically reviewed script."
+  },
+  "delivery_recipe": {
+    "base_commit": "e26f1423e6bd8e95c8ddc4af5f9f2cc2c6f62ee7",
+    "base_tree": "77bd99c55db7bb246fbd3d1fe9f2150225143aaa",
+    "three_source_old_blobs_match": true,
+    "concurrent_changes_preserved": "All base leaves except the declared three source files; BGC production/reviews/RTM stay at their current identities.",
+    "reviewed_full_scope_other_drift": [
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "current": "4a415a830fccdfec7b7ae73fa16133929c84652f",
+        "scope": "Preserved concurrent BGC evidence; no LDB product acceptance transferred."
+      }
+    ]
+  },
+  "runtime": {
+    "state": "not-run-at-delivery-subject",
+    "campaign": "One bounded execution of revised instrument after independent exhaustion assessment and source convergence; existing ocrm-local-exec-capture Linux selection only. Prior renderer success remains bound to f8e98a307bae97d989a823ec89498a2f9fbc5b7d.",
+    "required": "Inspect exact delivered H/U, source authority, all command/capture exits, required names, actual machine/cleanup controls and retained artifacts. No unchanged rerun or old-H transfer."
+  },
+  "acceptance": {
+    "source_review": "converged within stated lenses/scopes",
+    "verification": "pending exact-H Actions",
+    "global_flags_promoted": false,
+    "G01_G12": "unaccepted",
+    "AC01_AC24": "unaccepted"
+  }
+}

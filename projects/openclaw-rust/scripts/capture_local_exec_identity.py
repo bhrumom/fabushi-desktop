@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Capture LPI-v1 and the selected LDB-v1 daemon on their exact Actions subject."""
 
+from contextlib import ExitStack
 import hashlib
 import json
 import os
@@ -9,6 +10,7 @@ import re
 import select
 import signal
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -466,18 +468,77 @@ def qualify_owned_cleanup():
     return evidence
 
 
-def run_command(label, command, timeout_seconds, environment=None, assessor=None):
+def open_capture_channel(stack, path):
+    """Exclusively create one ordinary file below this invocation's evidence root."""
+    stream = stack.enter_context(path.open("xb"))
+    _, absolute = repository_path(path)
+    if absolute.parent != ROOT.resolve(strict=True):
+        raise ValueError("Capture channel escaped the owned evidence root")
+    info = os.fstat(stream.fileno())
+    return stream, {"path": path.name, "absolute_path": str(absolute),
+                    "device": info.st_dev, "inode": info.st_ino}
+
+
+def read_capture_channel(channel, verify_digest=False):
+    path = ROOT / channel["path"]
+    _, absolute = repository_path(path)
+    if absolute.parent != ROOT.resolve(strict=True):
+        raise ValueError("Capture channel escaped the owned evidence root")
+    if str(absolute) != channel["absolute_path"]:
+        raise ValueError("Capture channel absolute path changed")
+    descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(descriptor, "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError("Capture channel is no longer a regular file")
+        if (info.st_dev, info.st_ino) != (channel["device"], channel["inode"]):
+            raise ValueError("Capture channel identity changed")
+        raw = stream.read()
+    identity = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+    if verify_digest:
+        if any(channel.get(key) != value for key, value in identity.items()):
+            raise ValueError("Captured channel bytes changed before assessment")
+    else:
+        channel.update(identity)
+    return raw
+
+
+def run_command(label, command, timeout_seconds, environment=None, assessor=None,
+                machine_stdout=False, _qualification_probe=None):
     log = ROOT / (label + ".log")
     result = {"case": label, "command": command, "cwd": "repository root",
               "timeout_seconds": timeout_seconds, "command_exit": None, "capture_exit": 0,
-              "execution_error": None, "log": log.name, "oracle_accepted": False}
+              "execution_error": None, "oracle_accepted": False}
+    if machine_stdout:
+        result.update({"output_mode": "separate-machine-stdout-stderr", "channel_base": ROOT.as_posix(), "channels": {},
+                       "process_accepted": False, "capture_accepted": False,
+                       "json_accepted": False, "machine_output_accepted": False})
+    else:
+        result["log"] = log.name
     raw = b""
     try:
-        with log.open("wb") as stream:
-            process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT,
+        if _qualification_probe is not None and not machine_stdout:
+            raise ValueError("The capture-failure probe is restricted to machine qualification")
+        with ExitStack() as streams:
+            if machine_stdout:
+                outputs = {}
+                for channel in ("stdout", "stderr"):
+                    outputs[channel], result["channels"][channel] = open_capture_channel(
+                        streams, ROOT / (label + "." + channel + ".log"))
+                stdout, stderr = outputs["stdout"], outputs["stderr"]
+            else:
+                stdout = streams.enter_context(log.open("wb"))
+                stderr = subprocess.STDOUT
+            process = subprocess.Popen(command, stdout=stdout, stderr=stderr,
                                        env=environment, start_new_session=True)
             cleanup_attempted = False
             try:
+                if machine_stdout:
+                    result["owned_session"] = observe_owned_session(process)
+                # Only the actual-child qualification supplies this observer.
+                # It cannot manufacture a successful process or oracle result.
+                if _qualification_probe is not None:
+                    _qualification_probe(process, result)
                 observed = wait_unreaped(process, timeout_seconds)
                 if observed is None:
                     result["capture_exit"] = 1
@@ -496,12 +557,32 @@ def run_command(label, command, timeout_seconds, environment=None, assessor=None
                     cleanup_attempted = True
                     result["cleanup"] = stop_owned_session(process)
                     result["command_exit"] = result["cleanup"]["command_exit"]
-        raw = log.read_bytes()
+        if not machine_stdout:
+            raw = log.read_bytes()
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         result["capture_exit"] = 1
         result["execution_error"] = str(error)
-        if log.is_file():
+        if not machine_stdout and log.is_file():
             raw = log.read_bytes()
+    if machine_stdout:
+        for name in ("stdout", "stderr"):
+            channel = result["channels"].get(name)
+            if channel is None:
+                result["capture_exit"] = 1
+                result.setdefault("channel_errors", {})[name] = "Channel was not created"
+                continue
+            try:
+                captured = read_capture_channel(channel)
+                print("Captured " + label + " " + name + ": "
+                      + str(channel["bytes"]) + " bytes, sha256=" + channel["sha256"], flush=True)
+                print(captured.decode("utf-8", errors="replace"), flush=True)
+            except (OSError, ValueError) as error:
+                result["capture_exit"] = 1
+                result.setdefault("channel_errors", {})[name] = str(error)
+        result["process_accepted"] = result["command_exit"] == 0
+        result["capture_accepted"] = result["capture_exit"] == 0
+        # JSON and, for Cargo metadata, source binding are separate assessments.
+        return result
     text = raw.decode("utf-8", errors="replace")
     result.update({"log_bytes": len(raw), "log_sha256": hashlib.sha256(raw).hexdigest()})
     if assessor is not None:
@@ -510,6 +591,184 @@ def run_command(label, command, timeout_seconds, environment=None, assessor=None
         result["oracle_accepted"] = result["command_exit"] == 0 and result["capture_exit"] == 0
     print(text, flush=True)
     return result
+
+
+def assess_machine_stdout(result):
+    """Strictly assess the retained stdout; stderr remains diagnostic evidence."""
+    result["json_accepted"] = False
+    result["machine_output_accepted"] = False
+    result.pop("json_error", None)
+
+    def reject_constant(value):
+        raise ValueError("Non-JSON numeric constant: " + value)
+
+    def unique_object(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError("Duplicate JSON object key: " + key)
+            value[key] = item
+        return value
+
+    metadata = None
+    try:
+        raw = read_capture_channel(result["channels"]["stdout"], verify_digest=True)
+        # Decode the complete original stdout. No prefix search, trimming,
+        # diagnostic filtering or cache-dependent admission is permitted.
+        metadata = json.loads(raw.decode("utf-8"), parse_constant=reject_constant,
+                              object_pairs_hook=unique_object)
+        if not isinstance(metadata, dict):
+            raise ValueError("Machine command stdout must contain one JSON object")
+        result["json_accepted"] = True
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        result["json_error"] = str(error)
+    result["machine_output_accepted"] = (result["process_accepted"]
+                                         and result["capture_accepted"]
+                                         and result["json_accepted"])
+    return metadata
+
+
+def qualify_machine_capture():
+    """Actual child/channel qualification; it executes no Cargo or product tests."""
+    if os.environ.get("GITHUB_ACTIONS") != "true" or sys.platform != "linux":
+        raise ValueError("Actual machine capture qualification is Linux Actions-only")
+    valid = b'{"instrument":"machine-channel","value":1}\n'
+    noise = b"    Updating crates.io index\n Downloading crates ...\n"
+    cases = [
+        ("machine-json-ordinary", valid, b"", 0, None, True),
+        ("machine-json-noisy-stderr", valid, noise, 0, None, True),
+        ("machine-json-malformed", b'{"instrument":\n', noise, 0, None, False),
+        ("machine-json-empty", b"", noise, 0, None, False),
+        ("machine-json-prefixed", b"progress\n" + valid, noise, 0, None, False),
+        ("machine-json-trailing", valid + b"progress\n", noise, 0, None, False),
+        ("machine-json-nonzero-exit", valid, noise, 9, None, True),
+        ("machine-json-owned-timeout", valid, noise, 0, "timeout", True),
+        ("machine-json-capture-failure", valid, noise, 0, "capture-failure", True),
+    ]
+    child_code = ("import os,signal,sys\n"
+                  "signal.signal(signal.SIGTERM, lambda *_: sys.exit(23))\n"
+                  "os.write(1, bytes.fromhex(sys.argv[1]))\n"
+                  "os.write(2, bytes.fromhex(sys.argv[2]))\n"
+                  "if sys.argv[4] == 'wait':\n"
+                  "    while True: signal.pause()\n"
+                  "sys.exit(int(sys.argv[3]))\n")
+    peer_code = ("import sys\n"
+                 "print('PEER READY', flush=True)\n"
+                 "for line in sys.stdin: print('PEER ' + line.rstrip('\\n'), flush=True)\n")
+    evidence = {"scope": "Actual child, separated output and independent peer qualification only; no product, native build or Host source-closure acceptance.",
+                "planned_controls": [case[0] for case in cases], "controls": [],
+                "accepted": False, "teardown": []}
+    peer = None
+    peer_cleanup_attempted = False
+    peer_channel = None
+    try:
+        with ExitStack() as streams:
+            errors, peer_channel = open_capture_channel(streams, ROOT / "machine-capture-peer.stderr.log")
+            peer_command = [sys.executable, "-u", "-c", peer_code]
+            evidence["peer_command"] = peer_command
+            peer = subprocess.Popen(peer_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=errors, bufsize=0, start_new_session=True)
+            evidence["peer_ready"] = read_probe_line(peer.stdout)
+            evidence["peer_before"] = observe_owned_session(peer)
+            if evidence["peer_ready"] != "PEER READY\n" or evidence["peer_before"]["state"] != "not-exited":
+                raise ValueError("Machine capture peer did not establish live readiness")
+            for label, stdout_bytes, stderr_bytes, code, mode, json_expected in cases:
+                def ready_probe(process, result):
+                    deadline = time.monotonic() + 5
+                    while True:
+                        actual_stdout = read_capture_channel(result["channels"]["stdout"])
+                        actual_stderr = read_capture_channel(result["channels"]["stderr"])
+                        if actual_stdout == stdout_bytes and actual_stderr == stderr_bytes:
+                            break
+                        if time.monotonic() >= deadline:
+                            raise ValueError("Qualification child did not write both ready channels")
+                        time.sleep(0.01)
+                    observed = observe_owned_session(process)
+                    if observed["state"] != "not-exited" or observed["pgid"] == evidence["peer_before"]["pgid"]:
+                        raise ValueError("Qualification child lacks its separate live owned session")
+                    result["qualification_ready"] = {"stdout": True, "stderr": True, "ready_timeout_seconds": 5,
+                                                     "owned_session": observed}
+                    if mode == "capture-failure":
+                        raise OSError("Qualification-only capture observation failure after both ready channels")
+
+                command = [sys.executable, "-u", "-c", child_code,
+                           stdout_bytes.hex(), stderr_bytes.hex(), str(code), "wait" if mode else "exit"]
+                result = run_command(label, command, 0.1 if mode == "timeout" else 5,
+                                     machine_stdout=True, _qualification_probe=ready_probe if mode else None)
+                metadata = assess_machine_stdout(result)
+                expected = {"process_accepted": code == 0 and mode is None,
+                            "capture_accepted": mode is None, "json_accepted": json_expected,
+                            "machine_output_accepted": code == 0 and mode is None and json_expected}
+                observed = {key: result[key] for key in expected}
+                control = {"control": label, "expected": expected, "observed": observed,
+                           "execution": result, "matched": False}
+                evidence["controls"].append(control)
+                actual_stdout = read_capture_channel(result["channels"]["stdout"], verify_digest=True)
+                actual_stderr = read_capture_channel(result["channels"]["stderr"], verify_digest=True)
+                streams_match = actual_stdout == stdout_bytes and actual_stderr == stderr_bytes
+                value_matches = not json_expected or metadata == {"instrument": "machine-channel", "value": 1}
+                session = result.get("owned_session", {})
+                separate = (isinstance(session.get("pid"), int) and session["pid"] > 0
+                            and session["pid"] == session.get("pgid") == session.get("sid")
+                            and session.get("pgid") != evidence["peer_before"]["pgid"])
+                cleanup_matches = "cleanup" not in result and result["command_exit"] == code
+                if mode:
+                    cleanup = result.get("cleanup", {})
+                    cleanup_matches = (result.get("qualification_ready", {}).get("stdout") is True
+                                       and result["qualification_ready"].get("stderr") is True
+                                       and cleanup.get("result") == "terminated-and-reaped"
+                                       and cleanup.get("reap_confirmed") is True
+                                       and cleanup.get("signals") == ["SIGTERM", "SIGKILL"]
+                                       and cleanup.get("command_exit") == 23
+                                       and (cleanup.get("events") or [{}])[-1].get("event") == "reap")
+                    wanted_error = ("Owned command session exceeded its deadline" if mode == "timeout"
+                                    else "Qualification-only capture observation failure after both ready channels")
+                    cleanup_matches = cleanup_matches and result["execution_error"] == wanted_error
+                control["peer_after"] = observe_owned_session(peer)
+                challenge = label + "-" + os.urandom(16).hex() + "\n"
+                encoded = challenge.encode("ascii")
+                if peer.stdin.write(encoded) != len(encoded):
+                    raise ValueError("Incomplete machine capture peer challenge write")
+                control["peer_challenge"] = challenge
+                control["peer_response"] = read_probe_line(peer.stdout)
+                peer_survived = (control["peer_after"]["state"] == "not-exited"
+                                 and control["peer_response"] == "PEER " + challenge)
+                control.update({"streams_match": streams_match, "value_matches": value_matches,
+                                "separate_session": separate, "cleanup_matches": cleanup_matches,
+                                "peer_survived": peer_survived})
+                control["matched"] = (observed == expected and streams_match and value_matches
+                                      and separate and cleanup_matches and peer_survived)
+            peer.stdin.close()
+            evidence["peer_exit"] = reap_observed_child(peer, wait_unreaped(peer, 5))
+            evidence["accepted"] = (evidence["peer_exit"] == 0
+                                    and len(evidence["controls"]) == len(cases)
+                                    and all(control["matched"] for control in evidence["controls"]))
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+        evidence["error"] = str(error)
+    finally:
+        if peer is not None:
+            if peer.returncode is None and not peer_cleanup_attempted:
+                peer_cleanup_attempted = True
+                cleanup = stop_owned_session(peer)
+                evidence["teardown"].append({"role": "peer", **cleanup})
+                if cleanup["result"] != "terminated-and-reaped":
+                    evidence["accepted"] = False
+            for pipe in (peer.stdin, peer.stdout):
+                if pipe is not None and not pipe.closed:
+                    try:
+                        pipe.close()
+                    except OSError as error:
+                        evidence["accepted"] = False
+                        evidence.setdefault("pipe_close_errors", []).append(str(error))
+        if peer_channel is not None:
+            try:
+                read_capture_channel(peer_channel)
+                evidence["peer_stderr"] = peer_channel
+            except (OSError, ValueError) as error:
+                evidence["accepted"] = False
+                evidence["peer_stderr_error"] = str(error)
+    return evidence
+
 
 def bundle_inputs(bundle=BUNDLE, meta=META, expected_entry=ENTRY, required=None):
     metadata = json.loads(meta.read_text(encoding="utf-8"))
@@ -733,7 +992,7 @@ def main():
     save(receipt)
     try:
         selected_scope = os.environ.get("OCRM_LOCAL_EXEC_SCOPE", "full-lane-local-exec")
-        if selected_scope not in ("full-lane-local-exec", "ocrm-local-exec-runtime"):
+        if selected_scope not in ("full-lane-local-exec", "ocrm-local-exec-runtime", "ocrm-local-exec-capture"):
             raise ValueError("Unknown LocalExec execution selection")
         receipt["validation_scope"] = selected_scope
         receipt["selection_limit"] = "Only the declared LPI/LDB commands are assessed. Unselected historical failures and unrelated full-workflow gates remain unaccepted."
@@ -780,6 +1039,12 @@ def main():
         save(receipt)
         if not receipt["cleanup_qualification"]["accepted"]:
             raise ValueError("Actual owned-child cleanup qualification failed")
+        receipt["active_case"] = "machine-output-qualification"
+        save(receipt)
+        receipt["machine_capture_qualification"] = qualify_machine_capture()
+        save(receipt)
+        if not receipt["machine_capture_qualification"]["accepted"]:
+            raise ValueError("Actual machine-output capture qualification failed")
         cargo = ["cargo", "test", "--locked", "--target-dir", "source/host/target",
                  "--manifest-path", CRATE + "/Cargo.toml"]
         planned = [
@@ -808,18 +1073,29 @@ def main():
             if label == "typescript-bundle":
                 command_environment = dict(os.environ,
                     FABUSHI_LOCAL_EXEC_BUILD_WORK_ROOT=receipt["native_build_work"]["absolute_path"])
-            result = run_command(label, command, timeout, environment=command_environment, assessor=assessor)
+            result = run_command(label, command, timeout, environment=command_environment, assessor=assessor,
+                                 machine_stdout=label == "host-dependency-graph")
             receipt["executions"].append(result)
             save(receipt)
+            if label == "host-dependency-graph":
+                result["source_binding_accepted"] = False
+                metadata = assess_machine_stdout(result)
+                save(receipt)
+                if result["machine_output_accepted"]:
+                    try:
+                        host_paths, packages = host_source_paths(metadata)
+                        host_bindings = source_bindings(host_paths)
+                    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
+                        result["source_binding_error"] = str(error)
+                        raise
+                    receipt["resolved_local_host_packages"] = packages
+                    receipt["host_sources_before"] = host_bindings
+                    receipt["host_source_scope"] = "All tracked members of each resolved local Host package and tracked Cargo/config ancestors; includes a superset of compiled source. Registry packages remain bound by Cargo.lock and actual metadata/build."
+                    result["source_binding_accepted"] = True
+                    result["oracle_accepted"] = True
+                save(receipt)
             if not result["oracle_accepted"]:
                 raise ValueError("Required LPI/LDB command failed: " + label)
-            if label == "host-dependency-graph":
-                metadata = json.loads((ROOT / result["log"]).read_text(encoding="utf-8"))
-                host_paths, packages = host_source_paths(metadata)
-                receipt["resolved_local_host_packages"] = packages
-                receipt["host_sources_before"] = source_bindings(host_paths)
-                receipt["host_source_scope"] = "All tracked members of each resolved local Host package and tracked Cargo/config ancestors; includes a superset of compiled source. Registry packages remain bound by Cargo.lock and actual metadata/build."
-                save(receipt)
         for binary in (BINARY, HOST_BINARY):
             if not os.access(binary, os.X_OK) or binary.stat().st_size == 0:
                 raise ValueError("The same-H build produced no normal executable: " + str(binary))
@@ -873,6 +1149,7 @@ def main():
         receipt["bundled_inputs_unchanged"] = receipt["bundled_inputs_before"] == receipt["bundled_inputs_after"]
         receipt["staged_inputs_unchanged"] = receipt["staged_inputs_before"] == receipt["staged_inputs_after"]
         accepted = (receipt["cleanup_qualification"]["accepted"]
+                    and receipt["machine_capture_qualification"]["accepted"]
                     and len(receipt["executions"]) == len(planned) + len(behavior_cases)
                     and all(case["oracle_accepted"] for case in receipt["executions"])
                     and receipt["inputs_unchanged"] and receipt["host_sources_unchanged"]

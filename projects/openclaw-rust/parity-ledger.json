@@ -1669,7 +1669,8 @@
         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json"
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9766,7 +9767,8 @@
         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json",
-        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json"
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json",
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
       ],
       "existing_owner_candidates": [
         {

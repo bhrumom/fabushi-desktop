@@ -1,0 +1,44 @@
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 91a33c2584e8f19aaed7e95a3007b9eb17ef2dc2..d0c3081bba725956e5eb261150c6c57513dedaea 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -1669,7 +1669,8 @@
+         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json",
+-        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json"
++        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json",
++        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -1796,8 +1797,7 @@
+       ],
+       "evidence_refs": [
+         "projects/openclaw-rust/dossiers/gateway-client-crate-audit-20261029.md",
+-        "projects/openclaw-rust/dossiers/node-host-scoped.md",
+-        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
++        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -9767,7 +9767,8 @@
+         "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/source-contract.json",
+-        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json"
++        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h6d8-windows-assessment.json",
++        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -9880,8 +9881,7 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "source/host/src/runner/host_external_machine_dependencies.rs",
+-        "source/host/tests/runner_effect_custody_contract.rs",
+-        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/hf8e-capture-decisions.json"
++        "source/host/tests/runner_effect_custody_contract.rs"
+       ],
+       "existing_owner_candidates": [
+         {
