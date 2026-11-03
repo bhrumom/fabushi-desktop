@@ -446,6 +446,10 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
       : undefined;
   const humanAuthorName = value.authorKind === "human" ? (stringValue(value.authorName) ?? undefined) : undefined;
   const forwardedFromAuthorName = value.authorKind === "human" ? visibleForwardOriginAuthorName(value) : undefined;
+  const forcedForwardInfo = value.authorKind === "human"
+    && (value.forcedForwardInfo === true || value.forcePreserveForwardInfo === true)
+    ? true
+    : undefined;
   const resolvedDelivery = transcriptDelivery(value) ?? "sent";
   const isCanonicalSettledHumanRow = value.authorKind === "human"
     && resolvedDelivery === "sent"
@@ -465,6 +469,7 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
     ...(humanAuthorName === undefined ? {} : { authorName: humanAuthorName }),
     ...(forwardedFromAuthorName === undefined ? {} : { forwardedFromAuthorName }),
+    ...(forcedForwardInfo === undefined ? {} : { forcedForwardInfo }),
     ...(humanRemoteMessageId === undefined ? {} : { remoteMessageId: humanRemoteMessageId }),
     ...(humanReadAt === undefined ? {} : { readAt: humanReadAt }),
   };

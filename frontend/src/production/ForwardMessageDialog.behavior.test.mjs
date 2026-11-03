@@ -285,6 +285,19 @@ test("partial retry only sends failed destination with stable identity", async (
   assert.equal(await f.page.getByText("2 selected", { exact: true }).count(), 1);
   assert.equal(await captions.isChecked(), true);
   assert.equal((await f.call("requests")).filter((r) => r.kind === "search").length, 1);
+  // Source-eligibility clamp: when forcedForwardInfo becomes true on the open
+  // source message before snapshot lock, both privacy checkboxes clamp to false
+  // and disable; when restored to false, the user can re-enable them.
+  await f.call("setForcedForwardInfo", true);
+  assert.equal(await sender.isChecked(), false);
+  assert.equal(await captions.isChecked(), false);
+  assert.equal(await sender.isDisabled(), true);
+  assert.equal(await captions.isDisabled(), true);
+  await f.call("setForcedForwardInfo", false);
+  assert.equal(await sender.isDisabled(), false);
+  assert.equal(await captions.isDisabled(), false);
+  await captions.check();
+  assert.equal(await sender.isChecked(), true);
   await f.submit(); const first = await f.request("forward");
   assert.equal(first.args.dropSenderNames, true);
   assert.equal(first.args.dropCaptions, true);

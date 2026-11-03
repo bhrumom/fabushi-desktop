@@ -183,6 +183,17 @@ impl ForwardPrivacy {
         }
     }
 
+    /// Clamps forward privacy options against source-item eligibility (`CanHideForwardAuthor` /
+    /// `NormalizeForwardOptions`). When the source message requires preserving forward attribution,
+    /// both `drop_sender_names` and `drop_captions` are clamped to `false`.
+    pub fn normalized_for_source(self, force_preserve_forward_info: bool) -> Self {
+        if force_preserve_forward_info {
+            Self::default()
+        } else {
+            self.normalized()
+        }
+    }
+
     /// Resolves the canonical forward-origin attribution when forwarding a source message.
     ///
     /// - If `self.normalized().drop_sender_names` is `true`, returns `None` (no origin may be emitted).

@@ -85,6 +85,7 @@ type Controls = {
   readonly close: () => void;
   readonly replaceSource: (messageId: string) => void;
   readonly refreshMessage: () => void;
+  readonly setForcedForwardInfo: (forced: boolean) => void;
   readonly refreshCredential: () => void;
 };
 let controls: Controls | null = null;
@@ -97,6 +98,7 @@ function Fixture() {
   const [open, setOpen] = useState(true);
   const [messageId, setMessageId] = useState("message-1");
   const [messageRefresh, setMessageRefresh] = useState(0);
+  const [forcedForwardInfo, setForcedForwardInfo] = useState(false);
   const [credentialRefresh, setCredentialRefresh] = useState(0);
   const accountRef = useRef<string | null>(account);
   useForwardAccountScopeUnmountFence(scope);
@@ -105,7 +107,8 @@ function Fixture() {
   const message = useMemo<TranscriptMessage>(() => ({
     id: messageId, kind: "message", role: "user", author: "You",
     text: "Forward this message", timestampMs: 1 + messageRefresh,
-  }), [messageId, messageRefresh]);
+    ...(forcedForwardInfo ? { forcedForwardInfo: true } : {}),
+  }), [forcedForwardInfo, messageId, messageRefresh]);
   controls = {
     generation,
     scope,
@@ -120,6 +123,7 @@ function Fixture() {
     close: () => setOpen(false),
     replaceSource: (nextId) => setMessageId(nextId),
     refreshMessage: () => setMessageRefresh((value) => value + 1),
+    setForcedForwardInfo: (forced) => setForcedForwardInfo(forced),
     refreshCredential: () => setCredentialRefresh((value) => value + 1),
   };
   return <div data-account={account ?? "signed-out"} data-credential-refresh={credentialRefresh} data-generation={generation}>
@@ -178,6 +182,7 @@ Object.assign(window, {
     close: () => controls?.close(),
     replaceSource: (id: string) => controls?.replaceSource(id),
     refreshMessage: () => controls?.refreshMessage(),
+    setForcedForwardInfo: (forced: boolean) => controls?.setForcedForwardInfo(forced),
     refreshCredential: () => controls?.refreshCredential(),
     setTheme: (mode: "light" | "dark") => themeInstaller.update(mode),
     unmount: () => {

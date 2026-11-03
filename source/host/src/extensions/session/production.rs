@@ -3393,6 +3393,19 @@ impl ProductionSessionWorkers {
         Ok(conversations)
     }
 
+    pub(crate) fn source_entry_requires_preserving_forward_info(
+        source_entry: &serde_json::Value,
+    ) -> bool {
+        source_entry
+            .get("forcedForwardInfo")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false)
+            || source_entry
+                .get("forcePreserveForwardInfo")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false)
+    }
+
     pub(crate) fn human_recipient_requirements_from_entry(
         source_entry: &serde_json::Value,
     ) -> fabushi_messaging_core::RecipientSearchRequirements {
@@ -3804,6 +3817,19 @@ impl ProductionSessionWorkers {
                 }
                 Err(ForwardSourceFailure::Storage(error)) => return Err(error),
             };
+            if Self::source_entry_requires_preserving_forward_info(&source_entry)
+                && (batch.context.pointer("/privacy/dropSenderNames").and_then(serde_json::Value::as_bool) == Some(true)
+                    || batch.context.pointer("/privacy/dropCaptions").and_then(serde_json::Value::as_bool) == Some(true))
+            {
+                let denial = "forwardHumanMessage source requires preserving forward attribution".to_string();
+                for destination in &mut batch.destinations {
+                    if !destination.completed {
+                        destination.error = Some(denial.clone());
+                    }
+                }
+                store_forward_batch(&owner, &batch)?;
+                return Ok(batch);
+            }
             if self.human_forward_scope()? != (account.to_string(), issuer.to_string()) {
                 return Err("Fabushi native messaging credential changed Human account or issuer".into());
             }
@@ -3938,7 +3964,7 @@ impl ProductionSessionWorkers {
         if destinations.len() > 32 {
             return Err("forwardHumanMessage supports at most 32 unique destinations".into());
         }
-        let privacy = fabushi_messaging_core::ForwardPrivacy { drop_sender_names, drop_captions }.normalized();
+        let requested_privacy = fabushi_messaging_core::ForwardPrivacy { drop_sender_names, drop_captions }.normalized();
         let (account, issuer) = self.human_forward_scope()?;
         // Serialize request-ID discovery and initial source persistence by
         // account/issuer. Release this short lane before destination locks/HTTP.
@@ -3949,6 +3975,12 @@ impl ProductionSessionWorkers {
             if prior.source_conversation_id != source_conversation_id || prior.source_entry_id != source_entry_id {
                 return Err("forwardHumanMessage clientNonce already belongs to another source message".into());
             }
+            let forced_preserve = prior
+                .context
+                .pointer("/privacy/forcedPreserveInfo")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false);
+            let privacy = requested_privacy.normalized_for_source(forced_preserve);
             if prior.context.pointer("/privacy/dropSenderNames").and_then(serde_json::Value::as_bool)
                 != Some(privacy.drop_sender_names)
                 || prior.context.pointer("/privacy/dropCaptions").and_then(serde_json::Value::as_bool)
@@ -3962,6 +3994,8 @@ impl ProductionSessionWorkers {
         } else {
             let source_entry = self.authorize_forward_source(source_conversation_id, source_entry_id)
                 .map_err(|error| error.to_string())?;
+            let force_preserve = Self::source_entry_requires_preserving_forward_info(&source_entry);
+            let privacy = requested_privacy.normalized_for_source(force_preserve);
             let source_text = source_entry.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
             let attachments = source_entry.get("attachments")
                 .and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
@@ -3980,15 +4014,22 @@ impl ProductionSessionWorkers {
             } else {
                 source_text.to_string()
             };
+            let mut privacy_json = serde_json::json!({
+                "dropSenderNames": privacy.drop_sender_names,
+                "dropCaptions": privacy.drop_captions,
+            });
+            if force_preserve {
+                privacy_json
+                    .as_object_mut()
+                    .expect("privacy object")
+                    .insert("forcedPreserveInfo".into(), serde_json::Value::Bool(true));
+            }
             let mut context = serde_json::json!({
                 "batchVersion": 1,
                 "requestId": client_nonce,
                 "sourceConversationId": source_conversation_id,
                 "sourceEntryId": source_entry_id,
-                "privacy": {
-                    "dropSenderNames": privacy.drop_sender_names,
-                    "dropCaptions": privacy.drop_captions,
-                },
+                "privacy": privacy_json,
             });
             let source_metadata = source_owner.read_metadata().ok();
             if let Some(origin) = Self::resolve_human_forward_origin(
@@ -5963,6 +6004,73 @@ mod sharebox_shipping_tests {
         assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 1);
         assert_eq!(restarted.read_human_conversation_transcript(&gamma).unwrap().len(), 0);
         assert_eq!(restarted.read_human_conversation_transcript(&delta).unwrap().len(), 0);
+
+        // Source-eligibility forward-options clamp (CanHideForwardAuthor / NormalizeForwardOptions):
+        // when the source entry requires preserving forward attribution (forcedForwardInfo=true),
+        // requested drop_sender_names/drop_captions are clamped to PreserveInfo and origin is retained.
+        assert!(source_owner.append_transcript_entry(&serde_json::json!({
+            "id": "human-server-message:902",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "human-source",
+            "authorName": "Forced Source Author",
+            "content": "mandatory attribution message",
+            "forcedForwardInfo": true,
+            "delivery": "sent",
+            "timestampMs": 30.0,
+            "remoteMessageId": "902",
+            "remoteCreatedAt": "1970-01-01T00:00:30Z"
+        })).unwrap());
+        let clamped = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:902",
+                &[beta.clone()],
+                "forward-request-forced-preserve-1",
+                true,
+                true,
+            )
+            .unwrap();
+        assert_eq!(
+            clamped.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        let beta_entries = restarted.read_human_conversation_transcript(&beta).unwrap();
+        assert_eq!(beta_entries.len(), 2);
+        let forced_forwarded = &beta_entries[1];
+        let forced_context = forced_forwarded.get("forwardContext").unwrap();
+        assert_eq!(
+            forced_context.pointer("/privacy/dropSenderNames").and_then(serde_json::Value::as_bool),
+            Some(false),
+        );
+        assert_eq!(
+            forced_context.pointer("/privacy/dropCaptions").and_then(serde_json::Value::as_bool),
+            Some(false),
+        );
+        assert_eq!(
+            forced_context.pointer("/privacy/forcedPreserveInfo").and_then(serde_json::Value::as_bool),
+            Some(true),
+        );
+        assert_eq!(
+            forced_context.pointer("/origin/authorName").and_then(serde_json::Value::as_str),
+            Some("Forced Source Author"),
+        );
+        let clamped_replay = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:902",
+                &[beta.clone()],
+                "forward-request-forced-preserve-1",
+                true,
+                true,
+            )
+            .unwrap();
+        assert_eq!(
+            clamped_replay.pointer("/destinations/0/status").and_then(serde_json::Value::as_str),
+            Some("sent"),
+        );
+        assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 2);
 
         restarted.shutdown();
         let _ = fs::remove_dir_all(root);

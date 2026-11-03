@@ -19,6 +19,18 @@ fn participant(actor_id: &str, role: ParticipantRole) -> Participant {
     }
 }
 
+fn community_member(actor_id: &str, status: MemberStatus) -> CommunityMember {
+    CommunityMember {
+        actor_id: ActorId::new(actor_id),
+        status,
+        admin_title: None,
+        admin_rights: AdminRights::default(),
+        restrictions: MemberRestrictions::default(),
+        joined_at_ms: 1,
+        invited_by: Some(ActorId::new("human:owner")),
+    }
+}
+
 fn group_conversation(id: &str) -> Conversation {
     let mut conversation = Conversation::direct(
         id,

@@ -1328,17 +1328,38 @@ test("NMR-UI-ENTRY-REFRESH-01 live forward target reconciliation preserves eligi
   };
   assert.equal(reconcileForwardTargetMessage(target, unrelated), target);
 
-  // Same-id update refreshes text and preserves monotonic readAt
+  // Same-id update refreshes text, forcedForwardInfo, and preserves monotonic readAt
   const updatedText: TranscriptMessage = {
     ...target,
     text: "updated forwardable text",
     readAt: "2026-11-04T01:00:00Z",
+    forcedForwardInfo: true,
   };
   const refreshed = reconcileForwardTargetMessage(target, updatedText);
   assert.ok(refreshed != null);
   assert.equal(refreshed.id, target.id);
   assert.equal(refreshed.text, "updated forwardable text");
   assert.equal(refreshed.readAt, "2026-11-04T02:00:00Z");
+  assert.equal(refreshed.forcedForwardInfo, true);
+
+  const projectedForced = projectTranscriptEntry(
+    {
+      id: "human-server-message:601",
+      kind: "message",
+      role: "user",
+      authorKind: "human",
+      authorId: "human-self",
+      content: "forced forward info row",
+      forcedForwardInfo: true,
+      delivery: "sent",
+      remoteMessageId: "601",
+      timestampMs: 1_000,
+    },
+    0,
+    "Peer",
+  );
+  assert.ok(projectedForced != null && projectedForced.kind === "message");
+  assert.equal(projectedForced.forcedForwardInfo, true);
 
   // Attachment-only message remains forwardable when text is emptied
   const attachmentOnly = reconcileForwardTargetMessage(target, {

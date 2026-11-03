@@ -253,6 +253,8 @@ export interface TranscriptMessage {
   authorId?: string;
   authorName?: string;
   forwardedFromAuthorName?: string;
+  /** When true, source-eligibility rules require preserving sender attribution and captions on forward. */
+  forcedForwardInfo?: boolean;
   remoteMessageId?: string;
   /** Validated RFC3339/ISO read timestamp on canonical settled Human messages. */
   readAt?: string;

@@ -106,6 +106,9 @@ export function ForwardMessageDialog({
   const [activeRecipientIndex, setActiveRecipientIndex] = useState(0);
 
   const sourceEntryId = message?.id ?? null;
+  const forcePreserveForwardInfo = message?.forcedForwardInfo === true;
+  const effectiveDropCaptions = !forcePreserveForwardInfo && dropCaptions;
+  const effectiveDropSenderNames = !forcePreserveForwardInfo && (dropSenderNames || effectiveDropCaptions);
   const scopeKey = open && sourceEntryId != null && sourceConversationId != null
     ? JSON.stringify([accountScopeGeneration, sourceConversationId, sourceEntryId])
     : null;
@@ -159,6 +162,12 @@ export function ForwardMessageDialog({
       searchGenerationRef.current += 1;
     };
   }, [accountScopeGeneration, scopeKey, sourceConversationId, sourceEntryId]);
+
+  useLayoutEffect(() => {
+    if (!forcePreserveForwardInfo || snapshotRef.current != null) return;
+    if (dropSenderNames) setDropSenderNames(false);
+    if (dropCaptions) setDropCaptions(false);
+  }, [dropCaptions, dropSenderNames, forcePreserveForwardInfo]);
 
   useEffect(() => {
     const lifetime = lifetimeRef.current;
@@ -268,8 +277,8 @@ export function ForwardMessageDialog({
         sourceEntryId: lifetime.sourceEntryId,
         destinationConversationIds: [...selectedRef.current],
         clientNonce: lifetime.requestId,
-        dropSenderNames: dropSenderNames || dropCaptions,
-        dropCaptions,
+        dropSenderNames: effectiveDropSenderNames,
+        dropCaptions: effectiveDropCaptions,
       };
       const recipientNames = new Map<string, string>();
       for (const id of request.destinationConversationIds) {
@@ -414,10 +423,10 @@ export function ForwardMessageDialog({
           <legend>Forward options</legend>
           <label>
             <input
-              checked={dropSenderNames}
-              disabled={snapshotLocked}
+              checked={effectiveDropSenderNames}
+              disabled={snapshotLocked || forcePreserveForwardInfo}
               onChange={(event) => {
-                if (!canEditIntent()) return;
+                if (!canEditIntent() || forcePreserveForwardInfo) return;
                 const checked = event.currentTarget.checked;
                 setDropSenderNames(checked);
                 if (!checked) setDropCaptions(false);
@@ -428,10 +437,10 @@ export function ForwardMessageDialog({
           </label>
           <label>
             <input
-              checked={dropCaptions}
-              disabled={snapshotLocked}
+              checked={effectiveDropCaptions}
+              disabled={snapshotLocked || forcePreserveForwardInfo}
               onChange={(event) => {
-                if (!canEditIntent()) return;
+                if (!canEditIntent() || forcePreserveForwardInfo) return;
                 const checked = event.currentTarget.checked;
                 setDropCaptions(checked);
                 if (checked) setDropSenderNames(true);
