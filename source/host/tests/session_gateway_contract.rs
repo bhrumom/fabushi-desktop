@@ -4687,6 +4687,7 @@ fn shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_
 // termination and durable-progress failure deterministic rather than timed.
 #[derive(Default)]
 struct ForwardHttpState {
+    human_mode: bool,
     requests: Vec<String>,
     accepted: std::collections::BTreeMap<String, serde_json::Value>,
     resources: std::collections::BTreeMap<String, (serde_json::Value, Vec<u8>)>,
@@ -4746,6 +4747,11 @@ fn forward_multipart_file(request: &[u8]) -> (String, Vec<u8>) {
         .filter(|(name, _)| name.eq_ignore_ascii_case("content-type"))
         .map(|(_, value)| value.trim())).expect("multipart content type");
     assert!(content_type.starts_with("multipart/form-data;"));
+    assert!(headers.lines().any(|line| line.eq_ignore_ascii_case("accept: application/json")),
+        "Human and Forward uploads request the JSON resource receipt");
+    assert!(headers.lines().any(|line| line.to_ascii_lowercase().starts_with("x-fabushi-device-id: ")
+        && line.split_once(':').is_some_and(|(_, value)| !value.trim().is_empty())),
+        "Human and Forward uploads are bound to the authenticated device");
     let boundary = content_type.split(';').find_map(|value|
         value.trim().strip_prefix("boundary=")).expect("multipart boundary").trim_matches('"');
     let body = &request[header_end + 4..];
@@ -4757,6 +4763,8 @@ fn forward_multipart_file(request: &[u8]) -> (String, Vec<u8>) {
         .expect("multipart file headers");
     let part_headers = std::str::from_utf8(&body[prefix.len()..part_end]).expect("file headers");
     assert!(part_headers.contains("name=\"file\""));
+    assert!(part_headers.lines().any(|line| line.eq_ignore_ascii_case("content-type: application/octet-stream")),
+        "Human and Forward upload the file part as application/octet-stream");
     let name = part_headers.split("filename=\"").nth(1)
         .and_then(|tail| tail.split('"').next()).expect("file name").to_string();
     (name, body[part_end + 4..body.len() - suffix.len()].to_vec())
@@ -4773,10 +4781,21 @@ struct ForwardHttpFixture {
 
 impl ForwardHttpFixture {
     fn start(hold_first_post: bool) -> Self {
+        Self::start_with_mode(hold_first_post, false)
+    }
+
+    fn start_human(hold_first_post: bool) -> Self {
+        Self::start_with_mode(hold_first_post, true)
+    }
+
+    fn start_with_mode(hold_first_post: bool, human_mode: bool) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("forward listener");
         listener.set_nonblocking(true).expect("bounded forward listener");
         let url = format!("http://{}", listener.local_addr().expect("forward address"));
-        let state = Arc::new(std::sync::Mutex::new(ForwardHttpState::default()));
+        let state = Arc::new(std::sync::Mutex::new(ForwardHttpState {
+            human_mode,
+            ..ForwardHttpState::default()
+        }));
         let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let (seen, first_post) = std::sync::mpsc::channel();
         let (release, released) = std::sync::mpsc::channel();
@@ -4800,7 +4819,17 @@ impl ForwardHttpFixture {
                     .expect("bounded forward write");
                 let request_bytes = read_forward_http_bytes(&mut stream);
                 let request = String::from_utf8_lossy(&request_bytes).into_owned();
-                assert!(request.to_ascii_lowercase().contains("authorization: bearer fixture-token"));
+                let lowercase_request = request.to_ascii_lowercase();
+                assert!(lowercase_request.contains("authorization: bearer fixture-token"));
+                if request.starts_with("POST /api/social/message-resources ")
+                    || request.starts_with("POST /api/social/messages ")
+                {
+                    assert!(lowercase_request.lines().any(|line| line == "accept: application/json"),
+                        "Human and Forward requests require JSON responses");
+                    assert!(lowercase_request.lines().any(|line| line.starts_with("x-fabushi-device-id: ")
+                        && line.split_once(':').is_some_and(|(_, value)| !value.trim().is_empty())),
+                        "Human and Forward requests must carry the authenticated device id");
+                }
                 let is_post = request.starts_with("POST /api/social/messages ");
                 let (body, content_type, status) = {
                     let mut state = thread_state.lock().expect("forward HTTP state");
@@ -4827,7 +4856,8 @@ impl ForwardHttpFixture {
                             }
                         }
                         let (name, bytes) = forward_multipart_file(&request_bytes);
-                        let id = format!("forward-resource-{}", state.resources.len() + 1);
+                        let resource_prefix = if state.human_mode { "human-resource" } else { "forward-resource" };
+                        let id = format!("{resource_prefix}-{}", state.resources.len() + 1);
                         let resource = json!({
                             "resourceId":id,"name":name,"size":bytes.len(),
                             "contentType":"application/octet-stream","createdAt":"2026-10-05T01:00:00Z"
@@ -4873,9 +4903,13 @@ impl ForwardHttpFixture {
                         let peer = submitted["targetUserId"].as_str().expect("forward target")
                             .parse::<u64>().expect("numeric forward target");
                         let text = submitted["text"].as_str().expect("forward text");
-                        let attachments = submitted["attachments"].as_array().into_iter().flatten()
+                        let attachments = submitted.get("attachments")
+                            .and_then(serde_json::Value::as_array).into_iter().flatten()
                             .map(|item| {
-                                let id = item["resourceId"].as_str().expect("submitted resource identity");
+                                let fields = item.as_object().expect("send attachment object");
+                                assert_eq!(fields.len(), 1, "the HTTP send contract carries only the resource receipt id");
+                                let id = fields.get("resourceId").and_then(serde_json::Value::as_str)
+                                    .expect("submitted resource identity");
                                 state.resources.get(id).expect("message binds an actually uploaded resource").0.clone()
                             }).collect::<Vec<_>>();
                         let existing = state.accepted.get(nonce).cloned();
@@ -7218,7 +7252,7 @@ fn shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch(
 #[test]
 fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_settled_replay() {
     let root = temp_root("human-retry-resource-restart");
-    let server = ForwardHttpFixture::start(false);
+    let server = ForwardHttpFixture::start_human(false);
     server.fail_first_message_post();
     let runtime = human_message_fixture_runtime(&root, &server.url);
     let conversation_id = runtime.create_human_conversation("2", "Peer").unwrap()["id"]
@@ -7238,7 +7272,13 @@ fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_set
     assert_eq!(pending.len(), 1);
     assert_eq!(pending[0]["delivery"], "pending");
     assert_eq!(pending[0]["clientNonce"], "retry-resource-nonce");
-    assert_eq!(pending[0]["remoteDispatchAttachments"][0]["resourceId"], "forward-resource-1");
+    assert_eq!(pending[0]["remoteDispatchAttachments"], json!([{
+        "resourceId":"human-resource-1",
+        "name":"retry-report.pdf",
+        "size":5,
+        "contentType":"application/octet-stream",
+        "createdAt":"2026-10-05T01:00:00Z"
+    }]), "the Human multipart receipt is persisted as the exact remote dispatch attachment");
     assert_eq!(server.resource_post_count(), 1);
     runtime.shutdown();
     drop(owner);
@@ -7249,12 +7289,14 @@ fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_set
         &json!({"conversationId":foreign_conversation_id,"clientNonce":"retry-resource-nonce"}))
         .expect("retry gateway").expect_err("foreign conversation cannot claim another conversation's nonce");
     assert!(!foreign.to_string().is_empty());
+    assert_eq!(server.post_count(), 1, "a foreign conversation cannot reach the remote message endpoint");
+    assert_eq!(server.resource_post_count(), 1, "a foreign conversation cannot re-upload the Human attachment");
     let settled = dispatch(&restarted, "retryHumanMessage", json!({
         "conversationId":conversation_id,"clientNonce":"retry-resource-nonce"
     }));
     assert_eq!(settled["delivery"], "sent");
     assert_eq!(settled["clientNonce"], "retry-resource-nonce");
-    assert_eq!(settled["attachments"][0]["resourceId"], "forward-resource-1");
+    assert_eq!(settled["attachments"][0]["resourceId"], "human-resource-1");
     assert_eq!(dispatch(&restarted, "retryHumanMessage", json!({
         "conversationId":conversation_id,"clientNonce":"retry-resource-nonce"
     })), settled, "settled replay is a pure local read");
@@ -7264,6 +7306,50 @@ fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_set
     restarted.shutdown();
     server.finish();
     fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn shipping_human_retry_rejects_duplicate_client_nonce_identity_before_http() {
+    let root = temp_root("human-retry-duplicate-identity");
+    let server = ForwardHttpFixture::start_human(false);
+    server.fail_first_message_post();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_owned();
+
+    runtime.append_human_message(&conversation_id, "duplicate identity",
+        "duplicate-human-retry-nonce", Some(1234.0), None, &[])
+        .expect_err("first remote dispatch fails and leaves a durable retry row");
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("durable owner");
+    let rows = owner.get_transcript_entries().expect("single pending row");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["id"], "human-message:duplicate-human-retry-nonce");
+    let mut duplicate = rows[0].clone();
+    duplicate["id"] = json!("human-message:duplicate-human-retry-nonce:duplicate");
+    assert!(owner.append_transcript_entry(&duplicate).expect("persist duplicate client nonce under a distinct SQLite row id"));
+    assert_eq!(owner.get_transcript_entries().expect("two duplicate identity rows").len(), 2);
+
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &server.url);
+    let owner = restarted.open_human_conversation_db_owner(&conversation_id).expect("reopened owner");
+    let rows = owner.get_transcript_entries().expect("reopened duplicate rows");
+    assert_eq!(rows.len(), 2, "the negative fixture survives an actual SQLite close and reopen");
+    let error = dispatch_production_session_gateway_call(&restarted, "retryHumanMessage", &json!({
+        "conversationId":conversation_id,
+        "clientNonce":"duplicate-human-retry-nonce"
+    })).expect("registered retry gateway").expect_err("duplicate durable identity must fail closed");
+    assert!(error.contains("ambiguous durable identities"), "{error}");
+    assert_eq!(server.post_count(), 1, "duplicate identity must not reach the HTTP message endpoint");
+    assert_eq!(server.resource_post_count(), 0, "duplicate identity must not upload or reuse an attachment receipt");
+
+    restarted.shutdown();
+    drop(owner);
+    drop(restarted);
+    server.finish();
+    fs::remove_dir_all(root).expect("remove duplicate identity fixture");
 }
 
 #[test]

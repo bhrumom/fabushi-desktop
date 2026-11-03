@@ -3538,24 +3538,30 @@ impl ProductionSessionWorkers {
         if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
             || entry.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
             || entry.get("authorId").and_then(serde_json::Value::as_str) != Some(sender_id)
-            || entry.get("id").and_then(serde_json::Value::as_str)
-                != Some(format!("human-message:{client_nonce}").as_str())
         {
             return Err("retryHumanMessage identity is not the authenticated local Human outbox row".into());
         }
         if self.pending_human_forward_is_batch_owned(conversation_id, entry)? {
             return Err("retryHumanMessage refuses source-owned forwarding intent".into());
         }
-        if entry.get("remoteMessageId").is_some()
-            || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
-        {
-            if entry.get("id").and_then(serde_json::Value::as_str)
-                .is_some_and(|id| id.starts_with("human-server-message:"))
-                && entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
+        let delivery = entry.get("delivery").and_then(serde_json::Value::as_str);
+        if entry.get("remoteMessageId").is_some() || delivery == Some("sent") {
+            let remote_message_id = entry.get("remoteMessageId")
+                .and_then(serde_json::Value::as_str)
+                .filter(|value| !value.trim().is_empty());
+            let canonical_id = remote_message_id
+                .map(|remote_message_id| format!("human-server-message:{remote_message_id}"));
+            if delivery == Some("sent")
+                && canonical_id.as_deref() == entry.get("id").and_then(serde_json::Value::as_str)
             {
                 return Ok(entry.clone());
             }
             return Err("retryHumanMessage settled identity is not canonical".into());
+        }
+        if entry.get("id").and_then(serde_json::Value::as_str)
+            != Some(format!("human-message:{client_nonce}").as_str())
+        {
+            return Err("retryHumanMessage identity is not the authenticated local Human outbox row".into());
         }
         if !matches!(entry.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching")) {
             return Err("retryHumanMessage durable intent is not retryable".into());
