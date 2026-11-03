@@ -39,9 +39,11 @@ authorized Fabushi/Codex routes, with no arbitrary model/profile/runtime choice.
   from args, role text or a new credential. Ordinary internal/default contexts
   do not grant it implicitly. Preserve authorization of unrelated methods.
 - RMD02: Extend sessions.get with a session model status projection for an
-  existing canonical Agent main session. Derive route from inference.route(),
-  not configured_provider or request data. Fabushi/Codex defaults come from the
-  existing checked resolver with no session or explicit override. Preserve
+  existing canonical Agent main session. Derive route through the same Inference route policy used by inference.route(),
+  not configured_provider or request data. Capture the configured provider and
+  default together through the existing Settings owner's checked reader; source
+  errors must precede unsupported-route projection. Reuse the same product-mode
+  override and Fabushi/Codex default resolvers with no session/explicit override. Preserve
   model case and original provider identity. Read failures or malformed state
   remain visible errors, never absence. Unsupported routes do not gain a
   fabricated default/catalog pair. No credential or auth-profile secret is
@@ -162,3 +164,19 @@ Decision RMD-PRE-LIFECYCLE-EXPECTATION — FIX / IMPL_BUG before integration:
 the existing model-selection writer's latest-read revision cannot represent
 an earlier UI observation. Compare the supplied exact expectation under the
 existing owner lock and retain the existing atomic generation write.
+
+Decision RMD-PRE-CHECKED-CONFIG — FIX / IMPL_BUG before integration:
+legacy route readers intentionally default after malformed Settings. That fallback
+cannot become a successful unsupported-route status in this new strict ingress.
+Add a checked provider/default snapshot in the existing Settings owner and a
+projection in the existing Inference owner that reuses its exact route policy and
+provider-bound default resolvers. Keep legacy route/read behavior unchanged.
+
+Decision RMD-PRE-ADMISSION-PROJECTION — FIX / IMPL_BUG before integration:
+AgentSummary metadata.lifecycleRevision is distinct from the work-admission
+revision rotated by archive/restore. For canonical sessions.get, return the actual
+current SessionWorkAdmission identity/revision and pass that same revision to the
+guarded model reader. Do not return the old metadata revision or silently replace
+the caller's expectation inside a reset. Noncanonical transcript projections keep
+their existing contract. Archive/restore and stale earlier reads must be exercised
+through the actual summary/admission owners.
