@@ -7203,6 +7203,105 @@ fn shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch(
     server.finish(); fs::remove_dir_all(root).unwrap();
 }
 
+
+#[test]
+fn shipping_human_retry_identity_is_concurrent_idempotent_and_reuses_settled_intent() {
+    let root = temp_root("retry-concurrent");
+    let remote = fixture_remote_human_message(901, 1, 2, "retry exact payload", Some("retry-concurrent-nonce"), json!([]));
+    let (accepted, accepted_rx) = std::sync::mpsc::channel();
+    let (release, release_rx) = std::sync::mpsc::channel();
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"temporary dispatch failure"})),
+        HumanMessageFixtureReply::Deferred(
+            Box::new(HumanMessageFixtureReply::Json(201, json!({"success":true,"message":remote}))),
+            accepted,
+            release_rx,
+        ),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_owned();
+
+    for args in [
+        json!({"conversationId":conversation_id,"clientNonce":"retry-concurrent-nonce","text":"forbidden override"}),
+        json!({"conversationId":conversation_id,"clientNonce":"retry-concurrent-nonce","attachments":[]}),
+        json!({"conversationId":" padded ","clientNonce":"retry-concurrent-nonce"}),
+        json!({"conversationId":conversation_id,"clientNonce":" "}),
+        json!({"conversationId":conversation_id,"clientNonce":"x".repeat(201)}),
+        json!([]),
+    ] {
+        let result = dispatch_production_session_gateway_call(&runtime, "retryHumanMessage", &args)
+            .expect("registered retry gateway");
+        assert!(result.is_err(), "malicious retry arguments must fail closed: {args}");
+    }
+
+    dispatch(&runtime, "sendHumanMessage", json!({
+        "conversationId":conversation_id,
+        "text":"retry exact payload",
+        "clientNonce":"retry-concurrent-nonce",
+        "composedAtMs":1234.0,
+        "attachments":[]
+    })).pipe(|_| unreachable!());
+
+    runtime.append_human_message(&conversation_id, "retry exact payload",
+        "retry-concurrent-nonce", Some(1234.0), None, &[])
+        .expect_err("first remote dispatch is deliberately unavailable");
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("durable owner");
+    let pending = owner.get_transcript_entries().expect("pending row");
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["delivery"], "pending");
+    assert_eq!(pending[0]["clientNonce"], "retry-concurrent-nonce");
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &url);
+    let barrier = Arc::new(std::sync::Barrier::new(3));
+    let mut workers = Vec::new();
+    for _ in 0..2 {
+        let runtime = Arc::clone(&restarted);
+        let barrier = Arc::clone(&barrier);
+        let conversation_id = conversation_id.clone();
+        workers.push(thread::spawn(move || {
+            barrier.wait();
+            dispatch(&runtime, "retryHumanMessage", json!({
+                "conversationId":conversation_id,
+                "clientNonce":"retry-concurrent-nonce"
+            }))
+        }));
+    }
+    barrier.wait();
+    accepted_rx.recv_timeout(std::time::Duration::from_secs(15))
+        .expect("one concurrent retry reaches the remote server");
+    release.send(()).expect("release deterministic remote settlement");
+    let first = workers.remove(0).join().expect("first concurrent retry");
+    let second = workers.remove(0).join().expect("second concurrent retry");
+    assert_eq!(first, second, "serialized retry callers observe one canonical settlement");
+    assert_eq!(first["id"], "human-server-message:901");
+    assert_eq!(first["delivery"], "sent");
+    assert_eq!(first["clientNonce"], "retry-concurrent-nonce");
+    assert_eq!(first["content"], "retry exact payload");
+    assert_eq!(dispatch(&restarted, "retryHumanMessage", json!({
+        "conversationId":conversation_id,
+        "clientNonce":"retry-concurrent-nonce"
+    })), first, "settled replay is a pure local read");
+    assert_eq!(restarted.read_human_conversation_transcript(&conversation_id).expect("one row").len(), 1);
+    restarted.shutdown();
+    drop(restarted);
+    let requests = server.join().expect("exactly two message attempts");
+    assert_eq!(requests.len(), 2, "initial failed dispatch plus one concurrent retry");
+    assert_eq!(requests.iter().filter(|request| request.starts_with("POST /api/social/messages ")).count(), 2);
+    assert_eq!(fixture_request_json(&requests[0]), fixture_request_json(&requests[1]),
+        "retry preserves the exact durable payload and nonce");
+    let reopened = human_message_fixture_runtime(&root, &url);
+    assert_eq!(dispatch(&reopened, "retryHumanMessage", json!({
+        "conversationId":conversation_id,
+        "clientNonce":"retry-concurrent-nonce"
+    })), first, "restart settled replay remains idempotent");
+    reopened.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 fn human_history_message(id: u64) -> serde_json::Value {
     let mut row = fixture_remote_human_message(id, 2, 1, &format!("history-{id}"), None, json!([]));
     row["createdAt"] = json!("1970-01-01T00:00:01Z");
