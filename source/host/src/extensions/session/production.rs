@@ -5888,15 +5888,11 @@ mod sharebox_shipping_tests {
         // Destination permission & typed-share policy enforcement across searchHumanRecipients and forwardHumanMessage
         let gamma = conversation_id(&restarted.create_human_conversation("human-gamma", "Gamma Blocked").unwrap());
         let gamma_owner = restarted.open_human_conversation_db_owner(&gamma).unwrap();
-        let mut gamma_meta = gamma_owner.read_metadata().unwrap();
-        gamma_meta["permissions"] = serde_json::json!({ "canSendMessages": false });
-        gamma_owner.write_metadata(&gamma_meta).unwrap();
+        assert!(gamma_owner.set_metadata("permissions", serde_json::json!({ "canSendMessages": false })).unwrap());
 
         let delta = conversation_id(&restarted.create_human_conversation("human-delta", "Delta NoOther").unwrap());
         let delta_owner = restarted.open_human_conversation_db_owner(&delta).unwrap();
-        let mut delta_meta = delta_owner.read_metadata().unwrap();
-        delta_meta["permissions"] = serde_json::json!({ "canSendOther": false });
-        delta_owner.write_metadata(&delta_meta).unwrap();
+        assert!(delta_owner.set_metadata("permissions", serde_json::json!({ "canSendOther": false })).unwrap());
 
         let source_owner = restarted.open_human_conversation_db_owner(&source).unwrap();
         assert!(source_owner.append_transcript_entry(&serde_json::json!({

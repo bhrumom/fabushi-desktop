@@ -46,7 +46,7 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, isSettledTranscriptMessage, localTranscriptClientNonce, recordTranscriptReadUpdate, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, isSettledTranscriptMessage, localTranscriptClientNonce, recordTranscriptReadUpdate, reconcileForwardTargetMessage, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -3550,6 +3550,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (next?.kind !== "message" || !next.attachments?.some((attachment) =>
         transcriptAttachmentIdentity(attachment) === source.attachmentIdentity)) source.mount.close();
     };
+    const retireOrRefreshForwardTarget = (ownerId: string, entry: ConversationTranscriptEntry, previousId?: string) => {
+      setForwardTarget((current) => {
+        if (current == null || current.sourceConversationId !== ownerId) return current;
+        if (current.accountScopeGeneration !== accountScopeGenerationRef.current) return null;
+        const nextMessage = reconcileForwardTargetMessage(current.message, entry, { previousId });
+        if (nextMessage == null) return null;
+        return nextMessage === current.message ? current : { ...current, message: nextMessage };
+      });
+    };
     const resolveAgentRetryEcho = (ownerId: string, entry: ConversationTranscriptEntry): ConversationTranscriptEntry => {
       if (humanConversationsRef.current.some((conversation) => conversation.id === ownerId)) return entry;
       const nonce = localTranscriptClientNonce(entry, undefined);
@@ -3571,6 +3580,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         }
         for (const entry of projectedEntries) {
           retireChangedSpreadsheetSource(ownerId, entry);
+          retireOrRefreshForwardTarget(ownerId, entry);
           humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
           humanMessageRetryController.observeEntry(ownerId, entry);
           observeTranscriptSettlement(ownerId, entry);
@@ -3602,6 +3612,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         }
         rememberTranscriptUpdate(ownerId, projected, previousId);
         retireChangedSpreadsheetSource(ownerId, projected, previousId);
+        retireOrRefreshForwardTarget(ownerId, projected, previousId);
         invalidateActiveHumanSearch(ownerId);
         observeTranscriptSettlement(ownerId, projected);
         transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected, previousId);
@@ -3618,6 +3629,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         humanReactionSettlement.clearConversation(ownerId);
         if (spreadsheetViewerSourceRef.current?.agentId === ownerId) spreadsheetViewerSourceRef.current.mount.close();
+        setForwardTarget((current) => current?.sourceConversationId === ownerId ? null : current);
         invalidateActiveHumanSearch(ownerId);
         invalidateTranscriptConversation(ownerId);
         sendJournalApprovalLifecycle.reset();
@@ -3657,6 +3669,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       rememberPreBaselineFeedEntry(ownerId, projected.id);
       rememberTranscriptUpdate(ownerId, projected);
       retireChangedSpreadsheetSource(ownerId, projected);
+      retireOrRefreshForwardTarget(ownerId, projected);
       invalidateActiveHumanSearch(ownerId);
       observeTranscriptSettlement(ownerId, projected);
       transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);

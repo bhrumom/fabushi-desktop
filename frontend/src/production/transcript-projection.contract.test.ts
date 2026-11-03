@@ -18,10 +18,12 @@ import {
   applyTranscriptReadUpdates,
   createHumanReactionSettlement,
   currentTranscriptReadBuffers,
+  isForwardableTranscriptMessage,
   isSettledTranscriptMessage,
   localTranscriptClientNonce,
   mergeAuthoritativeTranscriptMessage,
   recordTranscriptReadUpdate,
+  reconcileForwardTargetMessage,
   reconcileTranscriptMutation,
   reconcileAuthoritativeTranscriptBaseline,
   reconcileLateInitialTranscriptPage,
@@ -1303,3 +1305,71 @@ test("NMR-READ-RECEIPT-01 Human read receipts and forwarded provenance require v
     }
   }
 });
+
+test("NMR-UI-ENTRY-REFRESH-01 live forward target reconciliation preserves eligible updates and retires cleared or non-actionable sources", () => {
+  const target: TranscriptMessage = {
+    ...message("human-server-message:601", "original forwardable text"),
+    authorKind: "human",
+    authorId: "human-self",
+    clientNonce: "forward-source-nonce",
+    remoteMessageId: "601",
+    delivery: "sent",
+    readAt: "2026-11-04T02:00:00Z",
+  };
+  assert.equal(isForwardableTranscriptMessage(target), true);
+
+  // Unrelated entry leaves the current reference untouched
+  const unrelated: TranscriptMessage = {
+    ...message("human-server-message:602", "other message"),
+    authorKind: "human",
+    authorId: "human-peer",
+    remoteMessageId: "602",
+    delivery: "sent",
+  };
+  assert.equal(reconcileForwardTargetMessage(target, unrelated), target);
+
+  // Same-id update refreshes text and preserves monotonic readAt
+  const updatedText: TranscriptMessage = {
+    ...target,
+    text: "updated forwardable text",
+    readAt: "2026-11-04T01:00:00Z",
+  };
+  const refreshed = reconcileForwardTargetMessage(target, updatedText);
+  assert.ok(refreshed != null);
+  assert.equal(refreshed.id, target.id);
+  assert.equal(refreshed.text, "updated forwardable text");
+  assert.equal(refreshed.readAt, "2026-11-04T02:00:00Z");
+
+  // Attachment-only message remains forwardable when text is emptied
+  const attachmentOnly = reconcileForwardTargetMessage(target, {
+    ...target,
+    text: "",
+    attachments: [{ path: "/cache/doc.pdf", name: "doc.pdf" }],
+  });
+  assert.ok(attachmentOnly != null);
+  assert.equal(attachmentOnly.text, "");
+  assert.equal(attachmentOnly.attachments?.length, 1);
+
+  // Emptied content and attachments retire the open forward target to null
+  assert.equal(
+    reconcileForwardTargetMessage(attachmentOnly, {
+      ...attachmentOnly,
+      text: "",
+      attachments: [],
+    }),
+    null,
+  );
+
+  // Non-actionable delivery states retire the forward target to null
+  for (const delivery of ["pending", "queued", "failed"] as const) {
+    assert.equal(
+      isForwardableTranscriptMessage({ ...target, delivery }),
+      false,
+    );
+    assert.equal(
+      reconcileForwardTargetMessage(target, { ...target, delivery }),
+      null,
+    );
+  }
+});
+

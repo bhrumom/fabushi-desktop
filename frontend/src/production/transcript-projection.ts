@@ -553,3 +553,28 @@ export function createHumanReactionSettlement(readAccountGeneration: () => numbe
     },
   };
 }
+
+export function isForwardableTranscriptMessage(
+  entry: ConversationTranscriptEntry | null | undefined,
+): entry is TranscriptMessage {
+  if (entry == null || entry.kind !== "message") return false;
+  const hasActionableContent = entry.text.length > 0 || (entry.attachments?.length ?? 0) > 0;
+  const deliveryActionable = entry.delivery !== "failed" && entry.delivery !== "pending" && entry.delivery !== "queued";
+  return hasActionableContent && deliveryActionable;
+}
+
+export function reconcileForwardTargetMessage(
+  current: TranscriptMessage,
+  incoming: ConversationTranscriptEntry,
+  options: { previousId?: string } = {},
+): TranscriptMessage | null {
+  const matchesTarget = incoming.id === current.id
+    || (options.previousId != null && options.previousId === current.id)
+    || transcriptEntriesCorrelate(current, incoming);
+  if (!matchesTarget) return current;
+  const merged = reconcileTranscriptMutation([current], incoming, {
+    previousId: options.previousId,
+  })[0];
+  return isForwardableTranscriptMessage(merged) ? merged : null;
+}
+

@@ -655,9 +655,14 @@ test("human_entry_refresh_retires_action_menus_without_hook_order_errors", { tim
   const recipients = await f.request("searchHumanRecipients", { sourceConversationId: A, sourceEntryId: entry.id, query: "" });
   assert.deepEqual(recipients.args, { sourceConversationId: A, sourceEntryId: entry.id, query: "", limit: 50 });
   await f.resolveRequest(recipients, []);
-  await f.page.keyboard.press("Escape");
+  await f.update({ ...restored, content: "ACTION_UPDATED_WHILE_FORWARD_OPEN" });
+  await f.frames();
+  await forward.waitFor();
+  assert.equal(await f.count("searchHumanRecipients"), 1, "in-place source content update preserves open forward dialog scope");
+  await f.update({ ...restored, content: "", attachments: [], richText: "" });
   await forward.waitFor({ state: "detached" });
-  assert.equal(await f.count("searchHumanRecipients"), 1);
+  await f.frames();
+  assert.equal(await f.count("searchHumanRecipients"), 1, "emptied source message retires open forward dialog without extra searches");
   assert.equal(await f.count("reactHumanMessage"), 1);
   assert.equal(await f.editor.innerText(), "ACTION_DRAFT_MUST_SURVIVE");
   await f.noSend();

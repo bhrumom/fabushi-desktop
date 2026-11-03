@@ -2049,6 +2049,10 @@
         "frontend/src/production/ForwardMessageDialog.tsx",
         "frontend/src/production/ForwardMessageDialog.fixture.tsx",
         "frontend/src/production/ForwardMessageDialog.behavior.test.mjs",
+        "frontend/src/production/ProductionRenderer.tsx",
+        "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        "frontend/src/production/transcript-projection.ts",
+        "frontend/src/production/transcript-projection.contract.test.ts",
         "frontend/src/production/forward-settlement.ts",
         "source/host/src/extensions/session/forward_batch_journal.rs"
       ],
@@ -2058,7 +2062,9 @@
         "pub fn clear_caption(&mut self)",
         "ClientCommand::ForwardMessage",
         "Command::ForwardMessage",
-        "fn idempotent_send_replay("
+        "fn idempotent_send_replay(",
+        "isForwardableTranscriptMessage",
+        "reconcileForwardTargetMessage"
       ],
       "target_language": "Rust",
       "language_rationale": "Forward privacy changes canonical persisted message content/provenance and replay semantics, so it belongs below the renderer in the existing Rust messaging domain.",
@@ -2103,6 +2109,9 @@
         "commit:c683e8a95affb8b8978cd562e72d3429261a17ca",
         "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog",
         "path:frontend/src/production/ProductionRenderer.tsx#forwardHumanMessage",
+        "path:frontend/src/production/ProductionRenderer.tsx#retireOrRefreshForwardTarget",
+        "path:frontend/src/production/transcript-projection.ts#isForwardableTranscriptMessage",
+        "path:frontend/src/production/transcript-projection.ts#reconcileForwardTargetMessage",
         "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
         "path:source/host/src/extensions/session/production.rs#forward_human_message",
         "path:source/host/Cargo.toml#fabushi-messaging-core",
@@ -2111,7 +2120,9 @@
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
         "native/mahayana-messaging/tests/service_contract.rs#forward_replay_is_idempotent_and_conflicts_on_changed_options",
-        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart"
+        "source/host/src/extensions/session/production.rs#sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart",
+        "frontend/src/production/transcript-projection.contract.test.ts#NMR-UI-ENTRY-REFRESH-01",
+        "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_retires_action_menus_without_hook_order_errors"
       ],
       "target_commit": "21ab7870a3ba3129172942d722befb83c321f413",
       "workflow_run": null,
