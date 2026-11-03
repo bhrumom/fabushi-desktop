@@ -78,5 +78,46 @@
   ],
   "scope": "Repair existing owner and preserve incoming cross-process mutation/admission serialization; no new runtime/permission/scheduler owner.",
   "execution": "not-run; preserve current Box694 source checkpoint and run one combined affected Actions campaign after source convergence.",
-  "globalFlagsChanged": false
+  "globalFlagsChanged": false,
+  "dependency_decisions": [
+    {
+      "id": "PS-LOCK-PORTABLE-CONTENTION",
+      "decision": "FIX",
+      "classification": "IMPL_BUG",
+      "priority": "P2",
+      "rationale": "The pinned fs2 0.4.3 contract exposes lock_contended_error() and returns raw platform contention codes. Windows LockFileEx returns ERROR_LOCK_VIOLATION, so ErrorKind::WouldBlock alone is not portable. Both shared-read and refresh try-lock helpers must compare raw_os_error() with fs2::lock_contended_error().raw_os_error(); preserve every other error as unavailable. No dependency version change.",
+      "source": {
+        "repository": "danburkert/fs2-rs",
+        "commit": "e1d4843b7c19e3ce1ecbae92255223de31b36d3b",
+        "tree": "e7ae2dbf59d3c400a598cff4b0e9025d715b89ca",
+        "paths": [
+          {
+            "path": "src/lib.rs",
+            "blob_sha": "51b22db6acd0e964adf224e6a155b45660f7abf8",
+            "range": [
+              24,
+              126
+            ]
+          },
+          {
+            "path": "src/windows.rs",
+            "blob_sha": "0e37c66579c0ca7eb4c8138f65d309285e438b4a",
+            "range": [
+              81,
+              113
+            ]
+          },
+          {
+            "path": "src/unix.rs",
+            "blob_sha": "91867f7e3f3b91c4edd24b3353464158cdc1fd8a",
+            "range": [
+              26,
+              54
+            ]
+          }
+        ]
+      },
+      "review_depth": "Actual-use and platform-lock contract review. Root acquired exact source and read the stated implementation/interface ranges. This does not establish archive equivalence, whole dependency reading or platform execution acceptance."
+    }
+  ]
 }
