@@ -47,7 +47,15 @@ permission capability is authorized.
   Request TERM, then force after the existing grace if the actual child remains
   alive. Poll and observe actual reap; never re-signal a retired numeric PID.
   Stop must not return clean while any required background child/reader/controller
-  completion remains unobserved. Bound waiting using the existing cleanup policy;
+  completion remains unobserved. Preserve autonomous completion/removal used by
+  existing callers: the controller's operation terminal is its final exact-ID/Arc
+  registry transaction, permitted only after actual reap, both reader outcomes,
+  writer/footer outcome and all required effects are observed. After that terminal
+  it may only release already-settled handles and return; no write, signal, wait or
+  recovery action may follow. Retain controller state/handle sufficient to detect
+  an exit or panic before this terminal and recover through the same entry.
+  Merely starting or losing a thread is not completion. Do not weaken existing
+  automatic-removal controls by adding observer calls. Bound waiting using the existing cleanup policy;
   inherited pipes or observation failures remain pending and later calls can
   observe their actual completion. No process-name cleanup or arbitrary
   descendant/PID ownership inference is allowed.
