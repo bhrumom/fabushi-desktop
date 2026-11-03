@@ -1,0 +1,60 @@
+{
+  "schema": "ocrm-review-finding-decision-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "DJC-v1 diagnostic follow-up",
+  "finding": "DJC-H14-OBSERVATION-01",
+  "severity": "P2",
+  "decision": "FIX",
+  "source_base": "c06900dfa561c8c20f7eef244c70877e3bb91566",
+  "source_tree": "593c13fddef24adff7ae1af36834aae3c1216fd4",
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "blob": "db2763c061d6808038a4f699695d44b31571067b"
+  },
+  "target": {
+    "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+    "blob": "3f36315eb6ca999bb1fc467019dc03efdc548746"
+  },
+  "historical_failure": {
+    "subject": "14e637798b7c76c8530f9a3710051461f793924f",
+    "run": 41597864483,
+    "attempt": 1,
+    "job": 125789361590,
+    "case": "join_storage_commit_refusal_never_publishes_payload",
+    "command_exit": 101,
+    "passed": 7,
+    "failed": 1,
+    "assessment": "projects/openclaw-rust/evidence/media-ci-recovery-647e0932-20261103/h14-macos-terminal-assessment.json",
+    "observation": "Receiver timed out at8s; worker returned later but its sole result carrier failed SendError. Original storage-error/rollback/reopen/recovery assertions were not reached."
+  },
+  "rationale": "The test's immediate panic discards the actual eventual owner result. thread::scope still joins during unwind while the reader fence remains alive, so the receive deadline does not bound native teardown. The8s threshold is fixture-only, but this decision does not increase it or classify the historical owner result. Repair the observation/owned-child boundary so the next frozen-H run can distinguish evidence failures and actual owner outcomes.",
+  "allowed_paths": [
+    "source/host/tests/device_pairing_join_admission_contract.rs"
+  ],
+  "required_behavior": [
+    "Keep existing8s commit-refusal and other existing semantic/timing assertions. Timeout remains a failed attempt even when later refusal/rollback/recovery assertions pass.",
+    "Return actual Result through owned worker JoinHandle; channel notification is not the sole result owner and failed notification does not replace the result.",
+    "Keep the real SQLite reader fence through observation and eventual return; do not release it merely to manufacture a refusal or payload. Preserve all original independent row, reopen, recovery and consumed-marker checks where prerequisites hold.",
+    "Record sanitized phase timings/result class without shortcode/payload values; journal observation is not labeled direct COMMIT instrumentation.",
+    "Use test-local exact-self child invocations, unique parent-owned roots/token/PID completion proof, owned output files, outer120s diagnostic deadline and separate5s kill/reap bound. Failure retains evidence; unresolved termination never permits cleanup or success.",
+    "Qualify missing or mismatched completion evidence and owned timeout behavior with bounded test-only controls inside existing selected test cases; preserve eight top-level test identities and existing full-target capture selectors.",
+    "If the shared journal-observation helper changes, adapt and re-review its delayed-expiry consumer with all existing live-at-write, expiry wait, no-early-publication, explicit unlock and consumed-marker assertions.",
+    "No new production owner, cancellation API, test seam, schema, dependency, or process framework; no ordinary retry or unchanged failed-H rerun."
+  ],
+  "review": {
+    "required": [
+      "fresh blind general",
+      "fresh blind structure",
+      "exact changed source/capture input integration"
+    ],
+    "effort": "xhigh",
+    "reason": "Native blocking call lifetime and uncertain result evidence with actual SQL refusal/recovery"
+  },
+  "validation": "Only existing GitHub Actions complete DJC target and paired Gateway controls at the new frozen H; no local/htch execution. Existing named selectors remain and failures cannot count as passing.",
+  "status": "decision recorded before source implementation; not-run",
+  "limits": [
+    "No isolated explanation for H14 latency is claimed.",
+    "Forced termination is unknown effect evidence, never original known-refusal success.",
+    "This diagnostic repair does not accept device compatibility, production latency, unknown-COMMIT recovery or global migration."
+  ]
+}
