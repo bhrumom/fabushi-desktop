@@ -1,0 +1,39 @@
+{
+  "schema": "ocrm-upload-boundary-state-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "RMD-v1",
+  "status": "blocked-automatic-approval-review",
+  "repository": "bhrumom/fabushi-desktop",
+  "exact_base": "ed6e0b09205f26a723395571692b8cfb1870f9da",
+  "paths": [
+    "source/host/src/extensions/session/agent_db.rs",
+    "source/host/tests/agent_db_owner_contract.rs",
+    "source/host/app/src/tests/session_model_default_reset_tests.rs"
+  ],
+  "attempts": 2,
+  "blobs_created": 0,
+  "reason": "Approval review required trusted explicit authorization for source upload to the identified public repository acknowledging public-disclosure risk; repo/org/push/parent/same-source proof and quoted user recovery authorization did not resolve rejection.",
+  "forbidden": "No alternate tool, agent, path, encoding or reconstruction upload of the denied payloads.",
+  "next_when_released": "Upload and readback the exact retained three authored source contents; integrate original23path scope and RMD49name exact-H validation only after fresh source review.",
+  "computed_only_not_uploaded": [
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "git_blob_fingerprint": "5953cfb45d593830097799894fea1f0893f86246",
+      "bytes": 426827
+    },
+    {
+      "path": "source/host/tests/agent_db_owner_contract.rs",
+      "git_blob_fingerprint": "2279c2089bae8a5cdf972db4349df9650de1baa9",
+      "bytes": 177616
+    },
+    {
+      "path": "source/host/app/src/tests/session_model_default_reset_tests.rs",
+      "git_blob_fingerprint": "ca36f014943b76b3292854290bc6a1c0b40169c7",
+      "bytes": 88478
+    }
+  ],
+  "production_change_applied": false,
+  "candidate_blobs_uploaded": false,
+  "complete_source_payload_or_diff_included": false,
+  "latest_user_notified": true
+}

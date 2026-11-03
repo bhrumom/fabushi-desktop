@@ -153,10 +153,26 @@
     "retained": "All existing Box77 and SC22 names remain selected as11 groups; append BG units,4actual Host consumers,3footer parser tests and3existing ordinary/stream/timed-shell controls as4more groups (15groups total). The original full plan and CRF16group104name selection remain available.",
     "compile": "Shipping Host --locked --profile ci, existing Host --locked --tests graph, ordinary daemon --locked build and separately bound --locked --lib test executable.",
     "artifact_boundary": "Actual shipping daemon and cfg(test) private operation-fault child have separate executable hashes; neither synthetic metadata nor the test process is a platform package.",
-    "source_review": "pending complete immutable BGC candidate and fresh GENERAL/STRUCTURE reviews",
-    "execution": "not-run",
+    "source_review": "R1 finding repaired; fresh blind complete-scope R2 and scoped workflow-extraction R3 GENERAL/STRUCTURE converged. R4 pending for the causal reader-observation oracle and focused recovery selector.",
+    "execution": "H6d3806857b58887245ae861c15c0ecb740e5d7d6 Actions41639406287/a1 failed on one macOS handoff-ID-exhaustion test oracle; Linux121/121 and macOS120/121 selected positives. Shipping compiles and source-authority structural checks passed; full BGC execution remains non-passing.",
     "selected_groups": 15,
-    "selected_named_cases": 121
+    "selected_named_cases": 121,
+    "focused_recovery": {
+      "decision": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/h6d380-recovery-decisions.json",
+      "failed_subject": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
+      "workflow_scope": "ocrm-background-custody-recovery",
+      "capture_scope": "background-custody-recovery",
+      "selection": "Four exact one-test commands, derived from the unchanged full-plan parent declarations and bound to separately compiled current cfg(test) producer. Sixteen scoped selection positive/negative controls supplement the retained result/artifact controls.",
+      "required_names": [
+        "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+        "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+        "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+        "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+      ],
+      "oracle": "Observe actual retained Child identity and real reader completion without fixture joins/removal, then execute ordinary foreground admission before demanding retirement. Preserve all valid response, effect, nonreuse, background-map, terminal-file, recovery and no-resignal assertions. Immediate cleanup remains a valid schedule.",
+      "execution": "not-run; requires new frozen H, source review and Actions",
+      "retained_evidence": "H6d380 prior positive checks remain evidence only for their unchanged inputs. H6d380 is not relabelled passing. Focused recovery is not a rerun or acceptance of the remaining 117 named cases."
+    }
   },
   "open_work": [
     "Normal active streamed TERM/drain completion outside background handoff",

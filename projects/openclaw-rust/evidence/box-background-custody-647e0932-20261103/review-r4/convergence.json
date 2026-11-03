@@ -1,0 +1,118 @@
+{
+  "schema": "ocrm-source-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BGC-v1",
+  "round": 4,
+  "original_base": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+  "candidate": "51c6bf1f2cb027a89689aad9fb3781965c8080ec",
+  "candidate_tree": "f7559b8b6bb6689d68348f655743a5c4b7543bb6",
+  "scope_packet": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
+  "scope_path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/review-r4/scope.json",
+  "scope_blob": "04501d65d7bb8c9598cd4ce94e15d01dd73e3175",
+  "fix_delta_blob": "5a7cfc10346dedba872b703aacb0c31686030284",
+  "complete_diff_blob": "e0f077f5209b6673765f63ac682f026e3d5a10b6",
+  "source_paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "6e315ffc0419a883b13065705c70b4db996cb9f2",
+      "changed_since_r3": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+      "blob": "b0a23c54e127da4ed859d5ea6a561f29ea408639",
+      "changed_since_r3": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "d0c3081bba725956e5eb261150c6c57513dedaea",
+      "changed_since_r3": false
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "4a415a830fccdfec7b7ae73fa16133929c84652f",
+      "changed_since_r3": false
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "083b67625c01f02ba01ab507a87bd20275f8a0cf",
+      "changed_since_r3": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/record_configuration_evidence.py",
+      "blob": "aa9984a83b002747d26960b85b3ef7ba83b70d98",
+      "changed_since_r3": false
+    },
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "blob": "03fef6d1747fcce67e12bbeb3e0a30e79d2f181c",
+      "changed_since_r3": true
+    },
+    {
+      "path": "source/host/src/runner/background_work.rs",
+      "blob": "275261c1676f2eac5acdb8378280c5d8f0e69e07",
+      "changed_since_r3": false
+    },
+    {
+      "path": "source/host/tests/background_work_contract.rs",
+      "blob": "fc2d1724e2978450bd3a40fc584afa8d50587403",
+      "changed_since_r3": false
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "blob": "a9da224c6c05e89d67eb3efe8a6233a7a486b013",
+      "changed_since_r3": false
+    }
+  ],
+  "decision": "Converged source review of the causal reader-observation correction and the bounded exact-name recovery selection; proceed to one new frozen-H focused Actions campaign.",
+  "reviews": [
+    {
+      "agent": "/root/bgc_r4_general",
+      "lens": "GENERAL",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "verdict": "APPROVED",
+      "blocking_findings": 0,
+      "depth": "Deep four-path delta and actual recovery/fixture/selector/build/receipt callers; complete ten-path original scope retained as context. No fresh whole-file deep claim for unchanged large historical sources.",
+      "full_report_carrier": "terminal conversation report; no separately uploaded report blob"
+    },
+    {
+      "agent": "/root/bgc_r4_structure",
+      "lens": "STRUCTURE/REUSE",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "verdict": "APPROVED",
+      "blocking_findings": 0,
+      "depth": "Deep actual Child/readers and ordinary admission observation, narrow selector and workflow/artifact owners, unchanged original Host/footer/helper/ledger linkage context.",
+      "full_report_carrier": "terminal conversation report; no separately uploaded report blob"
+    }
+  ],
+  "arbitration": {
+    "durable_decision": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/h6d380-recovery-decisions.json",
+    "decision_commit": "6d65324235ad4077e4d28bbe4d953d6b74e35254",
+    "fix": "BGC-H6D380-READER-OBSERVATION",
+    "assertions_retained": true,
+    "production_runtime_unchanged": true
+  },
+  "execution": {
+    "prior_failed_H": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
+    "prior_run_id": 41639406287,
+    "new_subject": null,
+    "state": "not-run-at-this-record",
+    "scope": "background-custody-recovery",
+    "groups": 4,
+    "names": 4,
+    "selection_controls": 16,
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "next_gate": "Exact new-H compilation, source binding, producer/artifact and four real named results; source authority remains separate.",
+    "unaffected_proof": "Preserve prior H6d380 positive checks and source identities; no claim that the focused recovery reexecutes or accepts the remaining117 names."
+  },
+  "acceptance": {
+    "execution_passed": false,
+    "full_BGC_accepted": false,
+    "global_flags_promoted": false,
+    "full_migration": false
+  }
+}

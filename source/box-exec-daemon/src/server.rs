@@ -5624,6 +5624,8 @@ mod tests {
         let (_root, runtime) = runtime();
         let runtime = Arc::new(runtime);
         let _cleanup = BackgroundFixture::new(&runtime, &[]);
+        let (observed_tx, observed_rx) = mpsc::channel();
+        *runtime.stream_recovery_observer.lock().unwrap() = Some(observed_tx);
         runtime.next_shell_id.store(u32::MAX, Ordering::Relaxed);
         let mut held = HeldFileStream::new(&runtime, "exhausted-handoff", true);
         held.resume();
@@ -5642,12 +5644,59 @@ mod tests {
             )) if error.error == "background shell id space exhausted")));
         assert_eq!(runtime.next_shell_id.load(Ordering::Relaxed), u32::MAX);
         assert_eq!(fs::read(runtime.workspace_root.join("exhausted-handoff-effect")).unwrap(), b"effect\n");
-        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
         assert!(runtime.background.lock().unwrap().is_empty());
-        assert_eq!(fs::read_dir(&runtime.terminals_directory).unwrap().count(), 0);
+
+        let (registration_id, owner) = observed_rx.recv_timeout(Duration::from_secs(1))
+            .expect("actual handoff refusal cleanup owner");
+        *runtime.stream_recovery_observer.lock().unwrap() = None;
+        let signals = {
+            let state = owner.lock().unwrap();
+            assert!(state.status.is_some(), "request cleanup observed actual direct-child reap");
+            state.signals_sent
+        };
+        // Request cleanup may observe readers immediately or retain them after
+        // direct-child reap. is_finished joins no reader and retires no custody.
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            let finished = {
+                let state = owner.lock().unwrap();
+                state.stream_recovery.as_ref().map_or(true, |recovery| {
+                    recovery.stdout_worker.as_ref().map_or(true, |worker| worker.is_finished())
+                        && recovery.stderr_worker.as_ref().map_or(true, |worker| worker.is_finished())
+                })
+            };
+            if finished { break; }
+            assert!(Instant::now() < deadline, "handoff refusal readers did not reach completion");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        let capture_complete = owner.lock().unwrap().capture_complete;
+        {
+            let processes = runtime.foreground_processes.lock().unwrap();
+            if capture_complete {
+                assert!(processes.is_empty());
+            } else {
+                assert_eq!(processes.len(), 1);
+                assert!(matches!(processes.get(&registration_id),
+                    Some((_, ForegroundProcess::Capture(retained))) if Arc::ptr_eq(retained, &owner)),
+                    "unobserved readers remain with the exact retained owner");
+            }
+        }
+        // Ordinary admission must observe any retained readers and retire them.
         let events = runtime.execute(stream_file_request(foreground_args("printf foreground-still-works")));
         assert_stream_file_result(&events, false);
         assert_eq!(stream_file_stdout(&events), "foreground-still-works");
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        assert!(runtime.background.lock().unwrap().is_empty());
+        assert_eq!(fs::read_dir(&runtime.terminals_directory).unwrap().count(), 0);
+        assert_eq!(Arc::strong_count(&owner), 1, "only this observation retains the owner");
+        let mut state = owner.lock().unwrap();
+        assert!(state.capture_complete);
+        assert!(state.stream_recovery.is_none(), "both reader handles were observed");
+        assert!(state.child.stdin.is_none());
+        assert!(state.child.stdout.is_none());
+        assert!(state.child.stderr.is_none());
+        state.signal(true).unwrap();
+        assert_eq!(state.signals_sent, signals, "no signal after observed reap");
     }
 
     #[test]

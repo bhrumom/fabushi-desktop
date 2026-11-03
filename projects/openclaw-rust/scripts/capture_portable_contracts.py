@@ -1,6 +1,6 @@
 import hashlib, json, os, pathlib, re, subprocess
 validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
-if validation_scope not in ("full", "custody-recovery", "background-custody"):
+if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery"):
     raise ValueError("Unknown portable contract scope")
 root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
@@ -243,6 +243,7 @@ inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/genera
 box_response_inputs = [
     "projects/openclaw-rust/docs/specs/box-background-execution-custody.md",
     "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+    "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/h6d380-recovery-decisions.json",
     "source/host/src/runner/background_work.rs",
     "source/host/src/runner/shell_terminal_watch.rs",
     "source/host/tests/background_work_contract.rs",
@@ -1305,6 +1306,23 @@ background_custody_labels = (*custody_box_labels,
     "box-response-background-custody-footer", "box-response-background-custody-retained")
 background_custody_required = {label: tuple(required)
     for label, _, required in full_cases if label in background_custody_labels}
+# The failed normal campaign remains failed. Recovery executes only the repaired
+# test and real retention/admission/autonomous controls, never the entire batch.
+background_recovery_cases = (
+    ("box-response-background-recovery-handoff", "box-response-background-custody-unit",
+        "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture"),
+    ("box-response-background-recovery-retention", "box-response-shell-capture-unit",
+        "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof"),
+    ("box-response-background-recovery-admission", "box-response-shell-capture-unit",
+        "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"),
+    ("box-response-background-recovery-autonomous", "box-response-background-custody-unit",
+        "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"),
+)
+background_recovery_source_labels = {parent for _, parent, _ in background_recovery_cases}
+background_recovery_source_commands = {label: tuple(command)
+    for label, command, _ in full_cases if label in background_recovery_source_labels}
+background_recovery_labels = {label for label, _, _ in background_recovery_cases}
+
 custody_desktop_names = (
     "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
     "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
@@ -1313,13 +1331,34 @@ custody_desktop_names = (
 djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
 
 def select_portable_cases(scope, declared):
-    if scope not in ("full", "custody-recovery", "background-custody"):
+    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery"):
         raise ValueError("Unknown portable contract scope")
     indexed = {label: (label, command, required) for label, command, required in declared}
     if len(indexed) != len(declared):
         raise ValueError("Duplicate portable case label")
     if scope == "full":
         return list(declared)
+    if scope == "background-custody-recovery":
+        for parent in background_recovery_source_labels:
+            if parent not in indexed:
+                raise ValueError("Background recovery lost its source command")
+            _, command, required = indexed[parent]
+            if (tuple(command) != background_recovery_source_commands[parent]
+                or tuple(required) != background_custody_required[parent]
+                or len(required) != len(set(required))):
+                raise ValueError("Background recovery source command or names drifted")
+        selected = []
+        for label, parent, name in background_recovery_cases:
+            if indexed[parent][2].count(name) != 1:
+                raise ValueError("Background recovery needs its exact original test name")
+            selected.append((label, ["cargo", "test", "--locked", "--manifest-path",
+                "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir",
+                "source/box-exec-daemon/target", name, "--", "--exact",
+                "--test-threads=1"], [name]))
+        if (len(selected) != 4 or len({label for label, _, _ in selected}) != 4
+            or len({name for _, _, names in selected for name in names}) != 4):
+            raise ValueError("Background recovery selection is incomplete or duplicated")
+        return selected
     if scope == "background-custody":
         if any(label not in indexed for label in background_custody_labels):
             raise ValueError("Background custody lost a declared command")
@@ -1414,6 +1453,39 @@ for control, scope, declared, expected in [
         actual = False
     selection_controls.append({"case": control, "expected": expected, "actual": actual})
     assert actual == expected, f"CRF selection oracle failed: {control}"
+background_recovery_selection_controls = []
+background_recovery_variants = [("qualified-focused-recovery", full_cases, True),
+    ("duplicate-source-label", full_cases + [full_cases[0]], False)]
+for parent in sorted(background_recovery_source_labels):
+    background_recovery_variants.extend([
+        (f"missing-source:{parent}", [case for case in full_cases if case[0] != parent], False),
+        (f"changed-command:{parent}", [(label, command + ["--foreign"], required)
+            if label == parent else (label, command, required)
+            for label, command, required in full_cases], False),
+        (f"duplicate-source-name:{parent}", [(label, command, required + required[:1])
+            if label == parent else (label, command, required)
+            for label, command, required in full_cases], False),
+    ])
+for _, parent, name in background_recovery_cases:
+    background_recovery_variants.extend([
+        (f"missing-positive:{name}", [(label, command, [item for item in required if item != name])
+            if label == parent else (label, command, required)
+            for label, command, required in full_cases], False),
+        (f"foreign-positive:{name}", [(label, command,
+            ["foreign::unrelated" if item == name else item for item in required])
+            if label == parent else (label, command, required)
+            for label, command, required in full_cases], False),
+    ])
+for control, declared, expected in background_recovery_variants:
+    try:
+        selected = select_portable_cases("background-custody-recovery", declared)
+        actual = len(selected) == 4
+    except ValueError:
+        actual = False
+    background_recovery_selection_controls.append(
+        {"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"BGC recovery selection oracle failed: {control}"
+
 cases = select_portable_cases(validation_scope, full_cases)
 
 def successful_test_names(output):
@@ -1465,6 +1537,8 @@ for label, output, cargo_exit, capture_exit, expected in [
 # duplicate aliases, foreign owners and additional positives are rejected.
 box_response_exhaustion_name = "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
 box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon", "box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect", "box-response-background-custody-unit", "box-response-background-custody-consumer", "box-response-background-custody-footer", "box-response-background-custody-retained"}
+
+box_response_filtered_cases.update(background_recovery_labels)
 
 def box_response_observed_names(output):
     names = successful_test_names(output.replace("\r\n", "\n"))
@@ -1608,6 +1682,10 @@ receipt = {
     "local_exec_outcome_scope": "Actual registered generated Runner, production ExternalShell adapter, shared Host LocalExec and permission owner through real bridge delivery. Counted external effects, unknown post-entry outcomes, sticky custody, no uncertain checkpoint/replay, known refusal/Exit and fresh-owner journal controls use fixture-owned peers. Separate native three-platform and actual App/protocol receipts remain required; no physical device, external account, full process-tree, package or global acceptance.",
     "box_shell_capture_contract": "BXR-SHELL-CAPTURE-v1",
     "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed","server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn","server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias","server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture","server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup","server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof","server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission","server::tests::foreground_capture_independent_runtimes_keep_distinct_spools_and_cleanup","server::tests::foreground_capture_occupied_spool_files_survive_failure_and_recovery","server::tests::foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery","server::tests::foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership","server::tests::foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership","server::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
+    "box_background_recovery_selection_controls": background_recovery_selection_controls,
+    "box_background_recovery_selected_here": validation_scope == "background-custody-recovery",
+    "box_background_recovery_required_names": {label: [name] for label, _, name in background_recovery_cases},
+    "box_background_recovery_prior_failed_subject": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
     "box_background_custody_contract": "BGC-v1",
     "box_background_custody_required_names": {label: list(background_custody_required[label])
         for label in background_custody_labels if label.startswith("box-response-background-custody-")},
@@ -1656,6 +1734,13 @@ if validation_scope == "background-custody":
         "uncertainty and terminal-watch completion, canonical footer parser and retained Box/foreground "
         "regressions only. Unselected full-plan cases, normal active streamed shutdown, complete upstream "
         "termination equivalence, real ecosystems, durable restart and packages remain open. "
+        "Requirement metadata elsewhere in this receipt is not execution.")
+
+if validation_scope == "background-custody-recovery":
+    receipt["scope"] = ("BGC-v1 focused recovery: repaired handoff-ID-exhaustion cleanup oracle "
+        "and actual retained-reader EOF/admission/autonomous completion controls only. "
+        "The prior H6d380 failed subject is retained; this result does not rerun or accept "
+        "the remaining BGC/full-plan groups, real ecosystems, durable restart or packages. "
         "Requirement metadata elsewhere in this receipt is not execution.")
 
 # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
@@ -1870,7 +1955,7 @@ for label, command, required in cases:
             execution_error = "BXR real daemon control blocked: the current build did not produce a bound executable"
             raw = (execution_error + "\n").encode("utf-8")
             log_path.write_bytes(raw)
-        elif label in ("box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect", "box-response-background-custody-unit", "box-response-background-custody-consumer", "box-response-background-custody-retained") and not capture_passed:
+        elif (label in ("box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect", "box-response-background-custody-unit", "box-response-background-custody-consumer", "box-response-background-custody-retained") or label in background_recovery_labels) and not capture_passed:
             capture_exit = 1
             execution_error = "SC control blocked: the current library test build did not produce a bound executable"
             raw = (execution_error + "\n").encode("utf-8")
