@@ -1,0 +1,58 @@
+{
+  "schema": "ocrm-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review": "DJC-existing-artifact-collector",
+  "base": "511bcebf08738c59ec0313a425a591a327d9cd20",
+  "candidate": "bc5cc3983bae1cbaaafaf2237de71f5ea9395802",
+  "candidate_tree": "14f39a512257f023c1b4e9bf092d5e394e690885",
+  "packet": "63a06f7b6f13c41e44aafc642f4d5ab21561ae1a",
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/djc_collector_r1_general",
+      "model": "configured parent model",
+      "requested_effort": "xhigh",
+      "verdict": "changes-required",
+      "finding": "G1"
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/djc_collector_r1_structure",
+      "model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "verdict": "changes-required",
+      "finding": "S1"
+    }
+  ],
+  "findings": [
+    {
+      "id": "DJC-COLLECTOR-CARRIER-001",
+      "state": "open",
+      "first_seen_candidate": "bc5cc3983bae1cbaaafaf2237de71f5ea9395802",
+      "severity": "P1",
+      "decision": "FIX",
+      "path": ".github/workflows/ocrm-p0-authority.yml",
+      "symbols": [
+        "jobs.source-authority.if",
+        "jobs.persist-verified-inventory.if",
+        "jobs.recover-original-host-log"
+      ],
+      "failure": "A marker-only exemption also suppresses normal source authority for a product-bearing or multi-commit push; fixed historical-source checks do not establish a workflow-only carrier.",
+      "fix": "Remove the newly introduced source-authority and persistence exemptions altogether, preserving normal jobs for every subject. Add API-only fail-closed complete push-range admission inside the existing DJC collector before historical acquisition: exact event/repository/before/after/sole parent/single commit and sole modified workflow path. Reject mixed or unresolved ranges. No new scheduler/job or product owner.",
+      "rationale": "Keeping the existing authority and persistence gates active avoids any marker bypass and avoids introducing a prerequisite classification job. The collector remains read-only with no product commands; normal source-authority work is separate and retains its existing permissions. Update DJC-08 before the repair to make this stricter no-exemption policy explicit.",
+      "controls": [
+        "valid exact one-workflow push",
+        "mixed product files",
+        "multi-commit or wrong parent/range",
+        "wrong repository/head",
+        "missing/undecidable change set"
+      ],
+      "closure": "Fresh focused independent review, then actual collector controls and existing-artifact readback in Actions. Collection never changes the old failed product verdict."
+    }
+  ],
+  "actual_static_depth": "Both reviewers read complete single-workflow candidate/diff and relevant historical producer/receipt/projection/upload contracts; root synthesizes their task-conversation reports here.",
+  "product_execution": false,
+  "archive_readback": false,
+  "global_acceptance": false
+}

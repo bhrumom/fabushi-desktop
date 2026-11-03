@@ -1,0 +1,76 @@
+{
+  "schema": "ocrm-verification-recovery-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "MGL-v1 native source identity",
+  "first_failed_subject": {
+    "commit": "511bcebf08738c59ec0313a425a591a327d9cd20",
+    "tree": "49b5ad915c48c7a10d67d4c6a6c3e42f54f27d16",
+    "run": 41648714149,
+    "attempt": 1,
+    "job": 125960842811,
+    "platform": "Windows",
+    "conclusion": "failure"
+  },
+  "log": {
+    "kind": "decoded connector job-log UTF-8 content, not ZIP digest",
+    "bytes": 60017,
+    "sha256": "7225454d752b38db86d45e98c9316b94e01ec599d16d3e6ab57764dfd0e7b7bd",
+    "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41648714149/job/125960842811",
+    "artifact_uploaded": false
+  },
+  "independent_assessment": {
+    "agent": "/root/mgl_r2_general",
+    "phase": "new failure diagnosis after source review",
+    "requested_effort": "xhigh",
+    "actual_read": "Complete decoded failed-job log; exact-H capture producer, before/after binding and generic receipt consumers; selected invocation/upload ordering; real repository reads proving tracked lock/generated-member existence.",
+    "classification": "TEST_FLAW",
+    "execution": "read-only/no local tools/no rerun"
+  },
+  "findings": [
+    {
+      "id": "MGL-WIN-GIT-IDENTITY-001",
+      "state": "open",
+      "severity": "P2",
+      "decision": "FIX",
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "04e8651579cee3a72fd637de471e3b6f9643f1a0",
+      "failed_assumption": "str(native Path) is a repository tree identity on all platforms.",
+      "actual_failure": "git show 511bcebf08738c59ec0313a425a591a327d9cd20:source\\box-exec-daemon\\Cargo.lock returned128 after the native filesystem read succeeded.",
+      "fix": "Use .as_posix() at recursive generated-source enumeration and both tracked-lock insertions, before set deduplication. Preserve source_bindings raw bytes/Git blobs/equality; add actual native lock and rglob-member Git controls with canonical uniqueness and rejected backslash operand.",
+      "proof_of_present_source": [
+        {
+          "path": "source/box-exec-daemon/Cargo.lock",
+          "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561"
+        },
+        {
+          "path": "source/packages/proto/generated/agent/v1/agent_pb.ts",
+          "blob": "3cd3d020e69b54d1a6df27c0f967afe7e9fc942c"
+        }
+      ]
+    },
+    {
+      "id": "MGL-WIN-EARLY-CAPTURE-001",
+      "state": "open",
+      "severity": "P2",
+      "decision": "FIX",
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "0c530c5038bf7ad6c095ecb9db728805a21c7a71",
+      "failed_assumption": "An always-uploaded evidence directory already contains a file if Python initialization fails.",
+      "actual_failure": "The directory existed, but capture stopped before its first receipt/log write; upload failed with no files.",
+      "fix": "Capture full Python stdout/stderr to the existing owned evidence directory through the workflow, retaining pipefail/command refusal and if-no-files-found:error. Do not turn preflight failure into a receipt pass."
+    }
+  ],
+  "prior_positive_proof": "Exact-H source-authority workflow41648714134 completed success, including33 source-review and21 materialization checks; shipping Host compile steps on Linux/macOS completed, while their product contract jobs were still in progress when assessed. No current Linux/macOS final result is asserted here.",
+  "forbidden": [
+    "Unchanged rerun of failed H",
+    "Dropping unselected Box source binding",
+    "Normalizing source file bytes or deleting raw equality",
+    "Omitting generated-input aliases only at one consumer",
+    "Reducing seven Windows commands or65 named positives",
+    "Relabeling earlier Linux/macOS executions with recovery H",
+    "Promoting Windows library evidence to shipping App or full acceptance"
+  ],
+  "next_direct_instrument": "After immutable focused review, actual Windows native path/Git binding preflight, selected-target compile and all seven unmet MGL commands in existing Actions job with complete raw capture.",
+  "campaign": "One normal campaign plus one focused recovery; further repeated failure requires independent directness/exhaustion assessment.",
+  "global_acceptance": false
+}

@@ -267,3 +267,29 @@ This is actual dependency-contract review, not full dependency source reading
 or new fixed-U reading credit. Windows reserved names/trailing-dot aliases,
 symlink confinement and concurrent external writers remain explicit separate
 platform requirements; none is silently marked accepted here.
+
+### Native repository identities in the verification adapter
+
+The first MGL Windows campaign at
+`511bcebf08738c59ec0313a425a591a327d9cd20` (run `41648714149`,
+attempt `1`, job `125960842811`) stopped before Cargo: native backslashes in
+a tracked lock's Git object operand caused exit 128. This is `TEST_FLAW`;
+it supplies no Memory behavior verdict. The original failed job remains evidence.
+
+Repository identity keys produced from native paths must use slash-separated
+`Path.as_posix()` before set deduplication, Git object lookup and receipt keys.
+Repair both tracked-lock insertions and recursive generated-source enumeration.
+Retain actual filesystem reads, committed raw bytes, blob resolution and exact
+before/after byte equality; do not normalize source bytes or omit an input.
+Use actual tracked-lock and recursively discovered generated-member Git binding
+controls, canonical uniqueness and the rejected original Windows backslash
+operand. Filesystem/process/artifact paths retain their native representation.
+
+The existing workflow must capture Python stdout/stderr into an owned raw log
+before invocation can fail, and preserve the command's failing status and the
+artifact missing-file gate. A new Windows-only recovery selector in the same job
+may execute these controls, selected-target compilation and all seven MGL
+commands / 65 required names. The ordinary three-platform scope and its 66/66/65
+requirements remain. Linux/macOS outcomes from the original H retain that H;
+they are not relabeled as executions of the recovery subject. A later full
+candidate still requires its own complete applicable platform acceptance.

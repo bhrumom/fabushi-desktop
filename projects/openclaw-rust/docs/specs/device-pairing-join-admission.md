@@ -208,10 +208,15 @@ redirects, archive/path/type/size checks, duplicate JSON rejection and the old
 identity drift, missing/changed selected members, a mismatched failure receipt
 and executable Actions syntax; they provide no product behavior evidence.
 
-Activate collection with a workflow-only push and a narrowly recognized marker,
-excluding source-authority generation/persistence for that carrier only. The
-normal source-authority gate remains required for every product subject. The
-collector executes no checkout, build, product test or archived command, writes
+Activate collection with a workflow-only push and a narrowly recognized marker.
+Before historical acquisition, the collector must prove from the push event and
+read-only GitHub commit/compare APIs that the complete before/after range is one
+commit changing only this authority workflow. Mixed product paths, multiple
+commits, absent/truncated identity or an unresolved comparison refuse collection.
+The marker grants no exemption from normal source-authority or persistence jobs;
+those existing owners retain their normal gates and permissions on every push.
+This avoids a marker-based route around product source authority. The collector
+job itself executes no checkout, build, product test or archived command, writes
 no repository state and names the failed source subject separately from the
 carrier SHA/run. Its successful receipt means complete evidence transport only.
 No scoped DJC equivalence, real onboarding/device acceptance, global flag or
