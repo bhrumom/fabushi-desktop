@@ -904,7 +904,7 @@ function requireOriginRow(value: unknown) {
 }
 
 function assertWireOriginRetired(value: unknown): void {
-  assert.deepEqual(value, { result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED } } });
+  assert.deepEqual(value, { result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED, isReadonly: false } } });
 }
 
 test("OD-T2 production Coordinator refuses departed account and serialized origin replay before manager B", options, async (t) => {

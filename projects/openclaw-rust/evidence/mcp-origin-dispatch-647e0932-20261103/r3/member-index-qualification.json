@@ -1,0 +1,48 @@
+{
+  "recordType": "append-only-frozen-manifest-qualification",
+  "originalManifest": {
+    "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r3/manifest.json",
+    "blob": "71df0c5c09829fbf80a0463b33e1154ed4c34738",
+    "preserved": true
+  },
+  "reviewCommit": "5d58596d2db779d9d1d3a94ac4d369f50c0108c6",
+  "tree": "08684cba1d291419254b4a25814108faf01b3091",
+  "base": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "authority": "The original members array and immutable review tree carry current R3 identities. The duplicate paths field retains historical R1 identities for exactly two paths; it is not a second current member index.",
+  "differences": [
+    {
+      "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+      "historicalPathsEntry": {
+        "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+        "blob": "3605572af9d62734a6cc79d1f801ddf2a158eeab",
+        "bytes": 41704,
+        "sha256": "4ba9573a2b1ab3ea7ca3876b5d89729925de4dad62b9891c9720a043e7e150d1"
+      },
+      "currentMembersEntry": {
+        "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+        "blob": "517cd42f6af6d6114790d4144cc7ba9156f4e308",
+        "bytes": 41723,
+        "sha256": "c10298fe7f04935eb6f471da80a144fb9d0ab9fe79196961ec42c6762d13cb25"
+      }
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+      "historicalPathsEntry": {
+        "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+        "blob": "b2c987bd59817ce00cacf3555ee64c8a804f2a42",
+        "bytes": 16484,
+        "sha256": "19c04ce8a66fa4798a7a909ab8917f410d91efea469501fabdd19c5a23fa4866"
+      },
+      "currentMembersEntry": {
+        "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+        "blob": "19318f75ff5454a583801351ddbd6aa1a3ff067d",
+        "bytes": 16503,
+        "sha256": "90d58ed9b066a59631b20d799bfb9153be591990c4fe7823103760bc19751388"
+      }
+    }
+  ],
+  "sourceTreeChanged": false,
+  "reviewVerdictChanged": false,
+  "executionClaim": "none",
+  "decisionBlob": "b9f1125a59bfa1887f9a985b7b57d158c0af7c2d"
+}

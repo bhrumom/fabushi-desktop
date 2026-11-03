@@ -313,7 +313,7 @@ test("MCP results retain their discriminants through native ports and the shippi
       result: { case: "error", value: { error: "official transport result is unknown" } },
     });
     assert.deepEqual(received.get("origin-retired").value, {
-      result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED } },
+      result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED, isReadonly: false } },
     });
     const deadline = received.get("backend-deadline").value;
     assert.equal(deadline.result.case, "error");

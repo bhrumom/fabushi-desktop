@@ -161,5 +161,117 @@
       "sha": "aa0298cab549c0e59e22b6a8cabb0bd856f92acd",
       "reason": "Lease preflight detected incoming05cf; update_ref never called."
     }
+  },
+  "r3Convergence": {
+    "recordedAt": "2026-11-03 06:58:32 UTC",
+    "frozenSource": {
+      "commit": "5d58596d2db779d9d1d3a94ac4d369f50c0108c6",
+      "tree": "08684cba1d291419254b4a25814108faf01b3091",
+      "base": "4e80e161c6cc539f4c120d64f91421619a57def1",
+      "paths": 77
+    },
+    "rootReportReads": "All four R2/R3 final reports read in full; published report blobs retrieved in full. No executable verification inferred.",
+    "reports": [
+      {
+        "round": 2,
+        "lens": "security/lifetime",
+        "task": "/root/mcp_origin_r2_security_review",
+        "blob": "a4b581d0bb8472f2f95300756f33c94e6a6cd040",
+        "bytes": 16010,
+        "sha256": "c97b978c0a4b2f585759b5e32a85a1514253d2cff79db970a73840e317232267",
+        "verdict": "CHANGES_REQUESTED",
+        "finding": "R2-SEC-01",
+        "decision": "Synthesized into already durable OD-CI-R3-001 FIX / TEST_FLAW before account literal edit."
+      },
+      {
+        "round": 2,
+        "lens": "structure/reuse/performance",
+        "task": "/root/mcp_origin_r2_structure_review",
+        "blob": "01e0e0b01a05a6a0d90ed6d03c9760bdb3bb4994",
+        "bytes": 17709,
+        "sha256": "a36ff695a23bc6273a9a80f8095a529cf45af9c8dade50e05844fc9a83095270",
+        "verdict": "CHANGES_REQUESTED",
+        "finding": "SR-R2-01",
+        "decision": "Same source-proven skipped-account oracle defect; no observed H72 account failure claimed."
+      },
+      {
+        "round": 3,
+        "lens": "security/lifetime",
+        "task": "/root/mcp_origin_r3_security_review",
+        "blob": "998c6ef6f58dc7a7c2cca292d4d9f36dd0107e64",
+        "bytes": 24853,
+        "sha256": "77901a833fe79b411b6555c0c509c048608a93ffbf08acd9217751cfbadb8eb9",
+        "verdict": "APPROVE_FOCUSED_SOURCE_ONLY",
+        "acceptedLaunch": {
+          "model": "gpt-6-astra",
+          "effort": "xhigh",
+          "fork_turns": "none"
+        },
+        "actionableFindings": []
+      },
+      {
+        "round": 3,
+        "lens": "structure/reuse/performance",
+        "task": "/root/mcp_origin_r3_structure_review",
+        "blob": "dc281ff9ca8b33133ad62f2c63d5de13f091d812",
+        "bytes": 9444,
+        "sha256": "0d746be3130624ccda08124d4631d4504de6eaac29e2e9e021d58f248ee83ee4",
+        "verdict": "PASS_SOURCE_ONLY",
+        "acceptedLaunch": {
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "fork_turns": "none"
+        },
+        "actionableFindings": []
+      }
+    ],
+    "appliedFixes": [
+      {
+        "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+        "preimageBlob": "b2c987bd59817ce00cacf3555ee64c8a804f2a42",
+        "blob": "19318f75ff5454a583801351ddbd6aa1a3ff067d",
+        "bytes": 16503,
+        "sha256": "90d58ed9b066a59631b20d799bfb9153be591990c4fe7823103760bc19751388"
+      },
+      {
+        "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+        "preimageBlob": "3605572af9d62734a6cc79d1f801ddf2a158eeab",
+        "blob": "517cd42f6af6d6114790d4144cc7ba9156f4e308",
+        "bytes": 41723,
+        "sha256": "c10298fe7f04935eb6f471da80a144fb9d0ab9fe79196961ec42c6762d13cb25"
+      }
+    ],
+    "oracle": "Only two strict expected literals add the generated own property isReadonly:false. Existing downstream execution/storage/recovery/no-replacement assertions remain.",
+    "manifestQualification": {
+      "decision": "FIX / EVIDENCE_METADATA_QUALIFICATION",
+      "reason": "Original frozen R3 manifest repeats historical R1 identities in paths for the two corrected oracle files. Preserve that original blob. Current members plus immutable R3 tree are authoritative; append explicit qualification and exact two-field differences without rewriting historical evidence.",
+      "originalBlob": "71df0c5c09829fbf80a0463b33e1154ed4c34738",
+      "qualificationPath": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r3/member-index-qualification.json"
+    },
+    "publication": "Evidence and the two reviewed oracle corrections are checkpointed with skip-ci. One exact-H native recovery is combined with the independently reviewed Official initial campaign; no runtime pass is claimed at this checkpoint.",
+    "currentObservedRuntime": {
+      "subject": "72b6ed8b6e91a0ac7e0588fd9492a7d30c535079",
+      "run": 41587096196,
+      "attempt": 1,
+      "renderer": {
+        "job": 125755041471,
+        "result": "failure",
+        "classification": "TEST_FLAW;176/177 complete plugin target;27 named origin positives;account skipped"
+      },
+      "linux": {
+        "job": 125755041791,
+        "status": "completed",
+        "conclusion": "success",
+        "semanticEvidence": "Original logs under independent assessment; badge alone not acceptance"
+      },
+      "macos": {
+        "job": 125755041473,
+        "status": "queued",
+        "result": "no pass"
+      }
+    },
+    "unitVerified": false,
+    "globalAcceptance": false,
+    "all8GlobalFlagsRemainFalse": true
   }
 }
