@@ -293,3 +293,64 @@ commands / 65 required names. The ordinary three-platform scope and its 66/66/65
 requirements remain. Linux/macOS outcomes from the original H retain that H;
 they are not relabeled as executions of the recovery subject. A later full
 candidate still requires its own complete applicable platform acceptance.
+
+### MGL-08 — native fixture lifetime and migration qualification
+
+The focused Windows campaign at
+`6266a77e72159b92e72c84ef8f0423caf1416a78` (run `41652461179`,
+attempt1, job `125973925583`) passed the four actual native repository-binding
+controls and selected-target compilation, then executed all seven groups:
+58 names passed and7 failed. The five complete passing groups retain48 names;
+the failed manager and AgentState groups are not accepted. Their strict
+receipts and raw failures remain. The required independent exhaustion
+assessment found two safely repairable `TEST_FLAW` signatures.
+
+The manager fixture deletes its root inside its own destructor while its
+TranscriptManager field still owns Session Arcs and a real CallSessionStore
+SQLite connection. `dispose()` is not destruction of those owned fields.
+The six failures occur at strict deletion (Windows sharing violation32),
+including the native-drive child's failure before its terminal marker.
+The corruption/monthly-log and directory-obstacle/log-directory second loop
+iterations are unreached; no later or partial success may be inferred.
+
+Destroy the same fixture-owned manager after unsubscribe/dispose and before
+strict root deletion. A takeable field or ordinary field-order ownership
+guard is appropriate; do not add product APIs or close another owner's store.
+A weak Session-owner witness must expire before deletion, without retaining
+an extra strong owner. Keep the exact original behavior, raw-byte, valid-after-
+refusal, mutation-notification, child exit/marker and cleanup assertions.
+No retry, sleep, ignored removal error or forced process cleanup replaces
+the required owner-destruction order.
+
+The AgentState whitespace migration fixture fails during `create_dir_all`,
+before the sentinel and constructor calls, because its short Windows path
+contains the exact component `" invalid "`. Preserve that original selector.
+Create the exclusively owned migration root, canonicalize that existing root
+to native absolute/Windows extended-length form, and then append `agents`,
+`" invalid "`, `workflows`, and `untouched-invalid` as separate components.
+Qualify the actual directory-entry basename and exact sentinel bytes before
+calling either real constructor. Use the same canonical root in both calls
+and a separately joined canonical destination for the no-migration assertion.
+Preserve all earlier invalid-ID/no-created-root controls. Clean only the owned
+tree through a native spelling that can address its exact whitespace name;
+cleanup success remains a required terminal condition.
+
+This dependency contract is supported by pinned Rust1.97.1 commit
+`8bab26f4f68e0e26f0bb7960be334d5b520ea452`: `std::fs::canonicalize`
+blob `0dd250acff8378dc1aa59f63d7e3a37e5b1369e3` and Windows path conversion
+blob `1c7bf50d1907f8b0c69f7ca2e27bff527652cc04`. This is scoped contract
+inspection; actual native fixture qualification still must run in Actions.
+
+After the recorded exhaustion assessment and causal FIX decisions, a newly
+reviewed `memory-fixture-lifecycle` scope may run only the two affected
+existing groups, manager7 + AgentState10, on each of Linux/macOS/Windows.
+Refresh compilation of those actual test targets. The shared fixture edits
+invalidate these corresponding checks on all three platforms. Do not repeat
+unchanged shipping App compilation or the five unchanged complete groups
+merely to obtain a new green overall run. Preserve ordinary66/66/65 coverage,
+parent-plan membership, named results, strict exits/summaries, actual Git
+controls and before/after bindings. The new receipt must declare17 selected
+names and explicitly retain the five other groups under their original H511
+(Linux/macOS) or H6266 (Windows) evidence. It cannot stand for a fresh full
+three-platform campaign. Any further failure requires causal reassessment;
+nothing in this supplement authorizes rerun-until-green or full acceptance.

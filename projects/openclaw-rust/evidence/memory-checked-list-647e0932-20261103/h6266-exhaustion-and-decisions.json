@@ -1,0 +1,747 @@
+{
+  "schema": "ocrm-scoped-exhaustion-assessment-and-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "6266a77e72159b92e72c84ef8f0423caf1416a78",
+  "subject_tree": "4190d9e06c22f8626d7d730bc34571b2540e25ea",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "verdict": "failed-or-incomplete; two safely repairable TEST_FLAW findings, not an environment blocker or product acceptance",
+  "runtime": {
+    "run": 41652461179,
+    "attempt": 1,
+    "conclusion": "failure",
+    "job": 125973925583,
+    "raw_connector_log": {
+      "bytes": 917908,
+      "sha256": "311a029da27b67d267a12998df0ff800ac3318004eca87dcd225415ea6f065f9"
+    },
+    "raw_summary_lines": [
+      "test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s\r",
+      "test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.08s\r",
+      "test result: FAILED. 1 passed; 6 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.71s\r",
+      "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 35.00s\r",
+      "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s\r",
+      "test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.01s\r",
+      "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\r",
+      "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\r"
+    ],
+    "receipt_result": "failed-or-incomplete",
+    "native_source_identity_controls": [
+      {
+        "case": "generated-recursive-member",
+        "native_spelling": "source\\packages\\proto\\generated\\agent\\v1\\agent_pb.ts",
+        "repository_key": "source/packages/proto/generated/agent/v1/agent_pb.ts",
+        "expected": "bound-exact-bytes-once",
+        "actual": "bound-exact-bytes-once",
+        "binding": {
+          "git_blob": "3cd3d020e69b54d1a6df27c0f967afe7e9fc942c",
+          "sha256": "6980a2db178657af12739183fa40ec8c6a67ddf79c61e7d940686b09ef8eeaea",
+          "bytes": 461627,
+          "matches_head_bytes": true
+        }
+      },
+      {
+        "case": "generated-recursive-member-backslash-refusal",
+        "native_spelling": "source\\packages\\proto\\generated\\agent\\v1\\agent_pb.ts",
+        "expected": "rejected",
+        "actual": "rejected",
+        "git_exit": 128
+      },
+      {
+        "case": "tracked-daemon-lock",
+        "native_spelling": "source\\box-exec-daemon\\Cargo.lock",
+        "repository_key": "source/box-exec-daemon/Cargo.lock",
+        "expected": "bound-exact-bytes-once",
+        "actual": "bound-exact-bytes-once",
+        "binding": {
+          "git_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+          "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+          "bytes": 15520,
+          "matches_head_bytes": true
+        }
+      },
+      {
+        "case": "tracked-daemon-lock-backslash-refusal",
+        "native_spelling": "source\\box-exec-daemon\\Cargo.lock",
+        "expected": "rejected",
+        "actual": "rejected",
+        "git_exit": 128
+      }
+    ],
+    "compile": {
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "memory_service_contract",
+        "--test",
+        "transcript_manager_contract",
+        "--test",
+        "memory_gateway_authorization_contract",
+        "--test",
+        "host_storage_contract",
+        "--test",
+        "agent_state_contract",
+        "--test",
+        "session_paths_contract",
+        "--test",
+        "memory_extension_contract"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "log": "mcp-origin-constructor-check.log",
+      "result": "compiled",
+      "execution_error": null,
+      "log_sha256": "b4229929e3442842049ae76b71b1b9c1ed4a07adac9fc675fedca2174f45903c"
+    },
+    "executions": [
+      {
+        "case": "memory-checked-list-store",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "memory_service_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "child_environment_overrides": {},
+        "observed_raw_passed_test_names": [
+          "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+          "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+          "exact_memory_recovery_preserves_synthesis_metadata",
+          "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+          "file_memory_store_append_directory_read_error_is_preserved",
+          "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+          "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+          "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+          "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+          "memory_fact_parser_matches_frozen_markdown_contract",
+          "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+          "memory_list_checked_preserves_missing_empty_order_and_limit",
+          "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+          "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+          "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+          "memory_service_creates_real_agent_scoped_store",
+          "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+          "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+          "production_session_workers_can_share_host_memory_extension_owner",
+          "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+          "project_memory_store_reads_membership_shards_and_applies_global_cap",
+          "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+          "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+          "user_memory_store_aggregates_frozen_shards_and_recent_order"
+        ],
+        "execution_error": null,
+        "required_positive_names": [
+          "memory_fact_parser_matches_frozen_markdown_contract",
+          "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+          "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+          "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+          "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+          "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+          "file_memory_store_append_directory_read_error_is_preserved",
+          "memory_list_checked_preserves_missing_empty_order_and_limit",
+          "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+          "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+          "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+          "exact_memory_recovery_preserves_synthesis_metadata",
+          "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+          "memory_service_creates_real_agent_scoped_store",
+          "production_session_workers_can_share_host_memory_extension_owner",
+          "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+          "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+          "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+          "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+          "user_memory_store_aggregates_frozen_shards_and_recent_order",
+          "project_memory_store_reads_membership_shards_and_applies_global_cap",
+          "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+          "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+          "memory_list_checked_rejects_nondirectory_ancestors_without_repair"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_names": [
+          "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+          "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+          "exact_memory_recovery_preserves_synthesis_metadata",
+          "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+          "file_memory_store_append_directory_read_error_is_preserved",
+          "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+          "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+          "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+          "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+          "memory_fact_parser_matches_frozen_markdown_contract",
+          "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+          "memory_list_checked_preserves_missing_empty_order_and_limit",
+          "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+          "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+          "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+          "memory_service_creates_real_agent_scoped_store",
+          "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+          "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+          "production_session_workers_can_share_host_memory_extension_owner",
+          "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+          "project_memory_store_reads_membership_shards_and_applies_global_cap",
+          "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+          "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+          "user_memory_store_aggregates_frozen_shards_and_recent_order"
+        ],
+        "summaries_passed_failed_ignored": [
+          [
+            24,
+            0,
+            0
+          ]
+        ],
+        "complete_summaries": [
+          [
+            24,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "oracle_accepted": true,
+        "log": "memory-checked-list-store.log",
+        "log_sha256": "1a0c368a2c9b9b29f895ab7aa5a5ec632382ecabb47b72219132395e07e5592d"
+      },
+      {
+        "case": "memory-checked-list-manager",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "transcript_manager_contract",
+          "memory_gateway_",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 101,
+        "capture_exit": 0,
+        "child_environment_overrides": {},
+        "observed_raw_passed_test_names": [
+          "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation"
+        ],
+        "execution_error": null,
+        "required_positive_names": [
+          "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+          "memory_gateway_rejects_path_selectors_before_external_memory_read",
+          "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+          "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+          "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+          "memory_gateway_checked_list_manager_preserves_path_type_failures",
+          "memory_gateway_manager_rejects_native_drive_relative_selector"
+        ],
+        "missing_or_nonunique_positive_results": [
+          "memory_gateway_rejects_path_selectors_before_external_memory_read",
+          "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+          "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+          "memory_gateway_checked_list_manager_preserves_corrupt_bytes_and_repair",
+          "memory_gateway_checked_list_manager_preserves_path_type_failures",
+          "memory_gateway_manager_rejects_native_drive_relative_selector"
+        ],
+        "observed_passed_test_names": [
+          "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation"
+        ],
+        "summaries_passed_failed_ignored": [],
+        "complete_summaries": [],
+        "oracle_accepted": false,
+        "log": "memory-checked-list-manager.log",
+        "log_sha256": "442ff231159944772925a82798342b84f7d35bbf6e76f79fba1d83ac73296c3e"
+      },
+      {
+        "case": "memory-checked-list-http",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "memory_gateway_authorization_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "child_environment_overrides": {},
+        "observed_raw_passed_test_names": [
+          "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+          "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+          "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+          "memory_gateway_http_rejects_native_drive_relative_selector",
+          "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+          "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+          "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+          "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+          "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+          "memory_gateway_write_only_and_admin_only_mutations_survive_reopen"
+        ],
+        "execution_error": null,
+        "required_positive_names": [
+          "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+          "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+          "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+          "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+          "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+          "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+          "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+          "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+          "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+          "memory_gateway_http_rejects_native_drive_relative_selector"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_names": [
+          "memory_gateway_checked_list_rejects_corrupt_older_log_beyond_native_limit",
+          "memory_gateway_checked_list_storage_faults_refuse_partial_arrays_and_recover",
+          "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+          "memory_gateway_http_rejects_native_drive_relative_selector",
+          "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+          "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+          "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+          "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+          "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+          "memory_gateway_write_only_and_admin_only_mutations_survive_reopen"
+        ],
+        "summaries_passed_failed_ignored": [
+          [
+            10,
+            0,
+            0
+          ]
+        ],
+        "complete_summaries": [
+          [
+            10,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "oracle_accepted": true,
+        "log": "memory-checked-list-http.log",
+        "log_sha256": "6201a9000bf0f35e54f27845b70c840a3a18016cc77643c29198ff002dbee783"
+      },
+      {
+        "case": "memory-checked-list-agent-paths",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "host_storage_contract",
+          "agent_paths_",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "child_environment_overrides": {},
+        "observed_raw_passed_test_names": [
+          "agent_paths_reject_native_windows_prefixes_and_roots",
+          "agent_paths_reject_traversal_and_whitespace"
+        ],
+        "execution_error": null,
+        "required_positive_names": [
+          "agent_paths_reject_traversal_and_whitespace",
+          "agent_paths_reject_native_windows_prefixes_and_roots"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_names": [
+          "agent_paths_reject_native_windows_prefixes_and_roots",
+          "agent_paths_reject_traversal_and_whitespace"
+        ],
+        "summaries_passed_failed_ignored": [
+          [
+            2,
+            0,
+            0
+          ]
+        ],
+        "complete_summaries": [
+          [
+            2,
+            0,
+            0,
+            0,
+            6
+          ]
+        ],
+        "oracle_accepted": true,
+        "log": "memory-checked-list-agent-paths.log",
+        "log_sha256": "02a42fff12fcc063aab2ddec2011ff7a561a148407d76fe8b64b40248d1d35da"
+      },
+      {
+        "case": "memory-checked-list-agent-state",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "agent_state_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 101,
+        "capture_exit": 0,
+        "child_environment_overrides": {},
+        "observed_raw_passed_test_names": [
+          "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+          "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+          "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration",
+          "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+          "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+          "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+          "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+          "owns_profile_settings_channel_and_avatar_mutations",
+          "routes_memory_to_agent_user_and_joined_project_shards"
+        ],
+        "execution_error": null,
+        "required_positive_names": [
+          "routes_memory_to_agent_user_and_joined_project_shards",
+          "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+          "owns_profile_settings_channel_and_avatar_mutations",
+          "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+          "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+          "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration",
+          "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+          "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+          "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+          "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration"
+        ],
+        "missing_or_nonunique_positive_results": [
+          "live_admission::both_state_constructors_reject_invalid_agent_ids_before_owned_paths_or_migration"
+        ],
+        "observed_passed_test_names": [
+          "avatar_uses_box_reader_when_box_root_path_is_not_on_host",
+          "live_admission::both_state_constructors_keep_valid_unicode_agent_paths",
+          "live_admission::both_state_constructors_reject_native_windows_prefixes_without_migration",
+          "live_admission::bound_runner_workflow_mutations_refuse_missing_and_malformed_admission",
+          "live_admission::production_runner_workflow_generation_is_fenced_across_archive_and_restore",
+          "live_admission::session_store_live_admission_reaches_retained_state_and_real_host_runner_surfaces",
+          "live_admission::supplied_workflow_store_does_not_construct_and_migrate_a_discarded_default",
+          "owns_profile_settings_channel_and_avatar_mutations",
+          "routes_memory_to_agent_user_and_joined_project_shards"
+        ],
+        "summaries_passed_failed_ignored": [],
+        "complete_summaries": [],
+        "oracle_accepted": false,
+        "log": "memory-checked-list-agent-state.log",
+        "log_sha256": "6e17ebe3275659d7bc0104eecd82273f7500c2b984f1e4e98c2156a4a1e6b2a6"
+      },
+      {
+        "case": "memory-checked-list-session-paths",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "session_paths_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "child_environment_overrides": {},
+        "observed_raw_passed_test_names": [
+          "public_session_commands_reject_harness_owned_namespace",
+          "public_session_route_resolves_one_canonical_boundary",
+          "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys",
+          "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+          "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+          "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+          "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+          "stat_if_exists_matches_the_frozen_missing_file_contract",
+          "transcript_path_uses_the_same_sand_root_resolution_as_the_host"
+        ],
+        "execution_error": null,
+        "required_positive_names": [
+          "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+          "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+          "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+          "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+          "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+          "stat_if_exists_matches_the_frozen_missing_file_contract",
+          "public_session_commands_reject_harness_owned_namespace",
+          "public_session_route_resolves_one_canonical_boundary",
+          "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_names": [
+          "public_session_commands_reject_harness_owned_namespace",
+          "public_session_route_resolves_one_canonical_boundary",
+          "root_main_session_guard_is_case_insensitive_only_for_structural_root_keys",
+          "session_paths_match_frozen_names_root_slot_and_gc_override_contract",
+          "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+          "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+          "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+          "stat_if_exists_matches_the_frozen_missing_file_contract",
+          "transcript_path_uses_the_same_sand_root_resolution_as_the_host"
+        ],
+        "summaries_passed_failed_ignored": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "complete_summaries": [
+          [
+            9,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "oracle_accepted": true,
+        "log": "memory-checked-list-session-paths.log",
+        "log_sha256": "c9621c93825afc90f656ea984f76b3fc008236f9d84751208aa34ee6fa4162bf"
+      },
+      {
+        "case": "memory-checked-list-extension",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "memory_extension_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "child_environment_overrides": {},
+        "observed_raw_passed_test_names": [
+          "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root",
+          "memory_extension_owns_one_agent_scoped_service",
+          "memory_extension_replacement_and_disable_keep_one_background_owner"
+        ],
+        "execution_error": null,
+        "required_positive_names": [
+          "memory_extension_owns_one_agent_scoped_service",
+          "memory_extension_replacement_and_disable_keep_one_background_owner",
+          "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_names": [
+          "memory_extension_exposes_frozen_agent_state_factory_on_same_sand_root",
+          "memory_extension_owns_one_agent_scoped_service",
+          "memory_extension_replacement_and_disable_keep_one_background_owner"
+        ],
+        "summaries_passed_failed_ignored": [
+          [
+            3,
+            0,
+            0
+          ]
+        ],
+        "complete_summaries": [
+          [
+            3,
+            0,
+            0,
+            0,
+            0
+          ]
+        ],
+        "oracle_accepted": true,
+        "log": "memory-checked-list-extension.log",
+        "log_sha256": "534c8cd7aecede12d367f9fedfdc33c03abaa89c0c60e664536a88b0dda7790b"
+      }
+    ],
+    "bindings": [
+      {
+        "name": "memory_checked_list",
+        "count": 34,
+        "before_equals_after": true,
+        "all_match_head": true
+      },
+      {
+        "name": "custody_recovery",
+        "count": 10,
+        "before_equals_after": true,
+        "all_match_head": true
+      },
+      {
+        "name": "plugin_admission_lock",
+        "count": 21,
+        "before_equals_after": true,
+        "all_match_head": true
+      },
+      {
+        "name": "local_exec_outcome",
+        "count": 41,
+        "before_equals_after": true,
+        "all_match_head": true
+      },
+      {
+        "name": "box_response",
+        "count": 57,
+        "before_equals_after": true,
+        "all_match_head": true
+      }
+    ],
+    "complete_passing_groups": 5,
+    "complete_passing_group_names": 48,
+    "all_observed_passed_names": 58,
+    "failed_required_names": 7,
+    "artifacts": [
+      {
+        "id": 13238069096,
+        "name": "ocrm-memory-checked-list-Windows-6266a77e72159b92e72c84ef8f0423caf1416a78-41652461179-1",
+        "bytes": 211240,
+        "api_upload_reported_digest": "sha256:9a89fce4ea69d715ceb88e64b5e621ce5e122a5ae43e6dd1194578855fe1efde",
+        "head": "6266a77e72159b92e72c84ef8f0423caf1416a78",
+        "archive_downloaded_by_root": false
+      }
+    ]
+  },
+  "source_authority": {
+    "run": 41652461121,
+    "attempt": 1,
+    "conclusion": "success",
+    "source_job": 125973923156,
+    "persistence_job": 125975065250,
+    "source_log": {
+      "bytes": 31536,
+      "sha256": "ad6f24311dd7fbed797c9879f17b32346fd317fadb6fee596a3112148058402d"
+    },
+    "persistence_log": {
+      "bytes": 18145,
+      "sha256": "fd3790b22e62e278b5bf1143e67470fde6810cc7046d8bab4bce521149ef6f28"
+    },
+    "controls": "33 risk-review +21 materialization +4 structural negatives passed",
+    "paths": 62130,
+    "mapped": 888,
+    "unread_or_partial": 62067,
+    "shards": 61,
+    "closure": "open",
+    "persistence": "No new source-derived shard content",
+    "artifacts": [
+      {
+        "id": 13237179523,
+        "name": "ocrm-p0-authority-6266a77e72159b92e72c84ef8f0423caf1416a78",
+        "bytes": 4951974,
+        "api_upload_reported_digest": "sha256:c0f6a062259795076327c6c95e9ff100f3a79f1a5c78978ee9bb226c788eb9d0",
+        "head": "6266a77e72159b92e72c84ef8f0423caf1416a78"
+      }
+    ]
+  },
+  "independent_exhaustion": {
+    "worker": "/root/mgl_windows_exhaustion_assess",
+    "configured_model": "configured parent model",
+    "selected_effort": "xhigh",
+    "actual_execution": "read-only; no campaign or source mutation",
+    "terminal_metadata_and_log_read": true,
+    "full_log_byte_count": 917908,
+    "independent_sha256_recomputed": false,
+    "verdict": "TEST_FLAW; concrete safe next instrument exists",
+    "scope": "Fixture and retained Session/CallSession SQLite ownership, production disposal, HTTP lifetime precedent, actual whitespace-path seeding, constructor/migration order and pinned Rust Windows path contract.",
+    "full_report_location": "task conversation; this file preserves its causal findings and root decisions"
+  },
+  "decisions": [
+    {
+      "id": "MGL-WIN-FIXTURE-LIFETIME-001",
+      "category": "TEST_FLAW",
+      "decision": "FIX",
+      "path": "source/host/tests/transcript_manager_contract.rs",
+      "signature": "Windows32 sharing violation at line669 strict root deletion; native-drive parent reports same child failure at745",
+      "failed_assumption": "manager.dispose() destroys all manager-owned fields and Session/CallSessionStore handles",
+      "source_cause": "Fixture Drop deletes before fields drop. ProductionSessionWorkers retains an Arc<CallSessionStore> with Mutex<rusqlite::Connection> to agents/.call-sessions.db; shutdown_inner does not remove that field. The log does not identify the particular locked pathname, but source establishes a live owned SQLite handle at deletion.",
+      "retained_owner_blobs": {
+        "manager": "71e90fb820d492d7e9607f63311595aed076c29a",
+        "session": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+        "call_session": "f97f628ec14618ab2788bdf5b5c301f7a00c81f6"
+      },
+      "fix": "Explicitly take, dispose and drop the fixture manager before strict deletion, require its weak Session-owner witness expired, preserve every behavior and native child marker assertion.",
+      "unreached": [
+        "second monthly-log-corruption iteration",
+        "second log-directory-obstacle iteration",
+        "native-drive child terminal marker"
+      ]
+    },
+    {
+      "id": "MGL-WIN-MIGRATION-FIXTURE-001",
+      "category": "TEST_FLAW",
+      "decision": "FIX",
+      "path": "source/host/tests/agent_state_contract.rs",
+      "signature": "Windows3 NotFound at line375 create_dir_all before sentinel/construction",
+      "failed_assumption": "Short DOS spelling can seed the exact trailing-space component",
+      "fix": "Preserve original whitespace-bearing selector and all refusals; canonicalize the created owned migration root, append individual native components, prove exact basename and sentinel bytes before constructors and no migration afterward; strict native owned cleanup.",
+      "dependency_sources": {
+        "rust_commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+        "std_fs": "0dd250acff8378dc1aa59f63d7e3a37e5b1369e3",
+        "windows_path": "1c7bf50d1907f8b0c69f7ca2e27bff527652cc04"
+      },
+      "unreached": [
+        "whitespace migration sentinel qualification",
+        "both constructor calls for that sentinel"
+      ]
+    }
+  ],
+  "retained_history": {
+    "normal_subject": "511bcebf08738c59ec0313a425a591a327d9cd20",
+    "normal_run": 41648714149,
+    "normal_conclusion": "failure",
+    "linux_mac_each": 66,
+    "normal_windows": "pre-Cargo Git native-path failure; no behavior verdict",
+    "normal_assessment_blob": "9b8503b71e9cf334248baf9a5ea8f7bb9eebecb6",
+    "scope_rule": "No H511 evidence relabeled to H6266 or a future repair; five unchanged groups retain their actual subjects."
+  },
+  "next_bounded_instrument": {
+    "preconditions": [
+      "This independent exhaustion record and causal decisions durable before code",
+      "Minimal fixture repairs and fresh complete-scope independent review",
+      "New frozen published H with exact readback"
+    ],
+    "scope": "memory-fixture-lifecycle",
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15",
+      "windows-2025"
+    ],
+    "groups": [
+      "memory-checked-list-manager",
+      "memory-checked-list-agent-state"
+    ],
+    "required_names_per_platform": 17,
+    "compile": "only actual changed test targets; product code unchanged",
+    "reason": "Shared fixture changes invalidate those two groups on all three platforms; five unchanged complete groups and original shipping compilation retain old subjects.",
+    "forbidden": [
+      "unchanged H6266 rerun or full-suite third campaign",
+      "cleanup retries/sleeps/ignored errors",
+      "skipped failed platform or lowered ordinary66/66/65 requirements",
+      "old failure/marker/raw-byte/error/refusal/notification assertions removed",
+      "broad process cleanup",
+      "source-byte normalization or input omission"
+    ],
+    "acceptance": "No Memory batch acceptance until required new evidence; no Windows shipping/App/full platform/global acceptance"
+  }
+}
