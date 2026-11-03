@@ -1,0 +1,128 @@
+{
+  "schema": "ocrm-execution-recovery-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BGC-v1",
+  "subject_commit": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
+  "subject_tree": "5fe0b4ef0a21ac6886152b63636cc11aa6aa2940",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "runtime": {
+    "run_id": 41639406287,
+    "attempt": 1,
+    "conclusion": "failure",
+    "linux": {
+      "job_id": 125928781395,
+      "conclusion": "success",
+      "groups": 15,
+      "required": 121,
+      "observed": 121,
+      "raw_log": {
+        "bytes": 1233824,
+        "sha256": "27dad2381dbafae42c3261762154a03e04199546dc385ff6d65634d2f6c506d2"
+      }
+    },
+    "macos": {
+      "job_id": 125928781050,
+      "conclusion": "failure",
+      "groups": 15,
+      "required": 121,
+      "observed": 120,
+      "raw_log": {
+        "bytes": 1191408,
+        "sha256": "0ce0c89d7617a88202951055c89c233b029623cf847c9bab94067bde9f955246"
+      },
+      "failed_case": "box-response-background-custody-unit",
+      "failed_name": "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+      "cargo_exit": 101,
+      "capture_exit": 0,
+      "group_log_sha256": "afb9189317d22e33ccf784e9d7385436ea7463a8f11e888374d76bacc7664e05",
+      "panic": "src/server.rs:5645:9: assertion failed: runtime.foreground_processes.lock().unwrap().is_empty()"
+    },
+    "retained_positive_evidence": "Both platforms passed locked shipping App compilation, Host test-graph compilation, separate ordinary daemon/private cfg(test) producer build and source/artifact custody controls. All 14 other groups passed. Full decoded logs, parsed subject receipts and named results were independently read; the failed subject remains failed."
+  },
+  "source_authority": {
+    "H": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
+    "tree": "5fe0b4ef0a21ac6886152b63636cc11aa6aa2940",
+    "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "run_id": 41639406306,
+    "attempt": 1,
+    "source_job_id": 125928779156,
+    "persistence_job_id": 125929805736,
+    "conclusion": "success",
+    "risk_tests": 33,
+    "inventory_materialization_tests": 21,
+    "negative_classes": [
+      "duplicate source path",
+      "unread denominator tamper",
+      "unbacked accepted verdict",
+      "orphan responsibility"
+    ],
+    "tracked_paths": 62130,
+    "mapped": 888,
+    "unread_or_partial": 62067,
+    "shards": 61,
+    "canonical_digest": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
+    "log": {
+      "bytes": 31545,
+      "sha256": "f4e02d78b0354c4fa9ee112b8654291971e9663fe0eca626527cb9ea5210d50a"
+    },
+    "persistence_log": {
+      "bytes": 18156,
+      "sha256": "40dce6b08bfd7540c631d62a737bfb1c7e594b8517f9547c256d61539e900afc"
+    },
+    "artifact": {
+      "id": 13231119817,
+      "name": "ocrm-p0-authority-6d3806857b58887245ae861c15c0ecb740e5d7d6",
+      "bytes": 4951972,
+      "digest": "sha256:6cbb9a12138e01eeefac49cc4b418567ba372aee06561f12366b0e9a57a8c4d4",
+      "zip_downloaded": false
+    },
+    "full_source_closure": false,
+    "full_risk_review": false,
+    "global_acceptance": false
+  },
+  "finding": {
+    "id": "BGC-H6D380-READER-OBSERVATION",
+    "severity": "P2",
+    "classification": "TEST_FLAW",
+    "decision": "FIX",
+    "source_blob": "bcd29696e2b4f20f0d2e158353fa5673d62b5802",
+    "path": "source/box-exec-daemon/src/server.rs",
+    "failed_assumption": "Joining the request thread proves that both retained output readers have finished and been joined. StreamRequest::drop bounds only direct-Child cleanup then observes readers once; pending readers remain owned until a real admission/stop observer.",
+    "evidence": [
+      "StreamRequest::drop901-927 transfers actual Child/readers into the same foreground registry, performs bounded cleanup and a single recovery observation.",
+      "cleanup_captured_child936-970 waits for direct-child reap, not both pipe workers.",
+      "CapturedChild::observe_stream_recovery786-806 joins only handles already finished.",
+      "Ordinary stream1376-1377 and process2310-2311 admission observe retained recovery; 2222-2237 removes only fully observed same-identity/same-Arc custody.",
+      "The failed test5623-5651 requires empty custody before its following normal admission without an EOF/worker completion observation."
+    ],
+    "required_fix": "Keep the existing production owner and all valid result/effect/no-background-ID/no-terminal/recovery assertions. Observe the actual owner through the existing private recovery observation channel, establish real worker completion without joining/removing in the fixture, then exercise ordinary foreground admission before requiring retirement. Assert actual reap, no resignal after reap and retained resource release. Handle both already-completed and still-retained schedules, with bounded causal observation rather than fixed sleep or an unchanged rerun.",
+    "scope": "Only the failing test and the existing scoped CI/evidence selector necessary to run the failed/invalidated test and causal recovery controls; retain the complete frozen BGC scope for focused review.",
+    "forbidden": [
+      "Deleting the empty-registry or terminal-file assertion",
+      "Calling a private cleanup helper from the fixture to manufacture success",
+      "Forcing production cleanup to wait indefinitely for pipe EOF",
+      "Unchanged retry/green harvesting",
+      "Replaying all unaffected contract groups as recovery proof"
+    ]
+  },
+  "campaign": {
+    "normal_campaign": {
+      "H": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
+      "run_id": 41639406287,
+      "attempt": 1
+    },
+    "focused_recovery_allowed": 1,
+    "next_instrument": "A new exact-H focused selection runs the corrected handoff-ID-exhaustion test plus existing retained-reader recovery controls on both operating systems, with exact names/result counts and separately bound producer compilation. Reuse prior passing unaffected scope only with explicit unchanged source identity; never recast H6d380 as passing.",
+    "third_campaign": "Requires independent exhaustion/directness assessment before any further execution."
+  },
+  "review": {
+    "classification": "xhigh: concurrency/lifetime and test-oracle failure",
+    "root_setting": "inherited configured model/effort; no executor or model subprocess",
+    "next": "fresh blind focused GENERAL and STRUCTURE on complete frozen scope plus fix delta"
+  },
+  "acceptance": {
+    "batch_passed": false,
+    "global_flags_promoted": false,
+    "full_migration": false
+  }
+}
