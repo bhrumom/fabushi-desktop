@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, mpsc};
+use std::time::Duration;
 
 use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
     LostSubagentWake, PendingWakeRearm, PendingWakeReport, PendingWakeRuntimePort,
@@ -8,32 +9,69 @@ use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
 };
 use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
     DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, SandPendingWakeStore,
+    coerce_quiet_origin,
+};
+use mahayana_host_runtime::runner::background_work::{
+    CloudAgentPendingWatch, CloudAgentWatchOptions, CloudAgentWatchOutcome,
+    RunnerCloudAgentWatches,
 };
 use uuid::Uuid;
 
 #[derive(Default)]
 struct FakeRuntime {
+    pending_store: Option<SandPendingWakeStore>,
     can_execute: Mutex<bool>,
     gone: Mutex<HashSet<String>>,
     group: Mutex<HashSet<String>>,
     armed: Mutex<HashSet<(String, String)>>,
     cloud_watches: Mutex<Vec<(String, String)>>,
+    admit_cloud_watch: Mutex<Option<Arc<dyn Fn(&DurablePendingWakeMarker) -> Result<bool, String> + Send + Sync>>>,
+    before_cloud_armed_check: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
+    after_cloud_armed_check: Mutex<Option<Arc<dyn Fn() + Send + Sync>>>,
+    cloud_watch_finishes: Mutex<bool>,
     shell_watches: Mutex<Vec<(String, String)>>,
     interrupted: Mutex<Vec<String>>,
     revived: Mutex<Vec<LostSubagentWake>>,
+    channel_revivals: Mutex<Vec<DurablePendingWakeMarker>>,
+    channel_rearm_error: Mutex<Option<String>>,
     emitted: Mutex<Vec<String>>,
     reports: Mutex<Vec<PendingWakeReport>>,
+}
+impl FakeRuntime {
+    fn with_store(pending_store: SandPendingWakeStore) -> Self {
+        Self { pending_store: Some(pending_store), ..Self::default() }
+    }
 }
 impl PendingWakeRuntimePort for FakeRuntime {
     fn can_execute(&self) -> bool { *self.can_execute.lock().unwrap() }
     fn is_agent_gone(&self, agent_id: &str) -> bool { self.gone.lock().unwrap().contains(agent_id) }
     fn is_group_session(&self, agent_id: &str) -> Result<bool, String> { Ok(self.group.lock().unwrap().contains(agent_id)) }
     fn cloud_watch_is_armed(&self, agent_id: &str, work_id: &str) -> bool {
-        self.armed.lock().unwrap().contains(&(agent_id.into(), work_id.into()))
+        let before = self.before_cloud_armed_check.lock().unwrap().take();
+        if let Some(callback) = before {
+            callback();
+        }
+        let armed = self.armed.lock().unwrap().contains(&(agent_id.into(), work_id.into()));
+        if let Some(callback) = self.after_cloud_armed_check.lock().unwrap().take() {
+            callback();
+        }
+        armed
     }
-    fn watch_cloud_agent(&self, agent_id: &str, work_id: &str, _quiet: Option<&QuietWakeOrigin>) -> Result<(), String> {
-        self.cloud_watches.lock().unwrap().push((agent_id.into(), work_id.into()));
-        self.armed.lock().unwrap().insert((agent_id.into(), work_id.into()));
+    fn watch_cloud_agent(&self, marker: &DurablePendingWakeMarker) -> Result<(), String> {
+        let callback = self.admit_cloud_watch.lock().unwrap().clone();
+        let admitted = match callback {
+            Some(callback) => callback(marker)?,
+            None => self.pending_store.as_ref().is_some_and(|store| {
+                store.replace_if_matches(marker, marker.clone())
+            }),
+        };
+        if !admitted {
+            return Ok(());
+        }
+        self.cloud_watches.lock().unwrap().push((marker.agent_id.clone(), marker.work_id.clone()));
+        if !*self.cloud_watch_finishes.lock().unwrap() {
+            self.armed.lock().unwrap().insert((marker.agent_id.clone(), marker.work_id.clone()));
+        }
         Ok(())
     }
     fn watch_background_shell(&self, agent_id: &str, work_id: &str, _title: Option<&str>, _quiet: Option<&QuietWakeOrigin>) -> Result<(), String> {
@@ -48,8 +86,81 @@ impl PendingWakeRuntimePort for FakeRuntime {
         self.revived.lock().unwrap().push(wake);
         Ok(())
     }
+    fn revive_channel_delivery_failure(&self, marker: &DurablePendingWakeMarker) -> Result<(), String> {
+        self.channel_revivals.lock().unwrap().push(marker.clone());
+        match self.channel_rearm_error.lock().unwrap().clone() {
+            Some(error) => Err(error),
+            None => Ok(()),
+        }
+    }
     fn emit_async_tasks_for_agent(&self, agent_id: &str) { self.emitted.lock().unwrap().push(agent_id.into()); }
     fn report_pending_wake(&self, report: PendingWakeReport) { self.reports.lock().unwrap().push(report); }
+}
+
+struct CloudRecoveryRuntime {
+    store: SandPendingWakeStore,
+    watches: RunnerCloudAgentWatches,
+    before_cloud_armed_check: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+    admissions: Mutex<Vec<bool>>,
+}
+
+impl PendingWakeRuntimePort for CloudRecoveryRuntime {
+    fn can_execute(&self) -> bool { true }
+    fn is_agent_gone(&self, _agent_id: &str) -> bool { false }
+    fn is_group_session(&self, _agent_id: &str) -> Result<bool, String> { Ok(false) }
+    fn cloud_watch_is_armed(&self, agent_id: &str, work_id: &str) -> bool {
+        let before = self.before_cloud_armed_check.lock().unwrap().take();
+        if let Some(callback) = before {
+            callback();
+        }
+        self.watches.is_cloud_watch_armed(agent_id, work_id)
+    }
+    fn watch_cloud_agent(&self, marker: &DurablePendingWakeMarker) -> Result<(), String> {
+        let quiet_origin = marker.quiet_origin.as_ref()
+            .map(serde_json::to_value).transpose().map_err(|error| error.to_string())?;
+        self.watches.watch_cloud_agent_if_admitted(
+            &marker.agent_id,
+            &marker.work_id,
+            CloudAgentWatchOptions::new(quiet_origin, false),
+            &|pending| {
+                let admitted = self.store.replace_if_matches(marker, cloud_pending_marker(pending));
+                self.admissions.lock().unwrap().push(admitted);
+                admitted
+            },
+        );
+        Ok(())
+    }
+    fn watch_background_shell(&self, _: &str, _: &str, _: Option<&str>, _: Option<&QuietWakeOrigin>) -> Result<(), String> {
+        panic!("cloud-only recovery fixture")
+    }
+    fn deliver_recreate_interrupted_shell_notice(&self, _: &DurablePendingWakeMarker) -> Result<(), String> {
+        panic!("cloud-only recovery fixture")
+    }
+    fn revive_lost_subagent(&self, _: LostSubagentWake) -> Result<(), String> {
+        panic!("cloud-only recovery fixture")
+    }
+    fn revive_channel_delivery_failure(&self, _: &DurablePendingWakeMarker) -> Result<(), String> {
+        panic!("cloud-only recovery fixture")
+    }
+    fn emit_async_tasks_for_agent(&self, _: &str) {}
+    fn report_pending_wake(&self, _: PendingWakeReport) {}
+}
+
+fn cloud_pending_marker(pending: &CloudAgentPendingWatch) -> DurablePendingWakeMarker {
+    DurablePendingWakeMarker {
+        agent_id: pending.parent_agent_id.clone(),
+        kind: PendingWakeKind::CloudAgent,
+        work_id: pending.work_id.clone(),
+        marked_at_ms: pending.marked_at_ms,
+        quiet_origin: pending.quiet_origin.as_ref().and_then(coerce_quiet_origin),
+        title: Some(pending.title.clone()),
+        subagent_type: Some("cursor-agent".into()),
+        interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
+    }
 }
 
 fn root() -> PathBuf {
@@ -62,6 +173,10 @@ fn marker(agent:&str, kind:PendingWakeKind, work:&str, marked:f64) -> DurablePen
         agent_id: agent.into(), kind, work_id: work.into(), marked_at_ms: marked,
         quiet_origin: None, title: Some("work".into()), subagent_type: Some("task".into()),
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
     }
 }
 
@@ -69,7 +184,7 @@ fn marker(agent:&str, kind:PendingWakeKind, work:&str, marked:f64) -> DurablePen
 fn persists_clears_and_disarms_with_reference_telemetry() {
     let dir=root();
     let store=SandPendingWakeStore::new(&dir);
-    let runtime=Arc::new(FakeRuntime::default());
+    let runtime=Arc::new(FakeRuntime::with_store(store.clone()));
     *runtime.can_execute.lock().unwrap()=true;
     let service=PendingWakeRearm::new(Some(store.clone()), runtime.clone());
     assert!(service.persist_pending_wake(marker("a",PendingWakeKind::Shell,"s1",10.0)));
@@ -91,7 +206,7 @@ fn persists_clears_and_disarms_with_reference_telemetry() {
 fn rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind() {
     let dir=root();
     let store=SandPendingWakeStore::new(&dir);
-    let runtime=Arc::new(FakeRuntime::default());
+    let runtime=Arc::new(FakeRuntime::with_store(store.clone()));
     *runtime.can_execute.lock().unwrap()=true;
     runtime.gone.lock().unwrap().insert("gone".into());
 
@@ -124,7 +239,7 @@ fn rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind() {
 fn interrupted_recreate_shell_uses_resume_notice_and_group_session_clears_marker() {
     let dir=root();
     let store=SandPendingWakeStore::new(&dir);
-    let runtime=Arc::new(FakeRuntime::default());
+    let runtime=Arc::new(FakeRuntime::with_store(store.clone()));
     *runtime.can_execute.lock().unwrap()=true;
 
     let mut direct=marker("a",PendingWakeKind::Shell,"resume",100.0);
@@ -157,10 +272,188 @@ fn enqueue_refuses_gone_agents_and_appends_for_live_agents() {
 }
 
 #[test]
+fn checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 200.0));
+    for raw in [
+        "not-json",
+        r#"{"version":2,"pending":[]}"#,
+        r#"{"version":1,"pending":[{"agentId":"a","kind":"shell","workId":"work","markedAtMs":100},{"agentId":"invalid-tail"}]}"#,
+        r#"{"version":1,"pending":[{"agentId":"a","kind":"shell","workId":"work","markedAtMs":100},{"agentId":"a","kind":"shell","workId":"work","markedAtMs":100}]}"#,
+    ] {
+        std::fs::write(store.file_path(), raw).unwrap();
+        assert!(service.rearm_pending_wakes_checked().is_err());
+        // The compatibility wrapper shares the same refusal and cannot dispatch
+        // the apparently valid prefix of a rejected document.
+        service.rearm_pending_wakes();
+        assert_eq!(std::fs::read_to_string(store.file_path()).unwrap(), raw);
+        assert!(runtime.cloud_watches.lock().unwrap().is_empty());
+        assert!(runtime.shell_watches.lock().unwrap().is_empty());
+        assert!(runtime.revived.lock().unwrap().is_empty());
+        assert!(runtime.interrupted.lock().unwrap().is_empty());
+        assert!(runtime.channel_revivals.lock().unwrap().is_empty());
+        assert!(runtime.reports.lock().unwrap().is_empty());
+    }
+    std::fs::remove_file(store.file_path()).unwrap();
+    std::fs::create_dir(store.file_path()).unwrap();
+    assert!(service.rearm_pending_wakes_checked().is_err());
+    assert!(store.file_path().is_dir());
+    assert!(runtime.reports.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn checked_rearm_accepts_known_empty_state_without_creating_recovery_work() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone());
+    service.rearm_pending_wakes_checked().unwrap();
+    assert!(!store.file_path().exists());
+    for raw in [r#"{"pending":[]}"#, r#"{"version":1,"pending":[]}"#] {
+        std::fs::write(store.file_path(), raw).unwrap();
+        service.rearm_pending_wakes_checked().unwrap();
+        assert_eq!(std::fs::read_to_string(store.file_path()).unwrap(), raw);
+    }
+    assert!(runtime.reports.lock().unwrap().is_empty());
+    assert!(runtime.channel_revivals.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+fn assert_channel_rearm_retains_marker_across_reopen(error: Option<&str>) {
+    for operation in [Some("operation-distinct-from-work"), None] {
+        let dir = root();
+        let observed = DurablePendingWakeMarker {
+            quiet_origin: coerce_quiet_origin(&serde_json::json!({
+                "automation": {"id": "original-automation", "name": "Original automation"},
+            })),
+            title: Some("Legacy channel failure".into()),
+            subagent_type: Some("legacy-channel-notice".into()),
+            interrupted_by_recreate: true,
+            delivery_operation_id: operation.map(str::to_string),
+            address_token: Some("slack:retained-room".into()),
+            failure_reason: Some("Original failure".into()),
+            session_key: Some("agent:channel-agent:main".into()),
+            ..marker("channel-agent", PendingWakeKind::ChannelDelivery, "recovery-work", 100.0)
+        };
+        let store = SandPendingWakeStore::new(&dir);
+        store.mark_pending_checked(observed.clone()).unwrap();
+        let original = std::fs::read(store.file_path()).unwrap();
+        drop(store);
+        for now in [PENDING_WAKE_STALE_MAX_AGE_MS + 200.0, PENDING_WAKE_STALE_MAX_AGE_MS * 2.0 + 300.0] {
+            let reopened = SandPendingWakeStore::new(&dir);
+            let runtime = Arc::new(FakeRuntime::with_store(reopened.clone()));
+            *runtime.can_execute.lock().unwrap() = true;
+            *runtime.channel_rearm_error.lock().unwrap() = error.map(str::to_string);
+            let service = PendingWakeRearm::new(Some(reopened.clone()), runtime.clone())
+                .with_now(Arc::new(move || now));
+            service.rearm_pending_wakes_checked().unwrap();
+            assert_eq!(runtime.channel_revivals.lock().unwrap().as_slice(), &[observed.clone()]);
+            assert_eq!(std::fs::read(reopened.file_path()).unwrap(), original);
+            assert_eq!(reopened.list_pending_checked().unwrap(), vec![observed.clone()]);
+            assert_eq!(runtime.reports.lock().unwrap().as_slice(), &[PendingWakeReport {
+                conversation_id: observed.agent_id.clone(),
+                outcome: if error.is_some() { "rearm_failed" } else { "rearmed" }.into(),
+                kind: PendingWakeKind::ChannelDelivery,
+                work_id: observed.work_id.clone(),
+                age_ms: Some(now - observed.marked_at_ms),
+                reason: error.map(|_| "error".to_string()),
+                is_quiet_origin: true,
+            }]);
+            assert!(runtime.cloud_watches.lock().unwrap().is_empty());
+            assert!(runtime.shell_watches.lock().unwrap().is_empty());
+            assert!(runtime.revived.lock().unwrap().is_empty());
+            assert!(runtime.interrupted.lock().unwrap().is_empty());
+        }
+        assert_eq!(SandPendingWakeStore::new(&dir).list_pending_checked().unwrap(), vec![observed]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+}
+
+#[test]
+fn channel_rearm_success_retains_complete_marker_across_reopen() {
+    assert_channel_rearm_retains_marker_across_reopen(None);
+}
+
+#[test]
+fn channel_rearm_error_retains_complete_marker_across_reopen() {
+    assert_channel_rearm_retains_marker_across_reopen(Some("recovery admission refused"));
+}
+
+#[test]
+fn checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let observed = DurablePendingWakeMarker {
+        quiet_origin: coerce_quiet_origin(&serde_json::json!({
+            "automation": {"id": "old-automation", "name": "Original automation"},
+        })),
+        title: Some("Original retained title".into()),
+        subagent_type: Some("legacy-channel-notice".into()),
+        interrupted_by_recreate: true,
+        delivery_operation_id: Some("old-operation".into()),
+        address_token: Some("slack:retained-room".into()),
+        failure_reason: Some("Original provider failure".into()),
+        session_key: Some("agent:channel-agent:main".into()),
+        ..marker("channel-agent", PendingWakeKind::ChannelDelivery, "old-operation", 10.0)
+    };
+    store.mark_pending_checked(observed.clone()).unwrap();
+    let channel_image = std::fs::read(store.file_path()).unwrap();
+    store.mark_pending_checked(marker("shell-agent", PendingWakeKind::Shell, "old-shell", 20.0)).unwrap();
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    *runtime.channel_rearm_error.lock().unwrap() = Some("provider unavailable".into());
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| PENDING_WAKE_STALE_MAX_AGE_MS + 1_000.0));
+    service.rearm_pending_wakes_checked().unwrap();
+
+    assert_eq!(runtime.channel_revivals.lock().unwrap().as_slice(), &[observed.clone()]);
+    assert!(runtime.shell_watches.lock().unwrap().is_empty());
+    assert_eq!(std::fs::read(store.file_path()).unwrap(), channel_image);
+    assert_eq!(SandPendingWakeStore::new(&dir).list_pending_checked().unwrap(), vec![observed.clone()]);
+    let reports = runtime.reports.lock().unwrap();
+    assert_eq!(reports.len(), 2);
+    assert!(reports.iter().any(|report| report.kind == PendingWakeKind::Shell
+        && report.work_id == "old-shell" && report.outcome == "pruned"));
+    assert!(reports.iter().any(|report| report.kind == PendingWakeKind::ChannelDelivery
+        && report.work_id == observed.work_id && report.outcome == "rearm_failed"));
+    assert!(!reports.iter().any(|report| report.kind == PendingWakeKind::ChannelDelivery
+        && report.outcome == "pruned"));
+    drop(reports);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn recreate_carry_still_excludes_channel_delivery_markers() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let observed = DurablePendingWakeMarker {
+        address_token: Some("slack:excluded-carry-room".into()),
+        failure_reason: Some("Retained failure".into()),
+        ..marker("channel-agent", PendingWakeKind::ChannelDelivery, "recovery-work", 100.0)
+    };
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone());
+    assert_eq!(service.restore_recreate_carried_pending_wakes(&[
+        serde_json::to_value(&observed).unwrap(),
+    ]), 0);
+    assert!(!store.file_path().exists());
+    assert!(runtime.channel_revivals.lock().unwrap().is_empty());
+    assert!(runtime.reports.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
 fn recreate_carry_filters_before_persisting_and_reports_frozen_outcomes() {
     let dir = root();
     let store = SandPendingWakeStore::new(&dir);
-    let runtime = Arc::new(FakeRuntime::default());
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
     let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
         .with_now(Arc::new(|| 500.0));
 
@@ -170,6 +463,18 @@ fn recreate_carry_filters_before_persisting_and_reports_frozen_outcomes() {
     let gone = marker("gone", PendingWakeKind::CloudAgent, "gone-1", 130.0);
     let group = marker("group", PendingWakeKind::CloudAgent, "group-1", 140.0);
     let subagent = marker("parent", PendingWakeKind::Subagent, "sub-1", 150.0);
+    let rearmed_cloud = DurablePendingWakeMarker {
+        marked_at_ms: 500.0,
+        title: Some("Cloud agent cloud-1".into()),
+        subagent_type: Some("cursor-agent".into()),
+        ..live_cloud.clone()
+    };
+    let callback_store = store.clone();
+    let callback_marker = rearmed_cloud.clone();
+    *runtime.admit_cloud_watch.lock().unwrap() = Some(Arc::new(move |observed| {
+        // Recovery transfers only the exact observed marker before awaiting.
+        Ok(callback_store.replace_if_matches(observed, callback_marker.clone()))
+    }));
     store.mark_pending(local.clone());
     runtime.gone.lock().unwrap().insert("gone".into());
     runtime.group.lock().unwrap().insert("group".into());
@@ -189,6 +494,7 @@ fn recreate_carry_filters_before_persisting_and_reports_frozen_outcomes() {
 
     assert_eq!(service.restore_recreate_carried_pending_wakes(&carried), 2);
     assert!(store.has_pending("cloud", PendingWakeKind::CloudAgent, "cloud-1"));
+    assert!(store.list_pending().contains(&rearmed_cloud));
     assert!(store.has_pending("shell", PendingWakeKind::Shell, "shell-1"));
     assert!(!store.has_pending("gone", PendingWakeKind::CloudAgent, "gone-1"));
     assert!(!store.has_pending("group", PendingWakeKind::CloudAgent, "group-1"));
@@ -205,5 +511,295 @@ fn recreate_carry_filters_before_persisting_and_reports_frozen_outcomes() {
     assert!(reports.iter().any(|r| r.work_id == "shell-1" && r.outcome == "carried"));
     assert!(reports.iter().any(|r| r.work_id == "shell-1" && r.outcome == "dropped_with_notice"));
     drop(reports);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn cloud_wake_survives_repeated_rearm_and_store_reopen_until_settlement() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let pending = marker("cloud", PendingWakeKind::CloudAgent, "cloud-1", 100.0);
+    assert!(store.mark_pending(pending.clone()));
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 500.0));
+
+    service.rearm_pending_wakes();
+    assert_eq!(store.list_pending(), vec![pending.clone()]);
+    service.rearm_pending_wakes();
+    assert_eq!(store.list_pending(), vec![pending.clone()]);
+    assert_eq!(
+        runtime.cloud_watches.lock().unwrap().as_slice(),
+        &[("cloud".into(), "cloud-1".into())],
+        "an armed watch is reused without admitting duplicate work",
+    );
+
+    let reopened = SandPendingWakeStore::new(&dir);
+    assert_eq!(reopened.list_pending(), vec![pending.clone()]);
+    let recovery = PendingWakeRearm::new(Some(reopened.clone()), runtime.clone())
+        .with_now(Arc::new(|| 600.0));
+    recovery.rearm_pending_wakes();
+    assert_eq!(reopened.list_pending(), vec![pending]);
+    assert_eq!(runtime.cloud_watches.lock().unwrap().len(), 1);
+
+    recovery.clear_settled_pending_wake("cloud", PendingWakeKind::CloudAgent, "cloud-1");
+    assert!(reopened.list_pending().is_empty());
+    assert!(SandPendingWakeStore::new(&dir).list_pending().is_empty());
+    assert!(runtime.reports.lock().unwrap().iter().any(|report| {
+        report.work_id == "cloud-1" && report.outcome == "settled"
+    }));
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn failed_cloud_rearm_preserves_the_observed_marker_for_retry() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    *runtime.admit_cloud_watch.lock().unwrap() =
+        Some(Arc::new(|_| Err("cloud watch admission failed".into())));
+    let pending = marker("cloud", PendingWakeKind::CloudAgent, "cloud-1", 100.0);
+    assert!(store.mark_pending(pending.clone()));
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 500.0));
+
+    service.rearm_pending_wakes();
+
+    assert_eq!(SandPendingWakeStore::new(&dir).list_pending(), vec![pending]);
+    assert!(!runtime.cloud_watch_is_armed("cloud", "cloud-1"));
+    assert!(runtime.reports.lock().unwrap().iter().any(|report| {
+        report.work_id == "cloud-1"
+            && report.outcome == "rearm_failed"
+            && report.reason.as_deref() == Some("error")
+    }));
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn cloud_rearm_preserves_an_admitted_marker_on_success_and_failure() {
+    for fail_watch in [false, true] {
+        let dir = root();
+        let store = SandPendingWakeStore::new(&dir);
+        let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+        *runtime.can_execute.lock().unwrap() = true;
+        let pending = marker("cloud", PendingWakeKind::CloudAgent, "cloud-1", 100.0);
+        let replacement = DurablePendingWakeMarker {
+            marked_at_ms: 200.0,
+            title: Some("Cloud agent cloud-1".into()),
+            subagent_type: Some("cursor-agent".into()),
+            ..pending.clone()
+        };
+        assert!(store.mark_pending(pending));
+        let callback_store = store.clone();
+        let callback_marker = replacement.clone();
+        *runtime.admit_cloud_watch.lock().unwrap() = Some(Arc::new(move |observed| {
+            assert!(callback_store.replace_if_matches(observed, callback_marker.clone()));
+            if fail_watch {
+                Err("cloud watch admission failed after replacement".into())
+            } else {
+                Ok(true)
+            }
+        }));
+        let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+            .with_now(Arc::new(|| 500.0));
+
+        service.rearm_pending_wakes();
+
+        assert_eq!(
+            SandPendingWakeStore::new(&dir).list_pending(),
+            vec![replacement.clone()],
+        );
+        let expected_outcome = if fail_watch { "rearm_failed" } else { "rearmed" };
+        assert!(runtime.reports.lock().unwrap().iter().any(|report| {
+            report.work_id == "cloud-1" && report.outcome == expected_outcome
+        }));
+        if !fail_watch {
+            service.rearm_pending_wakes();
+            assert_eq!(store.list_pending(), vec![replacement]);
+            assert_eq!(runtime.cloud_watches.lock().unwrap().len(), 1);
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+}
+
+#[test]
+fn cloud_rearm_rejects_a_marker_replaced_after_the_durable_snapshot() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    let pending = marker("cloud", PendingWakeKind::CloudAgent, "cloud-1", 100.0);
+    let replacement = DurablePendingWakeMarker { marked_at_ms: 200.0, ..pending.clone() };
+    assert!(store.mark_pending(pending));
+    let callback_store = store.clone();
+    let callback_marker = replacement.clone();
+    *runtime.before_cloud_armed_check.lock().unwrap() = Some(Arc::new(move || {
+        // A different admission wins after recovery has captured its older row.
+        assert!(callback_store.mark_pending(callback_marker.clone()));
+    }));
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 500.0));
+
+    service.rearm_pending_wakes();
+
+    assert_eq!(store.list_pending(), vec![replacement.clone()]);
+    assert_eq!(SandPendingWakeStore::new(&dir).list_pending(), vec![replacement]);
+    assert!(!runtime.cloud_watch_is_armed("cloud", "cloud-1"));
+    assert!(runtime.cloud_watches.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn cloud_completion_after_snapshot_before_first_armed_check_cannot_start_another_worker() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let (started_tx, started_rx) = mpsc::channel::<String>();
+    let (release_tx, release_rx) = mpsc::channel::<()>();
+    let release_rx = Mutex::new(release_rx);
+    let (settled_tx, settled_rx) = mpsc::channel::<()>();
+    let (changed_tx, changed_rx) = mpsc::channel::<()>();
+    let fresh_pending = Arc::new(Mutex::new(0usize));
+    let watches = RunnerCloudAgentWatches::new(
+        Arc::new(move |work_id, _| {
+            started_tx.send(work_id.to_string()).unwrap();
+            release_rx.lock().unwrap().recv_timeout(Duration::from_secs(2)).unwrap();
+            CloudAgentWatchOutcome { status: "completed".into(), text: "finished".into() }
+        }),
+        Some({
+            let store = store.clone();
+            let fresh_pending = Arc::clone(&fresh_pending);
+            Arc::new(move |pending| {
+                *fresh_pending.lock().unwrap() += 1;
+                assert!(store.mark_pending(cloud_pending_marker(pending)));
+            })
+        }),
+        Some({
+            let store = store.clone();
+            Arc::new(move |completion| {
+                let completed = cloud_pending_marker(&CloudAgentPendingWatch {
+                    parent_agent_id: completion.parent_agent_id,
+                    work_id: completion.work_id,
+                    title: completion.title,
+                    marked_at_ms: completion.marked_at_ms,
+                    quiet_origin: completion.quiet_origin,
+                });
+                assert!(store.clear_if_matches(&completed));
+                settled_tx.send(()).unwrap();
+            })
+        }),
+        Some(Arc::new(move |_| changed_tx.send(()).unwrap())),
+    );
+    assert!(watches.watch_cloud_agent("cloud", "cloud-1", CloudAgentWatchOptions::new(None, false)));
+    assert_eq!(started_rx.recv_timeout(Duration::from_secs(2)).unwrap(), "cloud-1");
+    changed_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    let persisted = store.list_pending();
+    assert_eq!(persisted.len(), 1);
+    let now_ms = persisted[0].marked_at_ms + 1.0;
+    let runtime = Arc::new(CloudRecoveryRuntime {
+        store: store.clone(),
+        watches: watches.clone(),
+        before_cloud_armed_check: Mutex::new(Some(Box::new({
+            let store = store.clone();
+            move || {
+                // rearm_pending_wakes has captured its durable snapshot, but
+                // has not yet observed the watch map. Force terminal settlement.
+                release_tx.send(()).unwrap();
+                settled_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+                changed_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+                assert!(store.list_pending().is_empty());
+            }
+        }))),
+        admissions: Mutex::new(Vec::new()),
+    });
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(move || now_ms));
+
+    service.rearm_pending_wakes();
+
+    assert_eq!(*runtime.admissions.lock().unwrap(), vec![false]);
+    assert_eq!(*fresh_pending.lock().unwrap(), 1, "recovery must not republish fresh pending work");
+    assert!(store.list_pending().is_empty());
+    assert!(SandPendingWakeStore::new(&dir).list_pending().is_empty());
+    assert!(!watches.is_cloud_watch_armed("cloud", "cloud-1"));
+    assert!(watches.async_task_snapshots("cloud").is_empty());
+    drop(service);
+    drop(runtime);
+    drop(watches);
+    assert_eq!(
+        started_rx.recv_timeout(Duration::from_secs(2)),
+        Err(mpsc::RecvTimeoutError::Disconnected),
+        "the settled snapshot must not admit a replacement completion worker",
+    );
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn cloud_completion_after_armed_check_is_not_resurrected_by_rearm() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    runtime.armed.lock().unwrap().insert(("cloud".into(), "cloud-1".into()));
+    let pending = marker("cloud", PendingWakeKind::CloudAgent, "cloud-1", 100.0);
+    assert!(store.mark_pending(pending.clone()));
+    let callback_store = store.clone();
+    let callback_runtime = Arc::downgrade(&runtime);
+    *runtime.after_cloud_armed_check.lock().unwrap() = Some(Arc::new(move || {
+        // Completion wins after the rearm read captured an armed watch.
+        callback_runtime
+            .upgrade()
+            .unwrap()
+            .armed
+            .lock()
+            .unwrap()
+            .remove(&("cloud".into(), "cloud-1".into()));
+        assert!(callback_store.clear_if_matches(&pending));
+    }));
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 500.0));
+
+    service.rearm_pending_wakes();
+
+    assert!(store.list_pending().is_empty());
+    assert!(SandPendingWakeStore::new(&dir).list_pending().is_empty());
+    assert!(!runtime.cloud_watch_is_armed("cloud", "cloud-1"));
+    assert!(runtime.cloud_watches.lock().unwrap().is_empty());
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn cloud_completion_during_watch_registration_is_not_resurrected_as_failure() {
+    let dir = root();
+    let store = SandPendingWakeStore::new(&dir);
+    let runtime = Arc::new(FakeRuntime::with_store(store.clone()));
+    *runtime.can_execute.lock().unwrap() = true;
+    *runtime.cloud_watch_finishes.lock().unwrap() = true;
+    let pending = marker("cloud", PendingWakeKind::CloudAgent, "cloud-1", 100.0);
+    let replacement = DurablePendingWakeMarker {
+        marked_at_ms: 200.0,
+        ..pending.clone()
+    };
+    assert!(store.mark_pending(pending));
+    let callback_store = store.clone();
+    *runtime.admit_cloud_watch.lock().unwrap() = Some(Arc::new(move |observed| {
+        // Recovery transfers its marker, then settles before returning.
+        assert!(callback_store.replace_if_matches(observed, replacement.clone()));
+        assert!(callback_store.clear_if_matches(&replacement));
+        Ok(true)
+    }));
+    let service = PendingWakeRearm::new(Some(store.clone()), runtime.clone())
+        .with_now(Arc::new(|| 500.0));
+
+    service.rearm_pending_wakes();
+
+    assert!(store.list_pending().is_empty());
+    assert!(SandPendingWakeStore::new(&dir).list_pending().is_empty());
+    assert!(!runtime.cloud_watch_is_armed("cloud", "cloud-1"));
+    assert_eq!(runtime.cloud_watches.lock().unwrap().len(), 1);
+    assert!(runtime.reports.lock().unwrap().iter().any(|report| {
+        report.work_id == "cloud-1" && report.outcome == "rearm_failed"
+    }));
     std::fs::remove_dir_all(dir).unwrap();
 }

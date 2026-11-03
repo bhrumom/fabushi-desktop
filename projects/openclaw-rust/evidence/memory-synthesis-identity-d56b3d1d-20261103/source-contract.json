@@ -1,0 +1,2147 @@
+{
+  "format": "memory-synthesis-identity-gap-assessment-v1",
+  "date": "2026-11-03",
+  "assessment_kind": "Read-only production-gap assessment; implementation and runtime verification not performed",
+  "review_identity": {
+    "agent": "/root/memory_synthesis_identity_gap",
+    "effort": "xhigh inherited parent configuration; no model override applied",
+    "repository": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+    "target_commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+    "target_tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+    "target_parent": "4fc23a22cc036ae138e5b7b367960d6cb337da0c",
+    "target_identity_basis": "Independently read locally fetched H commit metadata and immutable H tree/blob objects. The initial missing-wrapper/promisor-fetch failure was resolved after the parent fetched H; it is historical, not a remaining blocker.",
+    "working_head_observed_at_start": "eea788e757484924116f002f4a88b24a2b5c6cbf",
+    "working_tree_policy": "Working-tree content and old HEAD were not used as the assessment source. Existing concurrent changes were left untouched.",
+    "upstream_repository": "openclaw/openclaw",
+    "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "upstream_identity_basis": "The exact U/tree pair is recorded in H upstream.lock.json; selected source blobs were freshly acquired through the GitHub connector at exact U. This assessment did not independently reconstruct or verify the entire upstream tree.",
+    "constraints_observed": [
+      "No product edits",
+      "No shared schema, workflow, ledger, source-observation, ref, or CI mutations",
+      "No local or htch tests, builds, project validators, generators, or formatters",
+      "No CI dispatch",
+      "No peer reviewer conclusions consulted",
+      "Only this report and exact-U raw read artifacts under fusion-review/memory-synthesis-source were written"
+    ],
+    "verification_executed": false
+  },
+  "decision": {
+    "production_gap_present": true,
+    "finding": "One production background synthesis snapshot can be proposed under identity A and verified under identity B. The second request includes the same historical memories/evidence plus A's proposed changes. Each production callback independently resolves current route/model and credentials, so a valid identity change between the calls is accepted independently.",
+    "confidence": "High for static reachability and causality in exact H; no runtime reproduction was executed.",
+    "classification": "New bounded production behavior opportunity in existing Memory and Inference owners. CWB-v1 intentionally leaves independent summary calls fresh; the finding is not a claim that CWB's documented independent-summary behavior regressed.",
+    "recommended_batch": "Bind one background synthesis snapshot job's proposal, verification, and bounded retries to one process-local provider identity, including Native/Codex model and existing request binding.",
+    "strong_scope": "Freeze the selected provider for the job. Reuse the existing Native account/context binding and Codex credential-path/ChatGPT-workspace binding, with token rotation allowed within those identities. Explicitly scope model and credential continuity to Native/Codex until other provider owners are examined.",
+    "not_claimed": [
+      "OpenClaw memory equivalence",
+      "Full source-closure readiness",
+      "Privacy isolation between every stored memory's original human account and a later independently admitted background job",
+      "Full lifecycle-generation fencing",
+      "Durable restart continuation",
+      "Complete draining of existing detached inference workers",
+      "All-provider credential/model continuity",
+      "Packaged, real-provider, or platform acceptance"
+    ]
+  },
+  "governance": {
+    "authority": "AGENTS.md and main specification Revision 2 section 17 require risk-proportional source reading, current source identity, existing-owner production batches, honest partial-read facts, and Actions-based implementation verification. Global incomplete source closure does not by itself prevent a properly scoped later batch.",
+    "owner_domains": [
+      "OCRM-M20 Memory",
+      "OCRM-M06 Inference/provider model identity",
+      "OCRM-M03 credential identity",
+      "OCRM-M07 existing Session apply owner, preserved"
+    ],
+    "related_current_task": "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+    "existing_ledger_row": {
+      "id": "OCRM-RESP-MEM-SHORT-TERM-PROMOTION-001",
+      "observed_range": [
+        16238,
+        16330
+      ],
+      "limits": "This row describes ranking/evidence/CAS and has verification not-run and acceptance pending. Its historical source reference and wired/read-complete labels do not establish the new fixed-U dreaming execution graph, production proposal/verification identity continuity, atomic rollback of arbitrary multi-change failures, or runtime verification of this finding.",
+      "source_refs": [
+        {
+          "source_id": "H:projects/openclaw-rust/parity-ledger.json",
+          "lines": [
+            16238,
+            16330
+          ]
+        }
+      ]
+    },
+    "historical_dossier": "memory-knowledge-retrieval-scoped.md identifies an older source U and scoped contracts. It is preserved as historical attribution, not counted as fresh fixed-U reading.",
+    "source_refs": [
+      {
+        "source_id": "H:AGENTS.md",
+        "lines": [
+          1,
+          395
+        ]
+      },
+      {
+        "source_id": "H:docs/specs/openclaw-rust-equivalence-migration.md",
+        "lines": [
+          671,
+          720
+        ]
+      },
+      {
+        "source_id": "H:projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "lines": [
+          1,
+          155
+        ]
+      },
+      {
+        "source_id": "H:projects/openclaw-rust/module-map.md",
+        "lines": [
+          64,
+          69
+        ]
+      },
+      {
+        "source_id": "H:projects/openclaw-rust/module-map.md",
+        "lines": [
+          81,
+          81
+        ]
+      },
+      {
+        "source_id": "H:projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "lines": [
+          1,
+          111
+        ]
+      },
+      {
+        "source_id": "H:projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
+        "lines": [
+          1,
+          278
+        ]
+      },
+      {
+        "source_id": "H:projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "lines": [
+          1,
+          288
+        ]
+      }
+    ]
+  },
+  "production_path": [
+    {
+      "stage": "Activation",
+      "fact": "The authenticated-bootstrap experiment gate creates create_production_memory_synthesis with the same production Inference extension and MemoryService, then enables the synthesis service. MemoryExtension starts its background worker and installs a weak bridge; replacement/disabling disposes the old service.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/host_production_extensions.rs",
+          "lines": [
+            735,
+            739
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/host_production_extensions.rs",
+          "lines": [
+            797,
+            817
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/extension.rs",
+          "lines": [
+            1,
+            94
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "Turn evidence producer",
+      "fact": "After an eligible successful turn, main selects RecordEvidence when synthesis_enabled. It records agent id, evidence id, user text, assistant text, and timestamp through MemoryService; the admitted turn's provider/model/request bindings are not part of that bridge.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/app/src/main.rs",
+          "lines": [
+            12725,
+            12865
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/runner/turn_memory.rs",
+          "lines": [
+            135,
+            142
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            736,
+            745
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            1305,
+            1353
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "Separation from extraction",
+      "fact": "RecordEvidence returns without executing the admitted memory prompt closure. Extract mode separately uses run_turn_memory_prompt and current CWB turn bindings. Background synthesis can also be a temporal review of existing memories with no new turn evidence.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/runner/turn_memory.rs",
+          "lines": [
+            1,
+            266
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            552,
+            654
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            861,
+            880
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1000,
+            1040
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "Queue/snapshot",
+      "fact": "MemorySynthesisService owns bounded per-agent evidence/temporal queue, active/disposed state, snapshot selection, retries, deadline, and final apply. run_agent snapshots memories/evidence once for a retry sequence.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            155,
+            290
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            782,
+            787
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1000,
+            1047
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "Proposal and verification",
+      "fact": "Production closures each call the independent run_summarization_prompt. Proposal payload includes currentMemories and newEvidence. Verification includes the same snapshot memories and evidence plus proposedChanges. Both calls convert ProviderSessionError into String.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/production.rs",
+          "lines": [
+            101,
+            179
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            622,
+            639
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            684,
+            745
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "Independent identity selection",
+      "fact": "Each independent summary resolves the current route, current provider-bound Native/Codex default model, and a new Codex binding; it passes no Native binding. Native transport therefore loads its configured endpoint/credential file afresh for each call.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            234,
+            322
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            656,
+            772
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/provider_session.rs",
+          "lines": [
+            1076,
+            1164
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/provider_session.rs",
+          "lines": [
+            1189,
+            1199
+          ]
+        }
+      ]
+    },
+    {
+      "stage": "Late write admission",
+      "fact": "After verification, ProductionSynthesisTarget invokes the existing MemoryService apply gate. Session owns per-agent deletion locking, canonical store path/admission checks, and the FileMemoryStore fingerprint/apply operation. These occur after sensitive prompt dispatch.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/production.rs",
+          "lines": [
+            62,
+            99
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            1184,
+            1199
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/session/production.rs",
+          "lines": [
+            270,
+            296
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/session/production.rs",
+          "lines": [
+            2293,
+            2328
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/session/production.rs",
+          "lines": [
+            2450,
+            2479
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            403,
+            512
+          ]
+        },
+        {
+          "source_id": "H:source/host/app/src/main.rs",
+          "lines": [
+            15973,
+            15988
+          ]
+        }
+      ]
+    }
+  ],
+  "causal_scenarios": [
+    {
+      "id": "BG-SYN-IDENTITY-01",
+      "name": "Codex workspace and model switch between proposal and verification",
+      "preconditions": [
+        "Authenticated-bootstrap memory dreaming gate has enabled the real production service.",
+        "An existing agent target has historical memory M and pending evidence E, or a due temporal review.",
+        "Codex is the selected route in a runtime that permits it; valid credential image A at configured source P contains ChatGPT workspace A; provider-bound model default is model A.",
+        "Proposal returns nonempty valid changes grounded in E, or a permitted clock-only update/remove of synthesized memory."
+      ],
+      "steps": [
+        "run_agent captures M/E once.",
+        "Production propose calls the independent summary; that invocation selects Codex/model A and captures source P/workspace A.",
+        "While the proposal is in flight, SettingsService persists a valid Codex model B and the credential owner replaces P with a valid workspace-B image. Either change alone is sufficient for its respective identity dimension.",
+        "The proposal completes with changes C. No relevant service lifetime or attempt cancellation is required by these changes.",
+        "Production verify calls independent summary again. It reads model B and creates a fresh binding from valid P/workspace B.",
+        "The verification request sends M, E, and C to workspace B under model B. Both individual calls have internally valid fresh bindings; CWB does not compare them.",
+        "If verification approves and store/admission state remains valid, the apply gate can commit C. A later rejection or Stale result would not undo the prior disclosure."
+      ],
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/production.rs",
+          "lines": [
+            140,
+            171
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            697,
+            745
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1000,
+            1095
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            656,
+            697
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/settings/settings_service.rs",
+          "lines": [
+            856,
+            889
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/codex_request_binding.rs",
+          "lines": [
+            1,
+            165
+          ]
+        }
+      ],
+      "not_needed": [
+        "Malformed credentials",
+        "Provider fallback",
+        "Corrupted memory",
+        "A missing Session apply gate",
+        "A changed process environment",
+        "A test-only inference callback"
+      ]
+    },
+    {
+      "id": "BG-SYN-IDENTITY-02",
+      "name": "Provider route change where the product runtime permits it",
+      "fact": "The second summary reads InferenceService::route again, so a valid supported Settings provider change can select another provider for verification. Packaged/product mode forces Native, so this provider-switch scenario must not be presented as available there.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/inference/inference_service.rs",
+          "lines": [
+            60,
+            62
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            135,
+            152
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            656,
+            670
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/settings/settings_service.rs",
+          "lines": [
+            1249,
+            1260
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BG-SYN-IDENTITY-03",
+      "name": "Packaged Native credential context and model change",
+      "fact": "Even with the route pinned to Native by product mode, each independent summary resolves its Native model and constructs an unbound Native transport. Replacing the valid credential image with a different issuer/user/device/session context can change the recipient account context between passes. Existing Native binding already provides the narrower identity comparison needed by a job-bound summary.",
+      "qualification": "Native context comprises issuer, user_id, device_id, session_id; it is not the same identity type as Codex's ChatGPT workspace. Tests and claims must keep these scopes distinct.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            135,
+            152
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            671,
+            695
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/provider_session.rs",
+          "lines": [
+            1076,
+            1164
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/provider_session.rs",
+          "lines": [
+            1189,
+            1199
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/auth/auth_service.rs",
+          "lines": [
+            29,
+            89
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BG-SYN-IDENTITY-04",
+      "name": "Retry recapture",
+      "fact": "A deadline, transport failure, verification refusal, or invalid output may retry the entire proposal/verification pair with the same M/E snapshot. The global callbacks fresh-capture identity again on every call. Callback errors are reduced to Failed and all attempt errors are eligible for the bounded retry loop; there is no typed permanent identity-refusal branch.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            697,
+            745
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1129,
+            1201
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/production.rs",
+          "lines": [
+            140,
+            171
+          ]
+        }
+      ]
+    }
+  ],
+  "current_boundaries": {
+    "state_owner": {
+      "fact": "Queue and active/disposed/started state are private to MemorySynthesisService. There is no model/provider/credential generation or original turn epoch in that state, its evidence records, or SynthesisSnapshot. This is a statement about these inspected owners, not a claim that the whole application has no generations.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            155,
+            290
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            782,
+            787
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            101,
+            105
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            736,
+            745
+          ]
+        }
+      ]
+    },
+    "admission": {
+      "fact": "Initial enablement is an authenticated-bootstrap experiment decision. Target lookup currently checks agent directory existence; temporal listing enumerates agent directories. Session's canonical-store/deletion/admission gate is at final apply, not before proposal or verification. That gate checks current recorded session/key/lifecycle presence, but does not compare a generation captured at synthesis start. Legacy absent admission records can remain admitted by the inspected method.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/host_production_extensions.rs",
+          "lines": [
+            797,
+            817
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            1355,
+            1378
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/session/production.rs",
+          "lines": [
+            270,
+            296
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/session/production.rs",
+          "lines": [
+            2450,
+            2479
+          ]
+        }
+      ]
+    },
+    "fingerprint": {
+      "fact": "Snapshot fingerprint hashes selected memory paths and readable contents. It protects against changed memory file content when apply rereads it; it contains no provider/model/account identity. Current apply also preflights append destinations and protects explicit memories/tombstones under existing rules. Full arbitrary multi-change transaction rollback is not established by this inspection.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            403,
+            579
+          ]
+        }
+      ]
+    },
+    "permission": {
+      "fact": "The summary exposes no tools and a rejecting tool callback, which limits tool effects. It still transmits the memory/evidence payload to its selected provider. No-tools, evidence grounding, explicit-memory protection, and late write admission are separate from recipient identity continuity.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            699,
+            772
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            714,
+            738
+          ]
+        }
+      ]
+    },
+    "cancel": {
+      "fact": "Service lifetime and per-attempt AtomicBool flags are shared with the worker; checks surround propose/verify, retry waits, and inference entry. Cancellation is not derived from the original turn after RecordEvidence. There is no automatic provider/model/credential-change cancellation in the inspected synthesis state and callbacks.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            642,
+            682
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            697,
+            745
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1129,
+            1201
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/production.rs",
+          "lines": [
+            656,
+            713
+          ]
+        }
+      ]
+    },
+    "deadline_and_dispose": {
+      "fact": "Each attempt runs in a spawned inference thread with a receive timeout; timeout cancels that attempt. Its JoinHandle is not retained/joined. Dispose cancels the lifetime, stops/joins the background scheduler, and clears state. Detached inference threads may still unwind. A timed-out worker cannot itself apply because only run_agent applies and its result channel has been abandoned. Do not claim all model work has drained.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            975,
+            998
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1165,
+            1201
+          ]
+        }
+      ]
+    },
+    "success_cancel_race": {
+      "fact": "After a worker's final cancellation check returns changes, run_agent's success path proceeds to target.apply_synthesis without its own immediate cancellation recheck. A deterministic cancellation-before-apply oracle and any new guarantee must address this existing seam; the read does not prove a general no-late-commit invariant.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            741,
+            744
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1042,
+            1095
+          ]
+        }
+      ]
+    },
+    "temporal_metadata": {
+      "fact": "Inference/retry errors currently advance a temporal review marker unless the whole service is cancelled, then finish consumed evidence. Failed store apply was separately corrected to leave the marker untouched. A new identity-refusal category needs an explicit metadata policy instead of being accidentally folded into generic Failed.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1048,
+            1067
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1096,
+            1109
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/production.rs",
+          "lines": [
+            93,
+            97
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_service.rs",
+          "lines": [
+            522,
+            532
+          ]
+        }
+      ]
+    },
+    "stale_and_concurrent_evidence": {
+      "fact": "Stale leaves the original evidence/temporal item queued and marks another pass; a later run_agent takes a fresh store snapshot. Successful/nonstale finish consumes only the snapshot's evidence ids, preserving newly queued distinct evidence. No identity is currently retained across this boundary.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            155,
+            290
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1090,
+            1109
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/production_append_read_tests.rs",
+          "lines": [
+            285,
+            330
+          ]
+        }
+      ]
+    },
+    "restart": {
+      "fact": "The pending evidence queue and cancellation/job state are in process. Restart/replacement loses that in-memory queue; start can discover persisted memories that are due for temporal review. No synthesis identity checkpoint or durable resumption is present in the inspected service. A later process starts an independently admitted maintenance job.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/memory/extension.rs",
+          "lines": [
+            46,
+            94
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            782,
+            880
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            975,
+            998
+          ]
+        }
+      ]
+    }
+  },
+  "fixed_upstream_comparison": {
+    "purpose": "Fresh fixed-U reading establishes relevant existing upstream ownership/admission/cancellation patterns. It is not evidence that upstream implements exactly the proposed target two-pass identity contract.",
+    "findings": [
+      {
+        "fact": "The memory-core dreaming service selects a stable filesystem-workspace owner agent for model/credential context, forwards the owner/model into promotion/narrative work, and tracks background narrative tasks for service stop. This workspace owner is an agent/configuration owner, not proof of a ChatGPT workspace identity.",
+        "source_refs": [
+          {
+            "source_id": "U:extensions/memory-core/src/dreaming.ts",
+            "lines": [
+              1,
+              120
+            ]
+          },
+          {
+            "source_id": "U:extensions/memory-core/src/dreaming.ts",
+            "lines": [
+              121,
+              355
+            ]
+          },
+          {
+            "source_id": "U:extensions/memory-core/src/dreaming.ts",
+            "lines": [
+              431,
+              657
+            ]
+          }
+        ]
+      },
+      {
+        "fact": "The inspected sweep tail separates model work from the workspace lock and revalidates before publishing a promotion result. Narrative completion requires an owner agent and revalidates narrative source-entry/context state before append. Authorization-denied errors are explicitly not treated as a configured-model-unavailable fallback.",
+        "source_refs": [
+          {
+            "source_id": "U:extensions/memory-core/src/dreaming-phases.ts",
+            "lines": [
+              1151,
+              1216
+            ]
+          },
+          {
+            "source_id": "U:extensions/memory-core/src/dreaming-narrative.ts",
+            "lines": [
+              1,
+              319
+            ]
+          }
+        ]
+      },
+      {
+        "fact": "The inspected consolidation entrypoint runs owner-agent/model completions over candidate groups and validates parsed results against current memory/candidates before returning a plan. Its earlier parser/validation implementation was not fully read in this review.",
+        "source_refs": [
+          {
+            "source_id": "U:extensions/memory-core/src/dreaming-consolidation.ts",
+            "lines": [
+              383,
+              476
+            ]
+          }
+        ]
+      },
+      {
+        "fact": "The actual Gateway subagent.complete path authorizes before queueing and after dequeue, combines user/runtime/restart/execution cancellation, resolves model/profile under execution context, enforces model permission, and retains execution capacity through cleanup. Gateway plugin retirement aborts the bound runtime lifetime. This is the reachable completion path, distinct from the separate direct plugin runtime-llm API.",
+        "source_refs": [
+          {
+            "source_id": "U:src/gateway/server-plugins.ts",
+            "lines": [
+              295,
+              373
+            ]
+          },
+          {
+            "source_id": "U:src/gateway/server-plugin-subagent-runtime.ts",
+            "lines": [
+              349,
+              481
+            ]
+          }
+        ]
+      },
+      {
+        "fact": "Execution-auth-binding.ts describes process-local ephemeral execution identity tied to harness/provider/model/API/auth profile and stable owner or credential fingerprints; it accommodates token rotation for stable identity. The exact fingerprint/authority type is broader and different from target Codex path/workspace binding, so it is a design comparison rather than a claim of direct type equivalence.",
+        "source_refs": [
+          {
+            "source_id": "U:src/agents/execution-auth-binding.ts",
+            "lines": [
+              1,
+              295
+            ]
+          }
+        ]
+      },
+      {
+        "fact": "The separately inspected direct runtime-llm path retains current operator authority and a prepared model lease for a completion. Simple-completion runtime uses prepared model execution generations. These support explicit owner/admission reasoning but must not be conflated with the actual Gateway subagent.complete path or treated as proof that all dreaming passes share one credential identity.",
+        "source_refs": [
+          {
+            "source_id": "U:src/plugins/runtime/runtime-llm.runtime.ts",
+            "lines": [
+              156,
+              452
+            ]
+          },
+          {
+            "source_id": "U:src/plugins/runtime/runtime-llm-operator-authority.ts",
+            "lines": [
+              1,
+              97
+            ]
+          },
+          {
+            "source_id": "U:src/agents/simple-completion-runtime.ts",
+            "lines": [
+              120,
+              198
+            ]
+          },
+          {
+            "source_id": "U:src/agents/simple-completion-runtime.ts",
+            "lines": [
+              433,
+              560
+            ]
+          }
+        ]
+      },
+      {
+        "fact": "The selected agent-runner-memory maintenance range passes prepared run admission/source-policy session context and cancellation through memory-flush execution. It is a separate turn-maintenance path, not the same shape as target background proposal/verification.",
+        "source_refs": [
+          {
+            "source_id": "U:src/auto-reply/reply/agent-runner-memory.ts",
+            "lines": [
+              717,
+              930
+            ]
+          }
+        ]
+      }
+    ],
+    "limits": [
+      "No fixed-U source inspected here establishes that every completion of one entire dreaming sweep shares one immutable provider/model/credential identity. The recommended target job contract is a bounded inference from the causal target gap and relevant upstream owner/admission principles.",
+      "The actual downstream src/agents/isolated-completion.ts, model-fallback-runner.ts, and full prepareInProcessAgentExecution implementation were not acquired/deep-read in this assessment.",
+      "Runtime-llm-isolated.ts was acquired and search-indexed only; no contiguous range is credited as deep-read.",
+      "Dreaming phases, consolidation, Gateway runtime, simple completion, and memory-flush sources retain explicit partial ranges; full acquired raw text is not full-read credit.",
+      "Upstream branch head/latest main was not substituted for U."
+    ]
+  },
+  "recommended_existing_owner_contract": {
+    "label": "Background synthesis job identity, first bounded batch",
+    "status": "Proposal only; no implementation approved or performed by this agent",
+    "logical_job": "One actual run_agent input snapshot: agent target, selected currentMemories, evidence batch, and temporal flag, including every proposal/verification attempt in its bounded retry sequence.",
+    "admission_point": "Allocate the job handle once after target/snapshot selection and before perform_with_retry. Resolve its identity at most once before first possible model dispatch. Keep any settings/credential I/O within the existing bounded inference-worker/deadline path; an allocation-only job factory plus sticky one-time admission shared by both callbacks and every retry is a viable shape.",
+    "identity_fields": [
+      "Selected RoutedProvider, captured once.",
+      "For Native: resolved provider-bound model and existing FabushiResponsesRequestBinding (issuer/user/device/session context, credential source, endpoint); no token snapshot.",
+      "For Codex: resolved provider-bound model and existing CodexResponsesRequestBinding (absolute credential source and ChatGPT workspace); no token snapshot.",
+      "Only the existing provider owners may load/validate current credentials for each actual transport; same-identity token rotation remains legal."
+    ],
+    "minimal_implementation_shape": [
+      "ProductionInferenceExtension owns a small opaque process-local summary-job identity/handle and invokes its existing summary implementation with that identity. Do not make MemoryService parse credentials or persist auth fields.",
+      "MemorySynthesisOptions/MemorySynthesisService gains an existing-owner job factory or paired job executor allocated once per run_agent. Proposal and verification use that same handle; run_attempt_with_deadline clones it into each worker. Keep Memory's parser, evidence validation, retry scheduler, apply flow, and report owner.",
+      "The factory should be allocation-only if called on the scheduler thread. A sticky per-job admission result inside a worker prevents recapture after transient retry, timeout overlap, or a failed permanent admission. A credential capture that finishes after attempt cancellation may populate the same job identity, but that cancelled attempt must not dispatch; any retry uses the same recorded identity.",
+      "Preserve ordinary independent run_summarization_prompt fresh-call semantics. Background synthesis invokes an explicit job-bound summary method. Turn extraction and automatic compaction continue to use their existing admitted turn methods.",
+      "Retain typed cancellation/authentication/configuration categories across the production Memory callback boundary. A permanent identity/configuration refusal must not be stringified into an indistinguishable retryable failure or retried through a fresh independent summary.",
+      "Check service/attempt cancellation before admission work, after admission, before each model phase, and again before consuming a successful worker result for apply. Keep timing semantics explicit; a final check alone is not a proof of atomic cancellation versus a concurrently starting filesystem commit."
+    ],
+    "refusal_policy": {
+      "provider_model_changes": "A settings change affects the next newly admitted job; it cannot select another provider or Native/Codex model inside the current job.",
+      "credential_replacement": "If the bound source no longer contains the admitted workspace/context, stop before the next HTTP dispatch. Do not recapture a new binding or fall back to another provider for that job.",
+      "token_rotation": "Valid token/expiry replacement retaining the existing identity is allowed and the new token must be used by the next transport.",
+      "state_effect": "Recommended targeted terminal identity refusal: no apply, no temporal-review marker advance, and settle the current queue attempt under existing finish semantics without immediate replay. New independently admitted work can retry later. Ordinary Invalid/Rejected/no-op temporal policies and store-I/O failure policy remain as specified by their existing contracts.",
+      "diagnostics": "Keep existing public Failed/report shape if compatibility requires it, but retain a typed internal cause sufficient for nonretryable classification and a deterministic test observation. Do not include tokens, memory text, or credentials in diagnostics."
+    },
+    "stale_boundary": {
+      "recommendation": "For this smallest batch, Stale retires the snapshot-specific job identity. The next automatic run_agent takes a fresh memory snapshot and receives a new maintenance admission. No proposal/result from the stale job crosses that boundary.",
+      "why": "This preserves the existing resnapshot/retry ownership and avoids attaching credential identity to long-lived agent state. The promise is continuity within a snapshot job and all its retries, not permanent identity for every piece of historical evidence.",
+      "limit": "The same evidence ids may remain queued across Stale, so this scoped policy can send them under a later newly admitted identity. State this explicitly in the spec and oracle.",
+      "stronger_alternative": "If the intended contract is one identity until a pending queue item fully settles, retain the job identity in the existing PendingAgent state across Stale and concurrent-evidence merging. That is a larger queue-lifetime contract; it must not be silently claimed by a per-run_agent implementation."
+    },
+    "restart_and_scope": [
+      "Identity stays process-local and opaque. No Settings document, Session checkpoint, queue journal, or second credential store is introduced.",
+      "Service replacement/restart retires the handle. A later process/independent temporal sweep is a new admission; no durable credential identity or queued evidence continuation is claimed.",
+      "Provider route can be fixed for all supported routes with the captured enum. Native/Codex model and credential identity use existing bindings. Cursor/OpenRouter/ClaudeCode account/model continuity needs its own source/owner review before being included in the guarantee.",
+      "Existing Session final apply gate, canonical memory directory, deletion lock, fingerprint, explicit-memory protection, grounding rules, append read-integrity, and tombstones remain the authoritative write controls.",
+      "No new UI, scheduler, inference router, Memory database, global identity cache, or source-specific parallel implementation is needed."
+    ],
+    "candidate_edit_allowlist_for_a_later_batch": [
+      {
+        "path": "source/host/src/extensions/inference/production.rs",
+        "purpose": "Opaque summary-job admission and bound summary entrypoint; reuse provider-specific models/bindings and existing summary options/usage."
+      },
+      {
+        "path": "source/host/src/extensions/memory/production.rs",
+        "purpose": "Allocate one production inference job per Memory snapshot job and use it for both real proposal and verification; preserve typed failures."
+      },
+      {
+        "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "purpose": "One job handle per run_agent retry sequence, typed permanent-refusal handling, narrow pre-apply cancellation recheck and defined temporal behavior."
+      },
+      {
+        "path": "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "purpose": "Reuse real Session/Memory fixture and byte-tree assertions; add or colocate real production synthesis/inference integration cases."
+      },
+      {
+        "path": "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+        "purpose": "Reuse private synthetic credential/real-request fixture with test-only worker-scope hook entry; retain fixed production URL and same-thread hook safety."
+      },
+      {
+        "path": "source/host/tests/memory_synthesis_service_contract.rs",
+        "purpose": "Update affected callback/job API tests and retry/deadline outcome contracts without substituting them for the production oracle."
+      }
+    ],
+    "possible_test_only_seam": "A scoped cfg(test) worker-entry facility is needed if reusing the existing thread-local Codex request hook: the hook is Rc-based and thread-affine, while service inference runs on new worker threads. Pass only a Send-safe fixture plan to the worker and construct/enter the existing hook on that worker; never move its Rc across threads or add a process-global endpoint override. Native loopback transport can exercise the real service without this Codex hook but is not a replacement for a Codex identity case.",
+    "non_goals": [
+      "Changing the generic independent summary API to reuse a global binding",
+      "Capturing at service startup or once for every agent",
+      "Reusing an arbitrary original turn binding for a job aggregating multiple turns or a temporal-only job",
+      "Claiming original memory-account ownership",
+      "Repairing all detached-worker drain semantics or Session lifecycle-generation behavior in this batch",
+      "Changing shared source schemas/workflow gates or promoting global progress flags"
+    ]
+  },
+  "proposed_causal_oracle": {
+    "status": "Design only; no oracle was run and no pass/fail result is asserted",
+    "required_path": "Real MemoryExtension/MemoryService bridge -> real MemorySynthesisService queue/start/run_now -> create_production_memory_synthesis callbacks -> ProductionInferenceExtension -> actual Native/Codex request builder/HTTP transport -> real Session-bound apply gate -> real FileMemoryStore.",
+    "fixture": [
+      "Create a real agent session with ProductionSessionWorkers/SandAgentSessionStore; bind_memory_synthesis_gate; seed historical synthesized and explicit memories plus a tombstone using the admitted filesystem owner.",
+      "Enable the real production synthesis service, queue a distinctive evidence record through MemoryService::record_memory_evidence, and invoke the real service run_now deterministically. The default poller need not be used as a timer oracle.",
+      "Use fixture-owned temporary private synthetic credential files and a controlled loopback HTTP responder; no real user credentials or external-account services are required for this boundary test.",
+      "Keep production proposal and verification callbacks, production request serialization, provider model resolution, credential loading, cancellation, usage, parsing, and apply behavior. Do not replace propose/verify with canned Rust closures in the claimed production oracle.",
+      "Return valid proposal JSON with an existing snapshot memory id and real evidence id, then valid approval JSON using the provider's actual response envelope. Assert phase 1 reached the server with the historical/evidence sentinel and a nonempty proposal, so a zero-dispatch negative result cannot pass vacuously.",
+      "Use an explicit server-response barrier to perform the settings/credential mutation before returning phase-1 completion. Avoid sleeps as the causal trigger.",
+      "Snapshot complete memory/origin/tombstone/refresh bytes and current admission record before the failure case. Observe dispatch count and headers/body within the private fixture; do not export secret values into evidence logs.",
+      "If shortened retry/deadline timing is needed, use a test-only timing configuration that preserves the same production inference callbacks and job factory."
+    ],
+    "cases": [
+      {
+        "id": "BG-SYN-O01",
+        "purpose": "Positive continuity with same-workspace token rotation and a changed current default model",
+        "event": "Proposal reaches Codex workspace A/model A. At its response barrier, persist model B and rotate A's token while preserving workspace A at the bound file; verify approves.",
+        "expected": "Both phases use model A and workspace A; verify uses the rotated A token. Exactly one commit appears through the real Session gate, with expected synthesized memory, preserved explicit/tombstoned records, and normal temporal metadata. A later independent job uses current model B.",
+        "causal_value": "Rejects a permanently frozen token, global service identity cache, per-call model recapture, or a vacuous no-work fixture."
+      },
+      {
+        "id": "BG-SYN-O02",
+        "purpose": "Negative Codex workspace replacement between phases",
+        "event": "Proposal reaches workspace A/model A and returns valid changes. Replace the bound source with valid workspace B before its completion is delivered.",
+        "expected": "No verification HTTP and no second proposal retry occur under B. The job records a terminal typed identity refusal; complete memory/metadata bytes and Session admission record remain unchanged. Current temporal due marker stays due. A later independently admitted B job can succeed.",
+        "causal_value": "The present H code would fresh-capture B for verify; the corrected code must reject B before that request without relying on an eventual stale/apply failure."
+      },
+      {
+        "id": "BG-SYN-O03",
+        "purpose": "Positive and negative retry identity",
+        "event": "Make the first proposal return a real retryable transport/server failure. Positive branch rotates token within A and changes current default to model B; negative branch replaces source with workspace B.",
+        "expected": "Positive retry and its verification remain model A/workspace A and commit once. Negative branch has no B dispatch and does not reset admission or retry a permanent identity refusal. Counts distinguish the initial failed request from later attempts.",
+        "causal_value": "Proves the job handle survives the real retry loop and worker replacement, rather than only being shared between two successful callbacks."
+      },
+      {
+        "id": "BG-SYN-O04",
+        "purpose": "Packaged Native account context continuity",
+        "event": "Use the Native route with valid fixture credential context A and model A. Between phases rotate only token/expiry in the positive branch, then replace issuer/user/device/session context in the negative branch. Change current Native default model to B.",
+        "expected": "Positive verify uses rotated token with model A and commits. Negative branch refuses before the second HTTP request, performs no apply/temporal advance, and never recaptures context B. A later independent job can use B.",
+        "causal_value": "Covers the product-mode route where provider switching is unavailable but the actual unbound Native independent-summary gap still exists."
+      },
+      {
+        "id": "BG-SYN-O05",
+        "purpose": "Provider route continuity where route switching is supported",
+        "event": "Start a job under a supported nonpackaged route A; persist route B after a valid proposal.",
+        "expected": "Verification stays on the job's captured route A (and its Native/Codex model/binding if applicable), or fails under that captured route's own authorization. No route-B request carries old proposal/evidence. A new independent job selects B.",
+        "causal_value": "Proves freezing the provider enum rather than only a provider-specific model string. Do not assert this route switch is available in product/packaged mode."
+      },
+      {
+        "id": "BG-SYN-O06",
+        "purpose": "Cancellation and deadline containment on the real worker path",
+        "event": "Exercise cancellation before admission, during the explicit proposal-response barrier, and before the successful result is consumed for apply; separately expire an attempt while the server delays completion.",
+        "expected": "Already-cancelled entry performs no credential/HTTP work. Cancellation before verification yields no second phase/apply. A timed-out worker's late completion cannot apply or reacquire a new identity; subsequent allowed retries share the job handle. If claiming no commit after cancellation before apply, exercise the consumer-side check explicitly.",
+        "causal_value": "Does not equate cancelled status with full worker drainage. Retain a separate source limitation for detached JoinHandles and avoid asserting race-free cancellation linearization without an owner contract."
+      },
+      {
+        "id": "BG-SYN-O07",
+        "purpose": "Stale boundary and concurrent evidence",
+        "event": "Mutate an unrelated readable memory byte after snapshot but before apply; also enqueue a distinct new evidence id during the job.",
+        "expected": "The current job returns Stale and makes no write beyond the fixture mutation; original pending evidence remains and new evidence is preserved. A later run_agent resnapshots and follows the explicitly selected new-admission policy. Old proposed changes are not reused. Assert the chosen identity behavior at this boundary instead of leaving it incidental.",
+        "causal_value": "Distinguishes same-job retries from a fresh snapshot job and prevents accidental loss of concurrent evidence."
+      },
+      {
+        "id": "BG-SYN-O08",
+        "purpose": "Temporal-only and existing refusal controls",
+        "event": "Run a due historical-memory target with zero new evidence, a grounded clock-only update/remove, then no-op, unknown evidence, explicit-memory update, invalid destination, and verifier rejection controls.",
+        "expected": "Temporal work also receives one job identity; it is not dependent on an originating turn binding. Existing grounding, explicit-memory, tombstone, append-read integrity, Invalid/Stale and ordinary temporal policies remain intact. The new identity-refusal marker policy is asserted separately.",
+        "causal_value": "Prevents a repair that only covers recent-turn evidence or masks regressions behind rejected proposals."
+      }
+    ],
+    "test_seam_risk": {
+      "fact": "Existing Codex request_hook is thread-local and backed by Rc. Installing it on the thread that calls service.run_now will not automatically intercept transport construction inside sand-memory-synthesis-inference workers. A direct inference helper test or an injected-proposal service test cannot substitute for this integration.",
+      "source_refs": [
+        {
+          "source_id": "H:source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+          "lines": [
+            1,
+            240
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/inference/provider_session.rs",
+          "lines": [
+            1166,
+            1185
+          ]
+        },
+        {
+          "source_id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+          "lines": [
+            1165,
+            1191
+          ]
+        }
+      ],
+      "required_resolution": "Enter the current scoped hook on each actual worker from a Send-safe test-only plan; observe the original fixed URL/headers/body before redirecting only destination to a fixture-owned loopback responder. Preserve same-thread/liveness protections and do not add a production URL override."
+    },
+    "existing_evidence_limits": [
+      {
+        "fact": "Current memory_synthesis_service_contract's positive/rejection/deadline tests inject Rust closures and therefore cannot verify production identity selection.",
+        "source_refs": [
+          {
+            "source_id": "H:source/host/tests/memory_synthesis_service_contract.rs",
+            "lines": [
+              59,
+              175
+            ]
+          },
+          {
+            "source_id": "H:source/host/tests/memory_synthesis_service_contract.rs",
+            "lines": [
+              251,
+              307
+            ]
+          }
+        ]
+      },
+      {
+        "fact": "Production append-read tests use actual Session/store targets and thorough byte assertions, but their service_for callback injects proposal JSON. Reuse that owner fixture while reaching the real production factory/inference for this batch.",
+        "source_refs": [
+          {
+            "source_id": "H:source/host/src/extensions/memory/production_append_read_tests.rs",
+            "lines": [
+              1,
+              165
+            ]
+          },
+          {
+            "source_id": "H:source/host/src/extensions/memory/production_append_read_tests.rs",
+            "lines": [
+              167,
+              333
+            ]
+          }
+        ]
+      }
+    ],
+    "future_evidence_lane": "Only a later authorized implementation batch should run the repository's required GitHub Actions gates on its exact candidate head. This assessment neither dispatched CI nor selected a green result. Parent-reported CWB receipt correction/shared CI status is not evidence from this assessment."
+  },
+  "source_receipt": {
+    "method": "Risk-proportional deep reading of exact H production owners and fixed-U primary sources. Contiguous deep-read ranges are explicit. File metadata/raw acquisition/search hits do not imply full semantic reading.",
+    "range_convention": "Inclusive physical lines; final trailing newline is not counted as a phantom extra line.",
+    "target_sources": [
+      {
+        "path": "AGENTS.md",
+        "blob_sha": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+        "byte_length": 54199,
+        "physical_lines": 395,
+        "trailing_newline": true,
+        "id": "H:AGENTS.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            395
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "blob_sha": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+        "byte_length": 69579,
+        "physical_lines": 898,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            155
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "docs/specs/openclaw-rust-equivalence-migration.md",
+        "blob_sha": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+        "byte_length": 91359,
+        "physical_lines": 720,
+        "trailing_newline": true,
+        "id": "H:docs/specs/openclaw-rust-equivalence-migration.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            671,
+            720
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/module-map.md",
+        "blob_sha": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+        "byte_length": 43564,
+        "physical_lines": 279,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/module-map.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            70
+          ],
+          [
+            80,
+            90
+          ],
+          [
+            95,
+            120
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "blob_sha": "7e64ad5b1384d6881e99254495002b1266f0a1d1",
+        "byte_length": 8056,
+        "physical_lines": 111,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            111
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md",
+        "blob_sha": "1f0ecfb239f840df5e2ce5237029a78d945b4b9e",
+        "byte_length": 55857,
+        "physical_lines": 779,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            100
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
+        "blob_sha": "5877732b0f212dc6d2adcdbd18b193edded4c8a0",
+        "byte_length": 18142,
+        "physical_lines": 278,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            278
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "blob_sha": "fc5984bfbbad3febfbda0fc05f377836b1613f04",
+        "byte_length": 22652,
+        "physical_lines": 288,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            288
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "blob_sha": "4292a12fa7340ebc5157c7253b58f4945e50dd0d",
+        "byte_length": 128155,
+        "physical_lines": 1924,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/docs/specs/session-work-admission.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            98
+          ],
+          [
+            608,
+            630
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md",
+        "blob_sha": "726cf60244bc7193c9fc226811d101dfc7e8e0e0",
+        "byte_length": 8458,
+        "physical_lines": 112,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/dossiers/memory-knowledge-retrieval-scoped.md",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            112
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/upstream.lock.json",
+        "blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+        "byte_length": 3495,
+        "physical_lines": 73,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/upstream.lock.json",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            73
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/index.json",
+        "blob_sha": "da4677e30dba551a357ad0a7aad9c2995d8e060e",
+        "byte_length": 7661,
+        "physical_lines": 186,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/inventory/index.json",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            90
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "blob_sha": "32cedcdb059dacace773bd66cdb3507b06a83d08",
+        "byte_length": 1407068,
+        "physical_lines": 36337,
+        "trailing_newline": true,
+        "id": "H:projects/openclaw-rust/parity-ledger.json",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            16235,
+            16332
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/memory/production.rs",
+        "blob_sha": "b369633a88a68c027d43d7718beb323dc54bfc6d",
+        "byte_length": 6754,
+        "physical_lines": 184,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/memory/production.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            184
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/memory/extension.rs",
+        "blob_sha": "c57cd1e66a31e7fb35f9208aed0f5f9f6a1447ca",
+        "byte_length": 2851,
+        "physical_lines": 94,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/memory/extension.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            94
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/memory/memory_service.rs",
+        "blob_sha": "a8a084a38d3717686393847746468bc10b91b337",
+        "byte_length": 51623,
+        "physical_lines": 1574,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/memory/memory_service.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            75,
+            115
+          ],
+          [
+            395,
+            585
+          ],
+          [
+            728,
+            756
+          ],
+          [
+            1144,
+            1398
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "blob_sha": "3b2bff3589c306e273a188f34899ab877506ac38",
+        "byte_length": 43873,
+        "physical_lines": 1325,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/memory/memory_synthesis_service.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            1325
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/memory/production_append_read_tests.rs",
+        "blob_sha": "70d227908f5cc537239480a5334b60b2991ead77",
+        "byte_length": 17650,
+        "physical_lines": 333,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/memory/production_append_read_tests.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            333
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/tests/memory_synthesis_service_contract.rs",
+        "blob_sha": "44fbdf57458e82051d5f1fdc3e97217e08d87bb0",
+        "byte_length": 11138,
+        "physical_lines": 307,
+        "trailing_newline": true,
+        "id": "H:source/host/tests/memory_synthesis_service_contract.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            59,
+            177
+          ],
+          [
+            243,
+            307
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/inference/production.rs",
+        "blob_sha": "31bbb9c60e49154dd72a8e0e4acf1e114360fea2",
+        "byte_length": 38699,
+        "physical_lines": 971,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/inference/production.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            175
+          ],
+          [
+            228,
+            323
+          ],
+          [
+            503,
+            800
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/inference/inference_service.rs",
+        "blob_sha": "9340412fa13721e69573366f82c5446a6ddfa844",
+        "byte_length": 2599,
+        "physical_lines": 85,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/inference/inference_service.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            85
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/inference/provider_session.rs",
+        "blob_sha": "a372b514730d945ed12fc9b00844407a42f0d306",
+        "byte_length": 169170,
+        "physical_lines": 4090,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/inference/provider_session.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            70,
+            125
+          ],
+          [
+            275,
+            355
+          ],
+          [
+            1055,
+            1230
+          ],
+          [
+            1595,
+            1685
+          ],
+          [
+            1730,
+            1785
+          ],
+          [
+            1801,
+            1822
+          ],
+          [
+            1905,
+            2075
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/inference/codex_request_binding.rs",
+        "blob_sha": "cf02eac4f37990a4a61686367ce5749340562cb4",
+        "byte_length": 35196,
+        "physical_lines": 731,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/inference/codex_request_binding.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            270
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+        "blob_sha": "e4a3db8386ae7de53464e214199a233d8ef8774f",
+        "byte_length": 87128,
+        "physical_lines": 1548,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            240
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/session/production.rs",
+        "blob_sha": "f585fae13720e08f34323bed82759253590a3753",
+        "byte_length": 289796,
+        "physical_lines": 6968,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/session/production.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            228,
+            330
+          ],
+          [
+            2280,
+            2335
+          ],
+          [
+            2440,
+            2485
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/settings/settings_service.rs",
+        "blob_sha": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+        "byte_length": 82628,
+        "physical_lines": 2270,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/settings/settings_service.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            836,
+            908
+          ],
+          [
+            1238,
+            1288
+          ],
+          [
+            1436,
+            1471
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/host_production_extensions.rs",
+        "blob_sha": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+        "byte_length": 90983,
+        "physical_lines": 2132,
+        "trailing_newline": true,
+        "id": "H:source/host/src/host_production_extensions.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            735,
+            739
+          ],
+          [
+            797,
+            817
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob_sha": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+        "byte_length": 989159,
+        "physical_lines": 21564,
+        "trailing_newline": true,
+        "id": "H:source/host/app/src/main.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            12725,
+            12865
+          ],
+          [
+            15973,
+            16001
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/runner/turn_memory.rs",
+        "blob_sha": "bb814eece35d509e65f39a8505b78492139ba5f3",
+        "byte_length": 8337,
+        "physical_lines": 266,
+        "trailing_newline": true,
+        "id": "H:source/host/src/runner/turn_memory.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            266
+          ]
+        ],
+        "read_status": "full",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      },
+      {
+        "path": "source/host/src/extensions/auth/auth_service.rs",
+        "blob_sha": "56cc268d11369f3d941bc1a5f007d8c97c8b82c4",
+        "byte_length": 28977,
+        "physical_lines": 751,
+        "trailing_newline": true,
+        "id": "H:source/host/src/extensions/auth/auth_service.rs",
+        "commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+        "tree": "d2475cddee5dd18b8a25d74ddeccd466c87f5c35",
+        "deep_read_ranges": [
+          [
+            1,
+            155
+          ]
+        ],
+        "read_status": "partial",
+        "acquisition": "Immutable local Git blob at exact H tree, GIT_NO_LAZY_FETCH=1; metadata read directly from Git objects",
+        "working_tree_used_as_source": false
+      }
+    ],
+    "upstream_sources": [
+      {
+        "id": "U:src/agents/execution-auth-binding.ts",
+        "path": "src/agents/execution-auth-binding.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "5861377169b54c96e42164997a8cf078d7ed0e8c",
+        "physical_lines": 295,
+        "deep_read_ranges": [
+          [
+            1,
+            295
+          ]
+        ],
+        "read_status": "full",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/agents/execution-auth-binding.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/agents/execution-auth-binding.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": false
+      },
+      {
+        "id": "U:extensions/memory-core/src/dreaming.ts",
+        "path": "extensions/memory-core/src/dreaming.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "bcf1672d7538bbeba3f9d44e4097b78e8a995773",
+        "physical_lines": 657,
+        "deep_read_ranges": [
+          [
+            1,
+            657
+          ]
+        ],
+        "read_status": "full",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/extensions/memory-core/src/dreaming.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/extensions/memory-core/src/dreaming.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": false
+      },
+      {
+        "id": "U:extensions/memory-core/src/dreaming-phases.ts",
+        "path": "extensions/memory-core/src/dreaming-phases.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "c680bde47acabf6883d33ce823da664c3886ad10",
+        "physical_lines": 1216,
+        "deep_read_ranges": [
+          [
+            1151,
+            1216
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/extensions/memory-core/src/dreaming-phases.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/extensions/memory-core/src/dreaming-phases.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:extensions/memory-core/src/dreaming-narrative.ts",
+        "path": "extensions/memory-core/src/dreaming-narrative.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "a416f9bba5de8fa323b1bf55a68d41bab070ee61",
+        "physical_lines": 319,
+        "deep_read_ranges": [
+          [
+            1,
+            319
+          ]
+        ],
+        "read_status": "full",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/extensions/memory-core/src/dreaming-narrative.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/extensions/memory-core/src/dreaming-narrative.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": false
+      },
+      {
+        "id": "U:extensions/memory-core/src/dreaming-consolidation.ts",
+        "path": "extensions/memory-core/src/dreaming-consolidation.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "a3529dfaa42674a74ca92d677223df77d9f236a1",
+        "physical_lines": 476,
+        "deep_read_ranges": [
+          [
+            383,
+            476
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/extensions/memory-core/src/dreaming-consolidation.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/extensions/memory-core/src/dreaming-consolidation.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:src/auto-reply/reply/agent-runner-memory.ts",
+        "path": "src/auto-reply/reply/agent-runner-memory.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "2f479b8d69f045f488ce52a3a95b8a59ebceaa7e",
+        "physical_lines": 960,
+        "deep_read_ranges": [
+          [
+            717,
+            930
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/auto-reply/reply/agent-runner-memory.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/auto-reply/reply/agent-runner-memory.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:src/plugin-sdk/runtime-store.ts",
+        "path": "src/plugin-sdk/runtime-store.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "aadabab915d3b93d132ae72e0206c2067fd44e68",
+        "physical_lines": 89,
+        "deep_read_ranges": [
+          [
+            1,
+            89
+          ]
+        ],
+        "read_status": "full",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/plugin-sdk/runtime-store.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/plugin-sdk/runtime-store.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": false
+      },
+      {
+        "id": "U:src/plugins/runtime/index.ts",
+        "path": "src/plugins/runtime/index.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "299c992f1c5888de041fd87ea6bb82246de20a68",
+        "physical_lines": 394,
+        "deep_read_ranges": [
+          [
+            109,
+            137
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/plugins/runtime/index.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/plugins/runtime/index.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:src/plugins/runtime/runtime-llm.runtime.ts",
+        "path": "src/plugins/runtime/runtime-llm.runtime.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "999607e46af3ce838c96e4dd67058cda4e82dd94",
+        "physical_lines": 452,
+        "deep_read_ranges": [
+          [
+            156,
+            452
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/plugins/runtime/runtime-llm.runtime.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/plugins/runtime/runtime-llm.runtime.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:src/plugins/runtime/runtime-llm-isolated.ts",
+        "path": "src/plugins/runtime/runtime-llm-isolated.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "fa0243fd561739e63d8dbff0f245503dee01d4d3",
+        "physical_lines": 211,
+        "deep_read_ranges": [],
+        "read_status": "search-only",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/plugins/runtime/runtime-llm-isolated.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/plugins/runtime/runtime-llm-isolated.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:src/plugins/runtime/runtime-llm-operator-authority.ts",
+        "path": "src/plugins/runtime/runtime-llm-operator-authority.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "89882d0d875c64bb2274a303fd51d15343b032f0",
+        "physical_lines": 97,
+        "deep_read_ranges": [
+          [
+            1,
+            97
+          ]
+        ],
+        "read_status": "full",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/plugins/runtime/runtime-llm-operator-authority.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/plugins/runtime/runtime-llm-operator-authority.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": false
+      },
+      {
+        "id": "U:src/agents/simple-completion-runtime.ts",
+        "path": "src/agents/simple-completion-runtime.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "8b4b2fd441177d30946d5302116b87afd9a21ed3",
+        "physical_lines": 701,
+        "deep_read_ranges": [
+          [
+            120,
+            198
+          ],
+          [
+            433,
+            560
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/agents/simple-completion-runtime.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/agents/simple-completion-runtime.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:src/gateway/server-plugins.ts",
+        "path": "src/gateway/server-plugins.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "b54d1b3038fc5eaf5ad2e9ef57cfc75e8ce89859",
+        "physical_lines": 525,
+        "deep_read_ranges": [
+          [
+            295,
+            373
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/gateway/server-plugins.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/gateway/server-plugins.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      },
+      {
+        "id": "U:src/gateway/server-plugin-subagent-runtime.ts",
+        "path": "src/gateway/server-plugin-subagent-runtime.ts",
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "blob_sha": "2accb0ec18020ffb1d41660f3e5e9be45130a5a4",
+        "physical_lines": 645,
+        "deep_read_ranges": [
+          [
+            1,
+            82
+          ],
+          [
+            349,
+            487
+          ]
+        ],
+        "read_status": "partial",
+        "raw_artifact": "/workspace/scratch/a707eb82cd6b/fabushi-recovery/fusion-review/memory-synthesis-source/upstream-1440/src/gateway/server-plugin-subagent-runtime.ts",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/gateway/server-plugin-subagent-runtime.ts",
+        "acquisition": "GitHub connector fetch_file at exact fixed U; full UTF-8 raw acquired, only listed ranges count as deep reading",
+        "search_only_outside_ranges": true
+      }
+    ],
+    "discovery_only": [
+      "Exact-U extensions/memory-core/src, src/plugins, and src/plugins/runtime directory listings via GitHub connector.",
+      "Scoped exact-H git grep/rg searches to locate synthesis enable/disable, model/provider setters, credential-context type, and relevant ledger symbols; search output is not contiguous deep-read credit.",
+      "Two mistaken upstream discovery paths produced no usable source: src/plugins/runtime/subagent.ts and src/gateway/server-plugins-runtime-subagent.ts. Correct actual owner src/gateway/server-plugin-subagent-runtime.ts was subsequently fetched and partially deep-read."
+    ],
+    "partial_facts_policy": "Earlier dossier/CWB review facts mentioned by the parent were not imported as fresh reading. No peer review conclusion was read. Existing full raw files remain artifacts even when only partial ranges were reviewed; all such ranges are retained rather than resetting or promoting the file to full-read."
+  },
+  "remaining_gaps": [
+    {
+      "kind": "Runtime",
+      "detail": "No reproduction, tests, compile, type-check, formatter, validator, CI, packaged run, or external-provider test was executed. Static causality is not claimed runtime verification."
+    },
+    {
+      "kind": "Full upstream authority",
+      "detail": "Fixed-U exact blob identity is established for selected sources through the connector and lock, not by independent full-tree closure. Inventory authority flags remain unchanged."
+    },
+    {
+      "kind": "Upstream execution dependencies",
+      "detail": "Full Gateway admission implementation, isolated completion, fallback runner, all auth-profile/provider adapters, and their tests are outside this bounded read. Do not claim their transitive behavior is fully reviewed or equivalent."
+    },
+    {
+      "kind": "Target other providers",
+      "detail": "Cursor/OpenRouter/ClaudeCode model/account continuity beyond the selected route was not traced to full auth transport owners; the initial proposed strong identity contract is Native/Codex."
+    },
+    {
+      "kind": "Account-to-memory authorization",
+      "detail": "The memory bridge carries no originating credential/account identity. Binding the current background job does not prove its initial account is entitled to every historical memory. Full account-scoped persistence and pre-disclosure Session authorization are separate work."
+    },
+    {
+      "kind": "Generation/cancellation",
+      "detail": "No job-generation comparison or durable queue recovery exists in the inspected synthesis owner. Detached attempt workers and the pre-apply cancellation seam prevent broad drain/no-late-commit claims."
+    },
+    {
+      "kind": "Stale contract",
+      "detail": "The report recommends a snapshot-specific job and new admission after Stale. A stronger queue-item identity policy needs explicit owner design and different test expectations before implementation."
+    },
+    {
+      "kind": "Test integration",
+      "detail": "A real Codex service oracle needs worker-thread-scoped test hook entry; the existing thread-local hook cannot simply be reused from the parent test thread."
+    },
+    {
+      "kind": "Current branch/CI",
+      "detail": "The assessment is pinned to H859e/tree d247. Subsequent parent corrections or candidate changes require bounded reinspection. No claim is made about current remote branch head or current Actions result."
+    }
+  ],
+  "conclusion": {
+    "answer": "Yes: the real production background service has a reachable between-phase identity change. It is independent of admitted turn extraction and automatic compaction.",
+    "next_batch": "Use the existing Memory job owner to retain one Inference-owned identity for proposal, verification, and retries, with permanent identity refusal before dispatch and explicit temporal/stale/cancel rules.",
+    "completion_status": "Read-only assessment and source artifacts complete; product implementation, runtime verification, and global acceptance are untouched."
+  }
+}

@@ -7,7 +7,7 @@ use serde_json::Value;
 use std::path::Path;
 
 #[cfg(not(target_arch = "wasm32"))]
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::{Arc, Mutex};
 
@@ -64,6 +64,19 @@ pub(crate) struct StoredTurnSnapshot {
     pub state: TurnState,
     pub last_run_id: Option<RunId>,
     pub generation: u32,
+}
+
+/// The exact eligible predecessor selected before actor admission. Revalidate
+/// it inside the write transaction instead of accepting a stale N+1 generation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct RetryTurnPredecessor {
+    pub turn_id: TurnId,
+    pub created_at_ms: i64,
+    pub next_generation: u32,
+    state: String,
+    active_run_id: Option<String>,
+    last_run_id: Option<String>,
+    last_run_state: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -248,6 +261,62 @@ impl RuntimeStore {
         })
     }
 
+    pub(crate) fn record_admission(
+        &self,
+        turn: &LogicalTurn,
+        run: &ExecutionRun,
+        text: &str,
+        inference_provider: Option<&str>,
+        hidden: bool,
+        predecessor: Option<&RetryTurnPredecessor>,
+    ) -> Result<(), RuntimeStoreError> {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = (turn, run, text, inference_provider, hidden, predecessor);
+            Ok(())
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let Some(connection) = &self.connection else { return Ok(()); };
+            let mut connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
+            let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)
+                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            if let Some(expected) = predecessor {
+                let current = match turn.user_message_id.as_ref() {
+                    Some(message_id) => retry_predecessor_on(
+                        &transaction, turn.conversation_id.as_str(), message_id.as_str(),
+                    )?,
+                    None => None,
+                };
+                if current.as_ref() != Some(expected)
+                    || turn.id != expected.turn_id
+                    || turn.created_at_ms != expected.created_at_ms
+                    || run.turn_id != expected.turn_id
+                    || run.generation != expected.next_generation
+                {
+                    return Err(RuntimeStoreError::Sqlite(format!(
+                        "retry predecessor changed for {}", turn.id,
+                    )));
+                }
+            }
+
+            // Borrow one transaction: the standalone fixture writers below
+            // acquire their own mutex and must not be called under this guard.
+            record_turn_on(&transaction, turn)?;
+            if let Some(message_id) = turn.user_message_id.as_ref() {
+                record_turn_request_on(
+                    &transaction, &turn.id, message_id, text, inference_provider,
+                    hidden, run.started_at_ms,
+                )?;
+            }
+            record_run_on(&transaction, run)?;
+            // rusqlite rolls back on drop, including a refused COMMIT. Preserve
+            // the original statement/commit error, not a compensating write error.
+            transaction.commit().map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))
+        }
+    }
+
+    #[cfg(test)]
     pub fn record_turn(&self, turn: &LogicalTurn) -> Result<(), RuntimeStoreError> {
         #[cfg(target_arch = "wasm32")]
         {
@@ -258,34 +327,11 @@ impl RuntimeStore {
         {
             let Some(connection) = &self.connection else { return Ok(()); };
             let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
-            connection
-                .execute(
-                    "INSERT INTO conversations(conversation_id, updated_at_ms) VALUES (?1, ?2)
-                     ON CONFLICT(conversation_id) DO UPDATE SET updated_at_ms = excluded.updated_at_ms",
-                    params![turn.conversation_id.as_str(), turn.created_at_ms],
-                )
-                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
-            connection
-                .execute(
-                    "INSERT INTO turns(turn_id, conversation_id, user_message_id, created_at_ms, state, active_run_id)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-                     ON CONFLICT(turn_id) DO UPDATE SET
-                       state = excluded.state,
-                       active_run_id = excluded.active_run_id",
-                    params![
-                        turn.id.as_str(),
-                        turn.conversation_id.as_str(),
-                        turn.user_message_id.as_ref().map(|id| id.as_str()),
-                        turn.created_at_ms,
-                        turn.state.as_str(),
-                        turn.active_run_id.as_ref().map(|id| id.as_str()),
-                    ],
-                )
-                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
-            Ok(())
+            record_turn_on(&connection, turn)
         }
     }
 
+    #[cfg(test)]
     pub fn record_run(&self, run: &ExecutionRun) -> Result<(), RuntimeStoreError> {
         #[cfg(target_arch = "wasm32")]
         {
@@ -296,33 +342,11 @@ impl RuntimeStore {
         {
             let Some(connection) = &self.connection else { return Ok(()); };
             let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
-            connection
-                .execute(
-                    "INSERT INTO runs(run_id, turn_id, generation, provider, started_at_ms, finished_at_ms, state)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-                     ON CONFLICT(run_id) DO UPDATE SET
-                       finished_at_ms = excluded.finished_at_ms,
-                       state = excluded.state",
-                    params![
-                        run.id.as_str(),
-                        run.turn_id.as_str(),
-                        i64::from(run.generation),
-                        run.provider,
-                        run.started_at_ms,
-                        run.finished_at_ms,
-                        run.state.as_str(),
-                    ],
-                )
-                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
-            Ok(())
+            record_run_on(&connection, run)
         }
     }
 
-    /// Resolve one terminal logical turn to the next execution generation.
-    ///
-    /// Regenerate/retry is explicit: ordinary duplicate transport requests do
-    /// not select an existing turn. The caller supplies the original stable
-    /// client user-message id and receives the same turn id plus N+1.
+    #[cfg(test)]
     pub fn record_turn_request(
         &self,
         turn_id: &TurnId,
@@ -347,43 +371,20 @@ impl RuntimeStore {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(connection) = &self.connection else { return Ok(()); };
-            connection
-                .lock()
-                .map_err(|_| RuntimeStoreError::Poisoned)?
-                .execute(
-                    "INSERT INTO turn_requests(
-                        turn_id,
-                        message_id,
-                        text,
-                        inference_provider,
-                        hidden,
-                        updated_at_ms
-                     ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-                     ON CONFLICT(turn_id) DO UPDATE SET
-                       message_id = excluded.message_id,
-                       text = excluded.text,
-                       inference_provider = excluded.inference_provider,
-                       hidden = excluded.hidden,
-                       updated_at_ms = excluded.updated_at_ms",
-                    params![
-                        turn_id.as_str(),
-                        message_id.as_str(),
-                        text,
-                        inference_provider,
-                        if hidden { 1_i64 } else { 0_i64 },
-                        updated_at_ms,
-                    ],
-                )
-                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
-            Ok(())
+            let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
+            record_turn_request_on(
+                &connection, turn_id, message_id, text, inference_provider, hidden, updated_at_ms,
+            )
         }
     }
 
-    pub fn retry_turn_generation(
+    /// Select an explicit retry's eligible turn and expected predecessor. The
+    /// admission transaction must revalidate it before reusing the turn or N+1.
+    pub(crate) fn retry_turn_predecessor(
         &self,
         conversation_id: &str,
         user_message_id: &str,
-    ) -> Result<Option<(TurnId, i64, u32)>, RuntimeStoreError> {
+    ) -> Result<Option<RetryTurnPredecessor>, RuntimeStoreError> {
         #[cfg(target_arch = "wasm32")]
         {
             let _ = (conversation_id, user_message_id);
@@ -392,39 +393,20 @@ impl RuntimeStore {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(connection) = &self.connection else { return Ok(None); };
-            let row = connection
-                .lock()
-                .map_err(|_| RuntimeStoreError::Poisoned)?
-                .query_row(
-                    "SELECT t.turn_id, t.created_at_ms, COALESCE(MAX(r.generation), 0)
-                     FROM turns t
-                     LEFT JOIN runs r ON r.turn_id = t.turn_id
-                     WHERE t.conversation_id = ?1
-                       AND t.user_message_id = ?2
-                       AND t.state IN ('completed', 'failed', 'cancelled', 'recovering')
-                     GROUP BY t.turn_id, t.created_at_ms
-                     ORDER BY t.created_at_ms DESC
-                     LIMIT 1",
-                    params![conversation_id, user_message_id],
-                    |row| {
-                        Ok((
-                            row.get::<_, String>(0)?,
-                            row.get::<_, i64>(1)?,
-                            row.get::<_, i64>(2)?,
-                        ))
-                    },
-                )
-                .optional()
-                .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
-            row.map(|(turn_id, created_at_ms, generation)| {
-                let next = generation
-                    .checked_add(1)
-                    .and_then(|value| u32::try_from(value).ok())
-                    .ok_or_else(|| RuntimeStoreError::Sqlite("run generation overflow".to_string()))?;
-                Ok((TurnId(turn_id), created_at_ms, next))
-            })
-            .transpose()
+            let connection = connection.lock().map_err(|_| RuntimeStoreError::Poisoned)?;
+            retry_predecessor_on(&connection, conversation_id, user_message_id)
         }
+    }
+
+    #[cfg(test)]
+    pub fn retry_turn_generation(
+        &self,
+        conversation_id: &str,
+        user_message_id: &str,
+    ) -> Result<Option<(TurnId, i64, u32)>, RuntimeStoreError> {
+        Ok(self.retry_turn_predecessor(conversation_id, user_message_id)?.map(|expected| {
+            (expected.turn_id, expected.created_at_ms, expected.next_generation)
+        }))
     }
 
     pub fn set_turn_state(
@@ -441,7 +423,7 @@ impl RuntimeStore {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(connection) = &self.connection else { return Ok(()); };
-            connection
+            let updated = connection
                 .lock()
                 .map_err(|_| RuntimeStoreError::Poisoned)?
                 .execute(
@@ -449,6 +431,11 @@ impl RuntimeStore {
                     params![turn_id.as_str(), state.as_str(), active_run_id.map(|id| id.as_str())],
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            if updated != 1 {
+                return Err(RuntimeStoreError::Sqlite(format!(
+                    "turn state update for {turn_id} affected {updated} rows; expected 1"
+                )));
+            }
             Ok(())
         }
     }
@@ -467,7 +454,7 @@ impl RuntimeStore {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let Some(connection) = &self.connection else { return Ok(()); };
-            connection
+            let updated = connection
                 .lock()
                 .map_err(|_| RuntimeStoreError::Poisoned)?
                 .execute(
@@ -475,6 +462,11 @@ impl RuntimeStore {
                     params![run_id.as_str(), state.as_str(), finished_at_ms],
                 )
                 .map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+            if updated != 1 {
+                return Err(RuntimeStoreError::Sqlite(format!(
+                    "run state update for {run_id} affected {updated} rows; expected 1"
+                )));
+            }
             Ok(())
         }
     }
@@ -979,6 +971,106 @@ impl RuntimeStore {
         }
     }
 
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn record_turn_on(connection: &Connection, turn: &LogicalTurn) -> Result<(), RuntimeStoreError> {
+    connection.execute(
+        "INSERT INTO conversations(conversation_id, updated_at_ms) VALUES (?1, ?2)
+         ON CONFLICT(conversation_id) DO UPDATE SET updated_at_ms = excluded.updated_at_ms",
+        params![turn.conversation_id.as_str(), turn.created_at_ms],
+    ).map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+    connection.execute(
+        "INSERT INTO turns(turn_id, conversation_id, user_message_id, created_at_ms, state, active_run_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+         ON CONFLICT(turn_id) DO UPDATE SET
+           state = excluded.state,
+           active_run_id = excluded.active_run_id",
+        params![
+            turn.id.as_str(), turn.conversation_id.as_str(),
+            turn.user_message_id.as_ref().map(|id| id.as_str()), turn.created_at_ms,
+            turn.state.as_str(), turn.active_run_id.as_ref().map(|id| id.as_str()),
+        ],
+    ).map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+    Ok(())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn record_run_on(connection: &Connection, run: &ExecutionRun) -> Result<(), RuntimeStoreError> {
+    connection.execute(
+        "INSERT INTO runs(run_id, turn_id, generation, provider, started_at_ms, finished_at_ms, state)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         ON CONFLICT(run_id) DO UPDATE SET
+           finished_at_ms = excluded.finished_at_ms,
+           state = excluded.state",
+        params![
+            run.id.as_str(), run.turn_id.as_str(), i64::from(run.generation),
+            run.provider, run.started_at_ms, run.finished_at_ms, run.state.as_str(),
+        ],
+    ).map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+    Ok(())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn record_turn_request_on(
+    connection: &Connection,
+    turn_id: &TurnId,
+    message_id: &MessageId,
+    text: &str,
+    inference_provider: Option<&str>,
+    hidden: bool,
+    updated_at_ms: i64,
+) -> Result<(), RuntimeStoreError> {
+    connection.execute(
+        "INSERT INTO turn_requests(turn_id, message_id, text, inference_provider, hidden, updated_at_ms)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+         ON CONFLICT(turn_id) DO UPDATE SET
+           message_id = excluded.message_id,
+           text = excluded.text,
+           inference_provider = excluded.inference_provider,
+           hidden = excluded.hidden,
+           updated_at_ms = excluded.updated_at_ms",
+        params![
+            turn_id.as_str(), message_id.as_str(), text, inference_provider,
+            if hidden { 1_i64 } else { 0_i64 }, updated_at_ms,
+        ],
+    ).map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+    Ok(())
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn retry_predecessor_on(
+    connection: &Connection,
+    conversation_id: &str,
+    user_message_id: &str,
+) -> Result<Option<RetryTurnPredecessor>, RuntimeStoreError> {
+    let row = connection.query_row(
+        "SELECT t.turn_id, t.created_at_ms, COALESCE(r.generation, 0),
+                t.state, t.active_run_id, r.run_id, r.state
+         FROM turns t
+         LEFT JOIN runs r ON r.run_id = (
+             SELECT latest.run_id FROM runs latest WHERE latest.turn_id = t.turn_id
+             ORDER BY latest.generation DESC, latest.run_id DESC LIMIT 1
+         )
+         WHERE t.conversation_id = ?1 AND t.user_message_id = ?2
+           AND t.state IN ('completed', 'failed', 'cancelled', 'recovering')
+         ORDER BY t.created_at_ms DESC, t.turn_id DESC LIMIT 1",
+        params![conversation_id, user_message_id],
+        |row| Ok((
+            row.get::<_, String>(0)?, row.get::<_, i64>(1)?, row.get::<_, i64>(2)?,
+            row.get::<_, String>(3)?, row.get::<_, Option<String>>(4)?,
+            row.get::<_, Option<String>>(5)?, row.get::<_, Option<String>>(6)?,
+        )),
+    ).optional().map_err(|error| RuntimeStoreError::Sqlite(error.to_string()))?;
+    row.map(|(turn_id, created_at_ms, generation, state, active_run_id, last_run_id, last_run_state)| {
+        let next_generation = generation.checked_add(1)
+            .and_then(|value| u32::try_from(value).ok())
+            .ok_or_else(|| RuntimeStoreError::Sqlite("run generation overflow".to_string()))?;
+        Ok(RetryTurnPredecessor {
+            turn_id: TurnId(turn_id), created_at_ms, next_generation,
+            state, active_run_id, last_run_id, last_run_state,
+        })
+    }).transpose()
 }
 
 fn parse_turn_state(value: &str) -> Result<TurnState, RuntimeStoreError> {

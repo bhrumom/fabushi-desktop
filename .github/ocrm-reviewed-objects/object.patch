@@ -1,0 +1,163 @@
+diff --git a/source/host/app/src/main.rs b/source/host/app/src/main.rs
+index c3ee3dc9d1647853bace9dcb944878211edfcc2c..ba9c43c65e8f5b2473677a615b331808d53a125a 100644
+--- a/source/host/app/src/main.rs
++++ b/source/host/app/src/main.rs
+@@ -9952,9 +9952,8 @@ fn start_routed_provider_task(
+                 .map(ToOwned::to_owned)
+         })
+         .flatten();
+-    // Before acquiring provider-run/ACK/auto-review resources, an explicit
+-    // cancellation still exits through this exact lease's guard. After entry,
+-    // the worker/finalizer owns cleanup and sees this same token at attachment.
++    // Preserve cancellation precedence over supplied-ACK refusal and avoid
++    // further state preparation when this captured lease is already cancelled.
+     if let Err(error) = routed_turn_lease_guard.check_start() {
+         return match error {
+             RoutedTurnAdmissionError::Cancelled => {
+@@ -9966,28 +9965,78 @@ fn start_routed_provider_task(
+             RoutedTurnAdmissionError::Refused(error) => Err(error),
+         };
+     }
+-    let lease_cancellation = routed_turn_lease_guard.control.cancellation();
+-    transcript_runtime.begin_provider_run_with_kind(&agent_id, is_group_member_turn);
+     let supplied_ack_token = args
+         .get("ackToken")
+         .and_then(serde_json::Value::as_str)
+         .map(str::trim)
+         .filter(|value| !value.is_empty());
+-    let ack_token = if let Some(ack_token) = supplied_ack_token {
++    let validated_ack_token = if let Some(ack_token) = supplied_ack_token {
+         if !ack_obligations
+             .is_ack_run_token_for_agent(&agent_id, ack_token)
+             .map_err(|error| GatewayCommandError::Internal(error.to_string()))?
+         {
+-            transcript_runtime.end_provider_run_with_kind(&agent_id, is_group_member_turn);
+-            let _ = transcript_runtime.retire_idle_live_session(
+-                &session_workers,
+-                &agent_id,
+-            );
+             return Err(GatewayCommandError::BadRequest(
+                 "runner ackToken is not owned by this agent".into(),
+             ));
+         }
+         Some(ack_token.to_string())
++    } else {
++        None
++    };
++    // This remains admitted preparation: workflow-state construction can
++    // migrate legacy files. None of these operations needs provider resources.
++    let resolved_request_context = request_context.resolve();
++    let avatar_box_file_reader: AvatarBoxFileReader = {
++        let forever_box = Arc::clone(&forever_box);
++        let avatar_agent_id = agent_id.clone();
++        Arc::new(move |path: &std::path::Path| {
++            let path = path
++                .to_str()
++                .ok_or_else(|| "avatar box path must be valid UTF-8".to_string())?;
++            forever_box
++                .download_file(&(), &avatar_agent_id, path)
++                .map_err(|error| error.to_string())
++        })
++    };
++    let turn_state_surfaces = host_runner_composition
++        .compose_turn_state_surfaces(
++            Arc::clone(&session_workers),
++            &agent_id,
++            is_group_member_turn,
++            multitask_enabled,
++            Some(avatar_box_file_reader),
++        )
++        .map_err(|error| GatewayCommandError::Internal(format!(
++            "could not compose production turn state surfaces for {agent_id}: {error}"
++        )))?;
++    let state_writer = turn_state_surfaces.state_writer;
++    let multitask_todo_state = turn_state_surfaces.multitask_todo_state;
++    let cloud_agent_dir = session_workers
++        .session_db_path(&agent_id)
++        .map_err(GatewayCommandError::Internal)?
++        .parent()
++        .map(Path::to_path_buf)
++        .ok_or_else(|| GatewayCommandError::Internal(
++            format!("agent database path has no parent for {agent_id}")
++        ))?;
++    // Context callbacks and state preparation may wait or request cancellation.
++    // Recheck the same control before acquiring resources; a checked supplied
++    // ACK remains caller-owned until the adoption below.
++    if let Err(error) = routed_turn_lease_guard.check_start() {
++        return match error {
++            RoutedTurnAdmissionError::Cancelled => {
++                drop(routed_turn_lease_guard);
++                Ok(RoutedProviderStartOutcome::CancelledBeforeStart {
++                    stream_id, quiesced_for_upgrade: transcript_runtime.is_quiescing_for_upgrade(),
++                })
++            }
++            RoutedTurnAdmissionError::Refused(error) => Err(error),
++        };
++    }
++    let lease_cancellation = routed_turn_lease_guard.control.cancellation();
++    transcript_runtime.begin_provider_run_with_kind(&agent_id, is_group_member_turn);
++    let ack_token = if let Some(ack_token) = validated_ack_token {
++        Some(ack_token)
+     } else {
+         ack_obligations
+             .mint_ack_run_token(&agent_id)
+@@ -10054,7 +10103,6 @@ fn start_routed_provider_task(
+             &stream_id,
+         ),
+     );
+-    let resolved_request_context = request_context.resolve();
+     let worker_events = events.clone();
+     let accepted_stream_id = stream_id.clone();
+     let worker_stream_id = stream_id.clone();
+@@ -10273,39 +10321,6 @@ fn start_routed_provider_task(
+         .filter(|value| !value.is_empty())
+         .map(ToOwned::to_owned);
+     let worker_send_is_fork = turn_input.options.is_fork;
+-    let avatar_box_file_reader: AvatarBoxFileReader = {
+-        let forever_box = Arc::clone(&forever_box);
+-        let avatar_agent_id = agent_id.clone();
+-        Arc::new(move |path: &std::path::Path| {
+-            let path = path
+-                .to_str()
+-                .ok_or_else(|| "avatar box path must be valid UTF-8".to_string())?;
+-            forever_box
+-                .download_file(&(), &avatar_agent_id, path)
+-                .map_err(|error| error.to_string())
+-        })
+-    };
+-    let turn_state_surfaces = host_runner_composition
+-        .compose_turn_state_surfaces(
+-            Arc::clone(&session_workers),
+-            &agent_id,
+-            is_group_member_turn,
+-            multitask_enabled,
+-            Some(avatar_box_file_reader),
+-        )
+-        .map_err(|error| GatewayCommandError::Internal(format!(
+-            "could not compose production turn state surfaces for {agent_id}: {error}"
+-        )))?;
+-    let state_writer = turn_state_surfaces.state_writer;
+-    let multitask_todo_state = turn_state_surfaces.multitask_todo_state;
+-    let cloud_agent_dir = session_workers
+-        .session_db_path(&agent_id)
+-        .map_err(GatewayCommandError::Internal)?
+-        .parent()
+-        .map(Path::to_path_buf)
+-        .ok_or_else(|| GatewayCommandError::Internal(
+-            format!("agent database path has no parent for {agent_id}")
+-        ))?;
+     let worker_cloud_agents = Arc::clone(&cloud_agents);
+     let worker_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
+     let worker_async_cloud_agent_watches = Arc::clone(&cloud_agent_watches);
+@@ -17855,6 +17870,11 @@ mod tests {
+     #[path = "routed_preentry_cancellation_tests.rs"]
+     mod routed_preentry_cancellation_tests;
+ 
++    #[path = "routed_provider_test_support.rs"]
++    mod routed_provider_test_support;
++    #[path = "routed_startup_preflight_tests.rs"]
++    mod routed_startup_preflight_tests;
++
+     #[path = "config_secret_boundary_tests.rs"]
+     mod config_secret_boundary_tests;
+ 

@@ -681,14 +681,23 @@ impl LocalExecCancellationHandle {
     }
 
     pub fn cancel(&self) -> bool {
-        if self.cancel_sent.swap(true, Ordering::AcqRel) {
+        if self
+            .cancel_sent
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .is_err()
+        {
             return false;
         }
-        let _ = self.provider_send.send(json!({
+        if self.provider_send.send(json!({
             "kind": "cancel",
             "requestId": self.request_id,
-        }));
-        true
+        })).is_ok() {
+            return true;
+        }
+        // A failed channel send is not delivery. Leave the one-shot gate open
+        // so callers can distinguish transport failure from an accepted send.
+        self.cancel_sent.store(false, Ordering::Release);
+        false
     }
 }
 
@@ -729,17 +738,31 @@ impl LocalExecRequest {
         }
         self.closed = true;
         self.bridge.finish_request(&self.request_id);
-        if !self.cancel_sent.swap(true, Ordering::AcqRel) {
-            let _ = self.provider_send.send(json!({
-                "kind": "cancel",
-                "requestId": self.request_id,
-            }));
-        }
+        let _ = self.cancellation_handle().cancel();
     }
 }
 
 impl Drop for LocalExecRequest {
     fn drop(&mut self) {
         self.close();
+    }
+}
+
+#[cfg(test)]
+mod cancellation_delivery_tests {
+    use super::*;
+
+    #[test]
+    fn disconnected_provider_is_not_reported_as_cancelled_delivery() {
+        let (send, receive) = mpsc::channel::<Value>();
+        drop(receive);
+        let handle = LocalExecCancellationHandle {
+            request_id: "request-disconnected".into(),
+            provider_send: send,
+            cancel_sent: Arc::new(AtomicBool::new(false)),
+        };
+
+        assert!(!handle.cancel());
+        assert!(!handle.cancel_sent.load(Ordering::Acquire));
     }
 }

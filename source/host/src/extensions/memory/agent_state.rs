@@ -21,7 +21,8 @@ use crate::workflows::workflow_library::{WorkflowSpec, get_global_workflows_dir}
 use crate::workflows::workflow_store::FileWorkflowStore;
 use super::memory_service::{
     FileMemoryStore, MemoryKind, get_agent_memory_dir, get_project_dir,
-    get_project_memory_shard_dir, get_user_memory_shard_dir, normalize_memory_content,
+    get_project_memory_shard_dir, get_user_memory_shard_dir, memory_id_for,
+    normalize_memory_content,
     project_dir_exists,
 };
 use super::project_membership::AgentProjectMembership;
@@ -32,6 +33,25 @@ pub type AgentStateClock = Arc<dyn Fn() -> i64 + Send + Sync + 'static>;
 pub type AvatarChanged = Arc<dyn Fn() + Send + Sync + 'static>;
 pub type AvatarBoxFileReader =
     Arc<dyn Fn(&Path) -> Result<Vec<u8>, String> + Send + Sync + 'static>;
+pub type AgentMemoryRemover =
+    Arc<dyn Fn(&str) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentMemoryWriter =
+    Arc<dyn Fn(&str, MemoryTier) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentProfileWriter =
+    Arc<dyn Fn(Option<String>, Option<String>) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentSettingsWriter =
+    Arc<dyn Fn(Map<String, Value>) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentChannelDisconnector =
+    Arc<dyn Fn(&str) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentAutomationMutator =
+    Arc<dyn Fn(AgentAutomationMutation) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentWorkflowMutator =
+    Arc<dyn Fn(AgentWorkflowMutation) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentProjectMembershipMutator =
+    Arc<dyn Fn(AgentProjectMembershipMutation) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentAvatarMutator =
+    Arc<dyn Fn(Option<Vec<u8>>) -> StateWriteResult + Send + Sync + 'static>;
+pub type AgentProjectCreator = Arc<dyn Fn(String, String, Option<String>) -> StateWriteResult + Send + Sync + 'static>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MemoryTier { Profile, Note, Log }
@@ -47,6 +67,26 @@ impl StateWriteResult {
     pub fn failure(message: impl Into<String>) -> Self { Self { ok: false, message: message.into() } }
 }
 
+#[derive(Debug, Clone)]
+pub enum AgentAutomationMutation {
+    Create(AutomationSpec),
+    Update { id: String, spec: AutomationSpec },
+    SetEnabled { id: String, enabled: bool },
+    Remove { id: String },
+}
+
+#[derive(Debug, Clone)]
+pub enum AgentWorkflowMutation {
+    Upsert { id: Option<String>, spec: WorkflowSpec },
+    Remove { id: String },
+}
+
+#[derive(Debug, Clone)]
+pub enum AgentProjectMembershipMutation {
+    Join { slug: String },
+    Leave { slug: String },
+}
+
 pub struct SandAgentState {
     agent_id: String,
     agent_dir: PathBuf,
@@ -58,10 +98,38 @@ pub struct SandAgentState {
     now: AgentStateClock,
     on_avatar_changed: Option<AvatarChanged>,
     read_box_file: Option<AvatarBoxFileReader>,
+    write_agent_memory: Option<AgentMemoryWriter>,
+    remove_agent_memory: Option<AgentMemoryRemover>,
+    write_agent_profile: Option<AgentProfileWriter>,
+    write_agent_settings: Option<AgentSettingsWriter>,
+    disconnect_agent_channel: Option<AgentChannelDisconnector>,
+    mutate_agent_automation: Option<AgentAutomationMutator>,
+    mutate_agent_workflow: Option<AgentWorkflowMutator>,
+    mutate_agent_project_membership: Option<AgentProjectMembershipMutator>,
+    mutate_agent_avatar: Option<AgentAvatarMutator>,
+    create_agent_project: Option<AgentProjectCreator>,
 }
 
 impl SandAgentState {
     pub fn new(sand_root: impl Into<PathBuf>, agent_id: impl Into<String>) -> Result<Self, String> {
+        Self::with_workflow_store_factory(sand_root, agent_id, |sand_root, agent_dir| {
+            FileWorkflowStore::new(agent_dir, get_global_workflows_dir(sand_root))
+        })
+    }
+
+    pub fn new_with_workflow_store(
+        sand_root: impl Into<PathBuf>,
+        agent_id: impl Into<String>,
+        workflows: FileWorkflowStore,
+    ) -> Result<Self, String> {
+        Self::with_workflow_store_factory(sand_root, agent_id, |_, _| workflows)
+    }
+
+    fn with_workflow_store_factory(
+        sand_root: impl Into<PathBuf>,
+        agent_id: impl Into<String>,
+        workflow_store: impl FnOnce(&Path, &Path) -> FileWorkflowStore,
+    ) -> Result<Self, String> {
         let sand_root = sand_root.into();
         let agent_id = agent_id.into();
         if agent_id.trim() != agent_id || !is_safe_folder_id(&agent_id) {
@@ -72,20 +140,81 @@ impl SandAgentState {
             memory: FileMemoryStore::new(get_agent_memory_dir(&agent_dir)),
             membership: AgentProjectMembership::new(&agent_dir),
             channels: FileChannelStore::new(get_agent_channels_dir(&agent_dir)),
-            workflows: FileWorkflowStore::new(&agent_dir, get_global_workflows_dir(&sand_root)),
+            workflows: workflow_store(&sand_root, &agent_dir),
             agent_id, agent_dir, sand_root,
             now: Arc::new(system_now_ms),
             on_avatar_changed: None,
             read_box_file: None,
+            write_agent_memory: None,
+            remove_agent_memory: None,
+            write_agent_profile: None,
+            write_agent_settings: None,
+            disconnect_agent_channel: None,
+            mutate_agent_automation: None,
+            mutate_agent_workflow: None,
+            mutate_agent_project_membership: None,
+            mutate_agent_avatar: None,
+            create_agent_project: None,
         })
     }
 
     pub fn with_clock(mut self, clock: AgentStateClock) -> Self { self.now = clock; self }
     pub fn with_avatar_changed(mut self, callback: AvatarChanged) -> Self { self.on_avatar_changed = Some(callback); self }
     pub fn with_box_file_reader(mut self, reader: AvatarBoxFileReader) -> Self { self.read_box_file = Some(reader); self }
+    pub fn with_agent_memory_remover(mut self, remover: AgentMemoryRemover) -> Self {
+        self.remove_agent_memory = Some(remover);
+        self
+    }
+    pub fn with_agent_memory_writer(mut self, writer: AgentMemoryWriter) -> Self {
+        self.write_agent_memory = Some(writer);
+        self
+    }
+    pub fn with_agent_profile_writer(mut self, writer: AgentProfileWriter) -> Self {
+        self.write_agent_profile = Some(writer);
+        self
+    }
+    pub fn with_agent_settings_writer(mut self, writer: AgentSettingsWriter) -> Self {
+        self.write_agent_settings = Some(writer);
+        self
+    }
+    pub fn with_agent_channel_disconnector(
+        mut self,
+        disconnector: AgentChannelDisconnector,
+    ) -> Self {
+        self.disconnect_agent_channel = Some(disconnector);
+        self
+    }
+    pub fn with_agent_automation_mutator(mut self, mutator: AgentAutomationMutator) -> Self {
+        self.mutate_agent_automation = Some(mutator);
+        self
+    }
+    pub fn with_agent_workflow_mutator(mut self, mutator: AgentWorkflowMutator) -> Self {
+        self.mutate_agent_workflow = Some(mutator);
+        self
+    }
+    pub fn with_agent_project_membership_mutator(
+        mut self,
+        mutator: AgentProjectMembershipMutator,
+    ) -> Self {
+        self.mutate_agent_project_membership = Some(mutator);
+        self
+    }
+    pub fn with_agent_avatar_mutator(mut self, mutator: AgentAvatarMutator) -> Self {
+        self.mutate_agent_avatar = Some(mutator);
+        self
+    }
+    pub fn with_agent_project_creator(mut self, creator: AgentProjectCreator) -> Self {
+        self.create_agent_project = Some(creator);
+        self
+    }
     pub fn agent_dir(&self) -> &Path { &self.agent_dir }
 
     pub fn write_memory(&self, content: &str, tier: MemoryTier, scope: MemoryScope, project: Option<&str>) -> StateWriteResult {
+        if scope == MemoryScope::Agent {
+            if let Some(write_agent_memory) = self.write_agent_memory.as_ref() {
+                return write_agent_memory(content, tier);
+            }
+        }
         let (store, label) = match self.memory_store(scope, project) { Ok(value) => value, Err(result) => return result };
         let payload = match tier {
             MemoryTier::Note => format!("{MEMORY_NOTE_PREFIX}{}", content.trim()),
@@ -100,6 +229,15 @@ impl SandAgentState {
     }
 
     pub fn remove_memory(&self, content: &str, scope: MemoryScope, project: Option<&str>) -> StateWriteResult {
+        if scope == MemoryScope::Agent {
+            let normalized = normalize_memory_content(content);
+            if normalized.is_empty() {
+                return StateWriteResult::failure("no fact with exactly that text is recorded in agent memory.");
+            }
+            if let Some(remove_agent_memory) = self.remove_agent_memory.as_ref() {
+                return remove_agent_memory(&memory_id_for(&normalized));
+            }
+        }
         let (store, label) = match self.memory_store(scope, project) { Ok(value) => value, Err(result) => return result };
         match store.remove_memory_by_content(content) {
             Ok(true) => StateWriteResult::success(format!("Forgot from {label}: {}", normalize_memory_content(content))),
@@ -130,6 +268,9 @@ impl SandAgentState {
     }
 
     pub fn create_automation(&self, spec: &AutomationSpec) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::Create(spec.clone()));
+        }
         match self.workflows.automations.upsert(spec, (self.now)() as f64) {
             Ok(Some(record)) => automation_result("Saved", &record),
             Ok(None) => StateWriteResult::failure(
@@ -140,6 +281,12 @@ impl SandAgentState {
     }
 
     pub fn update_automation(&self, id: &str, spec: &AutomationSpec) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::Update {
+                id: id.to_string(),
+                spec: spec.clone(),
+            });
+        }
         match self.workflows.automations.update(id, spec) {
             Ok(Some(record)) => automation_result("Updated", &record),
             Ok(None) => StateWriteResult::failure(format!(
@@ -150,6 +297,12 @@ impl SandAgentState {
     }
 
     pub fn set_automation_enabled(&self, id: &str, enabled: bool) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::SetEnabled {
+                id: id.to_string(),
+                enabled,
+            });
+        }
         match self.workflows.automations.set_enabled(id, enabled) {
             Ok(Some(record)) => StateWriteResult::success(format!(
                 "{} routine \"{}\" (folder {}).",
@@ -163,6 +316,9 @@ impl SandAgentState {
     }
 
     pub fn delete_automation(&self, id: &str) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_automation.as_ref() {
+            return mutator(AgentAutomationMutation::Remove { id: id.to_string() });
+        }
         let name = self.workflows.automations.get(id)
             .map(|record| record.name)
             .unwrap_or_else(|| id.to_string());
@@ -187,6 +343,12 @@ impl SandAgentState {
             trigger: None,
             source_ref: None,
         };
+        if let Some(mutator) = self.mutate_agent_workflow.as_ref() {
+            return mutator(AgentWorkflowMutation::Upsert {
+                id: id.map(ToOwned::to_owned),
+                spec,
+            });
+        }
         let result = match id {
             Some(id) => self.workflows.update(id, &spec),
             None => self.workflows.create(&spec),
@@ -210,6 +372,9 @@ impl SandAgentState {
     }
 
     pub fn delete_workflow(&self, id: &str) -> StateWriteResult {
+        if let Some(mutator) = self.mutate_agent_workflow.as_ref() {
+            return mutator(AgentWorkflowMutation::Remove { id: id.to_string() });
+        }
         match self.workflows.remove(id) {
             Ok(true) => StateWriteResult::success(format!("Deleted workflow {id}.")),
             Ok(false) => StateWriteResult::failure(format!(
@@ -222,6 +387,12 @@ impl SandAgentState {
     pub fn update_profile(&self, name: Option<&str>, description: Option<&str>) -> StateWriteResult {
         if name.is_none() && description.is_none() { return StateWriteResult::failure("nothing to change - pass at least one of name or description."); }
         if name.is_some_and(|value| value.trim().is_empty()) { return StateWriteResult::failure("a blank name is not allowed."); }
+        if let Some(write_agent_profile) = self.write_agent_profile.as_ref() {
+            return write_agent_profile(
+                name.map(str::to_string),
+                description.map(str::to_string),
+            );
+        }
         let path = get_sand_profile_path(&self.agent_dir);
         let current = read_sand_profile_file(&path).unwrap_or(SandAgentProfile {
             name: String::new(), description: String::new(), title: String::new(),
@@ -243,6 +414,9 @@ impl SandAgentState {
         if let Some(value) = hidden_from_sidebar { update.insert("hiddenFromSidebar".into(), Value::Bool(value)); }
         if let Some(value) = notify_on_agent_updates { update.insert("notifyOnAgentUpdates".into(), Value::Bool(value)); }
         if update.is_empty() { return StateWriteResult::failure("nothing to change - pass at least one setting field."); }
+        if let Some(write_agent_settings) = self.write_agent_settings.as_ref() {
+            return write_agent_settings(update);
+        }
         match write_sand_settings_file(get_sand_settings_path(&self.agent_dir), &update) {
             Ok(()) => StateWriteResult::success("Updated your settings."),
             Err(error) => StateWriteResult::failure(format!("could not update settings: {error}")),
@@ -250,6 +424,9 @@ impl SandAgentState {
     }
 
     pub fn disconnect_channel(&self, platform: &str) -> StateWriteResult {
+        if let Some(disconnect_agent_channel) = self.disconnect_agent_channel.as_ref() {
+            return disconnect_agent_channel(platform);
+        }
         match self.channels.remove(platform) {
             Ok(true) => StateWriteResult::success(format!("Disconnected {platform}.")),
             Ok(false) => StateWriteResult::failure(format!("{platform} is not connected.")),
@@ -261,6 +438,13 @@ impl SandAgentState {
         let id = slug.trim();
         if !is_safe_folder_id(id) { return StateWriteResult::failure(format!("\"{id}\" is not a valid project slug.")); }
         if name.trim().is_empty() { return StateWriteResult::failure("a project needs a non-empty name."); }
+        if let Some(creator) = self.create_agent_project.as_ref() {
+            return creator(
+                id.to_string(),
+                name.trim().to_string(),
+                description.map(|value| value.trim().to_string()),
+            );
+        }
         let path = get_project_dir(&self.sand_root, id);
         let existed = project_dir_exists(&self.sand_root, id);
         if !existed {
@@ -268,10 +452,15 @@ impl SandAgentState {
             let body = format!("---\nname: {}\ndescription: {}\n---\n", name.trim(), description.unwrap_or_default().trim());
             if let Err(error) = fs::write(path.join("project.md"), body) { return StateWriteResult::failure(format!("could not create project \"{id}\": {error}")); }
         }
-        match self.membership.join(id) {
-            Ok(true) => StateWriteResult::success(if existed { format!("Joined existing project \"{id}\".") } else { format!("Created and joined project \"{}\" (folder {id}).", name.trim()) }),
-            Ok(false) => StateWriteResult::failure(format!("could not join project \"{id}\".")),
-            Err(error) => StateWriteResult::failure(format!("could not join project \"{id}\": {error}")),
+        let joined = self.join_project(id);
+        if joined.ok {
+            StateWriteResult::success(if existed {
+                format!("Joined existing project \"{id}\".")
+            } else {
+                format!("Created and joined project \"{}\" (folder {id}).", name.trim())
+            })
+        } else {
+            joined
         }
     }
 
@@ -279,6 +468,11 @@ impl SandAgentState {
         let id = slug.trim();
         if !is_safe_folder_id(id) { return StateWriteResult::failure(format!("\"{id}\" is not a valid project slug.")); }
         if !project_dir_exists(&self.sand_root, id) { return StateWriteResult::failure(format!("no project \"{id}\" exists.")); }
+        if let Some(mutator) = self.mutate_agent_project_membership.as_ref() {
+            return mutator(AgentProjectMembershipMutation::Join {
+                slug: id.to_string(),
+            });
+        }
         match self.membership.join(id) {
             Ok(true) => StateWriteResult::success(format!("Joined project \"{id}\".")),
             Ok(false) => StateWriteResult::failure(format!("could not join project \"{id}\".")),
@@ -289,6 +483,11 @@ impl SandAgentState {
     pub fn leave_project(&self, slug: &str) -> StateWriteResult {
         let id = slug.trim();
         if !is_safe_folder_id(id) { return StateWriteResult::failure(format!("\"{id}\" is not a valid project slug.")); }
+        if let Some(mutator) = self.mutate_agent_project_membership.as_ref() {
+            return mutator(AgentProjectMembershipMutation::Leave {
+                slug: id.to_string(),
+            });
+        }
         match self.membership.leave(id) {
             Ok(true) => StateWriteResult::success(format!("Left project \"{id}\".")),
             Ok(false) => StateWriteResult::failure(format!("could not leave project \"{id}\".")),
@@ -328,9 +527,25 @@ impl SandAgentState {
         if bytes.is_empty() || bytes.len() as u64 > AVATAR_MAX_BYTES { return StateWriteResult::failure("the image must be under 5 MB and non-empty."); }
         let Some(mime) = sniff_avatar_mime_type(&bytes) else { return StateWriteResult::failure("that file is not a recognized avatar image."); };
         let extension = match mime { "image/png" => "png", "image/jpeg" => "jpg", "image/webp" => "webp", "image/gif" => "gif", "image/svg+xml" => "svg", _ => return StateWriteResult::failure("that file is not a recognized avatar image.") };
+        let filename = if self.mutate_agent_avatar.is_some() || extension == "png" {
+            CANONICAL_AVATAR_FILENAME.to_string()
+        } else {
+            format!("avatar.{extension}")
+        };
+        if let Some(mutator) = self.mutate_agent_avatar.as_ref() {
+            let result = mutator(Some(bytes));
+            if !result.ok {
+                return result;
+            }
+            if let Some(callback) = &self.on_avatar_changed {
+                callback();
+            }
+            return StateWriteResult::success(format!(
+                "Updated your picture ({filename}). Source {source_label} can be deleted if you no longer need it."
+            ));
+        }
         if let Err(error) = fs::create_dir_all(&self.agent_dir) { return StateWriteResult::failure(format!("could not update picture: {error}")); }
         for name in list_conventional_avatar_filenames(&self.agent_dir) { let _ = fs::remove_file(self.agent_dir.join(name)); }
-        let filename = if extension == "png" { CANONICAL_AVATAR_FILENAME.to_string() } else { format!("avatar.{extension}") };
         if let Err(error) = fs::write(self.agent_dir.join(&filename), bytes) { return StateWriteResult::failure(format!("could not update picture: {error}")); }
         invalidate_avatar_data_url_cache(&self.agent_dir);
         if let Some(callback) = &self.on_avatar_changed { callback(); }
@@ -342,6 +557,16 @@ impl SandAgentState {
     pub fn clear_avatar(&self) -> StateWriteResult {
         let files = list_conventional_avatar_filenames(&self.agent_dir);
         if files.is_empty() { return StateWriteResult::failure("you already have the default picture."); }
+        if let Some(mutator) = self.mutate_agent_avatar.as_ref() {
+            let result = mutator(None);
+            if !result.ok {
+                return result;
+            }
+            if let Some(callback) = &self.on_avatar_changed {
+                callback();
+            }
+            return StateWriteResult::success("Cleared your picture - back to the default.");
+        }
         for name in files {
             if let Err(error) = fs::remove_file(self.agent_dir.join(name)) { return StateWriteResult::failure(format!("could not clear picture: {error}")); }
         }

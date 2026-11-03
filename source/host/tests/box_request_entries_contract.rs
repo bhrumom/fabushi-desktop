@@ -133,6 +133,56 @@ fn production_resolution_updates_only_matching_unresolved_request() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn session_bound_box_resolution_rejects_archived_owner_without_partial_update() {
+    let root = temp_root("session-bound-archive");
+    let sessions = ProductionSessionWorkers::with_agents_root(&root, 500);
+    let record = sessions
+        .materialize_new_session(None, "user", None)
+        .expect("materialize agent");
+    let session_key = format!("agent:{}:main", record.id);
+    let current = sessions
+        .read_session_work_admission(&record.id)
+        .expect("admission")
+        .expect("main admission");
+    sessions
+        .append_agent_transcript_entries(
+            &record.id,
+            &[serde_json::json!({
+                "id": "entry-bound",
+                "kind": "send-message",
+                "message": {"type": "text", "content": "help"},
+                "boxRequestId": "request-bound",
+                "sessionKey": session_key,
+            })],
+        )
+        .expect("entry");
+    sessions
+        .transition_session_work_archive(
+            &record.id,
+            &current.session_key,
+            &current.session_id,
+            Some(&current.lifecycle_revision),
+            true,
+            Some("human-1"),
+            Some("review"),
+            100.0,
+        )
+        .expect("archive");
+    let error = resolve_box_request_entry(&sessions, &record.id, "request-bound", "dismissed")
+        .expect_err("archived session must reject session-bound resolution");
+    assert!(error.contains("session is not admitted"));
+    let entry = sessions
+        .read_agent_transcript_entries(&record.id)
+        .expect("transcript")
+        .into_iter()
+        .find(|entry| entry["id"] == "entry-bound")
+        .expect("bound entry");
+    assert!(entry.get("boxResolution").is_none());
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn shipping_send_pipeline_owns_active_box_request_supersede_and_resolution_identity() {

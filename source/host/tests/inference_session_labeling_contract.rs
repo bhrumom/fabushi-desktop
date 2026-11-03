@@ -75,6 +75,25 @@ fn cursor_model_resolution_preserves_frozen_precedence() {
     assert_eq!(resolved.model_id, "summary-model");
     assert_eq!(resolved.max_mode, Some(true));
 
+    let session_override = SandSessionOptions {
+        model_id: Some("session-model".into()),
+        session_model_override: true,
+        thinking_level: Some("high".into()),
+        ..Default::default()
+    };
+    let resolved = requested(
+        Some(&session_override),
+        None,
+        Some(&stored),
+        None,
+        None,
+        Some(&experiment),
+    );
+    assert_eq!(resolved.model_id, "session-model");
+    assert_eq!(resolved.parameters[0].id, "thinking");
+    assert_eq!(resolved.parameters[0].value, "high");
+    assert_eq!(stored.model_id, "stored");
+
     let computer = SandSessionOptions {
         is_computer_use_subagent: true,
         ..Default::default()

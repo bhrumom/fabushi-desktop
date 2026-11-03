@@ -438,6 +438,7 @@ mod tests {
 
     fn responses_checkpoint() -> CodexDirectCheckpoint {
         CodexDirectCheckpoint {
+            model: Some("test-model".into()),
             input: vec![
                 serde_json::json!({
                     "type": "message",

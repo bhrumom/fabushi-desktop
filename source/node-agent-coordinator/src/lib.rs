@@ -5,6 +5,7 @@
 //! supervision boundary, not a renderer helper.
 
 pub mod carrier;
+pub mod cloud_worker_projection;
 pub mod client_side_tool_v2_relay;
 pub mod control_port_client;
 pub mod gateway;

@@ -134,7 +134,8 @@ fn generate_image_is_parent_only() {
             generate_image_executor: Some(Arc::new(FakeGenerator)),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     assert!(
         bridge
             .list_tools()

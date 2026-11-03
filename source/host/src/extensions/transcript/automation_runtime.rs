@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 
 use serde_json::{Map, Value};
 
-use crate::automations::automation::{AutomationRecord, AutomationSpec};
+use crate::automations::automation::{AutomationRecord, AutomationRun, AutomationSpec};
 use crate::automations::automation_id::stable_automation_id;
 use crate::automations::automation_schedule::summarize_schedule_next_7_days;
 use crate::automations::automation_store::FileAutomationStore;
@@ -14,8 +14,11 @@ use super::automation_event_fires::{
     AutomationEventFires, DroppedFire, DroppedFireReporter, EventBatchExecutor, EventFireBatch,
 };
 use super::automation_run_path::{
-    AutomationExecutionResult, AutomationRunPath, AutomationRunTrigger, FireAutomationArgs,
-    FireAutomationOutcome,
+    AutomationAdmissionStage, AutomationExecutionResult, AutomationRunAttempt,
+    AutomationRunFenceSnapshot, AutomationRunPath,
+    AutomationRunStore, AutomationRunTrigger, CronSessionRetentionPolicy,
+    CronSessionSweepThrottle, FireAutomationArgs, FireAutomationOutcome,
+    parse_cron_session_retention,
 };
 use super::automation_spend_guard_runtime::AutomationSpendGuardRuntime;
 use super::automation_snapshot::{
@@ -304,6 +307,188 @@ pub struct AutomationRuntime {
     last_known: Arc<Mutex<HashMap<String, BTreeMap<String, AutomationSnapshot>>>>,
     mutation_locks: Arc<Mutex<HashMap<String, Arc<Mutex<()>>>>>,
     lifecycle_reporter: Arc<Mutex<Option<AutomationLifecycleReporter>>>,
+    cron_sweep_throttle: Arc<Mutex<CronSessionSweepThrottle>>,
+}
+
+struct AdmittedAutomationRunStore<'a> {
+    session: SandAgentSessionStore,
+    agent_id: &'a str,
+    store: &'a FileAutomationStore,
+}
+
+impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
+    fn resolved_user_time_zone(&self) -> Option<String> {
+        self.store.resolved_user_time_zone()
+    }
+
+    fn mark_notice_raised(
+        &self,
+        automation_id: &str,
+        notice: &str,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store.mark_notice_raised(automation_id, notice)
+                    .map_err(|error| error.to_string())
+            })
+    }
+
+    fn record_run(
+        &self,
+        automation_id: &str,
+        fired_at_ms: f64,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store.record_run(automation_id, fired_at_ms)
+                    .map_err(|error| error.to_string())
+            })
+    }
+
+    fn begin_run(
+        &self,
+        automation_id: &str,
+        trigger: &str,
+        fired_at_ms: f64,
+        event: Option<&str>,
+        run_id: Option<&str>,
+        coalesced_run_ids: Option<&[String]>,
+    ) -> Result<Option<AutomationRun>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store.begin_fresh_run(
+                    automation_id,
+                    trigger,
+                    fired_at_ms,
+                    event,
+                    run_id,
+                    coalesced_run_ids,
+                )
+                .map_err(|error| error.to_string())
+            })
+    }
+
+    fn finish_run(
+        &self,
+        automation_id: &str,
+        run_id: &str,
+        status: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.session
+            .with_admitted_filesystem_mutation(self.agent_id, || {
+                self.store
+                    .finish_run(automation_id, run_id, status, finished_at_ms, detail)
+                    .map_err(|error| error.to_string())
+            })
+    }
+
+    fn begin_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        started_at_ms: f64,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron session registration agent identity mismatch".into());
+        }
+        let changed = self.session.begin_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            started_at_ms,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session run registration was not committed".into())
+        }
+    }
+
+    fn finish_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron session settlement agent identity mismatch".into());
+        }
+        let changed = self.session.finish_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session run settlement was stale or not committed".into())
+        }
+    }
+
+    fn publish_cron_session_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        fences: AutomationRunFenceSnapshot,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron fence publication agent identity mismatch".into());
+        }
+        let changed = self.session.publish_cron_session_run_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            fences.active_controller,
+            fences.pending_outgoing_media,
+            fences.unsettled_subagent,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session fence publication was stale or not committed".into())
+        }
+    }
+
+    fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        fences: AutomationRunFenceSnapshot,
+    ) -> Result<(), String> {
+        if agent_id != self.agent_id {
+            return Err("cron session settlement agent identity mismatch".into());
+        }
+        let changed = self.session.finish_cron_session_run_with_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+            fences.active_controller,
+            fences.pending_outgoing_media,
+            fences.unsettled_subagent,
+        )?;
+        if changed {
+            Ok(())
+        } else {
+            Err("cron session fenced settlement was stale or not committed".into())
+        }
+    }
 }
 
 impl AutomationRuntime {
@@ -317,11 +502,55 @@ impl AutomationRuntime {
             last_known: Arc::new(Mutex::new(HashMap::new())),
             mutation_locks: Arc::new(Mutex::new(HashMap::new())),
             lifecycle_reporter: Arc::new(Mutex::new(None)),
+            cron_sweep_throttle: Arc::new(Mutex::new(CronSessionSweepThrottle::default())),
         }
     }
 
     pub fn run_path(&self) -> Arc<AutomationRunPath> {
         Arc::clone(&self.run_path)
+    }
+
+    /// Request a throttled, read-only cron candidate projection through the
+    /// existing automation and session owners. A scheduler may consume the
+    /// result later; this bridge never archives or deletes a row.
+    pub fn list_expired_cron_session_candidates(
+        &self,
+        agent_id: &str,
+        retention_value: Option<&Value>,
+        now_ms: f64,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        let retention_ms = match parse_cron_session_retention(retention_value) {
+            CronSessionRetentionPolicy::Disabled => return Ok(Vec::new()),
+            CronSessionRetentionPolicy::DurationMs(value) => value,
+        };
+        if !now_ms.is_finite() || now_ms < 0.0 {
+            return Ok(Vec::new());
+        }
+        let now_ms_u64 = if now_ms >= u64::MAX as f64 {
+            u64::MAX
+        } else {
+            now_ms.floor() as u64
+        };
+        let admitted = self
+            .cron_sweep_throttle
+            .lock()
+            .map_err(|_| "cron sweep throttle lock poisoned".to_string())?
+            .admit(agent_id, now_ms_u64);
+        if !admitted {
+            return Ok(Vec::new());
+        }
+        match self
+            .sessions
+            .list_expired_cron_session_runs(agent_id, now_ms, Some(retention_ms))
+        {
+            Ok(rows) => Ok(rows),
+            Err(error) => {
+                if let Ok(mut throttle) = self.cron_sweep_throttle.lock() {
+                    throttle.forget_owner(agent_id);
+                }
+                Err(error)
+            }
+        }
     }
 
     pub fn event_fires(&self) -> Arc<AutomationEventFires> {
@@ -387,6 +616,36 @@ impl AutomationRuntime {
 
     pub fn list_all_automations(&self) -> Result<Vec<AgentAutomationEntry>, String> {
         SandAgentSessionStore::new(Arc::clone(&self.sessions)).list_all_automations()
+    }
+
+    pub fn find_automation_for_backend_delivery(
+        &self,
+        agent_id: &str,
+        backend_id: &str,
+    ) -> Result<Option<AgentAutomationEntry>, String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            SandAgentSessionStore::new(Arc::clone(&self.sessions))
+                .find_automation_for_backend_delivery(agent_id, backend_id)
+        })
+    }
+
+    pub fn read_run_for_delivery(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+    ) -> Result<Option<AutomationRun>, String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
+            let store = session.automation_store_for(agent_id)?;
+            // Use the same Session filesystem/deletion boundary as history
+            // writers. The closure reads only this already-resolved store;
+            // it must not re-enter the public Session admission facade.
+            session.with_admitted_filesystem_mutation(agent_id, || {
+                store.read_run_for_delivery(automation_id, run_id)
+                    .map_err(|error| error.to_string())
+            })
+        })
     }
 
     pub fn list_all_automation_definitions(&self) -> Result<Vec<AgentAutomationEntry>, String> {
@@ -535,13 +794,17 @@ impl AutomationRuntime {
         let mut args = FireAutomationArgs::manual(agent_id, automation, now_ms());
         args.is_group = Some(false);
         let runtime = self.clone();
+        let admitted_store = AdmittedAutomationRunStore {
+            session: SandAgentSessionStore::new(Arc::clone(&self.sessions)),
+            agent_id,
+            store: &store,
+        };
         let outcome = self.run_path.fire_automation_with_on_duplicate(
-            &store,
+            &admitted_store,
             args,
             move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
             execute,
         )?;
-
         self.with_agent_mutation_lock(agent_id, || {
             let after = store.list_definitions();
             let _ = self.record_changes(
@@ -570,45 +833,106 @@ impl AutomationRuntime {
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
+        self.run_background_automation_attempt_with(
+            agent_id,
+            automation_id,
+            trigger,
+            events,
+            run_uuid,
+            coalesced_run_uuids,
+            fired_at_ms,
+            scheduled_for_ms,
+            execute,
+        )?.into_legacy_outcome()
+    }
+
+    pub fn run_background_automation_attempt_with<Execute>(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        trigger: AutomationRunTrigger,
+        events: Vec<Value>,
+        run_uuid: Option<String>,
+        coalesced_run_uuids: Vec<String>,
+        fired_at_ms: f64,
+        scheduled_for_ms: Option<f64>,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
         if !trigger.is_background() {
             return Err("background automation run requires schedule or event trigger".into());
         }
         if self.wakes_suspended() {
-            return Ok(None);
+            return Ok(AutomationRunAttempt::Outcome(None));
         }
-        let Some((store, automation, reminder)) = self.with_agent_mutation_lock(agent_id, || {
-            let store = self.automation_store(agent_id)?;
-            let Some(automation) = store.get(automation_id) else {
-                return Ok(None);
-            };
-            let before = store.list_definitions();
-            let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
-            let guard = self.spend_guard.apply_with_store(
-                agent_id,
-                &store,
-                automation_id,
-                fired_at_ms,
-            )?;
-            let after_guard = store.list_definitions();
-            let _ = self.record_changes(
-                agent_id,
-                &before,
-                &after_guard,
-                AutomationLifecycleSource::SpendGuard,
-            );
-            if guard.paused {
-                self.event_fires.report_fire_dropped(DroppedFire {
-                    agent_id: agent_id.to_string(),
-                    trigger,
-                    reason: "user_away_paused".into(),
-                    scheduled_for_ms: None,
-                    run_uuid: run_uuid.clone(),
-                });
-                return Ok(None);
+        // Spend Guard owns the Session filesystem/admission boundary. Keep
+        // only this Runtime's mutation mutex here so the Session lock is not
+        // acquired recursively.
+        let prepared = self.with_agent_mutation_lock(agent_id, || {
+            // Carry the stage as data through the existing String-error lock
+            // boundary; only these explicit pre-admission operations refuse.
+            Ok((|| {
+                let store = self.automation_store(agent_id)
+                    .map_err(|detail| (AutomationAdmissionStage::RuntimeAdmission, detail))?;
+                let Some(automation) = store.get(automation_id) else {
+                    return Ok(None);
+                };
+                // Refuse a known claimed identity before Spend Guard, notice, and
+                // last-run writes. The Session-admitted begin_fresh_run below is
+                // the authoritative race fence for concurrent ingress.
+                let claimed_ids = run_uuid.iter().map(String::as_str)
+                    .chain(coalesced_run_uuids.iter().map(String::as_str));
+                let checked_ids = claimed_ids.collect::<Vec<_>>();
+                if !checked_ids.is_empty() {
+                    let session = SandAgentSessionStore::new(Arc::clone(&self.sessions));
+                    session.with_admitted_filesystem_mutation(agent_id, || {
+                        for id in &checked_ids {
+                            if store.read_run_for_delivery(automation_id, id)
+                                .map_err(|error| error.to_string())?
+                                .is_some()
+                            {
+                                return Err("automation run identity has already been admitted".to_string());
+                            }
+                        }
+                        Ok(())
+                    }).map_err(|detail| (AutomationAdmissionStage::HistoryPrecheck, detail))?;
+                }
+                let before = store.list_definitions();
+                let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
+                let guard = self.spend_guard.apply_with_store(
+                    agent_id,
+                    &store,
+                    automation_id,
+                    fired_at_ms,
+                ).map_err(|detail| (AutomationAdmissionStage::SpendGuard, detail))?;
+                let after_guard = store.list_definitions();
+                let _ = self.record_changes(
+                    agent_id,
+                    &before,
+                    &after_guard,
+                    AutomationLifecycleSource::SpendGuard,
+                );
+                if guard.paused {
+                    self.event_fires.report_fire_dropped(DroppedFire {
+                        agent_id: agent_id.to_string(),
+                        trigger,
+                        reason: "user_away_paused".into(),
+                        scheduled_for_ms: None,
+                        run_uuid: run_uuid.clone(),
+                    });
+                    return Ok(None);
+                }
+                Ok(Some((store, automation, guard.reminder)))
+            })())
+        })?;
+        let (store, automation, reminder) = match prepared {
+            Ok(Some(prepared)) => prepared,
+            Ok(None) => return Ok(AutomationRunAttempt::Outcome(None)),
+            Err((stage, detail)) => {
+                return Ok(AutomationRunAttempt::AdmissionRefused { stage, detail });
             }
-            Ok(Some((store, automation, guard.reminder)))
-        })? else {
-            return Ok(None);
         };
 
         let args = FireAutomationArgs {
@@ -625,13 +949,22 @@ impl AutomationRuntime {
             spend_guard_reminder: reminder,
         };
         let runtime = self.clone();
-        let outcome = self.run_path.fire_automation_with_on_duplicate(
-            &store,
+        let admitted_store = AdmittedAutomationRunStore {
+            session: SandAgentSessionStore::new(Arc::clone(&self.sessions)),
+            agent_id,
+            store: &store,
+        };
+        let outcome = self.run_path.fire_automation_attempt_with_on_duplicate(
+            &admitted_store,
             args,
             move |args| runtime.report_fire_dropped(args, "duplicate_in_flight"),
             execute,
         )?;
-
+        if matches!(&outcome, AutomationRunAttempt::AdmissionRefused { .. }) {
+            // The legacy error skipped this final lifecycle reconciliation.
+            // Preserve that boundary for both typed and compatibility callers.
+            return Ok(outcome);
+        }
         self.with_agent_mutation_lock(agent_id, || {
             let current = store.list_definitions();
             let _ = self.record_changes(
@@ -726,6 +1059,30 @@ impl AutomationRuntime {
         )
     }
 
+    pub fn run_server_scheduled_automation_attempt_with<Execute>(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_uuid: String,
+        scheduled_for_ms: Option<f64>,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
+        self.run_background_automation_attempt_with(
+            agent_id,
+            automation_id,
+            AutomationRunTrigger::Schedule,
+            Vec::new(),
+            Some(run_uuid),
+            Vec::new(),
+            now_ms(),
+            scheduled_for_ms,
+            execute,
+        )
+    }
+
     pub fn handle_spend_guard_answer(
         &self,
         agent_id: &str,
@@ -733,6 +1090,7 @@ impl AutomationRuntime {
         value: &str,
         now_ms: f64,
     ) -> Result<Option<String>, String> {
+        // The guard answer acquires the Session admission boundary once.
         self.with_agent_mutation_lock(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let before = store.list_definitions();
@@ -800,7 +1158,7 @@ impl AutomationRuntime {
     where
         Mutation: FnOnce(&FileAutomationStore) -> Result<T, String>,
     {
-        self.with_agent_mutation_lock(agent_id, || {
+        self.with_admitted_agent_mutation(agent_id, || {
             let store = self.automation_store(agent_id)?;
             let before = store.list_definitions();
             let _ = self.record_changes(agent_id, &before, &before, AutomationLifecycleSource::Agent);
@@ -808,6 +1166,17 @@ impl AutomationRuntime {
             let after = store.list_definitions();
             let events = self.record_changes(agent_id, &before, &after, source);
             Ok((result, events))
+        })
+    }
+
+    fn with_admitted_agent_mutation<T>(
+        &self,
+        agent_id: &str,
+        operation: impl FnOnce() -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.with_agent_mutation_lock(agent_id, || {
+            SandAgentSessionStore::new(Arc::clone(&self.sessions))
+                .with_admitted_filesystem_mutation(agent_id, operation)
         })
     }
 

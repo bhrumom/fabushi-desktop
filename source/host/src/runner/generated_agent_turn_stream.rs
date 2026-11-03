@@ -7,10 +7,14 @@ use serde_json::{Map, Value, json};
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
+use crate::extensions::session::typed_replay::TypedReplayEntry;
+use crate::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
 use crate::transcript_mirror::conversation_state_binary::{
     ConversationStateRecoveryFields, decode_conversation_state_recovery_fields,
 };
-use crate::transcript_mirror::generated_occurrence_codec::encode_generated_agent_tool_step;
+use crate::transcript_mirror::generated_occurrence_codec::{
+    encode_generated_agent_tool_step, encode_generated_agent_tool_step_wire,
+};
 
 use super::inactive_turn_agent_stream::{
     InactiveTurnAgentLifecycleHooks, InactiveTurnAgentOutputSink,
@@ -27,16 +31,18 @@ use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::{CompletedRoutedToolCall, TurnAgentComposition};
 use super::{
     OuterStreamFuture, OuterStreamPersistence, StreamAttemptPolicy,
-    StreamAttemptRuntime, StreamCancelReason, TurnRunOptions,
+    StreamAttemptRuntime, StreamCancelReason, ToolEffectCustodySnapshot,
+    TurnRunOptions,
 };
 
 pub struct GeneratedAgentTurnContext<'a> {
     pub data_dir: &'a Path,
     pub lifecycle_messages: &'a [ProviderMessage],
     pub provider_messages: &'a [ProviderMessage],
+    pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub prompt_action: &'a PromptCollectorTurnAction,
     pub options: &'a TurnRunOptions,
-    pub base_state_bytes: &'a [u8],
+    pub expected_base: &'a Option<ProductionAgentCheckpointSnapshot>,
     pub ack_token: Option<&'a str>,
 }
 
@@ -72,6 +78,7 @@ impl GeneratedAgentTurnStreamError {
 struct ProductionGeneratedAgentStreamSource {
     composition: TurnAgentComposition,
     checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
+    stream_attempt_runtime: Arc<StreamAttemptRuntime>,
 }
 
 fn validate_canonical_state_blob_references(
@@ -235,6 +242,9 @@ fn mcp_generated_result(value: &Value) -> Value {
 }
 
 fn checkpoint_tool_step(call: CompletedRoutedToolCall) -> Result<Vec<u8>, ProviderSessionError> {
+    if let Some(wire) = call.send_message_wire.as_ref() {
+        return Ok(encode_generated_agent_tool_step_wire(wire.as_bytes()));
+    }
     let effective = if call.tool.tool_name.trim().is_empty() {
         call.tool.name.as_str()
     } else {
@@ -279,6 +289,39 @@ fn checkpoint_tool_step(call: CompletedRoutedToolCall) -> Result<Vec<u8>, Provid
     })
 }
 
+impl ProductionGeneratedAgentStreamSource {
+    fn stage_generated_state(
+        &self,
+        context: &GeneratedAgentTurnContext<'_>,
+        calls: Vec<CompletedRoutedToolCall>,
+        assistant_content: String,
+    ) -> Result<GeneratedAgentTurnState, GeneratedAgentTurnStreamError> {
+        let generated_tool_steps = calls
+            .into_iter()
+            .map(checkpoint_tool_step)
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(GeneratedAgentTurnStreamError::Provider)?;
+        let checkpoint = match self.checkpoint_sink.as_ref() {
+            Some(checkpoint_sink) => Some(
+                checkpoint_sink
+                    .stage_generated_turn(
+                        context.expected_base,
+                        context.lifecycle_messages,
+                        context.options,
+                        &generated_tool_steps,
+                        &assistant_content,
+                    )
+                    .map_err(GeneratedAgentTurnStreamError::Provider)?,
+            ),
+            None => None,
+        };
+        Ok(GeneratedAgentTurnState {
+            checkpoint,
+            assistant_content,
+        })
+    }
+}
+
 impl<'ctx>
     InactiveTurnAgentStreamSource<
         GeneratedAgentTurnContext<'ctx>,
@@ -291,7 +334,7 @@ impl<'ctx>
         &'a self,
         context: &'a GeneratedAgentTurnContext<'ctx>,
         _resume_from: Option<&'a GeneratedAgentTurnState>,
-        _persist_checkpoint: &'a mut dyn InactiveTurnCheckpointSink<
+        persist_checkpoint: &'a mut dyn InactiveTurnCheckpointSink<
             GeneratedAgentTurnContext<'ctx>,
             GeneratedAgentTurnState,
         >,
@@ -301,57 +344,89 @@ impl<'ctx>
         Result<GeneratedAgentTurnState, Self::Error>,
     > {
         Box::pin(async move {
-            if let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() {
-                let live_base_state = checkpoint_sink
-                    .base_state_bytes()
-                    .map_err(GeneratedAgentTurnStreamError::Provider)?;
-                if live_base_state != context.base_state_bytes {
-                    return Err(GeneratedAgentTurnStreamError::Provider(
-                        ProviderSessionError::Protocol(
-                            "Runner Agent base state changed after turn input projection".into(),
-                        ),
-                    ));
+            let result = async {
+                if let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() {
+                    let live_base_snapshot = checkpoint_sink
+                        .checked_base_snapshot()
+                        .map_err(GeneratedAgentTurnStreamError::Provider)?;
+                    if &live_base_snapshot != context.expected_base {
+                        return Err(GeneratedAgentTurnStreamError::Provider(
+                            ProviderSessionError::Protocol(
+                                "Runner Agent base state changed after turn input projection".into(),
+                            ),
+                        ));
+                    }
+                    validate_canonical_state_blob_references(
+                        checkpoint_sink.as_ref(),
+                        live_base_snapshot.as_ref()
+                            .map(|snapshot| snapshot.checkpoint_bytes.as_slice())
+                            .unwrap_or_default(),
+                    )?;
                 }
-                validate_canonical_state_blob_references(
-                    checkpoint_sink.as_ref(),
-                    &live_base_state,
-                )?;
-            }
-            let mut forward_delta = |delta: &str, accumulated: &str| {
-                output.on_text_delta(delta, accumulated);
-            };
-            let assistant_content = self
-                .composition
-                .run(
+                let mut forward_delta = |delta: &str, accumulated: &str| {
+                    output.on_text_delta(delta, accumulated);
+                };
+                match self.composition.run(
                     context.data_dir,
                     context.provider_messages,
+                    context.typed_replay,
                     &mut forward_delta,
-                )
-                .map_err(GeneratedAgentTurnStreamError::Provider)?;
-            let generated_tool_steps = self
-                .composition
-                .take_completed_tool_calls()
-                .into_iter()
-                .map(checkpoint_tool_step)
-                .collect::<Result<Vec<_>, _>>()
-                .map_err(GeneratedAgentTurnStreamError::Provider)?;
-            let checkpoint = match self.checkpoint_sink.as_ref() {
-                Some(checkpoint_sink) => Some(
-                    checkpoint_sink
-                        .stage_generated_turn(
-                            context.lifecycle_messages,
-                            context.options,
-                            &generated_tool_steps,
-                            &assistant_content,
-                        )
-                        .map_err(GeneratedAgentTurnStreamError::Provider)?,
-                ),
-                None => None,
-            };
-            Ok(GeneratedAgentTurnState {
-                checkpoint,
-                assistant_content,
-            })
+                ) {
+                    Ok(assistant_content) => {
+                        let calls = self.composition.take_completed_tool_calls_checked()
+                            .map_err(GeneratedAgentTurnStreamError::Provider)?;
+                        self.stage_generated_state(context, calls, assistant_content)
+                    }
+                    Err(error) => {
+                        let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() else {
+                            return Err(GeneratedAgentTurnStreamError::Provider(error));
+                        };
+                        // Revoke completion observations before publishing failed
+                        // history, including any preceding successful invocation.
+                        checkpoint_sink.invalidate_original_turn_completion();
+                        let history_result: Result<(), GeneratedAgentTurnStreamError> = async {
+                            let calls = self.composition.take_completed_tool_calls_checked()
+                                .map_err(GeneratedAgentTurnStreamError::Provider)?;
+                            let custody = self.stream_attempt_runtime.effect_custody();
+                            if calls.is_empty()
+                                || calls.iter().any(|call| call.result.is_err())
+                                || custody.unsettled_reason().is_some()
+                                || u64::try_from(calls.len()).ok() != Some(custody.started_revision)
+                            {
+                                return Ok(());
+                            }
+                            let mut history = self.stage_generated_state(
+                                context, calls, String::new(),
+                            )?;
+                            // Canonical history does not accept a provider retry
+                            // checkpoint or change the observed effect revision.
+                            persist_checkpoint.persist(context, &mut history).await
+                                .map_err(GeneratedAgentTurnStreamError::Persistence)
+                        }
+                        .await;
+                        if let Err(history_error) = history_result {
+                            let phase = match history_error {
+                                GeneratedAgentTurnStreamError::Provider(_) => "observation-or-staging",
+                                GeneratedAgentTurnStreamError::Persistence(_) => "canonical-persistence",
+                            };
+                            // Keep private tool/provider content out of this
+                            // secondary diagnostic. The original typed refusal
+                            // still owns Host review and cancellation behavior.
+                            eprintln!("mahayana-runner interrupted_generated_history_not_committed phase={phase}");
+                        }
+                        Err(GeneratedAgentTurnStreamError::Provider(error))
+                    }
+                }
+            }
+            .await;
+            if result.is_err() {
+                if let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() {
+                    // Preparation, encoding and persistence refusals must not
+                    // leave an earlier invocation eligible for completion.
+                    checkpoint_sink.invalidate_original_turn_completion();
+                }
+            }
+            result
         })
     }
 }
@@ -391,7 +466,7 @@ impl ProductionGeneratedAgentPersistence {
             checkpoint.checkpoint.as_ref(),
         ) {
             (Some(checkpoint_sink), Some(staged)) => checkpoint_sink
-                .persist_staged_text_turn(context.options, staged)
+                .persist_staged_text_turn(context.expected_base, context.options, staged)
                 .map_err(|error| error.to_string()),
             (None, None) => Ok(()),
             (Some(_), None) => Err(
@@ -484,11 +559,39 @@ pub fn run_production_generated_agent_stream(
     upgrade_quiescing: Arc<AtomicBool>,
     turn_quiesced: Arc<AtomicBool>,
 ) -> Result<String, ProviderSessionError> {
+    run_production_generated_agent_stream_with_custody(
+        composition,
+        checkpoint_sink,
+        data_dir,
+        projection,
+        max_steps,
+        generation,
+        upgrade_quiescing,
+        turn_quiesced,
+    )
+    .result
+}
+
+pub(crate) struct ProductionGeneratedAgentStreamOutcome {
+    pub(crate) result: Result<String, ProviderSessionError>,
+    pub(crate) tool_effect_custody: ToolEffectCustodySnapshot,
+}
+
+pub(crate) fn run_production_generated_agent_stream_with_custody(
+    composition: TurnAgentComposition,
+    checkpoint_sink: Option<Arc<dyn AgentStateCheckpointSink>>,
+    data_dir: &Path,
+    projection: ProductionTurnAgentInputProjection<'_>,
+    max_steps: usize,
+    generation: u64,
+    upgrade_quiescing: Arc<AtomicBool>,
+    turn_quiesced: Arc<AtomicBool>,
+) -> ProductionGeneratedAgentStreamOutcome {
     let ProductionTurnAgentInputProjection {
         action,
         mcp_tools,
         mcp_meta_tools,
-        base_state_bytes,
+        expected_base,
         ack_token,
         cancel_this_run,
         emit_update,
@@ -502,7 +605,7 @@ pub fn run_production_generated_agent_stream(
         .with_max_steps(max_steps)
         .with_projected_mcp_tools(mcp_tools)
         .with_projected_mcp_meta_tools(mcp_meta_tools)
-        .with_stream_attempt_runtime(stream_attempt_runtime);
+        .with_stream_attempt_runtime(Arc::clone(&stream_attempt_runtime));
     let source: Arc<
         dyn InactiveTurnAgentStreamSource<
             GeneratedAgentTurnContext<'_>,
@@ -512,6 +615,7 @@ pub fn run_production_generated_agent_stream(
     > = Arc::new(ProductionGeneratedAgentStreamSource {
         composition,
         checkpoint_sink: checkpoint_sink.clone(),
+        stream_attempt_runtime: Arc::clone(&stream_attempt_runtime),
     });
     let path = InactiveTurnAgentStreamPath::new(source);
     let persistence = ProductionGeneratedAgentPersistence::new(
@@ -526,15 +630,16 @@ pub fn run_production_generated_agent_stream(
         data_dir,
         lifecycle_messages: &action.lifecycle_messages,
         provider_messages: &action.provider_messages,
+        typed_replay: action.typed_replay.as_deref(),
         prompt_action: &action.prompt_action,
         options: &options,
-        base_state_bytes: &base_state_bytes,
+        expected_base: &expected_base,
         ack_token: ack_token.as_deref(),
     };
     let mut output = LiveDeltaSink {
         callback: emit_update,
     };
-    futures::executor::block_on(path.run_lifecycle_with_output(
+    let result = futures::executor::block_on(path.run_lifecycle_with_output(
         &context,
         None,
         &persistence,
@@ -542,7 +647,23 @@ pub fn run_production_generated_agent_stream(
         &mut output,
     ))
     .map(|state| state.assistant_content)
-    .map_err(GeneratedAgentTurnStreamError::into_provider_error)
+    .map_err(GeneratedAgentTurnStreamError::into_provider_error);
+    if result.is_err() {
+        // Final outer persistence can fail after the source returned Ok. Revoke
+        // this same sink's earlier observations at the actual return boundary;
+        // a repaired later write cannot restore original-turn completion.
+        if let Some(checkpoint_sink) = persistence.checkpoint_sink.as_ref() {
+            checkpoint_sink.invalidate_original_turn_completion();
+        }
+    }
+    // Freeze the exact composition runtime only after lifecycle persistence has
+    // returned, including errors. Late workers retain their runtime, not this
+    // value, so they cannot rewrite the owner's terminal evidence.
+    let tool_effect_custody = stream_attempt_runtime.effect_custody();
+    ProductionGeneratedAgentStreamOutcome {
+        result,
+        tool_effect_custody,
+    }
 }
 
 #[allow(dead_code)]

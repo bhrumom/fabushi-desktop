@@ -142,9 +142,27 @@ impl WidgetResponses {
         entry_id: &str,
         next: Value,
     ) -> Result<Option<Value>, String> {
-        let updated = self
-            .workers
-            .update_agent_transcript_entry(agent_id, entry_id, &next)?;
+        let session_key = self
+            .find_entry(agent_id, entry_id)?
+            .and_then(|entry| {
+                entry
+                    .get("sessionKey")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned)
+            });
+        let updated = if let Some(session_key) = session_key {
+            self.workers.update_agent_transcript_entry_if_session_admitted(
+                agent_id,
+                &session_key,
+                entry_id,
+                &next,
+            )?
+        } else {
+            self.workers
+                .update_agent_transcript_entry(agent_id, entry_id, &next)?
+        };
         if let Some(updated) = updated.as_ref() {
             self.emit_updated(agent_id, updated);
         }
@@ -512,7 +530,9 @@ impl WidgetResponses {
             .as_object_mut()
             .expect("transcript entry must be object")
             .insert("secretProvided".into(), Value::Bool(true));
-        let _ = self.update_entry(agent_id, entry_id, entry)?;
+        if self.update_entry(agent_id, entry_id, entry)?.is_none() {
+            return Err("secret request response was not durably recorded".into());
+        }
         Ok(Some(crate::runner::tools::sand_secret_request::build_secret_provided_ack(
             &label,
             &target_kind,

@@ -16,10 +16,11 @@ use mahayana_host_runtime::host_production_extensions::{
 
 const PRODUCTION_OWNER: &str = include_str!("../src/host_production_extensions.rs");
 const MEMORY_PRODUCTION: &str = include_str!("../src/extensions/memory/production.rs");
+const SUMMARY_JOB: &str = include_str!("../src/extensions/inference/summary_job.rs");
 const SHIPPING_HOST: &str = include_str!("../app/src/main.rs");
 
 #[test]
-fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
+fn current_shipping_subset_is_declared_in_the_frozen_36_slot_registry() {
     let all = HOST_EXTENSION_ORDER.iter().copied().collect::<BTreeSet<_>>();
     let shipping = CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS
         .iter()
@@ -34,7 +35,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
         shipping.iter().all(|id| all.contains(id)),
         "every shipping production extension must occupy a frozen Grok registry slot"
     );
-    assert_eq!(HOST_EXTENSION_ORDER.len(), 35);
+    assert_eq!(HOST_EXTENSION_ORDER.len(), 36);
     assert!(shipping.contains(&HostExtensionId::Auth));
     assert!(shipping.contains(&HostExtensionId::Notifications));
     assert!(shipping.contains(&HostExtensionId::Automations));
@@ -46,6 +47,7 @@ fn current_shipping_subset_is_declared_in_the_frozen_35_slot_registry() {
     assert!(shipping.contains(&HostExtensionId::LocalToolPermission));
     assert!(shipping.contains(&HostExtensionId::LocalExec));
     assert!(shipping.contains(&HostExtensionId::CloudAgents));
+    assert!(shipping.contains(&HostExtensionId::CloudWorkers));
     assert!(shipping.contains(&HostExtensionId::WebauthnProxy));
     assert!(shipping.contains(&HostExtensionId::StateBackstop));
     assert!(shipping.contains(&HostExtensionId::Inference));
@@ -76,6 +78,81 @@ fn shipping_production_extension_owner_remains_send_sync() {
     assert_send_sync::<mahayana_host_runtime::host_production_extensions::ProductionHostBoxExtensions>();
     assert_send_sync::<ProductionBrowserUaLog>();
     assert_send_sync::<ProductionInferenceExtension>();
+}
+
+#[test]
+fn production_host_owns_the_canonical_plugin_capability_catalog() {
+    for needle in [
+        "pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>",
+        "let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());",
+        "register_bundled_channel_capabilities(&plugin_capability_catalog)?;",
+        "register_bundled_worker_capabilities(&plugin_capability_catalog);",
+        "plugin_capability_catalog,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own the plugin capability catalog: {needle}"
+        );
+    }
+    assert!(
+        PRODUCTION_OWNER.contains("pub fn register_channel_delivery_provider("),
+        "provider registration must be owned by ProductionHostExtensions"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("family: CAPABILITY_FAMILY_WORKER_PROVIDERS.into()")
+            && PRODUCTION_OWNER.contains("provider_id: \"crabbox\".into()")
+            && PRODUCTION_OWNER.contains("plugin_id: \"crabbox\".into()"),
+        "bundled Crabbox registration must remain capability metadata only"
+    );
+    assert!(
+        SHIPPING_HOST.contains("plugin_capability_catalog: Arc::clone(&production_extensions.plugin_capability_catalog)")
+            && SHIPPING_HOST.contains("if method == \"cloudWorkers.capabilities\"")
+            && SHIPPING_HOST.contains("\"metadataOnly\": true"),
+        "worker capability metadata must be projected through the existing Host catalog"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("if self.plugin_capability_catalog.get_channel(channel_id).is_none()"),
+        "provider registration must reject channels absent from the capability catalog"
+    );
+}
+
+#[test]
+fn production_host_owns_the_channel_delivery_boundary_consumed_by_gateway() {
+    for needle in [
+        "pub channel_delivery: HostChannelDelivery",
+        "channel_delivery_router: ChannelDeliveryRouter",
+        "let channel_delivery_router = ChannelDeliveryRouter::new();",
+        "let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));",
+        "channel_delivery,",
+        "channel_delivery_router,",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "ProductionHostExtensions must own channel delivery: {needle}"
+        );
+    }
+    assert!(
+        SHIPPING_HOST.contains("channel_delivery: production_extensions.channel_delivery.clone()"),
+        "Gateway must consume the canonical ProductionHostExtensions channel delivery"
+    );
+    for needle in [
+        "pub fn replace_channel_delivery_provider(",
+        "pub fn unregister_channel_delivery_provider(",
+        "pub fn revoke_bundled_channel(",
+    ] {
+        assert!(
+            PRODUCTION_OWNER.contains(needle),
+            "provider lifecycle operation must be owned by ProductionHostExtensions: {needle}"
+        );
+    }
+    assert!(
+        PRODUCTION_OWNER.contains("fn register_bundled_channel_capabilities("),
+        "production startup must own bundled channel capability discovery"
+    );
+    assert!(
+        PRODUCTION_OWNER.contains("PluginRegistrationMode::Capabilities"),
+        "bundled startup discovery must remain capability-only"
+    );
 }
 
 
@@ -286,14 +363,14 @@ fn cross_user_host_upgrade_and_teach_recording_have_one_shipping_owner() {
 }
 
 #[test]
-fn shipping_production_composition_covers_the_exact_frozen_35_slots() {
+fn shipping_production_composition_covers_the_exact_frozen_36_slots() {
     let frozen = HOST_EXTENSION_ORDER.iter().copied().collect::<BTreeSet<_>>();
     let shipping = CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS
         .iter()
         .copied()
         .collect::<BTreeSet<_>>();
-    assert_eq!(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len(), 35);
-    assert_eq!(shipping.len(), 35, "shipping production registry must not duplicate slots");
+    assert_eq!(CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS.len(), 36);
+    assert_eq!(shipping.len(), 36, "shipping production registry must not duplicate slots");
     assert_eq!(shipping, frozen, "shipping production registry must cover the exact frozen slots");
     assert!(
         !PRODUCTION_OWNER.contains("NoopProductionExtension")
@@ -362,9 +439,13 @@ fn mcp_plugin_skills_have_one_shipping_production_owner() {
     for needle in [
         "HostExtensionId::Mcp",
         "mcp: Mutex<Option<McpExtensionRuntime>>",
+        "plugin_skills_binding: Mutex<PluginSkillsBinding>",
         "pub fn start_mcp(",
         "CoordinatorPluginSkillsLoader::new(relay)",
         "SandPluginSkillsService::new(",
+        "prepare_plugin_skills_service(",
+        "previous.successor_with_loader(loader)?",
+        "previous.retire_for_replacement()?",
         "McpHostService::new(backend, Some(plugin_port))",
         "PluginSkillsAuthenticatedStartup::start(",
         "cleanup_legacy_mcp_auth_credentials(sand_root_dir)",
@@ -452,18 +533,37 @@ fn memory_synthesis_is_pinned_to_authenticated_statsig_and_shipping_inference() 
     );
 
     for needle in [
-        "run_summarization_prompt(",
+        "create_summarization_job(",
+        "let propose_job = Arc::clone(&job);",
+        "propose_job.run_prompt(",
+        "let output = job.run_prompt(",
+        "SynthesisModelJob::new(propose, Some(verify))",
+        "MemorySynthesisOptions::new_with_job_factory(",
         "synthesis_system_prompt()",
         "verification_system_prompt()",
         "is_cancelled()",
         "memory_synthesis_telemetry_report",
         "report_memory_synthesis",
+        "ProductionSynthesisTarget",
+        "apply_synthesis_with_gate",
     ] {
         assert!(
             MEMORY_PRODUCTION.contains(needle),
             "shipping Memory production must consume the shared inference/telemetry path: {needle}"
         );
     }
+    assert!(
+        !MEMORY_PRODUCTION.contains(".run_summarization_prompt("),
+        "one Memory snapshot must not recapture an independent identity for each phase"
+    );
+    assert!(
+        SUMMARY_JOB.contains("self.inference.run_summarization_prompt_with_identity("),
+        "the summary job must delegate to the existing shipping Inference owner"
+    );
+    assert!(
+        SHIPPING_HOST.contains("bind_memory_synthesis_gate()"),
+        "shipping Host must bind Memory synthesis to the session owner before runtime use"
+    );
 }
 
 #[test]
@@ -551,4 +651,33 @@ fn structured_log_domain_reporter_adapters_preserve_frozen_fields() {
         }
         other => panic!("unexpected GC projection: {other:?}"),
     }
+}
+
+#[test]
+fn plugin_skills_binding_precedes_lifecycle_callbacks_and_preserves_the_retained_owner() {
+    let mcp_start = PRODUCTION_OWNER.split_once("    pub fn start_mcp(")
+        .expect("actual Host MCP startup method").1
+        .split_once("    pub fn stop_mcp(").expect("bounded actual MCP startup method").0;
+    let bind = mcp_start.find("prepare_plugin_skills_service(").expect("shared owner binding");
+    for later in [
+        "McpHostService::new(", "cleanup_legacy_mcp_auth_credentials(",
+        "PluginSkillsAuthenticatedStartup::start(", "create_production_skill_publish(",
+    ] {
+        assert!(bind < mcp_start.find(later).expect(later),
+            "root checking and binding must precede {later}");
+    }
+    assert!(mcp_start[bind..].starts_with(
+        "prepare_plugin_skills_service(\n            &self.plugin_skills_binding, sand_root_dir, loader, reporter,\n        )?;"
+    ), "a binding error must leave before external startup");
+    let session_start = PRODUCTION_OWNER.split_once("    pub fn start_session(")
+        .expect("actual Session startup method").1
+        .split_once("    pub fn shutdown_session(").expect("bounded Session startup").0;
+    assert!(session_start.find("register_plugin_skills_session(&self.plugin_skills_binding, &store)?;").unwrap()
+        < session_start.find("start_session_extension(").unwrap());
+    let stop = PRODUCTION_OWNER.split_once("    pub fn stop_mcp(").unwrap().1
+        .split_once("    pub fn start_box_store_sync(").unwrap().0;
+    assert!(!stop.contains("plugin_skills_binding"),
+        "taking the old runtime cannot erase a retained reader or pending Session binding");
+    assert!(stop.contains(".take()"));
+    assert!(stop.contains("runtime.stop()"));
 }

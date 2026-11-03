@@ -58,6 +58,7 @@ fn direct_runner_surface_projects_created_and_settled_events_and_unbinds() {
 
     let scope = SandLocalToolScope {
         agent_id: "agent-a".into(),
+        session_key: Some("agent:agent-a:main".into()),
         tool_call_id: Some("tool-a".into()),
         action: Some("read-file".into()),
         direction_epoch: None,
@@ -75,6 +76,10 @@ fn direct_runner_surface_projects_created_and_settled_events_and_unbinds() {
             pending
         })
         .expect("pending");
+    assert_eq!(
+        pending.session_key.as_deref(),
+        Some("agent:agent-a:main")
+    );
     assert!(controller.resolve_request(&pending.id, SandLocalToolResolution::AllowOnce));
     assert!(worker.join().expect("worker").allowed);
 

@@ -1,0 +1,1389 @@
+{
+  "record_version": 1,
+  "record_kind": "OCRM scoped media source-contract and implementation evidence; no acceptance grant",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "fixed_upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "contracts": [
+    "HHP-v2",
+    "IPB-v1"
+  ],
+  "integration_history": {
+    "recovered_policy_base": "524889b3511f220233ee4948a81ddefc161d40b4",
+    "implementation_source_base": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+    "media_published_subject": "8cf6143501b8c69b051d98df05f3ed523b364268",
+    "latest_concurrent_base_at_integration": "fc4ce17977cde16e10d471287389ca24a5fd78d6",
+    "rule": "The immutable review/publication manifest supplies the final exact source base and candidate tree. Preserve incoming Codex binding, media corrections and all other-owner changes.",
+    "pre_review_reconciliation": {
+      "base": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+      "tree": "819bfd2abe9adc7167fc79d2933058d2dd1a6f0e",
+      "preserved": "Codex workspace binding, canonical checkpoint invocation admission, fixed-U literal read correction and canonical materialization; preserve current workflow and all ledger metadata, merge only four unchanged media responsibility rows.",
+      "media_correction": "Windows directory-substitution fixture is published in this base; new native Actions remain pending at this source-contract record creation."
+    }
+  },
+  "root_decisions": [
+    {
+      "id": "HHP-F01",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "contract": "total UTF-8 shape inspection with fixed-source 8192 UTF-16 window, ECMAScript whitespace and header boundaries; no new permission/trust"
+    },
+    {
+      "id": "HHP-F02",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "contract": "Only confirmed missing path/invalid entry selects a stale row; uninspectable errors retain full original snapshot and confer no read authority"
+    },
+    {
+      "id": "HHP-v2",
+      "decision": "IMPLEMENT",
+      "contract": "Consume exact explicit HTML request in existing bounded local loader and actual Attachments service, using actual bytes and current policy, no generated trust or fallback"
+    },
+    {
+      "id": "IPB-F01",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "contract": "Guard required color byte25 with length26; preserve existing sufficient-header bool-alpha behavior; Rastermill24/25nullable-alpha contract difference remains open"
+    }
+  ],
+  "fixed_u_source_reads": [
+    {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "path": "src/media/host-read-media-policy.ts",
+      "git_blob": "dfe3731a67d3f2d320c0bb67c3aa747cabdee909",
+      "sha256": "293e5a513ddf6bd223781025a46bc343784b59c394ba49f42d47de0454c50c5a",
+      "bytes": 8553,
+      "reading_extent": "whole file deep policy review",
+      "read_line_ranges": [
+        [
+          1,
+          234
+        ]
+      ]
+    },
+    {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "path": "src/media/generated-html-provenance.ts",
+      "git_blob": "d00a635b7ee764126236a7f7c4c32969acf3f893",
+      "sha256": "1dbb1bd4578f2a3963db231ed28c74829cae83d582ff774194ff9201a25398a2",
+      "bytes": 3451,
+      "reading_extent": "whole file deep read/write/prune contract",
+      "read_line_ranges": [
+        [
+          1,
+          97
+        ]
+      ]
+    },
+    {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "path": "src/media/web-media.ts",
+      "git_blob": "f48bca504f6fb77c3d094864eb656cb2b1bf25e2",
+      "sha256": "8f4cd8cc17958c96f2c1ba87ad0a4d9b011cee847c0a171f92429593ba5374ec",
+      "bytes": 29564,
+      "reading_extent": "partial file: exact trust, final projection and explicit/local byte-admission consumer",
+      "read_line_ranges": [
+        [
+          141,
+          259
+        ],
+        [
+          588,
+          596
+        ],
+        [
+          650,
+          756
+        ]
+      ]
+    }
+  ],
+  "historical_producer_consumer_assessment": {
+    "reference_identities": {
+      "schema": "read-only-source-assessment-reference-identities-v1",
+      "purpose": "Task artifact only; not an inventory, second completion ledger, or verification receipt.",
+      "target": {
+        "repository": "bhrumom/fabushi-desktop",
+        "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+        "tree": "a2ce09381c59668b4d6ad39bfdd6c1f64c2b2c56"
+      },
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "instructions": {
+        "path": "/workspace/scratch/ac2d94a35110/authority/AGENTS.md",
+        "source": "parent-provided exact instruction copy",
+        "read": "read; no local digest recomputation"
+      },
+      "execution": {
+        "tests": false,
+        "builds": false,
+        "formatters": false,
+        "generators": false,
+        "validation": false,
+        "push": false,
+        "product_edits": false
+      },
+      "refs": [
+        {
+          "id": "U01",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/generated-html-provenance.ts",
+          "blob_sha": "d00a635b7ee764126236a7f7c4c32969acf3f893",
+          "review": "deep: complete provenance read/write/prune module",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/generated-html-provenance.ts"
+        },
+        {
+          "id": "U02",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/generated-html-provenance.worker.ts",
+          "blob_sha": "0dd1b22b82eb26d4c53e00a8bc8bf9ae62b035fa",
+          "review": "deep: complete table operations and full-tuple conditional pruning",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/generated-html-provenance.worker.ts"
+        },
+        {
+          "id": "U03",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/generated-html-provenance.worker-contract.ts",
+          "blob_sha": "3d1ad1f65212e1b7dd166e647c426c38fe4283d6",
+          "review": "contract: complete command and row definitions",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/generated-html-provenance.worker-contract.ts"
+        },
+        {
+          "id": "U04",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/store.ts",
+          "blob_sha": "d4342f8f5a4de1834346f131db70d2c6b6e80426",
+          "review": "deep: cleanup and save boundaries; complete retrieved source used, no full-family closure",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/store.ts"
+        },
+        {
+          "id": "U05",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/web-media.ts",
+          "blob_sha": "f48bca504f6fb77c3d094864eb656cb2b1bf25e2",
+          "review": "deep: imports/options, trusted path resolution and marking 169–258, local loader 599–752, result finalization; not whole-file deep credit",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/web-media.ts"
+        },
+        {
+          "id": "U06",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/outbound-attachment.ts",
+          "blob_sha": "d2c00c2905323763fb58cb61b4e3aeb5bf37a250",
+          "review": "deep: complete staging/mark/failure cleanup module",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/outbound-attachment.ts"
+        },
+        {
+          "id": "U07",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/host-read-media-policy.ts",
+          "blob_sha": "dfe3731a67d3f2d320c0bb67c3aa747cabdee909",
+          "review": "deep: complete policy",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/host-read-media-policy.ts"
+        },
+        {
+          "id": "U08",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/load-options.ts",
+          "blob_sha": "b98cc4f771dd292d11f13ee0002276d9f3919847",
+          "review": "deep: complete real reader/options normalization",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/load-options.ts"
+        },
+        {
+          "id": "U09",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/read-capability.ts",
+          "blob_sha": "112aeee900ab77986bd1218ebd430a71bc3700ac",
+          "review": "deep: selected permission/captured reader construction, especially 185–273; not full-file credit",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/read-capability.ts"
+        },
+        {
+          "id": "U10",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/local-media-access.ts",
+          "blob_sha": "157b09fb0faaf35b8a16a1afdd58dcb6a1a216ae",
+          "review": "deep: selected actual opener/read owner 197–285 and scope checks",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/local-media-access.ts"
+        },
+        {
+          "id": "U11",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/outbound-attachment.test.ts",
+          "blob_sha": "34132ef7fce77af32d741aee44200bbc4cc1e174",
+          "review": "oracle source: fetched complete; focused marker and failure-cleanup assertions; not executed",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/outbound-attachment.test.ts"
+        },
+        {
+          "id": "U12",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/infra/tmp-openclaw-dir.ts",
+          "blob_sha": "cf059c7a37029556ba07f40f73563dcea9b39adb",
+          "review": "deep: complete secure temp-root selection boundary",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/infra/tmp-openclaw-dir.ts"
+        },
+        {
+          "id": "U13",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/state/openclaw-state-worker-context.ts",
+          "blob_sha": "3146eb05cd91b0d21941fb492b1a5e6045ee2251",
+          "review": "contract/deep: captured context APIs; selected relevant admission behavior",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/state/openclaw-state-worker-context.ts"
+        },
+        {
+          "id": "U14",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/state/openclaw-state-worker-context.types.ts",
+          "blob_sha": "9d96eaaf3bc2d6ac4668012c09540448a1426157",
+          "review": "contract: complete context types",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/state/openclaw-state-worker-context.types.ts"
+        },
+        {
+          "id": "U15",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/state/openclaw-state-worker-context.capture.ts",
+          "blob_sha": "9a24aa9f418f388be8956bdd43ac73cb37f3f946",
+          "review": "deep: complete captured-state routing and admission",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/state/openclaw-state-worker-context.capture.ts"
+        },
+        {
+          "id": "U16",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/state/openclaw-state-schema.sql",
+          "blob_sha": "eed557a7633c5a63d59a29ac0ac37da0637dc822",
+          "review": "contract: outbound_media_provenance table around 2758–2765; not full SQL schema review",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/state/openclaw-state-schema.sql"
+        },
+        {
+          "id": "U17",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/generated-html-provenance.test.ts",
+          "blob_sha": "e49c01be45ac77f6275498eeeece0b83feb648a1",
+          "review": "oracle source: complete 1–293; not executed",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/generated-html-provenance.test.ts"
+        },
+        {
+          "id": "U18",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/media/web-media.test.ts",
+          "blob_sha": "c5db39ce43b69697e0b8182e7e4709469c5460a6",
+          "review": "oracle source: selected local access and HTML tests including 351–573; not executed",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/web-media.test.ts"
+        },
+        {
+          "id": "U19",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/infra/outbound/message-action-send.ts",
+          "blob_sha": "2f03e468a9531433af016cb2279ad117924a974c",
+          "review": "deep selected actual producer 441–590, especially normalized sources and staging 528–581; not full-file credit",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/infra/outbound/message-action-send.ts"
+        },
+        {
+          "id": "U20",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "packages/media-core/src/mime.ts",
+          "blob_sha": "5dd65a194fd457e5f3d9a4c80d9f32f675739f93",
+          "review": "contract/deep: complete source read for extension mapping, MIME probe, detectMime and kind; dependency file-type implementation not fetched",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/packages/media-core/src/mime.ts"
+        },
+        {
+          "id": "U21",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "packages/media-core/src/constants.ts",
+          "blob_sha": "03db8b857c1d69601903eda22f204b02ce640f6f",
+          "review": "contract: complete media family and size defaults",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/packages/media-core/src/constants.ts"
+        },
+        {
+          "id": "U22",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "packages/media-core/package.json",
+          "blob_sha": "88490cbd64f5cddd4181f053bb029da78d272885",
+          "review": "contract: complete exports and file-type 22.2.0 declaration",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/packages/media-core/package.json"
+        },
+        {
+          "id": "U23",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "src/state/openclaw-state-db.generated.ts",
+          "blob_sha": "d45e02eec83c4d6ed0fc3962be803c7173dc9390",
+          "review": "contract locator: complete re-export only; generated artifact itself not obtained",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/state/openclaw-state-db.generated.ts"
+        },
+        {
+          "id": "U24",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "package.json",
+          "blob_sha": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+          "review": "contract: selected runtime/declared dependencies and generator references; not package-wide review",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/package.json"
+        },
+        {
+          "id": "U25",
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "path": "pnpm-lock.yaml",
+          "blob_sha": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+          "review": "contract: fetched 1–360 only; observed fs-safe importer version; no whole lock review",
+          "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/pnpm-lock.yaml"
+        },
+        {
+          "id": "T01",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+          "blob_sha": "9901ae7acfbd9e7bb80d9bc8dd155435d86739a7",
+          "review": "deep: complete policy, marker validator and stale-row selector",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/host_read_media_policy.rs"
+        },
+        {
+          "id": "T02",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/web_media.rs",
+          "blob_sha": "829c6a58f85946f34e2c9aa0ee0c233bfcee6412",
+          "review": "deep: complete 1–401",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/web_media.rs"
+        },
+        {
+          "id": "T03",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/attachments_service.rs",
+          "blob_sha": "cc0ddaed1cb14be2ff4cbec65f7bf09ecc757f80",
+          "review": "deep selected owner fields, upload/generation methods, dispatch 1856–1927 and 2006–2072; not whole-file credit",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/attachments_service.rs"
+        },
+        {
+          "id": "T04",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/read_capability.rs",
+          "blob_sha": "e75be65d0ad78318adad66c3e8f901f92c1d2c6b",
+          "review": "deep: complete source; boolean shapes do not prove actual file capability",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/read_capability.rs"
+        },
+        {
+          "id": "T05",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/load_options.rs",
+          "blob_sha": "4427dbc7b214cabdcbbb7b181c2c5338b6198233",
+          "review": "contract/deep: selected options construction and flags; not whole-file credit",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/load_options.rs"
+        },
+        {
+          "id": "T06",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/media_reference.rs",
+          "blob_sha": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+          "review": "deep: bounded reader 290–324 and relevant source resolution; no descriptor capability claim",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/media_reference.rs"
+        },
+        {
+          "id": "T07",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/media_store.rs",
+          "blob_sha": "ae5ed84ca624e55bc84aca51c00cb862d06d19e2",
+          "review": "deep selected existing lifecycle/global roots/cleanup and detect_mime_from_buffer 391–428; root-owned file not edited",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/media_store.rs"
+        },
+        {
+          "id": "T08",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/app/src/main.rs",
+          "blob_sha": "c3b87212e096b245bbd70081ef3eb33ca1ccda07",
+          "review": "deep selected production attachment resolver/persistence/custody 615–1090; Host dispatch 15017–15033 and 17780–17783; not whole-file credit",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/app/src/main.rs"
+        },
+        {
+          "id": "T09",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/attachment_paths.rs",
+          "blob_sha": "c66a2d1ce8dfb70532a16857a0fe02d31788ca62",
+          "review": "deep: complete existing Agent paths and owned-file custody",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/attachment_paths.rs"
+        },
+        {
+          "id": "T10",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/session/production.rs",
+          "blob_sha": "f585fae13720e08f34323bed82759253590a3753",
+          "review": "deep selected existing cached owner/open and admitted FS/DB facade, especially 1640–1740 and 2293–2344; not whole-file credit",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/session/production.rs"
+        },
+        {
+          "id": "T11",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/runner/tools/send_message_tool.rs",
+          "blob_sha": "08bfbe0bedc8138bb00804b5fbbd3b5ce3b046f2",
+          "review": "deep selected actual build/resolve/send and abort paths 251–353, 395–479; not whole-file credit",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/runner/tools/send_message_tool.rs"
+        },
+        {
+          "id": "T12",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/runner/tools/send_message_encoding.rs",
+          "blob_sha": "22e2700f4ea2f894b92f3233d0a399a296f6fa5b",
+          "review": "deep: complete existing generic encoding and Box resolution helper",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/runner/tools/send_message_encoding.rs"
+        },
+        {
+          "id": "T13",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/session/agent_db.rs",
+          "blob_sha": "78740768f7f1b0307dfd6756c4d50c368a91b721",
+          "review": "deep selected long-lived owner 880–1060, transaction/error/recovery patterns; full-file symbol search only elsewhere",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/session/agent_db.rs"
+        },
+        {
+          "id": "T14",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/session/agent_db_schema.rs",
+          "blob_sha": "279583c0e0ccb37a7188bfa29b5467f8a1e24b3e",
+          "review": "contract: complete current schema surface; no provenance table",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/session/agent_db_schema.rs"
+        },
+        {
+          "id": "T15",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/extension.rs",
+          "blob_sha": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+          "review": "deep: complete existing service/lifecycle ownership 1–85",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/extension.rs"
+        },
+        {
+          "id": "T16",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/state/state_persistence_engine.rs",
+          "blob_sha": "1854b98cae98cf808f319456fcdf3d1bdbf62191",
+          "review": "contract: complete in-memory engine; not durable owner",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/state/state_persistence_engine.rs"
+        },
+        {
+          "id": "T17",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/storage/store_db.rs",
+          "blob_sha": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+          "review": "contract: complete generation/live-handle bookkeeping; not DB owner",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/storage/store_db.rs"
+        },
+        {
+          "id": "T18",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+          "blob_sha": "0cd4fd9d9c0e513308c005a38b10aef84c0d4acd",
+          "review": "oracle source: complete three existing fixture tests; not executed",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/tests/openclaw_html_provenance_contract.rs"
+        },
+        {
+          "id": "T19",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/tests/openclaw_web_media_contract.rs",
+          "blob_sha": "cbe97afac793cf968d1c080e098e1914e91b24eb",
+          "review": "identity/next-path selection only; no full semantic review or execution",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/tests/openclaw_web_media_contract.rs"
+        },
+        {
+          "id": "T20",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/tests/attachments_service_contract.rs",
+          "blob_sha": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+          "review": "identity/next-path selection only; no full semantic review or execution",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/tests/attachments_service_contract.rs"
+        },
+        {
+          "id": "T21",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/local_roots.rs",
+          "blob_sha": "02d06b110886deebd256addd20282b6f5f3c1651",
+          "review": "deep: complete root calculation; broad std::env::temp_dir is not secure-generated-root authority",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/local_roots.rs"
+        },
+        {
+          "id": "T22",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/local_exec/native_file_sandbox.rs",
+          "blob_sha": "4f0f5a6d172bf3e555ddcdc74b6b9bbb80afb5f3",
+          "review": "deep selected root-relative read/atomic write protocol 87–241; not generic publication authority",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/local_exec/native_file_sandbox.rs"
+        },
+        {
+          "id": "T23",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/Cargo.toml",
+          "blob_sha": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "review": "contract: selected existing dependencies; no Cargo changes, no full locked dependency closure",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/Cargo.toml"
+        },
+        {
+          "id": "T24",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/media_facts.rs",
+          "blob_sha": "e35499d25303c2bd34e63590b330169b13171999",
+          "review": "locator/contract: MIME family functions and symbol scan only",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/media_facts.rs"
+        },
+        {
+          "id": "T25",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "source/host/src/extensions/attachments/media_fetch.rs",
+          "blob_sha": "447ee3910bf98e0f5663af5a9648f36cea80ef79",
+          "review": "locator: existing consumer of detect_mime_from_buffer; no full review",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/source/host/src/extensions/attachments/media_fetch.rs"
+        },
+        {
+          "id": "D01",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+          "blob_sha": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+          "review": "authority: current identity and relevant policy/state sections; historical claims not promoted",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/SOURCE_OF_TRUTH.md"
+        },
+        {
+          "id": "D02",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "docs/specs/openclaw-rust-equivalence-migration.md",
+          "blob_sha": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+          "review": "authority: §17 completely and relevant owner/storage/permission clauses",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/docs/specs/openclaw-rust-equivalence-migration.md"
+        },
+        {
+          "id": "D03",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/parity-ledger.json",
+          "blob_sha": "4e6844496f267050e4236494de424de28630ccc8",
+          "review": "disposition: complete generated-HTML row 18886–19008 plus neighboring locator matches",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/parity-ledger.json"
+        },
+        {
+          "id": "D04",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md",
+          "blob_sha": "522b50ed0892314f3d54b1b0d2d2c2ec79e9fd07",
+          "review": "disposition: complete relevant historical dossier; old U/test/SQLite claims not current evidence",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/dossiers/media-playback-and-html-provenance-scoped.md"
+        },
+        {
+          "id": "D05",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/docs/specs/media-store-read-scope.md",
+          "blob_sha": "61ef64b9d225dab1deeb2dd9384a5ae2e6823b62",
+          "review": "authority/domain: complete unresolved scope contract",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/docs/specs/media-store-read-scope.md"
+        },
+        {
+          "id": "D06",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+          "blob_sha": "4f6f0977c21f606c219c986814c609ff540d6762",
+          "review": "authority/domain: complete existing single lifecycle worker contract",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/docs/specs/media-store-lifecycle.md"
+        },
+        {
+          "id": "D07",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+          "blob_sha": "ec472b0ebc5b3a7aa86056c5d9d05eb4b6a94826",
+          "review": "authority/domain: complete publication/custody/transcript boundary",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/docs/specs/final-assistant-media-custody.md"
+        },
+        {
+          "id": "D08",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/docs/specs/attachment-content-publication.md",
+          "blob_sha": "c74551f6b0f05d771f1b324f3c535b82c3121eff",
+          "review": "authority/domain: complete CAP-v1, preserving owner and scoped limitations",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/docs/specs/attachment-content-publication.md"
+        },
+        {
+          "id": "D09",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/docs/specs/attachment-native-transport-binding.md",
+          "blob_sha": "0d760456e86499f1cd37376d362fc3cc8c882c1d",
+          "review": "authority/domain: selected initial 130 lines and relevant transport owner; not full review",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/docs/specs/attachment-native-transport-binding.md"
+        },
+        {
+          "id": "D10",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/module-map.md",
+          "blob_sha": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+          "review": "authority: current media/attachments/session owner mapping; historical counts not promoted",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/module-map.md"
+        },
+        {
+          "id": "D11",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/upstream.lock.json",
+          "blob_sha": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+          "review": "authority: fixed U and false/unaccepted global flags; no edits",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/upstream.lock.json"
+        },
+        {
+          "id": "D12",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md",
+          "blob_sha": "3f1408a1460a589eeffceba3c3404c0c151d1bfa",
+          "review": "authority: complete 86-line SOT",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md"
+        },
+        {
+          "id": "D13",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "docs/specs/fabushi-bot-communication-platform.md",
+          "blob_sha": "93c543fafda43a0f84ecc13808dba9dd2ef71b42",
+          "review": "authority: relevant single owner/resource/storage/permission clauses; not full-file credit",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/docs/specs/fabushi-bot-communication-platform.md"
+        },
+        {
+          "id": "D14",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/fabushi-communication-platform/architecture-map.md",
+          "blob_sha": "77a314c1c982da3aa85bb65165d80468b2663db3",
+          "review": "authority: selected initial owner architecture sections",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/fabushi-communication-platform/architecture-map.md"
+        },
+        {
+          "id": "D15",
+          "repository": "bhrumom/fabushi-desktop",
+          "commit": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+          "path": "projects/openclaw-rust/dossiers/media-store-read-scope-lifecycle-scoped.md",
+          "blob_sha": "7be30a3405234d9336ec0834dfd40a6d36d222b2",
+          "review": "disposition: selected contract/identity/status; historical dossier not execution evidence",
+          "url": "https://github.com/bhrumom/fabushi-desktop/blob/2ff201200b01e3d4b1dc74c816c2e610fea2e2d0/projects/openclaw-rust/dossiers/media-store-read-scope-lifecycle-scoped.md"
+        }
+      ],
+      "recovered_candidate": {
+        "evidence_level": "handoff-read; candidate identities and implementation claims reported by existing handoff, not independently recomputed or full-patch reviewed here",
+        "handoff": "/tmp/fabushi-647e-pairing/html-policy-implementation.md",
+        "prior_gap_assessment": "/tmp/fabushi-647e-pairing/html-provenance-production-gap.md",
+        "base_commit": "524889b3511f220233ee4948a81ddefc161d40b4",
+        "base_tree": "7897575c3d087517c075cc1aae31e06b605be793",
+        "policy_base": "9901ae7acfbd9e7bb80d9bc8dd155435d86739a7",
+        "policy_candidate": "9087b941ce253ac261a453df3d8b0054e64804e2",
+        "tests_base": "0cd4fd9d9c0e513308c005a38b10aef84c0d4acd",
+        "tests_candidate": "64f7c72e44d904a4ba84c524577c24688c80c278",
+        "patch_path": "/tmp/fabushi-647e-pairing/html-policy-implementation.patch",
+        "reported_patch_sha256": "1cc72259b2df46d73911deac9accda82fda01610ab82262be0967574691a229d",
+        "state": "unreviewed/unexecuted candidate; reuse subject to root exact-head integration",
+        "reused_dependency_contract_reported": {
+          "package": "@openclaw/fs-safe@0.27.0",
+          "archive_sha256": "02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c",
+          "dist_path_sha256": "9e1af8facd5a44b38a3440585ccd5422e0e416b11df7f8ec89c1a479f4b2564f",
+          "behavior": "ENOENT and ENOTDIR are missing-path class",
+          "limit": "recovered handoff evidence only; archive not reopened or validated by this assessment"
+        }
+      },
+      "limitations": [
+        "Exact target H is fixed; parent's later DVR-only head report is coordination, not a replaced subject.",
+        "No full upstream media family, whole repository, whole dependency or generated-artifact review is claimed.",
+        "U .artifacts/kysely/openclaw-state-db.generated.ts was not retrievable; the tracked generated type file is only a re-export.",
+        "file-type 22.2.0 implementation and full fs-safe package were not independently read in this task; exact local media-core wrapper and recovered fs-safe contract are distinguished.",
+        "Extension/Runner/root/storage searches locate symbols; they are not full semantic review of all scanned files.",
+        "Target loadWebMedia is directly production-dispatch reachable; actual frontend/Runner caller and ordinary registered gateway exposure are not established.",
+        "Some selected outputs were truncated; only explicitly scoped source ranges/content actually inspected receive review credit.",
+        "No tests or checks have been executed; source-only findings and candidate reports never imply verified or accepted."
+      ]
+    },
+    "assessment": {
+      "task_local_source": "html-gap/assessment.md",
+      "bytes": 23832,
+      "sha256": "e4fa773fbac364e59c5c5b01ee93cac7c7545d878783e1bf9af8bedc0e0185b1",
+      "text": "# HTML 来源标记与实际加载消费者：只读评估\n\n## 结论与下一批建议\n\n完整的 generated-HTML provenance 仍是一个真实的业务运行时缺口。固定 target H 仅有行类型、校验和 stale-row 筛选，尚无可信 HTML 来源的生产者、持久化标记写入、以标记授权的真实读取消费者、数据库条件删除及重启闭环。不能因已有 helper，或因为普通附件能被 SendMessage 发出，就关闭 `OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001` / `BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001`。\n\n**现在可以实施的最小批次是：在现有 `loadWebMedia` 直接 dispatch 接口接通 opt-in 显式 HTML 内容合同。** 调用者明确选择 `htmlPublication: \"explicit\"`，且路径声明为 HTML 时，实际有界读取的字节必须通过已有 HTML 策略，成功返回原字节、`text/html`、`document`，且不产生 generated trust。普通加载与非 HTML 文件保持既有行为。该批次使用真实生产服务和加载器，是 §17.3 允许的必要公共合同；没有证据证明桌面或 Runner 已使用此扩展方法，因此不得把它报为聊天 HTML 生产闭环。\n\n根已恢复 HHP-v1 候选。下一批应复用其 Unicode/ECMAScript/UTF-16 与 stale-error 修正，随实际消费者接通交付，**不再重写这两项既有候选实现**。恢复 handoff 的内容和身份见 §7；它仍未独立审查、未执行验证。\n\n## 1. 身份、边界和证据等级\n\n| 项目 | 本次 subject |\n| --- | --- |\n| 仓库/分支 | `bhrumom/fabushi-desktop:codex/openclaw-rust-fusion-chat-20261101-writer` |\n| 固定 target H | `2ff201200b01e3d4b1dc74c816c2e610fea2e2d0` |\n| H tree | `a2ce09381c59668b4d6ad39bfdd6c1f64c2b2c56` |\n| 固定上游 U | `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845` |\n| U tree | `90c8aab39972da11cfad220361781d49e1bc6700` |\n| 源读取 | target 对象库只用 `git show H:path`；U 用 exact-ref GitHub API。未追浮动上游。 |\n| 产物范围 | 仅本评估与同目录 `reference-identities.json`。 |\n| 验证状态 | 源分析；没有运行本地测试、构建、格式器、生成器、验证器或 runtime probe；没有 push。 |\n\n根随后报告远端推进到独立 DVR oracle 修正 `5593e6d96e849ce5bf93de299aedeffca70b9568`，且无 HTML/Attachments 生产变化。该消息用于协调，不替代本次 H 的直接 source evidence；集成仍须以根冻结的新 H 和文件身份为准。\n\n已读根提供的 `authority/AGENTS.md`、OCRM SOT、主 Spec §17、模块映射、相关领域规范、dossier 和 ledger。§17 要求必要产品合同、真实 owner/consumer 和分别记录实现、接线、验证；允许独立批次继续，但不允许把未实现业务变成 nonproduct。所有事实引用身份在独立清单中，读取范围与整文件阅读明确区分。\n\n本次定位扫描覆盖 exact-H Host extensions 的 535 个 Rust 文件、Runner 的 101 个、Host 根的 46 个及 storage 的 6 个，查找 provenance/loader/trust/caller 符号。这是定位证据，不是 688 个文件的完整语义阅读，更不是全仓 consumer 穷尽证明。\n\n## 2. 固定 U 的真实闭环\n\n1. **初始信任由实际文件边界产生。** `web-media.ts::resolveTrustedGeneratedHostReadHtml` 先捕获 state context，检查 regular leaf、非 symlink、nlink=1，再求真实路径。安全私有 tmp root 内的文件可以得到 TempRoot；位于 outbound 的文件必须取得既有 marker，即使 outbound 物理上也在 tmp root 内。任意系统 tmp、workspace 或 JSON 布尔值都不是该信任。安全 tmp owner 的实现还检查所有权/模式或 Windows ACL 等条件。[U05,U12]\n2. **读取权限与格式策略独立。** `load-options.ts` 只有在真实 host `readFile` 回调存在且有显式 roots 时，才构造 `hostReadCapability: true`。回调来自工具/工作区/注册媒体权限绑定。普通读由 `local-media-access.ts` 的已打开文件句柄、root/excluded-root、scope 和限额实施。provenance 不授予新的文件读取权限。[U08,U09,U10]\n3. **可信来源被复制到 outbound 才登记。** `outbound-attachment.ts::resolveOutboundAttachmentFromUrl` 加载实际 bytes 后，调用已有 store 保存；只有上一步返回 `trustedGeneratedHtmlSource`，才用完全相同的 bytes 调用 `markTrustedGeneratedHtmlPath`。登记失败只清理本次新保存的文件并返回失败。`resolveOutboundAttachmentFromBuffer` 不凭任意 buffer 铸造标记。[U05,U06]\n4. **登记固定 owner 和 bytes。** `markTrustedGeneratedHtmlPath` 在 filesystem await 前捕获 state context，并固定 bytes 的 hash/size；真实路径必须属于 outbound。记录 kind/version、SHA-256、字节数与时间。实际消息路径 `message-action-send.ts` 按最终规范化 media URLs 创建访问权，再调用上述 staging 入口；不是只有测试调用。[U05,U19]\n5. **唯一既有数据库保存 marker。** worker 使用既有 state worker、`outbound_media_provenance` 表和 admission。读后复查捕获 context；写入复制命令且使用既有 operation/receipt 机制，已证实的 committed receipt 可以恢复结果，unknown 不重放。[U01,U02,U03,U13,U14,U15,U16]\n6. **实际读消费者同时检查 byte shape 和字节身份。** HTML trust 经 `web-media.ts` 传入 `assertHostReadMediaAllowed`。Outbound trust 要求大小与 SHA-256 完全匹配。显式发布可走独立的内容校验分支，但不会生成 `trustedGeneratedHtmlSource`。[U05,U07]\n7. **cleanup 清理内容后清理信任。** `store.ts::cleanOldMedia`（298–307）和 `pruneOutboundMedia` 都在 filesystem 工作前捕获同一个 state context，随后 prune markers。lstat 只把确定 missing、非 regular、symlink、nlink≠1 的完整旧 row snapshot 送回数据库。EMFILE/EACCES 等不能检查的错误记录诊断并保留 row。worker 删除条件包括全部六字段，避免旧观察删掉同一路径新 marker；每批 100 行。[U01,U02,U04,U17,U18]\n\n该闭环的 retention 对象是临时 outbound staging。它不能自动等同于 target 已被 transcript 接受的 Agent 附件。\n\n## 3. 固定 H 已有能力与实际缺口\n\n| 边界 | 已有生产/合同能力 | 仍缺少的内容 |\n| --- | --- | --- |\n| 策略类型与校验 | `GeneratedHtmlProvenanceRow`、`HtmlProvenanceMarker`、`validate_provenance_row`、`HostReadHtmlTrust`、`is_allowed_host_read_html`、`assert_host_read_media_allowed` 已有。 | 不能重复实现；传入结构体不证明 row 来自可信 durable owner。 |\n| stale selector | `filter_stale_provenance_rows` 已有，H 上把所有 metadata 错误算 stale。 | HHP-v1 已有候选修正，但仍没有 SQL prune、完整 row CAS 或生命周期调用。 |\n| loader | `WebMediaOptions` 有 `host_read_capability`、`html_publication` 字段；实际 `load_web_media` 会读取真实文件和执行 cap。 | 两字段完全未消费；不查 provenance；不调用内容策略；当前非 image 结果也写 `kind: image`；所有 generated 字段都是 None。 |\n| Attachments service | `loadWebMedia` arm 构造 options 并执行 loader，返回实际结果；`assertHostReadMediaAllowed` arm 直接执行策略。 | load arm 只传 maxBytes/optimizeImages；assert arm固定 trust=None、explicit=false；都未读持久 marker。 |\n| capability | `read_capability.rs` / `load_options.rs` 有可序列化 has_read_file/has_open_file 等标志。 | 不是 U 的实际 reader closure / admitted capability；没有发现真实权限 consumer。不能凭标志补出授权。 |\n| 存储/生命周期 | `MediaStoreLifecycleWorker` 是既有唯一清理 worker；Session 是真实 Agent DB/custody owner。 | Attachments 无 provenance connection；state engine 是内存结构；storage/store_db 是 generation/live-handle 辅助，不是另一个可用 DB owner。 |\n\n### 3.1 实际 SendMessage 链与目录区别\n\n实际链为：\n\n`send_message_tool::build_sand_send_message`\n→ `ProductionSendMessageSink::resolve_attachment_source`\n→ `resolve_production_attachment_source`\n→ `persist_runner_media_bytes`\n→ `attachment_paths::persist_agent_media_bytes`\n→ Session media custody / transcript append\n→ 已有 channel delivery。\n\n这是一般附件材料化和消息提交。Host 本地分支先 `fs::read`，另有 ForeverBox 下载分支；两者都没有 HTML 生成授权。Session admission 绑定 Agent/session/lifecycle revision，且管理本次新文件的 rollback/commit，但它不等同于“可读任意来源路径”的文件 capability，更不证明文件由可信 HTML producer 生成。[T08,T09,T10,T11,T12]\n\n| 目录/对象 | owner 与生命周期 |\n| --- | --- |\n| 全局 `<sand_root>/media/outbound` | 现有 media_store TTL staging、既有清理 worker。 |\n| `<sand_root>/agents/<agent>/attachments` / `assets` | 真实 SendMessage 写入，Session admission 与 transcript custody；已提交资源应保留。 |\n| `<agent>/attachments/outbound` | `resolve_outbound_attachment_from_buffer` 辅助写入位置；定位范围内未发现该符号的真实调用者，不能当作可信生成链。 |\n\n不能把全局清理器扩大到 Agent committed attachments，不能为 metadata 自动新建后台线程，也不能选择“当前 Agent”替 host-global provenance 决定 owner。\n\n### 3.2 loadWebMedia 的真实接线与公开程度\n\n生产代码已有：\n\n`HostLaneRequest::Gateway`（main 17780–17783）\n→ `dispatch_gateway_call`（15017–15033）\n→ `AttachmentsService::dispatch_gateway`（2006–2020）\n→ `web_media::load_web_media`（311–400）\n→ 序列化 `WebMediaResult` 返回 caller。[T02,T03,T08]\n\n这是可执行的生产直接 dispatch 合同，不只是工具声明或测试函数。另一方面，恢复的旧评估记录普通 registered gateway method 表没有 `loadWebMedia` / `assertHostReadMediaAllowed` 等兼容扩展方法；本次没有发现桌面、Renderer 或 Runner 的真实调用方。因此本批的准确范围是**既有生产直接 dispatch 的显式加载合同**；不扩展方法注册、不宣称 HTTP/桌面端已公开、不改 SendMessage。\n\n## 4. 下一批明确合同：opt-in 显式 HTML 实际加载\n\n### 4.1 精确 U 行为\n\n`web-media.ts` 664–737 的区分如下。HTML 声明由路径 MIME 得出；固定 U 的 media-core 映射 `.html` 与 `.htm`（不区分扩展名大小写）为 `text/html`，并将 `text/*` 分类为 `document`。[U05,U20,U21]\n\n| htmlPublication | 路径声明 | hostReadCapability | 固定 U 的局部内容策略 |\n| --- | --- | --- | --- |\n| 精确字符串 `explicit` | HTML | false/未设 | 开启 explicit HTML 校验，普通文件访问检查仍执行；无需 generated marker。 |\n| 精确字符串 `explicit` | 非 HTML | false/未设 | `explicitHtmlPublication=false`；不会因该选项对其他附件启用 host-read 文本策略。 |\n| 精确字符串 `explicit` | 非 HTML | true | 仍执行原有 host-read 内容策略；explicit 不替非 HTML 放宽规则。 |\n| 未设或其他字符串 | HTML | true | 没有 explicit 例外；必须取得真实 generated trust，否则拒绝。 |\n| 未设或其他字符串 | 任意 | false/未设 | 不由该选项新增内容策略；既有普通加载路径继续。 |\n\nU 类型声明只允许 `\"explicit\"`；所读运行时没有对非法字符串主动抛参数错误，而是严格等值比较。表中“其他字符串等同未 opt-in”是对运行时分支的直接推导，不是上游非法参数测试结果。target 最小兼容合同建议也只识别精确 `\"explicit\"`；未知字符串、`\"EXPLICIT\"`、null/非字符串不得获得显式模式。若根选择拒绝非法参数，要在 scoped spec 明记这个 target 行为增量，不能称其为 U 已有异常语义。\n\nU 的 HTTP 分支在这些 local-host 检查之前返回。target 当前 loader 没有完整 HTTP 实现；此批不借机补网络栈，不扩大到 remote URL、全局 MIME 或全部媒体类型重写。\n\n### 4.2 权限含义必须保持狭窄\n\n固定 H 的 service 是已有 Host Attachments 文件加载接口，不是已建立的 fs-policy hostReadCapability 通路。它的 load arm没有 Agent/session/read-grant 输入，也不向 loader传 roots。外围 Host 通道存在，并不自动证明文件级 grant 的语义。\n\n本批可以把 `htmlPublication` 作为**已有加载调用的内容声明**：它增加 HTML 字节检查；它不新增文件可读范围，也不解除既有检查。不得接收 caller 的 `hostReadCapability=true`、`sandboxValidated=true`、任意 localRoots 作为新权限。不得把这一选项或“.html”后缀变成 TempRoot/Outbound trust。不能把 U 的 hostReadCapability 策略普遍套到所有 Fabushi SendMessage 附件，造成原有 Markdown、文本、普通文件或 Box 行为退化。\n\n没有必要改 `read_capability.rs` 或 Session schema 才能做这个狭窄合同；更完整的 directory-capability / opened-handle / revocation 仍属于已有 read-scope blocker。\n\n### 4.3 实现应使用现有能力\n\n- Service 仅将精确识别的 optional `htmlPublication: \"explicit\"` 接到已有 `WebMediaOptions`。无需新 JSON 权限协议。\n- Loader 在原有路径解析、root check 和有界读取之后，且 image optimization/返回之前，判断“explicit 且声明 HTML”，把**实际读到的同一 buffer**交给已有策略。无需为普通加载打开全局 host-read 模式。\n- 实际 MIME probe 可复用现有 `media_store::detect_mime_from_buffer(&buffer, None)`（391–428），该文件只作为依赖读取，**不修改**。不能把后缀推导的 `text/html` 伪装成 byte-sniff 结果；现有 PDF/ZIP/image signature 等必须能造成冲突拒绝。\n- 成功明确返回原 bytes、`contentType: text/html`、`kind: document`、已有 filename；`trustedGeneratedHtmlSource` 仍为 None 并在 JSON 缺省。不能返回 false 后又被别的 consumer 误解成已注册标记，更不能返回 true。\n- 不合法 HTML 使用策略的 `HostReadMediaTypeError` 语义穿过 `WebMediaError` 和现有服务错误边界，不伪装成 not-found/IO error，不降级为普通附件成功。\n- 保留 target 当前 cap、path处理与普通加载/图像优化行为。本批不因 U 文档默认 100 MiB 就改变 target 的全局默认限额。\n\n**MIME 证据限制：** U `packages/media-core/src/mime.ts` 使用 file-type 22.2.0 的有界 sniff，并另补 CAF magic；target现有 detector 的签名集合更小。使用已有真实探测器与 text/shape策略可交付上述狭窄合同，但不构成全 MIME 嗅探等价证明。已知冲突必须有负例；若验收要求涵盖 U 全部探测类别，则需另行明确 detector contract / 复用范围，不能用“没有 sniff 结果”掩盖已知类别差异。无需因此重写全部媒体 owner。\n\n### 4.4 精确允许修改路径建议\n\n| 路径 | 下一批作用 |\n| --- | --- |\n| `source/host/src/extensions/attachments/host_read_media_policy.rs` | 复用已恢复 HHP-v1 候选；只做实际 loader 所需的最小可见性/调用适配，保留同一个策略 owner。 |\n| `source/host/src/extensions/attachments/web_media.rs` | 消费显式选项、对实际 buffer 校验、正确返回 HTML 类型、传播策略错误。 |\n| `source/host/src/extensions/attachments/attachments_service.rs` | 将 recognized opt-in 接到已有 load arm；不接受新 file-authority 参数。 |\n| `source/host/tests/openclaw_html_provenance_contract.rs` | 复用 HHP-v1 已编写用例，不重写；仍不称真实 provenance closure。 |\n| `source/host/tests/openclaw_web_media_contract.rs` | 对实际文件和 loader 的正负例、cap/root、不变行为。 |\n| `source/host/tests/attachments_service_contract.rs` | 对真实 `AttachmentsService::dispatch_gateway(\"loadWebMedia\",...)` 返回/错误做集成 oracle。 |\n\n根串行处理已恢复 `projects/openclaw-rust/docs/specs/media-html-policy-safety.md` 及其扩展的显式加载合同、原有 dossier 的准确说明和必要 Actions selection。现有 workflow/ledger/RTM 仍由根处理；此评估不授权 worker 修改它们。\n\n**本批不需要修改：** `media_store.rs`、`attachment_paths.rs`、`extensions/session/*`、`read_capability.rs`、`load_options.rs`、`app/src/main.rs`、公共 composition 或 Cargo。不与当前 media cleanup 产品路径争用；集成后仍要核查被调用的 `detect_mime_from_buffer` 身份与接口未漂移。\n\n## 5. 该批必须提供的实际 oracle\n\n所有执行只在根冻结的候选 H 的 GitHub Actions；这里没有执行任何项。\n\n1. **服务成功与结果精确性。** 通过真实 AttachmentsService dispatch 加载 `.html` / `.htm` 的有效文档，显式选项、原 bytes、filename、`text/html` / `document` 一致；JSON 没有 `trustedGeneratedHtmlSource`。\n2. **服务失败必须可观察。** 相同文件名下放纯 CSV/普通文本、二进制、空文件，返回策略拒绝；不返回 bytes 成功、不从错误转向 ordinary fallback、不创建标记或新文件。\n3. **真实 MIME 冲突。** PDF/ZIP/已识别 image bytes 即使带 HTML closing-tag 尾部也拒绝；不能只测无魔数随机二进制。另明确 CAF 等 target detector 未覆盖类别的处置，不把 scoped passing 扩大为 file-type 全等价。\n4. **HHP 的真实消费者回归。** 把跨 UTF-8 byte 8192 的二/三/四字节 Unicode、UTF-16 边界、ECMAScript trim/boundary 阳性与阴性通过真实 loader/服务，而不只调用 shape helper；无 panic，窗口内外判断正确。\n5. **默认/非 HTML 兼容。** 无 opt-in 时保留 target 当前结果；有 explicit 但路径是 PNG/其他非 HTML 时，不启动 HTML gate；未知 publication字符串不等同 explicit。图片优化的已有控制不变。\n6. **既有限额与 roots 不放宽。** `maxBytes = len - 1` 失败，等于长度成功；loader 的 denied local-root 控制即使 explicit也拒绝；不因 option添加 sandbox bypass。service不接收根本不存在的权限 flag 作为 grant。\n7. **不改变存储/custody。** 该加载操作不写数据库、不生成 marker、不启动 worker、不产生 staged file；测试不能借临时 fixture直接塞 `HostReadHtmlTrust` 充当生产来源。\n8. **错误边界。** 非 HTML内容失败保留 type-policy错误，missing/cap/root错误仍按已有类返回，服务无 panic/成功空 JSON。先选择 affected compile + 两个 owner test target + HHP精确命名集合，避免无理由全量重复。\n\n这批可以报告显式加载合同 implemented/wired；只有 exact-H相应 Actions通过后才可报告该合同 verified。它不能改变 generated-HTML责任的 `wiring:not-wired`，也不能改变全局 flags。\n\n## 6. 完整 provenance 的下一闭环仍需哪些 owner\n\n若根下一阶段选择真实 Agent SendMessage 生成报告重读，合理复用路径是：\n\n- Attachments 负责来源/HTML 策略和 staged bytes；\n- `ProductionSessionWorkers` / `SandAgentDb` 负责持久 marker，利用现有 admitted DB mutation facade与同一长存 connection；\n- 实际发送/重读 consumer 传真实 capability与捕获的 Agent/session generation；\n- 保留 `OutgoingMediaCustody` 对本次新路径的独占 rollback；\n- 在既有生命周期 owner 中定向处理其真实 staging对象，不新增 scheduler。\n\n该完整批次必须先明确：哪一个**真实** writer/私有输出域授予最初 generated origin；marker 属于 Agent DB还是 host-global域；文件发布、marker提交、transcript接受的先后和未知结果；读取权限与文件身份如何绑定；清理如何按完整快照条件删除。现在没有证据允许直接把 upload、任意 buffer、local fs::read、Box download 或 SendMessage成功当作 generated producer。\n\n它将涉及共享路径 `session/agent_db_schema.rs`、`agent_db.rs`（或其既有同owner内部模块）、`session/production.rs`、实际 `main.rs` 生产注入、必要的 `attachments/extension.rs`/已有生命周期。若选择全局 media/outbound，还必然涉及根正在集成的 `media_store.rs`，以及 host-global存储owner尚待明确的事实。不是当前可独立下发的六路径批次。\n\n完整闭环的安全 oracle还必须覆盖：owner reopen后同bytes可读；same-length tamper拒绝；删除后同名同bytes重建不能继承旧trust；outbound位于tmp内仍要marker；非regular/symlink/hardlink拒绝；非missing检查错误保留marker；旧snapshot与新marker并发时不误删；1001行分批；captured DB不随ambient state改变；取消/retirement在事务和提交边界检查；rollback证实或unknown不重放；仅清理本次拥有的文件；既有worker shutdown/join和平台负例。HHP没有覆盖这些生产语义。\n\n## 7. 已恢复 HHP-v1：引用与复用，不重新发明\n\n根提供、且本次读取 handoff 的既有候选：\n\n| 项目 | 身份/状态 |\n| --- | --- |\n| handoff | `/tmp/fabushi-647e-pairing/html-policy-implementation.md` |\n| 原始 base | `524889b3511f220233ee4948a81ddefc161d40b4`；tree `7897575c3d087517c075cc1aae31e06b605be793` |\n| policy base→candidate | `9901ae7acfbd9e7bb80d9bc8dd155435d86739a7` → `9087b941ce253ac261a453df3d8b0054e64804e2` |\n| test base→candidate | `0cd4fd9d9c0e513308c005a38b10aef84c0d4acd` → `64f7c72e44d904a4ba84c524577c24688c80c278` |\n| patch | `/tmp/fabushi-647e-pairing/html-policy-implementation.patch`；handoff声明 SHA-256 `1cc72259b2df46d73911deac9accda82fda01610ab82262be0967574691a229d` |\n| 合同 | HHP-v1；既有 scoped spec draft `media-html-policy-safety.md` |\n| 限制 | 候选 source/test；未执行、未独立 review、未集成，不是本次 H 中已存在能力。 |\n\n本次 H 的 policy/test base blob 与 handoff所列base相同，因此这个候选直接针对本次确认的相同缺陷。根应保留候选并在当前head集成审查，而不是采用旧 H 的整个共享文件树。本次没有重新计算候选哈希、运行其测试或独立审查完整patch；表中candidate身份和实现细节来自恢复handoff。\n\nhandoff记录已处理：精确ECMAScript空白/doctype空白、8192 UTF-16 unit借用前缀、header `/iu` word boundary（含 long-s/Kelvin）、关闭标签替代分支；missing只选 NotFound/NotADirectory，其余inspection错误保留。它已有既有三个测试与新增Unicode/真实filesystem错误/修复再评估用例；Windows硬链接/reparse完整语义、完整text decoder的Latin-1/Windows-1252差异、数据库/producer/consumer仍未闭合。\n\n## 8. Ledger/dossier 的准确解释\n\n本 H ledger对该责任已有四个 exact source_refs，并非 source_refs缺失；status明确为 implemented / not-wired / not-run / pending。它指向的 Rust target正是两个已存在helper。[D03]\n\n历史 dossier仍以旧 U和旧阶段统计为背景，并含“SQLite persistence实现”的叙述；不能据此覆盖当前实际源码。四个provenance源blob在固定U中确实相同，可以复用明确范围的源阅读；不能升级整个dossier/全媒体source closure或旧测试结论。\n\nledger的 `risk: Low` 不适合后来真实权限/存储接线的批次；其 permissive “host read text fallback” rollback文字不能被实施成绕过provenance的退路。根可在真实范围确定后纠正这类叙述，但不得把未实现生产责任改成 nonproduct，也不得把今回只读发现、HHP候选或显式加载合同当作完整generated closure。\n\n**交付状态：只读评估完成。** 已有源、未接线点、可立即实施的六路径公开合同、完整闭环的共享owner缺口与oracle分别列出；没有修改任何产品、测试、spec、ledger、workflow、索引或工作树文件，没有执行验证，也没有对全量覆盖作出 verified 声明。\n\n"
+    },
+    "limit": "These exact earlier target reads remain historical. No whole-file or new-revision reading claim is synthesized from their path identities."
+  },
+  "recovered_policy_handoff": {
+    "path": "/tmp/fabushi-647e-pairing/html-policy-implementation.md",
+    "text": "# HHP-v1 implementation handoff\n\n## Outcome and authority\n\nImplemented the bounded public policy corrections in the existing owner and its existing integration-test target. The HTML shape predicate now uses ECMAScript leading whitespace, an allocation-free borrowed prefix of at most 8192 UTF-16 code units, the upstream header word boundary, and the existing case-insensitive closing-tag alternatives. The stale-row selector selects an inspection error only when its kind is `NotFound` or `NotADirectory`; all other inspection errors retain the row.\n\n**Source implementation is ready for root's independent review and integration. No executable verification has run, and no unit is verified or accepted by this handoff.** The missing real generated-HTML producer, durable marker, read consumer, and platform acceptance remain open. No production trust, database, scheduler, permission model, or schema was added.\n\n| Authority | Exact identity |\n|---|---|\n| Target base/start H | `524889b3511f220233ee4948a81ddefc161d40b4` |\n| Target tree | `7897575c3d087517c075cc1aae31e06b605be793` |\n| Branch | `bhrumom/fabushi-desktop:codex/openclaw-rust-fusion-chat-20261101-writer` |\n| Fixed upstream U | `1440bb1771372334bea23d7642bb52deb7db1845` |\n| Fixed upstream tree | `90c8aab39972da11cfad220361781d49e1bc6700` |\n| Shared contract | **HHP-v1**, `projects/openclaw-rust/docs/specs/media-html-policy-safety.md` |\n| Spec SHA-256 read before code | `7c5bba34e2a473f40bf0d197c71dfec372c26f72a13f66d4c07490520de3b926` |\n| Decisions implemented | `HHP-F01 FIX / IMPL_BUG`, `HHP-F02 FIX / IMPL_BUG` |\n\nThe complete 128-line HHP-v1 spec was read before any product/test edit. Root remains the sole owner of spec, workflow, ledger, RTM, source lock, refs, integration, and publication. This worker retained its configured model/effort; the applicable scope classification is xhigh because Unicode policy equivalence and filesystem-error classification affect a trust boundary. No external worker or model-setting process was started.\n\n## Exact files and patch\n\nOnly these two repository files were modified, under `/tmp/fabushi-647e-pairing/html-policy-work/`:\n\n| Relative path | Base Git blob | Changed Git blob | Changed SHA-256 |\n|---|---|---|---|\n| `source/host/src/extensions/attachments/host_read_media_policy.rs` | `9901ae7acfbd9e7bb80d9bc8dd155435d86739a7` | `9087b941ce253ac261a453df3d8b0054e64804e2` | `d45556ae26bbd0bc6fcb86440619b063b3455286c442bd722d9c9d6dfc2d4256` |\n| `source/host/tests/openclaw_html_provenance_contract.rs` | `0cd4fd9d9c0e513308c005a38b10aef84c0d4acd` | `64f7c72e44d904a4ba84c524577c24688c80c278` | `09d388e2ead4e0c7a4d78d2f4c0037bbfd60acdf20ff1c1b74159ee1db018586` |\n\nBase copies in `/tmp/fabushi-647e-pairing/html-policy-base/` were not changed. Before editing, both base and work copies matched the declared base blobs. The changed policy is 448 lines; the changed provenance test target is 494 lines.\n\nComplete binary-capable/full-index patch:\n\n- Path: `/tmp/fabushi-647e-pairing/html-policy-implementation.patch`\n- SHA-256: `1cc72259b2df46d73911deac9accda82fda01610ab82262be0967574691a229d`\n- Contains exactly the two paths above, with repository-relative `a/source/...` / `b/source/...` headers and complete old/new blob identities.\n- Generated from complete `git diff --no-index --binary --full-index` output against the untouched base copies. The diff command's exit `1` means files differ; it is not a validation/test result.\n\nNo frozen media/carry file, shared workflow/spec/ledger/RTM/ref/lock/composition, Cargo declaration, or foreign checkout was modified. This report and the patch are task artifacts, not repository state or a second evidence ledger.\n\n## Implementation decisions\n\n### HHP-F01: total, bounded, source-equivalent shape predicate\n\nOne small private predicate holds the ECMAScript WhiteSpace plus LineTerminator set and is reused for leading trim and the required doctype whitespace. It includes U+FEFF and excludes U+0085, preserving the difference from Rust's default Unicode trimming. It does not treat U+180E or U+200B as whitespace.\n\nAfter leading trim, a character-boundary walk counts UTF-16 units and borrows the corresponding UTF-8 prefix. It stops at the budget and never constructs a slice through a UTF-8 scalar. A supplementary scalar crossing the last UTF-16 unit is omitted, as expressly allowed by HHP-v1: the omitted surrogate half cannot create an ASCII token or change the relevant word-boundary result.\n\nHeader recognition accepts the case-insensitive `<html` or `<!doctype` + one or more ECMAScript whitespace characters + `html` prefixes. The following character must satisfy the upstream `/iu` word boundary: ASCII alphanumerics, underscore, long s U+017F, and Kelvin sign U+212A prevent the boundary. Other Unicode letters/combining marks remain non-word for this ECMAScript boundary, so using Rust's default Unicode `\\b` would be wrong. The ASCII letters in the actual header/closing-tag literals have no additional non-ASCII simple-fold partners; byte-wise ASCII case comparison preserves those literal matches.\n\nThe alternative closing tags remain `</html>` and `</body>`, case-insensitive, anywhere within the bounded prefix. A malformed opening prefix followed by an in-window valid closing tag still matches, just as upstream does; this remains a shape check, not an HTML parser.\n\nThe shape predicate allocates no heap buffer and never scans the unbounded non-whitespace suffix. Beyond the upstream-required leading-whitespace scan, it inspects at most the 8192-unit prefix (and at most the scalar straddling its end). Its byte window is at most 24,576 bytes. The former module-local regex and its sole import were removed; no dependency declaration changed.\n\nThe public signatures and MIME, text-decoding, printable-ratio, explicit-publication, missing-trust, byte-size, and SHA-256 admission decisions are unchanged. Existing full-buffer decoding/validation is separate from the bounded shape operation and is not represented as bounded by this patch.\n\n### HHP-F02: retain uninspectable provenance rows\n\n`filter_stale_provenance_rows` still performs the same ordered `symlink_metadata` inspection, selects observed non-file/symlink kinds, and on Unix selects link count other than one. It clones complete input rows in input order, including distinct snapshots for a repeated path.\n\nThe only changed error branch selects rows on `ErrorKind::NotFound` or `ErrorKind::NotADirectory`. Permission failure, symlink-loop failure, and every other error kind retain the row. The function does not mutate a database, publish content, or grant read permission. A second call after repair evaluates fresh filesystem evidence.\n\nThe fixed dependency's missing class contains both `ENOENT` and `ENOTDIR`. Checking only `NotFound` would lose the second required case; selecting every error would preserve the original defect.\n\n## Exact declared test names and platform sets\n\nAll tests live in the existing `openclaw_html_provenance_contract` integration target. There are no new private unit-test groups, `#[ignore]` annotations, skip branches, environment-dependent early successes, or synthetic production consumers.\n\n### Common set: nine tests on every platform\n\n1. `test_html_provenance_marker_validation` — existing body unchanged.\n2. `test_html_provenance_filter_stale_rows` — existing body unchanged, including its existing internal Unix/non-Unix branches.\n3. `test_html_provenance_host_read_admission` — existing body unchanged.\n4. `test_html_shape_ecmascript_whitespace` — all ECMAScript whitespace/line-terminator members, leading and doctype use, nonmembers U+0085/U+180E/U+200B, long leading whitespace, whitespace-only input.\n5. `test_html_shape_header_word_boundaries` — mixed case, EOF boundary, non-ASCII non-word positives, ASCII/underscore/digit and `iu` fold negatives, malformed prefix, exact closing tags, and closing-tag fallback after a malformed prefix.\n6. `test_html_shape_utf16_window_boundaries` — ASCII/two-byte/three-byte scalar windows, supplementary scalars, last complete tag versus partial/outside tag, surrogate-half boundary, late suffix rejection, and two-/three-/four-byte scalars crossing byte 8192 without panic.\n7. `test_html_policy_public_assertion_trust_mime_and_byte_identity` — calls the actual public assertion with outbound and temporary-root fixtures, explicit publication, missing trust, conflicting sniffed MIME, wrong size, wrong hash, same-length modified bytes, non-text/empty bytes, and absent buffer.\n8. `test_html_policy_public_assertion_unicode_and_malformed_shape` — actual public assertion over long Unicode boundary positives/negatives and malformed headers, both valid-hash outbound fixtures and explicit publication; missing trust still refuses otherwise valid HTML.\n9. `test_html_provenance_stale_snapshot_order_and_missing_kinds` — real regular file, missing leaf, regular-file parent, directory, repeated-path distinct snapshots, exact ordered/full-row result, no filesystem mutation by selection, and recovery after fixture repair.\n\n### Unix-only additions: three tests\n\n10. `test_html_provenance_stale_link_kinds_and_recovery` — real regular file, two hard-link paths with actual link count two, symbolic and dangling links, exact selected snapshots, then unlink/replacement and link-count-one recovery.\n11. `test_html_provenance_permission_denied_retained_and_recovered` — real inaccessible parent directory, explicit `PermissionDenied` observation, row retention, restored inspection, and later confirmed-missing selection. A permission-restoration guard handles assertion unwinding. The fixture **fails** if the runner can inspect through the zero-mode directory; it requires the intended unprivileged Unix Actions account and does not skip.\n12. `test_html_provenance_symlink_loop_retained_and_recovered` — real self-referential parent symlink, actual `libc::ELOOP`, row retention, repaired directory/file inspection, and later confirmed-missing selection. Uses the existing `libc` dependency.\n\n**Expected complete target counts: Unix/Linux/macOS = 12; Windows/non-Unix = 9.** The regular-file-parent fixture requires an actual error in the selected missing class on every platform and specifically `NotADirectory` on Unix. It does not assume a non-Unix API must expose a POSIX-named error rather than `NotFound`. Its real non-directory parent and exact stale selection remain required on Windows.\n\nRoot's separate exact existing regression remains:\n\n- Target: `openclaw_channel_and_local_roots_contract`\n- Exact name: `test_ocrm_host_read_media_policy_format_admission`\n- Expected selected test count: **1**, with exact name filtering on every platform.\n- Source blob: `47161efa7f1fb526c517de4394c739cfe3734623`; function lines 258–319 were read and not changed.\n\nThus the two HHP additions to root's capture select **13 named tests on Unix, 10 on Windows**, without changing the already-reviewed two MSL commands. Root owns extending the existing capture in its separate HHP candidate; this worker did not edit the capture or workflow. Counts above are source declarations for a strict future receipt, not executed test results.\n\n## Spec-to-source review\n\n| Requirement | Authored implementation/oracles | Present evidence state |\n|---|---|---|\n| HHP-01 | Borrowed UTF-16 window, exact trim set, Unicode/ASCII window and panic regressions. | Source-reviewed by implementer; exact-H Actions and independent review pending. |\n| HHP-02 | Header `iu` boundary and closing alternatives; actual public assertion over MIME/trust/hash/size and malformed/long Unicode inputs. | Source-reviewed by implementer; execution pending. |\n| HHP-03 | Only confirmed missing error kinds select stale; observed kind/link rules, full rows, duplicates and order preserved. | Complete diff and causal fixture source inspected; execution pending. |\n| HHP-04 | Owned real files and Unix links/errors, mandatory observed errors, repair/re-evaluation. | Fixtures authored; no fixture was executed locally. Platform receipts pending. |\n| HHP-05 | All three existing test bodies preserved; public signatures and existing format regression preserved; no added runtime owner. | Exact base/diff evidence exists; regression execution pending. |\n\n## Actual reading depth and identities\n\nThis phase read the complete HHP-v1 spec, complete target base policy (1–392), complete existing provenance tests (1–152), complete fixed-U host-read policy (1–234), and the complete final two-file diff. It also read the existing format regression (258–319) and the complete current Host Cargo manifest, confirming Rust edition 2024 and existing `uuid`, `sha2`, and `libc`; no new test dependency was necessary.\n\n| Source/rule | Exact identity | Review used |\n|---|---|---|\n| Root `AGENTS.md` at H524 | `e4682748087759b2d4bb2b3a47916b6148e8a6f2` | Repository instructions reread; exact current tree confirms no nested AGENTS on the two edited paths. |\n| OCRM source of truth | `3748d734b10c9ed5b2d948467fbaa9483f1dd306` | Current identity matched prior review; applicable authority/constraints reread. Historical discovery paragraphs are not current implementation authority. |\n| OCRM main spec | `69c9667af2328e20a1fba09ebf80c5aab4d5c336` | Current identity matched; latest §17, lines 671–720, read completely (older §17 context 637–669 also read). |\n| OCRM module map | `15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3` | Current identity matched; 1–105 reread, including existing-owner mapping and M23/M32. |\n| OCRM execution entry | `5ff7894d245588ed539ab075b09215a2f1a82716` | Complete `management/prompts/full-fusion-batch.md`. |\n| U `src/media/host-read-media-policy.ts` | `dfe3731a67d3f2d320c0bb67c3aa747cabdee909` | Complete 1–234 at fixed U, before code. |\n| U provenance main | `d00a635b7ee764126236a7f7c4c32969acf3f893` | Prior complete 1–97 source review reused; fixed identity and current HHP contract unchanged. |\n| Actual fs-safe archive | SHA-256 `02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c` | Prior exact archived dependency contract review reused. |\n| Distributed `package/dist/path.js` | SHA-256 `9e1af8facd5a44b38a3440585ccd5422e0e416b11df7f8ec89c1a479f4b2564f` | Prior actual-source ranges 1–44/39–53 establish the `ENOENT`/`ENOTDIR` class. No claim of reading all 711 archive members. |\n| Host Cargo manifest at H524 | `9b477d438dd0a9325cbe52b670c2ada774f352e8` | Complete existing manifest, no edits. |\n\nSource reads, exact API/tree reads, Git blob hashes, SHA-256 identities, `rg` source-name enumeration, line counts, and complete binary/full-index diffs were the only checks performed. No Rust/JavaScript policy execution, generator, formatter, linter, schema checker, build, test, runtime probe, or local/htch validation was invoked. The patch was not locally applied as a verification exercise.\n\n## Remaining limitations and next owner action\n\nRoot must freeze/review the integrated source and run the exact-subject Actions receipt. The three-platform capture must enforce the declared named sets, real Unix error observations, and the existing format regression; failed, absent, duplicate, ignored, incomplete, or zero-test results cannot count as passing. This report supplies no external execution result.\n\nThe selector still consumes filesystem path observations, not an admitted verified file handle or durable transaction. Windows hardlink count and reparse semantics, real producer/consumer wiring, Session/database generation, conditional deletion of a newer marker, lost acknowledgments, cancellation, reopen/migration, and shutdown fencing remain outside HHP-v1. Full text-decoder equivalence, including the pre-existing Latin-1 versus upstream Windows-1252 distinction, is unchanged. The existing signed-size marker normalization was also not expanded into this patch.\n\nThe broader production assessment remains `/tmp/fabushi-647e-pairing/html-provenance-production-gap.md`. No helper test creates a real trusted producer. Existing wiring blockers, literal reading history, not-run/pending accounting, and all eight global false flags remain unchanged by this worker.\n"
+  },
+  "implementation_handoffs": {
+    "html": {
+      "task_local_source": "html-gap/explicit-implementation.md",
+      "bytes": 13833,
+      "sha256": "ba9c53cf35d6b487fd679011e7a986d8fb0c34dfbe2cf59ad787bfbd17d553e5",
+      "text": "# HHP-v2 explicit HTML loader implementation handoff\n\nStatus: source implementation and source-selected contract tests only. Independent review and exact-H GitHub Actions are pending. This is not a passing verification receipt.\n\n## Assigned scope and identities\n\n- Worker: `html_explicit_loader_impl`; effort `xhigh`, as assigned/applied by the parent for content admission, actual-byte/Unicode/error/root invariants. The configured model was retained; this worker applied no model override.\n- Root integration base, as supplied by the parent: `8cf6143501b8c69b051d98df05f3ed523b364268`, tree `e297663945890a9ec86b085b5f32761c16d1bf9e`.\n- Fixed upstream U: `1440bb1771372334bea23d7642bb52deb7db1845`, tree `90c8aab39972da11cfad220361781d49e1bc6700`.\n- Candidate root: `/workspace/scratch/ac2d94a35110/html-candidate`.\n- The two starting candidate files were independently hashed and matched the exact `5593e6d96e849ce5bf93de299aedeffca70b9568` Git blobs below. The parent reports those blobs unchanged through the later media-only/CWB integration base. The patch is built from the two exact 5593 source blobs, not from the foreign checkout's dirty files.\n- The HHP-v2 contract was read completely before editing. Its earlier 5593/cb62 identity prose is retained in the root-owned spec; the integration base for this handoff is the parent's 8cf identity above. No spec or authority file was edited by this worker.\n\nOnly these product/test paths were written:\n\n1. `source/host/src/extensions/attachments/web_media.rs`\n2. `source/host/tests/openclaw_web_media_contract.rs`\n\nOnly these additional handoff artifacts were written:\n\n1. `/workspace/scratch/ac2d94a35110/html-gap/explicit-implementation.md`\n2. `/workspace/scratch/ac2d94a35110/html-gap/explicit-implementation.patch`\n\nThe complete unified two-file diff is `explicit-implementation.patch` (469 lines); its SHA-256 is `9fe7c3948502a0883f415d4cba0fd7cef2464edfc64c169b63da4a46fc3b2784`. The `diff` command's exit 1 means the source files differ; it is not a test or validation result.\n\n| Path | Exact starting Git blob | Candidate Git blob |\n| --- | --- | --- |\n| `source/host/src/extensions/attachments/web_media.rs` | `829c6a58f85946f34e2c9aa0ee0c233bfcee6412` | `61291cf57b42408cd98c7fe7676d2a0694fa44d0` |\n| `source/host/tests/openclaw_web_media_contract.rs` | `cbe97afac793cf968d1c080e098e1914e91b24eb` | `a90b5f913679b7e284f4970c42e8c2b774ee4c94` |\n\n| Path | Starting SHA-256 | Candidate SHA-256 |\n| --- | --- | --- |\n| `source/host/src/extensions/attachments/web_media.rs` | `cca8cc37ac548054c76f665bc41153803f2d17e8b952f1d56f1ebaf0bf0aee3a` | `30bf9699720e33dd9c2bdbc08be5b95a9b42dc4a7ca2a056d62ff3a1a8bfc584` |\n| `source/host/tests/openclaw_web_media_contract.rs` | `79e2b8980400d9e5bdc5083b35a0d99ee988be8106bcc5a8b8370bd65877d118` | `54e4d35a332617e8774f844e68de8ae2443dd947000e3b152dcc8a97d9c5e608` |\n\n## Implementation and integration contract\n\n`load_web_media` retains the existing network-path refusal, URL/workspace resolution, canonical local-roots check, byte cap and `read_outbound_media_file_bounded` call. Only after that read succeeds does exact `options.html_publication.as_deref() == Some(\"explicit\")` combined with a resolved ASCII-case-insensitive `html`/`htm` extension enter the new branch.\n\nThe branch calls the existing `detect_mime_from_buffer(&buffer, None)`. No filename hint is supplied. It passes that observation, the resolved file path, the same captured buffer, `text/html`, `document`, no generated trust and `explicit_html_publication: true` to the existing `assert_host_read_media_allowed` owner. No policy decoder, shape parser, permission decision or provenance owner is copied into the loader.\n\nA policy refusal returns `WebMediaError::LocalAccess` with code `invalid-html-publication` and `error.to_string()` from the existing policy error. The branch cannot fall through to image probing, optimization or the ordinary result. Success moves the original buffer into the result with `text/html`, `document`, the existing `extract_original_filename` projection and `trusted_generated_html_source: None`.\n\nThe ordinary image probe is moved below this early-return branch; the existing non-HTML and absent/unknown-mode paths, optimization logic and final cap assertion remain present. `host_read_capability`, `sandbox_validated` and roots acquire no new meaning here.\n\nThe root-owned candidate service arm was read after the edit. It now forwards `args.get(\"htmlPublication\").and_then(Value::as_str).map(str::to_owned)` alongside its existing max-byte and optimization fields. This worker did not edit that service file. The new tests depend on this root integration and use its actual `AttachmentsService::dispatch_gateway(\"loadWebMedia\", ...)` consumer.\n\nThe recovered policy file was read, not modified. Its observed candidate blob remains `9087b941ce253ac261a453df3d8b0054e64804e2`. HHP-01/02's ECMAScript whitespace, UTF-16 prefix and header-boundary semantics remain owned there. The recovered policy/provenance tests were not edited.\n\n## Source-selected tests and causal controls\n\nEvery added test uses an owned real filesystem fixture. The existing `test_attachments_service` constructor is reused unchanged. Its auth and Box implementations are unused plumbing for these file reads; there is no mock reader, injected file payload or fake service result.\n\nTwo new assertion helpers call the production loader and the production service directly. Success asserts the entire serialized object against independent expected bytes/MIME/kind/filename, requiring generated trust to be absent. Refusal asserts the typed loader code, existing public policy error text and the corresponding service error string. Default service optimization is exercised by these calls.\n\n| Exact new test name | Requirements / concrete control |\n| --- | --- |\n| `test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes` | HHP-06/09: `.html`, uppercase `.HTM`/`.HTML`, uppercase file URL with encoded Unicode/space, original filename stripped from the existing UUID suffix, case-insensitive header, ECMAScript BOM/NBSP leading and doctype whitespace, byte-for-byte JSON results and absent trust. |\n| `test_ocrm_web_media_explicit_html_unicode_byte_boundary` | HHP-01/06/09: two-, three- and four-byte UTF-8 scalars cross byte 8192, guarded by an actual `is_char_boundary` fixture assertion; both actual consumers must return the original bytes normally. |\n| `test_ocrm_web_media_explicit_html_utf16_shape_window` | HHP-01/06/07/09: no opening HTML header; complete closing token ends at UTF-16 unit 8192 versus 8193, BMP and supplementary text, and a supplementary scalar straddling the unit limit. Includes trimmed BOM/NBSP before the bounded window. Both real consumers must distinguish positives and refusals. |\n| `test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext` | HHP-02/07/09: empty input, ordinary CSV/text, word/underscore/digit header continuations, missing doctype whitespace, long-s/Kelvin word-fold controls, U+0085 not treated as ECMAScript whitespace, invalid UTF-8 beyond fallback tolerance and NUL-heavy content. All require the specific HTML policy refusal. |\n| `test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts` | HHP-07/09: observed PNG/PDF/ZIP signatures with a closing body token. PDF is printable; the ZIP fixture is valid UTF-8 and its two control bytes are below the policy's printable threshold, making sniffing necessary to refuse those two fixtures. No image/ordinary fallback may return success. |\n| `test_ocrm_web_media_html_publication_requires_exact_mode` | HHP-08/09: absent mode, empty/unknown strings, uppercase mode, whitespace variants, plus service null/boolean/number/object/array values retain the current ordinary result; the same actual file refuses on exact `explicit`. |\n| `test_ocrm_web_media_explicit_mode_preserves_non_html_loading` | HHP-08/09: a binary `.txt`, HTML-shaped `.bin` and the existing complete PNG fixture retain ordinary result bytes/MIME/kind with explicit mode; both optimization settings are exercised through both consumers. |\n| `test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary` | HHP-08/09: exact byte cap succeeds; one byte below the length fails with the existing `TooLarge` type and matching service error. Both valid and invalid HTML inputs ensure the bounded read precedes HTML admission. |\n| `test_ocrm_web_media_explicit_html_keeps_local_access_guards` | HHP-08/09: allowed workspace-relative HTML succeeds with local roots; absolute and relative traversal outside those roots refuse. Missing file, directory-as-file, UNC/double-slash paths, network file URL and encoded separator still refuse through loader and service. Caller JSON permission/trust-looking fields do not change those service refusals. This does not claim service-level file authority or a new root capability. |\n| `test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes` | HHP-08/09: invalid bytes refuse, removal/replacement at the same path succeeds, same-length invalid replacement refuses, and another same-length valid replacement succeeds. Both consumers reopen/revalidate; the original file is unmodified by loads and the fixture directory has no extra staging/sidecar file. |\n\nThe existing seven test bodies, fixtures, helper bodies and assertions remain exactly as in the starting file. The only edits before their end are the two necessary import additions. Preserved exact test names:\n\n1. `test_ocrm_anthropic_inline_content_blocks_normalization`\n2. `test_ocrm_web_media_animated_webp_preservation`\n3. `test_ocrm_web_media_file_url_and_traversal_guards`\n4. `test_ocrm_web_media_local_loading_and_roots_boundary`\n5. `web_media_local_reads_are_bounded_before_buffer_acceptance`\n6. `test_ocrm_remote_workspace_file_transfer`\n7. `test_ocrm_web_media_gateway_service_dispatch`\n\n### Expected platform counts — SOURCE SELECTION ONLY\n\nTarget: the complete existing `openclaw_web_media_contract` integration-test target. Source contains 17 `#[test]` functions: seven preserved and ten added, with no ignored or platform-gated additions.\n\n| Actions platform | Expected named selections | Executed by this worker |\n| --- | ---: | ---: |\n| Linux | 17 | 0 |\n| macOS | 17 | 0 |\n| Windows | 17 | 0 |\n\nThese counts come from source inspection, not `cargo test --list` or an execution result. Root owns strict capture selection, workflow changes, complete immutable review scope, current-H inputs, native runs and resulting receipts.\n\n## Reads, limitations and no-execution declaration\n\nRead before implementation: the complete current HHP-v2 contract; the complete supplied root `authority/AGENTS.md`; the OCRM SOT's current authority/constraint sections and main migration spec §17; the complete current `assessment.md` and `reference-identities.json`; and the relevant existing Attachments owner mapping. Adjacent authority reads included the FBCP SOT and relevant ownership/architecture clauses.\n\nSource reading included the complete starting loader and web contract target, the complete recovered policy, the service constructor and actual `loadWebMedia` dispatch arm, the bounded read implementation, the actual MIME detector, original-filename projection and relevant image-probe/optimization consumers. Adjacent repository source was read using `git show 5593...:<path>` in the foreign checkout; that checkout was never edited. The historical reference manifest's upstream read claims are reused as recorded evidence, not newly claimed full upstream reads by this worker.\n\nNo local or htch-runtime tests, builds, lint, formatter, generator, validator, capture, benchmark or runtime execution occurred. No test listing occurred. Source/Git reads, edits, diff generation and hashing are the complete tool activity relevant to this handoff. No commit, ref update, push, workflow dispatch or ledger/status promotion was performed.\n\nThis candidate does not establish ordinary registered external Gateway exposure, a frontend or Runner caller, generated-HTML origin, durable provenance, Session/custody closure, host-read capability authority, opened-handle confinement, cancellation/retirement or full MIME decoder parity. Existing signatures are reused; pinned `file-type` all-format equivalence remains outside the scoped claim. The implementation is synchronous and read-only and does not improve the existing path-check/open race contract.\n\nThe actual service field forwarding, capture/workflow/spec/ledger/RTM/lock/ref integration and independent review remain root-owned. Source-written controls do not make HHP-06..09 verified or accepted; exact-H native Actions are still required.\n\n## Adjacent pre-existing defect retained for separate repair\n\nWhile reading the existing image consumer, this worker observed a source-level out-of-bounds defect outside the allowed paths:\n\n- Exact source: `5593e6d96e849ce5bf93de299aedeffca70b9568:source/host/src/extensions/attachments/image_ops.rs`, blob `1c40854ad1f802501e588ff1bb007fc8d26681bf`.\n- Function/lines: `read_image_probe_from_header`, lines 270–273. The PNG branch checks `buffer.len() >= 24`, then reads `buffer[25]` before the width/height validity check.\n- Concrete trigger: a 24- or 25-byte buffer with the eight-byte PNG signature and `IHDR` at offsets 12–15 reaches that unchecked index and can panic in the ordinary image probe. This was found by source reading; it was not executed or reproduced here.\n- No fix was made. Root was informed and requested that the finding be preserved for a separate existing-owner repair. The non-HTML regression uses the same complete PNG bytes already present in the original web tests, and the HTML signature controls require the specific policy refusal before image probing. Neither HHP-v2 nor the media receipts claim this separate defect fixed.\n\n"
+    },
+    "png": {
+      "task_local_source": "png-implementation.md",
+      "bytes": 14527,
+      "sha256": "d3c95a39f03d79b25d434b96df0ec840805e315591eee7b71dc38aadb4355621",
+      "text": "# IPB-v1 PNG probe repair handoff\n\nStatus: isolated implementation and source inspection complete; independent review and exact-H Actions execution pending. No executable verification has been run.\n\n## Subject and allowed scope\n\n- Parent integration base H: `8cf6143501b8c69b051d98df05f3ed523b364268`, tree `e297663945890a9ec86b085b5f32761c16d1bf9e`.\n- Exact image-file base: `5593e6d96e849ce5bf93de299aedeffca70b9568`; parent reports these image files unchanged at H.\n- Fixed upstream U: `1440bb1771372334bea23d7642bb52deb7db1845`.\n- Parent assignment records applied `xhigh` for untrusted byte bounds and real loader/service/metadata oracles; model inherited.\n- Read IPB-v1 completely before other investigation or edits. Read root AGENTS, the current SOT policy, main Spec §17, module-map M23 and the existing image-ops ledger responsibility `OCRM-RESP-MEDIA-IMAGE-OPS-001`.\n- Only production/test writes: `png-candidate/source/host/src/extensions/attachments/image_ops.rs` and `png-candidate/source/host/tests/openclaw_image_ops_contract.rs`. This handoff and `png-implementation.patch` are the only other output files.\n- Adjacent production was read with `git show 5593e6d96e849ce5bf93de299aedeffca70b9568:<path>` from `/workspace/scratch/29e7135d8bfe/fabushi-desktop`. No foreign worktree, index, ref or object-store mutation was performed.\n- Root owns the spec, shared capture/workflow, ledger, RTM, integration, immutable review freeze and Actions. The HTML worker's files were not edited.\n\n## Complete two-file delta\n\nComplete patch: `/workspace/scratch/ac2d94a35110/png-implementation.patch`.\n\nPatch SHA-256: `f337e5f5bc2e8d37364b5c67b5e237ee701d7af946d382f52028d9b46f707fb0`.\n\n| Path under repository | Base Git blob | Candidate Git blob | Source lines, base → candidate |\n| --- | --- | --- | --- |\n| `source/host/src/extensions/attachments/image_ops.rs` | `1c40854ad1f802501e588ff1bb007fc8d26681bf` | `bcbb2f0d96ddb00dc9f10297ecdf9281171f856d` | 495 → 496 |\n| `source/host/tests/openclaw_image_ops_contract.rs` | `06931e7ef677e88ace3e8f1cbc6ed53f9984c58a` | `f7230c34879341a9126e52b38bc1e2621db3b083` | 309 → 559 |\n\nThe sole production behavior change is the PNG admission guard from `buffer.len() >= 24` to `buffer.len() >= 26`, with an explanatory comment for the read at offset 25. Signature, IHDR, positive dimensions, alpha classification, orientation and byte-count behavior for sufficient headers remain unchanged. No schema, codec, decoder, CRC validator, dependency, permission, persistence, worker or state owner was added.\n\nThe test diff changes imports and appends a fixture plus seven tests after the existing target. All nine existing test bodies and their assertions remain byte-for-byte unchanged in the diff.\n\n## Requirements and causal oracles\n\n| Requirement | Written source evidence | Remaining evidence |\n| --- | --- | --- |\n| IPB-01 | Direct probe and metadata calls for each prefix length 0 through 25; the 24/25-byte cases retain signature, IHDR and positive dimensions, reaching the old erroneous index. No `catch_unwind` or panic-to-success conversion. | Actions execution of the complete target. |\n| IPB-02 | Header-only positives for color types 0/2/3/4/6 at 26/29/33 bytes; explicit complete `ImageProbe` and display dimensions; zero width, zero height and both-zero negatives. Existing nine tests retain PNG/BMP/JPEG/WebP-related controls. | Actions execution; no full-image decode or CRC validity claim. |\n| IPB-03 | Real `prepare_attachment` explicit-image and generic-MIME calls with bytes retained and dimensions absent, then sufficient-header retry. Real bounded file loader with optimization false/true, same-file 24/25 → 26 replacement, and metadata derived from the returned bytes. Actual `AttachmentsService::dispatch_gateway` loads the file, passes its returned buffer into `readImageMetadata`/`prepareAttachment`, checks exact serialized results and repeats after replacement. | Actions execution and fresh independent review. |\n| IPB-04 | Actual loader controls for exact 26-byte cap, 27-byte refusal and recovery, outside-root refusal, directory refusal and unchanged ordinary MIME behavior. Service dispatch also refuses 26 bytes under a 25-byte cap. Existing TestAuth/TestBox are construction plumbing; no fake byte reader was introduced. | Actions on native Linux/macOS/Windows. |\n\nThe fixture deliberately ends at color type (26 bytes). Padded variants are also header-only fixtures; neither CRC validity nor decodability is asserted. The short-header loader result keeps the existing `kind: image` and absent content type; it is not reinterpreted as a valid PNG.\n\n### Exact new test names\n\n1. `test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type`\n2. `test_ocrm_image_ops_png_probe_preserves_required_header_metadata`\n3. `test_ocrm_image_ops_png_probe_rejects_zero_dimensions`\n4. `test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry`\n5. `test_ocrm_image_ops_png_prefix_file_loader_and_retry`\n6. `test_ocrm_image_ops_png_file_loader_preserves_read_boundaries`\n7. `test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry`\n\nSource declaration count: **16 unconditional `#[test]` functions**, comprising 9 retained and 7 new. Expected complete-target source count is 16 on Linux, 16 on macOS and 16 on Windows. These are source counts, not compiled counts or pass counts. There are no new platform gates or ignored tests. The 26 prefixes and other loop cases are not reported as additional test functions.\n\n## Existing production consumer sources read\n\nAll identities below are from exact target 5593:\n\n| Path | Git blob | Read boundary |\n| --- | --- | --- |\n| `source/host/src/extensions/attachments/web_media.rs` | `829c6a58f85946f34e2c9aa0ee0c233bfcee6412` | Actual loader, option defaults, bounded read, MIME probe, image optimization and result fields. |\n| `source/host/src/extensions/attachments/attachments_service.rs` | `cc0ddaed1cb14be2ff4cbec65f7bf09ecc757f80` | Dispatch branches around 1900–2070, especially `readImageMetadata`, `prepareAttachment`, `normalizeAnthropicInlineImage` and `loadWebMedia`. |\n| `source/host/src/extensions/attachments/media_reference.rs` | `acbed906d06b496b481fd4d4b5c604d9fc3eda57` | `read_outbound_media_file_bounded`, around 291–324: ordinary-file admission, metadata size refusal, bounded reader and post-read size check. |\n\nAlso read the exact existing `openclaw_web_media_contract.rs` loader/dispatch precedents and relevant `source/host/Cargo.toml` dependency declarations. No runtime consumer was replaced or reimplemented by the tests.\n\n## Fixed-U source accounting\n\nThe parent acquired exact-U files under `/workspace/scratch/ac2d94a35110/png-fixed-u/`; their Git blob hashes were independently read with `git hash-object`:\n\n| Fixed-U source | Git blob | Read depth |\n| --- | --- | --- |\n| `src/media/image-ops.ts` | `8ee68607c533dac5134996a21919710de046d3e7` | Lines 1–140 read, with deep attention to imports/reexports 1–17 and optional display dimensions 52–66. This is not an entire-file or all-codec review claim. |\n| `package.json` | `6989c0618742d3c2b93cc336cbe1d9c3c4f0a657` | Dependency input contract at 2455–2461; exact `rastermill: 0.4.0` declaration at 2458. |\n| `pnpm-lock.yaml` | `83b4975eb96942ec007a2eb9847ccfe98d380bda` | Importer 431–433, resolution 9903–9905 and dependency snapshot 18096–18098. |\n\n### Actual distributed Rastermill package acquired\n\nRead the actual npm artifact at `https://registry.npmjs.org/rastermill/-/rastermill-0.4.0.tgz` into memory using standard-library archive/network reads. The package was not installed, imported or executed. No tag archive was substituted.\n\n- Artifact size: **41,458 bytes**.\n- SHA-512 integrity: `sha512-5WrZ6tuK54oVk45w/riFm0/VwTSieJ45c/zAGIaNtTKOSYL2zwx1r3VdBB2pKwlOO/tG+A9lmvN+3S6hwU6znA==`, identical to the fixed-U lock resolution.\n- SHA-512 hex: `e56ad9eadb8ae78a15938e70feb8859b4fd5c134a2789e3973fcc018868db5328e4982f6cf0c75af755d041da92b094e3bfb46f80f659af37edd2ea1c14eb39c`.\n- Archive member names enumerated: `package/LICENSE`, `package/dist/index.js`, `package/package.json`, `package/dist/index.js.map`, `package/README.md`, `package/dist/index.d.ts`.\n- Member enumeration is separate from semantic reading. The README and source map were not semantically reviewed; this is not complete package or codec closure.\n\n| Exact member | Bytes / lines | SHA-256 | Actual read depth |\n| --- | --- | --- | --- |\n| `package/package.json` | 2,056 / 68 | `53b4ba8a7ef93e4182da1dd3cc3388f475802ab0d3dfa9ec7313ea91ccec6a05` | Whole manifest: version 0.4.0, ESM export `./dist/index.js`, declarations `./dist/index.d.ts`, Node >=22, MIT, direct `@silvia-odwyer/photon-node: 0.3.4`. |\n| `package/dist/index.js` | 99,300 / 2,443 | `4168d0778e325c6bfcb481da2d877260190b38fe73236fec3702c4b3b0d2426e` | Scoped contract read: `toBuffer` 82–87, dimension normalization 155–160, PNG metadata/alpha 161–200, exported header functions 637–699. PNG call chain read deeply. Other exported probe branches were read as dispatch; their codec internals were not fully reviewed. |\n| `package/dist/index.d.ts` | 9,815 / 189 | `2fa40fe13139290c84696664d1f62f3461f6355bc6d51ec357f7c78b47e47958` | Header input/result contract, especially 1–18 and declarations 175–178: byte inputs, optional/null alpha, optional/null orientation, and header-only results. |\n| `package/LICENSE` | 1,065 / 21 | `6ae2daf92d73e912aef033d56ce374df997ae0ad1d88ca9ef76f0c11123aae27` | Whole MIT notice; copyright 2026 openclaw. |\n\nThe exact package proves a relevant source difference: `readPngMetadata` accepts 24 bytes with the signature, IHDR and positive dimensions; `readPngAlphaChannel` returns null below 29 bytes. Consequently the distributed export returns PNG dimensions and null alpha for the representative 24/25-byte prefixes. Rust's existing `ImageProbe.has_alpha` is a required boolean. The root explicitly retained decision IPB-F01: make this Rust probe total with a 26-byte threshold while preserving its sufficient-header behavior; do not widen this repair into a shared-schema change or claim all-prefix Rastermill equivalence.\n\nOther source differences remain open: Rastermill's PNG alpha helper scans `tRNS` and handles unknown alpha, and its public probe dispatches additional formats. Photon 0.3.4 is declaration-reviewed here; its binary/codec implementation was not acquired or reviewed. Full image policy/decoder equivalence, codec closure, UI/platform/package acceptance and all existing OCRM completion gates remain unaccepted.\n\n### Actual exported functions, package/dist/index.js:637–641 and 643–699\n\nThe following is copied from the integrity-matched npm distribution; no downloaded code was run:\n\n```javascript\nexport function readImageMetadataFromHeader(input) {\n    const buffer = toBuffer(input);\n    const probe = readImageProbeFromHeader(buffer);\n    return probe ? { width: probe.width, height: probe.height } : null;\n}\nexport function readImageProbeFromHeader(input) {\n    const buffer = toBuffer(input);\n    const png = readPngMetadata(buffer);\n    if (png) {\n        return {\n            ...png,\n            format: \"png\",\n            hasAlpha: readPngAlphaChannel(buffer),\n            orientation: null,\n            bytes: buffer.length,\n        };\n    }\n    const gif = readGifMetadata(buffer);\n    if (gif) {\n        return { ...gif, format: \"gif\", hasAlpha: null, orientation: null, bytes: buffer.length };\n    }\n    const webp = readWebpMetadata(buffer);\n    if (webp) {\n        return {\n            ...webp,\n            format: \"webp\",\n            hasAlpha: readWebpAlphaChannel(buffer),\n            orientation: null,\n            bytes: buffer.length,\n        };\n    }\n    const bmp = readBmpMetadata(buffer);\n    if (bmp) {\n        return { ...bmp, format: \"bmp\", hasAlpha: null, orientation: null, bytes: buffer.length };\n    }\n    const tiff = readTiffMetadata(buffer);\n    if (tiff) {\n        return { ...tiff, format: \"tiff\", hasAlpha: null, orientation: null, bytes: buffer.length };\n    }\n    const primaryHeif = readIsoBmffPrimaryItemMetadata(buffer);\n    const heif = primaryHeif?.metadata ?? readLargestIsoBmffImageMetadata(buffer);\n    if (heif) {\n        return {\n            ...heif,\n            format: isAvifImage(buffer) ? \"avif\" : \"heif\",\n            hasAlpha: null,\n            orientation: primaryHeif?.orientation ?? null,\n            bytes: buffer.length,\n        };\n    }\n    const jpeg = readJpegMetadata(buffer);\n    if (jpeg) {\n        return {\n            ...jpeg,\n            format: \"jpeg\",\n            hasAlpha: false,\n            orientation: readJpegExifOrientation(buffer),\n            bytes: buffer.length,\n        };\n    }\n    return null;\n}\n```\n\nLicense for the copied Rastermill excerpt:\n\n```text\nMIT License\n\nCopyright (c) 2026 openclaw\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n```\n\n## Execution and integration boundary\n\nNo local or htch tests, builds, lints, formatters, product generators, validators, capture scripts or media executions were performed. No npm dependency was installed or executed. Source/Git reads, network/archive source acquisition, hashes, editing and source diff preparation are the only operations used.\n\nThe full two-file delta was read after editing. Runtime correctness, compiled test counts, native-platform results and independent acceptance remain pending the root's combined media-contract freeze, fresh blind reviews and exact-H GitHub Actions. No ledger completion flag or historical source read was rewritten by this worker.\n"
+    }
+  },
+  "rastermill_dependency": {
+    "identity": {
+      "record_kind": "scoped dependency source evidence for canonical OCRM integration",
+      "record_version": 1,
+      "recorded_at_utc": "2026-11-03T01:58:10.806269+00:00",
+      "purpose": "One archive evidence record for IPB-v1; not a parallel inventory, parity ledger, source-read completion truth or acceptance receipt.",
+      "scope": {
+        "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "integration_base": "8cf6143501b8c69b051d98df05f3ed523b364268",
+        "target_image_base": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+        "owner": "source/host/src/extensions/attachments/image_ops.rs",
+        "contract": "IPB-v1 / IPB-F01 target PNG probe totality repair",
+        "effort": "xhigh as assigned; inherited model",
+        "product_files_changed_by_this_followup": []
+      },
+      "archive": {
+        "package": "rastermill",
+        "version": "0.4.0",
+        "source_url": "https://registry.npmjs.org/rastermill/-/rastermill-0.4.0.tgz",
+        "file": "rastermill-0.4.0.tgz",
+        "size_bytes": 41458,
+        "sha256": "ac6ccddfe285bc5bb0909a0bb0a1d1381dddd9e598bde06bac5282cc00dbbf91",
+        "sha512": "e56ad9eadb8ae78a15938e70feb8859b4fd5c134a2789e3973fcc018868db5328e4982f6cf0c75af755d041da92b094e3bfb46f80f659af37edd2ea1c14eb39c",
+        "sri": "sha512-5WrZ6tuK54oVk45w/riFm0/VwTSieJ45c/zAGIaNtTKOSYL2zwx1r3VdBB2pKwlOO/tG+A9lmvN+3S6hwU6znA==",
+        "fixed_u_lock_sri": "sha512-5WrZ6tuK54oVk45w/riFm0/VwTSieJ45c/zAGIaNtTKOSYL2zwx1r3VdBB2pKwlOO/tG+A9lmvN+3S6hwU6znA==",
+        "sri_matches_fixed_u_lock": true,
+        "member_count": 6,
+        "acquisition": "Original response bytes preserved; no tag archive substituted, package installation/import/execution, or archive extract-all operation."
+      },
+      "fixed_u_contract_sources": [
+        {
+          "path": "src/media/image-ops.ts",
+          "git_blob": "8ee68607c533dac5134996a21919710de046d3e7",
+          "sha256": "f7fda2f4ef78e0b9d5f7121d2a7c984e4833e79667be896b0edc31252a673407",
+          "selected_line_ranges": [
+            [
+              1,
+              17
+            ],
+            [
+              52,
+              66
+            ]
+          ],
+          "purpose": "Imports/reexports Rastermill header probe and uses optional display dimensions.",
+          "reading_limit": "Selected contract ranges only; byte hashing is not full semantic review."
+        },
+        {
+          "path": "package.json",
+          "git_blob": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+          "sha256": "86d06ba07a09a34b13e781254f47d0cff4a9b94b17cc89588216996c60980749",
+          "selected_line_ranges": [
+            [
+              2455,
+              2461
+            ]
+          ],
+          "purpose": "rastermill 0.4.0 dependency declaration at line 2458.",
+          "reading_limit": "Selected contract ranges only; byte hashing is not full semantic review."
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "git_blob": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+          "sha256": "a4623b232742ae72f37072a40779d709b32436b430b88dc006902d1fa1287a4c",
+          "selected_line_ranges": [
+            [
+              431,
+              433
+            ],
+            [
+              9903,
+              9905
+            ],
+            [
+              18096,
+              18098
+            ]
+          ],
+          "purpose": "Importer pin, integrity resolution and photon-node dependency snapshot.",
+          "reading_limit": "Selected contract ranges only; byte hashing is not full semantic review."
+        }
+      ],
+      "members": [
+        {
+          "name": "package/LICENSE",
+          "type": "regular-file",
+          "tar_type_flag": "0",
+          "size_bytes": 1065,
+          "sha256": "6ae2daf92d73e912aef033d56ce374df997ae0ad1d88ca9ef76f0c11123aae27",
+          "link_target": null,
+          "text_lines": 21,
+          "disposition": "license",
+          "action": "Preserve the original MIT notice unchanged with copied contract excerpts and retain the original archive member.",
+          "semantic_reading": {
+            "extent": "whole-file",
+            "depth": "license disposition",
+            "line_ranges": [
+              [
+                1,
+                21
+              ]
+            ]
+          },
+          "byte_observation": "Entire member bytes read for the recorded digest; this does not upgrade semantic reading depth."
+        },
+        {
+          "name": "package/dist/index.js",
+          "type": "regular-file",
+          "tar_type_flag": "0",
+          "size_bytes": 99300,
+          "sha256": "4168d0778e325c6bfcb481da2d877260190b38fe73236fec3702c4b3b0d2426e",
+          "link_target": null,
+          "text_lines": 2443,
+          "disposition": "necessary probe dependency; distributed implementation",
+          "action": "Use the exact distributed PNG header call chain as scoped dependency-contract evidence for IPB-v1; preserve the original module in the archive.",
+          "semantic_reading": {
+            "extent": "partial module; no whole-module read-complete claim",
+            "deep_line_ranges": [
+              [
+                82,
+                87
+              ],
+              [
+                155,
+                200
+              ],
+              [
+                643,
+                654
+              ]
+            ],
+            "contract_line_ranges": [
+              [
+                1,
+                18
+              ],
+              [
+                636,
+                699
+              ]
+            ],
+            "scope": "Byte conversion, positive dimensions, PNG signature/IHDR admission, optional alpha handling, and the actual exported header probe. Other format branches were read as dispatch; their internal codecs were not fully reviewed."
+          },
+          "byte_observation": "Entire member bytes read for the recorded digest; this does not upgrade semantic reading depth."
+        },
+        {
+          "name": "package/package.json",
+          "type": "regular-file",
+          "tar_type_flag": "0",
+          "size_bytes": 2056,
+          "sha256": "53b4ba8a7ef93e4182da1dd3cc3388f475802ab0d3dfa9ec7313ea91ccec6a05",
+          "link_target": null,
+          "text_lines": 68,
+          "disposition": "dependency entrypoint and generator-input manifest",
+          "action": "Retain exact version, exported JavaScript and declaration entrypoints, engine/license/dependency inputs and build-script declaration. The declared compiler configuration and original TypeScript source are not included in this npm archive.",
+          "semantic_reading": {
+            "extent": "whole manifest",
+            "depth": "dependency/input contract",
+            "line_ranges": [
+              [
+                1,
+                68
+              ]
+            ]
+          },
+          "byte_observation": "Entire member bytes read for the recorded digest; this does not upgrade semantic reading depth."
+        },
+        {
+          "name": "package/dist/index.js.map",
+          "type": "regular-file",
+          "tar_type_flag": "0",
+          "size_bytes": 95453,
+          "sha256": "eeec667279c9d63ee6bdbf4a1943983a462bce091fbf615c0a603b7f79f1db4f",
+          "link_target": null,
+          "text_lines": 1,
+          "disposition": "source-map",
+          "action": "Retain exact generated map bytes in the archive; record its source reference and absence of embedded sources. Do not infer original source identity, mapping correctness or reproducible generation.",
+          "semantic_reading": {
+            "extent": "metadata only; encoded mappings not semantically read",
+            "depth": "source-map/input-reference contract",
+            "observed_metadata": {
+              "version": 3,
+              "file": "index.js",
+              "sourceRoot": "",
+              "sources": [
+                "../src/index.ts"
+              ],
+              "names": [],
+              "sourcesContent_present": false,
+              "sourcesContent_count": 0,
+              "mappings_characters": 95351
+            }
+          },
+          "byte_observation": "Entire member bytes read for the recorded digest; this does not upgrade semantic reading depth."
+        },
+        {
+          "name": "package/README.md",
+          "type": "regular-file",
+          "tar_type_flag": "0",
+          "size_bytes": 2874,
+          "sha256": "01c03c6f7e086072c07deb5b9e1a6e7714d2756bd9b8ae4e6fe3672fe50b6dc5",
+          "link_target": null,
+          "text_lines": 70,
+          "disposition": "docs",
+          "action": "Retain upstream API, execution-mode and backend documentation in the archive. Treat claims about encoding/backends as documentation, not executed or accepted behavior.",
+          "semantic_reading": {
+            "extent": "whole-file",
+            "depth": "documentation disposition",
+            "line_ranges": [
+              [
+                1,
+                70
+              ]
+            ]
+          },
+          "byte_observation": "Entire member bytes read for the recorded digest; this does not upgrade semantic reading depth."
+        },
+        {
+          "name": "package/dist/index.d.ts",
+          "type": "regular-file",
+          "tar_type_flag": "0",
+          "size_bytes": 9815,
+          "sha256": "2fa40fe13139290c84696664d1f62f3461f6355bc6d51ec357f7c78b47e47958",
+          "link_target": null,
+          "text_lines": 189,
+          "disposition": "necessary probe public type contract; distributed declaration output",
+          "action": "Retain and quote byte-input and optional header-result declarations; do not infer declaration-generator or complete package closure.",
+          "semantic_reading": {
+            "extent": "selected declarations",
+            "depth": "public input/result contract",
+            "line_ranges": [
+              [
+                1,
+                18
+              ],
+              [
+                175,
+                178
+              ]
+            ]
+          },
+          "byte_observation": "Entire member bytes read for the recorded digest; this does not upgrade semantic reading depth."
+        }
+      ],
+      "preserved_artifacts": [
+        {
+          "file": "LICENSE",
+          "source_member": "package/LICENSE",
+          "size_bytes": 1065,
+          "sha256": "6ae2daf92d73e912aef033d56ce374df997ae0ad1d88ca9ef76f0c11123aae27",
+          "preservation": "Original archive member bytes."
+        },
+        {
+          "file": "contract-snippets.json",
+          "size_bytes": 15824,
+          "sha256": "3131597ad18ecc31131b712ac9da77659a6ae5a32fba7339929bc4b4b41bd445",
+          "preservation": "Exact selected text ranges with source identities and excerpt hashes; raw member bytes remain in the original archive."
+        }
+      ],
+      "scoped_contract_observations": [
+        {
+          "observation": "The exported header probe first calls readPngMetadata. Positive dimensions and a PNG signature/IHDR can produce a PNG probe at 24 or 25 bytes.",
+          "source_member": "package/dist/index.js",
+          "line_ranges": [
+            [
+              155,
+              168
+            ],
+            [
+              643,
+              654
+            ]
+          ]
+        },
+        {
+          "observation": "PNG alpha is null below 29 bytes; the public alpha result is boolean or null. At sufficient lengths the helper checks alpha color types and tRNS/chunk bounds.",
+          "sources": [
+            {
+              "member": "package/dist/index.js",
+              "line_ranges": [
+                [
+                  169,
+                  200
+                ]
+              ]
+            },
+            {
+              "member": "package/dist/index.d.ts",
+              "line_ranges": [
+                [
+                  12,
+                  18
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "observation": "IPB-v1 preserves the existing Rust boolean-alpha schema and sufficient-header behavior with a 26-byte admission requirement. This target totality repair does not establish 24/25-byte result equivalence to Rastermill or full PNG validity.",
+          "authority": "Root decision IPB-F01 and media-image-probe-boundary.md; no product change in this follow-up."
+        }
+      ],
+      "open_closure_gaps": [
+        {
+          "subject": "@silvia-odwyer/photon-node 0.3.4",
+          "state": "declaration-only; dependency closure blocked",
+          "reason": "Declared by exact package/package.json:41-43 and fixed-U pnpm-lock.yaml:18096-18098. Its package, binary/codec contents and runtime contract have not been acquired, read or executed in this work."
+        },
+        {
+          "subject": "Original Rastermill generator inputs and generation provenance",
+          "state": "not acquired; closure not established",
+          "reason": "The source map names ../src/index.ts but has no sourcesContent. package.json declares tsc -p tsconfig.build.json; neither src/index.ts nor tsconfig.build.json is an archive member. Source-map metadata and compiled exports do not prove exact original source or reproducible generation."
+        },
+        {
+          "subject": "Complete Rastermill implementation, remaining codecs and native backends",
+          "state": "not fully reviewed or accepted",
+          "reason": "Only the selected PNG header call chain and public contracts are deep/contract reviewed. Whole-module, encoder, non-PNG codec, native backend and transitive dependency equivalence is not claimed."
+        },
+        {
+          "subject": "Runtime, native-platform, package/UI and full OCRM acceptance",
+          "state": "not executed or accepted by this record",
+          "reason": "The archive evidence does not establish test/build outcomes, source closure, global OCRM completion flags or platform/package acceptance."
+        }
+      ],
+      "execution_statement": "No package install/import/execution, media execution, tests, builds, lints, formatters, product generators, validators or capture scripts were run. Operations were source acquisition/archive reads, metadata parsing, hashes, source excerpts and evidence-file writes only. Frozen product/test files were not edited."
+    },
+    "contract_snippets": {
+      "record_kind": "selected exact source excerpts supporting identity.json; not a second inventory or ledger",
+      "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "archive_file": "rastermill-0.4.0.tgz",
+      "archive_sha256": "ac6ccddfe285bc5bb0909a0bb0a1d1381dddd9e598bde06bac5282cc00dbbf91",
+      "license_file": "LICENSE",
+      "license_sha256": "6ae2daf92d73e912aef033d56ce374df997ae0ad1d88ca9ef76f0c11123aae27",
+      "line_numbering": "One-based, end inclusive; text preserves the selected original UTF-8 lines and line endings.",
+      "excerpts": [
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/package.json",
+          "source_sha256": "53b4ba8a7ef93e4182da1dd3cc3388f475802ab0d3dfa9ec7313ea91ccec6a05",
+          "source_git_blob": null,
+          "start_line": 1,
+          "end_line_inclusive": 4,
+          "text_sha256": "9504d7a408241e10bae188b5500b7c55a188e3494d0409b1ab5ffed0c2eb4d07",
+          "text": "{\n  \"name\": \"rastermill\",\n  \"version\": \"0.4.0\",\n  \"description\": \"Fast, portable image processing for Node agents.\",\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/package.json",
+          "source_sha256": "53b4ba8a7ef93e4182da1dd3cc3388f475802ab0d3dfa9ec7313ea91ccec6a05",
+          "source_git_blob": null,
+          "start_line": 14,
+          "end_line_inclusive": 43,
+          "text_sha256": "bb0a142af84ee99575b33cdea289dcb751f83b44ed5254d0c2c433e06377c9fc",
+          "text": "  \"homepage\": \"https://rastermill.com/\",\n  \"bugs\": {\n    \"url\": \"https://github.com/openclaw/rastermill/issues\"\n  },\n  \"license\": \"MIT\",\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"git+https://github.com/openclaw/rastermill.git\"\n  },\n  \"files\": [\n    \"dist\",\n    \"README.md\",\n    \"LICENSE\"\n  ],\n  \"type\": \"module\",\n  \"main\": \"./dist/index.js\",\n  \"types\": \"./dist/index.d.ts\",\n  \"exports\": {\n    \".\": {\n      \"types\": \"./dist/index.d.ts\",\n      \"import\": \"./dist/index.js\",\n      \"default\": \"./dist/index.js\"\n    }\n  },\n  \"publishConfig\": {\n    \"access\": \"public\"\n  },\n  \"dependencies\": {\n    \"@silvia-odwyer/photon-node\": \"0.3.4\"\n  },\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/package.json",
+          "source_sha256": "53b4ba8a7ef93e4182da1dd3cc3388f475802ab0d3dfa9ec7313ea91ccec6a05",
+          "source_git_blob": null,
+          "start_line": 53,
+          "end_line_inclusive": 58,
+          "text_sha256": "37ae088c528a9a24dc0dde2349d4ac5327cec6bc6a3e908d6e2200cda13c33ef",
+          "text": "  \"engines\": {\n    \"node\": \">=22\"\n  },\n  \"scripts\": {\n    \"build\": \"tsc -p tsconfig.build.json\",\n    \"check\": \"tsgo --noEmit\",\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/dist/index.js",
+          "source_sha256": "4168d0778e325c6bfcb481da2d877260190b38fe73236fec3702c4b3b0d2426e",
+          "source_git_blob": null,
+          "start_line": 1,
+          "end_line_inclusive": 18,
+          "text_sha256": "9fa29972d58725f03bc95baa62f68fa98b12feaa700015bd551825767897a504",
+          "text": "import { execFile } from \"node:child_process\";\nimport { access, mkdtemp, readFile, rm, writeFile } from \"node:fs/promises\";\nimport os from \"node:os\";\nimport path from \"node:path\";\nimport { promisify } from \"node:util\";\nimport { deflateSync, inflateSync } from \"node:zlib\";\nconst execFileAsync = promisify(execFile);\nconst DEFAULT_MAX_INPUT_PIXELS = 25_000_000;\nconst DEFAULT_TIMEOUT_MS = 20_000;\nconst DEFAULT_MAX_PROCESS_BUFFER_BYTES = 1024 * 1024;\nconst DEFAULT_JPEG_QUALITY = 85;\nconst DEFAULT_PNG_COMPRESSION_LEVEL = 6;\nconst DEFAULT_TEMP_PREFIX = \"rastermill-\";\nconst PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);\nconst DEFAULT_PNG_SIDES = [2048, 1536, 1280, 1024, 800];\nconst DEFAULT_LOSSY_SIDES = [2048, 1536, 1280, 1024, 800];\nconst DEFAULT_PNG_COMPRESSION_LEVELS = [6, 7, 8, 9];\nconst ISO_BMFF_IMAGE_BRANDS = new Set([\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/dist/index.js",
+          "source_sha256": "4168d0778e325c6bfcb481da2d877260190b38fe73236fec3702c4b3b0d2426e",
+          "source_git_blob": null,
+          "start_line": 82,
+          "end_line_inclusive": 87,
+          "text_sha256": "7d898114e6b796f04d0ab697fd9ffd738e5fedb4f017a039cb39b6a1de64c1e9",
+          "text": "function toBuffer(input) {\n    if (input instanceof ArrayBuffer) {\n        return Buffer.from(new Uint8Array(input));\n    }\n    return Buffer.from(input);\n}\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/dist/index.js",
+          "source_sha256": "4168d0778e325c6bfcb481da2d877260190b38fe73236fec3702c4b3b0d2426e",
+          "source_git_blob": null,
+          "start_line": 155,
+          "end_line_inclusive": 200,
+          "text_sha256": "d7d7f3e2aee0dd1eb02d407d0b0dd42df5ca3be2dc4c56df464fadfe068c0006",
+          "text": "function normalizeMetadata(width, height) {\n    if (!Number.isInteger(width) || !Number.isInteger(height) || width <= 0 || height <= 0) {\n        return null;\n    }\n    return { width, height };\n}\nfunction readPngMetadata(buffer) {\n    if (buffer.length < 24 ||\n        !buffer.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE) ||\n        buffer.toString(\"ascii\", 12, 16) !== \"IHDR\") {\n        return null;\n    }\n    return normalizeMetadata(buffer.readUInt32BE(16), buffer.readUInt32BE(20));\n}\nfunction readPngAlphaChannel(buffer) {\n    if (buffer.length < 29 || readPngMetadata(buffer) === null) {\n        return null;\n    }\n    const colorType = buffer[25];\n    if (colorType === 4 || colorType === 6) {\n        return true;\n    }\n    if (colorType !== 0 && colorType !== 2 && colorType !== 3) {\n        return null;\n    }\n    let offset = 8;\n    while (offset + 8 <= buffer.length) {\n        const chunkLength = buffer.readUInt32BE(offset);\n        const typeStart = offset + 4;\n        const dataStart = offset + 8;\n        const dataEnd = dataStart + chunkLength;\n        const nextOffset = dataEnd + 4;\n        if (dataEnd > buffer.length || nextOffset > buffer.length) {\n            return null;\n        }\n        const chunkType = buffer.toString(\"ascii\", typeStart, typeStart + 4);\n        if (chunkType === \"tRNS\") {\n            return chunkLength > 0;\n        }\n        if (chunkType === \"IDAT\" || chunkType === \"IEND\") {\n            return false;\n        }\n        offset = nextOffset;\n    }\n    return false;\n}\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/dist/index.js",
+          "source_sha256": "4168d0778e325c6bfcb481da2d877260190b38fe73236fec3702c4b3b0d2426e",
+          "source_git_blob": null,
+          "start_line": 636,
+          "end_line_inclusive": 699,
+          "text_sha256": "b3fe088847707448c4f80c3811a4e845049728fcc86c7da5c5baa77a8b3c5594",
+          "text": "/** Read dimensions from a recognized image header without decoding pixels. Returns null when dimensions are unknown. */\nexport function readImageMetadataFromHeader(input) {\n    const buffer = toBuffer(input);\n    const probe = readImageProbeFromHeader(buffer);\n    return probe ? { width: probe.width, height: probe.height } : null;\n}\n/** Read format, dimensions, alpha hints, orientation, and byte size from a recognized image header. */\nexport function readImageProbeFromHeader(input) {\n    const buffer = toBuffer(input);\n    const png = readPngMetadata(buffer);\n    if (png) {\n        return {\n            ...png,\n            format: \"png\",\n            hasAlpha: readPngAlphaChannel(buffer),\n            orientation: null,\n            bytes: buffer.length,\n        };\n    }\n    const gif = readGifMetadata(buffer);\n    if (gif) {\n        return { ...gif, format: \"gif\", hasAlpha: null, orientation: null, bytes: buffer.length };\n    }\n    const webp = readWebpMetadata(buffer);\n    if (webp) {\n        return {\n            ...webp,\n            format: \"webp\",\n            hasAlpha: readWebpAlphaChannel(buffer),\n            orientation: null,\n            bytes: buffer.length,\n        };\n    }\n    const bmp = readBmpMetadata(buffer);\n    if (bmp) {\n        return { ...bmp, format: \"bmp\", hasAlpha: null, orientation: null, bytes: buffer.length };\n    }\n    const tiff = readTiffMetadata(buffer);\n    if (tiff) {\n        return { ...tiff, format: \"tiff\", hasAlpha: null, orientation: null, bytes: buffer.length };\n    }\n    const primaryHeif = readIsoBmffPrimaryItemMetadata(buffer);\n    const heif = primaryHeif?.metadata ?? readLargestIsoBmffImageMetadata(buffer);\n    if (heif) {\n        return {\n            ...heif,\n            format: isAvifImage(buffer) ? \"avif\" : \"heif\",\n            hasAlpha: null,\n            orientation: primaryHeif?.orientation ?? null,\n            bytes: buffer.length,\n        };\n    }\n    const jpeg = readJpegMetadata(buffer);\n    if (jpeg) {\n        return {\n            ...jpeg,\n            format: \"jpeg\",\n            hasAlpha: false,\n            orientation: readJpegExifOrientation(buffer),\n            bytes: buffer.length,\n        };\n    }\n    return null;\n}\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/dist/index.d.ts",
+          "source_sha256": "2fa40fe13139290c84696664d1f62f3461f6355bc6d51ec357f7c78b47e47958",
+          "source_git_blob": null,
+          "start_line": 1,
+          "end_line_inclusive": 18,
+          "text_sha256": "6635ad00ca168fdbdddfb4ca37fafdb6bf0903a14034548f62fde4330e6f3947",
+          "text": "/** Image bytes accepted by Rastermill. File paths and streams are intentionally not part of the public API yet. */\nexport type ImageInput = Buffer | Uint8Array | ArrayBuffer;\n/** Pixel dimensions read from an image header or encoded output. */\nexport type ImageMetadata = {\n    width: number;\n    height: number;\n};\n/** Input formats Rastermill can identify from headers. Decode support depends on execution mode and available codecs. */\nexport type ImageFormat = \"png\" | \"gif\" | \"webp\" | \"bmp\" | \"tiff\" | \"heif\" | \"avif\" | \"jpeg\";\n/** Output formats Rastermill can encode. WebP quality requires an external backend because Photon exposes fixed-quality WebP only. */\nexport type EncodedImageFormat = \"jpeg\" | \"png\" | \"webp\";\n/** Header-only probe result. `hasAlpha` is a cheap hint and may be null when the container does not expose it. */\nexport type ImageProbe = ImageMetadata & {\n    format: ImageFormat;\n    hasAlpha: boolean | null;\n    orientation: number | null;\n    bytes: number;\n};\n"
+        },
+        {
+          "source_kind": "npm archive member",
+          "source_path": "package/dist/index.d.ts",
+          "source_sha256": "2fa40fe13139290c84696664d1f62f3461f6355bc6d51ec357f7c78b47e47958",
+          "source_git_blob": null,
+          "start_line": 175,
+          "end_line_inclusive": 178,
+          "text_sha256": "559c2015d183034d1e10244659bfe48c02ff4554de44067c2ff9cd18e18dc6a5",
+          "text": "/** Read dimensions from a recognized image header without decoding pixels. Returns null when dimensions are unknown. */\nexport declare function readImageMetadataFromHeader(input: ImageInput): ImageMetadata | null;\n/** Read format, dimensions, alpha hints, orientation, and byte size from a recognized image header. */\nexport declare function readImageProbeFromHeader(input: ImageInput): ImageProbe | null;\n"
+        },
+        {
+          "source_kind": "fixed-U repository source",
+          "source_path": "src/media/image-ops.ts",
+          "source_sha256": "f7fda2f4ef78e0b9d5f7121d2a7c984e4833e79667be896b0edc31252a673407",
+          "source_git_blob": "8ee68607c533dac5134996a21919710de046d3e7",
+          "start_line": 1,
+          "end_line_inclusive": 17,
+          "text_sha256": "3050c8ee914bb21886cc1d2450af22567eaf21b1b81cfd5049cdfd904ed86664",
+          "text": "import {\n  isRastermillUnavailableError,\n  RastermillUnavailableError,\n  readImageProbeFromHeader,\n  type EncodedImage,\n  type EncodeOptions,\n  type ImageProbe,\n  type ImageMetadata,\n} from \"rastermill\";\nimport { MAX_IMAGE_INPUT_PIXELS } from \"./image-processor-config.js\";\nimport { convertBmpToPngWithWorker, createImageProcessor } from \"./image-processor.js\";\n\nexport { MAX_IMAGE_INPUT_PIXELS } from \"./image-processor-config.js\";\nexport { createImageProcessor } from \"./image-processor.js\";\nexport { readImageProbeFromHeader };\n\nexport type { ImageMetadata, ImageProbe };\n"
+        },
+        {
+          "source_kind": "fixed-U repository source",
+          "source_path": "src/media/image-ops.ts",
+          "source_sha256": "f7fda2f4ef78e0b9d5f7121d2a7c984e4833e79667be896b0edc31252a673407",
+          "source_git_blob": "8ee68607c533dac5134996a21919710de046d3e7",
+          "start_line": 52,
+          "end_line_inclusive": 66,
+          "text_sha256": "1a508d38b79dcf77a1de524e66e9576dbf230a7286315c8b7f524be315fc93e8",
+          "text": "function resolveDisplayImageMetadata(probe: ImageProbe | null): ImageMetadata | null {\n  if (!probe) {\n    return null;\n  }\n  // Rastermill reports encoded axes; orientations 5-8 swap the displayed axes.\n  if (probe.orientation && probe.orientation >= 5 && probe.orientation <= 8) {\n    return { width: probe.height, height: probe.width };\n  }\n  return { width: probe.width, height: probe.height };\n}\n\n/** Reads display dimensions from image header bytes without invoking a full image decode. */\nexport function readImageMetadataFromHeader(buffer: Buffer): ImageMetadata | null {\n  return resolveDisplayImageMetadata(readImageProbeFromHeader(buffer));\n}\n"
+        },
+        {
+          "source_kind": "fixed-U repository source",
+          "source_path": "package.json",
+          "source_sha256": "86d06ba07a09a34b13e781254f47d0cff4a9b94b17cc89588216996c60980749",
+          "source_git_blob": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+          "start_line": 2455,
+          "end_line_inclusive": 2461,
+          "text_sha256": "b84811a608321dc73c1e3e9eb4a604496551420bbc412531a10c925c0258eb66",
+          "text": "    \"playwright-core\": \"1.64.1\",\n    \"proxy-from-env\": \"2.1.0\",\n    \"qrcode\": \"1.5.4\",\n    \"rastermill\": \"0.4.0\",\n    \"semver\": \"7.8.5\",\n    \"tar\": \"7.5.22\",\n    \"tslog\": \"5.4.0\",\n"
+        },
+        {
+          "source_kind": "fixed-U repository source",
+          "source_path": "pnpm-lock.yaml",
+          "source_sha256": "a4623b232742ae72f37072a40779d709b32436b430b88dc006902d1fa1287a4c",
+          "source_git_blob": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+          "start_line": 431,
+          "end_line_inclusive": 433,
+          "text_sha256": "f684535d8608fead09b45ecaf58195df17ec44d1e06de57f9e1cdbec38deefde",
+          "text": "      rastermill:\n        specifier: 0.4.0\n        version: 0.4.0\n"
+        },
+        {
+          "source_kind": "fixed-U repository source",
+          "source_path": "pnpm-lock.yaml",
+          "source_sha256": "a4623b232742ae72f37072a40779d709b32436b430b88dc006902d1fa1287a4c",
+          "source_git_blob": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+          "start_line": 9903,
+          "end_line_inclusive": 9905,
+          "text_sha256": "8ff62c982ad747fec76b4cc9e858872ac241241fb2b908afb33297b2afd40f43",
+          "text": "  rastermill@0.4.0:\n    resolution: {integrity: sha512-5WrZ6tuK54oVk45w/riFm0/VwTSieJ45c/zAGIaNtTKOSYL2zwx1r3VdBB2pKwlOO/tG+A9lmvN+3S6hwU6znA==}\n    engines: {node: '>=22'}\n"
+        },
+        {
+          "source_kind": "fixed-U repository source",
+          "source_path": "pnpm-lock.yaml",
+          "source_sha256": "a4623b232742ae72f37072a40779d709b32436b430b88dc006902d1fa1287a4c",
+          "source_git_blob": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+          "start_line": 18096,
+          "end_line_inclusive": 18098,
+          "text_sha256": "9bced6310cd68714c23c86a12356e27a7ebd6c24063b446cb3185f8714574bd6",
+          "text": "  rastermill@0.4.0:\n    dependencies:\n      '@silvia-odwyer/photon-node': 0.3.4\n"
+        }
+      ]
+    },
+    "license": {
+      "task_local_source": "png-fixed-dependency/LICENSE",
+      "bytes": 1065,
+      "sha256": "6ae2daf92d73e912aef033d56ce374df997ae0ad1d88ca9ef76f0c11123aae27",
+      "text": "MIT License\n\nCopyright (c) 2026 openclaw\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    "original_archive": {
+      "encoding": "base64",
+      "filename": "rastermill-0.4.0.tgz",
+      "bytes": 41458,
+      "sha256": "ac6ccddfe285bc5bb0909a0bb0a1d1381dddd9e598bde06bac5282cc00dbbf91",
+      "content": "H4sIAAAAAAAAA+x9+3fbNtLo/py/AtHNaaVUluVXHkocX0mWE+36FdvZNl8+b0JLlM1EIlWS8qOp//d7Bm8MAIqy3e7uPdVpHYkEBjODwWAwGAymweBbcB4u7/a7vf3j3t/+iE+z2Xy2vk7g32azif9trjY3VkhzbeNZc2Xl2bPmOoF/V9fI35p/CDboM8vyIP1b895tYeL+Sz57/ROyGw3COAsfPeom05s0Or/ISXVQI6vN1WckmYbxYBxcPXp0GKaTKMuiJCZRRi7CNDy7IedpEOfhsE5GaRiSZEQGF0F6HtZJnpAgviHTMM2SmCRneRDFUXxOAjJIpjePkhHJL6KMZMkovwrSkATxkARZlgyiIA+HZJgMZpMwzoMc2htF4zAj1fwiJJVjXqNSo40Mw2D8KIoJvBOvyFWUXySznKRhlqfRAGDUSRQPxrMh4CBej6NJxFuA6pTy7FGekFkW1imedTJJhtEI/g0pWdPZ2TjKLupkGAHos1ke1kkGDykL60DHcpKSLByPHw2SaRRmhNKqsKNlAPUpMDTnLMrgydVFMjEpibJHo1kaR9lFSOsME5IltMWv4SCHJ1B8lIzHyRWQNkjiYQQUZa1Hj04uQhKcJZchpYV1bJzk0YCxm3bAVPUqf5VdBOMxOQs5w8IhiWISaOSk0HyWB3EeBWMyTVLaHiaz8ejRybseOT7YOfm5fdQj/WNyeHTwz/52b5tU2sekf1ypk5/7J+8OPpyQn9tHR+39k4/kYIe09z+Sf/T3t+uk98vhUe/4mBwcPervHe72e9t10t/v7n7Y7u+/JZ0PJ2T/4ITs9vf6J71tcnJAoEEOqt87BmB7vaPuu/b+SbvT3+2ffKw/2umf7APMnYMj0iaH7aOTfvfDbvuIHH44Ojw47pH2/jbZP9jv7+8c9fff9vZ6+ycN0t8n+wek98/e/gk5ftfe3YWmHrU/nLw7OAL8SPfg8ONR/+27E/LuYHe7d3RMOj2y2293dnusqf2PpLvb7u/VyXZ7r/22R2sdnLzrHT2CYgw78vO7HjyC9tr7pN096R/sAxndg/2To3b3pE5ODo5OZNWf+8e9Omkf9Y+BITtHB3v1R8DOgx0o0t+Hevs9BgVYTYweOTiivz8c9yRAst1r7/b33x5DZSBRFG48+ncrqr8+f8hnyud/0GfLUTwMrxtfswduo3D+X2uuPF9fR/P/2ur6yl/z/5/xiSagwMl3El6Hg51oHJJbMkqTCanEyTBsDS6i8fDzNE0GYZZVXj2SxYMBPKmTybdhHk6mdZKGwRDq10k6qZOrNMpDG9woW56mySTKQg1YkulFEu3NNMgv9HfwW0eCwYpGN2Yrszwa68WG4Wgc5OHxTTwAM0D+MGv9No7OKq8eDZI4yyU32hmU21QtVcWbmii63dtpf9g9+bzX/uVzf//ww8nnw/4vvd1jsklWNz43m034Hxc+6e/1Dj6cfN6jxZxFAN7h0UG3d3z8ufNhZ6d39Lnz8aQHFVaaq+vkKf0H1/r7Ye/t5/cf2jCfkE3yYgMXONx/+7l7sEdn1v7B/ufd3j97u2STPLNQ7O0dfj486u30fyGbpJIGWQ62wni8JLkEsI77b/fbJx+OemSTdGajUZg2gKnVT83rFy/rpHm90YS/6yH9+xz+Nof0bwB/VwL2/dTiJwO+TQn+tNpcf1EnKxtrz+pkZfVFs06Jr5MXzeYprrh7cHz88W5VncyhUJ7VyfM6eVEnL2Wl/vHB587ezs7nPkzonztH7f1tKBuHV+Q4zKufHhFCSCW4jEaVuvyeie8XYTTQvl+r75fa80vtuYIziUYr8ntGvysGSrzAamj390FwDn7pOVALh7lEJ5oOEvU9nUrwwyiQ38NcfY9ihU6SXIrvWX42Ft/zNPhmoNY96n4+oUbRJqlWa2TzDflOi7LXeXA2DjmaH6I4X1ttp2lwU13deFZ7RcuNkpRUx2FO6FRFNknzFf/6mtVujMP4PL8QT3/aJCs13gZ8oOplMJ5BK7TEK/lKgj6LcgYYvrwmL9gXDAk+AhL79weyQrZI8zocnr14sbbaJP8iVfbmzZs3ULlFtJ+q4Vv5jVLwieJ1KsFC6SYrzUqmYT5LY1b41aPbWrX26hHgPb1I8iQ+ZPoVuDgbj189Wn76lHSCLCRhmiYppfIyGEfDgK2Ksui3cIkuhOpkFg/DQTIEuEtRPJ3lbKlyFgy+hfFwaRYHl0E0pn00CqLxLA2zBnm6/Ci8pop2MA6yjBxJPdGjDYbXeRgPM8J+id4ehq9Uv6ezQZ6kVXgKC60sC2CplUzpukLneTabhmnVKqFYCUuaRhxMgPwKwqSCikFzZFPD5fbRLeUWwzS/SJOrmFxdhGx1OEjiUXQ+S8MhnRxmdNl4lsziYZDekEEQxwldy42SlK3h0vDXWZjBYjaaBOchrKRTyvQinn1QPDbZh9nKmCJhcm4GsyzMbM7KYhp7WVlQbac2iytH7eOT3tFef3eXazc+Ex0cff6w3/5nu78Lo7iiwTNHBoXe4o00RlE8rFbpDzrm6TcSxbCIHITJiLG8VldDYn6fYk7h7pU0k03MJiUCggc644QYnNxMQ3I+C9IhHTSwKGYMpTKgEGEDyxgJo1lMnQ4kylC/VWlhwXA+ktnI1NiBKr1yY8TH5TJI8CAzhqdAaS8YgzwKGcz4eB6KoUPAxwCCW9FqV+aSgnm/KFW4PhAoG8oTZkZUqQoSQKMRYQ90iHR2YKV1GeYI6NaImFFesAmFga45tKpeiZUykEtRdxbrLA4TGsdy4KloNBYn6SQYR7+Fh0kW5dFl2I/z8DxM2axSJ+PgLBzrDHq8P5uchWkjyo6DkVm6Rn7/nU8orzdJU2cX1XQWZboK6LS3Px8cghuhUidfnnynDd+SySzLwVEUkClHkESszS8u1tLW3QSehJPpUZLk25FEV7cLUvZKTolbWyTJGvlkOozSKm8K6OflGnkaTao1bgqQzc37EVyBBU5D4ECJhiFzFpJwMs1vKi5aeWmDWj7tUmIP03AUXZu0AgX0wcMiPqVNzcNbNc7dflm1slxRUqM9/t//rdQeFCsqQuDjpVqevXFytUCCDtgAqqIRqFZzMz4XyBo98XAvGYaiXkMWrWnTKJkE131QBofRdTjOdCh4aAo41KTKthqRVm1ry7tYrJMKq6FXqBg45FJs6IzGmoGHW4KZGnxt8aaGR34zBa2pA9rcBIs9jeLzit6lDlFVtVw9o6pKBqrZ3OSe8fxglssXrfJcTbRqQDZqQTJTL1fR7Itc6ZuWWwuZDObDGUFg7NCeRZMwmeV7ZSiRZY1ek14BGCaihI74JLg+ZM4YNlF1bvKwTHPOelggXd6GOqk46+pIDZLJJIiHR2GWjC/DtCWlE72A9lL2nQ0+MAB20mRyGOQXDNyte3SbY9UxQ8iSQzFJbIlZIE92k6sw7QZZKOaK7CrKBxekqmrpwj+A1RKshUZRHA5b5vNKBT8IZnmiPdQGBXv1CpWHKTKNg7EFKIqXhKPNfmW/0RuSMHFjsHxwNhYHICYecLKWAjcMR8FsnJvlF9T8Pyo9LPQ+Y1Fdo6AOG0wKgx9ryirXbNE+L95hNnCV28LI8OJPmZpjy+OKIWAB7JtZwNxWnDVDkMcAVuOVS3L3wjwYBnlQvYqG+UWdXISwDec22sSgpUXp1Gu/E/V//53QYtSag1/shWXcCROU+gKIpbaJgRYafuDSPYzPJQlnhqUNuLMnwl55TVbXye+/y7Yf89fZ7CygZnezbroMecVaI/x1FoyzqvGypoPikPLkmE5W1UqQDaKoAh69Oll5VmN90X+3fVQpT73dSbwZIPxDH/xPnV515VmtTlwvVpu1motf7fH0IuheBHEcjsvw7CV0n4/XILqAfgmqmCYcJOMkpSvFTY71p9WNU2UEaO83Nwn0FzEfPXM0laezEFuLqhbwvkl++IGYj1btR2slyABXVjIaZSF44V6wN1cXsJVQ5Y9/Ii9Azg1GGgqcMeJiFn/b5Za0swMZOM3VwA2tm2l4nAcptC9bXMeloJesUi9cpXqggbTyP+mo4QpxeJ0fCOpFbaN54L148cZkAnSmBuCNn0VO/hPDGalx0RAnxyCUHNO+AtI1E2sNFozW/Gj/uOJBSu886f408XNA7G+3TypUotHz3v62r6VRMM5CF3wpg4qjDh3CqyMt8HN4Nl1UDayU0nfNOlnn2u6ov7NTKVUJ9j9Wea2fe53DMjpSw9GvdSl3/3n44hcXxKpQP81TsPyaNfIDbPg0yRbVJ6Sl8/4Oje4ajTp5ugHCoKFBNdX16uhOQ+EsyjNbk7yorq7UyO8GODyPvKiurtbI69fkRYmSa7QkEDq36DotuqqPM8l7QBa2DlZf1PjOhI/pBvFIkN9GowWm/5UypgdjZhadxwG4Uov0SrNOnmnuHVWHSvLb/s6L50EFZhnHm5fBQ1oCK892e1WHIUCfv3DYAaABFuDcWvM/a/QvoPz5sNQsDFP5+tSDzfMV8hPm726vCnu1a7U68bx9Dm8tV5aNAymHg6t/V58x1bU2Go3cEsAGGStRApe/NJdfc9ldwnSZZC/5iazUSVVoOLKyXjNfuvxTTuXWmSwyRFefqS5xD00xyDp75YfYMDp7FwbDMD2Ofgtddupur7qyro0uVGFzkw7uO0r2yguPSmNrG1OOzZZfk/UFFpqF6Eg6AZu9IL9oBGeZq8Dqas2hak+i0ehDDFNAOBTLZFa5zo24OhlHeT4Oe/EwCmK0rtdfkS0nN/hCgbTst/oyogCv3SQ+fzikKDO8SJlrGwdSCwj9i9KCfHaThwfpMEznTOirhlPboHNTB0Lt9n5FCf5jo+wPP2iF6ajbKzXq6DbRHKFZxV0D8Nedo8yxdo1GQ7mAKxSDddTMKwliDDH0WS5jOBS/sjCMtTiemrE8Vi0/xjtH1HwKw7hxEWSqHHUjqVo/kdV7rhlpE8FwqDWBF7hhnKc33WQWu/iDe0KCcbLKBBqFmViPGyR5yrJVuVHxJx25p2RFqwr80yr+RNbvySnoZubA20Rl4A13x+FXRdFPCnVf7BPqAymkiAesskm+qpoH5yX6TWvA23OCrRQi+IbWmhhbLx9NXuqQqONp4xnoB/XzuQvwIInzKJ6FRVCVQ2gxokHuCgkXvjr3MDDUhAnWrTR0LjCgQDh4FNiuH3O+UaaIX+u1+zFFxL7lwrBds4BtLciyF4g2C2BrEU5haH7Jg/BCBy/E8OS7zn6GhOMsdNSXg7gQALbVJ3xyJpsCAe4B1pz88tEW+6c1d7/B1GSPRSOLKi05L02jwbdd+JX2IbBItspL1CUZRsslJ0alaJ1daBiWvEHLzulnSWcyGnWSa7BWLdNL2ysChmiO5Tf6OydPTDfGb+Haahn/MnNgsNJ4dhYRU/GQLHEUsc2iVV3BE7vEfuWZjX6JblWkPFs3SelE50DNs3VJDfDIXrTxuq83SSc678d5le9bwa7ycXun97m/f9J72zuqkS3CXlVZFTBfPUsGRvErtO/HupUKXRmHVPGaDaLA+ZptlN9MXfaj5S1jzILifMVWIG3NOrIRNGtWQvj9dwVNYCwfFBgZPgSlkaBtomj7GNBJArx6DvMBkipneDu1H738FKNLtVazZhlrR0lhPsexHmXty+ivrv+Du56v5tKA2seLdLU5x3AIwGB6AoL2hvEs823J3EE2fPPRYJamYZxDuHM8pCFNxta79VRrhFfFivgxf+6qIaA5PKmskowf42qSP27wHf+n+Lkxe3NIohELlnhhQ5NvDHgYaw7wDUJ2S5UgLcUVjfkQ3i0UczbFLp46ydjWYAjz+TCcKlmmXiV4QN6U8jQYok2hFq+ZndvGaH7k8s6Gb/GY1o0HZFCJ+iDk/Otr8gJ+ysbF87vP0PkcT3yiLRKcszUDc1Hob1R2CzM2yBYoppZ7a9vaAFewcfGz5JotuTFDTE7K5UQlyqYh3dzRd85XVunOP4WFebiAdVou8kNveN0TBKKXeVGr1Vy9Z8ym6FAWnVCBaGuiFFsw0Xgo2KyYQ09ikS2DN+ukpX6/uitr5g1mhVCd9wMf1NT17qRfDllWfgErfpc9160+j/OSA/JYiFtzycLzdR0s9JbcN2Cd0fulv/P54Kjf2z9pQ0zb5732yVG/K4/W7QVTfrTuU2Wl3qw36yuwQXZa58+W1MNV/HAJnq7Jp9rDdfmwWV+pr9SblTrZ0J4tiYfPzIdL7Olzozp/+OJUP5b3rtff+Xx0YBPFiVmh/GlqpMD3OlmCF+LRkiy1pBeDx7zY6SvfGi3MHJOFGeF5BqXocSWl811zwZ+i8x9IkfqnDg30Q80hlIGN6Sy7qJr1QKu0Fp5V6gYMqXdarrnALBvGw5ZFkvvsl7JRjcnC0B1CCDZpN8NmCZWUlnvPj3fzzmw87iTXbD9LdvZZcm0sKZLrhqlg30CRRjkHgRUZfxmmkGdFsPqTAZ6FyCgujMbBeWZt7XR6FlIrdHdc1psGN+MkGPK+sChwRVlrbDlMo0mQ3vTzcNIfutiiC745cPwc1VY+rGLJbRpWuMHZ5vWa8GI64XQng9kJDS4Tjn07R0WXO8KByutN4toNcmOyXogJ1RMlMSnay5YdCGcd85s2T6VEz8RonVEnU72LH7RbmYPSYNQb5oP2MWaR4WToewdAfY1k7DHN9cxpC2EdSEQ5xA5KbGLCqDCSLbJKWmatQDEeVaUjmodiQbUVvdqU91s/HkYDY56Ta3pKFNvzYV/NPR/2DO/5GO5BnaKfyIqb/SVmEp0/sNumM4rG/brHW8kNa1v3aw3gKVhjt9nfn1h1plZdQFdeuZlkQXxq9+ldGSf7UoPIelR/8NrCwXzv39dLgyuy6RDBUp1SdTAObZoo7uE2XLtbmkzTzUrA7gdS9aLXvH4+Go1Ii35xbNcIgdvcNJUYrBHNtqztb/FBw4xZQ0Zd1C7epzEUMYJm6OTJbJxH0/HNQRqJNHZ7ASSjC7NqMMqpEg1HSRqiBcwn2SAt9al5Sp7ykvD9J/54RXsslhLuSivuSmtWpVV3S2uFLa26W1pztHRawugoiEx57F7ald6pyZPpbngZji1zX1t7eJy2amMO1uAczhbPakCNo02mEdD6XJ8iae3ff6dQLKOSPlxk2wkqdGEhntJwEC9Bdmt11Zgx/0T5hGwacIsJhArm+VRIGrMQCJplRucRRQJOPcGb0rwwdcHmfHMWmqm5Jt9uEkOayjDNingKyCme8t+Yn5BNh6WNQpDnsWSQYK5Ogg5f+rqhjfMw9cObQBj01pY0J4DRiGPa/vJjijcEBYlmvWfR5/QJxTQK53BykJicHCQaJ5lMSEiLNu6zpRRfIWWlJNT2D2gTVYblqsDKBojYzDZtDROw44CXk0RzOnLOZI1GQ4dtRXDiSgv2LVguWniCek1fwOwG07zuLVKv8zSIM56LZFPfudL6xJzEkxEm0u4iUUANjijMPplwliQeWKhuQNLFd01NvlFDzWXk2TEyZliXqLsnOGL2od4RDYe724GQ8HsXYSU7Zmtrs6R/29mSz9HtLPzC7fClATE+OtMktzb+RJqPXJjEwhi1W9XPEjXXTGvN4rzbsflJNERh+UZYIRGTKLWIsFovQwSsBjXX6copaWkjaEkX3VunCLHWLGkQOBTZoSaIOq+ELGBz4Pq3Zr1xRWXdY6KuMjEThXPLwGOLVL2u+MZ5mFcZJY2vSRRXK3VIV8I7WrhV5vjBNG659xnKma9bDY0EJWu4TbBnS7X492l43ruOnOhtbc0hwGoXoC0QCr6unUiRB1JGI+3ping6XHgzd9XrvPdHQZiFUUEaIG4uaDc5xnisOH0C5mDjRd4UHDp2UkocfpNJkH7To+TVqZgCFwjyVggYnNt0YWE8ernIpGVBbLLIUf7sDYVID3jzJ6/pk+euLcvCRlSg2sOwMgvPIUm875C3eTpDR8Ss+JqsGrss5tuHOEUdsejqg9FOyhLZ6awdWKwdjLQnbEgN1u1HL+xHA5NOs12MuosTzw1OPJvbT14WmGzQi80/maRHG264TijpBdYKN51/2jS7s8CfDin2jsJgSIbRJIwzap3T/MABScNBch7T9DIsmSP3eIubBGjeTMi/P6UxMw1yREFnbGFFc0hqQCHp3iz+FidXsTPVnpwUBIcgRw73wBtJ8fg+JuUOdU0YmfPQEvdM7nQC6EN4oMGVkwQx/FtnIdkSWUJa7EHDiCwWD0UCEW3fTfITZu0gr2ssqJMATseTiyjOs7o+0fOUozd5SANA53RAMfswjXflXSyOPDgSdGir6vjcMeuZo6XRaEzjc3M7lHGnRSrT+LxivroIMppFoFWUWsSsYthMytIRnzOWL8oMdVCjx15Mn0cjTrzjKLgi/jwauYgHgs+jUV0ReQ5JjDXCKIoOrJ2YuhC8Cs+mHEPXmWuFIhQs00FQztND8Kqwi3x5H/7YPjqbCA44TrQqBpxNnPQDzWeQwV2SeTaZPmwf5dFopAX9+1GEgj4c4Z2GJPx8WCy5y+ZdKEV+voWv64kLVlEDs9XQVuVlA5oUNwBgGYmFcm6JdYVMb4mA3JaRU9wWaFsyDeYadDrWOfcU6q/TUKhd10JFcQkKluESlPOMa3jlZQP1VRXwYc7C7M5smHNyvRdDCtntKGO5V61lo/MI+yIn2P3rN2e4/QurQiWKaR7Jij5IIM1nwVF383QwdLg8MuQqvtI0yy96mH5lnfyEatkplSRdGjqviaOqVlSS+XpTr+YqgdcXc9jozQFg1ZMJ79zV6AH+Un02SCbTNGSXRLmZutbUmMqDA1chnFGljdWA1KxmP60362RjtU424JKGJs1Ysq5VNjCnKowTB0oMZStkZyAVxvSwI0tFZj7csNGA1ld4ShMf8tC6bBLad7GMGqkFUri2bpqYLJBFZQqTpxirChIcDhFCs6SVQka7AgXHPUQFufsvk/EpAHWtUs2kSNM7F0F2SJm+LS4JQEFBMss6MrGpdaKlY6dZE6n2qvAjooXqTI+DEtmNfNnyHqu9LK1v3WmMfGWdmXt8hZ0+NFdhygUtDaXpjguyLEzzBdnLQq/K94o+SbLMnWZiciuru3ZtQIU1Iu45oOvdkN0gx9ZjbC5VWZsdea/peZLObEgdtGEe1FHaXp0uuknNzr++YSlBRuMkSasoEfMy283mx1oc+0PijIwzMbrWyFMDkDFlb5EvpPrku6/wLW+k9sWo1SIV40aCeYlSWTLok4ODz7vto7dws8IXarbpfoPwehDCNYAXIXny3eQEzXI7CMahmNTDeOnDcaXGsSMsdT7NitwiOjG31/wXp+bJd0bOrTOFO5R0CC4TOb1/ZQCCs4eNgIoib4dl7NEdBluQizj7YX+71z3Y5vdVVD7E9IYEenUkrROHXIQVp1+RNBzNMnDowD2NPPWuJyN5Odl2et99vvz/LCf8epETXiEp/eyPF/GzkzluY6fP/JNyJKOtXcON/UAo2A73oITDfY5f2HCH3zeZyKLecIiPXsgjvvrAXnGLpeEK+eEHAwJqbhMMblRk0SMLbAKGQVdxg1Jy9YJvF80r9/LUjp7Q6Afeo0EO2g2cIOiECchys17A8TlObqt82aXkPPTAzyJyu0ajUc9MnCDf8twJqIhTFBbOGoVQkCH+/95MUjxmAUbXyjPY7Zenfd48YE4x1BLNNVG+pUUShQnucIqqJqvL58DiC6DRsCmPLWqQOBUGdH1FruqxbFSLChTPHcLtCqBDQixxhRyv7cug5MqeZCLsTp8kskep5DQrHtpK6k5Bmwa0JvduzXyACm/dR6fYg5LmoOgPccZKqwqqGAaN/uz1JnlBtoxHLScBxfpIxnjoRlEaXIlrPYydJ8PXayRz0enE+VKkR3nK7xzxgXf5JLOrYJq1WTAmboUm7MQPn7kePnc9fKEPdXZtyc88/5BqdUvg1mK42nXeiZxDeiW2amnxyqiSdt0ivxxLb/2pCfepHKtyFPEjKTf00CKFT+xjKLI0H28w1hgFxJ2njIYMgq88h8tHr195XsIVpzfmS3G3h0M4jCEBt2CstqznhF7DKBpmnFsiK2QJIyE+Z2kYfLNfUfhrDwBfEcr7npW+WRyb9SJsHqKBjXnkemAqDO7A42fzGi1D1b0weP6wGNxT5l7cuxPuhoArR1yWzNJBKKfK6g15yqH/RK4hQcn6K0cthomqJTB7aujFnwRJDjjJLP+kQzllp4+Ynv+kY4XPh7lq02WmFwJ7WwrKaiGU1ZJQ1gqhrFEoqxsbhTOvmv4SuOWVh3do7FXhHYb+pwGTAb0TW07a4Dhm3sGqULTmTbQQkMzu4q5W/m8WjS+jYCkZXt2E6TIruAT3b1dqjfwijKvVSTLULgYm5t1lk2TYYI1Rl9FWIw6vPkOMyGe6szaOBjwFvEDPSJFO+Gl3DigNaYhJ6fKDNJnOKQ3FjoPJdBzF5zv0aMZWYzeIB78l2Rqd5+W9UnhSUh5Z7sLiHtdhNKTX9kGUSxbKm2WjVIbCcP9UkpL2Yb/iXCcK910ikm+YewbBVRCh+4NNL990Or7BzipWvM6QEDFapofPtjh9sa7a4kyv5DCUXNYcRcERdoBClx3GJa0JIcOf0+DqMxsU1Ronij6nY8N8xIYGPNONDE4CLTVKQ3nZmDB2wyvOYV2AqxqOjSm3Q/Vn3CbVH8kkTnr+qyDMLw7TcBjRC3/H4Qjuc57C/9Mw3Q1HKO5pyoqyjoHS5Ccym5IlVd7cV2VXrsJzsqlSdGtQliiUmqvWh6m3zmzqqcGRKKgoyNK3NzUsYd9VtQ9ZhLxvEYO0PhtLPhjaUwPsAkS2gJUtnZVaT81idmTrMD4/HgTxOIrDrBrFo3GQh0NriUO12iH3rZtdCNc20husxaaEUVZbUXPYwokMCqzKK0PKHvIUXUpG5q2x2aqB35QLV6gNBLynZr5RafaDaqOGP3xRCwX45V5jMx7RS9oZ9p+g7FMDcc316zQ37BrwB1dC1garxOqoopKQQTKeTfiZbf79tSgtHsw7ny1JQlM3q+6yAriHiw0I3sqbTbPD4VCEw1rgpZfMwuL8Scvd0mzKOfGGJjkohMuInwtQDWgBl10O5iLFMjlLoeCh0QJmoQj96kjRKxaSTBS9a8im294W6ZHT4GpxG35lLkzyk6acFgHtWfKaoGfTB1vrmoC1ndyqnHVqZNnYjijbomc9a7ZYYmJcqGXnPZjiUzIQ3ivLp/KG6x/o9lWhDZ/MzImF7cm/TYObDDaCafTaocyqXLSpuLZGz/7iAJHFbmssudkokmrzMWgku28aETTDIO/CzTnOZCjOBKc8OaBO3St7ahl79sfmXQn4AJkX73Nn4BhdF6hfA/hQO4j8YK8rUojvv/AW0eahOhhp3cBJzL1OMD5e4EUTEwRpnKysuQpAy59enPoh0AIvT3m8l6/Aitg195dYmVti9dSfYqSkDhDjAACaIoiTrsjhYRdddy725MHV3LwY0eoWOcLY6XGUrr0YoOtGRaQyHQkgrQstcVILcbS8VDp748gpzVqgKLpT2oLwehoOcrimgFlociu9KmzsVdNkVkpMGHXsCaRi0vwX/J2y/Y5v4kGVG9CDJB4EeVXhXqtbh3n5PekMn5YHTzuFHqctoHZMCG6FBwudofFf52KyWWLHeQ7331Yw8oNgloUtQlv3YsiOmqTBDZ21yOaCq6RVXSAkmPIJI0SUGNoIEZ1+4d38YBY8TF11vpBgSwP+/LWiScxH4hVs2cs67hzcUJdsKhB8vYAXCAx7blCc8gqe18KVWVxkdX6RtVMHZtIVKt2PTqejY6PN6VRkfppwqLtL3HFldQLXiLPy/JB6XY84lfGmgskLhq290iqVjbbUbRnm94HUXNTRpntMlQZhY8qpQPgrOFxieZAcHlDTqVasBJSoKasRFHWxMWlO/4/N6m7P5n30DPNzwmFLwii3tIxf0+jahhizkuKqxzdnkiXdc+gxF2b01Jiobh196ooclActOWqmA1J45PWXwhVJbj1CW9z7ApTur1RdRou7B7Lu+23po2+r2FnMG1TuYkkOSsYgLYAj6qQ/mLIkO8xlXyefcaYJKofs7dzDQCMIgq1EcRYNQ3TsJ4xpKmrr1I8RDMAiMKApHhD82OfYl1Qc0qj2Sxl6rFevk4r+04wz1dri6vLOjYnZsmL89jY3Ca6Pwa1y5/Y4ANUgf1BxzP2jiN0KRMvBj60t2UO6Jr0Isj2OlyzuRBRVopta7Xgo4yP8/QeOqQKOK0ujSpEGa3iQXIZphR3Q4I9G0XhcqQGsxxrO/KeJzWI2Wae9/fngEFKeQIy4QQacnDYxh5PmcreIHkPXWBxl5Mn3UZS7Q7214I0oVwOh0WiYsm9sasFhcTgCLhWZUfS25oSjXWrlACS0nlnYA0qIggcWf93CkqNDkxqAl+G/KUhqWDwijswxULSTXFdNDQTT+llyLQJ5dGa80gtgqdQXF4uMSNkWbLmalV7phXh7vlKGHCj88SDRENdfyYbYMVD5U5MKDU+wnEUX65iRJuIxnVuH2zJGvyrzBRGT6eL4CF0uM8F7zVbzcoUppOg1WhwubKn02UEp6wCBV6li/WBuchcMrN9/JwXDZXGTy1AjlXuqEUaML1jxMRpJP/yAKH1DUH9ZxL7BXee7VkqKmAlRyRgWgduC7XKnFqv7NJI9qZ0l13JMa8pBW6tqmdUfgAjUtlA7kBJSiRRs6Cixaqm3r8zaUidBAU3mXPXtwEIK8RiGLIPgUiHiKrjG4cFx/6T/T7glbqe/3z/5SDQVsYy4YEzstF2tGZc+mtsOr7SM2aq3BNIfZnk4FI3h8cxNgC22xTEJrquKBXUdUTB5WZko9pbRm87MFsUo2sI4aWBX6uilGYqgpdBiciZxXuH3b6fJLB5iLfqUoVLTJkshkPMASA+KAeEW3yIVjEvod40rsHabPy9Y8yh02mPVaY4RyIDecUTzmzzQ3KMNIzztzG+0nYHDzxjLy56Rx6DICuynrMN/YgPDqPRGtTh3KeUTIJBCvWlDLAwkIHBBNldD6RKEfBk1ivMlWMJtoDFfcjXMxYLJRl3rAoS5ZxUr5XMXjmBmVXoSE52HlIVBrBUZYN6y4oCnQ5EaHANb13jA7d6fGTO8azbUQp1U0JNKzTK6VYlCO7AIrXe8G0rg9U4sX/GjQszELXkLY3bIAyRLYCackBX8SMPsVg021c+eDtUPnZmFnfObt7SL9nssNrkTlZ0izoRBSALYUg0gLCjWTGBWynlmViHpWETtJCkeK0qhu0aNmB71ya9wuMA9TKRllcF2hg7FY1aYYHxmhA6oUBq3yIq2WKL0ZL+muS3My9YC56ltH+uTkjz9vhPFUR4yLVaDWYlx7407rNKTe15y1eLhlt/UemVCkNalxb/yMOQFmBaD5sLQIxGsGYBnGvAYP464hXkQsPXDQPBj1nIJJJiorvl+o3Hq999lnJ/+1jxXLzqcw5QnD374gYhmrMg0Hu3vSX4qt35loxYAcbqhCEKJfWLkYUY7fKbLFrlp0aSrvNHh0LrnTykTVczwIduPNbxEbUdM5IKhzo6DdQ9xikxTJvYqUjDTWkZy95ymfRShVrIHthWNEx7oFndd7Vi78j4sbLrrgZqQPH7eQkHbpEV35kJS+U+sWbH5eooHD7pH18o/ohNGlol1ue7ivpiDDyee5B/8hAInneX/yFQCEB2VeRlA2DkOlQIEkQl5QDAp0jGsj1JrxtZ3zNCZAOfCTWyZS/l0xNoLCbVj7oUhxYGxDEuWILFGkEDQQGT6gEZiqDMDKFoD1kPm3gADp5xTeHOAv7fDqNlIF03yLUb2oMp5pHuWjG0aXto8TSIPk+D7kaxjB6YWLrF8JR5PJfdsMIcv/0cOjaZ4IOcHKyhqzuh1dpVZF87d/GzM1lHMT4UJznEm61LkBfXOnLcVLMF5HZiQOye0sXZEAeb/pjH/Vx1IkSVFDYt7dQLOk2lJuHJcLGm0FUCGQlNdGuGBgFgnLD42T6Z1cSpEoksf8wfv9N1tJOiWFBLtrnHWeoHPlQMps3nta8+xeW3uI8RH52fBCZyomQZpGA9uqlNjmrKjTNdklOlrkeJZxPNotwfimYSD1W9UW93YqEF2FfjH6cD2X7DAC/CrU6yIGZoSjXapQZmwe1i+5OKETN/5PsatEamySBgO2zUnlVxDQawBTS0rd2YVtrk06J195D6qpfW700El8njyhLwtkThaPJf7etTudqBjpQUtKGH4o6iiGxszi6WkDckcpIO1VRSuTc+cpAPC0hmxj2Xe0GzZyQgdwaNcplWr3aPu5xPYs/pUhSf/ojVqPMhcHN34F6Ev37x5IyOXDcHjVRUeNVq2aZ5Di89pECMNFWXhwqaMwfOOSLrNIyAheolX4BHVZmYXEYVpnDhal7M6vG1cpVEeGreyaxd569AYS5ygBukAwWFdYgZqflIkMAJPazXVCGcWqiJQwVXr0OZpTWRLZ0kQ6cmFo7edtghMDDKIrGyQE0i3N06ulsb0IruLcDyFHPSAcUbiRAXQDlgMrCs5OvPhHMbnML6qzoC8up4pU9yZ90x0o9cfJmJZjCAWb2kZjGJGodBE6kzBgozuqqhwRzDmPVxZnLNctCYzCP6FUw2OZlzhKtbZO+MOWHbMyxAx94E7w5QVdrE+KAQr5M11kjMycydm1r2P3qXBVcEROk3dBlefZNlTdXwDPtwgHiTTG8jfUteA0hur9VN25i9IY0W/OLgeXQxTzNgVYQnDSzR6uUQ2/SWEFK5rReCQgczHQh9Aki/yTHsAhwgkvezJivVkVXvi1gqSXcZJGu0ub6FM2bGKOgVcc76H+H6IrlPR5ZTt3wlVFS3blASz96WxtYEHfa0G3mt3cxD9Xzc7oimKnponk8+CwbcwHmY7SbpDc4RWxXUQ4XU4mLH0oslU3LL3/dacL+SaFF6ymmxZQnPxa+6OTyKzah2u5wrOw0lwHg2+wc/zNJheRINMPRmNJpDy+1TzeOiw4SYGY9rfEofsG9NxkENRjkQUr62aRW1srqJ4mFxlS3EACnA+fqcWvNYC1Jm1Wx7Eh0F6FcXzMM+iaXY3fs5r38O4+zOvCJlFWanB0jX1LIPw5G6hYNIEWUyo6YUS72fBOMpvNHlVgq3u8GRDhd3jyb6zfWqRM1gTV1VdTZxyQPFL6mKepNrhyMQ0CByirM9rdTgyOJAJNSIzYS/QiEHoY6tJ+dplhWKYhq4ZjIMsi0Y3HBAzAox1I6UAHpAoZsf2k1FBCmQHUZWZKlOxmOMH7YU3CnKZu9w8DpVlwblxfyldDczSlB1z0Fa4fC9BvNMQsJoVYNmZL16jwZ8iV1Aly4dhmlZIFMt2f/hBpEQRdVkhJg4ZdT5WzFPX7iZZNf2MpKRMFKER/TZnhmEeRGN61zAHzC76+98Yksgku8lVmHaDTK6y6FFJWkdldK8YmawrNSPPPy7LjyEMw3F4HuTlSqc0a8sIptY55aGcEqnisoNkMoH4vLKwOZXhdZ4Gg1zk6oY7lSAz/DxCErqugKwH8WWY0h2vwZw6YZyEcT6n0NSV2qYcJXB7MpkGg29AyI/+dEI/FoP70QWuKDvRj+WxmyTD2fjBkOPQ7oFbNpuyNWCSsozt+kUIfOa6CFhPn4VhTM5m0RiUyJwemcUcssxEJJLA29dK2ErTuu++MkjSdDblQqqdy6hEE3ZTqXH1l1EgzmajUTSgJ1B4LG6QB2YRFqlL18d05LBAVm6eQKpvmiNdrxMnDFhG+Fa9/nIWi1OYJIyHS8loiY4oo4R2a5nGc17mtJElk7BaFaoXJkPMY/FOMXQL4A7F6TNlQbXURGK7Bmfxz1F+wWfFTBrg3ECpC2PjQPweoSsc6EyjT0Tc78QBQlya18oXVpBm7ZvN2dt1wvYBlxaHa0S5G9UbWXQeB+OtBnUB9EftMyqRhkPY8DxqwsecnKNYWhzOrROP+/lOqMCHcZNNhgyq01HPbJloIPaUC4wbtBcEm5ioNszN+hi006LYGdAFLJcpSrO3ONtQsmm3sXB8/T61+sWQ5vNqGn5l4w72QfmgdRwHJIVHAgk6FkhcGwcEueBL3ZohzprKTVyVn03rASrvT76zUXLL3HJRfP6KQALiIWzQCtEXtxiTSu32S51LTw3bvZOp8KzRBCJ1Moli6p8XIstFXjoC6HvpCpgE14YzgAKhQURGkrH8QlneVW6L6KY1lGhEWfssS8azPJRFHHbvJ/7u1LbvAErGrnSnS8cwvmwctk/ebTWy6TjKWSvDkG5lh2lNLCs6STIOg5hehWwqKlik8Ds0NsstSLfoBdtG671fTgQClVcVd6uVRu8XKriN7t42/bfTPqmc6gu3TxWxmpQX9uQXWQMcN3vBtFodRimdChTOjQk8D69Zwm9KPBWJYZTWyZcn3zkjb598D69hz571mrU9lCXjy7BHtTAIICR6PwzyC9yNvrAJT+cbTlhLzzIFGwyAkSqwwrM3KF77lbAJfHmZnKQ3VAvE4XVOoJO0cAznCEaZp+cxSZAppzE0mhh9YorjhY8YlFTyqKgltvI9SZKx0LNWW7oOZosscMvYjlt4LHfubFKENycxpl2NGFr/hx8W8BhBkJHEejQOLpO0Jb1GnPoWg4tjbHFsoUUkcvw47vaBZV52EY7HRUSrUkWka7C8DHC4rNz0G01KLmhNLMwL3U1lM4K9KGKC9GfZDGA3ccBr74kqm0IJT1LHcXCepqITA2bpY8VSd8CIWHMWkMWLOOkSDfMyBZl6XAQqyJJCgc+t2catg2BP+KzVrcjd6EjLMCki/3xSJNLnE4940mqSrPOJdmczQRMx834W4cD9oxgPEavA6rvxkFUlLry4foc0Vpgn4WR6mIaj6LqKtKTMazqKIMiJ+6iEas5lPX78Uibw3XKUqcIhLfuxQZvI36BhxBp3qXtIXUGNQShdTXzrrGGUSmZPvg2h5aqa73WEjpIk34b5388X4T41Z2W88jGHBTTWItWYXhZvGxv0uWlH0/20FmH00ooqt4ORxNmUbBkO5mrhlVWJoUvb2onGIQ/Yki3ZFUQ0DS2HRmwdqblgaOBP8RYCHwxpey4sNUaY2YzswA8ObcJqf4fbzGdpFl2GLZ6rZpSkA/5DA+ZayFNLQVolQXqeaet4tv4UMlW8GmU4waocKGxDQxiuZtlFkzCZ5dqgYA/2tOCXSXDNNgRVKQhQZ4qfvelAhhrzpA5D0ndgn7+Vh2g47n7K9EURU9jAsHZ6nlXzJBkzypARBy8aTC1xvTyp0F0oNQs0Gg2oeEpaFAA6t5hmOR3cx4MwDqufWUPGZfO8pS9PvtPHt5+ap1/cjpquwlrD2NvHXLK4XFBKZCcWMMCGZ+7ZzqLxkGPC8q+8DZNJmKc3cuSNIiNsHkWLOtZ7X55810M2Id7YCLu8/dcXx3bP3FqPv9iY79B5hCHOwmbvgTaNLd682kSItC42MSotOoo/J2l0Dhrgc0BPBn6m+aA2o3iQhkEW1iEEshQ4JzvKY/PFNRgYT6g0MLtaZwZ7ggN/XUt3Q4FWllggJsqkUyBDvCHRJ6pdNLdUls7T4DLKbxDoygACElP8dIkumXP0+MuT70Z7SpDMx4JtqvapowM+KWrvRuGpq1sgZH9KewUpjE+VJdhRm1bMasxQ6iaTSRJ7qsVJlg8jusm9dOOsXtToJJjKDEsUxAoCAWs67WwLBeO4cWfOZTyujMQKiRG0fJGk0W9JDJ5tPd+3I+Ow1kNQceVF06qxXtgU9EQ0cDS0UdjQ6vMmZdE8dJ8VQnlpY/t8XoUyrb6Yi7tWw5ncWFQ59ZolIAxtyPqln3Zis43Ki+ecvu52dorVgokM3cO1NV8uW5IQUHkAY16qUNa0Qxdwo9Rt2nOD8ipJv2XTYBAia5gHtNFbeYXFL8uyILVqJYob0eS84jBz9Su/IApR1gRDtVpJZnnj6/RcT8lSZCh84uYNN1pArJYS6lVnLZy6zAXEJUwC9KKFyC01MxjyP/f3tw9+Pv6836bnM496x/3/6X0+7h71D0/IJvnyaBqkwaT6iJBPLKjg9AkLNQ/YMX75lB+CEo+jOD99wsNtjHJsX0qVOaHK+WeRFkB/+E7mGWBPaQ6NISrKHuKibXl88FHt0RO6I9CmowRWZyFEskOM54/HeTL98VF7OFw6gZy6S+0sCydn45v9YBKS45ssDyeN7TS4iuLzR09kaOgn802Dyt1pqwW+XLpOUSyqPXoiz9k9oXmYnpxF+SSYqt/C/SCfiJWiWjHCGNFIIkvhr3AtFEQgcKwah3RrNr/pD3ejLCdLsI8URHFGVp9rEbpPzDH+qRPlfOYM09NW6yRhN19WBdS3YS4B5+GkCsAa/2Q7GzKnv5hdnniml1XyXaJ5lORBHu6Mo2kVc1G9gr44bbXYg/0kpg9/qWmunbV7gVx50YRnAFkHuv4QQA00N+4F8aUN8NkDAMRkP78XzNXnNpYvHgKiiab4l44JBTycJJehJaHkVmxUqD0H49ETcehc1z7wXJ4lNzTQIz4C+RntcUiaZAn2DcWZa3hSI9/5xuSPvnRkP1JMngzT4Eqco6NwNb1Gls5zBst4esvPbwvMJRx5iE4DxJ9hSOLuMAlKZK0CWDR+fYeHTzoVHPx7qEqBuqNfVtfPptOj8zPBJA4EVNSP0/j8R6EJ7tHE2urZFExkaINiK1Xqfni1dHAG+9BIWzc6VMtWFbPrOsPqBjqgyHQ1jHF7y19xFc/OXnEkjLqNbjKZ0hMW8Tmf+xzg+L+r247ip63Wu+j8QsWpKtg0PHOajKl+3UuGrplIgbZKm5A70WB2Fg2MBo4nSZJfRPH5XOBGSQvlYjFQvBqHQWophW4yTuhUpI531ejw1RIYlIXx80WUhzUhNLISFBN9yE+9Nul/HmExu3g7yiBMroqF5gnPsvhEPyb7CfbyT1utvSjm6kNvpSaKy1FslBenIjAqUOMXvTA7T0ANH/Fshx1R1XTNkoYZP5gqgH1cAJhQLjriChzteoYf9HyT2yisEfyE4xX+qqtE9Vq0JN6bWVo1M4oNRPYUGVtYcADuEcvI5VcdUCCIz8GOo6TUOQF1De26Qb8bo0Z3nMQcCMC0lc7t3NHCYDaOg8uwqpvYXv1JBVvqz8P43B49EBYzKFDBFEQXCvXjUXLaar0NmWOVnYtLwVMh4hF/vgjTUPDxO3nyubEXTUJmTAMxdApc/joNz38kt7LWcTgOB7motrQDrluedYeyA/qOdTzFVZta/37Ye8sPz7HIXhnJ8yO3EZ6It34COR2nrZZ+HkBUPIQFT6GAIDi0QgjuTQGCjZ9n63IFVLNbyO7URFZdqVnbSSbcBv3nEz0bZbwRpb0yxbhdR/BYe7fWfopRylCLDpzM19Qge2SC1Do+DpVmpQaMrXzV0FFVGF20AiexsDifv6k5ycarWVwYmQr120dfXtlbijQ+gkXIMfcj8rkwr2OdoEhMvGGanIW61+UQHoC1YdxsoB/PhAJbDf3Iy0UYjWj6a8e74DIaGU5k66LTnxklHF9uvIqNcisG/V2v34WrAWBA2ml2HQjQ8zh3R8A4J0B+Ds8OnUnN7u8MygZpNKUDwu8R4rk5ptmKOn5HD4oWeVPqpDLLRy8qNcuB9CD+J+qy2LTOz0GkMrh/6PcWka6gsk4sBbysFwvtBuwnh2mCYrLFm5haqcGAnSlDr3siUvkwGUcDa/OhczMNssyqtWO3pHrUfM68bMYjRq35jCfyMYI7+U7Cr9zG39oi272d9ofdk88wHj6//9De7Z98rMMZ25VmE6fTHEkXmNWKY4+kVqIgP8hcVJLpuJOygI3iTvC8oH7ly+YmzwS2RSpNKm4rWl/o/kvRyiJuTEsUb10xHqGM5fv7NDxX0XxYHUtUXNmRQKTteJuiIEGlmB9D5SJFx+ORhWaTIca3kMPbsGnMGwEYar/KdeV9JFKha227W2GND6BaCdpkYNe9+AXIqEhoiB/rP+tFi+O1yOaHT/jIwhpZUOMEssi+gKqVyr1hskl4znYHOz65Dvm6t46tghyC8zmhWvQ3pEL1z6J6omRdl0oykVqChdRJwtZcLBlu2ZaK1OTcWkWY+U83Aw+LsShq7dQlGnyrze64RqOhxMZGtLKE50n6lB8Tc7z5SiMCF4PDD984CnAyuWpyMNIxEbPm2PaX9cI1SyOGFVkoKJKnSBsssqtGrAg0p3rVwpILlGzZRQXvKjQN/ffujzpZxkNU3QHKv17iqXBthSzJafIpaTZWX9bhlr+1lVp5IXEOMjvgwyW1kUNkPSIuYWpRIM5SPDUcjYdbuhyJsBdHiFVBzAvddXeiPAL3Qta6dA3vFacm+NVZWAz1S0crzlH7R41DJIJOzYkjBvWAQRNNowP8MVwO9jYaDTu4CK9ZuKxWnPa4W21iZp6aQ8g2rR4L0wqPIhp7AeepBiEkTm5C2AHUW2K2jZurcuTMjZO8i6Hvjlfw2vn0QsQ5Zv4Dm/fgZPGpKec7y6i++6KAHg073H8rDyt++dMnHXAm/BfPOYC+VUOoiEKtoI1ne/z/yWNQa8NKFGfdpKdLxGMeXO3Egh6HriyxqnB4dhqftzT4LOnd5pPvrtUnxoOS8rLmSGBstufUkrq/SZZk/epyRf1xmkgTlzma6OfwbPofoYqounG+8WiCe6oj8Md69NHDey3+K3QMc3ffzbD9b7FLmSVqPV7cMn0gk9RpRpEyK9A/1DbFovDwxql3SvrLGH2YKUDvwtsaOhEZDI/4pYxst1bddsFyyzL/iKn2ZY5YbctPVNN2/WjiXk3h4+uWyR2yeXxR93pD01r2C67QVMCa80Za550U9HgEONwN2vVjLVouYPKarMPkBI9gnxrEAfIZy2cr4tnwhcNcdd/8wZLtwjiiLWWzsyBNgxsIZlmtaYnbZDLxVSNnWyLTopLXRMMVJxOn+IlM4gJxyzPBEv9Si8XEhtXEOeGdN7EIhCdB+i1MZS5YBkEV5vgbpQwKwPyjWOtFTlmcvQN3A9BPnttk2HF1reCbTR/TCukTJ+cBEtl0oQlJsfHEm4XnkzDOj/MgdXFEZC+5gbTpopBJlk6VooXzZBiU708dldK9arf4EkRfPHtDH9ErHfiT1/TJc+tOk3J41Q1eYCzleNALWd5nlJMIZRXQWf0TWSVvioThgZmJkpNTiKDXWCR7p2dgZ9lwvMlePEQcID9xmKagSAW2Si8gUbX/fJKjTOjaYwYEUszrIhRaIhSO6G1jhuyNQpPCxxbcu0qd4k7NOW9LyVMFHdMNb007HbRCtlj+uBbK5MyKmtOzzHwuiGLRBNUp/QcduWMP6aX37LyfAWrCI9t2kpRP9EaONQRLD8SgTnrYFFfhcBVHrmNVQkRrsF/U+kDZnLPw2TrHgiUcr2q5xx25pgZhNNaKkGWyVmMJ0zWwF0EGZ8P5fVLuXDvaoXJ6jhz5GuA2LK0ExdNRzt1H/sZlTnT22pEEjz6nmauVvVSMq5HMjlZXBTf9KfMx0DokYmFfdftU4cpGCmrB8tmV4ZoHY614SbxVDY69elBEg3b7jbv5ZbgO4ClZs6jTIPnO+S16d0Bbv/CS3r3BZSDK1C3p4Jxgj2mCSOagcEaOKUQajQarolY04WgU0iilPd592i3PsPkqqXNePxtlkPcxinXxntG0GfAdjS94Re8RyEBnczZb7eu3jXr6wrq4ngLWCijwZk2Ubo4FcrIlirGiUbf4HedBPkNjVXpHzEIqPzHcQEQTGLo0pW890dKsf+dKyrcU42tUsRh75e56KNqy1rM4XktMBK25U4Kq475KXr72XCmvCpwxqWOoiTtV1FvVey3n5GDU09AS7bVQN6kS/Honfsejej64SLIwhuwgvP9uXaJ/EWS9a1jPRzlD6Ock/YaTkhqpILAwOBaAQpPZgqOlexc+RTTtmGoJz8AlG6PTs9ZWsf/doWxcQK2E9R4K9LwFQXwUzrKQHjftce0mb4USXBZ3TolbIR1c91lJcs6QfgeWfTQNszBF6eDMi7FMPj9mOLBLVenFT5xy6gliX9nFTyWkpUyj3LOmhZZJtrr8UNpRdPX2hx8EsvqpWahDg8j9r12X+How9N7HV3h7quhR7ZJUdHOfkXiJXxMIUsYxZg9gX0gPSdJLiKvprYmAHkNmrPRYiMZMKnxvyuqfBr/OQpmcaKvBHoDRLVRJSwxnLUeUusos1+pqTxEAOkSd9Qc3TgDc7geWVlyajFEPEzm7D/sBeXAPFtyXAwszALp/Rw/4qhrhX74MnQY/zBr6G6lweLSFJx8Ve6uI4KXx9fOOEe8BqEq0XHrCB7hM1iwFEGXRwsCUIeMGp6Zqq8at0+xUHabMz+zuvbZg/3uIlAssD5HSvrZqePlWZPYagHUjyVPb29NhkA7sG+xFT9O3Wk+z0u5uYcK6k6THtNRecH0cDcOqmJ3T4Io/UvY12jtgr4vWejqQCsOmwauZl/pJCEMdHNtIEh0sb5MW2LwqM4Gp66BVG46ae5IYmRLbvFLWDJrV4taN6q83BVscc68I3dqSzgHjEjmIQiayPlk2MfOsFOhN6Ioy2Ma0jH3PhfTGpCxvo7fXAsXV8W322mJV3MrO6N5q8Afyjk2XVDIhYR2PRRKLIbXozGMTGo+cdu/iwjJHBk07p6TsaPTyHEvGGFRXMvgoFxff0Lr4xinuwoM0PiKKgd0ot907prGX2ovdg+Pjj/yVPihSvQOoa7REt6hBgar7fEdiI43TYXfUiB7KYonaPzUbzzfqpNmgf9bY91X6d+UF+7WyumFQYdwW90lrVsPO0LMCE3k1VUZH8uYbktHRbVY1dbTElSVoFz9pbc8QMtn0VJJbk5fnGdIFHQehMcdhrrKnZzW4OSTNq9WgTs7YZWFkiQSuCKEopjkIWZyKfpmu8napcCFmgOtjjT3ZMi/LtfbPZR5l665dfh2w69Jc/tK8MrcgVa1C2LAczeOpxfdFA0VRVnBzA68h11db9i3B3iTZFu0ssaubdJbn1bU1UXx3NUNL78h3UZxXzY6zZgzPFcgO6up6HV+XOZX4RTIbD8FE6zOJM4TNFix7WV5KxKy1LH9uLu2VTrRW/Sy9Kz+s7HglNzzc6fqBQO8wmiTDsGgwTRKuGStw10Mexi4nRnEPY++GAkkXTyC5j0t1xb1aNsblXTSMuaMUZnmXuvSYb1of3ebsd8UWE2K/paL/plfUJbOc5hrXX1DPZcOoSk3nW495Batm3QXbaBiVHW5IQx+w6g320gxW0gnTUke7hlOshUILQ0RZKqYBZFHAbI9WganDASgk9PNwLf6rXE1qjfJT6dISvXVvsjHP2hz3hb74QX4FJuO3NWuTA4S9DHCH89O5f2ikL4BG3cso5o6RvjHY+gmzPBzWCb2ZJtPdZPQqHpacj+pSb1BWkGVhmrMoLFqU79uIVhAY3fhJkNcOoBU581S3au489xqNkaqv1KR4cC4wkmumSckZcsR9Kn4bW3IO0+AGqGTTYdJjEHWMiHm5POAtEZR9i8lzNF23+KPZwwZY7rh1LhA5WEdYGYQrzyG1GCuTyRpGdRcna76tKT7EeYUtesgX/HVRDCZyxVp8Woj7tpzsgnjvSVtQyubLrClBYzNS2aYSm1l8GrT0EtHl6PbPHHL/ylh2g5ve3Iuj0fLG0toog3mitr/MuUbqSXhWtDMGecjz8FBcSuYLeBCzN0Q2yMaZWUSTrFSNBPcSOx4TARoGbuFIWKAML+w6W8wtwbIZaMRHLU9cV7vYN1GJj7i2Q9etYldDc83ZOhZ/DLPJLnJrPXFdYYWAqVtY/KDMX86Kmu+ddZixYvr399vjgo5b9IZAFVM8DGmdOLTSX74iaTia0Ts+80Tc7oSTIJh8vbeYKPmcs7RBPemWD8/K2le2eOlmUF3EBNpXwXicXFlXdLu2RM0+nHdLoi6T0JGiBd57+r2sGRlG9NpvFlZj7Bzx9Qdc5VPYoW6NYLoYwmB4SK+3PLE9DGrvs1T3m40XXSEqGH3HW8ltxqP7K90YiVaLbky3Lw0tbHfhDp9zOaanm+UNmfwm0jr5RPE9dehpm2Yvi2792pPtP1V5bvQ0uDowZ0zZy+yuSX0hotu85gpFA2MiYtQveaMs82zZyyADlnOsUskzWuSGvKerGY1qUfZZOK7VbjPs+SWznGeWvIWL6vUGCmdTy9eHN79FL7ixI8a2t4GIP/UKI7hFXGxw18L3xhKnqBWTBJ0liDG7qVCRLDxNi/1sJ3kWzlve1a1ZXewEOHmGnrrCXrxa1MKohbd1TPK+y+77LFpX4bE44JTtaVBZBW0CVxeLcTpHTMU1ssEgVyPblkEbcGFOjcIgA2NHmNhTNTvL4QuFLhvMW05Y6e3hph/CPQBht15jknv4AAfKbsdbXMBAFt2ALwRYZrPdCQBrBKeR7mHudpSGA8VYnX+1ApveqOxUJKiP7jKx/GnLgoX9YKWsMI7+ZMpSqUa5umGmM5n2OAflK/+KBYOgl7KyZPtOq2jhZYzI3E/tnhkcKgmHpLN3yO83LxQvQJCfR4n4RXsI4Zoe3RmK9JYspFIkEXDT4V1HC/XLrPVbeZgdzjEJjyMzpln8tomQr//qfH3kNhJoW41RGoZYTm2mkBJmN0EnIBBnmL/5999JkZH8uKyRTOYZ6G4aihb/93X7zp+ni00Kj6fRbSp4PLviw8Y7TwqtjXeXN9eIJgYJ0qo57wAujFY20fXFLs83pbmWN04tFLchw5mHxQNcnmtQ+TpmMZ2TmUBilqO4ZddkDRudPEU4tnydoeFmEWeAuNvUcc068+IWnXUsc0jm2uAZQjz3zVq3LvN147wVDitWL6/gCiemOww2nQD33B2wSbtI4xSrTPFxgZ9jGchuKGAi94DLfRWdXQZ7kWsdf/yzkJs/hUc5XB/X0NWza3NCGudh/pmeh/kMYKvuQeHJJVOrqaSJ6hhSQae4OTufYivfuQ8EvyLbJg4gsIlNXpM9Dx5x5VVn/U2G0ZBm7gmvIZ29mbKniAHFTCB36jcgrUq7grLpD+4KfLKnLA3sx2F8fnR+FhhUpMHVZ3qXByRQMbqO7iXhh2zzCJ6aSFrnhjShhdDB7sHe4VHv+Lh/sP95t/fP3m5NJl+7B8PcT+3rsm0WMYqK1Ng8y4moXW0aXNERU4JINWWDvYdiYS1BETlvoPTgBhYqQqbQr+UKC/HZRwW5hu1pWSbJcs/Lv7oNBVHLt6J2t+U7E1E4SLbEjWq+Dz5L4W1zMWQf0F7RP+pEhe/8mwlSBtx6/JGaqecyvpH7p9ADa+ghEOCSs5Z7e+GOs5Rls1ErAW6mGXyjKzLjpbikxffek+xsHvF42Lpz7BUr94cbtOThBhMpM6DIQw0qN+JOjfNwWN9DY7nx/YMUAXl4ZUAMhbCIpeNm7R+RoLG4VWv08wSxS2wowQB3YlqkMeZXQFrEpy3KaApnXuB/z8xuGXoPPOdi+HgMWO3/ZSz8xxgLJW163yb6g6aQlo09wG44H6LuIEDvqJq71aJtgpXZbll860RmEnKlJSraI/4jN0/+dO8yPw2ZWVvWbPttSxwn3eI5RRx72J/koWGzrqjqusHGfSzP7Ve9k4NbT0ccFZDHbZS7kMerusi7s4t3vtrdIp9kAe+tNC826gSO7D3bqJONjTpZ36iTtQ3nZTN4yvCzCpe8C88wDBfz8MFKyztyjAiB7JnZJBiPw4yOZyusEwrQRLtsD7Jn7wiBoqzyc8JwVjAZyZHhMk204qLnklFBr38VFwbMEQxPj0sx9vW3kgifIaVhbBkJhajDlOWdLLds8fGWLYUmmet/JsqzFF47jhKYp+3duiOjB+bnaBB3o2xbaE5Pl1hZlYtOmO8FJnrShsI4EEetajlP1Nw1lfiIfB2qZ+bXu7WDkPCnSJ8Wiqf+eViWkzuzndesFi8VVB8sZNLjz106hJTrFKJdyvefwtMHFmdyLw6W0SbojOWcBIJlIMpz686IOfzBh2h8H/eZTC8mzrOaxTg4z3D6PnxqbjFF/u/Sdn/4KL4tLnJbLA/0OIE0iyCuRoiGSDspjSb2oMymo2ZmSXD32VIEJHXhKoODSBh83/b9b8pEMonPXZbM+INtU7K1tVkUt+THfrGIJuC+6NGCGBtRZF5UHCbDH6pXbIyjoySLBvftBBGcXckT3jc8poSJmZ5BtjLfC6HHjaszBDT98P09EPjsgp14z3ts4QGiPwN2SMq8kqgw5YIp6sYBezvngN3gLNNSFtDgKsCg4TpAZS+QjeMpj/W0Dq6mqHzxIxGbuOEtL+jcMjVZxj5vEzqrrIYc62ItBM2x8JX80A+feZaEgnwXJAatEif5Em0vzhGT2KlAIwn4/IA7R1jcvNhqXyY51TtWpJ+t8LgSwokrLP6XiOmjdfzoO+Lui3Pr6XQ4jycU2LK3mFbaKUhUf/+d4Wxm1LD8CMbg2PRmbvVzlDZyR54KOXw4vrqG4AMw2EG2wL3uHnvmOMNjqpwP2zxINe842/2nDztz6R85iYznZqpwHndzxznj/BUu542TESJruu0N8iUNEZkZHuAMlWMUY4S0JO7iU6h+XRXKToeuuv4D4Nq5aae/crFUT4VRJovPH37DW5yHNHD4/2SnU21AujcaaTYQqd//zTumPjdH4fF6jh2e0V3n92nqNsNusrSwnwO+lPYGAYslgCghxHTJ4BdhkRPaOcnZyyU9F7TXbC2qN7DCctyZsbSOqVoKtTg9My7uEhZbGsunCPbUK9+M79Six7b2jHJXeuHCtsohWC7lsLNOuQYWS4u9kM5ysLt0dmtPvZJMe8CTLW4zMZnlln1nZrFTIx8S/iw/fUq6NNcPCbTEDFrGBbDhISqf3ntA5Om3OsmCUZjfSFskDyfTOsmjSUjVYhAPCb8Wdomu0tmZuSzM8yg+zxrk6fIjiPVPc4KSDiksZIo33XEh/GgoQZG05GRklFqb3T6CrVS+eX+kJy1im64SgfMw38alqqJhuz74uyyczcxPViXBdN7OksjlQb7QhElfGuRDFpIvGOwXuhU6mGV5MhHma5Kq7iBnySweBmkUGqxFGSodOZmMY8du+ht6NT/+uoJmZGSEH+5I4vENlYhhErJgn2waXIkUhvQa6CK0/ZmJymDvqO0ngo29Lw0iQ1mijIjAJzKLx2GWkS9KHSiT5gu4duXNFhchbNSew6kFdjkOmcWDiyA+D4cFhLLWxarLnZ+wkFY3AEru8v8hWTJLB+FeMJ1G8fmHo93NKB6G142vNDfx3wo+02DwjV78xv5tfM2SuKj8XT7NZvPZ+jqBf5vNJv63ud5caZLm2saz5srKs2fNddJcWVtprpC/NR8aEddnluVB+rfmvdvCxP2XfEAAK3EwCSstUlETCDXjK5dhCgtneNVsrDea7OkwzAZpRAUQ3uwE4KkBmacRflb6JtBu++D1Ds7DOM8aDMi38OYqSYdZpcXzdFcuwmjAVw8self8YMcP2HeR9If/iuULZvqJXyJ25ZS2dZFMwikAbJHKRZ5Ps9bysmYlD5LJMkPqbHYOCLFBWZmlY73GeZRfzM5o6WQaxoNxcKVBWY6ybBZm0CidmytwlXSc0Tb3+icMfhrSA/BJeqNagVN4UOg8ygX2vOHzKP+pXOMNqCxbHkXjUOPrMMok5KNee3uv15gMxYPdfre3f9xTvBLoTJLhbMz4WZkEEe3pxjLAWhaqpSIrZNbbYSPn75k61NjaqKiN2Hm1uTAABB8CjEamMF1lmJ0kmTOdnY2j7KKbxKPoXCEVDGhOuBYvMFDcHIbTMB6G8SAKNSL+bxaNL6NgKRle3YTpMhPLpTgZhmywrDXWdRCX224olPxlUe1fq6uN1WZjXXQOe03H2jKbT2GReRmFV1D6eaPZaC4Nw8vGanP1WfN583ljVda8jPIwy5cHyWWYBufh0uUL2sBGo9kQd9hXkuvRhLLsX83G8yYf3fT5OIrZi5XGiw31QqFDXwICskXWoNaIpD6Mz6NYp1qQ+2ZzdVUVY4C1YmezaDyEcnk2IEtTkmcD2mkN+oJOVKLxwUU4+MaKnidkaSlOehM1nIbJIGtJaNA64Y0t06dLUGApi/KwMZFCxWpJwNN4OiEKEGwHnUdwY/loRJaWwusoX6I7e0tLtNTy08ZFPhmz76PgMhokcSO7PGcPGnHyNfx2M+bvx+NJ1siv6b1fwESy9Bv538qTKjQwzpbocCZLS0l+EaYZbW0wng3DJTBshkE6vFejtf+tCIqZ0wqopZJBGvSfdEBZTXQDQfWF+Uv1DGHy0OAv8oxk6YBRJzraaFVxmrW9tEQf/Ek4CHlnkm8VI0tLAjxqdWmJtbE0Hc/Oo5iK3hLdJ19K4qVZPIF9+3C4NAVXaKrmLUZHK5sk30JLKPnbJfoWRJIs55Oppu6XoIQclHzYMUQgM4T+piU0gFkE+CtePKKXDPy77ZC/Pv+ej7D/jUlz3qJhwU+h/b/6fHVtbQPZ/+vN1eZf9v+f8fmujPy1OjUdK62KMrAqbGF5lCR5pVWRv7NK61Ol0VjO0gEXmjyrnNbpQgLendYrE7YWzSqtSrvdbtcP2u2Deq/d7tXft9vv2be9dnuvnnTa7aRT77bb3VftdvdlVytKC9Bvrurqz3G7fazV+NZpt78pkBs9DJKWF69/67DX/Xa7z17/3G7/LF8/72i1UUNGwVzHnL5B36wqvXSbPQza7aD+tt1+qzBjdNJvvPS345UuK37VabevOqzCh3b7g6K0azCAFqAPRIExL3DebbfPu6wApVt9E0UFbrx/aAFKhihwwWE967Tbz3gBHd/uNS8w6bTbE16AUioKCHoU+RJZhYv2kzZ/728KqMBjusMajjrtdqRTUhauqKF64mvPpv2eIGMO8kWn3X6B+a26xvlNB9R7znv21067/WsHCwEt1W93p6xz4Ov+Q37rtruHBvt772ypttG5/LPRoSNRMVnKP9TNO6zMP9rtf2gIy7GNB0O/3Y27rDQtqOqpflLP6Df6Quk/Vdfs2Vfv6UhFUCUEeD3uaLXpa9Sy95mrvY9UMlBTSBbVH6qd1FtaWJHn+uMoAkQsb8uv29pr9U0hgyr3qQoXX7eZjlYMare7I9cwAknYZRwQ6inqGhqyd7ld//a23f72lmpWrrwo+LDdPu+ABL2nLUHDyx1ZOeu86rd7cbf+sd3+CE9vOnKSC+W3rAPEbvQ0etT0Qr8ZDLruaN2lupqrNFHqpbuUIgsklRfvtrs7QOZ2/eptu31FqbzWqWx22u1VTmbYbodUa2zLKSwCMrsrHanUPwLZax1G9rGLbFrybbs9YCMN03/VbbevusggAIm85DKhgLjmEFHkW0fTjPQhxUjJxHG7m/dM9r5z8m29026vK+7+pjep9IeyNt63u2t6Dwh69VkadJ3VA7Ptdnu2DT1wyZU3HVla7wL6A6gsDChFGPSNPucK+d2un79rt8/f0cn8nQZWI0uC/W0bg4XubyorK93WAFOSlQXzDyENX7uaqqJQlHkkOPSVE+DqR/pNmjwuVQKtbKiv235YSE+A+dTBJHDWgcLvt9vrYG5ycxIktjviA7Xf7uW6FSk5rk3o3sHr5B2fDAWigZwFAkrgNhYi+k0aVxptit2e2WOZQ1A4zzrt9qyjzQO0OjfzDEZf75RQrBpVmq0PJW+oTAhDk9ZX7SnOoalQtJhy4hQ7XVUUJwyqLwqp5uaxOYFbtMqGqcFnyY62CpEdd6l3yFwkLztFSP7Uabd/Qh0y1pFELanhiKxRVxGPsFxsF2E067bbM8S2lQVF5LxD504x3zWpiIy3sU2WdWDgadOi0rmmKuA1BzCp0JpyZHWf61WVfFGNROnnRXtU60rZ7abKnNjRtCaF7hJGWoT+5KsBUXt5W5NgCoPyRq1wBdvjriFNSgEKSF+xxoNau5Qf8O2E0g/fhqzrKHTFiUs3J4R90mfs69HJha8aqFJk5phS4fr4dnFCjRiwWLYpIfD1n9rCWtd8qGcpIM4I1VVy9t0RuCHqjH7mRSgoPsx7dLnGBbkLphSjK9TNMV6dPqOVbzpUgf1D2gogzn/H4qzLqdR4xhyuNB5aAdI6aHrsU31NBYRWNqWEG/qGvTHSYItnR+wZXf98BOkw50g60Dks5V7QHlK5EA/F8gIwBWhDTZxFmWkRNKAGKv7irAhveobSATql1gEd+et2u/3rNpXIbcmmfdkn73Cf6FbTAUiDbjYpFSWVIXVLWepdjgMGZZVNiD00NbCyiHhshllYqRl/j5tfuXvGVwoPzfjecsgSQpaB8oF5JoDLHc3MEbweYhWvlqzIjSfIX/NZWgzDgZzfu7o9r8xlsTwYdzBVptuMtarsIlXOZzrxxaYLoCIN/VEdwCntrqmVw3YZhumdr5qW4wz7dIqLqJkB3Jc9zGltEpK8/k3vegevsVmryjlsNbrMmUc2ms8VQJMOvnynYNRQUrKKnpmy2p2DQ1moc1tamUetYq7tGRpp6hdZZqg7sE2gHMqIh0oqTIHXTTjEe4TXe8r2xQoqA15VMWZo4RBG5pINUThL1GvECbUOdL01vFV237yXffO+UBJdI1/ZKcg/aOCf9rDM2HiJbQfVfwaI3zoaii5gcxv4atnb76W9rQhHmwjMuYm0U/lFndAnK+V0dzGvXWpNGS7M31IWgkdPr5TX02hA3mVaMBdSyOJG1CLfFfLHqj+uZ6q/+lQM/kAiSswaLupcs8ZHZYQVj1Xuf+seOQ0c01VtzamOgoiHUG+tfD2jvY071NO1Hlo0maa7380+VwhW8PrQ3Osb4jHtscaK+hp7Lu44/ZdVBJp4I01IIbie4U2TB7DL1B+vXeb4Qy1gyy7TPR/S7P//T48u1PMuZSRAxe550ehlMcnq/aiGkmpbeVQcjeERWLaage2l5ZlbFO9io19hVmKFgMgQiC0viuNf2v/htb8lqmq7ScFFu7WoMGrBW9fofLFQ/AOniBLWh1dX2UvMca+MpnHFlvgWzdwPpDZ91fx7z9G50Kodd4axCX2n2bYAWxWzgLBVw0IJTHE1e5JLd7DUSC8rlxvl5ZIuZ+aPm3JHk2sinb/QXagw3b63MMXLGi+mX//dmHoNB89YRIryPV3y/XnmGq1MKVS+AtMNST2pumJWGxGotEHFdSl/D5LAPYyz4r1n9G+UWikqZiFBKmhQ6iB9X+gtDZQwGhP2GgrgENpBLuV7Yk4p9JJ1tEkDjXc1fSGaXPOKw8Uxz/VS3CYv15t2sNvI3YfKN4NYyuJIXHJn+12EW001pqqoZ+ZEtI39UeXYExfaOz0U1fWtYxa80Ee44/3X8gFnaivJGyjwkdrbyOGoOKNgYYtOqZ2CnlO7XKjnILanp0m3q53zDt1LQqz8KFn5UUoaAjEf7HKHbaHS3SkFDA2+ApoQy23qhFwqDNzqohy0lZ7W3a4dIbTfrwY+iqQx2fCy62cDR7x7guDQikcayDtwiXWtPo3chznjkoLkCqP8SN/Qr2BG7akK+5qEG+W/KgfuO21M09J01kQRi6ovFF/LOvzQ3qEVCCcQeb6jVUc+EbV161XXyh2vdyYKzTcaTLfnToRK+dgTYSrN4N7iMTcuo+0tbFL3lYMeGUVKT5m+olLmkYJVwpDr0z1C1N325Py1ozHdDhQ0XPVlgCGiBU8soj+6bELXatxFNNom9OyRjPXQPJetSr/pti364yruGyuU39YCV/Gyrca3EiYa9CJFicfE/3ErXNvDMu3h/Ze+3H9RcqeUCZJ+y9L0cUy3ORXe9KcCruhTz7zWjbYD7EVeaTjX0gQ9Uw2rt54Qhd84JXqAhmsJ6+oc5EBzOdxNj4/lg3iva4Z3WOKKd9LUoloI3Ne/BO6/QuCQDXdfIePkIFtO4YCemYuuglXF4iKpouJe0vngGQ26ek7t4p86fI2p+KKWYKLlEZ63+2re7ptrQFNkofKZtnwVNWK9stfFpzbS0BERVxFbOFM95AzVc8VceYs4pv2ePCPCQavwJPXHXAUjhKGnlq2QcaOruMnTHYpYsu4ZNX7g2y8iHLl35l8dKslZKLLFGHwxCuNw+DG8oS+2FfabFWbiVj/qm726v7bkzUDQir1BQSoOK6lUdInLhe/VDMV6ySDnpRVIWmx6eo9e+Zy4VkuuYCAjYjPvOg1DxUhR8MJafipWqVbQJGfw/sK5IpEbKT042TfPRe+K4vE6630hP9CqiHN/L4OAlYdLD2lGUmabFJeWAwpxyKUpvJEBSnV+pDpjLsPcy3S1SFPPkNYQjNBO6umMcCwUaGS/FWw0Z4Wnn3qQG0+8qmGwu1cE87y/PgPD+cfYIHsp/fIfOLUsQhz7muTJuOtt15yJlCwK85Zv+ZlFMzxcvr3olKn8JzfcVa9Fn/JDZzxInh6xpFPktlM1+axZqPI/c2p4qp35FeHcrYyhX396Me3qG6k77u0bOboC02cxRq7CSDvG+Eo7YeqfjP/8yfbPm52Kp3WKwgLT+vK8ad3hXGVHKdS21INM9dzGQHknJE3Uya4nZzDJoydZOyav3mnzrGGVTy1VjFY1iPmu7jI04qUa6PhUIwirMlHfssPDvZGpJq25TXWW+mlI7cW8HUB1NAr1hAKoGkYUsc0hl3tVhQF5UUd64D11qtNBgAaPWQ+OF12ovV/reJFuWRhezpCfL0O2GCrvHrp9lVIAFRS4/89isbLmOtNSNKYvTttVQgoKcVj9KVYr3lA8A/2XVuwTwt+z+L/+T8S/RPiOtKO4xa4NRXayOeDxDb2083BS5GKsa93lYuTc0X85LyAITQAOFnOf20LTlpx/dRqNN//DXrhOaqChscgfPZyC2xAIuFd1lwMuTt0KT0Vg2hvpg24wv1cBnaqH0MZesQR8dJ34Kd6zoPC93J/f7QsV5htwSkaMszEipYy7J9U3JF3v6fFWl9xRNY34qQPXvxfx1D7J5TKFFEFICNQz3qB66lkAr+lWjF7zYToKvfVxVqLzm95lmq3OA0WRBxKxszzmDrUumzF2Kyks2iB9puIUESdhc3q6jVNR0G+mw5GamLp9KAa45So2Eon8Zi3NV1k+mG4b0oz9Qxydv6Y8ogefe3yyZxaYiylI7NGLRWpQF7rbSP2rEUcj/1BpU1yGJk861qVqn/tdekNNply+F0O7b5TaRFdbPWhZvNDe0obld1U7OWiYK4Wn4COLxOF6o2dqdOtGuTLRZghSreqtbb+szVu9UByUVeTmkLd99NY21zZ6mGtqgfJgXHtpdc0f04ira9RP0+4oJZlKx7vNX9vsE3n29GyMpfpsbk+9tHpKz4rxYGyc6ukyrWaQFlm8GdQTLJQaTWquzlNbBIqNntXly1KnkZSl/zDdk+uv7TwddrCiC6k5Vrfqf8UOoxVxKlvpC+Q614mj35BZ8J7GmtPXKj8a6rOPNMFbsX3oskDUwDcYd93VuEBLo1giX2RToeYUkbRibsHbkCtoxy/TPGaLOISfd7EZbDhgrztazykDTmWZkTNlF8+FysGktJBtJCzrHEYRFUp60TPb4Ocp/ADiL1o30noijdIzFGw83cZwXdt6CBO0wVeE0zUPLqQA5Z4e2BQu29/Vjt6jMNMuXq+rLCS1txU4iEOkm8y1+lYJtwsHNG4chgTPcaASXOkphxBSRp9tbN+ZBNXYHbE3hdf5p+TAu3fdVyx1lEvQDbLjjrYslUsdYfk6ZkSo9Hxb0wYG97UkYvo6Cw3ghUIx1NKKplSiiZ5QHmoXs/g2Jeoc17oYdR2am9EfeEFXFXJftDg7ltjM3eC6XK447CWF8h4YPk4RLTw3NQWFb+0EK5oQWugA1gInt4sOYKG36o8rGtxbxBCQuScikTvImL3caWhcfiizTSuGB5V2ccFLxEcVTWe7s6yTQ174BkB74Vk2kNkbxqXlsin2uhVH9mPfpXfadcFCHEaNoHKmxVYwwRcLqc1ce8fNxdziQ7g2c8WJKmTtIAxdUB0YFoToKgz5jCaTKRTztGwHu57J6XenYKYpQX2J/gEXoJ3nAp2MKnWS2aEz8JRXXNjo3uc7mP2KXqGOVqzdaEPX6/tZV+/a7Suaxfhaz2Ksz9EyAfGaNdyNLMUocfiylefdWvub5Qs2dNT2h/qmmkXBFOotcn2h2dc59c3ettszmq778q3GD5RSWAYh3YEfysvtSgknSovTEran64jZKh/BVpGw4Oc+4gE8O9NMIZS7bk/KcaqHJFHTgx3Bcm3XwzeIjNBMsL9rwvaAFGobo6oI6mX6DbknlZWDnvnIMX0EGzuYHIWl5eEwCMp1q84g6AR3mWDyoYbAHs8oOtQIsk59iS7L/+qyP6PLNIJUEbPL/giCXloEqYWQ27QXxdcsBigslFfDcmYZMF727iXHxkGcefu95jO66usiZrIx4boTyFzK8Mp3HQH/xlEulPVIo825wqIW+Z1ILBHUYsWXabtUZRdiC2elefW+3XYtvF5ap7NUwz2Wu0vUMw64iOwOrlNPvlgg7jxVk723nknFq75yht0pU063p+kXn0HO14kofYKs8oplP1JjW6QFzzveo19wmPq64+CeYTxLKdN4rdI6a65fM7vOvJ4pTrlqc2rDcoKVdVApYTSCRab66SW15+L6g/jtAu06f4SKqD9GqtCLHc3jjUJizWd6fhbEBu+fQjZ48dL+GJ13bW1mleu8FWtYoTwfyKuOHPYCTMoFSkUiu7jrUkNqA8lFIyIU7qGzEgS5o0SPRTr636yAG5Q4EbXmXwNpfwxV+Fym0O/uFmeR5lG8Zcq45zij1NeypdRuDSdYO3liuy31laWDnxv69p97s9iVsO69Cuej1bX7dfTrEdgdSKZ+US5WK9m9vmLq068UzIDfWyP3KhXGKEGKeka/Kdc/8kLZ1KwUuNaUzilu2LAbjHMhKJLQW1mEyf/m3CAAPLlto10vwC9A6lHnIbc0VYCL+qbUGbd1ED4ub51iBEei+1UNlAXtHXc2Ndm3qRUmgCQX2YVfrbAJg0//tPikLki57tRXt9vtVXoNw8a2nyAkj32J8kDDpU2DQecQq2+5ljXuXOLzX+JlX9SPvqF7MhUOH8FB7XL/eoeqz51n4eVBZLogInf1npdINbYQ2z+qk5H39m572JeX8nMrXMt5vKfzPN4qpbCaBz/ymP9AMVff9UQ2yeJHluVmMlfkxfJlZFK67pQtzTWRqMhVjqX0EJLK4vTy3Ow1t/vaUYUuk8o7su0oWnUw45gf+OMpgfTzUq44QzuXQrn4ywe8B0GbgP4t2R5py+iEiZok5eTrXlR7RzIqV7Lwq76Ka//PQomyT9kxrt5Uvho8Jy0kUOpbcXNSeKxMmvcXb8V7hIPR8gJ39SpEik62XFguUBdRCqpReVlfUKPlPOJDmSkLdbhaUM+JWFLNo8qu7vuobl1DRz0UKcglov641vgGObFyM1tnFIqVq7rEb42msKGXxYHDUWVJUSr3Z7BU6VW9Haebw+ilvIMnRaQnXdt8co7oamTow6Z7VsK3UvqZlO8dpzh6VYhrXtYOvCHt7qviAk2dSNb+jXQCYilDJwJNXbaNhyAatOqZ2QG+QRtba0wvQNW3XoAflbGMJgDx+sK69Ai/phMxuhGQHvPRThi9Sjqw6lJAkP5CgKE0t694xs57QlLFXcaUWfy3kg0/HCSz1v8UvHk4xP7cNh6uu/28Kt/GR/AaCAm2DrCoQewC64L9UTnhERiFnWuissGsbWsPlY2E1Jh6Ya9ev1oQXLgjWKiIDfW3/2yo8hmN41F+HmseRjOdsluUrlSaTJVTh4HEHB7Lrz2u4enMQN167K50tdWjpiz9CnMHT9DCj7t16LoYDQCFJD/7IlHQM5wb5vyeWebCfc7dKCNyeNDXKiJMxbxzO0JetIPyUKtJ9mq73b7S/KSvWPJz8RXj+8qRBIf1p/JTqeVsmx4rUd1h21R79HtPzEn0rBAPquObscjycIaHSDQMj6SyGgsNMRyD9cqVw9KBANREfm4uIGDcqTfKpOupeBX6Ru3UMKK5IcuTE72i90UjC80wA880E1bxQpnDKCwBhSqggeXiKEQvW7tDyvfal4OvJyk5FpFiX3t4HwzF0ZgqRN8vVdrEZUshgLj/XY16Idjbd+J0PI9wLAHDXg+KVJzKMaF28dQz3oIhjLYrznUzi4JmXf5jyrf2x9jyW7Gc5cagfM8P3vPs5tZCpyDVh5qTDaeWuOpHuYaU3lM/XXOM7du2r31yrdzV6gB5vlFztg5Z0e14BUZxFoFWzzwLAyHWqlF0dAnNBo4Fi1LN1hApAQFZM3PAqMUWc9ooZhT7bpGr1LeosfpHMUNho3rFaUehXSr10xua4LJmFB6u3cXCP9RhsYP7H3XF4nj4yC7EA526ZYlbdTxU30kesbsL7oJdIb8o2I1tH6ZH0vgIlDzwZSoa5wBoZC02lHZRBsncpRGqZI5UWiYuXOG46itEoczXheu7dsoVP9HU5JAoCppHmizQrDF193H8DJrIAAwfrawJ+sSaoLSrLqiR6ZUhRYtj750rJaGDreWB6u+2MECLt3r/UbTVS8l1xSPc9zZ4FNCwU2bn17GMZeWK94UNOwcd+r4or7UVK3x7ZjzVEprCSmwYvFexgkhXI14vvjsobYFFLydXwuTYueJePJdXDeFuu73LHWwq5oNaKZhxbzzUR+1s+1zvHbxVK3Xp/2gP6QoWHp45pxmz4qJllNoyywzvX4YZn7L0vINKrggfbzzsRyUiZau8lzOodiS6qHvWOpqTGu1wGGDFlnRpsHs8aPYIy5tya9kq5NJKjK/iEUtdENRXB++UICNfPDLzsV1cwpBXyX7favigkam6Bo3ovsrh/l6l4ur/v/a+bbmNI1lwnvkVtZqIXcuHV4uULHI8igYISrQsiZRkj+kTJ8wm0CSaArqh7gYvshWxT/sBG/uF50s2KuuSWVnZTZCSPGdOWBGWIaC7KisrK++VCTGc4Kg+I6uX7GH8FDbxtYXFsSqDgVfnpV8xH8kP7lNQxy9AiWXrmM7oM6b0yP0kqXHWZo9dD9NznrRMGYdXqSMlzMuXok7hsIVc4wRXscC+srOGWMX9beX8hvIWFXHSd+yqbqvZ0mrKHEK3UsbUpQvA8fGeyXQVK0TNTYks8SsbX+oVtjT2CPP17kOFD9xwycPbGt9MQAj3BR8ulqCf0VQXyF+0bjfm+DEeN0f0U2NraM/FrK20O8ssNPFGOSModvysRZY+ammBgkZCeyXypA8RT2JhHZgMuVNUYjsAZsPvwI38BpN05SoH7vELyu7ji8guc09mX2U/Sco+ah+ziH+lIf869PyLOaJlh6d2irOqciZWj1/a+TSgUf052hyNZqGyHfH5qJqwGCGzHBGWJ8Yeoc5f4wHe2nVQEf/z94tsIo4a5z2dcnVQ8ii2nk3pCoHcl4+Nw97pJ3HDHt2vwRt1P/ISH1Yfy0HtOweUXoLT8YqmTcfuwV/4lTQfGTGXg8MMHC0zBWTHNZ0BJTS0QjNuei13HBCPMVv5sNs+Ge5YPNm47UIFogLPn5vhQcdkSFXxZOdtkyEWece9nf0g0NfhjsWzHNyxijvqtsJKWDQ8Q532rVvXjWsvv2jrS/RaoGKD30myHl308E/J1/9oEHBL7YWy3HcAyvm7QZK8o5HQPlxKkmgVK/nopw2jYi5hCRPseEphA0lUM9J263m8K84p4HeROZla1nLYzwfinAKZLDKnxMLizMFZx4OYH/0cDo/jc9GVoECdgsZomojxMLRFLuD6jmWAUu5tYPk87t3yrGP8mL3intnqkRxb6RlT9IFJFxaWRuD9dza5Hfdj3961etlOi2huSlSDM4V7DmUuovAXZWKH9gya4eze7PH4FUv1kqJbLWaDY1aylkRvcfl9HBCMsh1lbCj0P0b7fytWGOh2j3e7udX7QZK8Bx7VIABRZyvpnEo/oA0oYVwyVxjuGdqP0BkrURHjaIhJNmqA3a1dsjppaIlZLsDWsNWTqUXJ5GdXr8DHPS60Aojffk4M7Af3tiIPEvPXSFmd/STKpiaQx3zvQ+TDYLz/jpMEPHMryiBg3IsNg5sgx+IRI0KhHEhZsOzbZpj0TxlrvO2EiB3hSNBsXl7CirETdvUauRzDHtoxrXetb/MaRQnzBIWihvwVKtftcyJTiNVx25l3B0vNsyCRNIwUxmPbjAjF6Yyww/P0KZMgd2CTPEcTQ1JAUPpI8m5twB0ZTEIecibm8DjpkFCxLvWAd8PZwaZwovVwO+4XuqVEmc3YQIvMdjknN8ApcSYhZh0OE2c9SXKwRcWb0FQjxFBoaPSISXx70m41JFqpU5LPAiuDZA6aRBG+R5qRtds7bdJ25xDvIn7yaqVRpNXibkmrfQ6st/VAMjt7sydKI1DUeyKUoZyyd3vCdeovv+drx9Msm/r4OxU4oQNENsOYjn+UhCknrRCR6gUiRPg79YAGEE32/ktBRPYesjohTIu+NbZ1xhjDn2NbadL+M+SSoqC5QW0vd5OkhEv4VcclfCzikmDfv5YySodkdEfHg62oMGJ04ty4+tXdVrLmYl76i70rKV8DTJuSUHirSVoVrgG0GGslPmNOMybhG+oQEcU+STPjahkjkswi+5cvAmkpsisbhmUhM0EaGp0LRXUlJwca9KKOu0NaZEiuD8miZa+vffLrLGPnS6iHfrqtqArBl1AU/XSu9wUjHgYCokmK08bKhytuw6x3KfMpMNfPI3XNjWizvzA5AqePh2nkYhKYm5N6bcqXEyWZFK03VSRTOYw2cJcic5jenIWNAU7KUn/kl0xhUe1NQwLX+iTSWG9xsQJv5zJucLfvbASd0bDklmAKYpvTYufQR50Z7Wtkn3JcYzD5cSS0/g0+r/W02JwDti+iTPdbGETszcD0an3vfJe49Zg3U1KZg93/0CdeVsZtJDbhmsfIBlZwoqo4bPGwBx0+BmBqTPtJMqUVuaTyR1ZjYOAxkKnDqX+FQVhUT3z1qriOFTb9uOq8ZQT27mAt2l5GjYiq1tAuPsJCuw5aV1EO7U65fZBg2UZJiYELaRblDWDSGGKX+ewR44yu2HPM7XcEQRcpL2EB65B9Jy0ZqSXMxYXCLh3XoQ79ET+8jdvgUIqStIb7JH8C/lPyJ7SIpSryr7AKdhIhHGGCCSowi9rpUm5CMPTjyPG5qFEs5TQEQ59HhH97RYYxEFwE2182XgCHa1iHdPHJcOCKYQCps3cMh4v8SqcI50TVAUkdWRNLOsNfGRxuztlee5bIkc8hCYJ9rqQhBjiCON+5Vya+QGqKxNKZhvKuZ1kjUy3ZkcPvJNrtcvp9kINWbK9wOkR/gNq47s0hNYgi/RLRwdQW+AF2FpNkCpoI94KINlfUb9BQLxjuEGKkIw+OvRN7zdf2uOSBEexORXolHqMwecy/vzEgrkrMqZW8ASi6zAyW0dh/iGWhj3yCBwTDWmXJPsF7TIaB5w+qCj7oEVIIz59NNUaZimAzwWritcxRzLwRrYxL8hMwNnSDpcmIkE3HsnPx5QSdTYihoC8Y9uo82hHL40q8DzeE3YQwJ57JTibvJK5LmlHAl9INtnBDwperPhcdi026RX21OGmrrxxHQMnCtjRkVGyNuyxOwUfFNbLxkSmwURMMR8MO13tJUu/ZwsG4lXZt1nD1bEi6Pkw7iVvAB7Me7zcS6S1ujR/aiuQyhdGUKmeqHcCK6jBzX8QywF0HR/XMu0+TwfLDfpI8ZFswxhzoyPJjCqNfUdQmpZW4GKx4TGOjYdxxZ6tVrjF2i0TCvgtn2iMsmXEwppgwb0mb5I3UXCmAJlHrIRxViYEytB+yWpVS3gTzr3YvhZFSvB8XNIuH6cPSfjPpyAOcjJm0MIRH8itdrC6YRZIk7sFf7vAczhk/J18j+5Tn2nih3X3XTOBEdDYFio1rLdAnPYf6L0nuAlINU5puH3iUfkWy4Pm2MbH0Z3tGZ291oXWLredepnsJ8AMRAKJ7ZR0Y/ga4dLwryNk33xp2CX60UPz3R8zngHY8+QvdZKm/6mrREDJ+e0eBsUvP7sldZfMXChfUK0H/hHvsci5PNHsEE0CiR1iLbsJ3rKSPJn43gJDKrod/1AEgbvhNKIsAbUVK+SlIYbNCHbIoC3fhjfZnfGKX6nUKfwmFqdxhEUpb+AdnZjcWGTZCXx4x0wLKCxJYAwvgnGbsohkXahr2vMgNCHiuV3TF6hPHb11rNLuQgLWzj11O0YSgdJ1ggz7Znn+O3VYxNARJLTYhNgxu2CmCGjPBfVY2SNw0u+p3ujR4nJJdsH/Mai8ehU4Mh2v4C5uhh2uIui0z9MZ3wNfsrBiXQ8dCuBhyBOzNl+D0SNPFjtFHe8RDhQ8GK92IMIYqkDQf0xhYcUpXwasfmfzwySvhFn/SMzRkaxIlpKdIV4HoRubt5ltspLN+kpwhZs+jBAf4RDwxO6RlLHsq4Dkfep8w0rvdJHmHWcyFjPXFnsp3kyTHpyaf8pTvDOFDyNJTJFNed3d60Jd5AuaK6e00+oVBD2gLPdvP2iJzvZ8k6y6PweytVRaNzWmv55u5tab0gPam6Gal0iLiQ/6AiiWnoZ7yoR1XpRWLkfG72NxWqJu9It03hknyb7sQ5dR/J9dghfNKVcPwbLoKCXKdACkggL7p2Hf4eEBkNDIy1AEI24vudQYeSkLmqLQfhUUJmfQOUe6pqMWTDQ7yBWA4YketLYBAOyXg3VvZU+qfp53m4WdXyMlaqlZ5RGmAGkrLi77jjnwV5bqv6cKo7qCvRRd28154Yxfctsyn3+rsRt3Mn2TNru3+91+7SDI8974Hxbe7RYo9bz7Dva979biTEiVcYmGP516+P/XySH+yNyfZLRXmUm0146RfcVtbra+E5m3HNRdtLwdfUY/lgDAKFzVA6RSYTnhsc9BdxXzCiHcW+UZomOcaz0RrQGgfOT1ah63GyKHXPSTWSMBkGTjs127g2GlvjcyaFFgGTOy/+ZkFeLguzXwIbFclrx97WDoU+BzupBCpEsjwES39icLFyMuQGhs5WUVK/eCKPOPYKH8EMrLdXWCwNzSYU1AOjm4eaERq+nHZpFqJEbHoXKtURZ/HY9NTRfOaUyNV7cV0lDe4YGSu7MwlsH5pJiwyYMpKXZpONf1gLsbo43DSBc19QzfjTTLbvd5QzDAbmnkjjnyhYbLHUmEBNl8YfrCtXnEY3JN93/IJrTtcOnUROOjP5TgTXTzWjo4XP4naL7ZyIu6zaV08my+MwgBp8xuwiyw+DY1Tk9AiOf7p0lmCYrD0DZp2Gug2PxPApQVKaY8xWV7Re5OdqA1ndzvKsibosloLqB1hNi0b+Axr1bdCzoZln9wEG7iuZ2SF3cnQt6Bk5OHRulvDpYeQfxjCugipsgFRzEijBIuL74TehQxN+Rrmvl8A7pspUIQ7wcoKgos7Qb7rLXe7qP5P3PGCAUapdEpnqpT4iEPHhXXGdNT8ScD9IMkTF5xlNuAg2T8DaTKWA5CSNiS5jtCLc4Oj0K+mifJGBEvNFPQLtUTyz0XVnkDBmPWZDcPpHUEYuEJFWxE/XXBC5DDOLdRadix83BWTDDSZoMoqU77ZIpjPodtqagX8TdhBdQfrybFEGnbCmGaK3LMb6GCiCV5dpQk4SNKWurS7H1WxfZ9jQMkcsn9tkkGr6U7C8BgmlZQUw5GZIPDSx9olkiAyJqz1U7BQduvVo1auzY7K81B1Mipu62IT9HlEN4J1qHM/Sa7Bkv4AK7edGJgdjIBLYWAmj9mx6eLEW5H1SyB7niTrANkGEFGqITshKgGmdrjhLnoi/bhKWw/i1S5AQRJnRJJAjR+pm3kpmHgKmPhWJIpoUZAXtguZQerQZhagji9pT4funETppix3EjeWZufoLBgU6nccJsFhWgs384XNbrEwEEIMImZMmkjhbpKc7S7yZMAcqn2OgkUnDI5dExE3M8e+6dnQHsNmFwoe0AvezhX4llNNR5oP7tIRXAR1bWZ+8ubdazKulEzbTQXhxFqwnHfcNmWs4w7LuOk8GTWbBAjMCyy8LN51bXm1LVsP5hdZLahBdAiMUcZDnEcnh/bFdo0HdWqk1PPtkLV8O/KNuxiTCmsdW1tygfeYt9r4HhZ4j6WSmRuxi87H1IcY9gf9RcZiyD4Mu/fc8N6NMGwsBIOEP/10ZGa2JsijYMM7hOcwRQlRnhlwvEVE2y1uBDLvklT/hZGpXB8mWN/5gDu2w4BCSNfNjQVE8GdJr0NKCu910RotLFOUXVpDziGJczIMykMcoc1fTpMgu3UNZHzS8ZDUjG794xDSORFpC8BqcnJjvkuTxmAs22RNQ7vz5f70k2/2iB281+ZX3U+SdTgbG/RsgAjWH00isy8sTD2vjCrkkhAONS4kh5uCr+MBav01oPYPu/wVmGpzN0k2maU23iNn4BZTPOqJU5DAPapEUcrPJx0z5qmNjplO2LIuVNfOgNGlpa+IrL01eagrHXzOM81gDq0P8pdk2gUBjK2FmEQsLzdCJtH/OWYS/V+MKNG4059+sSon+FR71qFEWvEYdc8plAdEGXQ5lCbGixfmzXRSHxA0Ga0wQZ6FZiEuCLsZ8cFb1U333oOoinnbJ3AGy08HIWEc+1weUViwve+Fz7D7BowEpEuCwB1N94ABqTnQP4hhIP1FbmLZcdL+xk0sW7SVaTBKZppMudB67uCUqwrwT6obSP4UL1zoPTwWND7UdCkyLGNWwWh0Is+WIz812rWfgZL34ZZnqyIT892gEtqtWOgRsiObmBOwx5ACwb34gQbOX2ALqfDLQP+THKSSDsFY5RGWwLkVxxXuft9FiyLtf5FTh6u+impknfXCAlBtNjjkxDSUrC6hP5aGBj5+vzDX0E9PbmIyyJL04+feoaj/VS3O/S57rexPYq3v4XFYKy1MJBHFzZMv8rDAJ2H/+R1y2Kef8Xoi6URkt9Anyr/G7X5JHwAz3HSaYwe9nwQ96ODjD2bX9UfDi3W/ggMP4N4i2roUV+s6PEEQbGGzgWGP9YFpZUqslzJxdEfsWmIH0ichrPd5lcZ/nm3WikaWwEg6S6GgwFON36H8YTERFtJxo852A4prUf3OgCfBsCS4DF/bFkj2MBA6h6e9O8oEsOSag+wv3DG5j8iCTjvGkfE0PjbVYsnRh4/P6PlmzMa/+xM5s4sqVkc3K1atB3BH6Ppmkiik8ECgb27dhOwohacbdSavJqKBIyABVO8lHnjkmKNWSQ/8wva4m5fpucHcY/m+aQgkiVMF2JxF2JSaWN6Krx5iH/bP6eJoC7dv7trmLh36MnUsfDYtuZtD3UI3HVPZK6vYtrlPAFHsgviiUod5vULk/HeROoxC4OdOfkIEzA1cw9bf+KccbDap5VIYFW+lHmYOHkHmnpTlgJtp81clI4+nXzGpy4XwIRRAYatg83KuG75+flOJT/fgpPevwvxCZ0E5wFqr/zWYH06zGDea3cz83veT5D1jfueU+X0p/8K/CCcT3ZZ30J//KE2XPHAHPRbenOy2aKreVJX1LbRGP7umKu4C063uqqmKooU+8KfeuRjrvYOfFoahHSqx6BJc/rO3s2FKvLnHXtgPJy0oP41v5NmqDfK1MZuhCk9QF6IbOyiQA9gICrVOomwJlul8JF9/QhbEhECIPaI2LPBIsOqtm5K5A1YYlZcKfZpctQhQ5GKGbE3u51NCROy+GcNHqMbLOGtd8hHrDStpKh31xe21RetrZd2pYQSh44XNn4T14c8MYrYK5iKNV3FuMzMYnR9ifg+DSUITZy3SqpgslECMYXAlUVqw4Xy1+DN+CmUxJZoWTMwW30+h7znxp4v7yWZu3TV8mD0X0t7u7WAdxBk4fqwLWhHWP2MLhLu83Z/b6XOBA4a0/vmxuwBdxalHrlYsRj5aKOyDzG3gO6kabLzwB1904bSr563ISSJKzwxpy4OoPecR3p67FfkJdz52sCbRDitNHFzwaOSkJVywFEAWWArnxq3qiJhqzfTduQGNWhowGypqYio5y4gxOkgQy0BTjAEu0Ad5Q8KBlFaGRzyBzn8MPmpW/ugqyT6K+hEytUy6gBug86LPJwrMMoOGNV54hnc4CRFMru1jwkiCzjV5UX62iiWqsDo2rqiJo8m6F/7u1KxWYAMFI+B/qGpSamADCYcGOBL9UlJX4kJQBX6MbhUyFIYpVXRYrMUgw4zXKKKuxzqEvydCjZ+QeqUp2yjLr+tRVO+JVa1qyZF0GkRbDyCfPkZnaG8v7Bn124BvMpcXfkIu99xXNxELMtCrbU9xYN8M64P3/DhIEKvMLLQZTqbOk4RxdtxwNOAmbDRqHerOUq0rsGynb3pzYKaar8AyhOoy+8lgIzx4/Z8IWHjnuJtVRjdAO4WDvXbXYQZKXg1Ce0gFoR9+59AlnOxAw94b+onRrGiW6/HcNm6raLw0tDBobrlgbVudHvPfKVMUJKHVkxBkvQs7h1hlwLs8iNmL8Vj/T2jw1WsnDFu+RCzJ8y04QIMuBC1xmKbHRYfk1sRf4RMTHeZWDeMjTMAGk1Ydk+LRw18j372ba4tO+8nrSHAd7WhGj7NH+Atw/g/cbT/f6SXaCKoJSVdE8KgG6HoUVXHHauL7SdwHmbEaCRF+VS0FG4L5J3s3zM9sAnaFJdSydkhbcsaVkFkyg0/6NQbTFnq/AUxUldHVFN1KYGFAlIktrOwDdZTiVjI2K0kViR0jK0kwuaWlTqoOBmsQnm71uUx1//yJ7zAuIuS6nAGZWtXI+PBllGhtAVPryZfqU6A7BNjrc7hj1Mrmgp5Kr+xltqfuetoCq2Xnomu1W9FqmfzuWm0VrbbvzYZgtY8WXW0KIaCBKyx5BlJ+HO2zK+g2pvasxAfveBmYDRWq5wNxTjz3t5oTWR8bKphzTZ7zn7HO7kaSrXNKNSqYR/w5PfkxndhrCaZbB6OTchfuXkU6NpU+WOEFzW5T2OOPXaYxzKQ5BRt1kTnRnJJMLDfng70/mISeU9Ui3k5svmLikjls57n1JNi+B4e8cRxGf6lWjAcmMij3MXUapbWfO4A6tobj6yRS07k42OTcBUByzO0npaS16eERNDAMjIq6Xag30fx35rjm3jHcepY4GdT+bCLmyxb91PZTLqg9Ia0XqafblkeQQj/VziFma37yJLil8SQNrfXDKN0rNKS+u0jfeEluI6RvStNdcSZbTilQ/uPigt2kuQih4+B73HN3R1pNfCmvRWy3NtwwE7vbe4ng8hLf4kPSVRZn1eOhjazedjaBB7PFQeZq0dzQSJT1ysATjCePHTJJPwug2+DGyo5pSoZtG2Ds1hAkzoLSAL09yCuILG3tI4eUyca61SnGHZIo+Tk6l/Z9OgeOzxxVUnkpyQuE8DLwJcjdKbiS6xJio+8KAPC3YwNb+xoOwgfq0ED6a/EyrFF/C1ZCwAdpVhR73VwaR3oM4jy0shSiTMrAcgOs+Y9dfe1gEq/ZxS2ypWXH8dhqIC4bH6TLjjMS1qK4UmBPd/TSY/z12lS0oGoo674mLMV68vjOQC2iDl+Y7RYbTv34JsdIF/F8oPvkFk+dCa3htG4rf0EfABwYuVYqmoiz8MDs25vKkaMqPDzwVwtjdvVHIlEZUPNVFBfBMRHP8ArbmOgWxSH2CL/FnIh7WfFt9TqLHj57hLUY0OEqEL/mXvh76C/jGqtiqBsMCsY7GXdEVwA+EiaCSvwU9OU9rmM6OfUSQ+472OpyYPPfXuLDiET9w4l5403SP9HnqCPWEKhpUf9q29QYgUM0d7aftscJV39Dm+sdU8QXhTxuImDiOVbj6LSlDKt9ZzyOlCky06/TLcQ3iBfYlcKktSvr2OqRloKyLVygiOiVlC7DY/4G7koMElsW0DMC6O0OBcyF/p2oUHY07AyOoWu7S/vtyd7TLpNwSxilu+JFUFU+MluRkUkmr5vN7hKzD2gePX7rBbd9FyvYUDjtiK0zz2xCCPNph4Imqj0tmjY0YcURwAWBQL9CUSKHq/pYCN6rg9yYlQrswbVXo1KhqKTGhQtnPaZhNp7BS1V/NlVsTlYd5qTHteZNLqyr+Xcbz1rAOoxp7jzyoCEjllJzUb6ziE6ruI/jkI8o68FNYLYnY1HCrzd51YMC4pcuiSQwjeYu1o1aaPgJE6oJatnSEaFH2C0Vn+449EcYJmLuAJP/jhq5uUcu26fMCYjD65dmXIszhVJ7/nMQiynhkjbL1tUvYLr8M/8pSus9JJU1nDqHSkGA0yZC05dAKkOUX80vhNH2SZcaW37D99HxiV5HpBdyf/e2+3AkFSZsVczhwq5VQcpeaFIA+mz9hMh+yLHPHAcYsUGDolIolFbdhbeCJiNDL4ungySZDkBDH3RPaS9wIBXKPqrF8PjYT9ZiZJqLIKiry73QNArHkelHCF1/tGuQ28vAJ1ZDvjQXWG7E3eUgSS7hgpetnh2QvEvkxHoaFhoG7RGtY+MrpwfnTnLiufsjLrsJfSt0X5g+cwQyVeqDGnfyubCWPD0k+Ga4U+7Ztg6rpn9Or51MUDbQ48AcVXqQguZi4uqoRoORTl3r43GfjgtfXVBAQpCh3gdtLGnvQZHtk6Zn/cHZwA6jDzwXGkRO4NuxTQb0mSmI4l/yHPHELbT/Mt4bnSl0w5fR9SJ9AKJzras1nrECKagiHpHEIVcThm58/5T0PBpSX4AFnF5S0zyeUcUR3g71Vi+AUxAV1FxKi5KoPyV+BpOnWgh5MPqogXLbqTUHUwP2QKaqqFXlwLWiWusT87oEVokr++QIqD9sa9RB+slBTj/sg93Pvg8gM6kT94gUa285tMwJiq4QHOUQc0I7VSE88eDVlFtNiyz2y2pPC1nOXXL6g8W0nBkcz3kVdWkTyN3Vk5Pvz5FekX7Y2R7XSJgCxsBn7gqAQUpYgwpYg0g/Z1EZlEXwAzo1H1FtIIrhk0K6/Zc4/B53lXOlx31s0YxK1IykFaLWsrjCA/W3aGVIPxFRo9BgoKZDu4fF34oZkKzY/ut26WISRNzQe5zYqVojHa/IqWHUTErz1H8i0T/zqRzBxdGOHEQJDOlTq9pkg1wSJ5LGDq962Kt9bC/QBg9so7UWWe/vVtv74+iLYY8z4mIX7v1RN5KXpqxI49yR1beqlylcCIHL4nhaULEcuMvt46htmCD1WvTUblZQ7RJiF1nBInRv+EOrKs3SRmzZvFZ2cgkV4dhAFCy66isCQlSxQe6ZJmUUIBap6XgJ/ENaF5IVgrNpbFd6NLTDDCexA/ffirKLkWbEC/two2vglwlb5gIrPyPA3+PH3dvCjlQmZYlxKdRn5cRxR6PSGps9dItuoj0iBXTRWdCWXsZJnFmLUGdxbyEsMBmlISviHXSFoX4WIRrgtQOUae6XQu42wA0Wy+EBTh/P0xEVyhv6P3RsN1Z61KtwRox+gFIbO2n6pXP0xbkBiL2P5rm+m0ZsS1fvfQHaKrlPBxmRs8Qcmx8Etp+tzBnlxkTy0K91vCtycOEmwiIcHPmWVKeFqiDSpGGCLtDWFZ8Cvv2ez4t0wkYL533U/4PFlZ50jVpcUbprP9BswSuxscuroXSAyiQK4xFSFJGd/bMeBg/PbsUBS84BUeNk39HD2iqRNa6aPVkYOKqfED2GUP3mbah+s53qGQFqdh0ToP72LgS42U6AXLPq43W+G+Zd4MBtGrfdH0v4m7cl/GtO+OBX7ZbdZcjMZcHaWb/qjAg+R/z9QUS5MPxWj1G50yEjOh+gW7+MJLenaScjz2Wa/lycnF9Tg615vBhbpZNFI4Yn98NCJ+pPlh5QdquaIocSOig7Kkt55G/O62HRq7K3uMcKBqbGNobjRSo07x6i2so8aaLr3vvS3P30u7rI5OiFe37yGV1kX9AJguB1W4U+GDCjnZRxkyRTEO/UnPX83OYv6vSQJl7UC3Nll4E50gsuo/osy7ijIwPCsxE/wLhGCda1xC5u/5dIxDSNpgPVIcpiiFtRRrbK9Hnti69+29NXg9mO0kjHU/gdjf0jLOB1ZmqNuq9dNzXEPo4Sesa26JNoxi+6leGvZiv32C7Ctz+37i/TaMcUIKq4tlnDIBFo/1hXlOGy53Ombpj3knis+k59ekbCGKFfVDNn0cdn1f3+9yQZyVmrmz3PZaznsMWwMBTWD6OjC4RUdkqT/YvXP/UX8f3PT7EqzS4Zh3xo0ezkfcxQ46py69aV5k7rrZZ5yZd5yZcpVgZYZKGxZtWH3He21PdkqSVb6mdZwOfZp0txnwjwSJg/m6cwmZmVSIlybv2bFb+WA5vvVuO/eGkiqPrjL4xk5RTlEoLquCLIADRffiF6/hL0k4NPbOdhz6uAm+h47ns9Ff7JSuJKKljoyZzsEn0FxeVmD3sRb6JDgRUcPiOWT/iuo+xLdK9dtsbINiFGtoBKa61giloMgF1iLgh1C7YHw9qk2Qm/QnaEV8jwxWibzkhnGyqsj3wLIxL3kYOp3/ST5BtqAAQ1uwM9XMphQSkzcJVr76SPo/eTRhLi5KRZlBezWIgbSZOFZT5467D/E6EH10dvw4d6sHNG3NMGg9+4QqvhMxUAxg0PKOg9diDMzA7NCC6OpJJuggYHCZh7sbIIRXxAGaQD+HrMVGnFBUGWTGkojr3ENV2aezOY0cuwCGRbyNO1eWJhykg0+dwI2BpqlUkRyr43eWAS6y4Mrzqbd/gtU9scxK1GpichJYeIsP7L4CKch89kF1CJmnq9S4+AnINyXryvw5JNWklNyGm4iDAgp8J7AsWP0X3WVgyc77ZgQOC7xqW2uxAuGOQYBgqJlR+Q7kPjmN9MZn6yE8LlWDafyPQo+cZMb+OOTE9+XrL0/DZHN1NauIojbnzQ5RFUlOxdUt4p+e4OyYPBOegPCD8iOe4Sb4HfH/VaGbA7gQidfytKI5IMSulX+Kv7XRYLCc2rVo4XKuMksZnpuKCH2qZ3/yzfKuo4zLUJiIFjQ3NvJcL8Il5Y7VQdE0Pfqm2Qg3+JHQ8kwYAIZheWb8NmYJINqsqDPfk+yOsi6fVRJlUrkbBSl56nPm53yDlHiiQwvTLQ0MuO4TkK5Bey3U/ZOLwB4ZFRDUQa+eQkVjYUm1SONIdZiya8Ex2dUjo6aFaw0di8cjjkyx2Isx6rQdXGJxaedAEmASnNMob/Kdv65dCbMnZz5G/IeDhMpQ74hBea92M9B+57+6vCg93lzWdJsvkMylRTnx/VVNxMtmyxLSQA30aXRvGFcK0wL70lDEwPzYmaOiCTZDC2t/LsfYp9qH9tHw+jneSeuKtQQHTPqHL2u6dJ8u4ptMAgBdqJihvksOZmatoqLWocxJJegyUXdMnXe0lyvae//rAnTh1ke5upJ7tdUwtta/3UG3Tqh8+S5CHs8qNn4tTBd64m8CtbbscX0JChYOOxUJaDx2a43/v4lz//3PRnlg7fpWfZ2utBsvtisDodfYE51tfXH25uKv3/9fV1/v/1rc1H36j1B1sP1zc2Hj5c31TrG99srD9Sf1n/ArBEf+Z1k1Z/Wf/kufji/kX+/FW9Tusmq6b5ZLK09D/+Hf+lTtKiyKr/+GpUDuu1tK6zpl6rsnQ0zVbMT6vns7P7S0t7ad0sq1lZNenJJFP5ND3L1Kwqh1ld58WZOi0r9bIcZSo9y4qmXl1aIpPMqvIiH2W1SlU9TScT8/oKeT052Ich6qy6yKqVOh9lZrhhOcpW1X6j5nVWLx2My6Ys4MnTtG5UXrhBLESXZfVOpcVIDdNCnaawwOE71ZSqSJv8IlNNWU5qVc+HY5XWS8d1PquPl9W+fvlFepYP3y2rp1U6G+fD2v1bT3Y6nWVmkadlNU2bWjXjtFFFlo1UdtVkVZFOljSsQ1XPZxpNq0tLu+Ww3lZ/GzfNrN5eW6s8QlaH5XTt70tLx8fHTb2UT/Xz6jc1rLK0yQjePqrTqpyqe/jmvZ2lpWFZ1I3C79R30Ztf/bakVHaVDedNXhbb6l46b8p7y0tKTfJp3tTbSj+gVF7M5s1BfpVN6m31zdav6+vr+r9l+LGcN62/flxe+njfw5IXp6X6TqWXaU4BW51V5Un2FexMb356mlX3d+wb5xqdwhtZoZFIX1kGUA3Wt9U9/SIspMrq/EO2rX5T0/TqTT7KttXGw/V1DZlS7+fpJG+ut9W3WwbQtTX13d/Vb2qUNukyH01N82n29nqWbat7MPOa/f4yHzXjZTXO8rNxs6xOrpusXlbTrEn1ONvqXt1U+WyWje4tW3hGy2o4LuusUB/17i4t/fWvmrbdVi+ydeVM71l9f8cM8HacwenINclVWaanH5ejentpaUUdWwzrbbx/rP7zf/8/pQ+vOjYrPF5Wx7AG/cGsQn+CdcBXaZ1MZuP0eBnOzHFZ5VnRpHr+Y0N6zThT4ywd6X24zJtxOW9Uqk7nk4kaZXA2NRRNlRb1LK2yYngdAGOeUcNyOi0Lu25/gvSUVQa07yHpjzXTmRyrOpulVdpkk2sDiH7irZ/GUuUxzO5oRs+7rCz6nnh06G3R27NintO8IC1UdpUOGwvKstLHY6XOJtmwUeUsfT/P1EWtcFmNPQzL6jRv1CifZkWdl4U9TYC9NeBeaaUZC1CKOpmPzjLNB/QW1unUb51Kq0ylk7pU2ZVefjZSaa3qJi1G6aQsMnU6L4awCuBe2UidXKtUTdIP10uj7DSdT5qVYVmc5mfzKhupvNCvDrPtiKEAdSwruj3LyqJB5C1AcYmqmyrVxGLxo4ZlcZFVsOKvstWzVfVssN9fS37a31P/+X/+r/r+YPD0vibQ83nd8P34jZ029fH+MZCSKkp1bLbneBXGUIOf9/cUIUIgkVmVT9PqesUw+GeD/T0z83Felc3x2nE+zatjs0Y9k8HuKGuyoUasZtkaDVrI6NHMPqqzrJxmTXW9SiSjSmezSZ7pc5ZN9dZM8mHeTK4NtPokTNPhqzfKCA2zNcVoR5XNOKucfDEUX9Wqypo0L/RreaWyq7xuNAjDstBfZ9WKB1idZOP0Ii+rVXWQ1rU61sT4CpCwrUVYnR1rmq3f5TMPVIAkLfNWl5YGgHa3Qk1PVT7zzEqTkKWdVXVMWNisykDo3jtWZTG5Vu7f9ZJ/9XKcFRRPWrZWWTOvYHkalrO8SCeGP6p5MRynxVk22lFWXI/KrFZF2Sxpcq8z2Oa1pwdv1vb7/bWfXxwAz1pWl1XeZCBuh+XsWjO9elnV+rRe6ycmuMdmbQRCZCV1sDjPn49XgRX3zJ7VS0vHkXQ8BhXDwUw0C01CBy+fLgONLqun+3vL6h/ZyYFhmr0XB0uW1BuNp0DPAMyl7hhpbaH26oIK1QX1Y52FUOWFefAe7P9pWZ3kIzUc55ORU7y0NCorFbzlhr93vNSUeklmWylYqwC+E5JAk1U5UVX2fp5XWksrEEhL5Usn2TDVgxn0/K/aDGGOeuV3WKXDYTbTIsINXmeNJvxQH6yyU8B1UzoJAYe7NidtXrwryssC2Wy97H6fpNVZVmndC0hvKeCC+lzPtFywnBdwYxiMavSLTTSAwgGWLGegI6wu/bM198/zx9l/o7xu1vJilF2tjlab+rPO0W3/ffNg45tHzP57sPlo40/774/4s/b118bEsSzanFKjV+CxXFV7+SRTs7QZG+WsbqostQJVM6NCs5h0orlJ2ahZWjWqPIVjNJufTPIh6KnXWbOqvl5bMqqNaq5nmZl7Hw7od8qo9ep39WNeNN8mVZVeq98V/N/8tLOk4QUNj/AAo9iCzpIW1tozmqk+5lkg/GQAXjhp8Z21fkA13lbFfHqiZ9VfGSUZv/togDGwO8WVicJ8pDFzahVVA1O9qnYNZ7P8XY2ymZY8qizQMFNTsJiLkUov0nwCljVIhVpewZ6RI9+pe7Pi7J76Xd07y0/h/5fZyQw+nEzN/5v81Pwyzuwj6YX9AGqYWdcrw/NaFmaQyqRFl5RQoZRQRt7X6jS/ykYrbgQYTgulaJFWhWFrNWrj77hoWKxZwDPA9orVXMqTTDN8o+N440ZrpqkajrN0psZ50QDCp+m1OslUoS0ZkNJWGhjtDAWaVVnyFpo6gDm/YwT2Py2BOc2XLMiSmYVtW52U5SRLC/U7gGJ+Jcqdo8TgdzjEEY3u6aWkelRtEcwysCA8Ot6O89oK29rIuDpwZ1xqq9UdqGFawAmvSq0yEOtBRsJb8oQ/XMyi8yv1CIisOfKIXVLfaCagR4GSTQhUb+CkTEexwras6ll6GWpioAtoyjwpm7G8ioE7lS/0ofzOaoWa3rwipv/h9SsD4uusLicXmljMbNrU1fRVpNOsXlWvjZoMZNaUappq9xSApOaFP/QyQH0zlJ2hUt+pr+zo26AAF2f3tVPDfLQEon5XB1U5zevsb8H3f7dMtSpH86HWvDJtI6bVtRrlVTZsygo0f31QDV2Y5awApNrAqGfpMIvZ0ttsOjuA9yiYBC6LJdw3Z6161QvofNXye2NQg8TJitOyGmohlZ2WlbOsFIMNeak+xZkGgMgMPY5WJoGzhuyZLQQhfGUcCJ6Q/QxPtgVCMeRswH7i3GrMtfYklDHct8Z+/mj+p3coGLAqy2Y3r55se8y6X8zG+R/U78K2hGPn06ycNy/41NP06sCcISOJe5rRsGeGIVU6pDBi9Uf4tdG/tUehyc6uV9XxsLzIqmM1zPSpWhlW5axW6al2DNXDdKIXpo5P84n2ATVV1gzHxlAwDhvc23gHYaa9HGRGXmgXMhxYmA8+nRonBwFLC7OsblZVz1vHKvBbW1tYpcBQFRAryA9DalkBBkUbMJyUTvPmyTYC6pGu3ZcMzaCbPJGUE/alBeFJzD2tcPdG8jgtRhq/q45lWjZvrG9tcwOXNG6w/CIjzoDIZO/WsA7KSQ6iwBjgRng7P4MB7h/afT5OZ7OsyEbg3yjn1TBDaI3vxPoZQFVtBDxTjcHN/qZJm3ntZ9fmPwVgdG9nCd7tpXVm3uf7ZIxGv1X2Z4Nv9M48YTKtzs+KdPJkWyUnZdW8gX+ZX9a+/toc1q+V1xFmgCOtJhqyc6gCpqcVFsPv1tBxmV1kJvRRlCvlzGpn9aobGTHMHDlqEUdOqxPHDa+9MOmwmTM/jB7GeGOIqynUAsepVqXw5+Rg3wG9Zk6A/cXxkpCMPD2Di9Diwnp5V9Wx1SpBy9tY2Vhfh+NpDzNwjm+3IrL5fpad8a2PyYGrcU5z1t/ZaZ9EatjBSwHIYTnV26EZ1w/ZhfZv57VaX3kcwfowAvWguAukWlX2/DqYOoaYeHIkvHYp/N7FBxTXru5Hq/pHdjK7w7Ks5t+5Af2yGFZZk61YrxtfmdHDVzRDz0/zodYPToymAIu4SCf5SFtpxnM7TZvh2AY4p2lsBbyxw/DFxBT2e7yVv8d4MGt4YwMJThvTh3LF+KTMeoCNB3aZjT343fJb5fWXFuZp5uIsEKWSFg/GhQh4/vf/4PhveUAgPOFJZ7yYvdKaTKbtCLvuY7/zxkV7C1u0ZbVmogM/D8rmxQ65+v1uRy1+7yZaDtRstJValzG4aqp02PxNfmBZApsY0x+thRDYckZGtewExCls0MAZlsZxC0boyjCdmVQBaz15UxP1+dzQsbhRFJDIIjN0EuoVoOFN0qbJCqtj7LI4nVmI4QfHqypp1CTTWQQ65AZPqKkOYJ1kRnYWjRGYx+Zt4NnamzPJs5i6QHD5CX8w85HD9A9Bn5umV88klU6r4dwy+GiVFoMcIxmFMytp7PrrtM4ebko/GrbxZFtiBsy2kZboD3Ayb8pp2uRDF2GzaqRmO69MRNX68LVmcGyCrMc7geOfxlutiwIeJt8fR4jXEy8iSSTEhfLliSNu64UBED1m+IGylhSC9mT75mPKXxpe+/E5vaNCYXyrXIz9qDHDQqvcR3YMFG8sJxfAFs6yCZICZlZGVa7VzBY/Kkf0V7L4E7F9X3t5+WaZJYahS6uCziZzrUpozkEjQV6NrEHNN0E4rZxaZjUcl7kWH4GraBS7WKjl0OrAM2FE55am/DN2VdrDJqaSgBcJ/un2x/yLyADm1IOv8NSyE+0jnO32jzMjm3Fe9EBz4PaKzVhh35r0Fep4uGnJAkkTY4uwZfuvomxWLIO9hyPIZrAsHd0vHQLXejs+Rv4n6yQsK++JWlV9yMEBOQAc/7qcm9Su4bxuyqlP8wgd98vgowG/TG3D1sb3V2kniKxyvaapP78541C91rEN66E2LtjTdNjUPuWGJtxYn2Jt/H366NqA6bKaF/CMFrsAkPZ8OLUR/FHGgDY+I584tE3iM/e3vf+Q+Le9D9HBa2MbWVHOz8aOV+torklzmOf12GkBxv1rJerQeuEwnB+w+1X1Etwq4L8lKqyNWlvQ42yjrhVQvkpW8NrmBZnUFpYC5NKCbp/s42CkOTAUOsxP2g6ZKQGbnrO/o+SHf7+aZcZhqtUhM4kJ95BVWu3nTVPNhw3ExgnVZVUFlKo9B+rtOKszMH1qk9ZpxIXLT0gnk25X6UAP1rfK2evkzdvB6xf7P/zw6/7Lgx/f/vr21atff0hePx0AhOTnVz++7fy9l+z++urg7f6rl/yXH1/uDvqvdpPeD9FL+y+Sp4NfD16/6g/evHn1+tcfXyY/Jfs/wKMGIVorsOvX6wRDD3C5rDQtrMD+BodoxSZ26ENtzYoV4rZXp2k+mVehW2qUDScao8OJTuZhuALk6iig+ZfzNlmrSO/KtoReZ14UNexpWX3V+qgWkHWdnmXOGxxQnH7KEdzO0kcjfAGUZlxp1Z2GwlxmBXK9k3JejHTQwAWIsgrcQMZRB65UnYkBIrV0lLoIcn5EpIZ44vhjGPOTbLPjscMwq/1R9bbjlGiiIkZbhxIwaoZ7Qsbz2NSyX53N08qknqXGPdZ2EEXKcdl/Kq/Z8r+Cl/y097ctOecRonYkYCwJr5kQc0DJDpoX6UTvqNvF2pL+yBERMAu99ffI2/cWXgXf54UWxF9yHvx0REM9JjNAVdmwPCu0XhPmCDhJCmdb+3OcxAmkKZA/ix9Z2DrXqAkt0MH2qnJqYtOihAq1TRfb9cty8ofqvSayq+PXoGz4CLHlTloGQUijGw+LrQKk/iJLoOoBVeVVlV6q1097idMN0lo7Rm0YelJerky0vqbG2WSmN0dn/oVO4uF4XrzrPh5G/B0UZ6/PTtKvZjaGjFkly2GCxzJL7lhuVx/vo84PHkWjHqayGgmmq0/M9MxyWdXpadZce7VBK4vLLvRmds0qjCuoMLp8ue6Vt+WMP9mO45j36XfWL2JziH0o1qSRH1ujko9u7MNAFYaUGy4WclkQeqjvpnLKAFN9x8BdB65o8Ku7HI44HaATzk/SL2Vwvc/Jn/ncJujOspGaFxOdZ9qSlbtgtu0CR+WzqKN2it8+7vw3SY7888+ff/788+ef/8Z//j+2sGoQAE4DAA=="
+    }
+  },
+  "canonical_responsibilities": [
+    "OCRM-RESP-MEDIA-HOST-READ-POLICY-001",
+    "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+    "OCRM-RESP-MEDIA-WEB-PIPELINE-001",
+    "OCRM-RESP-MEDIA-IMAGE-OPS-001"
+  ],
+  "source_selected_execution": {
+    "runner": "Existing rust-desktop-runtime.yml media capture on native Linux/macOS/Windows",
+    "script": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+    "groups": [
+      "cleanup-owner",
+      "cleanup-consumers",
+      "html-policy",
+      "host-read-format",
+      "explicit-html-consumers",
+      "image-probe-consumers"
+    ],
+    "expected_names_counts": {
+      "Linux": [
+        7,
+        17,
+        12,
+        1,
+        17,
+        16
+      ],
+      "macOS": [
+        7,
+        17,
+        12,
+        1,
+        17,
+        16
+      ],
+      "Windows": [
+        8,
+        16,
+        9,
+        1,
+        17,
+        16
+      ]
+    },
+    "qualification_controls": 13,
+    "claim": "Source selection only. No compiled counts or runtime passes; strict names/exits/input identities/raw logs/current-H receipts required."
+  },
+  "unclosed_responsibilities": [
+    "Generated-origin producer, durable current-owner marker, atomic conditional stale deletion, cancellation/restart/shutdown fencing and actual Runner/Session/chat consumers",
+    "Generic Host extension dispatch is not evidence of ordinary registered external Gateway/frontend/channel consumer closure",
+    "Existing local read/root checks do not establish opened-handle confinement or full host-read capability authority",
+    "Full file-type MIME coverage, Rastermill nullable alpha/tRNS/other formats, generator inputs, Photon/native dependency closure and full image policy remain applicable",
+    "Real providers/channels/plugins/nodes/devices/UI/timing/security/performance/soak/platform packages/upgrade/rollback and all remaining G01-G12/AC01-AC24 plus independent ACCEPT"
+  ],
+  "status_boundary": "Not an alternative inventory, ledger, source-read or permission authority. Existing OCRM historical read fields, responsibility wiring/not-run/pending states and all eight global completion flags are unchanged. Independent review and exact-H Actions remain necessary; no local/htch validation performed.",
+  "prior_windows_delivery_readback": {
+    "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+    "round": 1,
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "commit": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+    "tree": "819bfd2abe9adc7167fc79d2933058d2dd1a6f0e",
+    "parent": "4fdf18a4906f5ea924e125aed6082de634d410e1",
+    "branch_at_readback": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+    "verified": true,
+    "verification": "GitHub ref update succeeded and fresh Git Data commit plus full contents of all three scoped paths matched exact frozen candidate/evidence through GitHub API.",
+    "files": [
+      {
+        "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+        "git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+        "full_content_equal": true
+      },
+      {
+        "path": "source/host/src/extensions/attachments/media_store.rs",
+        "git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+        "full_content_equal": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/media-windows-fixture-recovery-647e0932-20261103.json",
+        "git_blob": "8e51bf11f5f06aeba4358100e764aee778eb8696",
+        "full_content_equal": true
+      }
+    ],
+    "previous_unpublished_attempt": {
+      "sha": "917f6b4798955ca61fec4af2c32f9256e4ccabe3",
+      "parent": "7a89cc44924bf900731febbb7cc0c3779d61c300",
+      "outcome": "update returned unknown error; fresh ref and comparison showed concurrent4fdf direct child, so identical blobs were rebased and published without force"
+    },
+    "runs": [
+      {
+        "id": 41564137594,
+        "name": "OCRM P0 source authority",
+        "status": "in_progress",
+        "conclusion": null,
+        "head_sha": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41564137594"
+      },
+      {
+        "id": 41564137858,
+        "name": "Rust desktop runtime",
+        "status": "queued",
+        "conclusion": null,
+        "head_sha": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41564137858"
+      }
+    ]
+  }
+}

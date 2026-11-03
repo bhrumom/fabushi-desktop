@@ -1,7 +1,11 @@
 use std::fs;
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::collections::BTreeMap;
+use std::sync::{mpsc, Arc, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::experiments::extension::{
+    HostExperimentsExtension, HostExperimentsOptions,
+};
 use mahayana_host_runtime::extensions::inference::cursor_web_tools::{
     CursorWebBackend, WebDocument, WebFetchResponse, WebSearchRequest, WebSearchResponse,
 };
@@ -13,12 +17,16 @@ use mahayana_host_runtime::extensions::inference::inference_service::{
 };
 use mahayana_host_runtime::extensions::inference::production::{
     CursorWebBackendFactory, InferenceAuth, InferencePortFactory, InferenceProductionExtras,
-    ModelExperimentApplied, ProductionInferenceSettings, RequestIdObserver,
-    summarization_session_options,
+    ModelExperimentApplied, ProductionInferenceExtension, ProductionInferenceSettings, RequestIdObserver,
+    start_production_inference_extension, summarization_session_options,
 };
-use mahayana_host_runtime::extensions::inference::provider_session::RoutedProvider;
+use mahayana_host_runtime::extensions::inference::provider_session::{
+    ProviderSessionError, RoutedProvider, resolve_fabushi_request_model,
+};
 use mahayana_host_runtime::extensions::inference::cursor_session::SAND_SUMMARIZATION_MODEL_ID;
-use mahayana_host_runtime::extensions::settings::settings_service::SettingsService;
+use mahayana_host_runtime::extensions::settings::settings_service::{
+    HostSettingsUpdateError, SettingsService,
+};
 
 struct FakeAuth;
 impl InferenceAuth for FakeAuth {
@@ -28,6 +36,196 @@ impl InferenceAuth for FakeAuth {
 
 struct FakeOwner;
 impl AgentInferenceOwner for FakeOwner {}
+
+fn model_settings_path(label: &str) -> std::path::PathBuf {
+    let nonce = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock").as_nanos();
+    std::env::temp_dir().join(format!(
+        "fabushi-inference-model-{label}-{}-{nonce}.json", std::process::id()
+    ))
+}
+
+fn model_inference_extension(settings: Arc<SettingsService>) -> ProductionInferenceExtension {
+    use mahayana_host_runtime::extensions::auth::auth_service::{
+        HostAuthEnvironment, HostAuthServiceOptions,
+    };
+    use mahayana_host_runtime::extensions::auth::extension::start_host_auth_extension_with_options;
+
+    let auth = start_host_auth_extension_with_options(
+        HostAuthServiceOptions {
+            environment: HostAuthEnvironment::from_pairs(BTreeMap::new()),
+            backend_url: Some("http://127.0.0.1:9".into()),
+            backend: None,
+            machine_id: Arc::new(|| Ok("model-contract-machine".into())),
+            log: Arc::new(|_| {}),
+            now_ms: Arc::new(|| 0),
+        },
+        Arc::new(|_| Ok(None)),
+    ).expect("real auth owner without a renewal credential");
+    start_production_inference_extension(
+        Arc::new(auth),
+        Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
+            is_dev_build: false,
+            env_gate_overrides: None,
+        })),
+        settings,
+    )
+}
+
+#[test]
+fn fabushi_model_resolution_preserves_priority_identity_and_reopened_defaults() {
+    let path = model_settings_path("priority");
+    let settings = Arc::new(SettingsService::new(&path));
+    settings.set_host_settings(&serde_json::json!({"agentDefaultModel": {
+        "provider": "fabushi", "modelId": "Vendor/Nested/Case@Preview",
+        "maxMode": false, "parameters": []
+    }})).expect("persist default A");
+    let inference = model_inference_extension(Arc::clone(&settings));
+    let owner = inference.port();
+    let first = owner.resolve_fabushi_turn_model(None, None, None).expect("default A");
+    assert_eq!(first, "Vendor/Nested/Case@Preview");
+    assert_eq!(owner.resolve_fabushi_turn_model(None, None, Some(&serde_json::Value::Null))
+        .expect("null remains an absent override"), first);
+    let explicit = serde_json::json!("  Turn/Nested/Case@v2  ");
+    assert_eq!(owner.resolve_fabushi_turn_model(None, None, Some(&explicit))
+        .expect("explicit model"), "Turn/Nested/Case@v2");
+    assert_eq!(owner.resolve_fabushi_turn_model(None, None, Some(&serde_json::json!(SAND_SUMMARIZATION_MODEL_ID)))
+        .expect("model names do not infer provider ownership"), SAND_SUMMARIZATION_MODEL_ID);
+    assert_eq!(owner.resolve_fabushi_turn_model(
+        Some(" Session/Nested/Case@v3 "), Some("fabushi"), Some(&explicit),
+    ).expect("session pair wins"), "Session/Nested/Case@v3");
+
+    settings.set_agent_default_model(Some(&serde_json::json!({
+        "provider": "fabushi", "modelId": "Model/B", "maxMode": true, "parameters": []
+    }))).expect("commit default B");
+    assert_eq!(first, "Vendor/Nested/Case@Preview", "resolved A remains an owned value");
+    assert_eq!(owner.resolve_fabushi_turn_model(None, None, None).expect("later default"), "Model/B");
+    drop(inference);
+    drop(settings);
+    let reopened = model_inference_extension(Arc::new(SettingsService::new(&path)));
+    assert_eq!(reopened.port().resolve_fabushi_turn_model(None, None, None)
+        .expect("reopened default"), "Model/B");
+
+    fs::write(&path, b"invalid settings").expect("corrupt default source");
+    assert_eq!(reopened.port().resolve_fabushi_turn_model(None, None, Some(&explicit))
+        .expect("explicit selection does not consult defaults"), "Turn/Nested/Case@v2");
+    assert_eq!(reopened.port().resolve_fabushi_turn_model(Some("Session/A"), Some("fabushi"), None)
+        .expect("session selection does not consult defaults"), "Session/A");
+    assert!(matches!(reopened.port().resolve_fabushi_turn_model(None, None, None),
+        Err(ProviderSessionError::Configuration(_))));
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn fabushi_model_resolution_rejects_malformed_pairs_and_present_raw_overrides() {
+    let path = model_settings_path("invalid-selection");
+    let settings = Arc::new(SettingsService::new(&path));
+    settings.set_agent_default_model(Some(&serde_json::json!({
+        "provider": "fabushi", "modelId": "Default/A", "maxMode": true, "parameters": []
+    }))).expect("known fallback");
+    let inference = model_inference_extension(settings);
+    let explicit = serde_json::json!("Explicit/A");
+    for (model, provider) in [
+        (Some("Session/A"), None), (None, Some("fabushi")),
+        (Some(""), Some("fabushi")), (Some("   "), Some("fabushi")),
+        (Some("Session\nA"), Some("fabushi")),
+        (Some("Session/A"), Some("")), (Some("Session/A"), Some("cursor")),
+        (Some("Session/A"), Some("Fabushi")), (Some("Session/A"), Some(" fabushi ")),
+    ] {
+        assert!(matches!(inference.port().resolve_fabushi_turn_model(model, provider, Some(&explicit)),
+            Err(ProviderSessionError::Configuration(_))), "invalid pair must not use the explicit/default model");
+    }
+    for invalid in [
+        serde_json::json!(true), serde_json::json!(3), serde_json::json!([]), serde_json::json!({}),
+        serde_json::json!(""), serde_json::json!("  "), serde_json::json!("Model\nA"),
+        serde_json::json!("\tModel"), serde_json::json!("Model\u{7f}"),
+    ] {
+        assert!(matches!(inference.port().resolve_fabushi_turn_model(None, None, Some(&invalid)),
+            Err(ProviderSessionError::Configuration(_))));
+        assert!(matches!(inference.port().resolve_fabushi_turn_model(
+            Some("Session/A"), Some("fabushi"), Some(&invalid),
+        ), Err(ProviderSessionError::Configuration(_))),
+            "higher-priority session selection does not make malformed raw input valid");
+    }
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn bound_defaults_are_isolated_from_cursor_and_do_not_change_route_authority() {
+    let path = model_settings_path("provider-isolation");
+    let settings = Arc::new(SettingsService::new(&path));
+    let inference = model_inference_extension(Arc::clone(&settings));
+    let cursor_default = inference.port().resolve_requested_model(None);
+    let fabushi_default = resolve_fabushi_request_model(None, None).expect("environment or builtin fallback");
+    for provider in [None, Some("cursor"), Some("fabushi"), Some("codex"), Some("claude-code"), Some("openrouter")] {
+        let mut model = serde_json::json!({
+            "modelId": "Provider/Nested/Case@v1", "maxMode": false, "parameters": []
+        });
+        if let Some(provider) = provider {
+            model["provider"] = serde_json::json!(provider);
+        }
+        settings.set_agent_default_model(Some(&model)).expect("persist provider model");
+        assert_eq!(inference.port().configured_provider(), "cursor",
+            "a model default cannot authorize or switch the configured provider route");
+        let fabushi = inference.port().resolve_fabushi_turn_model(None, None, None).expect("Fabushi selection");
+        if provider == Some("fabushi") {
+            assert_eq!(fabushi, "Provider/Nested/Case@v1");
+        } else {
+            assert_eq!(fabushi, fabushi_default);
+        }
+        let cursor = inference.port().resolve_requested_model(None);
+        if provider.is_none() || provider == Some("cursor") {
+            assert_eq!(cursor.model_id, "Provider/Nested/Case@v1");
+            assert_eq!(cursor.max_mode, Some(true));
+        } else {
+            assert_eq!(cursor, cursor_default);
+        }
+    }
+    let _ = fs::remove_file(path);
+}
+
+#[test]
+fn fabushi_default_consumer_rejects_invalid_source_instead_of_using_fallback() {
+    let path = model_settings_path("strict-source");
+    let inference = model_inference_extension(Arc::new(SettingsService::new(&path)));
+    let fallback = resolve_fabushi_request_model(None, None).expect("environment or builtin fallback");
+    assert_eq!(inference.port().resolve_fabushi_turn_model(None, None, None).expect("missing source"), fallback);
+    for bytes in [
+        b"invalid JSON".to_vec(), b"[]".to_vec(), br#"{"version":2}"#.to_vec(),
+        br#"{"version":1,"agentDefaultModel":false}"#.to_vec(),
+        br#"{"version":1,"agentDefaultModel":{"modelId":"Legacy/A"}}"#.to_vec(),
+        br#"{"version":1,"agentDefaultModel":{"provider":null,"modelId":"Model/A","maxMode":true,"parameters":[]}}"#.to_vec(),
+    ] {
+        fs::write(&path, &bytes).expect("seed malformed default source");
+        assert!(matches!(inference.port().resolve_fabushi_turn_model(None, None, None),
+            Err(ProviderSessionError::Configuration(_))));
+        assert!(matches!(inference.port().resolve_fabushi_turn_model(None, None, Some(&serde_json::Value::Null)),
+            Err(ProviderSessionError::Configuration(_))));
+        assert_eq!(fs::read(&path).expect("unchanged source"), bytes);
+    }
+    fs::remove_file(&path).expect("remove malformed source");
+    fs::create_dir(&path).expect("non-file source");
+    assert!(matches!(inference.port().resolve_fabushi_turn_model(None, None, None),
+        Err(ProviderSessionError::Configuration(_))));
+    let _ = fs::remove_dir(path);
+}
+
+#[test]
+fn fabushi_summarization_consults_the_default_and_keeps_cancellation_first() {
+    let path = model_settings_path("summarization");
+    fs::write(&path, br#"{"version":1,"inferenceProvider":"fabushi","agentDefaultModel":{"provider":null,"modelId":"Model/A","maxMode":true,"parameters":[]}}"#)
+        .expect("seed invalid persisted default");
+    let inference = model_inference_extension(Arc::new(SettingsService::new(&path)));
+    let cursor_options = summarization_session_options();
+    assert_eq!(inference.cursor_auth_for_session(Some(&cursor_options)).requested_model().model_id,
+        SAND_SUMMARIZATION_MODEL_ID);
+    let error = inference.run_summarization_prompt(path.parent().expect("temp directory"), "system", "user", &|| false)
+        .expect_err("Fabushi summary consults the checked default rather than the internal Cursor model");
+    assert!(matches!(error, ProviderSessionError::Configuration(ref message) if message.contains("agentDefaultModel")));
+    assert!(matches!(inference.run_summarization_prompt(
+        path.parent().expect("temp directory"), "system", "user", &|| true,
+    ), Err(ProviderSessionError::Cancelled(_))));
+    let _ = fs::remove_file(path);
+}
 
 #[derive(Default)]
 struct FakePortFactory {
@@ -160,11 +358,24 @@ fn production_inference_settings_owns_live_route_and_usage_persistence() {
     ));
     fs::create_dir_all(&root).expect("create temp settings dir");
     let settings = Arc::new(SettingsService::new(root.join("settings.json")));
-    settings
-        .set_inference_provider("openrouter")
-        .expect("persist provider");
     let adapter = ProductionInferenceSettings::new(Arc::clone(&settings));
+    let initial = settings.get_host_settings_snapshot();
+    let committed = settings
+        .set_host_settings_if_current(
+            Some(&initial.hash),
+            serde_json::json!({"inferenceProvider": "openrouter"}),
+        )
+        .expect("persist provider through the conditional owner");
 
+    assert_eq!(adapter.inference_provider(), RoutedProvider::OpenRouter);
+    assert!(matches!(
+        settings.set_host_settings_if_current(
+            Some(&initial.hash),
+            serde_json::json!({"inferenceProvider": "codex"}),
+        ),
+        Err(HostSettingsUpdateError::Conflict { .. })
+    ));
+    assert_eq!(settings.get_host_settings_snapshot(), committed);
     assert_eq!(adapter.inference_provider(), RoutedProvider::OpenRouter);
     adapter.record_inference_usage(
         RoutedProvider::OpenRouter,
@@ -182,6 +393,103 @@ fn production_inference_settings_owns_live_route_and_usage_persistence() {
     assert_eq!(usage["providers"]["openrouter"]["outputTokens"].as_u64(), Some(7));
     assert_eq!(usage["providers"]["openrouter"]["cacheReadTokens"].as_u64(), Some(3));
     assert_eq!(usage["providers"]["openrouter"]["cacheWriteTokens"].as_u64(), Some(2));
+    let persisted = settings.get_host_settings_snapshot();
+    drop(adapter);
+    drop(settings);
+    let reopened = Arc::new(SettingsService::new(root.join("settings.json")));
+    let reopened_adapter = ProductionInferenceSettings::new(Arc::clone(&reopened));
+    assert_eq!(reopened.get_host_settings_snapshot(), persisted);
+    assert_eq!(reopened_adapter.inference_provider(), RoutedProvider::OpenRouter);
+    assert_eq!(reopened.get_inference_router_usage(), usage);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_experiments_apply_reentrant_settings_notifications_in_commit_order() {
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-settings-notification-order-{}-{nonce}",
+        std::process::id()
+    ));
+    fs::create_dir_all(&root).expect("create settings directory");
+    let path = root.join("settings.json");
+    let settings = Arc::new(SettingsService::new(&path));
+    let experiments = Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
+        is_dev_build: false,
+        env_gate_overrides: None,
+    }));
+    experiments.replace_feature_flag_overrides(BTreeMap::from([
+        ("settings_commit_order_gate".into(), false),
+    ]));
+    let applied = Arc::new(Mutex::new(Vec::new()));
+    let applied_sink = Arc::clone(&applied);
+    let experiments_for_settings = Arc::clone(&experiments);
+    let _feature_subscription = settings.subscribe_to_feature_flag_overrides(Arc::new(
+        move |overrides| {
+            // This is the same real consumer called by production composition.
+            experiments_for_settings.replace_feature_flag_overrides(overrides);
+            applied_sink.lock().expect("applied gates").push(
+                experiments_for_settings.check_feature_gate("settings_commit_order_gate"),
+            );
+        },
+    ));
+    let nested_receipt = Arc::new(Mutex::new(None));
+    let receipt_sink = Arc::clone(&nested_receipt);
+    let applied_during_callback = Arc::clone(&applied);
+    let weak_owner = Arc::downgrade(&settings);
+    let _timezone_subscription = settings.subscribe_to_user_time_zone(Arc::new(move |zone| {
+        assert_eq!(zone.as_deref(), Some("Asia/Tokyo"));
+        let owner = weak_owner.upgrade().expect("settings owner");
+        let current = owner.get_host_settings_snapshot();
+        let receipt = owner
+            .set_host_settings_if_current(
+                Some(&current.hash),
+                serde_json::json!({
+                    "inferenceProvider": "codex",
+                    "featureFlagOverrides": {"settings_commit_order_gate": false}
+                }),
+            )
+            .expect("B commits from A's timezone callback");
+        assert_eq!(receipt.settings["inferenceProvider"], "codex");
+        assert_eq!(owner.get_host_settings_snapshot(), receipt);
+        assert!(applied_during_callback.lock().expect("applied gates").is_empty(),
+            "B's receipt precedes notification completion while A is draining");
+        *receipt_sink.lock().expect("nested receipt") = Some(receipt);
+    }));
+
+    let owner = Arc::clone(&settings);
+    let (sender, receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        sender.send(owner.set_host_settings_if_current(
+            None,
+            serde_json::json!({
+                "userTimeZone": "Asia/Tokyo",
+                "inferenceProvider": "openrouter",
+                "featureFlagOverrides": {"settings_commit_order_gate": true}
+            }),
+        )).expect("deliver A receipt");
+    });
+    let first = receiver.recv_timeout(Duration::from_secs(10))
+        .expect("reentrant settings notifications must not deadlock")
+        .expect("A commits");
+    worker.join().expect("settings drainer thread");
+    let second = nested_receipt.lock().expect("nested receipt")
+        .take().expect("B receipt");
+    assert_eq!(first.settings["inferenceProvider"], "openrouter");
+    assert_ne!(first.hash, second.hash);
+    assert_ne!(first.config_source["rawHash"], second.config_source["rawHash"]);
+    assert_eq!(settings.get_host_settings_snapshot(), second);
+    assert_eq!(applied.lock().expect("applied gates").as_slice(), &[true, false]);
+    assert!(!experiments.check_feature_gate("settings_commit_order_gate"));
+    let stored: serde_json::Value =
+        serde_json::from_slice(&fs::read(&path).expect("latest source bytes"))
+            .expect("persisted settings JSON");
+    assert_eq!(stored["inferenceProvider"], "codex");
+    assert!(stored.get("featureFlagOverrides").is_none(),
+        "the existing feature override contract remains runtime-only");
     let _ = fs::remove_dir_all(root);
 }
 

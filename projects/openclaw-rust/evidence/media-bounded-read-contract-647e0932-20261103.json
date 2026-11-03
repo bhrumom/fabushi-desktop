@@ -1,0 +1,934 @@
+{
+  "schema_version": 1,
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "record_kind": "Scoped BR-v1 source, existing-owner and consumer contract; no runtime or whole-scope acceptance",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "rebaselined": false
+  },
+  "starting_subject": {
+    "commit": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+    "tree": "819bfd2abe9adc7167fc79d2933058d2dd1a6f0e"
+  },
+  "integration_subject": {
+    "commit": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+    "tree": "686109128a616195e65d1c9018ccd5b0b9d2cc8a",
+    "reader_blob": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+    "reference_tests_blob": "e12bee9bc0a5789f7020b1b50c883c9269b08b8c",
+    "service_blob": "7cfeff678c334320515de0bc01200bdb6af39379",
+    "web_tests_blob": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+    "integration_rule": "Read back exact H947 source. Reader/reference target unchanged from starting subject. Preserve full HHP-v2/IPB-v1 service/web-test changes and existing canonical-root ff0d456 workflow correction."
+  },
+  "responsibility_id": "OCRM-RESP-MEDIA-BOUNDED-READ-001",
+  "contract": "BR-v1",
+  "spec": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+  "root_pre_edit_decisions": {
+    "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+    "round": 1,
+    "base": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+    "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "pre_edit": true,
+    "assessment": "media-read-boundary/assessment.md",
+    "findings": [
+      {
+        "id": "BR-F01",
+        "decision": "FIX",
+        "classification": "IMPL_BUG_SOURCE_CONFIRMED",
+        "reason": "Actual loadWebMedia u64 maxBytes narrows unchecked to usize and common reader uses max_bytes+1. A tiny file at usizeMAX can panic with overflow checks or return false empty success under wrapping. No execution has reproduced it yet.",
+        "scope": "Existing bounded reader arithmetic plus root-owned checked service conversion and actual consumer cases."
+      },
+      {
+        "id": "BR-F02",
+        "decision": "FIX",
+        "classification": "IMPL_BUG_SOURCE_CONFIRMED",
+        "reason": "Stable special files reject, but Unix regular-to-FIFO replacement between metadata and blocking open can hang before byte limit. Use owned nonblocking Unix open and opened-handle regular/size admission while preserving existing symlink/hardlink behavior.",
+        "scope": "No new root authority, no blanket nofollow, no promised Windows hostile-open or cancellation guarantee."
+      },
+      {
+        "id": "BR-F03",
+        "decision": "FIX",
+        "classification": "IMPL_BUG_SOURCE_CONFIRMED",
+        "reason": "Unbounded metadata-guided Vec::with_capacity allows caller-admitted size to request wholefile allocation before reading. Bound initial allocation and use fallible growth driven by actual bytes.",
+        "scope": "Existing owner/private read loop; no process-wide memory budget, schema/new store or scheduler."
+      }
+    ],
+    "risk": "High: actual untrusted bytes, platform open/cleanup, size and allocation contracts; fresh general/security and pinned structure/reuse/performance review required.",
+    "verification": "GitHub Actions only, exact combined H; do not execute local or htch tests/parser/formatter/validator/generator."
+  },
+  "behavior_contract": {
+    "entry": "Existing AttachmentsService loadWebMedia dispatch and all existing callers of read_outbound_media_file_bounded.",
+    "producer": "Existing admitted filesystem paths and per-call byte limits; no path or option supplies a principal or capability.",
+    "unique_owner": "source/host/src/extensions/attachments/media_reference.rs; same public function and eight existing production call expressions.",
+    "state_and_storage": "One fresh owned file handle and request-local byte vector; no new persistent/shared state, worker, cache or authority.",
+    "service": "loadWebMedia checked-converts parsed u64 caps, preserving omitted/non-u64 behavior and HHP explicit HTML forwarding.",
+    "consumer": "Actual WebMediaResult bytes/error through Attachments dispatch; unchanged Attachments image/video/dimension ingestion, Box staging, generated-image accessor and channel upload preparation.",
+    "errors": "Preflight/opened ordinary-file and size checks; InvalidData only for observed byte limit refusal, ordinary OS/read/allocation errors otherwise. No returned successful prefix on cap crossing or late failure.",
+    "ownership_and_retry": "Fresh owned descriptor each attempt, released on every return. Unix opens with O_NONBLOCK but follows previously supported ordinary aliases. A later call sees a newly opened file.",
+    "cancellation_restart": "No cancellation or persisted restart protocol is added. Read attempt is synchronous; no claimed revoked-scope/deadline guarantee. Absence of persistent reader state supports ordinary fresh retry, not full process crash acceptance.",
+    "oracle": "Native Actions only: strict exact-name/exit/summary capture over existing real service/files and private causal fault/after-preflight FIFO controls. Fixture faults are not live provider, native32 or process-wide OOM acceptance."
+  },
+  "source_assessment": {
+    "path": "media-read-boundary/assessment.md",
+    "bytes": 28385,
+    "sha256": "ab0e8710416ad7ebac7a7928d76f673c3a67431fdc88636fd52604fbff8237c6",
+    "content_utf8": "# Bounded outbound media read: production correction assessment\n\nStatus: assessment complete; implementation/spec publication/verification not performed.\n\n## Decision\n\nThe existing Attachments reader is the correct owner for a narrow, implementable correction. Its unchecked sentinel arithmetic has a real service consumer, and its pre-open-only type check permits a Unix replacement-to-FIFO hang. Correct the shared reader and the loadWebMedia numeric conversion, preserving ordinary file, symlink, hardlink, caller error and fresh-read behavior. Do not turn this into a new filesystem permission owner or claim the fixed upstream's full read-capability contract.\n\nTarget is bhrumom/fabushi-desktop at **7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a**, tree **819bfd2abe9adc7167fc79d2933058d2dd1a6f0e**, on the existing codex/openclaw-rust-fusion-chat-20261101-writer migration line. The commit/tree pair was observed with immutable git show. Fixed U is **1440bb1771372334bea23d7642bb52deb7db1845**, tree **90c8aab39972da11cfad220361781d49e1bc6700**. Neither identity was changed. Root's separate frozen HHP/IPB candidate tree **cddd06d5f6f3255ae63b76ac7e3955c12ab2e1e2** was treated as an integration constraint; no review report or product/public file was edited.\n\nThe parent selected and applied xhigh for this assessment; the configured model and effort were inherited, without an override. Investigation used exact Git objects, exact-ref API source reads, archive-member source reads and hashes. No test, build, lint, formatter, validator, generator, syntax check, runtime probe, Actions dispatch, repository ref/index/worktree change, or publication was performed.\n\n## 1. Governing scope\n\nThe supplied AGENTS.md, active OCRM SOT entry, main migration spec's latest §17 (671–721), current P0 task admission contract and module map M23/M32 were read before source diagnosis. §17 permits a necessary common contract with known owner/callers to proceed without global P0 closure; implementation, wiring, scoped verification and final acceptance remain separate.\n\nThe existing media-store-read-scope.md, blob 61ef64b9d225dab1deeb2dd9384a5ae2e6823b62, governs **scoped publication**, including directory identity, custody and consumer acceptance. It is not authority to redefine every generic local file read. The existing HHP-v2 spec, locally read blob f0892088bfa3448441f7b92df6344692ac535932, explicitly leaves real read authority, cancellation and atomic filesystem confinement open. Its explicit HTML request is content intent, not a read capability. Preserve that scope when root writes the corrective spec.\n\nAll source identities, archive hashes, inspected ranges and qualifications are in reference-identities.json. This is task-local evidence, not a second canonical source ledger. Large files are recorded as scoped reads; downloading a full body is not labeled a complete semantic review.\n\n## 2. Existing common reader and all non-test call sites\n\nThe exact reader body is [media_reference.rs:290–324][T1], blob **acbed906d06b496b481fd4d4b5c604d9fc3eda57**:\n\n1. fs::metadata follows existing symlinks.\n2. A non-file returns io::ErrorKind::NotFound.\n3. Metadata length greater than max_bytes returns InvalidData.\n4. File::open re-resolves the original path.\n5. Vec::with_capacity reserves the complete earlier metadata length.\n6. Read::take receives (max_bytes + 1) as u64.\n7. Actual buffer length greater than the cap returns InvalidData; otherwise the bytes are returned.\n\nFor ordinary stable files and caps below usize::MAX, the reader already checks oversize before buffering and catches growth beyond the cap by reading a sentinel byte. Empty files are accepted, including at cap zero. Missing/open/read errors propagate. Existing symlinks to ordinary files and hardlinks are accepted by this primitive. It has no root, principal, scope, revocation token, deadline or cancellation argument.\n\nImmutable git grep over source found exactly **eight non-test invocation expressions**, plus imports and tests:\n\n| Caller / exact range | Existing admission and byte limit | Existing consumer/error result |\n| --- | --- | --- |\n| [attachments_service.rs:241–287][T2], ingest_attachment | Absolute path; a pre-existing in-store path bypasses this reader; external path checks file kind and filename-derived limit: 25 MiB, or 200 MiB for recognized video | Success goes to content-addressed ingestion; InvalidData becomes TooLarge; other errors become Io |\n| [attachments_service.rs:327–350][T2], read_host_attachment_image_with_root | Reanchors path, canonical containment check under sand root, recognized image suffix; 25 MiB | Encodes actual bytes into image data URL; any read error becomes None |\n| [attachments_service.rs:357–372][T2], read_host_attachment_video_bytes_with_root | Reanchor, sand-root containment, recognized video suffix; 200 MiB | Returns byte vector, or None on read error |\n| [attachments_service.rs:634–649][T2], read_image_dimensions_with_root | Sand-root containment, recognized image suffix; 25 MiB | Header/dimension inspection, or None on error |\n| [box_staging.rs:27–77][T3] | Box running; caller resolves an owner directory; excludes videos; metadata kind and 50 MiB cap | Adds bytes to owned upload list; read error skips that item; upload failure returns an empty mapping |\n| [generate_image_resource_accessor.rs:137–158][T4] | Lexical and canonical containment under agent media roots; filename-derived 25/200 MiB cap | Success contains data; read error is an Error variant retaining the supplied path and text |\n| [web_media.rs:310–400][T5] | Network-path refusal; optional root guard; explicit max_bytes or default 20,000,000 bytes | InvalidData becomes WebMediaError::TooLarge; other read errors become LocalAccess/not-found; actual bytes proceed to media inspection |\n| [channel_attachment.rs:46–91][T6] | Local reference resolution/reanchor; metadata regular, nonempty and at most 50 MiB | Success creates Upload bytes/filename/MIME; read error becomes None |\n\nLimits are declared in media_mime.rs:6–8,80–85 (blob b380ea8446d859a03b594aa93040d1425d4f0662), box_staging.rs:7, channel_attachment.rs:9 and image_ops.rs:23 (blob 1c40854ad1f802501e588ff1bb007fc8d26681bf).\n\nThis is a complete call-site result for the named function at this base, not a claim that every helper has a shipping UI/provider path. For example, the image-resource accessor factory and read_video_bytes wrapper exist on AttachmentsService, but a factory's existence does not establish the missing downstream product caller.\n\n### Confirmed real consumer closure\n\nThe relevant concrete flow is Host generic dispatch → AttachmentsService::dispatch_gateway(\"loadWebMedia\") → load_web_media → bounded reader → serialization of actual result bytes. Host app main.rs:15056–15071 forwards Attachments results and maps errors to GatewayCommandError::Internal. The service arm at **2006–2020** reads maxBytes using Value::as_u64, narrows it with **as usize**, calls the real loader and propagates its error. Existing openclaw_web_media_contract.rs:279–323 constructs the actual service and uses an owned PNG file. This proves a real direct service contract; it does not prove loadWebMedia is a registered ordinary external Gateway method or a frontend/SendMessage path. [T2][T5][T7][T8]\n\nSeparate existing consumers provide useful regression coverage: main.rs:9343–9359 stages attachment paths through the real Attachments service before turn projection; cross_user_sharing/production.rs:385–397 consumes channel attachment bytes. Attachments service tests already cover real upload→box staging and image persistence→read→gateway projection at 102–220. These paths justify preserving shared-reader behavior rather than creating a loader-only substitute.\n\n## 3. Concrete failures and their limits\n\n### BR-F01 — User-supplied maximum can panic or return empty success\n\nUse an ordinary nonempty tiny PNG and dispatch loadWebMedia with optimizeImages=false and a maxBytes JSON integer equal to u64::MAX on a 64-bit Host. Value::as_u64 accepts it, as usize retains usize::MAX, metadata passes, then max_bytes + 1 overflows. With overflow checks enabled the addition panics; with wrapping arithmetic it yields zero, so Take reads zero bytes and the loader returns an empty successful result. This is a causal source diagnosis, not an executed reproduction. No exact release profile behavior is assumed. [T1:315][T2:2006–2020][T5:361–399]\n\nOn 32-bit targets the unchecked service cast also truncates other valid u64 values. For example, 2^32 becomes zero and an ordinary nonempty file is wrongly rejected. Other values can become usize::MAX and hit the same sentinel defect. Fixed 25/50/200 MiB callers do not produce this extreme cap on normal supported desktop word sizes.\n\n**Selected correction:** the existing helper must support every usize cap without arithmetic overflow, including usize::MAX on a tiny file; the service must checked-convert u64 and return an explicit service error if the value does not fit usize. Do not silently wrap, saturate to a different requested cap, fall back to the default, or introduce an unrelated lower media limit. The fixed upstream's JavaScript-safe-integer validation is recorded below; copying its numeric ceiling into the existing Rust u64 service would be an additional wire-contract decision.\n\n### BR-F02 — Metadata-before-open can admit a blocking special-file replacement\n\nA stable FIFO is already rejected by metadata.is_file; that case is not the defect. A writer that can replace a consumed leaf can instead let the reader stat a small regular file, rename it away, and put a FIFO at the same path before File::open. On Unix, a read-only blocking FIFO open waits for a writer. The reader never reaches its byte limit or post-read length check. The same race can occur after a caller's additional metadata check; duplicated path checks do not bind the opened object. The dependency deliberately applies O_NONBLOCK to reads where supported. [T1:295–315][D2]\n\nThe narrow fix can retain the existing early kind/length preflight, open a **fresh owned** descriptor with O_NONBLOCK on Unix, then check kind and length on that actual handle before reading. Do not add O_NOFOLLOW: that would reject ordinary symlink inputs previously supported by the common reader. A symlink to an allowed regular target should continue to work; a symlink whose target is a FIFO should still be refused. Only the new descriptor receives open flags; no inherited/shared descriptor flags are changed.\n\nPost-open metadata also prevents using an earlier small size as admission for a newly opened large/nonregular object. It does **not** identify the opened ordinary file as the same object admitted by a caller's earlier root check, nor does it prevent ancestor substitution, same-file concurrent writes, or a new regular file being selected before open.\n\nNative Windows requires its own honest boundary: preserve normal File::open behavior and check the opened handle; do not pretend POSIX O_NONBLOCK exists there. Unix FIFO proof is not evidence for Windows named pipes, device aliases, reparse-point substitutions, or a deadline on a blocked Windows open. Adding a no-reparse policy would also change existing symlink/junction compatibility. Those stronger guarantees need an explicit existing-owner platform contract.\n\n### BR-F03 — Whole-metadata reservation is an avoidable allocation hazard\n\nA caller-selected large cap permits a large sparse file to pass preflight. Vec::with_capacity then reserves the complete reported length before the first read. Allocation/capacity failure can panic/abort rather than follow the ordinary Result path. This is not an unlimited-byte read at ordinary caps: current Take still bounds bytes for non-overflowing caps. The defect is trusting an unbounded caller-admitted metadata size as an immediate allocation demand. [T1:302–315]\n\nUse a small bounded initial/scratch allocation and fallible growth based on bytes actually obtained. Preserve allocation failure as an ordinary I/O failure, not InvalidData/TooLarge. This does not promise arbitrary huge files fit in RAM, bound JSON/base64 copies, establish an aggregate concurrency quota, or protect against all process-wide memory exhaustion. The returned Vec still inherently requires memory proportional to accepted bytes.\n\n## 4. Fixed-U equivalent and necessary dependency contract\n\nThe source-equivalent responsibility is split across files; it is not implemented solely by upstream media-reference.ts.\n\n| Fixed-U source | Exact blob | Reviewed role |\n| --- | --- | --- |\n| src/media/bounded-read-file.ts:1–34 | c6761090ffa01740cf3b4b9341f8d50062126517 | Marks owned bounded callbacks; forwards maxBytes only to marked callbacks; public unmarked callbacks keep their one-argument contract |\n| src/media/load-options.ts:1–103 | b98cc4f771dd292d11f13ee0002276d9f3919847 | Real readFile callback and declared roots; callback presence is not replaced with an arbitrary bool |\n| src/media/read-capability.ts:186–273 | 112aeee900ab77986bd1218ebd430a71bc3700ac | Chooses real host/workspace readers; native opener returns undefined for transport/caller-owned paths to avoid stale local mirrors |\n| src/media/local-media-access.ts:206–285 | 157b09fb0faaf35b8a16a1afdd58dcb6a1a216ae | Opened-handle root/excluded-root/hardlink/size admission, disposal, and real captured-scope checks before and after each read |\n| src/media/web-media.ts:600–715 | f48bca504f6fb77c3d094864eb656cb2b1bf25e2 | Derives source-read cap, requires a real reader for sandbox/any bypass, routes callback or local owner, preserves error classes |\n| src/infra/fs-safe.ts:1–165 | 3ad107a5747538188a7cd11422f8246751afd98a | Re-exports the locked fs-safe package APIs and compatibility wrappers |\n\nFixed-U package.json:2412 pins **@openclaw/fs-safe 0.27.0**; pnpm-lock.yaml:293–295,5154–5156 and13230–13242 resolves it and lists optional platform packages. Their exact blobs are 6989c0618742d3c2b93cc336cbe1d9c3c4f0a657 and 83b4975eb96942ec007a2eb9847ccfe98d380bda.\n\nThe available archive at /tmp/fabushi-647e-pairing/media-fixed-dependency/fs-safe-0.27.0.tgz was read without extraction or execution. Its SHA-256 is **02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c**. Its recomputed SHA-512 SRI exactly matches the fixed lock:\n\nsha512-v9RWszhsnswr7kAg/6ZM1fUxtyY1PItj7uBarnQ2UdeTPgDdUZFS5hXIGUdLtNvSty/JEPJvjE3MWqbKbx9dng==\n\nNecessary directly inspected members:\n\n- **D1: package/dist/bounded-read.js:1–150**, SHA-256 3f70e6995a89d9559393bdd5f7abd24ca5c00d4eeffad2df957492fe2948477f. Scratch reads are 64 KiB; metadata-guided initial allocation is capped at 16 MiB plus sentinel. The handle reader consumes at most cap+1 bytes, reads from the current offset and does not close the caller's handle. Short reads are not generally treated as EOF. Size is an optimization hint, not authority to buffer without a bound.\n- **D2: package/dist/read-open-flags.js:1–13**, SHA-256 3f55efd546ebab437d8365fa828e683836dd1385d0f3d6fc434aa68c79b92075. Applies O_NONBLOCK outside win32 where available and selects O_NOFOLLOW according to an explicit follow-symlink policy.\n- **D3: package/dist/local-file-descriptor.js:15–95**, SHA-256 7fe423a5df3d5a4a392e08e8f379e8c70962fa831e8f8050cbacf50e02cda2ed. Rejects unsafe devices, checks pre-open and opened kind/identity, closes rejected handles. Its default leaf-symlink policy is stricter than the existing Rust generic reader.\n- **D4: package/dist/root-impl.js:148–197,499–504**, SHA-256 5c77e1eb980f1a5ba37ce580e649caf65d86ccc4324a7de1dd95070376ebd7cb. openLocalFileSafely delegates to verified opening, real-path and identity checks; this is a richer contract than File::open plus metadata.\n- **D5: package/dist/byte-budget.js:1–9**, SHA-256 ce3affd8e4bd59fb130abcb297a8033de8c391726eb239785d2ff4e80e505a99. Finite values must be nonnegative safe integers; Infinity is a distinct allowed sentinel.\n\nAdditional narrowly inspected admission/descriptor/device members and package identity are recorded in the JSON. Package metadata says MIT and names optional native platform packages; no full legal/native-platform/dependency closure is claimed here.\n\nThe common necessary contract established by this read is bounded actual I/O with bounded initial allocation and an owned admitted file handle. Full callback routing, root identity, channel read-scope authority and per-read revocation are separate required parity work. The current Rust read_capability.rs and load_options.rs expose has_read_file/has_open_file/host_read_capability booleans; they are not those callable capabilities. Neither an existing boolean nor a path grants the missing authority.\n\n## 5. Existing-owner reuse decision\n\nNo new module, crate, capability store or global safe-files utility is needed for the correction.\n\n| Existing candidate | Source-grounded decision |\n| --- | --- |\n| Attachments media_reference.rs | Selected: already owns this byte-bound contract and all eight call expressions. A private opened-file/read loop seam can remain here. |\n| Attachments content_addressed_file.rs:17–86,165–186, blob 876ab91156b62f5d3484f6822a62cfae5e474638 | Read before proposing anything new. Useful precedent for O_NONBLOCK and actual-handle kind checks, but private verify_existing_file compares expected bytes and rejects symbolic/reparse aliases. Calling it would require known content and change generic read semantics. Keep its publication invariant unchanged. |\n| Attachments media_store.rs:606–625, blob 8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1 | Private source-copy reader has no-follow semantics and delegates final size rejection to the save path. It lacks nonblocking admission and is not a compatible common read capability. |\n| local_exec/native_file_sandbox.rs:360–425,983–1028, blob 4f0f5a6d172bf3e555ddcdc74b6b9bbb80afb5f3 | Root-relative, same-filesystem/no-symlink native sandbox ownership differs. Its private bounded_read calls read_to_end without a streaming cap and checks size afterwards. Do not import it as a qualified bounded media reader or silently broaden this task to repair it. |\n| media_fetch.rs:30–39 and remote_workspace_file.rs:140–210 | HTTP helper has a Response-specific contract; remote transfer owns chunk/revision/deadline/assert_active logic. Neither supplies an already-authorized generic opened local file with compatible errors. Reusing either would move policy across the wrong boundary. |\n\n## 6. Concrete proposed corrective-spec requirements\n\nThese are proposals for root's durable spec, not published requirements or an approval substitute.\n\n| ID | Required behavior |\n| --- | --- |\n| BR-01 Numeric totality | The helper handles every usize cap without addition/cast overflow. A tiny ordinary file at usize::MAX returns its exact bytes. loadWebMedia uses checked u64→usize conversion and errors on nonrepresentability; existing omitted/otherwise parsed options keep their current semantics. |\n| BR-02 Actual byte bound | Return exact bytes only on successful EOF within the cap. Empty/cap-zero and exact-cap files retain their behavior. Metadata-oversize and growth beyond cap both fail as InvalidData; never return an over-cap prefix as success. A fixed one-byte probe after reaching the cap can avoid computing cap+1 entirely. |\n| BR-03 Opened-object admission | Retain the existing early ordinary-kind/size rejection. Recheck ordinary-file kind and size on the actual newly opened handle before buffering; all subsequent reads use that same handle. Preserve NotFound for the existing non-file classification and ordinary I/O propagation. No promise of immutable contents or pre-open pathname identity is added. |\n| BR-04 Compatible Unix open | Apply O_NONBLOCK at open on the fresh owned Unix descriptor so regular→FIFO replacement cannot wait for a FIFO writer. Preserve existing ordinary symlink and hardlink inputs; do not add blanket no-follow/reparse rejection. Native Windows ordinary-file behavior is tested separately and stronger hostile-open guarantees remain explicitly unclaimed. |\n| BR-05 Allocation discipline | Do not reserve the entire metadata length. Use a bounded small initial/scratch buffer and fallible growth driven by actual bytes; handle short reads and Interrupted correctly. Allocation failure is an I/O failure, not false TooLarge or empty success. The spec should name its initial allocation ceiling; 64 KiB is a conservative implementation choice within this owner. |\n| BR-06 Consumer preservation | Keep current per-caller caps, root checks and error/Option/skip projections. loadWebMedia must expose the corrected bytes/error through the real Attachments service arm. Preserve HHP's explicit HTML branch and absence of generated trust. |\n| BR-07 Ownership and freshness | Every attempt opens a fresh handle; every exit releases only that handle. Failure produces no successful byte result, upload entry, durable marker or publication. A later ordinary retry observes fresh bytes. There is no cache, worker, background task or new cleanup scope. |\n| BR-08 Permission boundary | No root/principal/scope can be synthesized from maxBytes, file paths, sandboxValidated, host_read_capability, has_read_file, or htmlPublication. Existing missing callback authority, root/ancestor identity, revocation and transport routing remain separately open. |\n| BR-09 Evidence | Review the frozen complete correction and adjacent callers; execute selected tests only in native GitHub Actions lanes against the exact resulting H/tree/U. No review/read/test-source assertion advances verification or global flags. |\n\nThe implementation can remain two product files: **source/host/src/extensions/attachments/media_reference.rs** and the maxBytes conversion in **source/host/src/extensions/attachments/attachments_service.rs**. Root owns that shared service arm and must reconcile it after the frozen HHP/IPB candidate. No change is required to web_media.rs to repair the common reader. No public signature/dependency/schema change is necessary; libc is already declared at source/host/Cargo.toml:23.\n\n## 7. Minimal causal test selection\n\nExtend **source/host/tests/openclaw_media_reference_contract.rs** and **source/host/tests/openclaw_web_media_contract.rs**. If deterministic opened-file sequencing needs access to a private function, add a small cfg(test) module beside the reader; do not expose a public callback/permission seam or global race hook solely for tests.\n\n1. **Actual reader boundary:** empty at cap zero; nonempty at zero; exact cap; cap+1; missing path; directory; small nonempty file with usize::MAX. Existing bounded test at 126–141 covers only exact ten bytes and rejection at five, so it cannot decide BR-F01.\n2. **Short reads/growth/error:** exercise the same private bounded loop used by the public reader with a finite scripted reader for short reads, Interrupted, later I/O failure and cap crossing. Retain a real file control. For growth, deterministically append through an owned handle after metadata admission and before the actual read; no probabilistic repeated race.\n3. **Opened kind/Unix liveness:** prove an ordinary-file preflight followed by leaf replacement before the production open routine; the replacement FIFO must be refused promptly without a writer. Use a bounded owned fixture with cleanup that can release/join its reader if the assertion fails. A stable FIFO-only test is insufficient because the old preflight already rejects it.\n4. **Compatibility/freshness:** real symlink to a regular file succeeds where native creation is available; root-denied symlink still fails at the actual loader; hardlink behavior is preserved; re-read after replacement gets new bytes. Missing platform privileges are a visible fixture limitation, not a passing or skipped positive.\n5. **Allocation:** verify that a hostile size hint cannot request an initial reservation above the specified small ceiling and that an injected reserve failure follows the I/O error path; do not create a multi-gigabyte allocation just to exercise failure. The private seam must still be the one used by the production reader.\n6. **Actual service:** dispatch loadWebMedia on an owned PNG with optimizeImages=false and maxBytes=u64::MAX. On a 64-bit target require the exact original buffer; on a target unable to represent that cap require the declared conversion error. Also assert exact-cap success, smaller-cap service failure, missing-file error, and a fresh successful retry. Preserve/run the complete HHP-extended web-media target, including explicit HTML cap/roots/error controls.\n\nRun the two extended contract targets plus the reader's focused unit module if added. Reuse the existing service tests **service_upload_read_text_chunk_and_gateway_use_single_agent_media_store** and **image_reads_and_persistence_preserve_content_addressed_dimensions**, and **channel_attachment_contract**, for shared consumer behavior. Source-string assertions in attachments_helpers_contract.rs are wiring hints, not a replacement for these behavioral oracles. Native Linux/macOS/Windows ordinary cases are separate from Unix FIFO/symlink cases; no native 32-bit claim follows from three 64-bit desktop runs.\n\nThese are a test plan only. No test was run, and the existing tests were not represented as passing.\n\n## 8. Exact remaining owner decisions\n\nThe narrow correction above is ready for a spec and implementation; it does not need a new owner. A broader \"safe/read-capability equivalent\" claim would require these explicit choices before code:\n\n- **Authority producer and transport selection:** identify the existing turn/session/channel owner that can provide an actual authorized reader or opened handle, including remote workspace freshness. The boolean DTOs cannot choose the host filesystem on its behalf.\n- **Symlink/root semantics:** decide, per real caller, which allowed aliases remain supported and how the root/directory/file identity is retained through open. The generic helper has no root input, and denying all symlinks would regress its current behavior.\n- **Revocation/cancellation:** choose the actual lifecycle token and before/after-read fence under the existing owner. A synchronous byte cap or caller timeout does not cancel an in-progress OS read/open. The correction creates no such guarantee.\n- **Native Windows hostile paths:** select an existing platform mechanism and compatibility policy for device namespaces, reparse/ancestor swaps and blocked opens, then obtain native evidence. Unix flags cannot decide this.\n- **Resource policy:** an aggregate memory/concurrency/deadline limit or a stricter public numeric ceiling needs a service-level policy decision. Bounded per-read allocation alone cannot supply it.\n\nNo global OCRM status, canonical source review status, wiring/verification/acceptance field, or authority flag was changed. The deliverable closes this assessment and identifies an implementable production correction; full media migration, capability parity and native/platform acceptance remain open.\n\n## Source links\n\n[T1]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/src/extensions/attachments/media_reference.rs#L290-L324\n[T2]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/src/extensions/attachments/attachments_service.rs\n[T3]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/src/extensions/attachments/box_staging.rs\n[T4]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/src/extensions/attachments/generate_image_resource_accessor.rs\n[T5]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/src/extensions/attachments/web_media.rs#L310-L400\n[T6]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/src/connectors/channel_attachment.rs\n[T7]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/app/src/main.rs#L15056-L15071\n[T8]: https://github.com/bhrumom/fabushi-desktop/blob/7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a/source/host/tests/openclaw_web_media_contract.rs#L279-L323\n\n"
+  },
+  "source_identity_and_read_ranges": {
+    "format": "task-local-read-assessment-v1",
+    "task": "media_bounded_read_assessment",
+    "status": "assessment-only; not implementation, executable verification, acceptance, or canonical source-ledger update",
+    "scope": {
+      "target_repository": "bhrumom/fabushi-desktop",
+      "target_base": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+      "target_tree": "819bfd2abe9adc7167fc79d2933058d2dd1a6f0e",
+      "target_identity_observed_by": "immutable git show --no-patch --format='%H %T'",
+      "migration_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+      "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+      "separate_root_frozen_candidate_tree": "cddd06d5f6f3255ae63b76ac7e3955c12ab2e1e2",
+      "candidate_identity_source": "parent handoff; no review reports read or edited"
+    },
+    "effort": {
+      "selected": "xhigh",
+      "actually_applied": "xhigh inherited; parent launch instruction states selected and actually applied",
+      "model": "inherited configured model; no override",
+      "reason": "untrusted file reads, numeric bounds, allocation, concurrent replacement and permission/cancellation boundaries"
+    },
+    "limits": {
+      "product_and_public_writes": 0,
+      "repository_mutations": 0,
+      "local_executable_validation_runs": 0,
+      "htch_executable_validation_runs": 0,
+      "actions_runs_started": 0,
+      "upstream_rebaseline": false,
+      "full_dependency_closure_claimed": false,
+      "native_windows_hostile_replacement_acceptance": false,
+      "full_capability_or_confinement_claimed": false,
+      "source_review_note": "Read ranges describe the inspected semantic scope; fetched complete bodies and search hits do not become complete-file review. No canonical inventory/ledger fields changed."
+    },
+    "target_sources": [
+      {
+        "path": "source/host/src/extensions/attachments/media_reference.rs",
+        "git_blob_sha1": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+        "sha256": "7a80344e377760ef662d6b2ab708cb00cf6dbceba52c0b2d1201d5b4f7479917",
+        "bytes": 10677,
+        "lines": 324,
+        "read_ranges": [
+          [
+            290,
+            324
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/attachments_service.rs",
+        "git_blob_sha1": "cc0ddaed1cb14be2ff4cbec65f7bf09ecc757f80",
+        "sha256": "763e7619b1449b7e7a7cd9888e4676e277fdbe585ad079de139678272cb6b850",
+        "bytes": 87188,
+        "lines": 2289,
+        "read_ranges": [
+          [
+            210,
+            410
+          ],
+          [
+            597,
+            649
+          ],
+          [
+            1355,
+            1441
+          ],
+          [
+            1501,
+            1594
+          ],
+          [
+            1636,
+            1671
+          ],
+          [
+            2006,
+            2021
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/web_media.rs",
+        "git_blob_sha1": "829c6a58f85946f34e2c9aa0ee0c233bfcee6412",
+        "sha256": "cca8cc37ac548054c76f665bc41153803f2d17e8b952f1d56f1ebaf0bf0aee3a",
+        "bytes": 14909,
+        "lines": 401,
+        "read_ranges": [
+          [
+            1,
+            87
+          ],
+          [
+            310,
+            400
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/connectors/channel_attachment.rs",
+        "git_blob_sha1": "356e901feb2328729f882afe487fbe0199f4a40a",
+        "sha256": "f21d584b7afeca9568287547cfaad6c6cddbb827c4305cd3d3d3432965f009fe",
+        "bytes": 3114,
+        "lines": 92,
+        "read_ranges": [
+          [
+            1,
+            92
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/box_staging.rs",
+        "git_blob_sha1": "6339dd944730c07e880883c61b97a6778fc25ead",
+        "sha256": "ec3b4fc5ad79d7d39e6a19b9cfca44292ab7dd0a0ea484502886d04f1b2e7e6c",
+        "bytes": 2346,
+        "lines": 78,
+        "read_ranges": [
+          [
+            1,
+            78
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+        "git_blob_sha1": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+        "sha256": "37342663507ff20524afdd1b7f30a745c96e7d00b3dda6c4ad83ca71828c1ea2",
+        "bytes": 5255,
+        "lines": 160,
+        "read_ranges": [
+          [
+            1,
+            160
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/content_addressed_file.rs",
+        "git_blob_sha1": "876ab91156b62f5d3484f6822a62cfae5e474638",
+        "sha256": "a12d7cc98389a83ebbf629bb2deea2360440e95ecd62895a3ebd04bf80d529b0",
+        "bytes": 16729,
+        "lines": 406,
+        "read_ranges": [
+          [
+            1,
+            186
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/local_exec/native_file_sandbox.rs",
+        "git_blob_sha1": "4f0f5a6d172bf3e555ddcdc74b6b9bbb80afb5f3",
+        "sha256": "1648ca30441d1c919fbdb9f5a8f5f1bbde150449b7d5b4fdc6922c2e15b9be81",
+        "bytes": 45222,
+        "lines": 1255,
+        "read_ranges": [
+          [
+            1,
+            85
+          ],
+          [
+            305,
+            425
+          ],
+          [
+            565,
+            575
+          ],
+          [
+            965,
+            1028
+          ],
+          [
+            1184,
+            1195
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/media_store.rs",
+        "git_blob_sha1": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+        "sha256": "8cf2757ba7ff661b99d6e091ee602fac97d21b9b3747f275362112743b422687",
+        "bytes": 78603,
+        "lines": 2004,
+        "read_ranges": [
+          [
+            575,
+            625
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/media_fetch.rs",
+        "git_blob_sha1": "447ee3910bf98e0f5663af5a9648f36cea80ef79",
+        "sha256": "6a6f75cbc4786652dfe244dc7c9e56f92537804b48f5f91ae1d303b71ae4af2a",
+        "bytes": 36360,
+        "lines": 1089,
+        "read_ranges": [
+          [
+            1,
+            39
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/remote_workspace_file.rs",
+        "git_blob_sha1": "6acaff9642b343b57f4fbc56d3d295b8ed102f10",
+        "sha256": "5eb2200bbce21c499ea0551b88a52aae2318794d2724a3eda70e21f5ebd62149",
+        "bytes": 6532,
+        "lines": 210,
+        "read_ranges": [
+          [
+            140,
+            210
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/read_capability.rs",
+        "git_blob_sha1": "e75be65d0ad78318adad66c3e8f901f92c1d2c6b",
+        "sha256": "fdc4b4329b903fc17c2e23356e796428ffe55351abf1c02d4355c4de008e0e84",
+        "bytes": 7374,
+        "lines": 233,
+        "read_ranges": "full",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/load_options.rs",
+        "git_blob_sha1": "4427dbc7b214cabdcbbb7b181c2c5338b6198233",
+        "sha256": "ec03f81f171c24ef7d44e4ab1e6fb945a8f841b93888594c01d9d26250365137",
+        "bytes": 6834,
+        "lines": 190,
+        "read_ranges": "full",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/media_mime.rs",
+        "git_blob_sha1": "b380ea8446d859a03b594aa93040d1425d4f0662",
+        "sha256": "524302269a83413e2ad87212c3b72819fecc8bdc644be1b910f508c0aa1c7217",
+        "bytes": 12306,
+        "lines": 401,
+        "read_ranges": [
+          [
+            1,
+            45
+          ],
+          [
+            75,
+            89
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/attachments/image_ops.rs",
+        "git_blob_sha1": "1c40854ad1f802501e588ff1bb007fc8d26681bf",
+        "sha256": "c50e84d0de99bd7d37eecceba04c9640c6ecc23807d0bda321dbb71eba03002b",
+        "bytes": 19113,
+        "lines": 495,
+        "read_ranges": [
+          [
+            23,
+            23
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "git_blob_sha1": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3",
+        "sha256": "87c1536d3a8bb6c4799c8c228bdc40290534903fd18664021387838a0194182c",
+        "bytes": 989159,
+        "lines": 21564,
+        "read_ranges": [
+          [
+            8134,
+            8165
+          ],
+          [
+            9343,
+            9360
+          ],
+          [
+            15056,
+            15083
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/src/extensions/cross_user_sharing/production.rs",
+        "git_blob_sha1": "c4dfcf00ee24e3e964f0c3329e68d7cad4333da3",
+        "sha256": "7179092e2f2639305d49c27d9ff877f079776eb4117315670c521382376b4d20",
+        "bytes": 31489,
+        "lines": 883,
+        "read_ranges": [
+          [
+            378,
+            398
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/tests/openclaw_media_reference_contract.rs",
+        "git_blob_sha1": "e12bee9bc0a5789f7020b1b50c883c9269b08b8c",
+        "sha256": "b6875281828c9020e2941a10dd4f421583e0d8dd46c293dd31e8f5f03641c423",
+        "bytes": 16105,
+        "lines": 380,
+        "read_ranges": [
+          [
+            126,
+            141
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/tests/openclaw_web_media_contract.rs",
+        "git_blob_sha1": "cbe97afac793cf968d1c080e098e1914e91b24eb",
+        "sha256": "79e2b8980400d9e5bdc5083b35a0d99ee988be8106bcc5a8b8370bd65877d118",
+        "bytes": 11569,
+        "lines": 323,
+        "read_ranges": [
+          [
+            235,
+            323
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/tests/attachments_service_contract.rs",
+        "git_blob_sha1": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+        "sha256": "e71bcbe332ec8c4012d39e8db5ba541611ab38491bceeddb7beb928cf879a838",
+        "bytes": 33705,
+        "lines": 846,
+        "read_ranges": [
+          [
+            80,
+            221
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "path": "source/host/Cargo.toml",
+        "git_blob_sha1": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+        "sha256": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+        "bytes": 1856,
+        "lines": 59,
+        "read_ranges": [
+          [
+            23,
+            23
+          ]
+        ],
+        "review_depth": "scoped-source-read"
+      }
+    ],
+    "authority_local_inputs": [
+      {
+        "local_path": "/workspace/scratch/ac2d94a35110/authority/AGENTS.md",
+        "git_blob_sha1": "b1cb89ad75d72dfa32ad7e00c47d3f11bd8826f7",
+        "sha256": "d2b443803466705024d15bc8b5b041b2101ed278aa4540deba5a59b14bdaf3fc",
+        "bytes": 54200,
+        "read_ranges": [
+          [
+            1,
+            396
+          ]
+        ]
+      },
+      {
+        "local_path": "/workspace/scratch/ac2d94a35110/authority/projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "git_blob_sha1": "d5447172e41e9b54ec0c8814631cbde90d78b00a",
+        "sha256": "16525eb169dbb2c6bc0be33014f390d7f49845846d998f2ad28bd1d0d9e6fe54",
+        "bytes": 69580,
+        "read_ranges": [
+          [
+            1,
+            105
+          ]
+        ]
+      },
+      {
+        "local_path": "/workspace/scratch/ac2d94a35110/authority/docs/specs/openclaw-rust-equivalence-migration.md",
+        "git_blob_sha1": "92d85e2d0df6c695da713e66c0ccbd5c5d4aa253",
+        "sha256": "c4f81c3285d1c3b4b656df9d90e9a3e17c73370bd9fd85a0359e36ce8252e414",
+        "bytes": 91360,
+        "read_ranges": [
+          [
+            671,
+            721
+          ]
+        ]
+      },
+      {
+        "local_path": "/workspace/scratch/ac2d94a35110/authority/projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md",
+        "git_blob_sha1": "1f0ecfb239f840df5e2ce5237029a78d945b4b9e",
+        "sha256": "5259c338db2d8b5bd1be1b4847e802be7c69d12e14d93baf41ed12c6ffb3d4a4",
+        "bytes": 55857,
+        "read_ranges": [
+          [
+            1,
+            60
+          ],
+          [
+            300,
+            365
+          ]
+        ]
+      },
+      {
+        "local_path": "/workspace/scratch/ac2d94a35110/authority/projects/openclaw-rust/module-map.md",
+        "git_blob_sha1": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+        "sha256": "428395f7d0da5161d70c453d0645b1c4164260f40a86a01c92816b9a19f73562",
+        "bytes": 43564,
+        "read_ranges": [
+          [
+            1,
+            48
+          ],
+          [
+            84,
+            84
+          ],
+          [
+            92,
+            123
+          ]
+        ]
+      },
+      {
+        "local_path": "/workspace/scratch/ac2d94a35110/media-read-boundary/projects/openclaw-rust/docs/specs/media-store-read-scope.md",
+        "git_blob_sha1": "61ef64b9d225dab1deeb2dd9384a5ae2e6823b62",
+        "sha256": "f442293f5ac70cb5c986df090e7108236fbaa25f033751ab2b0eaa4e8187429b",
+        "bytes": 6211,
+        "read_ranges": "full"
+      },
+      {
+        "local_path": "/workspace/scratch/ac2d94a35110/html-review-r1/projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+        "git_blob_sha1": "f0892088bfa3448441f7b92df6344692ac535932",
+        "sha256": "294aa876496bb5e0efe2d59d29bfb21bc25fbdb4a4a9c6d0b723a8718d01af61",
+        "bytes": 15095,
+        "read_ranges": "full"
+      }
+    ],
+    "dependency": {
+      "archive_path": "/tmp/fabushi-647e-pairing/media-fixed-dependency/fs-safe-0.27.0.tgz",
+      "package": "@openclaw/fs-safe",
+      "version": "0.27.0",
+      "archive_sha256": "02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c",
+      "archive_sri": "sha512-v9RWszhsnswr7kAg/6ZM1fUxtyY1PItj7uBarnQ2UdeTPgDdUZFS5hXIGUdLtNvSty/JEPJvjE3MWqbKbx9dng==",
+      "members": [
+        {
+          "member": "package/package.json",
+          "sha256": "792e20cdae1e959a5f2a7de5122f46ef8b498bd3854c46375e08dce0beb3418f",
+          "bytes": 7327,
+          "lines": 215,
+          "read_ranges": "name/version/license/repository/dependencies/optionalDependencies/engines fields",
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/bounded-read.js",
+          "sha256": "3f70e6995a89d9559393bdd5f7abd24ca5c00d4eeffad2df957492fe2948477f",
+          "bytes": 6843,
+          "lines": 150,
+          "read_ranges": [
+            [
+              1,
+              150
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/read-opened-file.js",
+          "sha256": "393573ad1273437d13385667278e96d893c6a604cacf131246471c906d8bdcfb",
+          "bytes": 811,
+          "lines": 17,
+          "read_ranges": [
+            [
+              1,
+              17
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/read-open-flags.js",
+          "sha256": "3f55efd546ebab437d8365fa828e683836dd1385d0f3d6fc434aa68c79b92075",
+          "bytes": 521,
+          "lines": 13,
+          "read_ranges": [
+            [
+              1,
+              13
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/root-read-admission.js",
+          "sha256": "8888979ca9386959bea4e93fa1667f17e04b75a0226411c80360b7a600feab15",
+          "bytes": 4108,
+          "lines": 86,
+          "read_ranges": [
+            [
+              1,
+              86
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/pinned-open.js",
+          "sha256": "fe40f9f82fe4f4452084155a82d4a9033fcce2830358e52b658a6cc9e081093f",
+          "bytes": 4529,
+          "lines": 103,
+          "read_ranges": [
+            [
+              1,
+              103
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/local-file-access.js",
+          "sha256": "7530a957ca9d56f56deba8da1dd06be03c894c6f6472bc8571080937b57bfda8",
+          "bytes": 3135,
+          "lines": 81,
+          "read_ranges": [
+            [
+              1,
+              81
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/local-file-descriptor.js",
+          "sha256": "7fe423a5df3d5a4a392e08e8f379e8c70962fa831e8f8050cbacf50e02cda2ed",
+          "bytes": 4356,
+          "lines": 95,
+          "read_ranges": [
+            [
+              1,
+              95
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/byte-budget.js",
+          "sha256": "ce3affd8e4bd59fb130abcb297a8033de8c391726eb239785d2ff4e80e505a99",
+          "bytes": 406,
+          "lines": 9,
+          "read_ranges": [
+            [
+              1,
+              9
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/device-path.js",
+          "sha256": "da2f1223469785af3605bbd6ef1df384d39438c5a2b24776fccfe373c68dabf4",
+          "bytes": 4580,
+          "lines": 139,
+          "read_ranges": [
+            [
+              1,
+              139
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        },
+        {
+          "member": "package/dist/root-impl.js",
+          "sha256": "5c77e1eb980f1a5ba37ce580e649caf65d86ccc4324a7de1dd95070376ebd7cb",
+          "bytes": 72785,
+          "lines": 1496,
+          "read_ranges": [
+            [
+              53,
+              121
+            ],
+            [
+              148,
+              197
+            ],
+            [
+              499,
+              504
+            ]
+          ],
+          "review_depth": "dependency-contract-read"
+        }
+      ]
+    },
+    "upstream_sources": [
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/media/media-reference.ts",
+        "git_blob_sha1": "b94761535f4e5e6521e7b203c7e3792a71ea2c04",
+        "read_ranges": "full",
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/media-reference.ts",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/media/bounded-read-file.ts",
+        "git_blob_sha1": "c6761090ffa01740cf3b4b9341f8d50062126517",
+        "read_ranges": [
+          [
+            1,
+            34
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/bounded-read-file.ts",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/media/read-capability.ts",
+        "git_blob_sha1": "112aeee900ab77986bd1218ebd430a71bc3700ac",
+        "read_ranges": [
+          [
+            1,
+            70
+          ],
+          [
+            186,
+            273
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/read-capability.ts",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/media/load-options.ts",
+        "git_blob_sha1": "b98cc4f771dd292d11f13ee0002276d9f3919847",
+        "read_ranges": [
+          [
+            1,
+            103
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/load-options.ts",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/media/web-media.ts",
+        "git_blob_sha1": "f48bca504f6fb77c3d094864eb656cb2b1bf25e2",
+        "read_ranges": [
+          [
+            1,
+            65
+          ],
+          [
+            74,
+            96
+          ],
+          [
+            600,
+            715
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/web-media.ts",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/media/local-media-access.ts",
+        "git_blob_sha1": "157b09fb0faaf35b8a16a1afdd58dcb6a1a216ae",
+        "read_ranges": [
+          [
+            1,
+            90
+          ],
+          [
+            99,
+            120
+          ],
+          [
+            206,
+            286
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/media/local-media-access.ts",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "src/infra/fs-safe.ts",
+        "git_blob_sha1": "3ad107a5747538188a7cd11422f8246751afd98a",
+        "read_ranges": [
+          [
+            1,
+            165
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/infra/fs-safe.ts",
+        "review_depth": "scoped-source-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "package.json",
+        "git_blob_sha1": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+        "read_ranges": [
+          [
+            2407,
+            2415
+          ],
+          [
+            2533,
+            2534
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/package.json",
+        "review_depth": "dependency-contract-read"
+      },
+      {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "path": "pnpm-lock.yaml",
+        "git_blob_sha1": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+        "read_ranges": [
+          [
+            293,
+            295
+          ],
+          [
+            5154,
+            5156
+          ],
+          [
+            13230,
+            13242
+          ]
+        ],
+        "retrieval": "GitHub fetch_file exact commit",
+        "url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/pnpm-lock.yaml",
+        "review_depth": "dependency-contract-read"
+      }
+    ]
+  },
+  "read_scope_correction": "The prior assessment remains historical source-only work at H7ba with truthful ranges. H947 integration preserves matching reader/reference identities and overlays the independently reviewed/published HHP service and web tests. Complete-file acquisition is not promoted into full semantic reading.",
+  "root_adjacent_reads": [
+    {
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "read_scope": "complete source: bounded read and skip/upload projection"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "read_scope": "115-158: existing write completion and complete read consumer"
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "blob": "356e901feb2328729f882afe487fbe0199f4a40a",
+      "read_scope": "complete 92-line source: URL passthrough versus bounded local Upload"
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "blob": "85fd507cc4a63401c879ab2b7ae95b9887016f55",
+      "read_scope": "complete four-test target; actual local bytes and limit refusal, no real remote-channel transmission"
+    },
+    {
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "read_scope": "1-220: fixture declarations plus two exact actual upload/Box/image persistence/read/gateway consumers; remainder acquired, not full new review"
+    }
+  ],
+  "validation": {
+    "status": "pending frozen final-H native GitHub Actions and independent review",
+    "local_executable_runs": 0,
+    "htch_executable_runs": 0,
+    "preserve_previous_capture_groups": true,
+    "previous_synthetic_capture_controls": 13,
+    "native_32bit_acceptance": false,
+    "verification_promotion": false,
+    "source_selected_groups": 11,
+    "source_selected_positives": {
+      "Linux": 108,
+      "macOS": 108,
+      "Windows": 101
+    },
+    "source_selected_input_count": 34,
+    "fifo_capture": "Private owner group uses --show-output to retain one exact BR_FIFO_CHILD_OUTPUT_BASE64 record without contaminating parent anchored libtest names/summaries; actual child run must produce its exclusive acknowledgment."
+  },
+  "canonical_accounting": {
+    "authority": "Existing OCRM inventory/ledger/RTM only",
+    "ledger_change": "existing bounded-read row behavior/invariants/risk/evidence/tests/rollback; original status and read history retained",
+    "rtm_change": "R24/AC24 evidence references only",
+    "global_flags_changed": false,
+    "inventory_coverage_changed": false,
+    "new_owner": false
+  },
+  "open_required_scope": [
+    "Complete callable read capability and transport selection; boolean DTOs do not supply it",
+    "Root/ancestor/path identity and per-read principal/scope/revocation/cancellation",
+    "Hostile Windows namespace/open deadline and native32 evidence",
+    "Generated HTML origin producer/durable marker/database prune and full MIME/codec/dependency parity",
+    "All fixed-U source/recursive dependency/download/patch/LFS/generated-input/legal dispositions",
+    "All applicable G01-G12 and AC01-AC24 with real provider/channel/plugin/node/device, UI/timing/security/performance/soak/platform packages/upgrades/rollback and Fabushi regression",
+    "Final shipping SHA/build correspondence and independent ACCEPT"
+  ],
+  "overall_complete": false,
+  "owner_handoff": {
+    "path": "media-bounded-read-implementation.md",
+    "bytes": 14880,
+    "sha256": "01a92e8595d7f567e92cefa01d600c1f1bb766f27ceda76d96ddbeb0032b605f",
+    "content_utf8": "# BR-v1 bounded media reader implementation handoff\n\nStatus: implementation and source review complete for the two assigned owner paths; independent review, compilation, native execution, mutation execution and acceptance remain pending. No test, build, formatter, parser, validator, test listing or runtime probe was run locally or on htch. Source reads, source edits, byte hashes and a Git binary-capable diff are the only verification operations reported here.\n\n## Authority and immutable inputs\n\nThe complete pre-edit `media-bounded-read-safety.md` BR-v1 contract and `reviews/media-bounded-read-decisions.json` were read before implementation. The FIX decisions cover maximum-cap overflow, Unix ordinary-file-to-FIFO replacement, and metadata-sized initial allocation. The authority file, OCRM SOT, main specification §17 and current P0/module ownership were already read in the preceding assessment.\n\nStarting H: `7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a`, tree `819bfd2abe9adc7167fc79d2933058d2dd1a6f0e`. Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`, tree `90c8aab39972da11cfad220361781d49e1bc6700`. Root reports that live H `947e980bd3c9dcb06535127f5cedfd193b83f0fc` retains the same two base blobs; this owner did not fetch or mutate any repository reference. The final combined H/tree must be bound by root after integration.\n\nOnly these two repository paths are in the patch:\n\n| Path | Exact base blob | Exact candidate blob | Candidate bytes | Candidate SHA-256 |\n| --- | --- | --- | ---: | --- |\n| `source/host/src/extensions/attachments/media_reference.rs` | `acbed906d06b496b481fd4d4b5c604d9fc3eda57` | `71b19135ed156a589767c4e7f824dc48df698863` | 30533 | `6cea1f5d8541e8312fc4441104ed1ba44ee97e1af6be6ef3d094634d77942041` |\n| `source/host/tests/openclaw_media_reference_contract.rs` | `e12bee9bc0a5789f7020b1b50c883c9269b08b8c` | `df52afa0b1c727b2236dc2d96328047e10daab85` | 20363 | `c64b47b827f0b674a3fa58080d51c7196655574d65e8c70365bf3d9c9aca309d` |\n\nBoth base copies were hashed before the diff and matched the required immutable blobs. Base reader SHA-256 is `7a80344e377760ef662d6b2ab708cb00cf6dbceba52c0b2d1201d5b4f7479917`; base reference target SHA-256 is `b6875281828c9020e2941a10dd4f421583e0d8dd46c293dd31e8f5f03641c423`.\n\nThe complete patch is `/workspace/scratch/ac2d94a35110/media-bounded-read-implementation.patch`: 27782 bytes, SHA-256 `8ce349f79a0850f7416f3a756bfb31e340c81be29bfde8b004405319de93334e`, Git blob `7614006220c549425f97f72b97a7590a2d30eb79`. It was produced with `git diff --no-index --binary --full-index --no-ext-diff --no-textconv` over the exact base and candidate byte streams. Only the diff path headers were normalized to repository-relative `a/` and `b/` paths. Both files retain mode 100644. This is a diff artifact, not an executed patch-application check.\n\n## Reader changes and rationale\n\nThe public signature remains `read_outbound_media_file_bounded(&Path, usize) -> io::Result<Vec<u8>>`. Its existing early metadata check remains, followed by a fresh owned open, actual-handle admission, and reads through that same handle. All previous non-reader code in this file is retained except the necessary `io` import.\n\n| Function or constant | Candidate source location | Behavior |\n| --- | --- | --- |\n| `MEDIA_READ_CHUNK_BYTES` | line 290 | Fixed 64 KiB stack scratch; no metadata-sized reservation. |\n| `read_outbound_media_file_bounded` | lines 294–301 | Existing public entry point; early path preflight, fresh open and the bounded production loop. |\n| `check_outbound_media_metadata` | lines 303–321 | Shared preflight/opened-handle kind and size checks. Nonregular remains `NotFound`; oversize remains `InvalidData`, with existing messages. The usize cap is compared without narrowing it. |\n| `open_outbound_media_file_bounded` | lines 323–335 | Private owner seam. Unix adds `O_NONBLOCK` on its new descriptor, then checks metadata from the actual handle. Ordinary symbolic links and hard links remain admitted. Windows retains ordinary `OpenOptions::read(true)` behavior. |\n| `reserve_media_read_capacity` | lines 337–342 | Fallible `try_reserve_exact`; reservation refusal maps to allocation-free `io::ErrorKind::OutOfMemory`. |\n| `read_media_bytes_bounded` | lines 344–379 | Private production loop and reservation seam. Fixed scratch, actual-byte-driven growth, finite cap arithmetic, short reads and Interrupted handling, error propagation, and EOF proof. |\n\nThe result length stays at or below the cap. Reads request at most the remaining allowance, bounded by the scratch length. Once the cap is reached, the loop requests one byte into scratch to distinguish exact EOF from excess input. It never computes `max_bytes + 1`, never appends the excess byte and never returns a successful prefix after a read, cap or reservation error. A tiny real file with `usize::MAX` therefore has no overflowing cap arithmetic in this implementation.\n\nThe vector starts empty. Its first requested reservation is no larger than the first actual read, at most 64 KiB. Subsequent requests use the larger of actual required length and saturating doubled capacity, clamped to the caller's cap. The addition for required length follows the `read <= max_bytes - bytes.len()` check. Growth is amortized and fallible; no global allocation/cache state is introduced. Allocator bookkeeping or allocator-granted excess capacity is not a separate process memory guarantee.\n\nThe generic seams are private to this existing owner. No callback, capability store, utility module, dependency, schema, service behavior, caller limit or publication path was added. Existing `libc`, `uuid` and `base64` dependencies suffice. The adjacent content-addressed reader remains a separate policy owner because it forbids aliases and compares against already-owned expected bytes; it is not a compatible reusable generic reader.\n\n## Exact selected tests and platform scope\n\nNames below are derived from the authored source, not from executing a test-list command. No test result is claimed.\n\n### Whole integration target\n\nSelect the entire existing `openclaw_media_reference_contract` target. On Linux, macOS and Windows it contains 17 cases: 11 preserved cases and six new cases. The symbolic-link case has `#[cfg(any(unix, windows))]`; the other five new cases have no platform guard.\n\nPreserved names:\n\n```text\ntest_ocrm_media_ref_01_inbound_uri_parsing_and_validation\ntest_ocrm_media_ref_02_classify_media_reference_source\ntest_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite\ntest_ocrm_media_ref_04_bounded_read_file\ntest_ocrm_media_ref_05_playback_codec_policy_resolution\ntest_ocrm_media_ref_06_native_codec_compatibility_rules\ntest_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation\ntest_ocrm_media_ref_08_canonicalize_persisted_user_message_media\nmru_unicode_non_media_references_preserve_normalization_and_local_projection\nmru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy\nmru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals\n```\n\nNew names and causal observations:\n\n| Exact test name | Source line | Real fixture/oracle |\n| --- | ---: | --- |\n| `br_public_empty_zero_exact_and_over_limits` | 402 | Real empty/nonempty files, zero cap, exact cap, larger cap and preflight oversize. |\n| `br_public_usize_max_returns_original_bytes` | 419 | Tiny nonempty binary file at usize::MAX; exact original bytes required. |\n| `br_public_missing_and_directory_preserve_not_found` | 432 | Missing path and actual directory preserve NotFound. |\n| `br_public_retry_observes_replaced_file` | 446 | Read original, replace the file, reject a too-small retry, then return exact fresh replacement bytes. |\n| `br_public_hard_links_preserve_bytes` | 468 | Real native hard link and exact alias bytes. |\n| `br_public_symbolic_links_preserve_bytes` | 482 | Real native file symbolic link and exact alias bytes on Unix/Windows. |\n\nThe Windows link fixture calls `symlink_file` and requires success; lack of runner privileges is an explicit fixture failure, not a skipped or fabricated pass. No hostile Windows namespace behavior is inferred from it. The hard-link fixture likewise requires a real supported native filesystem operation.\n\n### Private production-owner unit group\n\nSelect `extensions::attachments::media_reference::bounded_read_tests::` from the library target. It has eight common tests, plus three Unix-only tests. Exact source names are:\n\n```text\nextensions::attachments::media_reference::bounded_read_tests::br_loop_short_reads_and_interrupted_preserve_bytes\nextensions::attachments::media_reference::bounded_read_tests::br_loop_zero_and_one_over_probe_without_allocating_extra_bytes\nextensions::attachments::media_reference::bounded_read_tests::br_loop_late_read_error_discards_prefix\nextensions::attachments::media_reference::bounded_read_tests::br_loop_allocation_failure_discards_prefix\nextensions::attachments::media_reference::bounded_read_tests::br_loop_growth_is_bounded_and_amortized\nextensions::attachments::media_reference::bounded_read_tests::br_initial_allocation_ignores_large_metadata_hint\nextensions::attachments::media_reference::bounded_read_tests::br_opened_admission_rechecks_size_after_preflight\nextensions::attachments::media_reference::bounded_read_tests::br_opened_file_growth_is_not_successful_prefix\n```\n\nAdditional names under `#[cfg(unix)]`:\n\n```text\nextensions::attachments::media_reference::bounded_read_tests::br_unix_opened_admission_rejects_directory_replacement\nextensions::attachments::media_reference::bounded_read_tests::br_unix_open_owns_nonblocking_descriptor\nextensions::attachments::media_reference::bounded_read_tests::br_unix_fifo_replacement_after_preflight_does_not_block\n```\n\nThe finite scripted reader drives the actual production loop, preserving short reads and Interrupted, surfacing a later I/O error, and consuming only one over-limit byte. The reservation seam checks initial bounded allocation, amortized multi-chunk requests and later refusal after an accumulated prefix. It does not claim recovery from a real process-wide OOM. The metadata-hint fixture is a bounded 512 KiB file, not a multi-gigabyte allocation. Actual-file controls change size after preflight and append a byte after opened-handle admission.\n\nThe selected scopes therefore contain 28 source-declared cases on Linux/macOS (17 integration + 11 private unit) and 25 on Windows (17 + 8), before root's separately selected service and existing consumer regressions. All counts require native confirmation for the final H. A 64-bit desktop run supplies no native 32-bit evidence.\n\n## FIFO child, cleanup and capture contract\n\nThe Unix FIFO test first admits a real ordinary file, retains that owned file under a second name, then substitutes a FIFO before invoking the production open helper in a child process. A stable FIFO-only preflight cannot satisfy this fixture.\n\nThere is no ignored/dummy child-only test. The exact same selected test function re-enters under two command-scoped environment variables. Normal parent execution always runs the fixture. Child execution invokes the real production open, requires NotFound for the opened FIFO, and writes an exclusive acknowledgment. The parent requires both successful child exit and exact acknowledgment bytes, so selecting zero tests in the child cannot produce a false pass.\n\nOnly the exact spawned `Child` is owned. Its stdout and stderr are captured together in an owned file, avoiding pipe-fill deadlock. The first completion deadline is five seconds. If it expires, the parent opens nonblocking read/write handles only on its owned FIFO to release a blocking-open mutation, waits up to another five seconds, and kills/reaps its exact child if still necessary. A deadline hit always fails after cleanup. Polling sleep only waits for child completion; it does not stand in for the mutation oracle. The RAII child guard kills/reaps on assertions or panic as well, before fixture-directory cleanup. No worker thread, process scan or unrelated process termination is used.\n\nAfter reaping, complete combined child output is base64-encoded into exactly one `BR_FIFO_CHILD_OUTPUT_BASE64=` line. The same retention is attempted during panic cleanup. This preserves child evidence without nested libtest result or summary lines in parent capture.\n\n**Required root capture option:** select the private group using `-- --test-threads=1 --show-output`. Passing test stdout is otherwise suppressed by libtest. `--show-output` retains the encoded record after ordinary anchored parent result lines; parent `--nocapture` is not needed. The child itself uses `--nocapture`, with all of its output redirected to the owned log.\n\nProposed native Actions selections, not executed here:\n\n```text\ncargo test --manifest-path source/host/Cargo.toml --test openclaw_media_reference_contract -- --test-threads=1 --show-output\ncargo test --manifest-path source/host/Cargo.toml --lib extensions::attachments::media_reference::bounded_read_tests:: -- --test-threads=1 --show-output\n```\n\nRoot owns final capture integration, exact-H invocation and mutation controls. Source-level causal controls include maximum-cap arithmetic, omitting nonblocking open, omitting opened kind/size admission, treating a short read as EOF, removing the one-byte overflow probe, and returning a prefix after read/reservation refusal. Those controls are authored or supported by this test selection; none was executed in this owner task.\n\n## Integration ownership and remaining boundaries\n\nThis patch implements the reader portion of BR-01 and BR-02 through BR-05, with fresh-handle/failed-read behavior for BR-07. BR-06 retains existing caller expressions because no caller path was edited. Root owns the service's checked u64-to-usize conversion, four real consumer cases, earlier HHP/IPB preservation, capture changes and public accounting. BR-08 limits remain explicit, and BR-09 review/execution is still pending.\n\nThe implementation does not pin original pathname identity, confer root or ancestor authority, freeze concurrent contents, transport a real read callback/capability, implement revocation/cancellation, guarantee a deadline for Unix regular/network files or hostile Windows opens, bound aggregate concurrent memory, or establish full fs-safe parity. Symlink/hardlink compatibility is intentional, not proof of confinement. The one-byte probe proves only the EOF observed on that handle at that moment. Error propagation and RAII do not guarantee survival of every process-wide allocation failure.\n\nNo root-owned specification, service, web-media test, capture, ledger, RTM, workflow, composition or frozen HHP/IPB source was changed by this implementation owner. No index, worktree, remote reference, commit or publication was mutated. Final integration, review and native results remain the root owner's responsibility.\n"
+  },
+  "owner_two_path_diff": {
+    "bytes": 27782,
+    "sha256": "8ce349f79a0850f7416f3a756bfb31e340c81be29bfde8b004405319de93334e",
+    "content_utf8": "diff --git a/source/host/src/extensions/attachments/media_reference.rs b/source/host/src/extensions/attachments/media_reference.rs\nindex acbed906d06b496b481fd4d4b5c604d9fc3eda57..71b19135ed156a589767c4e7f824dc48df698863 100644\n--- a/source/host/src/extensions/attachments/media_reference.rs\n+++ b/source/host/src/extensions/attachments/media_reference.rs\n@@ -1,5 +1,5 @@\n use std::fs;\n-use std::io::Read;\n+use std::io::{self, Read};\n use std::path::{Component, Path, PathBuf};\n use regex::Regex;\n use std::sync::LazyLock;\n@@ -287,21 +287,29 @@ pub fn resolve_media_reference_local_path_info(\n     }\n }\n \n-/// Passes source limits only to owned readers; rejects oversized files before buffering.\n+const MEDIA_READ_CHUNK_BYTES: usize = 64 * 1024;\n+\n+/// Reads a fresh ordinary file within the caller's byte limit.\n+/// Path/root authority remains with the caller; pathname identity is not pinned.\n pub fn read_outbound_media_file_bounded(\n     file_path: &Path,\n     max_bytes: usize,\n ) -> std::io::Result<Vec<u8>> {\n-    let meta = fs::metadata(file_path)?;\n+    check_outbound_media_metadata(&fs::metadata(file_path)?, max_bytes)?;\n+    let mut file = open_outbound_media_file_bounded(file_path, max_bytes)?;\n+    read_media_bytes_bounded(&mut file, max_bytes, reserve_media_read_capacity)\n+}\n+\n+fn check_outbound_media_metadata(meta: &fs::Metadata, max_bytes: usize) -> io::Result<()> {\n     if !meta.is_file() {\n-        return Err(std::io::Error::new(\n-            std::io::ErrorKind::NotFound,\n+        return Err(io::Error::new(\n+            io::ErrorKind::NotFound,\n             \"target path is not a file\",\n         ));\n     }\n-    if meta.len() > max_bytes as u64 {\n-        return Err(std::io::Error::new(\n-            std::io::ErrorKind::InvalidData,\n+    if meta.len() > u64::try_from(max_bytes).unwrap_or(u64::MAX) {\n+        return Err(io::Error::new(\n+            io::ErrorKind::InvalidData,\n             format!(\n                 \"file size ({} bytes) exceeds maximum limit ({} bytes)\",\n                 meta.len(),\n@@ -309,16 +317,472 @@ pub fn read_outbound_media_file_bounded(\n             ),\n         ));\n     }\n+    Ok(())\n+}\n \n-    let mut file = fs::File::open(file_path)?;\n-    let mut buffer = Vec::with_capacity(meta.len() as usize);\n-    file.by_ref().take((max_bytes + 1) as u64).read_to_end(&mut buffer)?;\n-    if buffer.len() > max_bytes {\n-        return Err(std::io::Error::new(\n-            std::io::ErrorKind::InvalidData,\n-            \"file grew beyond maximum limit during read\",\n-        ));\n+fn open_outbound_media_file_bounded(file_path: &Path, max_bytes: usize) -> io::Result<fs::File> {\n+    let mut options = fs::OpenOptions::new();\n+    options.read(true);\n+    #[cfg(unix)]\n+    {\n+        use std::os::unix::fs::OpenOptionsExt;\n+        // Keep ordinary symlinks working, but do not wait for a replaced FIFO's writer.\n+        options.custom_flags(libc::O_NONBLOCK);\n+    }\n+    let file = options.open(file_path)?;\n+    check_outbound_media_metadata(&file.metadata()?, max_bytes)?;\n+    Ok(file)\n+}\n+\n+fn reserve_media_read_capacity(bytes: &mut Vec<u8>, capacity: usize) -> io::Result<()> {\n+    bytes\n+        .try_reserve_exact(capacity - bytes.len())\n+        // Avoid allocating an error message on the allocation-failure path.\n+        .map_err(|_| io::Error::from(io::ErrorKind::OutOfMemory))\n+}\n+\n+fn read_media_bytes_bounded(\n+    reader: &mut impl Read,\n+    max_bytes: usize,\n+    mut reserve: impl FnMut(&mut Vec<u8>, usize) -> io::Result<()>,\n+) -> io::Result<Vec<u8>> {\n+    let mut bytes = Vec::new();\n+    let mut scratch = [0_u8; MEDIA_READ_CHUNK_BYTES];\n+    loop {\n+        let remaining = max_bytes - bytes.len();\n+        // At the limit, inspect one byte without computing max_bytes + 1 or\n+        // extending the result. A short read alone is never treated as EOF.\n+        let read_limit = remaining.min(scratch.len()).max(1);\n+        let read = match reader.read(&mut scratch[..read_limit]) {\n+            Ok(read) => read,\n+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,\n+            Err(error) => return Err(error),\n+        };\n+        if read == 0 {\n+            return Ok(bytes);\n+        }\n+        if read > remaining {\n+            return Err(io::Error::new(\n+                io::ErrorKind::InvalidData,\n+                \"file grew beyond maximum limit during read\",\n+            ));\n+        }\n+        if read > bytes.capacity() - bytes.len() {\n+            // The first request is at most one scratch chunk. Later requests\n+            // grow geometrically, within the cap, only after actual input.\n+            let required = bytes.len() + read;\n+            let capacity = required.max(bytes.capacity().saturating_mul(2).min(max_bytes));\n+            reserve(&mut bytes, capacity)?;\n+        }\n+        bytes.extend_from_slice(&scratch[..read]);\n+    }\n+}\n+\n+#[cfg(test)]\n+mod bounded_read_tests {\n+    use super::*;\n+    use std::collections::VecDeque;\n+    use std::io::{Seek, Write};\n+\n+    struct ReadDirectory(PathBuf);\n+\n+    impl ReadDirectory {\n+        fn new(label: &str) -> Self {\n+            let path = std::env::temp_dir().join(format!(\n+                \"fabushi-bounded-media-{label}-{}\",\n+                uuid::Uuid::new_v4()\n+            ));\n+            fs::create_dir(&path).expect(\"create owned media-read fixture\");\n+            Self(path)\n+        }\n+    }\n+\n+    impl Drop for ReadDirectory {\n+        fn drop(&mut self) {\n+            let _ = fs::remove_dir_all(&self.0);\n+        }\n+    }\n+\n+    enum ReadStep {\n+        Bytes(&'static [u8]),\n+        Failure(io::ErrorKind),\n+        Eof,\n+    }\n+\n+    struct ScriptedReader {\n+        steps: VecDeque<ReadStep>,\n+        requests: Vec<usize>,\n+        consumed: usize,\n+    }\n+\n+    impl ScriptedReader {\n+        fn new(steps: impl IntoIterator<Item = ReadStep>) -> Self {\n+            Self {\n+                steps: steps.into_iter().collect(),\n+                requests: Vec::new(),\n+                consumed: 0,\n+            }\n+        }\n+    }\n+\n+    impl Read for ScriptedReader {\n+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {\n+            assert!(!buffer.is_empty(), \"the production loop must request input\");\n+            self.requests.push(buffer.len());\n+            match self.steps.pop_front().expect(\"reader exceeded its finite script\") {\n+                ReadStep::Bytes(data) => {\n+                    let read = data.len().min(buffer.len());\n+                    buffer[..read].copy_from_slice(&data[..read]);\n+                    self.consumed += read;\n+                    if read < data.len() {\n+                        self.steps.push_front(ReadStep::Bytes(&data[read..]));\n+                    }\n+                    Ok(read)\n+                }\n+                ReadStep::Failure(kind) => Err(io::Error::new(kind, \"scripted media read failure\")),\n+                ReadStep::Eof => Ok(0),\n+            }\n+        }\n+    }\n+\n+    #[test]\n+    fn br_loop_short_reads_and_interrupted_preserve_bytes() {\n+        let mut reader = ScriptedReader::new([\n+            ReadStep::Failure(io::ErrorKind::Interrupted),\n+            ReadStep::Bytes(b\"a\"),\n+            ReadStep::Failure(io::ErrorKind::Interrupted),\n+            ReadStep::Bytes(b\"bc\"),\n+            ReadStep::Eof,\n+        ]);\n+        let bytes = read_media_bytes_bounded(&mut reader, 3, reserve_media_read_capacity)\n+            .expect(\"short reads and interruptions must retain all bytes\");\n+        assert_eq!(bytes, b\"abc\");\n+        assert_eq!(reader.consumed, 3);\n+        assert!(reader.steps.is_empty(), \"success requires the scripted EOF\");\n+        assert_eq!(reader.requests.last(), Some(&1), \"exact-cap reads must probe EOF\");\n+    }\n+\n+    #[test]\n+    fn br_loop_zero_and_one_over_probe_without_allocating_extra_bytes() {\n+        let mut empty = ScriptedReader::new([ReadStep::Eof]);\n+        let empty_bytes = read_media_bytes_bounded(&mut empty, 0, |_, _| {\n+            panic!(\"an empty zero-cap read must not reserve result storage\");\n+        })\n+        .expect(\"empty input at zero cap\");\n+        assert!(empty_bytes.is_empty());\n+        assert_eq!(empty.requests, vec![1]);\n+\n+        let mut nonempty = ScriptedReader::new([ReadStep::Bytes(b\"x\")]);\n+        let error = read_media_bytes_bounded(&mut nonempty, 0, |_, _| {\n+            panic!(\"the overflow probe must not allocate result storage\");\n+        })\n+        .unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);\n+        assert_eq!(nonempty.consumed, 1);\n+\n+        let mut over = ScriptedReader::new([ReadStep::Bytes(b\"abcdef\")]);\n+        let mut capacities = Vec::new();\n+        let error = read_media_bytes_bounded(&mut over, 4, |bytes, capacity| {\n+            capacities.push(capacity);\n+            reserve_media_read_capacity(bytes, capacity)\n+        })\n+        .unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);\n+        assert_eq!(over.consumed, 5, \"only one over-limit byte may be consumed\");\n+        assert_eq!(capacities, vec![4], \"the sentinel never enters the result vector\");\n     }\n \n-    Ok(buffer)\n+    #[test]\n+    fn br_loop_late_read_error_discards_prefix() {\n+        let mut reader = ScriptedReader::new([\n+            ReadStep::Bytes(b\"prefix\"),\n+            ReadStep::Failure(io::ErrorKind::PermissionDenied),\n+        ]);\n+        let error = read_media_bytes_bounded(&mut reader, 20, reserve_media_read_capacity)\n+            .unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);\n+        assert_eq!(error.to_string(), \"scripted media read failure\");\n+        assert_eq!(reader.consumed, 6);\n+        assert!(reader.steps.is_empty());\n+    }\n+\n+    #[test]\n+    fn br_loop_allocation_failure_discards_prefix() {\n+        let source = vec![0x5a; MEDIA_READ_CHUNK_BYTES + 1];\n+        let mut reader = io::Cursor::new(source.as_slice());\n+        let mut reservations = 0;\n+        let error = read_media_bytes_bounded(&mut reader, source.len(), |bytes, capacity| {\n+            reservations += 1;\n+            if reservations == 2 {\n+                assert_eq!(bytes.as_slice(), &source[..MEDIA_READ_CHUNK_BYTES]);\n+                return Err(io::Error::new(\n+                    io::ErrorKind::OutOfMemory,\n+                    \"injected media reservation failure\",\n+                ));\n+            }\n+            reserve_media_read_capacity(bytes, capacity)\n+        })\n+        .unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::OutOfMemory);\n+        assert_eq!(error.to_string(), \"injected media reservation failure\");\n+        assert_eq!(reservations, 2);\n+    }\n+\n+    #[test]\n+    fn br_loop_growth_is_bounded_and_amortized() {\n+        let source = vec![0x37; MEDIA_READ_CHUNK_BYTES * 8 + 1];\n+        let mut reader = io::Cursor::new(source.as_slice());\n+        let mut capacities = Vec::new();\n+        let bytes = read_media_bytes_bounded(&mut reader, source.len(), |bytes, capacity| {\n+            assert!(capacity <= source.len(), \"requested capacity exceeds the byte cap\");\n+            capacities.push(capacity);\n+            reserve_media_read_capacity(bytes, capacity)\n+        })\n+        .expect(\"finite multi-chunk read\");\n+        assert_eq!(bytes, source);\n+        assert!(capacities[0] <= 64 * 1024);\n+        assert!(\n+            capacities.len() <= 5,\n+            \"growth must not reallocate for every one of the nine input chunks: {capacities:?}\"\n+        );\n+    }\n+\n+    #[test]\n+    fn br_initial_allocation_ignores_large_metadata_hint() {\n+        let directory = ReadDirectory::new(\"allocation-hint\");\n+        let path = directory.0.join(\"source.bin\");\n+        let source = fs::File::create(&path).expect(\"create source\");\n+        source.set_len((MEDIA_READ_CHUNK_BYTES * 8) as u64).expect(\"set bounded fixture length\");\n+        drop(source);\n+        let metadata = fs::metadata(&path).expect(\"source metadata\");\n+        assert!(metadata.len() > (64 * 1024) as u64);\n+        check_outbound_media_metadata(&metadata, usize::MAX).expect(\"regular-file preflight\");\n+        let mut opened = open_outbound_media_file_bounded(&path, usize::MAX)\n+            .expect(\"opened source admission\");\n+\n+        let mut requested_capacity = None;\n+        let error = read_media_bytes_bounded(&mut opened, usize::MAX, |bytes, capacity| {\n+            assert!(bytes.is_empty() && bytes.capacity() == 0);\n+            requested_capacity = Some(capacity);\n+            Err(io::Error::from(io::ErrorKind::OutOfMemory))\n+        })\n+        .unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::OutOfMemory);\n+        let requested_capacity = requested_capacity.expect(\"one observed reservation\");\n+        assert!((1..=64 * 1024).contains(&requested_capacity));\n+        assert!(\n+            opened.stream_position().expect(\"source offset\") <= 64 * 1024,\n+            \"allocation refusal must stop after at most one bounded input chunk\"\n+        );\n+    }\n+\n+    #[test]\n+    fn br_opened_admission_rechecks_size_after_preflight() {\n+        let directory = ReadDirectory::new(\"opened-size\");\n+        let path = directory.0.join(\"source.bin\");\n+        fs::write(&path, b\"x\").expect(\"write initial file\");\n+        check_outbound_media_metadata(&fs::metadata(&path).unwrap(), 1)\n+            .expect(\"initial preflight\");\n+        fs::write(&path, b\"xy\").expect(\"grow file after preflight\");\n+        let error = open_outbound_media_file_bounded(&path, 1).unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);\n+    }\n+\n+    #[test]\n+    fn br_opened_file_growth_is_not_successful_prefix() {\n+        let directory = ReadDirectory::new(\"opened-growth\");\n+        let path = directory.0.join(\"source.bin\");\n+        fs::write(&path, b\"abc\").expect(\"write initial file\");\n+        check_outbound_media_metadata(&fs::metadata(&path).unwrap(), 3)\n+            .expect(\"initial preflight\");\n+        let mut opened = open_outbound_media_file_bounded(&path, 3).expect(\"opened admission\");\n+        let mut appender = fs::OpenOptions::new().append(true).open(&path).expect(\"owned append\");\n+        appender.write_all(b\"d\").expect(\"grow after opened metadata admission\");\n+        drop(appender);\n+\n+        let error = read_media_bytes_bounded(&mut opened, 3, reserve_media_read_capacity)\n+            .unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);\n+        assert_eq!(opened.stream_position().unwrap(), 4, \"one sentinel byte is enough\");\n+        drop(opened);\n+        assert_eq!(read_outbound_media_file_bounded(&path, 4).unwrap(), b\"abcd\");\n+    }\n+\n+    #[cfg(unix)]\n+    #[test]\n+    fn br_unix_opened_admission_rejects_directory_replacement() {\n+        let directory = ReadDirectory::new(\"opened-kind\");\n+        let path = directory.0.join(\"source\");\n+        fs::write(&path, b\"x\").expect(\"write initial file\");\n+        check_outbound_media_metadata(&fs::metadata(&path).unwrap(), 1)\n+            .expect(\"regular-file preflight\");\n+        fs::remove_file(&path).expect(\"remove owned regular leaf\");\n+        fs::create_dir(&path).expect(\"substitute owned directory\");\n+        let error = open_outbound_media_file_bounded(&path, 1).unwrap_err();\n+        assert_eq!(error.kind(), io::ErrorKind::NotFound);\n+    }\n+\n+    #[cfg(unix)]\n+    #[test]\n+    fn br_unix_open_owns_nonblocking_descriptor() {\n+        use std::os::fd::AsRawFd;\n+\n+        let directory = ReadDirectory::new(\"open-flags\");\n+        let path = directory.0.join(\"source.bin\");\n+        fs::write(&path, b\"x\").expect(\"write source\");\n+        let opened = open_outbound_media_file_bounded(&path, 1).expect(\"open ordinary file\");\n+        let flags = unsafe { libc::fcntl(opened.as_raw_fd(), libc::F_GETFL) };\n+        assert!(flags >= 0, \"inspect owned descriptor: {}\", io::Error::last_os_error());\n+        assert_ne!(flags & libc::O_NONBLOCK, 0);\n+    }\n+\n+    #[cfg(unix)]\n+    struct OwnedFifoChild {\n+        child: std::process::Child,\n+        log_path: PathBuf,\n+        output_reported: bool,\n+    }\n+\n+    #[cfg(unix)]\n+    impl OwnedFifoChild {\n+        fn wait_for(\n+            &mut self,\n+            timeout: std::time::Duration,\n+        ) -> io::Result<Option<std::process::ExitStatus>> {\n+            let deadline = std::time::Instant::now() + timeout;\n+            loop {\n+                if let Some(status) = self.child.try_wait()? {\n+                    return Ok(Some(status));\n+                }\n+                let remaining = deadline.saturating_duration_since(std::time::Instant::now());\n+                if remaining.is_zero() {\n+                    return Ok(None);\n+                }\n+                // Poll only this owned child's completion. The exit status and\n+                // deadline decide the oracle, not an assumed scheduling sleep.\n+                std::thread::sleep(remaining.min(std::time::Duration::from_millis(10)));\n+            }\n+        }\n+\n+        fn report_output(&mut self) -> io::Result<()> {\n+            use base64::Engine;\n+\n+            let output = fs::read(&self.log_path)?;\n+            println!(\n+                \"BR_FIFO_CHILD_OUTPUT_BASE64={}\",\n+                base64::engine::general_purpose::STANDARD.encode(output)\n+            );\n+            self.output_reported = true;\n+            Ok(())\n+        }\n+    }\n+\n+    #[cfg(unix)]\n+    impl Drop for OwnedFifoChild {\n+        fn drop(&mut self) {\n+            if !matches!(self.child.try_wait(), Ok(Some(_))) {\n+                let _ = self.child.kill();\n+                let _ = self.child.wait();\n+            }\n+            if std::thread::panicking() && !self.output_reported {\n+                if let Err(error) = self.report_output() {\n+                    eprintln!(\"Failed to retain owned FIFO child output: {error}\");\n+                }\n+            }\n+        }\n+    }\n+\n+    #[cfg(unix)]\n+    #[test]\n+    fn br_unix_fifo_replacement_after_preflight_does_not_block() {\n+        use std::ffi::CString;\n+        use std::os::unix::ffi::OsStrExt;\n+        use std::os::unix::fs::OpenOptionsExt;\n+        use std::process::{Command, Stdio};\n+        use std::time::Duration;\n+\n+        const CHILD_PATH_ENV: &str = \"FABUSHI_BR_FIFO_PROBE_PATH\";\n+        const CHILD_ACK_ENV: &str = \"FABUSHI_BR_FIFO_PROBE_ACK\";\n+        const TEST_NAME: &str = \"br_unix_fifo_replacement_after_preflight_does_not_block\";\n+        const ACK: &[u8] = b\"opened-nonregular-rejected\";\n+\n+        if let Some(path) = std::env::var_os(CHILD_PATH_ENV) {\n+            // Re-enter the one selected test, not an ignored/dummy helper.\n+            let ack = std::env::var_os(CHILD_ACK_ENV).expect(\"owned child acknowledgment path\");\n+            let error = open_outbound_media_file_bounded(Path::new(&path), 8).unwrap_err();\n+            assert_eq!(error.kind(), io::ErrorKind::NotFound);\n+            let mut receipt = fs::OpenOptions::new().write(true).create_new(true)\n+                .open(ack).expect(\"create exclusive child acknowledgment\");\n+            receipt.write_all(ACK).expect(\"write actual rejection acknowledgment\");\n+            return;\n+        }\n+\n+        let directory = ReadDirectory::new(\"fifo-replacement\");\n+        let path = directory.0.join(\"source.bin\");\n+        fs::write(&path, b\"ordinary\").expect(\"write initial regular file\");\n+        check_outbound_media_metadata(&fs::metadata(&path).unwrap(), 8)\n+            .expect(\"prove regular-file preflight before substitution\");\n+        fs::rename(&path, directory.0.join(\"original.bin\")).expect(\"retain original owned file\");\n+        let native_path = CString::new(path.as_os_str().as_bytes()).expect(\"fixture path has no NUL\");\n+        let created = unsafe { libc::mkfifo(native_path.as_ptr(), 0o600) };\n+        assert_eq!(created, 0, \"create owned FIFO: {}\", io::Error::last_os_error());\n+\n+        let ack_path = directory.0.join(\"child-rejection\");\n+        let log_path = directory.0.join(\"child-output.log\");\n+        let log = fs::File::create(&log_path).expect(\"create owned child output log\");\n+        let error_log = log.try_clone().expect(\"capture owned child stderr\");\n+        let module = module_path!().split_once(\"::\").expect(\"module has crate prefix\").1;\n+        let child = Command::new(std::env::current_exe().expect(\"current unit-test binary\"))\n+            .arg(\"--exact\")\n+            .arg(format!(\"{module}::{TEST_NAME}\"))\n+            .arg(\"--nocapture\")\n+            .env(CHILD_PATH_ENV, &path)\n+            .env(CHILD_ACK_ENV, &ack_path)\n+            .stdin(Stdio::null())\n+            .stdout(Stdio::from(log))\n+            .stderr(Stdio::from(error_log))\n+            .spawn()\n+            .expect(\"start the exact owned FIFO probe\");\n+        let mut probe = OwnedFifoChild { child, log_path, output_reported: false };\n+\n+        let (status, blocked) = match probe.wait_for(Duration::from_secs(5))\n+            .expect(\"wait for owned FIFO probe\")\n+        {\n+            Some(status) => (status, false),\n+            None => {\n+                // A blocking-open mutation must be released and reaped before\n+                // this timeout is reported as failure. A read anchor makes the\n+                // writer open nonblocking even if the child has not run yet.\n+                let release_read = fs::OpenOptions::new().read(true)\n+                    .custom_flags(libc::O_NONBLOCK).open(&path)\n+                    .expect(\"open owned FIFO read anchor\");\n+                let release_write = fs::OpenOptions::new().write(true)\n+                    .custom_flags(libc::O_NONBLOCK).open(&path)\n+                    .expect(\"release only the owned FIFO reader\");\n+                let status = match probe.wait_for(Duration::from_secs(5))\n+                    .expect(\"wait after releasing owned FIFO\")\n+                {\n+                    Some(status) => status,\n+                    None => {\n+                        let kill = probe.child.kill();\n+                        let reaped = probe.child.wait();\n+                        assert!(kill.is_ok(), \"terminate exact owned probe: {kill:?}\");\n+                        reaped.expect(\"reap terminated owned probe\")\n+                    }\n+                };\n+                drop(release_write);\n+                drop(release_read);\n+                (status, true)\n+            }\n+        };\n+        probe.report_output().expect(\"retain complete child stdout/stderr as one encoded record\");\n+        assert!(!blocked, \"FIFO open exceeded its deadline; owned probe was released/reaped: {status}\");\n+        assert!(status.success(), \"owned FIFO probe failed: {status}\");\n+        assert_eq!(\n+            fs::read(&ack_path).expect(\"child must prove it executed the real open\"),\n+            ACK,\n+            \"a zero-test child exit is not proof of rejection\"\n+        );\n+    }\n }\n+\ndiff --git a/source/host/tests/openclaw_media_reference_contract.rs b/source/host/tests/openclaw_media_reference_contract.rs\nindex e12bee9bc0a5789f7020b1b50c883c9269b08b8c..df52afa0b1c727b2236dc2d96328047e10daab85 100644\n--- a/source/host/tests/openclaw_media_reference_contract.rs\n+++ b/source/host/tests/openclaw_media_reference_contract.rs\n@@ -378,3 +378,120 @@ fn mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals() {\n         assert!(matches!(parse_inbound_media_uri(source), Err(MediaReferenceError::InvalidPath(_))), \"{source}\");\n     }\n }\n+\n+struct BoundedMediaFixture(PathBuf);\n+\n+impl BoundedMediaFixture {\n+    fn new(label: &str) -> Self {\n+        let path = std::env::temp_dir().join(format!(\n+            \"ocrm-bounded-media-{label}-{}\",\n+            uuid::Uuid::new_v4()\n+        ));\n+        fs::create_dir(&path).expect(\"create owned bounded-media fixture\");\n+        Self(path)\n+    }\n+}\n+\n+impl Drop for BoundedMediaFixture {\n+    fn drop(&mut self) {\n+        let _ = fs::remove_dir_all(&self.0);\n+    }\n+}\n+\n+#[test]\n+fn br_public_empty_zero_exact_and_over_limits() {\n+    let fixture = BoundedMediaFixture::new(\"limits\");\n+    let empty = fixture.0.join(\"empty.bin\");\n+    fs::write(&empty, b\"\").expect(\"write empty file\");\n+    assert!(read_outbound_media_file_bounded(&empty, 0).unwrap().is_empty());\n+\n+    let source = fixture.0.join(\"source.bin\");\n+    fs::write(&source, b\"abc\").expect(\"write ordinary file\");\n+    for cap in [0, 2] {\n+        let error = read_outbound_media_file_bounded(&source, cap).unwrap_err();\n+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);\n+    }\n+    assert_eq!(read_outbound_media_file_bounded(&source, 3).unwrap(), b\"abc\");\n+    assert_eq!(read_outbound_media_file_bounded(&source, 4).unwrap(), b\"abc\");\n+}\n+\n+#[test]\n+fn br_public_usize_max_returns_original_bytes() {\n+    let fixture = BoundedMediaFixture::new(\"max-cap\");\n+    let source = fixture.0.join(\"source.bin\");\n+    let original = b\"\\0nonempty\\xff\";\n+    fs::write(&source, original).expect(\"write binary file\");\n+    assert_eq!(\n+        read_outbound_media_file_bounded(&source, usize::MAX).unwrap(),\n+        original,\n+        \"the maximum cap must not panic or wrap the read limit to zero\"\n+    );\n+}\n+\n+#[test]\n+fn br_public_missing_and_directory_preserve_not_found() {\n+    let fixture = BoundedMediaFixture::new(\"missing-kind\");\n+    let missing = fixture.0.join(\"absent.bin\");\n+    assert_eq!(\n+        read_outbound_media_file_bounded(&missing, usize::MAX).unwrap_err().kind(),\n+        std::io::ErrorKind::NotFound\n+    );\n+    assert_eq!(\n+        read_outbound_media_file_bounded(&fixture.0, usize::MAX).unwrap_err().kind(),\n+        std::io::ErrorKind::NotFound\n+    );\n+}\n+\n+#[test]\n+fn br_public_retry_observes_replaced_file() {\n+    let fixture = BoundedMediaFixture::new(\"fresh-retry\");\n+    let source = fixture.0.join(\"source.bin\");\n+    fs::write(&source, b\"first\").expect(\"write first file\");\n+    assert_eq!(read_outbound_media_file_bounded(&source, 5).unwrap(), b\"first\");\n+\n+    let replacement = fixture.0.join(\"replacement.bin\");\n+    fs::write(&replacement, b\"replacement\").expect(\"write replacement\");\n+    fs::remove_file(&source).expect(\"remove old owned file after read\");\n+    fs::rename(&replacement, &source).expect(\"publish owned replacement for retry\");\n+    assert_eq!(\n+        read_outbound_media_file_bounded(&source, 5).unwrap_err().kind(),\n+        std::io::ErrorKind::InvalidData\n+    );\n+    assert_eq!(\n+        read_outbound_media_file_bounded(&source, b\"replacement\".len()).unwrap(),\n+        b\"replacement\",\n+        \"retry must observe the current file rather than retain old bytes or a prior error\"\n+    );\n+}\n+\n+#[test]\n+fn br_public_hard_links_preserve_bytes() {\n+    let fixture = BoundedMediaFixture::new(\"hard-link\");\n+    let source = fixture.0.join(\"source.bin\");\n+    let alias = fixture.0.join(\"hard-link.bin\");\n+    fs::write(&source, b\"linked bytes\").expect(\"write linked source\");\n+    fs::hard_link(&source, &alias).expect(\"create real native hard link\");\n+    assert_eq!(\n+        read_outbound_media_file_bounded(&alias, b\"linked bytes\".len()).unwrap(),\n+        b\"linked bytes\"\n+    );\n+}\n+\n+#[cfg(any(unix, windows))]\n+#[test]\n+fn br_public_symbolic_links_preserve_bytes() {\n+    let fixture = BoundedMediaFixture::new(\"symbolic-link\");\n+    let source = fixture.0.join(\"source.bin\");\n+    let alias = fixture.0.join(\"symbolic-link.bin\");\n+    fs::write(&source, b\"linked bytes\").expect(\"write linked source\");\n+    #[cfg(unix)]\n+    std::os::unix::fs::symlink(&source, &alias).expect(\"create real Unix file symlink\");\n+    #[cfg(windows)]\n+    std::os::windows::fs::symlink_file(&source, &alias)\n+        .expect(\"create real Windows file symlink (required native fixture)\");\n+    assert_eq!(\n+        read_outbound_media_file_bounded(&alias, b\"linked bytes\".len()).unwrap(),\n+        b\"linked bytes\"\n+    );\n+}\n+\n"
+  },
+  "prior_subject_evidence_carrier": "projects/openclaw-rust/evidence/media-hhp-native-recovery-647e0932-20261103.json"
+}

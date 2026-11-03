@@ -2,6 +2,7 @@ use std::fs;use std::io;use std::path::{Path,PathBuf};use std::sync::Arc;use std
 use serde_json::{Map,Value,json};
 use crate::storage::folder_id::is_safe_folder_id;use crate::watched_directory::{ChangeListener,WatchedDirectory};
 use super::automation::{AUTOMATION_MAX_PER_AGENT,AUTOMATION_MAX_RUN_HISTORY,AutomationConfig,AutomationRecord,AutomationRun,AutomationSpec,clamp_automation_name,clamp_coalesced_run_ids,clamp_run_detail,create_automation_run_id,describe_trigger,normalize_automation_prompt,slugify_automation_name};
+use super::automation_id::stable_automation_id;
 use super::automation_schedule::{compute_next_run_at,normalize_schedule};
 use super::automation_trigger::{parse_stored_trigger,serialize_stored_trigger,trigger_members,trigger_schedule};
 use super::routine_notices::is_routine_notice_id;
@@ -21,12 +22,159 @@ impl FileAutomationStore{
  pub fn config_path(&self,id:&str)->PathBuf{self.dir.get_location().join(id).join(CONFIG_FILENAME)}
  pub fn runs_path(&self,id:&str)->PathBuf{self.dir.get_location().join(id).join(RUNS_FILENAME)}
  pub fn list_ids(&self)->Vec<String>{self.dir.list_subdirectory_names().into_iter().filter(|id|is_safe_folder_id(id)).collect()}
- pub fn read_config(&self,id:&str)->Option<AutomationConfig>{if !is_safe_folder_id(id){return None;}let path=self.config_path(id);let raw=fs::read_to_string(&path).ok()?;parse_stored_config(&raw,file_time_ms(&path))}
- pub fn read_runs(&self,id:&str)->Vec<AutomationRun>{let Ok(raw)=fs::read_to_string(self.runs_path(id))else{return Vec::new();};let Ok(value)=serde_json::from_str::<Value>(&raw)else{return Vec::new();};let Some(items)=value.as_array()else{return Vec::new();};let mut runs=items.iter().filter_map(parse_stored_run).collect::<Vec<_>>();runs.sort_by(|a,b|b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));runs.truncate(AUTOMATION_MAX_RUN_HISTORY);runs}
+ pub fn read_config(&self,id:&str)->Option<AutomationConfig>{if !is_safe_folder_id(id){return None;}let path=self.config_path(id);let(raw,_)=read_regular_file(&path).ok()?;parse_stored_config(&raw,file_time_ms(&path))}
+ /// Find one backend definition without reading or trusting display history.
+ pub fn find_for_backend_delivery(
+     &self,
+     agent_id: &str,
+     backend_id: &str,
+ ) -> Result<Option<AutomationRecord>, AutomationStoreError> {
+     if !is_safe_folder_id(agent_id) {
+         return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid agent folder ID").into());
+     }
+     if !delivery_directory_exists(self.dir.get_location())? {
+         return Ok(None);
+     }
+     let mut matched = None;
+     for entry in fs::read_dir(self.dir.get_location())? {
+         let entry = entry?;
+         let id = entry.file_name().into_string().map_err(|_| {
+             io::Error::new(io::ErrorKind::InvalidData, "automation folder identity is not UTF-8")
+         })?;
+         let metadata = entry.metadata()?;
+         if metadata.file_type().is_symlink() {
+             // A dangling or unreadable entry cannot silently disappear from
+             // a checked enumeration, even when a different ID is requested.
+             fs::metadata(entry.path())?;
+         }
+         if !is_safe_folder_id(&id) || stable_automation_id(agent_id, &id) != backend_id {
+             continue;
+         }
+         // list_ids excludes child symlinks. Do not newly admit one here, or
+         // misreport its matching identity as a missing automation.
+         if !metadata.is_dir() {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidData,
+                 "automation delivery target is not a local directory",
+             ).into());
+         }
+         if matched.replace(id).is_some() {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidData,
+                 "automation backend identity is claimed by different folders",
+             ).into());
+         }
+     }
+     // Complete enumeration first: a later identity or metadata failure must
+     // invalidate an apparent match, not hide behind an early return. History
+     // remains exclusively the required checked delivery resolver's authority.
+     let Some(id) = matched else { return Ok(None); };
+     let config = self.read_config_for_delivery(&id)?;
+     Ok(Some(self.record_from_config(&id, config, true)))
+ }
+
+ fn require_local_directory(&self, id: &str) -> Result<(), AutomationStoreError> {
+     let folder = self.dir.get_location().join(id);
+     if !fs::symlink_metadata(&folder)?.is_dir() {
+         return Err(io::Error::new(
+             io::ErrorKind::InvalidData,
+             "automation delivery target is not a local directory",
+         ).into());
+     }
+     Ok(())
+ }
+
+ fn read_config_for_delivery(&self, id: &str) -> Result<AutomationConfig, AutomationStoreError> {
+     self.require_local_directory(id)?;
+     let path = self.config_path(id);
+     let (raw, metadata) = read_regular_file(&path)?;
+     serde_json::from_str::<UniqueJson>(&raw)
+         .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+     // Keep the legacy timestamp/default/trigger semantics, after checked
+     // metadata and unique-key decoding have established the input's identity.
+     let fallback = metadata.created().ok().or_else(|| metadata.modified().ok())
+         .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+         .map(|duration| duration.as_millis() as f64).unwrap_or_else(now_ms);
+     parse_stored_config(&raw, fallback).ok_or_else(|| io::Error::new(
+         io::ErrorKind::InvalidData,
+         "automation delivery definition is invalid",
+     ).into())
+ }
+ pub fn read_runs(&self,id:&str)->Vec<AutomationRun>{let Ok((raw,_))=read_regular_file(&self.runs_path(id))else{return Vec::new();};let Ok(value)=serde_json::from_str::<Value>(&raw)else{return Vec::new();};let Some(items)=value.as_array()else{return Vec::new();};let mut runs=items.iter().filter_map(parse_stored_run).collect::<Vec<_>>();runs.sort_by(|a,b|b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));runs.truncate(AUTOMATION_MAX_RUN_HISTORY);runs}
+ /// Resolve delivery custody from the complete raw history, before legacy normalization.
+ pub fn read_run_for_delivery(
+     &self,
+     id: &str,
+     run_id: &str,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     if !is_safe_folder_id(id) {
+         return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid automation folder ID").into());
+     }
+     if run_id.is_empty() {
+         return Err(io::Error::new(io::ErrorKind::InvalidInput, "automation run ID must not be empty").into());
+     }
+     self.read_config_for_delivery(id)?;
+     Ok(self.read_runs_for_custody(id)?.into_iter().find(|run| {
+         run.id == run_id || run.coalesced_run_ids.as_ref()
+             .is_some_and(|ids| ids.iter().any(|identity| identity == run_id))
+     }))
+ }
+
+ // Delivery and fresh admission consume the same complete checked image.
+ // No lookup, capacity check or retention may hide a later invalid row.
+ fn read_runs_for_custody(&self, id: &str) -> Result<Vec<AutomationRun>, AutomationStoreError> {
+     let items = self.read_run_image(id, true)?;
+     let mut identity_owners = std::collections::HashMap::<&str, usize>::new();
+     let mut runs = Vec::with_capacity(items.len());
+     for (row_index, item) in items.iter().enumerate() {
+         let invalid = || io::Error::new(
+             io::ErrorKind::InvalidData,
+             "automation run history contains invalid delivery custody",
+         );
+         let object = item.as_object().ok_or_else(invalid)?;
+         let primary_id = object.get("id").and_then(Value::as_str)
+             .filter(|id| !id.is_empty()).ok_or_else(invalid)?;
+         if !object.get("startedAt").and_then(Value::as_f64).is_some_and(f64::is_finite) {
+             return Err(invalid().into());
+         }
+         let status = object.get("status").and_then(Value::as_str).ok_or_else(invalid)?;
+         let finished = object.get("finishedAt");
+         match status {
+             "running" if finished.is_none_or(Value::is_null) => {}
+             "ok" | "error" if finished.and_then(Value::as_f64).is_some_and(f64::is_finite) => {}
+             _ => return Err(invalid().into()),
+         }
+         let aliases = match object.get("coalescedRunIds") {
+             None | Some(Value::Null) => &[][..],
+             Some(Value::Array(values))
+                 if values.len() <= super::automation::MAX_EVENTS_IN_AUTOMATION_WAKE => values.as_slice(),
+             _ => return Err(invalid().into()),
+         };
+         let mut row_identities = Vec::with_capacity(aliases.len() + 1);
+         row_identities.push(primary_id);
+         for alias in aliases {
+             row_identities.push(alias.as_str().filter(|id| !id.is_empty()).ok_or_else(invalid)?);
+         }
+         for identity in row_identities {
+             if identity_owners.insert(identity, row_index)
+                 .is_some_and(|previous| previous != row_index)
+             {
+                 return Err(io::Error::new(
+                     io::ErrorKind::InvalidData,
+                     "automation run identity is claimed by different history rows",
+                 ).into());
+             }
+         }
+         // Custody fields are now lossless; keep the existing metadata parser.
+         runs.push(parse_stored_run(item).ok_or_else(invalid)?);
+     }
+     Ok(runs)
+ }
  pub fn write_config(&self,id:&str,config:&AutomationConfig)->Result<(),AutomationStoreError>{self.dir.write_file_atomic(self.config_path(id),serialize_config(config).as_bytes())?;Ok(())}
  pub fn write_runs(&self,id:&str,runs:&[AutomationRun])->Result<(),AutomationStoreError>{let values=runs.iter().map(run_to_json).collect::<Vec<_>>();let mut raw=serde_json::to_string_pretty(&values)?;raw.push('\n');self.dir.write_file_atomic(self.runs_path(id),raw.as_bytes())?;Ok(())}
  pub fn earliest_next_run_at(&self,c:&AutomationConfig)->Option<f64>{let anchor=c.last_run_at.unwrap_or(c.created_at);let time_zone=(self.resolve_user_time_zone)();let mut earliest:Option<f64>=None;for member in trigger_members(&c.trigger){if member.get("type").and_then(Value::as_str)!=Some("cron"){continue;}let Some(schedule)=member.get("schedule").and_then(Value::as_str)else{continue;};if let Some(next)=compute_next_run_at(schedule,anchor,time_zone.as_deref()){if earliest.is_none_or(|current|next<current){earliest=Some(next);}}}earliest}
- pub fn to_record(&self,id:&str,c:AutomationConfig,derive_next_run_at:bool)->AutomationRecord{let schedule=trigger_schedule(&c.trigger).unwrap_or_default();let next_run_at=if derive_next_run_at&&c.is_enabled{self.earliest_next_run_at(&c)}else{None};AutomationRecord{id:id.to_string(),name:c.name,prompt:c.prompt,trigger_description:describe_trigger(&c.trigger),trigger:c.trigger,is_enabled:c.is_enabled,created_at:c.created_at,last_run_at:c.last_run_at,raised_notices:c.raised_notices,schedule,next_run_at,runs:self.read_runs(id),file_path:self.config_path(id)}}
+ pub fn to_record(&self,id:&str,c:AutomationConfig,derive_next_run_at:bool)->AutomationRecord{let mut record=self.record_from_config(id,c,derive_next_run_at);record.runs=self.read_runs(id);record}
+ fn record_from_config(&self,id:&str,c:AutomationConfig,derive_next_run_at:bool)->AutomationRecord{let schedule=trigger_schedule(&c.trigger).unwrap_or_default();let next_run_at=if derive_next_run_at&&c.is_enabled{self.earliest_next_run_at(&c)}else{None};AutomationRecord{id:id.to_string(),name:c.name,prompt:c.prompt,trigger_description:describe_trigger(&c.trigger),trigger:c.trigger,is_enabled:c.is_enabled,created_at:c.created_at,last_run_at:c.last_run_at,raised_notices:c.raised_notices,schedule,next_run_at,runs:Vec::new(),file_path:self.config_path(id)}}
  pub fn list(&self)->Vec<AutomationRecord>{let mut out=self.list_ids().into_iter().filter_map(|id|self.read_config(&id).map(|c|self.to_record(&id,c,true))).collect::<Vec<_>>();out.sort_by(|a,b|a.next_run_at.unwrap_or(f64::INFINITY).partial_cmp(&b.next_run_at.unwrap_or(f64::INFINITY)).unwrap_or(std::cmp::Ordering::Equal).then_with(||a.created_at.partial_cmp(&b.created_at).unwrap_or(std::cmp::Ordering::Equal)));out}
  pub fn list_definitions(&self)->Vec<AutomationRecord>{let mut out=self.list_ids().into_iter().filter_map(|id|self.read_config(&id).map(|c|self.to_record(&id,c,false))).collect::<Vec<_>>();out.sort_by(|a,b|a.created_at.partial_cmp(&b.created_at).unwrap_or(std::cmp::Ordering::Equal));out}
  pub fn get(&self,id:&str)->Option<AutomationRecord>{self.read_config(id).map(|c|self.to_record(id,c,true))}
@@ -40,12 +188,321 @@ impl FileAutomationStore{
  pub fn record_run(&self,id:&str,at:f64)->Result<Option<AutomationRecord>,AutomationStoreError>{self.record_run_with(id,at,true)}
  pub fn record_run_definition(&self,id:&str,at:f64)->Result<Option<AutomationRecord>,AutomationStoreError>{self.record_run_with(id,at,false)}
  fn record_run_with(&self,id:&str,at:f64,derive:bool)->Result<Option<AutomationRecord>,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(None);}let Some(mut c)=self.read_config(id)else{return Ok(None);};c.last_run_at=Some(at);self.write_config(id,&c)?;Ok(Some(self.to_record(id,c,derive)))}
- pub fn begin_run(&self,id:&str,trigger:&str,at:f64,event:Option<&str>,run_id:Option<&str>,coalesced:Option<&[String]>)->Result<Option<AutomationRun>,AutomationStoreError>{if self.read_config(id).is_none(){return Ok(None);}let mut runs=self.read_runs(id);let run_id=run_id.map(ToOwned::to_owned).unwrap_or_else(create_automation_run_id);if let Some(found)=runs.iter().find(|r|r.id==run_id){return Ok(Some(found.clone()));}let run=AutomationRun{id:run_id,trigger:match trigger{"manual"|"event"=>trigger.to_string(),_=>"schedule".into()},started_at:at,finished_at:None,status:"running".into(),detail:None,event:clamp_run_detail(event),coalesced_run_ids:clamp_coalesced_run_ids(coalesced)};runs.insert(0,run.clone());runs.truncate(AUTOMATION_MAX_RUN_HISTORY);self.write_runs(id,&runs)?;Ok(Some(run))}
+ pub fn begin_run(
+     &self,
+     id: &str,
+     trigger: &str,
+     at: f64,
+     event: Option<&str>,
+     run_id: Option<&str>,
+     coalesced: Option<&[String]>,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     self.begin_run_checked(id, trigger, at, event, run_id, coalesced, false)
+ }
+ /// Unlike the legacy idempotent projection API, production execution may
+ /// only admit an identity not already claimed by any primary or coalesced row.
+ pub fn begin_fresh_run(
+     &self,
+     id: &str,
+     trigger: &str,
+     at: f64,
+     event: Option<&str>,
+     run_id: Option<&str>,
+     coalesced: Option<&[String]>,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     self.begin_run_checked(id, trigger, at, event, run_id, coalesced, true)
+ }
+ fn begin_run_checked(
+     &self,
+     id: &str,
+     trigger: &str,
+     at: f64,
+     event: Option<&str>,
+     run_id: Option<&str>,
+     coalesced: Option<&[String]>,
+     require_fresh: bool,
+ ) -> Result<Option<AutomationRun>, AutomationStoreError> {
+     if self.read_config(id).is_none() {
+         return Ok(None);
+     }
+     if run_id.is_some_and(str::is_empty) {
+         return Err(io::Error::new(
+             io::ErrorKind::InvalidInput,
+             "automation run ID must not be empty",
+         ).into());
+     }
+     if require_fresh {
+         if !at.is_finite() {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidInput,
+                 "automation run start time must be finite",
+             ).into());
+         }
+         if coalesced.is_some_and(|ids| {
+             ids.len() > super::automation::MAX_EVENTS_IN_AUTOMATION_WAKE
+                 || ids.iter().any(String::is_empty)
+         }) {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidInput,
+                 "automation run aliases must be nonempty and within the batch limit",
+             ).into());
+         }
+     }
+     let mut runs = if require_fresh {
+         self.read_runs_for_custody(id)?
+     } else {
+         self.read_runs_for_mutation(id)?
+     };
+     let run_id = run_id.map(ToOwned::to_owned).unwrap_or_else(create_automation_run_id);
+     if require_fresh {
+         let requested = std::iter::once(run_id.as_str())
+             .chain(coalesced.into_iter().flatten().map(String::as_str));
+         for identity in requested {
+             if runs.iter().any(|run| {
+                 run.id == identity || run.coalesced_run_ids.as_ref()
+                     .is_some_and(|ids| ids.iter().any(|existing| existing == identity))
+             }) {
+                 return Err(io::Error::new(
+                     io::ErrorKind::AlreadyExists,
+                     "automation run identity has already been admitted",
+                 ).into());
+             }
+         }
+     } else if let Some(found) = runs.iter().find(|run| run.id == run_id) {
+         return Ok(Some(found.clone()));
+     }
+     if runs.iter().filter(|run| run.status == "running").count() >= AUTOMATION_MAX_RUN_HISTORY {
+         return Err(io::Error::new(
+             io::ErrorKind::WouldBlock,
+             "automation history has reached its unsettled run capacity",
+         ).into());
+     }
+     let run = AutomationRun {
+         id: run_id,
+         trigger: match trigger {
+             "manual" | "event" => trigger.to_string(),
+             _ => "schedule".into(),
+         },
+         started_at: at,
+         finished_at: None,
+         status: "running".into(),
+         detail: None,
+         event: clamp_run_detail(event),
+         coalesced_run_ids: clamp_coalesced_run_ids(coalesced),
+     };
+     runs.insert(0, run.clone());
+     retain_run_history(&mut runs, None);
+     self.write_runs(id, &runs)?;
+     Ok(Some(run))
+ }
  pub fn finish_run(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>)->Result<Option<AutomationRecord>,AutomationStoreError>{self.finish_run_with(id,run_id,status,at,detail,true)}
  pub fn finish_run_definition(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>)->Result<Option<AutomationRecord>,AutomationStoreError>{self.finish_run_with(id,run_id,status,at,detail,false)}
- fn finish_run_with(&self,id:&str,run_id:&str,status:&str,at:f64,detail:Option<&str>,derive:bool)->Result<Option<AutomationRecord>,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(None);}let Some(c)=self.read_config(id)else{return Ok(None);};let mut runs=self.read_runs(id);if let Some(run)=runs.iter_mut().find(|r|r.id==run_id){run.finished_at=Some(at);run.status=if status=="error"{"error".into()}else{"ok".into()};run.detail=clamp_run_detail(detail);self.write_runs(id,&runs)?;}Ok(Some(self.to_record(id,c,derive)))}
+ fn finish_run_with(
+     &self,
+     id: &str,
+     run_id: &str,
+     status: &str,
+     at: f64,
+     detail: Option<&str>,
+     derive: bool,
+ ) -> Result<Option<AutomationRecord>, AutomationStoreError> {
+     if !is_safe_folder_id(id) {
+         return Ok(None);
+     }
+     let Some(config) = self.read_config(id) else {
+         return Ok(None);
+     };
+     let mut runs = self.read_runs_for_mutation(id)?;
+     let Some(run) = runs.iter_mut().find(|run| run.id == run_id) else {
+         return Ok(None);
+     };
+     run.finished_at = Some(at);
+     run.status = if status == "error" { "error" } else { "ok" }.into();
+     run.detail = clamp_run_detail(detail);
+     let committed = run.clone();
+     retain_run_history(&mut runs, Some(run_id));
+     self.write_runs(id, &runs)?;
+     let mut record = self.to_record(id, config, derive);
+     record.runs = runs.into_iter().take(AUTOMATION_MAX_RUN_HISTORY).collect();
+     if !record.runs.iter().any(|run| run.id == run_id) {
+         // A legacy excess of Running rows can exceed the display capacity.
+         // The settlement result must still carry the exact committed receipt.
+         record.runs.truncate(AUTOMATION_MAX_RUN_HISTORY.saturating_sub(1));
+         record.runs.push(committed);
+         record.runs.sort_by(|a, b| b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));
+     }
+     Ok(Some(record))
+ }
+
+ fn read_run_image(&self, id: &str, for_custody: bool) -> Result<Vec<Value>, AutomationStoreError> {
+     let path = self.runs_path(id);
+     if for_custody {
+         // Fresh admission has checked the definition through the legacy API;
+         // establish this same local-child policy independently of delivery.
+         self.require_local_directory(id)?;
+         match fs::symlink_metadata(&path) {
+             // The regular-file reader follows a valid link, but a dangling
+             // link cannot take the missing-history branch below.
+             Ok(_) => {}
+             Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                 // If the directory has since disappeared, absence is unknown.
+                 self.require_local_directory(id)?;
+                 return Ok(Vec::new());
+             }
+             Err(error) => return Err(error.into()),
+         }
+     }
+     let raw = match read_regular_file(&path) {
+         Ok((raw, _)) => raw,
+         Err(error) if !for_custody && error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+         Err(error) => return Err(error.into()),
+     };
+     let items: Vec<UniqueJson> = serde_json::from_str(&raw)?;
+     Ok(items.into_iter().map(|item| item.0).collect())
+ }
+
+ // Mutation reads preserve legacy normalization, but inspect every row before
+ // exact lookup. Only the separate display projection truncates this history.
+ fn read_runs_for_mutation(&self, id: &str) -> Result<Vec<AutomationRun>, AutomationStoreError> {
+     let items = self.read_run_image(id, false)?;
+     let mut runs = Vec::with_capacity(items.len());
+     let mut ids = std::collections::HashSet::new();
+     for item in &items {
+         let run = parse_stored_run(item).ok_or_else(|| {
+             io::Error::new(io::ErrorKind::InvalidData, "automation run history contains an invalid row")
+         })?;
+         if !ids.insert(run.id.clone()) {
+             return Err(io::Error::new(
+                 io::ErrorKind::InvalidData,
+                 "automation run history contains duplicate run IDs",
+             ).into());
+         }
+         runs.push(run);
+     }
+     runs.sort_by(|a, b| b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));
+     Ok(runs)
+ }
  pub fn remove(&self,id:&str)->Result<bool,AutomationStoreError>{if !is_safe_folder_id(id){return Ok(false);}let folder=self.dir.get_location().join(id);match fs::metadata(&folder){Ok(m)if m.is_dir()=>{},Ok(_)=>return Ok(false),Err(e)if e.kind()==io::ErrorKind::NotFound=>return Ok(false),Err(e)=>return Err(e.into())}fs::remove_dir_all(folder)?;self.dir.schedule_notify();Ok(true)}
 }
+
+// This rejects an observed nonregular input before a potentially blocking
+// content read, while preserving valid regular-file links. It does not close
+// metadata-to-open replacement races or bound storage/writer staging latency.
+fn read_regular_file(path: &Path) -> io::Result<(String, fs::Metadata)> {
+    let metadata = fs::metadata(path)?;
+    if !metadata.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "automation store input is not a regular file",
+        ));
+    }
+    Ok((fs::read_to_string(path)?, metadata))
+}
+
+// Missing descendants of an existing directory are genuine absence. A broken
+// ancestor link, non-directory or metadata error cannot supply that evidence.
+fn delivery_directory_exists(path: &Path) -> io::Result<bool> {
+    let mut current = path;
+    let mut missing = false;
+    loop {
+        let inspected = if current.as_os_str().is_empty() { Path::new(".") } else { current };
+        match fs::symlink_metadata(inspected) {
+            Ok(_) => {
+                if !fs::metadata(inspected)?.is_dir() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "automation delivery directory is not a directory",
+                    ));
+                }
+                return Ok(!missing);
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                missing = true;
+                current = current.parent().ok_or(error)?;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+}
+
+// Checked decisions cannot use Value's last-wins decoding of duplicate keys.
+struct UniqueJson(Value);
+
+impl<'de> serde::Deserialize<'de> for UniqueJson {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        struct UniqueVisitor;
+        impl<'de> serde::de::Visitor<'de> for UniqueVisitor {
+            type Value = UniqueJson;
+            fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                f.write_str("JSON without duplicate object members")
+            }
+            fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Null))
+            }
+            fn visit_none<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Null))
+            }
+            fn visit_bool<E: serde::de::Error>(self, v: bool) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Bool(v)))
+            }
+            fn visit_i64<E: serde::de::Error>(self, v: i64) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Number(v.into())))
+            }
+            fn visit_u64<E: serde::de::Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::Number(v.into())))
+            }
+            fn visit_f64<E: serde::de::Error>(self, v: f64) -> Result<Self::Value, E> {
+                serde_json::Number::from_f64(v).map(Value::Number).map(UniqueJson)
+                    .ok_or_else(|| E::custom("non-finite JSON number"))
+            }
+            fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::String(v.to_owned())))
+            }
+            fn visit_string<E: serde::de::Error>(self, v: String) -> Result<Self::Value, E> {
+                Ok(UniqueJson(Value::String(v)))
+            }
+            fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut items = Vec::new();
+                while let Some(item) = seq.next_element::<UniqueJson>()? {
+                    items.push(item.0);
+                }
+                Ok(UniqueJson(Value::Array(items)))
+            }
+            fn visit_map<A: serde::de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+                let mut items = Map::new();
+                while let Some(key) = map.next_key::<String>()? {
+                    if items.contains_key(&key) {
+                        return Err(serde::de::Error::custom(
+                            "automation history contains a duplicate JSON object member",
+                        ));
+                    }
+                    items.insert(key, map.next_value::<UniqueJson>()?.0);
+                }
+                Ok(UniqueJson(Value::Object(items)))
+            }
+        }
+        deserializer.deserialize_any(UniqueVisitor)
+    }
+}
+
+fn retain_run_history(runs: &mut Vec<AutomationRun>, settled_run_id: Option<&str>) {
+    runs.sort_by(|a, b| b.started_at.partial_cmp(&a.started_at).unwrap_or(std::cmp::Ordering::Equal));
+    let protected = runs.iter().filter(|run| {
+        run.status == "running" || settled_run_id == Some(run.id.as_str())
+    }).count();
+    let mut terminal_slots = AUTOMATION_MAX_RUN_HISTORY.saturating_sub(protected);
+    runs.retain(|run| {
+        if run.status == "running" || settled_run_id == Some(run.id.as_str()) {
+            true
+        } else if terminal_slots > 0 {
+            terminal_slots -= 1;
+            true
+        } else {
+            false
+        }
+    });
+}
+
 pub fn get_agent_automations_dir(agent_dir:&Path)->PathBuf{agent_dir.join(AUTOMATIONS_DIRNAME)}
 pub fn inspect_agent_automation_definitions(agent_dir:&Path)->AutomationDefinitionInspection{let Ok(meta)=fs::metadata(agent_dir)else{return AutomationDefinitionInspection{state:AutomationDefinitionInspectionState::AgentMissing,valid_definition_count:0};};if !meta.is_dir(){return AutomationDefinitionInspection{state:AutomationDefinitionInspectionState::AgentMissing,valid_definition_count:0};}let dir=get_agent_automations_dir(agent_dir);let Ok(entries)=fs::read_dir(&dir)else{return AutomationDefinitionInspection{state:AutomationDefinitionInspectionState::DirMissing,valid_definition_count:0};};let(mut candidate,mut valid)=(0usize,0usize);for entry in entries.flatten(){let name=entry.file_name().to_string_lossy().into_owned();if !entry.file_type().map(|k|k.is_dir()).unwrap_or(false)||!is_safe_folder_id(&name){continue;}candidate+=1;let path=entry.path().join(CONFIG_FILENAME);let Ok(raw)=fs::read_to_string(&path)else{continue;};if parse_stored_config(&raw,file_time_ms(&path)).is_some(){valid+=1;}}let state=if valid>0{AutomationDefinitionInspectionState::Valid}else if candidate>0{AutomationDefinitionInspectionState::ConfigsInvalid}else{AutomationDefinitionInspectionState::DirEmpty};AutomationDefinitionInspection{state,valid_definition_count:valid}}
 pub fn agent_has_automations(agent_dir:&Path)->bool{inspect_agent_automation_definitions(agent_dir).valid_definition_count>0}

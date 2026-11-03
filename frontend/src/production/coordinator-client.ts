@@ -1,6 +1,11 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import {
   validateCoordinatorReply,
+  parseCloudWorkerDoctorRequest,
+  type CloudWorkerCapabilitiesProjection,
+  type CloudWorkerDoctorProjection,
+  type CloudWorkerDoctorRequest,
+  type CloudWorkerStatusProjection,
   type CoordinatorAgentThreadRequest,
   type CoordinatorAgentThreadResponse,
   type CoordinatorTranscriptWindowRequest,
@@ -31,7 +36,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateReply(method: string, value: unknown): unknown {
-  if (method === "getAgentTranscriptWindow" || method === "getAgentThread") return validateCoordinatorReply(method, value);
+  if (["getAgentTranscriptWindow", "getAgentThread", "cloudWorkers.status", "cloudWorkers.capabilities", "cloudWorkers.doctor"].includes(method)) return validateCoordinatorReply(method, value);
   if (["listAgents", "searchAgents", "getTrays", "listAllAutomations"].includes(method)) {
     if (!Array.isArray(value)) throw new Error(`${method} returned a malformed array reply`);
   }
@@ -54,6 +59,9 @@ export interface ProductionCoordinatorClient {
   getAgentTranscriptWindow(args: CoordinatorTranscriptWindowRequest): Promise<CoordinatorTranscriptWindowResponse>;
   getAgentThread(args: CoordinatorAgentThreadRequest): Promise<CoordinatorAgentThreadResponse>;
   isEgressTunnelAvailable(): Promise<boolean>;
+  cloudWorkersStatus(): Promise<CloudWorkerStatusProjection>;
+  cloudWorkersCapabilities(): Promise<CloudWorkerCapabilitiesProjection>;
+  cloudWorkersDoctor(args: CloudWorkerDoctorRequest): Promise<CloudWorkerDoctorProjection>;
   subscribe(family: string, listener: EventListener): () => void;
   subscribeTransport(listener: TransportListener): () => void;
   dispose(): void;
@@ -97,8 +105,13 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   const handleMessage = (expectedPort: TransferredCoordinatorPort, value: unknown) => {
     if (port !== expectedPort || disposed) return;
     if (!isRecord(value) || typeof value.kind !== "string") {
-      expectedPort.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "protocol-error", detail: "coordinator posted a malformed frame" });
-      return disconnect(expectedPort, "coordinator posted a malformed frame");
+      const reason = "coordinator posted a malformed frame";
+      try {
+        expectedPort.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "protocol-error", detail: reason });
+      } catch {
+        return disconnect(expectedPort, `${reason}; protocol-error shutdown could not be sent`);
+      }
+      return disconnect(expectedPort, reason);
     }
     if (value.kind === "lifecycle" && value.phase === "ready") {
       if (value.protocolVersion !== COORDINATOR_PROTOCOL_VERSION) return disconnect(expectedPort, "coordinator protocol version mismatch");
@@ -111,25 +124,42 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     if (value.kind === "reply" && typeof value.requestId === "string" && isRecord(value.outcome)) {
       const waiting = pending.get(value.requestId);
       if (waiting == null) return;
-      pending.delete(value.requestId);
       if (value.outcome.status === "ok") {
+        pending.delete(value.requestId);
         try { waiting.resolve(validateReply(waiting.method, value.outcome.value)); }
         catch (error) { waiting.reject(error); }
-      } else if (value.outcome.status === "failed" && isRecord(value.outcome.failure)) {
+      } else if (value.outcome.status === "failed") {
+        pending.delete(value.requestId);
+        if (!isRecord(value.outcome.failure)) {
+          waiting.reject(new CoordinatorCallError(
+            "protocol-error",
+            "Coordinator returned a failed reply without a failure object",
+          ));
+          return;
+        }
         waiting.reject(new CoordinatorCallError(
           typeof value.outcome.failure.code === "string" ? value.outcome.failure.code : "failed",
           typeof value.outcome.failure.message === "string" ? value.outcome.failure.message : "Coordinator request failed",
           typeof value.outcome.failure.transportKind === "string" ? value.outcome.failure.transportKind : undefined
         ));
+      } else {
+        pending.delete(value.requestId);
+        waiting.reject(new CoordinatorCallError(
+          "protocol-error",
+          "Coordinator returned a reply with an invalid outcome status",
+        ));
       }
       return;
     }
-    if (value.kind === "event" && typeof value.family === "string") {
+    if (value.kind === "reply") return disconnect(expectedPort, "coordinator posted a malformed reply frame");
+    if (value.kind === "event" && typeof value.family === "string" && "payload" in value) {
       if (value.family === COORDINATOR_TRANSPORT_STATE_FAMILY && isRecord(value.payload) && (value.payload.state === "connected" || value.payload.state === "down")) {
         for (const listener of transportListeners) listener(value.payload.state);
       }
       for (const listener of eventListeners.get(value.family) ?? []) listener(value.payload);
+      return;
     }
+    return disconnect(expectedPort, `coordinator posted an unsupported or malformed frame: ${value.kind}`);
   };
 
   claim = portBridge.claim({
@@ -148,7 +178,14 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       nextPort.addEventListener("message", (event) => handleMessage(nextPort, event.data));
       nextPort.addEventListener("close", () => disconnect(nextPort, "coordinator port closed"));
       nextPort.start();
-      nextPort.postMessage({ kind: "lifecycle", phase: "hello", protocolVersion: COORDINATOR_PROTOCOL_VERSION });
+      try {
+        nextPort.postMessage({ kind: "lifecycle", phase: "hello", protocolVersion: COORDINATOR_PROTOCOL_VERSION });
+      } catch {
+        try { nextPort.close(); } catch {
+          // Disconnect below still owns local request/claim cleanup.
+        }
+        return disconnect(nextPort, "coordinator hello post failed");
+      }
     }
   });
   if (claim == null) return null;
@@ -159,7 +196,15 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     if (disposed || port == null || !serving) throw new Error(`coordinator is unavailable for ${method}`);
     const requestId = `r-${++nextRequestId}`;
     const response = new Promise<unknown>((resolve, reject) => pending.set(requestId, { method, resolve, reject }));
-    port.postMessage({ kind: "request", requestId, method, args });
+    const expectedPort = port;
+    try {
+      expectedPort.postMessage({ kind: "request", requestId, method, args });
+    } catch {
+      try { expectedPort.close(); } catch {
+        // Disconnect below still owns local request/claim cleanup.
+      }
+      disconnect(expectedPort, "coordinator request post failed");
+    }
     return await response;
   };
 
@@ -169,6 +214,12 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     getAgentTranscriptWindow: async (args) => await call("getAgentTranscriptWindow", args) as CoordinatorTranscriptWindowResponse,
     getAgentThread: async (args) => await call("getAgentThread", args) as CoordinatorAgentThreadResponse,
     isEgressTunnelAvailable: async () => await call("isEgressTunnelAvailable") === true,
+    cloudWorkersStatus: async () => await call("cloudWorkers.status") as CloudWorkerStatusProjection,
+    cloudWorkersCapabilities: async () => await call("cloudWorkers.capabilities") as CloudWorkerCapabilitiesProjection,
+    cloudWorkersDoctor: async (args) => {
+      if (parseCloudWorkerDoctorRequest(args) == null) throw new Error("cloudWorkers.doctor request is malformed");
+      return await call("cloudWorkers.doctor", args) as CloudWorkerDoctorProjection;
+    },
     subscribe(family, listener) {
       const listeners = eventListeners.get(family) ?? new Set<EventListener>();
       listeners.add(listener);
@@ -182,10 +233,20 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     dispose() {
       if (disposed) return;
       disposed = true;
-      port?.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "requested", detail: null });
+      const currentPort = port;
+      try {
+        currentPort?.postMessage({ kind: "lifecycle", phase: "shutdown", reason: "requested", detail: null });
+      } catch {
+        // Local disposal must still reclaim the claim and settle callers when
+        // the endpoint is already unable to accept the shutdown frame.
+      }
       claim.release();
       rejectCalls("coordinator source disposed");
-      port?.close();
+      try {
+        currentPort?.close();
+      } catch {
+        // Endpoint cleanup is best effort after local ownership is settled.
+      }
       port = null;
       serving = false;
     }

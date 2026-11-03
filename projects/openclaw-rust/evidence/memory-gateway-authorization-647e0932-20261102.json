@@ -1,0 +1,1855 @@
+{
+  "format_version": 1,
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "MGA-v1",
+  "evidence_kind": "bounded source and native production contract record; not an acceptance ledger",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "discovery_subject": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+  "implementation_base": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+  "integration_parent": "32a9a391199b03d8b8df76380701c14d56f84834",
+  "source_observations": [
+    {
+      "path": "src/gateway/server-methods/method-authorization.ts",
+      "sha": "ac99d03f94f35de81ff15cfb70bb84bb5fbc911a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 125
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/gateway-protocol/src/index.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/gateway/cron-creator-authority-grant.ts",
+        "src/gateway/in-process-session-run.ts",
+        "src/gateway/method-scopes.ts",
+        "src/gateway/methods/descriptor.ts",
+        "src/gateway/operator-approval-authorization.ts",
+        "src/gateway/operator-role-policy.ts",
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/role-policy.ts",
+        "src/gateway/server-methods/shared-types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/method-scopes.ts",
+      "sha": "a0bd7baa2384890202a25ed146aaa227d2fc11cb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 343
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/normalization-core/src/record-coerce.ts",
+        "packages/normalization-core/src/string-coerce.ts",
+        "src/infra/node-commands.ts",
+        "src/plugins/runtime/gateway-request-scope.ts",
+        "src/shared/gateway-method-policy.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/shared/session-method-scopes.ts",
+        "src/gateway/agent-command-policy.ts",
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/node-browser-proxy-policy.ts",
+        "src/gateway/operator-scopes.ts"
+      ]
+    },
+    {
+      "path": "src/shared/operator-scope-compat.ts",
+      "sha": "a265fb895a8535378e9bb9626c19a030df463e1f",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 119
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/role-policy.ts",
+      "sha": "09247fd9cfeb26a2bf5642d325d41f3d397a709a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 24
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/role-policy.types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/operator-scopes.ts",
+      "sha": "46213c1aeb779f618139cf2824d2b6274ee74bdb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 49
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/methods/core-method-policy.ts",
+      "sha": "2b64d1738783b5261d091ef40e7f34606fd1f0f3",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 124
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/methods/core-descriptor-types.ts",
+        "src/gateway/methods/core-descriptors.ts",
+        "src/gateway/methods/core-profile-access.ts",
+        "src/gateway/methods/descriptor.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/methods/core-descriptors.ts",
+      "sha": "852432d87eecbd5d68bb73b5435f23daa8862377",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 44,
+          "end_line": 51
+        },
+        {
+          "start_line": 229,
+          "end_line": 235
+        },
+        {
+          "start_line": 242,
+          "end_line": 248
+        },
+        {
+          "start_line": 257,
+          "end_line": 263
+        },
+        {
+          "start_line": 291,
+          "end_line": 301
+        },
+        {
+          "start_line": 367,
+          "end_line": 373
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    }
+  ],
+  "observation_provenance": {
+    "readers": [
+      "/root",
+      "/root/memory_consumer_gap"
+    ],
+    "acquisition": "GitHub connector fetch_file at fixed U; exact returned blobs and full text for the first six files. core-descriptors.ts was acquired but only the listed ranges were read; whole-text name search does not grant full reading.",
+    "accounting": "Append literal observations through the existing inventory/read-observations.json input. Preserve every historical range and evidence; the Actions materializer alone updates canonical shards. No category, applicability, disposition, reviewed state, responsibility mapping, verification, acceptance, lock or global completion flag is upgraded here.",
+    "dependency_edges": "Listed edges are literal imports resolved to fixed-tree paths. The partial descriptor row has no new edge observation. An acquired dependency identity is not a claim to have read its implementation."
+  },
+  "scoped_contract_review": [
+    {
+      "source": "src/shared/operator-scope-compat.ts",
+      "finding": "The pure implication owner makes admin satisfy operator scopes and write satisfy read. Narrow session grants do not satisfy general read/write; a request ceiling cannot create authority.",
+      "application": "Memory get accepts read/write/admin, Memory mutations accept write/admin. Only these three native methods consume this implication supplement."
+    },
+    {
+      "source": "src/gateway/role-policy.ts",
+      "finding": "Only operator and node role names parse; non-node methods require operator role before method-scope admission.",
+      "application": "Reject any authenticated non-operator Memory caller before payload or owner dispatch."
+    },
+    {
+      "source": "src/gateway/server-methods/method-authorization.ts",
+      "finding": "Role admission and current grant authority precede owner execution. Admin has an explicit implication path; specialized cron, session and plugin decisions have independent authority.",
+      "application": "Pairing owner is the credential truth. Header ceilings never expand its returned Memory role/scopes. Native no-token requests with a supplied unrecognized credential cannot become ambient authorization."
+    },
+    {
+      "source": "src/gateway/method-scopes.ts",
+      "finding": "Method scope resolution also has parameter, plugin, reserved-method and dynamic-session branches. Their imported policies remain separate high-risk migration work.",
+      "application": "Use one exact native Memory method classification in the existing Rust Gateway. Do not claim this supplement migrates every resolver branch."
+    },
+    {
+      "source": "src/gateway/operator-scopes.ts",
+      "finding": "Known operator scopes form a closed set, including narrower session/cron capabilities.",
+      "application": "Only explicit read/write/admin ceilings satisfy Memory; empty, unknown or session-only ceilings fail."
+    },
+    {
+      "source": "src/gateway/methods/core-method-policy.ts",
+      "finding": "Core descriptors select role/scope policy and missing handler descriptors are rejected.",
+      "application": "Keep the existing Fabushi registry admission and unknown-method refusal."
+    },
+    {
+      "source": "src/gateway/methods/core-descriptors.ts",
+      "finding": "Listed ranges distinguish read/write/admin and node methods. The existing Fabushi camelCase Memory names are not an upstream RPC equivalence claim.",
+      "application": "Native supplement, not an invented fixed-U Memory RPC registration."
+    }
+  ],
+  "production_contract": {
+    "spec": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "entry": "source/host/src/gateway_server.rs::handle_connection",
+    "registry": "source/host/src/host_gateway_api.rs",
+    "credential_owner": "source/host/src/device_pairing_owner.rs::DevicePairingOwner",
+    "data_owner": "source/host/src/extensions/transcript/transcript_manager.rs::dispatch_memory_gateway_call",
+    "mutation_owner": "source/host/src/extensions/session/production.rs::{remove_agent_memory,clear_agent_memories}",
+    "storage": "Existing file-backed MemoryService/FileMemoryStore and Session memory mutation journal/snapshot",
+    "consumer": "Existing /api responses used through the unchanged Coordinator/MainData gateway path",
+    "methods": [
+      "getAgentMemories",
+      "deleteAgentMemory",
+      "clearAgentMemories"
+    ],
+    "oracle": "Actual HTTP Gateway, actually issued/revoked pairing credentials, actual TranscriptManager/Session/file-backed memory, zero-dispatch denials, unchanged file/snapshot/journal/notifications, positive mutations and reopen. Controlled transport/fixture data is not real remote-device or packaged acceptance."
+  },
+  "necessary_review_limits": [
+    "Full Gateway dynamic session, plugin registry, profile/cron and approval authorization are not closed by these seven literal reads.",
+    "Full core descriptor consumption and recursive policy dependencies remain separate high-risk work; only the explicitly read descriptor ranges are credited.",
+    "Cross-account/tenant semantics, symlink resistance, all provider/Memory tool consumers, real remote-device access, rendered UI, supported platform packaging and final G01-G12/AC01-AC24 remain open.",
+    "Native read/write/admin implications are a three-method compatibility/security supplement; existing unrelated method policy is intentionally unchanged."
+  ],
+  "execution": {
+    "local_validation": "NOT_RUN_PROHIBITED",
+    "exact_subject_actions": "Exact H aae00b9a039ce476896a5f2cbc5eecf3df725518 / tree13cc7fd2404e724977e4a6f19a52245edd6dc480, run41540633894/Linux125603576514 completed failure. Direct terminal logs establish all seven required MGA names and the canonical-store control exactly once, cargo/capture exits0. Preserve passed portable/Automation/preview checks. The shared App positive fails on invalid Settings fixture (TEST_FLAW):18 preceding passes,1 failure,33 selected cases unexecuted. macOS125603575905 was queued at2026-11-02T23:08:08.144Z; full acceptance remains open.",
+    "source_materialization": "Exact-H source-authority jobs succeeded as detailed above; MGA persistence CAS failure retained.",
+    "independent_frozen_review": "r6 full/required fixture integration and r8 channel integration source-only approvals preserved; all10r8MGAblobs match publishedaae. Later PMSworkflow0447801 has separate PMSr4 source-only review.",
+    "historical_api_only_observation": "MGA run41540633894 Linux125603576514 in progress at22:59:25UTC; portable Memory step success by API, literal seven-name/receipt review not yet collected. macOS125603575905 queued.",
+    "terminal_runtime_evidence": {
+      "subject": {
+        "H": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+        "tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+        "runtime_run": 41540633894,
+        "linux_job": 125603576514,
+        "linux_conclusion": "failure",
+        "macos_job": 125603575905
+      },
+      "whole_linux_job_conclusion": "failure",
+      "literal_required_results": {
+        "subject": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+        "tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+        "source_job": 125603576514,
+        "outcomes": [
+          {
+            "name": "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5737,
+                "raw": "2026-11-02T22:54:16.6930245Z test memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner ... ok",
+                "body": "test memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5736,
+                "raw": "2026-11-02T22:54:16.6929751Z test memory_gateway_read_scope_and_headers_cannot_grant_mutation ... ok",
+                "body": "test memory_gateway_read_scope_and_headers_cannot_grant_mutation ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5733,
+                "raw": "2026-11-02T22:54:16.6928125Z test memory_gateway_empty_unrelated_and_session_only_grants_fail_closed ... ok",
+                "body": "test memory_gateway_empty_unrelated_and_session_only_grants_fail_closed ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5739,
+                "raw": "2026-11-02T22:54:16.6931532Z test memory_gateway_write_only_and_admin_only_mutations_survive_reopen ... ok",
+                "body": "test memory_gateway_write_only_and_admin_only_mutations_survive_reopen ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5734,
+                "raw": "2026-11-02T22:54:16.6928685Z test memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility ... ok",
+                "body": "test memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5738,
+                "raw": "2026-11-02T22:54:16.6930961Z test memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access ... ok",
+                "body": "test memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5735,
+                "raw": "2026-11-02T22:54:16.6929245Z test memory_gateway_preserves_projection_selectors_and_unrelated_routes ... ok",
+                "body": "test memory_gateway_preserves_projection_selectors_and_unrelated_routes ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5746,
+                "raw": "2026-11-02T22:54:16.6944705Z test bound_synthesis_gate_rejects_a_noncanonical_store_path ... ok",
+                "body": "test bound_synthesis_gate_rejects_a_noncanonical_store_path ... ok",
+                "echo": false
+              }
+            ]
+          }
+        ]
+      },
+      "portable_receipt_projection": {
+        "source_run": 41540633894,
+        "source_job": 125603576514,
+        "raw_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125603576514/logs",
+        "log_line_start": 9553,
+        "log_line_end": 10451,
+        "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1",
+        "subject_commit": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+        "subject_tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run_id": "41540633894",
+        "run_attempt": "1",
+        "runner_os": "Linux",
+        "result": "passed",
+        "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+        "inputs_sha256": {
+          ".github/workflows/rust-desktop-runtime.yml": "e88d760a851fe6b02291fce519126ecd6d73144b15548c4e142b687f2bfbb9a9",
+          "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md": "c26d82021cb7b4fe9a6d37b4f6b38d7cb199dcd21a01d27915038b1b2b74ba0f",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md": "d217ed7383ac0fbf7d491675683189ba156ebafe028b1236c8eef31c61fadade",
+          "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md": "8f802f6282ee4da43470bce23a96f6919f4767b39d1ce929ea53b3db61845ece",
+          "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md": "047c00ea7551f14f9ba5d4c5675c2b0b8c57010087b1cc58349b69156d9d1324",
+          "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+          "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+          "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md": "9a14803cd7f3ecd46c43453e28c5a7395b1c760b2fe8a02d67755b23ca6a69fd",
+          "source/host/src/extensions/content_search/agent_content_search.rs": "8d3321c4f0918922d05b9bbc8e94ea28d99810bca4cdf2b0a5946262680a6e3d",
+          "source/host/src/extensions/transcript/roster_search.rs": "c2a91b65b69404d7c07d83bd0666acfe8d9a5f3e116fc09c80eb44bc6525c17b",
+          "source/host/src/extensions/session/gateway.rs": "b18abd2ef360e0b67c2d94a6421d08ea05f12e9546684ec7c9a88200ce24a22b",
+          "source/host/tests/agent_content_search_contract.rs": "4d1759e94a2312c8758181fa8a6da5386a5736780eb08d633c59ccbb0424dc0a",
+          "source/host/tests/roster_search_contract.rs": "c8a7311884d10022c8d4a254099904c42424931ed41f188356801b37634d05bc",
+          "frontend/src/production/command-palette-message-provider.ts": "777f744c5f0809175630a67c4bf1412267bb6d5e5ac9341875afec5dd72624ca",
+          "frontend/src/production/command-palette-model.ts": "ed2e06f039fe8312b1849489c1bf394fc3585987240d06e018f88c12ecd2b150",
+          "source/host/src/extensions/transcript/sand_pending_wake_store.rs": "daa4e5b0792db15e295c4303a9f9ad2b85428b180baa30f63952350735af0638",
+          "source/host/src/extensions/transcript/pending_wake_rearm.rs": "9bdc6f64dd1bddf5b9f0a98f8633cb6a6e32b172ec73c5e98de65d621dde604c",
+          "source/host/src/extensions/transcript/production_runtime.rs": "6b2b213a78e25368fd07cceeef6c617c30de3bd5416f108c22b70c0300e7d6d3",
+          "source/host/src/extensions/transcript/transcript_manager.rs": "7c21b22f2b605566906dc9ca2fd622d3da1d9b9832b06fa65fed05fd846f1f12",
+          "source/host/src/extensions/session/production.rs": "87c5f41a478551c13da63de11bee47392384f21ac99bd21adf381c601bbd6e77",
+          "source/host/src/extensions/memory/memory_service.rs": "25c6c59eed297e3a8e64d39a862c9a7da20789d5c11c73f1bcd56f705271c3b0",
+          "source/host/src/extensions/memory/memory_synthesis_service.rs": "1c6ccdc12d01f107c8989fa9570dd2fe1c8d1f9d877b09c1f9059965d15ba1c3",
+          "source/host/src/extensions/memory/production.rs": "8375687c4a53b2f4abbbdf96160139b457fbac750ef4de3021c2d88714d58902",
+          "source/host/src/extensions/memory/production_append_read_tests.rs": "2c593c6441afec0c83998b04124b6fae5a1004d1846f0019bac4976a0e55a39e",
+          "source/host/src/watched_directory.rs": "32f4bba78fe5f240ec3945ca3d1c2cf324ad7ad905c9d2f05ad84a7053baa0fd",
+          "source/host/src/storage/agent_paths.rs": "5054ac0abd74991b97012146f21c4f7132198a6dcfe5cd3b50a9e9b9d7c95df4",
+          "source/host/src/storage/folder_id.rs": "903c6fb755ff11d4cf3723bcd4fe57dcaff88dfe8c3db9164add6f9182a6b9ef",
+          "source/host/src/device_pairing_owner.rs": "b2b09c0e6a63621fcc989b4e0901ef3d384eb114fb6b36c43ae77eb43fd6c611",
+          "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json": "9a4c12fb9eb71ce12da5ccebfbc9fe2577986b738960963626ec6be01319e9de",
+          "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+          "source/host/src/extensions/transcript/background_wakes.rs": "e5687a9f2513458edb1a2ba60acedfd0738595bac412e69070d38d5051707ce6",
+          "source/host/src/gateway_server.rs": "319041658ff956776c42c1135051bb0d6ef97effc26cb2fd765c6203234246ac",
+          "source/host/app/src/main.rs": "70bd7e01802f4b1047f72fcb5521b3f3109cd8e83b2a39d060536491fc16a740",
+          "source/host/tests/durable_recovery_stores_contract.rs": "12eb56444d61333c610e504d8c0c624539379344cd9955e52fe07a081dece12c",
+          "source/host/tests/pending_wake_rearm_contract.rs": "ee047795f5abecc197164ef0d9cdeff4790c64c747334cbd61c62ffc88a17e97",
+          "source/host/tests/transcript_manager_contract.rs": "be2d93044219ebdb9ed2dd6ee829965aca8746cbf71277a184ec65ec7ee6e261",
+          "source/host/tests/memory_gateway_authorization_contract.rs": "3f6d268d1d613aeda0a1b8de6ac2ff0658b5c7833cde9e9eff5f163c3ab07f94",
+          "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs": "fa243b2087bbed478438d8f9341c87b3f4daa1c024499f18e0c335b4dc70696d",
+          "source/host/tests/memory_service_contract.rs": "d8dd449bcae9b4096d9da841f036ff1033f7f5fdff8fe49b08f4ecb213b2bf61",
+          "source/host/tests/memory_synthesis_store_contract.rs": "6be6a1d6a96f888e141961120f4f1674b7b216996c9c0c1c1044f019e1b49a96",
+          "source/host/tests/memory_synthesis_service_contract.rs": "5ff66d7d689bce2376b3ed6bad544ef8720e4dd22661b3b2ffb83fa6f901e952",
+          "projects/openclaw-rust/docs/specs/session-communication-production-boundary.md": "c94e1191df6c58e20bdb1e2c3294d7d0dff0856d8e2caad8d9bf131645c3dd7b",
+          "source/host/src/extensions/session/session_conversation_state.rs": "6fa183735c63c87c0ba09bdfc310e9ddf244e9025764de260cdabb9f09acbe67",
+          "source/host/src/extensions/session/agent_db.rs": "3257b66faf35ddcce6b4cba650390053002457a047b58023063e6eeab918eb82",
+          "source/host/src/extensions/transcript/agent_to_agent_messaging.rs": "849574aa94c76016d35f1581cb4a8f150d9a8cdc2bcb3e022e6485034f7d8b23",
+          "source/host/src/transcript_mutation_events.rs": "8ea2750c1bcf712cf6eaf935d78d7a1de6d5230effcc0f0783b3c281f6c7ea9d",
+          "source/host/tests/openclaw_sessions_and_config_contract.rs": "2286a1858e965035ae142766ac412a20f4ffaafe5de10c250e4049b2d7123ab1",
+          "source/host/tests/agent_to_agent_messaging_contract.rs": "dbf0417f51e3a0004b8c67e249b9339e7e825af8b9c41e11e09c07a3c71cbea6",
+          "source/host/tests/background_wakes_production_contract.rs": "c52ac4c4eab2c60067b072bc282601f7509f97428f166088db322171b7dd39b7"
+        },
+        "executions": [
+          {
+            "case": "integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "durable_recovery_stores_contract",
+              "--test",
+              "pending_wake_rearm_contract",
+              "--test",
+              "transcript_manager_contract",
+              "--test",
+              "memory_gateway_authorization_contract",
+              "--test",
+              "cloud_agent_pending_wake_rearm_production_contract",
+              "--test",
+              "agent_content_search_contract",
+              "--test",
+              "roster_search_contract",
+              "--test",
+              "memory_service_contract",
+              "--test",
+              "memory_synthesis_store_contract",
+              "--test",
+              "memory_synthesis_service_contract",
+              "--test",
+              "background_wakes_production_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "b926426af806c15c6024eb44385ae32ae837038c27e4e02d23d85c8f3bcdf8c6"
+          },
+          {
+            "case": "checked-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "a88bf454cce5066ca3bd00f1a32b4ecddf0d530657e00e0a116412f47c46fe74"
+          },
+          {
+            "case": "paired-device-sse",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "c9467cad8eb3326bd025c896ef16229068683fe499aa78427c7e724b0730e07f"
+          },
+          {
+            "case": "production-memory-synthesis",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::append_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "0c8f4e04df8c77ae159145e9d7bc2f6758aa97323a33b5a0fc03c73beac78e9c"
+          },
+          {
+            "case": "session-claim-integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "openclaw_sessions_and_config_contract",
+              "--test",
+              "agent_to_agent_messaging_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "a068a652f79858738ac45a0d5ca5f066386b86616237723801ca62d30d12f762"
+          },
+          {
+            "case": "session-claim-commit-custody",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::session::agent_db::fresh_append_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "2adc55ebcaafe40f90c8a12298fe9c6f23224625033cf3e0d53c12194ce7ae5b"
+          }
+        ]
+      },
+      "shared_app_failure": {
+        "classification": "TEST_FLAW",
+        "confidence": "direct log and exact-H prerequisite source",
+        "failing_test": "tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+        "app_case_index": 18,
+        "app_required_cases": 52,
+        "app_preceding_passed_cases": 18,
+        "failed_cases": 1,
+        "unexecuted_following_cases": 33,
+        "subjects": [
+          {
+            "head": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+            "tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+            "run_id": 41540633894,
+            "job_id": 125603576514,
+            "step": 14,
+            "case_stdout_sha256": "90743012737a3a508e85ed723502c5c53dbd6a19f38d70f293ae8c2bd7dfffd7",
+            "case_stderr_sha256": "e520d23a9d6828273bddbfb54149bb113da0c8df201b566227854b64a293e20b"
+          },
+          {
+            "head": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+            "tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+            "run_id": 41540837575,
+            "job_id": 125604260942,
+            "step": 17,
+            "case_stdout_sha256": "90743012737a3a508e85ed723502c5c53dbd6a19f38d70f293ae8c2bd7dfffd7",
+            "case_stderr_sha256": "69182bc935b1800dd6c85d5ade92b5a67f66e1bcdc9bae2eb7d1c5c8f9f0cb14"
+          }
+        ],
+        "signature": "called `Result::unwrap()` on an `Err` value: \"Unsupported settings version; expected version 1\"",
+        "panic_source": "source/host/app/src/tests/channel_failure_readiness_tests.rs:275:55",
+        "fixture_source": "source/host/app/src/tests/channel_failure_readiness_tests.rs:64",
+        "fixture_statement": "fs::write(root.join(\"settings.json\"), b\"{}\").unwrap();",
+        "owner": "SettingsService::commit_host_settings -> load_checked",
+        "owner_source": "source/host/src/extensions/settings/settings_service.rs:517-538; SettingsService::commit_host_settings",
+        "contract_source": "projects/openclaw-rust/docs/specs/config-settings-atomic-commit.md:84 (CAS-09)",
+        "causal_chain": "The healthy readiness fixture creates an existing settings document without version. The first inferenceProvider update skips the later compatibility-key branch that writes version=1. commit_host_settings invokes load_checked; existing missing-version input is correctly rejected before mutation/notification/readiness. The positive test unwraps that refusal.",
+        "command_exit": 101,
+        "step_exit": 1,
+        "oracle_limitation": "No readiness behavioral verdict is possible from this failed positive because its Settings input prerequisite is invalid.",
+        "retained_positive_evidence": [
+          "shipping cfg(not(test)) cargo check",
+          "actual linked App test-harness build",
+          "18 App Automation/Settings cases",
+          "MGA seven controls once per subject",
+          "canonical synthesis fixture control once per subject",
+          "portable channel/Memory/Session controls",
+          "PMS Rust fixture to twelve Node tests and production tsc",
+          "typed Automation including composed Runner Memory consumer",
+          "independent native preview Host/Coordinator/App and reused MCP controls"
+        ],
+        "repair_hint": "Repair only the fixture's healthy Settings input through an absent source or explicit valid version-1 document. Preserve CAS-09 strict-source refusal, explicit invalid-source negatives and every readiness/marker/order assertion. Recheck the affected fixture plus remaining unmet App controls at a new authorized exact H. No rerun or repair is performed in this review.",
+        "non_causes": "The missing fixture renewal-credential warning does not explain the actual Settings-version panic. No production Memory/Palette defect, missing secret, build failure or preview failure is established by this signature."
+      },
+      "failure_excerpt": "14128: 2026-11-02T23:01:17.1764115Z {\"command\": [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d\", \"--exact\", \"tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls\", \"--nocapture\", \"--test-threads=1\"], \"exit\": 0}\n14129: 2026-11-02T23:01:17.1766023Z \n14130: 2026-11-02T23:01:17.1766128Z running 1 test\n14131: 2026-11-02T23:01:17.1766682Z test tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls ... ok\n14132: 2026-11-02T23:01:17.1767178Z \n14133: 2026-11-02T23:01:17.1767471Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 127 filtered out; finished in 0.05s\n14134: 2026-11-02T23:01:17.1767843Z \n14135: 2026-11-02T23:01:17.1767847Z \n14136: 2026-11-02T23:01:17.1767850Z \n14137: 2026-11-02T23:01:17.1846183Z {\"command\": [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d\", \"--exact\", \"tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker\", \"--list\"], \"exit\": 0}\n14138: 2026-11-02T23:01:17.1848118Z tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker: test\n14139: 2026-11-02T23:01:17.1848617Z \n14140: 2026-11-02T23:01:17.1848727Z 1 test, 0 benchmarks\n14141: 2026-11-02T23:01:17.1848881Z \n14142: 2026-11-02T23:01:17.1848884Z \n14143: 2026-11-02T23:01:17.2182481Z {\"command\": [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d\", \"--exact\", \"tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker\", \"--nocapture\", \"--test-threads=1\"], \"exit\": 101}\n14144: 2026-11-02T23:01:17.2184329Z \n14145: 2026-11-02T23:01:17.2184436Z running 1 test\n14146: 2026-11-02T23:01:17.2184979Z test tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker ... FAILED\n14147: 2026-11-02T23:01:17.2185477Z \n14148: 2026-11-02T23:01:17.2185566Z failures:\n14149: 2026-11-02T23:01:17.2185690Z \n14150: 2026-11-02T23:01:17.2185768Z failures:\n14151: 2026-11-02T23:01:17.2186232Z     tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker\n14152: 2026-11-02T23:01:17.2186672Z \n14153: 2026-11-02T23:01:17.2186967Z test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 127 filtered out; finished in 0.02s\n14154: 2026-11-02T23:01:17.2187346Z \n14155: 2026-11-02T23:01:17.2187350Z \n14156: 2026-11-02T23:01:17.2187968Z channel-lane-fixture-auth inference-credential renewer started, but no renewal credential was delivered into the box; inference is unavailable until the box is re-provisioned with one\n14157: 2026-11-02T23:01:17.2188684Z \n14158: 2026-11-02T23:01:17.2189287Z thread 'tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker' (18915) panicked at src/tests/channel_failure_readiness_tests.rs:275:55:\n14159: 2026-11-02T23:01:17.2190241Z called `Result::unwrap()` on an `Err` value: \"Unsupported settings version; expected version 1\"\n14160: 2026-11-02T23:01:17.2191196Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n14161: 2026-11-02T23:01:17.2191527Z \n\n",
+      "later_fixture_repair": {
+        "commit": "2e703571de21993273d15b5e8803da82e9b82606",
+        "source_review": "Root API/source read confirms version-1 healthy fixture plus actual validity and unconfigured-provider assertions; old failed H is not upgraded. New candidate execution remains separate."
+      },
+      "preview": "Independent same-H preview receipt passed after the App failure: Host nine required, Coordinator two required, actual App three required, reused MCP two required; no whole-job pass inferred.",
+      "uploaded_artifact": {
+        "id": 13187252567,
+        "archive_sha256": "253c1cee82c8b581a9af2409cd97a85473391cd17e6c29b515617aa8d3fffa80"
+      },
+      "source_proof_hashes": {
+        "terminal_status": {
+          "saved_file": "terminal-exact-subject-status.json",
+          "sha256": "7668095993281b7d67f64ca2ac4209dbb526e0717f5524c72d6e131ad51365ff"
+        },
+        "mga_names": {
+          "saved_file": "mga-linux-required-names.json",
+          "sha256": "cf5268eb903b95f4f018c4c458bc415307a87e4ab89d3a93fc9a25fcbdb435e3"
+        },
+        "mga_portable": {
+          "saved_file": "mga-linux-3-receipt.json",
+          "sha256": "cc59d4b8805f38d519325e3f3181cff25f530c88306632983803bfd4740355b3"
+        },
+        "app_failure": {
+          "saved_file": "shared-app-failure-classification.json",
+          "sha256": "be9b5bcdf286b15fbb60250dde74e2676267d2490f24ea20aef0f376ad69acd8"
+        },
+        "mga_preview": {
+          "saved_file": "mga-linux-6-receipt.json",
+          "sha256": "c2209056b5934246dfea3e1cc73d56b9e7e965da7a632986f68b345b292dd3d2"
+        },
+        "terminal_review": {
+          "saved_file": "terminal-actions-review.md",
+          "sha256": "b1d5beff8ae775e79ce47a889f5fe8c09f9b20265312649f19b0824c8730ee38"
+        }
+      }
+    }
+  },
+  "integration_history": [
+    {
+      "parent": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "preserved": "Router Host acknowledgement and existing Node receipt controls."
+    },
+    {
+      "parent": "32a9a391199b03d8b8df76380701c14d56f84834",
+      "preserved": "All eleven Memory append-read-integrity paths, actual FileMemoryStore/Session synthesis error propagation and Linux/macOS controls. MGA production and test blobs unchanged; workflow and RTM retain the union."
+    }
+  ],
+  "published_subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "sha": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+    "tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+    "parent": "5728181593dd168a9b7d3ec2ba1092b252d3a8ee",
+    "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/aae00b9a039ce476896a5f2cbc5eecf3df725518",
+    "branch_ref_readback": true,
+    "git_commit_readback": true,
+    "changed_file_mapping_readback": true,
+    "full_file_contents_readback": true,
+    "files": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "blob": "8b1befefe65a1cf39bfc46b4c4f323c4fc8021dc",
+        "bytes": 244686,
+        "sha256": "e88d760a851fe6b02291fce519126ecd6d73144b15548c4e142b687f2bfbb9a9",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "blob": "2987e6c3b33e7e48bfafa566028f50b843462849",
+        "bytes": 10721,
+        "sha256": "d217ed7383ac0fbf7d491675683189ba156ebafe028b1236c8eef31c61fadade",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+        "blob": "a49834e7d667592f40e0632b9d72188c629b2e3c",
+        "bytes": 11373,
+        "sha256": "9a4c12fb9eb71ce12da5ccebfbc9fe2577986b738960963626ec6be01319e9de",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/inventory/read-observations.json",
+        "blob": "daa1de9f234ebdbd37df561e7ce47cf8ccbbec06",
+        "bytes": 18640,
+        "sha256": "018f60a78692d71ec018fa14fa2e67904c3df6bd5d108c8fb122e28db4cd485d",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "blob": "4ca8737039f45b4d159753058cc538d967050a6a",
+        "bytes": 1384582,
+        "sha256": "0fde5f4607af7c315750863c535187c8eefb88c210a50a89416953c7df177cff",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "blob": "66fae7047504b92215e339d8e1de3c663a647d0e",
+        "bytes": 116996,
+        "sha256": "604cfcbcb6c528962819d3948579af40b7f53d92b532ac1d486506afcdf4bcb7",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "source/host/src/gateway_server.rs",
+        "blob": "579f21811cb01b32f838d2170f05d72e18a3f7dc",
+        "bytes": 59152,
+        "sha256": "319041658ff956776c42c1135051bb0d6ef97effc26cb2fd765c6203234246ac",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "source/host/tests/memory_gateway_authorization_contract.rs",
+        "blob": "7ffbb387686ca0aa22ab18cffe10e48c27961f4e",
+        "bytes": 29262,
+        "sha256": "3f6d268d1d613aeda0a1b8de6ac2ff0658b5c7833cde9e9eff5f163c3ab07f94",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+        "blob": "13492c280a0bdf888f65ade5516630f8832d9c68",
+        "bytes": 10090,
+        "sha256": "8f802f6282ee4da43470bce23a96f6919f4767b39d1ce929ea53b3db61845ece",
+        "full_api_content_equal_frozen_tree": true
+      },
+      {
+        "path": "source/host/tests/memory_service_contract.rs",
+        "blob": "1a7379713165ff5e50528971756786382fec1c07",
+        "bytes": 41068,
+        "sha256": "d8dd449bcae9b4096d9da841f036ff1033f7f5fdff8fe49b08f4ecb213b2bf61",
+        "full_api_content_equal_frozen_tree": true
+      }
+    ],
+    "verified": true,
+    "execution_claim": "This verifies delivery only; exact-H GitHub Actions and full acceptance are separate."
+  },
+  "independent_frozen_source_reviews": [
+    {
+      "report_sha256": "992e44b9d2bf7db579490d0b8f22d8002491ca47de41387ee38734678f51634c",
+      "report": {
+        "format_version": 1,
+        "reviewer": "/root/mga_final_security",
+        "review_lens": "security and functional integration",
+        "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+        "contract": "MGA-v1",
+        "review_directory": "r6",
+        "manifest_round": 1,
+        "decision": "source-only-approve",
+        "findings": [],
+        "summary": "No falsifiable security or functional defect was found in the complete declared frozen scope or the focused incoming-fixture integration. The merged test preserves real Session admission and all four incoming assertions, adds nonempty refusal and canonical-write controls, and is required by exact name in both Linux and macOS receipts. This verdict is source-only; it does not establish runtime verification or whole-project acceptance.",
+        "subject": {
+          "repository": "bhrumom/fabushi-desktop",
+          "repository_root": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+          "base": "8a4612e2042eefa32f12763c17141daabfd452e3",
+          "base_tree": "901891593cd0729d5aabe7cf76e3830bf8492516",
+          "frozen_tree": "fcdfab035252563d7c45206683df2cc9ae3fdfbd",
+          "upstream": {
+            "repository": "openclaw/openclaw",
+            "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+          },
+          "scope_binding": "Read the manifest and all candidate/integration/incoming patch hunks. The read-only Git diff from the exact base to the frozen tree lists precisely the ten declared paths. Product source was read through git show of the frozen tree."
+        },
+        "execution_settings": {
+          "model": "inherited configured model",
+          "reasoning_effort": "xhigh",
+          "provenance": "Inherited settings supplied by the parent task; no model override, external worker or local runtime was started.",
+          "scope_reason": "Authorization, persistence, Session admission and CI evidence integration require deep source reasoning."
+        },
+        "independence": {
+          "fresh_review": true,
+          "other_review_reports_read": false,
+          "runner_decisions_read": false,
+          "source_mutations": false,
+          "local_executable_validation": "not run; prohibited",
+          "output_only": "/workspace/scratch/403d4d169ac6/mga-review/r6/security-review.json"
+        },
+        "authority_read": [
+          "AGENTS.md, including independent frozen review, effort/model and OCRM Actions-only instructions",
+          "projects/openclaw-rust/SOURCE_OF_TRUTH.md, current entry and fixed-U authority",
+          "docs/specs/openclaw-rust-equivalence-migration.md, current OCRM-EXEC-02 section 17",
+          "projects/openclaw-rust/module-map.md, relevant Gateway, Session and existing-owner responsibility context",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md, complete MGS-v1/MGA-v1 contract",
+          "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md, complete MWR-v1 contract and shared-oracle correction"
+        ],
+        "reviewed_paths": [
+          ".github/workflows/rust-desktop-runtime.yml",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+          "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+          "projects/openclaw-rust/inventory/read-observations.json",
+          "projects/openclaw-rust/parity-ledger.json",
+          "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "source/host/src/gateway_server.rs",
+          "source/host/tests/memory_gateway_authorization_contract.rs",
+          "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+          "source/host/tests/memory_service_contract.rs"
+        ],
+        "focused_assessments": [
+          {
+            "area": "Final incoming Memory test merge",
+            "result": "source-consistent",
+            "evidence": [
+              "source/host/tests/memory_service_contract.rs:509-602",
+              "mga-review/r6/incoming.patch",
+              "mga-review/r6/integration-delta.patch",
+              "mga-review/r6/candidate.patch"
+            ],
+            "conclusion": "The frozen test retains the incoming SandAgentSessionStore import and create_session(None, \"user\", None) route, the issued Agent ID, live admission assertion, missing-Agent empty-proposal Invalid, canonical empty-proposal Committed, foreign empty-proposal Invalid, and canonical empty-proposal Committed after refusal. Added controls require a nonempty missing-Agent refusal without creating its directory, a persisted admission record, a nonempty foreign-store refusal with exact original profile bytes retained, empty canonical contents after refusal, and an actual nonempty canonical commit with one expected fact and foreign bytes still unchanged."
+          },
+          {
+            "area": "Actual Session materialization and admission",
+            "result": "source-consistent",
+            "evidence": [
+              "source/host/src/extensions/session/agent_session.rs:547-562",
+              "source/host/src/extensions/session/production.rs:263-289",
+              "source/host/src/extensions/session/production.rs:1149-1171",
+              "source/host/src/extensions/session/production.rs:1245-1262",
+              "source/host/src/extensions/session/production.rs:1625-1630",
+              "source/host/src/extensions/session/production.rs:2272-2294",
+              "source/host/src/extensions/session/production.rs:2423-2460",
+              "source/host/src/extensions/session/production.rs:2487-2534",
+              "source/host/src/extensions/session/production.rs:2784-2800"
+            ],
+            "conclusion": "create_session reaches the existing materialization and composition route, including durable main-session admission. The synthesis gate retains the per-agent filesystem boundary, checks the supplied store location against the canonical location, and then requires existing Session admission before applying. A missing Agent fails existing_session_db_path before owner opening. No production Session or Memory admission rule is changed by this candidate."
+          },
+          {
+            "area": "Actual Store behavior behind the corrected oracle",
+            "result": "source-consistent",
+            "evidence": [
+              "source/host/src/extensions/memory/memory_service.rs:175-205",
+              "source/host/src/extensions/memory/memory_service.rs:434-513",
+              "source/host/src/extensions/memory/memory_service.rs:659-708",
+              "source/host/src/extensions/memory/memory_service.rs:1173-1200",
+              "source/host/src/watched_directory.rs:40-62"
+            ],
+            "conclusion": "Creating a store handle and preparing its snapshot do not create the missing Agent path. With a real admitted Agent, an empty accepted proposal reaches the existing Committed path and temporal marker; a fresh snapshot and nonempty Create reach the real append implementation. The foreign fixture has readable original content and a matching snapshot, so the refusal is not explained by an uncreated Agent or an inherently invalid proposal."
+          },
+          {
+            "area": "HTTP Memory authorization",
+            "result": "source-consistent",
+            "evidence": [
+              "source/host/src/gateway_server.rs:649-671",
+              "source/host/src/gateway_server.rs:1222-1397",
+              "source/host/src/gateway_server.rs:1440-1483",
+              "source/host/src/gateway_server.rs:1559-1575",
+              "source/host/src/gateway_protocol.rs:14-30",
+              "source/host/src/host_gateway_api.rs:175-177",
+              "source/host/src/device_pairing_owner.rs:310-375",
+              "source/host/app/src/main.rs:12796-12841"
+            ],
+            "conclusion": "The classification matches exactly the three registered Memory methods. It rejects any supplied non-operator role and any authenticated non-operator credential; reads require read/write/admin and mutations require write/admin. Pairing grants and explicit header ceilings are checked independently, so headers cannot supply missing authority. In no-configured-token mode, an unrecognized, malformed or revoked supplied Authorization header cannot regain ambient Memory access, and ambient Memory access also requires a loopback bind. Ordinary Origin/Host checks and configured-token authentication precede this boundary. Memory admission precedes JSON decoding and dispatch. General unrelated method classifiers are not broadened, so their pre-existing admin/write behavior remains unchanged."
+          },
+          {
+            "area": "Real HTTP test harness and persistence oracles",
+            "result": "source-consistent",
+            "evidence": [
+              "source/host/tests/memory_gateway_authorization_contract.rs:68-135",
+              "source/host/tests/memory_gateway_authorization_contract.rs:196-295",
+              "source/host/tests/memory_gateway_authorization_contract.rs:313-419",
+              "source/host/tests/memory_gateway_authorization_contract.rs:428-607",
+              "source/host/src/extensions/transcript/transcript_manager.rs:696-741",
+              "source/host/src/extensions/session/production.rs:3791-3870",
+              "source/host/app/src/main.rs:13621-13626",
+              "source/host/Cargo.toml"
+            ],
+            "conclusion": "The seven authored tests start the real GatewayServer, obtain credentials through real pairing request/approval/rotation/revocation, and delegate Memory methods to the production TranscriptManager and Session/FileMemoryStore owners. Denial checks observe zero dispatch, private-data absence, exact Memory file bytes, prompt snapshot, mutation journal and notifications, followed by a valid control read. Both valid and malformed bodies exercise credential refusals. Positive write/admin/native tests perform actual delete and clear, check invalidated prompt/journal state, reopen the owners, and verify durable results. The thin test adapter does not replace Memory execution."
+          },
+          {
+            "area": "Linux and macOS required positives",
+            "result": "source-consistent",
+            "evidence": [
+              ".github/workflows/rust-desktop-runtime.yml:75-76",
+              ".github/workflows/rust-desktop-runtime.yml:714-797",
+              ".github/workflows/rust-desktop-runtime.yml:844-945",
+              ".github/workflows/rust-desktop-runtime.yml:1574-1575",
+              ".github/workflows/rust-desktop-runtime.yml:1853-2065"
+            ],
+            "conclusion": "macos-15 rust-host includes the new HTTP target and the existing memory_service_contract in integration-contracts. Its MWR receipt requires bound_synthesis_gate_rejects_a_noncanonical_store_path exactly once, zero integration exit, matching H/tree and named synthesis controls; the step exits nonzero unless both receipt groups pass. ubuntu-24.04 sqlite-native-path includes both targets in the portable integration command and requires the same canonical test and all seven HTTP names exactly once with successful command capture/results. Session claim and unknown-COMMIT controls remain in the additive union. These are inspected workflow requirements, not executed results."
+          },
+          {
+            "area": "Source accounting and acceptance claims",
+            "result": "source-consistent",
+            "evidence": [
+              "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+              "projects/openclaw-rust/inventory/read-observations.json",
+              "projects/openclaw-rust/parity-ledger.json",
+              "projects/openclaw-rust/requirements-traceability-matrix.json",
+              "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md"
+            ],
+            "conclusion": "The accounting edits append bounded literal source observations and contract/test references without raising verification or acceptance flags. The descriptor source remains explicitly partial. All seven declared upstream blob identities were independently fetched at fixed U and match the source records; scope implication, operator/node role separation and the stated dependency limits agree with the inspected source. The shared-oracle contract preserves the failed historical subjects and requires repaired exact-H evidence rather than relabeling them."
+          }
+        ],
+        "exact_upstream_sources_checked": [
+          {
+            "path": "src/gateway/server-methods/method-authorization.ts",
+            "blob": "ac99d03f94f35de81ff15cfb70bb84bb5fbc911a",
+            "read_scope": "full file"
+          },
+          {
+            "path": "src/gateway/method-scopes.ts",
+            "blob": "a0bd7baa2384890202a25ed146aaa227d2fc11cb",
+            "read_scope": "full file"
+          },
+          {
+            "path": "src/shared/operator-scope-compat.ts",
+            "blob": "a265fb895a8535378e9bb9626c19a030df463e1f",
+            "read_scope": "full file"
+          },
+          {
+            "path": "src/gateway/role-policy.ts",
+            "blob": "09247fd9cfeb26a2bf5642d325d41f3d397a709a",
+            "read_scope": "full file"
+          },
+          {
+            "path": "src/gateway/operator-scopes.ts",
+            "blob": "46213c1aeb779f618139cf2824d2b6274ee74bdb",
+            "read_scope": "full file"
+          },
+          {
+            "path": "src/gateway/methods/core-method-policy.ts",
+            "blob": "2b64d1738783b5261d091ef40e7f34606fd1f0f3",
+            "read_scope": "full file"
+          },
+          {
+            "path": "src/gateway/methods/core-descriptors.ts",
+            "blob": "852432d87eecbd5d68bb73b5435f23daa8862377",
+            "read_scope": "only lines 44-51, 229-235, 242-248, 257-263, 291-301, 367-373"
+          }
+        ],
+        "required_exact_positive_names": {
+          "shared_memory_control": "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+          "http_memory_tests": [
+            "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+            "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+            "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+            "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+            "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+            "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+            "memory_gateway_preserves_projection_selectors_and_unrelated_routes"
+          ]
+        },
+        "validation_status": {
+          "local_builds_tests_schema_checks_generators_or_runtime": "none",
+          "exact_H_actions": "pending",
+          "linux_runtime_result": "not established by this review",
+          "macos_runtime_result": "not established by this review",
+          "historical_failed_subjects": [
+            "32a9a391199b03d8b8df76380701c14d56f84834",
+            "c6be0cbc7bd47ac3392d02bec5b3ee8aa75a61bb"
+          ],
+          "historical_status_note": "The reviewed contract and supplied handoff identify these as failed canonical-oracle subjects. No runtime logs were re-adjudicated or historical result promoted by this source review.",
+          "whole_acceptance": "pending; applicable G01-G12/AC01-AC24, real services/devices/providers, rendered UI, supported platform packaging and independent ACCEPT remain required",
+          "limits": [
+            "No local executable verification or remote test dispatch was performed.",
+            "This is a three-method native HTTP authorization supplement, not complete Memory or Gateway equivalence.",
+            "Cross-account/tenant policy, symlink confinement, external filesystem races, arbitrary multi-file write failure, full provider consumers and real remote-device acceptance are not established here.",
+            "Publish the reviewed source as an exact commit H and obtain its matching H/tree/U Actions receipts before calling this batch verified."
+          ]
+        }
+      }
+    },
+    {
+      "report_sha256": "42962e383796ff99fa168dab799cdf4f8635845e0ec26fa97080a2525e0c5a1e",
+      "report": {
+        "review_kind": "independent focused reuse/structure/performance integration source review",
+        "contract": "MGA-v1",
+        "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+        "verdict": "source-only-approve",
+        "findings": [],
+        "subject": {
+          "repository": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+          "base": "8a4612e2042eefa32f12763c17141daabfd452e3",
+          "frozen_tree": "fcdfab035252563d7c45206683df2cc9ae3fdfbd",
+          "previous_reviewed_tree": "1a96172529b16f6b797eb839ffcdbd53aeb6613f",
+          "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "settings": {
+          "requested_model": "gpt-6.1-sol",
+          "requested_reasoning_effort": "xhigh",
+          "selection_provenance": "Parent-declared spawn settings; no independent in-worker runtime-model introspection is available.",
+          "scope_reason": "Focused integration changes the real Session fixture route while retaining the complete ten-path authorization, Memory oracle and Linux/macOS evidence context."
+        },
+        "independence_and_method": {
+          "other_review_reports_read": false,
+          "runner_decisions_read": false,
+          "inputs_read": [
+            "manifest.json",
+            "candidate.patch",
+            "integration-delta.patch",
+            "incoming.patch"
+          ],
+          "source_inspection": "Read-only Git tree/blob inspection and text reads. Git tree comparison shows exactly one changed path between the prior reviewed tree and r6: source/host/tests/memory_service_contract.rs. The other nine complete-scope blobs are identical, permitting reuse of this reviewer's own immediately preceding source inspection under Spec section 17.1.",
+          "repository_mutations": false,
+          "local_executable_validation": "not run"
+        },
+        "complete_scope": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "after_blob": "3d59259d1b735fab589d7d5d95606a65ac23eac3",
+            "disposition": "Unchanged from the immediately reviewed tree. All candidate hunks and adjacent macOS/Linux capture, commands, named positives, exact-H/tree/U and failure receipts inspected; inherited config/Automation/LPG and SCP gates retained."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+            "after_blob": "2987e6c3b33e7e48bfafa566028f50b843462849",
+            "disposition": "Unchanged; complete MGS/MGA contract read and checked against current HTTP and Memory owners."
+          },
+          {
+            "path": "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+            "after_blob": "a49834e7d667592f40e0632b9d72188c629b2e3c",
+            "disposition": "Unchanged; complete added evidence record read; fixed-U observations and native supplement stay separate from pending execution and full acceptance."
+          },
+          {
+            "path": "projects/openclaw-rust/inventory/read-observations.json",
+            "after_blob": "daa1de9f234ebdbd37df561e7ce47cf8ccbbec06",
+            "disposition": "Unchanged; complete delta read, preserving literal read/partial-range and single-ledger semantics."
+          },
+          {
+            "path": "projects/openclaw-rust/parity-ledger.json",
+            "after_blob": "5fe0920e12bd9656da9fc0a44342e8be5a09d308",
+            "disposition": "Unchanged; complete additive evidence/test/contract delta read, with no completion-state promotion."
+          },
+          {
+            "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+            "after_blob": "66f817639ef587de5b4e6b976bc10d665c3e9678",
+            "disposition": "Unchanged; complete additive reference delta read and inherited MWR references retained."
+          },
+          {
+            "path": "source/host/src/gateway_server.rs",
+            "after_blob": "579f21811cb01b32f838d2170f05d72e18a3f7dc",
+            "disposition": "Unchanged; exact Memory classifier, admission addition and adjacent auth/role/scope/MCP/JSON/owner-dispatch consumers read."
+          },
+          {
+            "path": "source/host/tests/memory_gateway_authorization_contract.rs",
+            "after_blob": "7ffbb387686ca0aa22ab18cffe10e48c27961f4e",
+            "disposition": "Unchanged; complete 607-line target read, including actual issued/revoked credentials, Session/Memory composition, refusal state, dispatch counts, cleanup and owner reopen."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+            "after_blob": "c684031ac6fa879e554fc9225e35a402cb0a9cd1",
+            "disposition": "Unchanged; complete relevant MWR contract and canonical-oracle decision read; fixed-subject runtime remains pending."
+          },
+          {
+            "path": "source/host/tests/memory_service_contract.rs",
+            "after_blob": "1a7379713165ff5e50528971756786382fec1c07",
+            "disposition": "Full incoming and integration deltas plus resulting edited test and nearby contracts read. Rechecked create_session's actual composition path and unchanged synthesis admission consumers."
+          }
+        ],
+        "focused_integration_checks": [
+          {
+            "claim": "Use of the incoming Session facade is existing-owner composition, with real materialization and admission.",
+            "source_evidence": [
+              "source/host/tests/memory_service_contract.rs::bound_synthesis_gate_rejects_a_noncanonical_store_path uses SandAgentSessionStore::new(Arc::clone(&workers)) and create_session(None, user, None), then the returned agent.id.",
+              "source/host/src/extensions/session/agent_session.rs:547-562 delegates create_session to ProductionSessionWorkers::materialize_session_with_active and returns that session's record.",
+              "source/host/src/extensions/session/production.rs:1245-1265 delegates to materialize_new_session_with_active, prepares the actual agent and composes its existing stores.",
+              "source/host/src/extensions/session/production.rs:1149-1173 creates actual storage, opens the same owner and ensures main-session admission.",
+              "The test explicitly calls assert_agent_work_admission and requires read_session_work_admission to return Some."
+            ],
+            "result": "source-supported"
+          },
+          {
+            "claim": "All four incoming assertions survive integration.",
+            "source_evidence": [
+              "Missing agent with a canonical path and empty proposal still returns Invalid.",
+              "Real canonical owner with an empty proposal still returns Committed.",
+              "Real agent targeting a foreign store with an empty proposal still returns Invalid.",
+              "After the foreign refusal, the same canonical owner with an empty proposal still returns Committed."
+            ],
+            "result": "source-supported"
+          },
+          {
+            "claim": "The nonempty mutation/no-effect controls from the focused repair survive the incoming implementation route.",
+            "source_evidence": [
+              "A nonempty Create for the missing agent returns Invalid and the missing agent directory must remain absent.",
+              "The foreign store is populated with an explicit profile sentinel; a nonempty Create is refused and raw sentinel bytes must remain identical.",
+              "The canonical store remains empty immediately after both foreign refusals.",
+              "A later nonempty canonical Create returns Committed and lists exactly one fact with the expected content; foreign raw bytes remain identical after that positive."
+            ],
+            "result": "source-supported; fixed exact-H execution pending"
+          },
+          {
+            "claim": "The fixture repair leaves production admission unchanged.",
+            "source_evidence": [
+              "Git tree comparison from r5 to r6 lists only source/host/tests/memory_service_contract.rs.",
+              "The unchanged production synthesis gate checks canonical store location and invokes assert_agent_work_admission_locked under the existing per-agent filesystem mutation boundary before Store apply.",
+              "The unchanged admission predicate first requires an existing session DB, then validates durable canonical identity and deletion state. The fixture now satisfies that contract through the owner."
+            ],
+            "result": "source-supported"
+          },
+          {
+            "claim": "The named-positive and exact-subject evidence union is retained.",
+            "source_evidence": [
+              "The workflow blob is identical to the just-reviewed r5 workflow.",
+              "Both macOS append_required and Linux required_integration require bound_synthesis_gate_rejects_a_noncanonical_store_path exactly once; both run memory_service_contract.",
+              "Existing MGS/MGA/RSU/MWR, SCP claim and unknown-commit/refused-rollback controls, composed Automation Memory consumer, config and LPG commands remain selected.",
+              "Receipts retain actual command exits, required name uniqueness, subject H/tree/U and command/input/log provenance; source review does not supply those execution results."
+            ],
+            "result": "source-supported; actual receipts pending"
+          }
+        ],
+        "reuse_structure_performance_assessment": {
+          "production_ownership": "The unchanged exact three-method Memory authorization supplement stays in existing Gateway admission and consumes DevicePairingOwner grants. Actual Memory data/mutations continue through TranscriptManager, ProductionSessionWorkers and MemoryService/FileMemoryStore. The real Session facade in the repair composes those owners; it adds no owner or production policy.",
+          "dependency_and_build": "No Cargo manifest/lock/dependency/build declaration changes are introduced. The existing auto-discovered integration test target and existing Linux/macOS Recovery owners carry the tests and required receipts.",
+          "performance": "No production delta exists in this integration. The already-reviewed Memory check uses bounded method classification and the existing issued scope vector without added I/O, threads or retained state. The extra controls are small fixture operations; no material source-level performance regression identified and no runtime performance claim made.",
+          "metadata": "The existing inventory/ledger/RTM remain the single accounting owners. The source record preserves narrow native-supplement scope and pending runtime/global status."
+        },
+        "authority_and_adjacent_context": [
+          "Latest root AGENTS.md, current OpenClaw SOURCE_OF_TRUTH authority/constraints and main Spec section 17 OCRM-EXEC-02",
+          "MGS/MGA and MWR narrow specs; relevant Session work-admission contracts",
+          "DevicePairingOwner token lookup/rotation/revoke; Gateway registry/protocol and existing role/scope test precedent",
+          "Shipping UnifiedGatewayApi auth and Memory delegation; TranscriptManager read/mutation dispatch",
+          "ProductionSessionWorkers real materialization/composition, existing DB checks, filesystem serialization and synthesis gate",
+          "MemoryService store lookup, synthesis snapshots and bound gate consumption",
+          "Cargo integration-test discovery; macOS and Linux workflow subject/capture/receipt and neighboring retained gates"
+        ],
+        "remaining_evidence": [
+          "No local builds, tests, linters, generators, schema checks, benchmarks or acceptance were executed.",
+          "This verdict approves only the inspected source structure/reuse/performance and fixture integration. Runtime/security/platform acceptance is not inferred.",
+          "The integrated final H must obtain its own Actions evidence; neither historical failed 32/c6 subjects nor authored controls become passing results through this review.",
+          "Linux/macOS execution and actual named-positive receipts, real providers/devices/accounts, UI/package acceptance and full OCRM G01-G12/AC01-AC24 remain pending."
+        ]
+      }
+    },
+    {
+      "report_sha256": "52534abd2280a3c775d85bfc3c799d3c5018189882b2769cd7a0bf2976a6320c",
+      "report": {
+        "format_version": 1,
+        "contract": "MGA-v1",
+        "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+        "review_round": "r8",
+        "manifest_round": 1,
+        "reviewer": "/root/mga_channel_security",
+        "lens": "security and permission integration",
+        "status": "completed",
+        "terminal": true,
+        "verdict": "APPROVED",
+        "verdict_scope": "Source-only approval of the frozen MGA integration. No concrete integration defect found. This is not executable verification, complete channel acceptance, or final product acceptance.",
+        "worker_settings": {
+          "model": "inherited configured model; no model override",
+          "reasoning_effort": "xhigh inherited through the existing spawn, as supplied by the parent",
+          "reason": "Permission admission, real Memory effects, Session journal and admission preservation, and concurrent channel-custody integration require the security lens at xhigh."
+        },
+        "subject": {
+          "repository": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+          "base": "74484facdac03260af2b5ca1bd7963dc2ce5c1c2",
+          "base_tree": "1a28595296545363c11d5d99452e391c0b9c5f19",
+          "candidate_tree": "548fd350b2ec4bdb21296d4de65abb8c38ed9a7e",
+          "prior_product_tree": "fcdfab035252563d7c45206683df2cc9ae3fdfbd",
+          "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+          "patch_sha256_from_manifest": "d5a01d2ad87acd39f5315b496c777678015b290f282af3dc182252f7864ab82d"
+        },
+        "authority": [
+          "Latest repository AGENTS.md: independent frozen review, falsifiable findings, configured security model and xhigh effort, Actions-only executable validation.",
+          "projects/openclaw-rust/SOURCE_OF_TRUTH.md: current fixed-U authority, existing owners, distinct source/implementation/wiring/verification/acceptance states.",
+          "docs/specs/openclaw-rust-equivalence-migration.md section 17: risk-proportionate source review, coherent existing-owner integration, exact-subject Actions and unchanged final acceptance scope.",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md: MGA-01 through MGA-06 and preserved MGS contract.",
+          "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md: MWR contract and canonical Session fixture correction.",
+          "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md: failure-notice live-custody integration and its explicit limits."
+        ],
+        "frozen_mga_paths": [
+          ".github/workflows/rust-desktop-runtime.yml",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+          "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+          "projects/openclaw-rust/inventory/read-observations.json",
+          "projects/openclaw-rust/parity-ledger.json",
+          "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "source/host/src/gateway_server.rs",
+          "source/host/tests/memory_gateway_authorization_contract.rs",
+          "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+          "source/host/tests/memory_service_contract.rs"
+        ],
+        "materials": {
+          "frozen_inputs": [
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/manifest.json",
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/candidate.patch",
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/integration-delta.patch",
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/incoming.patch"
+          ],
+          "method": "Read-only Git tree/diff and source/evidence inspection. Read the complete ten-path MGA change as context; inspect channel production integration and shared workflow/spec/ledger/RTM deltas. Incoming disjoint tests and documents are preserved by exact Git blob identity; this review does not repeat their independent full channel acceptance.",
+          "other_review_reports_read": false,
+          "runner_decisions_read": false,
+          "working_tree_used_as_candidate": false
+        },
+        "checks": [
+          {
+            "id": "MGA-R8-IDENTITY",
+            "result": "source-approved",
+            "evidence": "Git diff base 74484fac to candidate 548fd350 lists exactly the ten declared MGA paths. Git diff prior product tree fcdfab03 to candidate 548fd350 lists exactly the thirteen incoming channel paths. The nine disjoint incoming paths are absent from the base-to-candidate diff and therefore retain the incoming blobs. The other four are workflow, ledger, RTM and the Memory append spec. Temporary reviewed-object carrier files remain absent in the frozen candidate tree.",
+            "conclusion": "The integration retains both product batches; it does not replace prior App, Host, Settings, Memory or Session source with a parallel implementation."
+          },
+          {
+            "id": "MGA-R8-AUTHORIZATION",
+            "result": "source-approved",
+            "references": [
+              "source/host/src/gateway_server.rs::MemoryGatewayAccess",
+              "source/host/src/gateway_server.rs::handle_connection",
+              "source/host/src/host_gateway_api.rs registry consumed by the existing gateway command check"
+            ],
+            "evidence": "The exact get/delete/clear methods retain one classification. Read accepts read/write/admin; mutation accepts write/admin. The paired role and actual pairing grant are checked independently of requested headers, which only restrict access. No-token native Memory access rejects any supplied unrecognized credential and a non-loopback listener. Existing Origin/Host, registry and configured-token authentication precede the Memory supplement; JSON decoding and owner dispatch follow it. Unrelated method admission is not broadened. The gateway blob 579f21811cb01b32f838d2170f05d72e18a3f7dc is unchanged from the prior product tree by the channel integration."
+          },
+          {
+            "id": "MGA-R8-REAL-OWNER",
+            "result": "source-approved",
+            "references": [
+              "source/host/app/src/main.rs::UnifiedGatewayApi::call",
+              "source/host/src/extensions/transcript/transcript_manager.rs::dispatch_memory_gateway_call",
+              "source/host/src/extensions/session/production.rs::remove_agent_memory",
+              "source/host/src/extensions/session/production.rs::clear_agent_memories",
+              "source/host/src/extensions/session/production.rs::bind_memory_synthesis_gate"
+            ],
+            "evidence": "Shipping Memory dispatch still delegates to TranscriptManager and the same ProductionSessionWorkers. Deletion and clear retain filesystem admission, actual Session work admission, pending mutation preparation/commit/rollback and unknown-settlement custody. Synthesis retains canonical-location checking and Session admission before Store apply. The channel integration has no changes to these Memory/Session owner files or host_runner_composition. The main.rs changes add failure readiness/custody calls without changing Memory dispatch, credential authority or Settings ownership."
+          },
+          {
+            "id": "MGA-R8-HTTP-ORACLES",
+            "result": "source-approved",
+            "references": [
+              "source/host/tests/memory_gateway_authorization_contract.rs::MemoryApi",
+              "source/host/tests/memory_gateway_authorization_contract.rs::MemoryGateway",
+              "source/host/tests/memory_gateway_authorization_contract.rs: seven named HTTP contracts"
+            ],
+            "evidence": "All seven unchanged contracts use the actual HTTP Gateway, real DevicePairingOwner issue/revoke operations and an adapter that delegates Memory calls to actual TranscriptManager, ProductionSessionWorkers and file stores. Refusal controls compare dispatch counts, private response content, full owned Memory bytes, snapshots, journals and notifications, with malformed-body and valid-after-refusal controls. Write/admin and native positives perform actual delete/clear, check existing bool/null results and prompt invalidation, and reopen the actual owner. The test blob 7ffbb387686ca0aa22ab18cffe10e48c27961f4e is unchanged by the incoming channel integration. Authored tests establish intended oracles, not executed results."
+          },
+          {
+            "id": "MGA-R8-CANONICAL-ORACLE",
+            "result": "source-approved",
+            "references": [
+              "source/host/tests/memory_service_contract.rs::bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md"
+            ],
+            "evidence": "The positive creates a Session through SandAgentSessionStore::create_session, checks live admission and uses its issued ID. It retains all four existing canonical/missing/foreign/admitted-after-refusal assertions and adds nonempty missing-Session refusal, no missing path creation, unchanged foreign bytes and an actual canonical Create committed after refusal. Production admission is unchanged. The shared Memory spec retains both fixture narratives without relabeling failed historical subjects as passing."
+          },
+          {
+            "id": "MGA-R8-CHANNEL-BOUNDARY",
+            "result": "source-approved",
+            "references": [
+              "source/host/app/src/main.rs::request_channel_background_readiness",
+              "source/host/app/src/main.rs::process_channel_failure_work",
+              "source/host/app/src/main.rs::handoff_channel_failure_followup",
+              "source/host/app/src/main.rs::queue_recovered_channel_delivery_failure",
+              "source/host/src/extensions/transcript/background_wakes.rs::ChannelFailureWork",
+              "source/host/src/extensions/transcript/background_wakes.rs::begin_channel_failure_followup"
+            ],
+            "evidence": "The incoming production delta stays in the existing BackgroundWakes and shipping Host composition. It reserves and compares claim/token/phase in the existing mutex, rearms only pre-dispatch work, and retains entered non-success without converting it into replayable input. Shipping processing keeps the existing marker, Session/provenance, provider and quiescence gates and same final Runner call. Settings and successful resume extend the existing readiness callback; they do not introduce another authority or Memory path. Incoming production and test blobs are retained unchanged in MGA. No integration-specific bypass of the Memory or Session admission boundary was found."
+          },
+          {
+            "id": "MGA-R8-WORKFLOW-UNION",
+            "result": "source-approved",
+            "references": [
+              ".github/workflows/rust-desktop-runtime.yml: macOS recovery command and Memory receipts",
+              ".github/workflows/rust-desktop-runtime.yml: Linux channel/Memory integration required_integration and cases",
+              ".github/workflows/rust-desktop-runtime.yml: Linux Automation/Settings/channel App exact selectors",
+              ".github/workflows/rust-desktop-runtime.yml: native link-preview command"
+            ],
+            "evidence": "The merged workflow preserves inherited channel/CFRG, MGS/MGA/MWR, RSU, SCP claim/unknown-COMMIT, Automation, Settings and native-preview commands and assertions. It adds the incoming channel controls and MGA HTTP target/positives. The canonical Memory positive occurs once in Linux required_integration and once in macOS append_required; removing the duplicate identical Linux entry does not remove coverage. Named-result guards still require exactly one passing result, successful command exits and subject/log identities; Linux App cases still use exact listing and one-passed/zero-failed/zero-ignored completion. Existing final gates are not replaced by source approval."
+          },
+          {
+            "id": "MGA-R8-EVIDENCE-TRUTH",
+            "result": "source-approved",
+            "references": [
+              "projects/openclaw-rust/inventory/read-observations.json",
+              "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+              "projects/openclaw-rust/parity-ledger.json",
+              "projects/openclaw-rust/requirements-traceability-matrix.json"
+            ],
+            "evidence": "MGA appends literal fixed-U source observations and explicitly partial descriptor ranges, leaving materialization and broader policy work separate. Shared ledger/RTM deltas add evidence/contracts to existing responsibility rows and retain incoming channel references; duplicate reference movement does not drop the referenced file. Neither delta promotes verification, acceptance, source authority or global completion flags."
+          }
+        ],
+        "subsequent_identity_applicability": {
+          "r9_tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+          "published_commit_reported_by_parent": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+          "source_evidence": "Read r9 manifest and compared exact Git trees 548fd350 and 13cc7fd2. The only differences are projects/openclaw-rust/docs/specs/link-preview-native-gateway.md and source/node-agent-coordinator/tests/production_protocol.rs. All ten MGA blobs and the inspected production/workflow dependencies are unchanged.",
+          "applicability": "This source verdict carries to the unchanged MGA scope in r9. It does not independently review the two preview changes or claim exact-H runtime success. Parent-reported API full-byte publication readback was not repeated by this reviewer.",
+          "carrier_79920666": "Parent reports derived inventory only and no MGA code delta. No additional source or runtime verdict is asserted for that later carrier here."
+        },
+        "findings": [],
+        "validation": {
+          "local_build_test_lint_schema_validator_generator_or_runtime_execution": "not run; prohibited",
+          "executed_commands": "read-only cat/sed/rg and Git status/show/diff/ls-tree/rev-parse operations only; report writing is the sole mutation",
+          "exact_h_actions": "pending separate CI evidence assessment; not evaluated by this source reviewer",
+          "full_acceptance": "pending; all applicable final G01-G12 and AC01-AC24, real services/devices/platforms, packaging and independent acceptance remain required",
+          "limits": [
+            "This is a focused integration review, not renewed full channel-runtime acceptance.",
+            "No upstream read credit, runtime success or acceptance state is created by this report.",
+            "Broader Gateway/Memory account and tenant policy, symlink defense, real remote devices, unknown effects and full restart/platform/package behavior retain their existing open scope."
+          ]
+        }
+      }
+    },
+    {
+      "report_sha256": "60a015e9f0dfb9daa2e7a8eceab4595e433eaf1695fe523dfae3efdaf9352205",
+      "report": {
+        "format_version": 1,
+        "reviewer": "/root/mga_channel_structure",
+        "lenses": [
+          "reuse",
+          "structure",
+          "performance"
+        ],
+        "terminal": true,
+        "verdict": "APPROVE_SOURCE_ONLY",
+        "summary": "No falsifiable blocking reuse, structure or source-level performance defect found in the complete ten-path frozen MGA scope and the necessary incoming channel/Session integration context. This approves source structure only; exact-H GitHub Actions and full-scope acceptance remain pending.",
+        "settings": {
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "xhigh",
+          "provenance": "Assigned model/effort recorded by parent spawn and recovery handoff. No replacement reviewer or local CLI worker was created.",
+          "reason": "Integrated HTTP permission classification, real Session/Memory mutation ownership, incoming channel custody, shared workflow union and evidence identity require deep source review."
+        },
+        "scope": {
+          "repository": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+          "base": "74484facdac03260af2b5ca1bd7963dc2ce5c1c2",
+          "base_tree": "1a28595296545363c11d5d99452e391c0b9c5f19",
+          "frozen_tree": "548fd350b2ec4bdb21296d4de65abb8c38ed9a7e",
+          "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+          "changed_paths": 10,
+          "inputs": [
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/manifest.json",
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/candidate.patch",
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/integration-delta.patch",
+            "/workspace/scratch/403d4d169ac6/mga-review/r8/incoming.patch"
+          ],
+          "method": "Read-only Git/source inspection of exact trees, complete base-to-frozen diff, integration/incoming patch context and necessary adjacent functions/callers. No other reviewer reports or runner decisions were read.",
+          "boundaries": "No unrelated global source/dependency closure audit; no local executable validation, build, test, schema check, generator or runtime execution; no production/shared writes."
+        },
+        "authority": [
+          {
+            "path": "AGENTS.md",
+            "applied": "Independent review is read-only, covers complete frozen scope and necessary adjacent callers/consumers, and requires falsifiable findings. Quality ratchet addresses ownership/layering, dependency/build reach, duplication and orphans. Executable OCRM validation is Actions-only."
+          },
+          {
+            "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+            "applied": "Current authority/ownership and fixed U take precedence over historical discovery snapshots. Existing owners and the single ledger/RTM are retained; partial source work cannot promote global flags."
+          },
+          {
+            "path": "docs/specs/openclaw-rust-equivalence-migration.md:671-724",
+            "applied": "Section 17 allows coherent owner-based batches with deep review of changed high-risk behavior, contract/disposition review of evidence, reuse of unchanged identities and existing Actions/cache surfaces. Exact-H evidence and full final acceptance remain required."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+            "applied": "MGS-v1 and MGA-01 through MGA-06: exact three-method admission in existing gateway, pairing grants as authority, headers as ceilings, no invalid-credential ambient fallback, unchanged actual Memory/Session data path."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+            "applied": "MWR-v1 and canonical oracle repair preserve Session admission and original Committed/Invalid assertions, adding a nonempty refused-write and valid-after-refusal control without changing production policy."
+          }
+        ],
+        "path_coverage": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "blob": "8b1befefe65a1cf39bfc46b4c4f323c4fc8021dc",
+            "depth": "deep",
+            "disposition": "Complete MGA diff plus adjacent triggers, exact-subject binding, caches, macOS recovery command/receipts, Linux Host recovery command/receipts, inherited App selector and LPG/Automation gates inspected. Adds MGA target and seven named positives to existing commands. No new job, dependency or target directory."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+            "blob": "2987e6c3b33e7e48bfafa566028f50b843462849",
+            "depth": "disposition",
+            "disposition": "Complete contract read. The added MGA supplement preserves MGS behavior and identifies existing ingress, credential, mutation and storage owners plus explicit acceptance limits."
+          },
+          {
+            "path": "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+            "blob": "a49834e7d667592f40e0632b9d72188c629b2e3c",
+            "depth": "disposition",
+            "disposition": "Complete evidence declaration read. Fixed-U exact path/blob/range observations remain literal; partial descriptor ranges remain partial. Imported dependencies are not marked implementation-reviewed. Execution and acceptance remain pending."
+          },
+          {
+            "path": "projects/openclaw-rust/inventory/read-observations.json",
+            "blob": "daa1de9f234ebdbd37df561e7ce47cf8ccbbec06",
+            "depth": "contract",
+            "disposition": "Complete added observation delta reviewed against the evidence declaration. Seven exact source observations are appended; historical observations are retained. No canonical shard, classification, verification or acceptance promotion is introduced."
+          },
+          {
+            "path": "projects/openclaw-rust/parity-ledger.json",
+            "blob": "4ca8737039f45b4d159753058cc538d967050a6a",
+            "depth": "contract",
+            "disposition": "Complete changed records reviewed. Additive evidence/test/typed-contract references stay in existing Gateway ingress responsibility records; no new owner or implementation/wiring/verification/acceptance state is asserted."
+          },
+          {
+            "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+            "blob": "66fae7047504b92215e339d8e1de3c663a647d0e",
+            "depth": "contract",
+            "disposition": "Complete changed records reviewed. Existing requirements/acceptance rows gain MGA references while retaining their prior evidence and incoming channel/Memory references. Eight global flags remain false."
+          },
+          {
+            "path": "source/host/src/gateway_server.rs",
+            "blob": "579f21811cb01b32f838d2170f05d72e18a3f7dc",
+            "depth": "deep",
+            "disposition": "Complete production delta and relevant handle_connection admission/dispatch context inspected. MemoryGatewayAccess owns one exact-method classification and one implication decision. The new gate executes after common authentication and registry refusal, before JSON decoding and api.call."
+          },
+          {
+            "path": "source/host/tests/memory_gateway_authorization_contract.rs",
+            "blob": "7ffbb387686ca0aa22ab18cffe10e48c27961f4e",
+            "depth": "deep",
+            "disposition": "Complete 607-line new target read. Actual TCP GatewayServer and issued/revoked DevicePairingOwner credentials delegate through real TranscriptManager, ProductionSessionWorkers and file-backed Memory. Denial counters, raw bytes, snapshots, journals, notifications, valid-after-refusal and reopen controls inspect actual owners."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+            "blob": "13492c280a0bdf888f65ade5516630f8832d9c68",
+            "depth": "disposition",
+            "disposition": "Complete contract read. Added oracle repair record preserves failed subject identities, actual Session materialization, original admission assertions and Actions-only proof requirements."
+          },
+          {
+            "path": "source/host/tests/memory_service_contract.rs",
+            "blob": "1a7379713165ff5e50528971756786382fec1c07",
+            "depth": "deep",
+            "disposition": "Complete delta and full bound_synthesis_gate_rejects_a_noncanonical_store_path function inspected. Incoming SandAgentSessionStore fixture and original four assertions remain; nonempty missing-agent/foreign-store refusal, foreign byte preservation and canonical successful write controls strengthen the existing target."
+          }
+        ],
+        "adjacent_source": [
+          {
+            "path": "source/host/src/host_gateway_api.rs:175-177",
+            "evidence": "The three camelCase Memory methods remain registered to TranscriptManager."
+          },
+          {
+            "path": "source/host/app/src/main.rs:12892-12896,13715-13722",
+            "evidence": "UnifiedGatewayApi still resolves credentials through DevicePairingOwner and dispatches Memory through TranscriptManager with the same Internal error mapping used by the thin HTTP contract adapter."
+          },
+          {
+            "path": "source/host/src/extensions/transcript/transcript_manager.rs:696-744",
+            "evidence": "Exact get/delete/clear dispatch retains canonical read selector validation, 100-record MemoryService projection and Session-owned mutation calls."
+          },
+          {
+            "path": "source/host/src/extensions/session/production.rs:3700-3876",
+            "evidence": "Mutation admission, durable pending-memory journal, rollback, snapshot settlement and unknown-outcome retention remain in ProductionSessionWorkers; MGA adds no competing lifecycle owner."
+          },
+          {
+            "path": "source/host/src/extensions/memory/memory_service.rs:1173-1226",
+            "evidence": "Existing store selection, bound synthesis apply gate and 100-record list consumer remain unchanged."
+          },
+          {
+            "path": "source/host/src/device_pairing_owner.rs:310-345",
+            "evidence": "Gateway consumes the pairing owner's approved token authorization. MGA does not inspect pairing rows or copy token verification."
+          },
+          {
+            "path": "source/host/app/src/main.rs:6880-6970,7412-7593",
+            "evidence": "Necessary incoming readiness, token action driver, pre-Runner handoff admission, processing and terminal drain inspected. Memory HTTP admission does not replace or alter these channel ownership paths."
+          },
+          {
+            "path": "source/host/Cargo.toml",
+            "evidence": "Existing integration-test discovery and dependencies suffice. No Cargo manifest/lock or dependency change occurs in the frozen ten-path diff."
+          }
+        ],
+        "assessments": [
+          {
+            "lens": "reuse",
+            "result": "approved-source",
+            "evidence": [
+              "The new Memory scope implication cannot be replaced blindly by is_mutating_openclaw_command: that existing unrelated policy requires literal operator.write and must keep rejecting admin-only config.set. The exact Memory classifier avoids broadening that grant.",
+              "Pairing credential authority, HTTP ingress, TranscriptManager dispatch, Session journal and Memory storage are reused directly.",
+              "The seven HTTP contract tests share one fixture and common denial/read/mutation helpers; test-only counters observe the real GatewayApi owner boundary rather than a replacement Memory implementation.",
+              "The canonical synthesis repair reuses the existing Session creation route and selected MemoryService target; no production admission bypass is added."
+            ]
+          },
+          {
+            "lens": "structure",
+            "result": "approved-source",
+            "evidence": [
+              "One private enum and two small methods classify exactly getAgentMemories, deleteAgentMemory and clearAgentMemories. No new public RPC, global state, permission store, scheduler or runtime owner.",
+              "Device role/scopes come from the actual pairing owner; singular headers only constrain that grant. Native no-token Memory access refuses a present invalid credential and a non-loopback listener.",
+              "Common Origin/Host, registry, token, nonce and pairing-revision checks precede the new gate. JSON parsing and actual owner dispatch remain downstream.",
+              "Read selector safety, projection/order/bound, Session mutation journaling and durable reopen remain downstream existing-owner responsibilities."
+            ]
+          },
+          {
+            "lens": "performance",
+            "result": "approved-source",
+            "evidence": [
+              "The production delta adds constant exact-method matching and a linear scan of the already-loaded approved scope vector only for the three Memory methods. It adds no filesystem/database/network operation, worker, polling loop, additional lock, retry or unbounded retained state.",
+              "Denied Memory requests return before JSON deserialization and Memory/Session owner dispatch.",
+              "Existing Linux source/host target/cache is reused; macOS uses its existing recovery integration command/cache. No per-file workflow job or parallel build tree is introduced.",
+              "Runtime timing, memory use, soak and packaging performance were not executed or inferred from source."
+            ]
+          }
+        ],
+        "incoming_preservation": {
+          "incoming_base": "74484facdac03260af2b5ca1bd7963dc2ce5c1c2",
+          "incoming_patch_paths": 13,
+          "byte_identical_disjoint_paths": [
+            "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+            "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+            "source/host/app/src/main.rs",
+            "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+            "source/host/app/src/tests/channel_failure_readiness_tests.rs",
+            "source/host/app/src/tests/channel_host_lane_tests.rs",
+            "source/host/src/extensions/transcript/background_wakes.rs",
+            "source/host/tests/automation_spend_guard_runtime_contract.rs",
+            "source/host/tests/background_wakes_production_contract.rs"
+          ],
+          "shared_paths": [
+            ".github/workflows/rust-desktop-runtime.yml",
+            "projects/openclaw-rust/parity-ledger.json",
+            "projects/openclaw-rust/requirements-traceability-matrix.json",
+            "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md"
+          ],
+          "evidence": "Git base-to-frozen diff contains none of the nine disjoint paths. The four shared paths retain incoming controls/references and add the MGA/oracle supplement.",
+          "channel_app_controls": {
+            "total": 34,
+            "readiness": 14,
+            "handoff": 2,
+            "host_lane_and_recovery": 18,
+            "source": ".github/workflows/rust-desktop-runtime.yml:2380-2420",
+            "requirement": "Every case retains exact --list selection, exact execution, one-passed/zero-failed/zero-ignored outer/owned-child summaries and exact binary identity."
+          },
+          "background_wakes_controls": {
+            "total": 12,
+            "source": ".github/workflows/rust-desktop-runtime.yml:2018-2029",
+            "requirement": "Ten lifecycle/custody controls plus two wiring mutation controls remain in the Linux required-positive list and existing background_wakes_production_contract target."
+          },
+          "retained_contracts": [
+            "MGS-v1 selector, projection/order/bound, mutation/snapshot controls",
+            "MGA-v1 seven actual HTTP named positives on Linux and macOS",
+            "MWR-v1 append/synthesis/temporal and canonical gate controls",
+            "RSU-v1 Unicode search/fallback/index controls",
+            "SCP-CLAIM-v1 Session claim positives and unknown-COMMIT/refused-rollback controls",
+            "Automation typed admission/composed Runner Memory consumer and App controls",
+            "Config public/secret/revision-input controls",
+            "LPG-v1 native HTTP, Coordinator and App controls"
+          ],
+          "canonical_positive_deduplication": "bound_synthesis_gate_rejects_a_noncanonical_store_path appears once in the Linux required_integration list and once in the separate macOS append_required list. The integration union removes only an identical redundant Linux list entry; the selected test, its original assertions and strict named-positive requirement are retained.",
+          "accounting": "Read-observations are additive literal source facts. No lock/baseline/closure or global acceptance promotion; all eight global flags in both ledger and RTM are explicitly false."
+        },
+        "identity_applicability": {
+          "r9_tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+          "published_commit": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+          "r9_applicability": "Direct Git tree comparison shows only projects/openclaw-rust/docs/specs/link-preview-native-gateway.md and source/node-agent-coordinator/tests/production_protocol.rs differ from frozen r8; all ten MGA blobs are identical. This report applies to those unchanged MGA identities without adjudicating the disjoint preview oracle.",
+          "later_carrier": "79920666e475920109690520cd913df40b28c0f7",
+          "later_carrier_parent": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+          "later_carrier_delta": "Direct Git inspection confirms 79920666 changes only inventory/index.json, inventory/shards/manifest.json and eight compressed derived shards relative to its own parent a50e4222.",
+          "later_carrier_limit": "The cumulative tree from aae to 799 also contains intervening PMS work. Its workflow blob is 04478011065d7043b27a0b1fc9070b0ff9e1500a and RTM blob is 1c58580e035ac6b11367ad8bdf5a4608c3d8d727, so this report does not silently extend exact workflow/RTM approval from reviewed 8b1befefe/66fae704 identities to that later PMS union. Unchanged MGA production and test blobs retain this source-review applicability; separate review owns the later composition."
+        },
+        "findings": [],
+        "validation": {
+          "local_executable_validation": "NOT_RUN_PROHIBITED",
+          "operations_performed": [
+            "read-only source/text inspection",
+            "git show/diff/grep/ls-tree/rev-parse",
+            "author this review JSON"
+          ],
+          "exact_h_actions": "PENDING_SEPARATE_ASSESSMENT",
+          "full_scope_acceptance": "PENDING",
+          "meaning": "Authored assertions, named workflow gates and source reasoning are not test results. This report grants no runtime, remote-device, packaged-platform or complete OpenClaw equivalence acceptance."
+        },
+        "remaining_acceptance": [
+          "Exact shipping subject H/tree/U and compiled artifact identity with required Linux/macOS command exits, named positive counts and complete logs.",
+          "Independent acceptance of the complete applicable OCRM scope and original G01-G12/AC01-AC24 requirements.",
+          "Real providers/channels/devices, cross-account/tenant policy, symlink/filesystem races, UI/platform packaging and performance/soak remain separate product gates."
+        ]
+      }
+    }
+  ],
+  "shared_memory_oracle_repair": {
+    "decision": {
+      "contract": "MWR-v1/MGA-v1 shared Session admission control",
+      "decision_id": "MEMORY-CANONICAL-ORACLE-01",
+      "decision": "FIX",
+      "classification": "TEST_ORACLE_BUG",
+      "evidence": "GitHub Actions 32a9a391199b03d8b8df76380701c14d56f84834/job125588952180 and c6be0cbc7bd47ac3392d02bec5b3ee8aa75a61bb/job125593431475 fail the canonical positive with Invalid versus Committed. Both the prior production gate and current gate require an existing admitted Session; the fixture creates none. Independent directness assessment confirms existing_session_db_path returns Agent missing before Store apply.",
+      "fix": "Create the healthy canonical Session through ProductionSessionWorkers.materialize_new_session and use that issued ID. Keep both original Committed/Invalid assertions, retain a separate missing-agent Invalid control, observe foreign raw bytes unchanged under a nonempty proposal, and verify a healthy canonical write after refusal. Do not weaken production admission or remove any check.",
+      "validation": "Fresh independent frozen source review and exact-H GitHub Actions required; no local executable validation. Preview MCP reuse absence is a dependent skipped-Automation artifact, not a second demonstrated product defect."
+    },
+    "implementation_reconciliation": "The decision retained real Session admission. Incoming8a4612 used SandAgentSessionStore::create_session; the integrated candidate adopted that existing owner path and all incoming assertions, plus missing-agent empty/nonempty refusal, unchanged foreign raw bytes, valid-after-refusal and nonempty canonical success. This is the same FIX decision with an existing-owner fixture route, not a production gate change.",
+    "failed_subjects": [
+      "32a9a391199b03d8b8df76380701c14d56f84834",
+      "c6be0cbc7bd47ac3392d02bec5b3ee8aa75a61bb"
+    ],
+    "failed_jobs": [
+      125588952180,
+      125593431475
+    ],
+    "fixed_test_blob": "1a7379713165ff5e50528971756786382fec1c07",
+    "evidence_status": "Retain the historical failed subjects and original repair decision. At exact MGA H aae00b9a039ce476896a5f2cbc5eecf3df725518 and PMS H a50e4222776ce1e3a422d405d40fba26c0ae0594, bound_synthesis_gate_rejects_a_noncanonical_store_path has one literal positive result per job, with cargo/capture exits0. This establishes the repaired canonical/missing-Session/foreign-store control only; both overall Linux jobs still failed in the separate App Settings fixture."
+  },
+  "source_materialization": {
+    "authority_subjects": [
+      {
+        "H": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+        "source_run": 41540633895,
+        "authority_job": 125603577879,
+        "authority_job_result": "success",
+        "workflow_result": "failure",
+        "persistence_job": 125604299715,
+        "persistence_outcome": "CAS lease moved; stale publication correctly refused before commit/push"
+      },
+      {
+        "H": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+        "source_run": 41540837570,
+        "authority_job": 125604259387,
+        "authority_job_result": "success",
+        "workflow_result": "success",
+        "persistence_job": 125605099405,
+        "persistence_outcome": "derived inventory committed"
+      }
+    ],
+    "checks": "33 source-review and21 structural/expansion tests; scoped G01/G02 structural PASS for62130 tracked paths; not final source/dependency/review closure.",
+    "canonical_inventory_sha256": "c6d1735e74d172442a6d465ca5e031d616fc177981828b3f26e23e2ed716a448",
+    "derived_carrier": {
+      "sha": "79920666e475920109690520cd913df40b28c0f7",
+      "parent": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+      "tree": "062f8a06735a4b656a9e32595d8db2a6abef35de",
+      "commit_object_verified": true,
+      "remote_content_readback": true,
+      "files": [
+        {
+          "path": "projects/openclaw-rust/inventory/index.json",
+          "sha": "b540184e4eb0b49fea144f2ae191f8654351c13d",
+          "source_file": "0.b64",
+          "encoding": "base64",
+          "characters": 2412,
+          "bytes": 1778,
+          "sha256": "014f596fbe6dce0f3d7c032ce28d2d31356e369d4952210a9122db7e08c4590f",
+          "raw_file": "0.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/manifest.json",
+          "sha": "90123131f04bfcfbac63dd32a19e33588524c98c",
+          "source_file": "1.b64",
+          "encoding": "base64",
+          "characters": 37357,
+          "bytes": 27556,
+          "sha256": "0842aa9201cdc137b93dec13b9412e64c2e97acf333399b7a1ac0d978112316a",
+          "raw_file": "1.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0018.jsonl.gz",
+          "sha": "b2e4ca669a58337504dbaa8d6d8414f7568d67d3",
+          "source_file": "2.b64",
+          "encoding": "base64",
+          "characters": 68333,
+          "bytes": 50408,
+          "sha256": "f1b8bc548ff9493cd32a5242abad285b1b9ea8c01ffe3db2c567de9e303f2c05",
+          "raw_file": "2.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0019.jsonl.gz",
+          "sha": "e46baf93e4939e96f24be796870e1161aaae4c5e",
+          "source_file": "3.b64",
+          "encoding": "base64",
+          "characters": 71395,
+          "bytes": 52668,
+          "sha256": "4b8047cee39489916da52149788cff4767a0b463abc4eb7ae198eb42fedc4670",
+          "raw_file": "3.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0024.jsonl.gz",
+          "sha": "ea2eb6e58b011b230ff4638f42741c3ba0e9e491",
+          "source_file": "4.b64",
+          "encoding": "base64",
+          "characters": 70049,
+          "bytes": 51675,
+          "sha256": "31a4f86cd7059938497808fb1da75154a145672652288674405290045d59c985",
+          "raw_file": "4.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0026.jsonl.gz",
+          "sha": "082d8f940c7221c35a84e1c84d64e70d6fc66895",
+          "source_file": "5.b64",
+          "encoding": "base64",
+          "characters": 68381,
+          "bytes": 50443,
+          "sha256": "58224942f0d40ea88aee81c025d525b47d23d02f18bb2dbdf6fdaec5e80b1ccd",
+          "raw_file": "5.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0033.jsonl.gz",
+          "sha": "ab9974a9bc7d700b950f3372abecd08c513dc084",
+          "source_file": "6.b64",
+          "encoding": "base64",
+          "characters": 67824,
+          "bytes": 50032,
+          "sha256": "f66c143089e97eb689c5002e15aca2d911bca868ee32b20eccdcacf6e794d3ad",
+          "raw_file": "6.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0037.jsonl.gz",
+          "sha": "1b36a5c8c2122a96d68df2498bbe5283baa7ad93",
+          "source_file": "7.b64",
+          "encoding": "base64",
+          "characters": 69618,
+          "bytes": 51355,
+          "sha256": "0162aa3a8dc81881348ddcd99cb9ef8c768b9020c6f688cfe138ff21cc4068e8",
+          "raw_file": "7.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0038.jsonl.gz",
+          "sha": "f02e584a44bb159db17cddcc7948629282e22a9c",
+          "source_file": "8.b64",
+          "encoding": "base64",
+          "characters": 68325,
+          "bytes": 50403,
+          "sha256": "6d7c19447b418ffcbaaa680cc44fff4d4d8f3c962005538bf535066942c3c052",
+          "raw_file": "8.raw"
+        },
+        {
+          "path": "projects/openclaw-rust/inventory/shards/part-0048.jsonl.gz",
+          "sha": "4bad7e6ad078b291a038e1cf7d02de3807ede0ab",
+          "source_file": "9.b64",
+          "encoding": "base64",
+          "characters": 68589,
+          "bytes": 50598,
+          "sha256": "824df568e1be4c56563a523d5eaa4a9d4a8f616e5302ec2e12c8609f1a59675e",
+          "raw_file": "9.raw"
+        }
+      ],
+      "source": "GitHub connector exact-ref base64 fetch; bytes imported without running generators or validators; original two evidence WIP files retained"
+    },
+    "claim_boundary": "The generated carrier only records source-derived rows/index/manifest; runtime subject H and carrier remain distinct, and eight global flags remain false."
+  },
+  "historical_execution_at_source_record": {
+    "local_validation": "not run; prohibited",
+    "exact_subject_actions": "pending frozen commit; authored source and tests do not count as runtime evidence",
+    "source_materialization": "pending this input's exact-subject Actions; prior structural results are not relabeled",
+    "independent_frozen_review": "pending"
+  },
+  "evidence_carrier_scope": "This record revision carries source/delivery/runner evidence for explicitly identified subjects. Its own storage commit is not the tested or shipping subject and does not promote unit or full OCRM acceptance.",
+  "descendant_f5e_shared_regression_observation": {
+    "subject": {
+      "H": "f5e58a5dd052dd9c74454ae9a77a5b1ed531b981",
+      "tree": "23e13a6efabe861e351ec532eb7c3b284774d32b",
+      "parent": "7eb81e20b7dc2eac5a71516a9a0c78795d252e95",
+      "upstream": {
+        "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      }
+    },
+    "runtime": {
+      "run_id": 41545866179,
+      "attempt": 1,
+      "outer_status": "queued",
+      "outer_conclusion": null,
+      "linux_job_id": 125621214466,
+      "linux_status": "completed",
+      "linux_conclusion": "success",
+      "linux_completed_at": "2026-11-02T23:45:29Z",
+      "macos_job_id": 125621214739,
+      "macos_status": "queued",
+      "macos_conclusion": null,
+      "observed_at": "2026-11-02T23:49:38.796Z",
+      "proof_refs": [
+        "final-status-observation.json",
+        "job-125621214466.log"
+      ]
+    },
+    "scoped_claims": {
+      "MGA-v1": {
+        "status": "scoped-linux-pass",
+        "required_count": 7,
+        "positive_occurrences": {
+          "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner": 1,
+          "memory_gateway_read_scope_and_headers_cannot_grant_mutation": 1,
+          "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed": 1,
+          "memory_gateway_write_only_and_admin_only_mutations_survive_reopen": 1,
+          "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility": 1,
+          "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access": 1,
+          "memory_gateway_preserves_projection_selectors_and_unrelated_routes": 1
+        },
+        "proof_refs": [
+          "required-literal-results.json",
+          "linux-2-receipt.json"
+        ]
+      },
+      "canonical_memory_control": {
+        "status": "scoped-linux-pass",
+        "name": "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+        "literal_occurrences": 1,
+        "proof_refs": [
+          "required-literal-results.json",
+          "linux-2-receipt.json"
+        ]
+      }
+    },
+    "shared_app_fixture_recovery": {
+      "status": "scoped-linux-pass",
+      "required_app_cases": 62,
+      "passed_app_cases": 62,
+      "all_case_summaries": [
+        1,
+        0,
+        0
+      ],
+      "actual_commands": 127,
+      "all_command_exits": 0,
+      "startup_required": 7,
+      "startup_summary": [
+        7,
+        0,
+        0
+      ],
+      "app_executable_sha256": "392bd7a3c7c0534261065a59c75dcd1c697641de142bfb0a7f00f3ff1d9197d3",
+      "scope": "Exact shipping cfg(not(test)) check, linked App harness, current 62 actual App cases and seven normal-startup controls. Full packaged/shipping-platform acceptance remains open.",
+      "proof_refs": [
+        "linux-5-receipt.json",
+        "terminal-evidence-reconciliation.json",
+        "required-literal-results.json"
+      ]
+    },
+    "source": {
+      "run_id": 41545866193,
+      "conclusion": "success",
+      "source_job": 125621213696,
+      "source_job_conclusion": "success",
+      "persistence_job": 125621858549,
+      "persistence_conclusion": "success",
+      "source_review_tests": 33,
+      "structural_tests": 21,
+      "tracked_paths": 62130,
+      "canonical_inventory_sha256": "c6d1735e74d172442a6d465ca5e031d616fc177981828b3f26e23e2ed716a448",
+      "persistence_literal": "No new source-derived shard content",
+      "new_carrier": false,
+      "scope": "Scoped G01 tracked-tree/G02 structural only. No source/dependency/semantic closure or full gate promotion.",
+      "proof_refs": [
+        "source-authority-terminal.json",
+        "source-and-renderer-proof.json"
+      ]
+    },
+    "canonical_detail": "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+    "raw_log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125621214466/logs",
+    "raw_log_sha256": "f01dda28aa7fcd880e5af6a3c1281a53b8668fac1d65196df516b7927557c164",
+    "source_proposal_sha256": "7b50d7c996be61eb30a348ffd0d4850e1d8b31d5af16b7dd1c0118aa7ac293f7",
+    "preservation": [
+      "MGA Haae00b9a039ce476896a5f2cbc5eecf3df725518 and PMS Ha50e4222776ce1e3a422d405d40fba26c0ae0594 App/whole-Linux failures remain failed. This descendant result does not edit those runs.",
+      "Every historical pending snapshot and signed source-only review remains literal history; no report hash rewriting.",
+      "Only f5e58a5dd052dd9c74454ae9a77a5b1ed531b981 is the runtime subject. Later branch heads, later Memory edits and evidence/source carriers gain no execution claim from this observation.",
+      "macOS queued and profiler/platform-worker skipped remain non-passing.",
+      "All applicable full G01-G12/AC01-AC24, source/dependency/legal closure, real providers/transports/indexed backends, devices/platform/UI/soak/package/upgrade/rollback and independent ACCEPT remain open. No upstream-read credit, inventory completion or global flag is promoted."
+    ],
+    "carrier_scope": "This is a separately identified descendant observation. It does not change this file original subject, prior failed job or historical source review."
+  }
+}

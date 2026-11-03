@@ -2,8 +2,9 @@ use std::fs;
 use std::future::{ready, Future};
 use std::pin::Pin;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 static NEXT_TEMP_ROOT: AtomicU64 = AtomicU64::new(0);
 
@@ -12,6 +13,10 @@ use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::extensions::session::agent_db_serde::AwaitingUserResponse;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionRuntimeDeps;
+use mahayana_host_runtime::extensions::session::agent_db::ChannelInboundAppendOutcome;
+use mahayana_host_runtime::extensions::transcript::background_wakes::{
+    BackgroundWakes, InboundAppendAction,
+};
 use mahayana_host_runtime::extensions::session::box_handoff_service::{
     BoxHandoffDeps, BoxHandoffService, HandoffDecision, HandoffRequest, HandoffStartResult,
     HandoffTelemetry, HandoffTrigger,
@@ -25,7 +30,7 @@ use mahayana_host_runtime::extensions::transcript::pending_wake_rearm::{
 };
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
 use mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::{
-    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin,
+    DurablePendingWakeMarker, PendingWakeKind, QuietWakeOrigin, SandPendingWakeStore,
 };
 use mahayana_host_runtime::extensions::transcript::transcript_manager::{
     TranscriptManager, TranscriptTurnExecutionPort,
@@ -312,6 +317,7 @@ fn manager_is_the_single_production_composition_owner() {
     assert!(ack_a.redrive_schedule(&agent.id).is_none());
     {
         let wakes = wakes_a.lock().expect("background wakes after dispose");
+        assert!(wakes.is_closed());
         assert!(wakes.pending_inbound.is_empty());
         assert!(wakes.pending_channel_failures.is_empty());
         assert!(wakes.pending_event_wakes.is_empty());
@@ -326,6 +332,101 @@ fn manager_is_the_single_production_composition_owner() {
     assert_eq!(sessions.active_agent_db_owner_count(), 0);
     assert_eq!(sessions.active_worker_count(), 0);
 
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn manager_dispose_closes_original_queue_before_cleanup_and_rejects_snapshotted_callback_and_ticket() {
+    // Dropping the real registered observer during dispose can run captured
+    // cleanup code. Observe that exact teardown boundary, not just its return.
+    struct CleanupReadinessProbe {
+        wakes: Arc<Mutex<BackgroundWakes<Value>>>,
+        observed: Arc<Mutex<Vec<(bool, usize, bool)>>>,
+    }
+    impl Drop for CleanupReadinessProbe {
+        fn drop(&mut self) {
+            let mut wakes = self.wakes.lock().unwrap();
+            let closed = wakes.is_closed();
+            let tickets = wakes.request_inbound_readiness().len();
+            let rejected = wakes.enqueue_inbound_and_claim("cleanup-agent", json!({"late":"cleanup"})).is_err();
+            self.observed.lock().unwrap().push((closed, tickets, rejected));
+        }
+    }
+
+    let root = temp_root();
+    fs::create_dir_all(&root).unwrap();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let manager = Arc::new(TranscriptManager::new(&root, sessions));
+    let queue = manager.background_wakes();
+    let reserved = queue.lock().unwrap().enqueue_inbound_and_claim("agent-a", json!({"text":"reserved before spawn"}))
+        .unwrap().unwrap();
+    let cleanup_observed = Arc::new(Mutex::new(Vec::new()));
+    let cleanup_probe = CleanupReadinessProbe { wakes: Arc::clone(&queue), observed: Arc::clone(&cleanup_observed) };
+    manager.set_agent_run_lifecycle_observer(Some(Arc::new(move |_, _| {
+        let _retained_for_observer_lifetime = &cleanup_probe;
+    })));
+
+    let (entered_tx, entered_rx) = mpsc::channel();
+    let (release_tx, release_rx) = mpsc::channel();
+    let release_rx = Mutex::new(release_rx);
+    let (observed_tx, observed_rx) = mpsc::channel();
+    let callback_queue = Arc::clone(&queue);
+    manager.set_channel_config_changed_observer(Some(Arc::new(move || {
+        entered_tx.send(()).unwrap();
+        release_rx.lock().unwrap().recv_timeout(Duration::from_secs(10)).expect("dispose before snapshotted callback resumes");
+        let mut wakes = callback_queue.lock().unwrap();
+        let closed = wakes.is_closed();
+        let tickets = wakes.request_inbound_readiness().len();
+        let rejected = wakes.enqueue_inbound_and_claim("agent-a", json!({"late":"snapshotted callback"})).is_err();
+        observed_tx.send((closed, tickets, rejected)).unwrap();
+    })));
+    let emitting_manager = Arc::clone(&manager);
+    let emitter = thread::spawn(move || emitting_manager.emit_channel_config_changed());
+    entered_rx.recv_timeout(Duration::from_secs(5)).expect("real manager emitter has snapshotted its callback");
+    manager.dispose();
+    assert!(manager.is_disposed());
+    assert!(Arc::ptr_eq(&queue, &manager.background_wakes()), "disposal retains the permanently closed queue object");
+    assert_eq!(*cleanup_observed.lock().unwrap(), vec![(true, 0, true)], "closure precedes downstream observer teardown");
+    release_tx.send(()).unwrap();
+    assert_eq!(observed_rx.recv_timeout(Duration::from_secs(5)).unwrap(), (true, 0, true));
+    emitter.join().expect("snapshotted real-manager callback returns");
+
+    // A successful resume call and repeated disposal cannot replace the queue
+    // with Default or grant the previously reserved ticket append permission.
+    manager.resume_after_recreate().unwrap();
+    manager.dispose();
+    {
+        let mut wakes = queue.lock().unwrap();
+        assert!(wakes.is_closed());
+        assert!(!wakes.owns_inbound_append("agent-a", &reserved));
+        assert!(!wakes.release_inbound_launch("agent-a", &reserved));
+        assert_eq!(wakes.pause_inbound_append("agent-a", &reserved), InboundAppendAction::Stale);
+        assert_eq!(wakes.record_inbound_append_outcome("agent-a", &reserved, None,
+            &ChannelInboundAppendOutcome::Committed { inserted_count: 1 }), InboundAppendAction::Stale);
+        assert!(!wakes.finish_inbound_append("agent-a", &reserved));
+        assert!(wakes.request_inbound_readiness().is_empty());
+        assert_eq!(wakes.take_inbound_append_or_end_revival("agent-a"), None);
+        assert!(wakes.pending_inbound.is_empty());
+        assert!(wakes.reviving_inbound_agent_ids.is_empty());
+    }
+
+    let next_root = root.join("replacement");
+    fs::create_dir_all(&next_root).unwrap();
+    let next_sessions = Arc::new(ProductionSessionWorkers::with_agents_root(next_root.join("agents"), 500));
+    let next_manager = TranscriptManager::new(&next_root, next_sessions);
+    let next_queue = next_manager.background_wakes();
+    assert!(!Arc::ptr_eq(&queue, &next_queue));
+    {
+        let mut wakes = next_queue.lock().unwrap();
+        assert!(!wakes.is_closed(), "only a newly constructed manager owns a fresh open queue");
+        let next = wakes.enqueue_inbound_and_claim("agent-a", reserved.envelopes[0].clone()).unwrap().unwrap();
+        assert_ne!(next.claim_id, reserved.claim_id);
+        assert_ne!(next.worker_token, reserved.worker_token);
+        assert!(wakes.owns_inbound_append("agent-a", &next));
+        assert!(!wakes.owns_inbound_append("agent-a", &reserved));
+    }
+    next_manager.dispose();
+    assert!(queue.lock().unwrap().is_closed());
     let _ = fs::remove_dir_all(root);
 }
 
@@ -423,8 +524,207 @@ fn manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation() 
         .expect("snapshot read")
         .is_none());
 
+    sessions
+        .begin_agent_delete(&agent.id)
+        .expect("publish memory deletion fence");
+    let blocked = manager
+        .dispatch_memory_gateway_call("clearAgentMemories", &json!({"id":agent.id}))
+        .expect("handled")
+        .expect_err("memory gateway must honor deletion fence");
+    assert!(blocked.contains("new session work is not admitted"));
+    sessions
+        .end_agent_delete(&agent.id)
+        .expect("clear memory deletion fence");
+
     manager.dispose();
     let _ = fs::remove_dir_all(root);
+}
+
+// MGS-v1 uses real stores on both sides of the agents-root boundary. The
+// outside store must be readable independently, so malformed fixture data
+// cannot masquerade as refusal by the production Gateway entry.
+struct MemoryGatewaySelectorFixture {
+    root: std::path::PathBuf,
+    manager: TranscriptManager,
+    expected: Value,
+    before: Vec<(std::path::PathBuf, Option<Vec<u8>>)>,
+    notifications: Arc<AtomicU64>,
+    unsubscribe: Option<mahayana_host_runtime::extensions::memory::memory_service::MemoryUnsubscribe>,
+}
+
+fn memory_gateway_selector_files(
+    root: &std::path::Path,
+) -> Vec<(std::path::PathBuf, Option<Vec<u8>>)> {
+    fn visit(
+        root: &std::path::Path,
+        directory: &std::path::Path,
+        entries: &mut Vec<(std::path::PathBuf, Option<Vec<u8>>)>,
+    ) {
+        for entry in fs::read_dir(directory).expect("owned memory fixture directory") {
+            let entry = entry.expect("owned memory fixture entry");
+            let path = entry.path();
+            let relative = path.strip_prefix(root).expect("fixture-owned path").to_path_buf();
+            let kind = entry.file_type().expect("owned memory fixture type");
+            if kind.is_dir() {
+                entries.push((relative, None));
+                visit(root, &path, entries);
+            } else {
+                assert!(kind.is_file(), "fixture must not introduce symlink semantics");
+                entries.push((relative, Some(fs::read(&path).expect("owned memory fixture bytes"))));
+            }
+        }
+    }
+    let mut entries = Vec::new();
+    visit(root, root, &mut entries);
+    entries.sort_by(|left, right| left.0.cmp(&right.0));
+    entries
+}
+
+impl MemoryGatewaySelectorFixture {
+    const AGENT_ID: &'static str = "memory-selector-agent";
+    const DAY_MS: i64 = 86_400_000;
+
+    fn new() -> Self {
+        use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
+
+        let root = temp_root();
+        fs::create_dir(&root).expect("create exclusively owned memory selector fixture");
+        let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let mut fixture = Self {
+            manager: TranscriptManager::new(&root, Arc::clone(&sessions)),
+            root,
+            expected: Value::Null,
+            before: Vec::new(),
+            notifications: Arc::new(AtomicU64::new(0)),
+            unsubscribe: None,
+        };
+        let store = sessions.memory_service().store_for_agent(Self::AGENT_ID);
+        let profile = store.add_memory("Existing profile ☃", Self::DAY_MS, MemoryKind::Profile)
+            .expect("profile write").expect("new profile fact");
+        let log = store.add_memory("Existing log ☃", 2 * Self::DAY_MS, MemoryKind::Log)
+            .expect("log write").expect("new log fact");
+        fixture.expected = json!([
+            {"id": profile.id, "content": "Existing profile ☃", "createdAt": Self::DAY_MS, "kind": "profile"},
+            {"id": log.id, "content": "Existing log ☃", "createdAt": 2 * Self::DAY_MS, "kind": "log"},
+        ]);
+
+        let outside = FileMemoryStore::new(fixture.root.join("outside/memory"));
+        let sentinel = outside.add_memory(
+            "External sentinel must never enter an agent reply", 3 * Self::DAY_MS, MemoryKind::Profile,
+        ).expect("outside sentinel write").expect("new outside fact");
+        assert_eq!(outside.list_memories(100), vec![sentinel], "outside oracle must be readable");
+
+        let notifications = Arc::clone(&fixture.notifications);
+        fixture.unsubscribe = Some(sessions.memory_service().subscribe(Arc::new(move || {
+            notifications.fetch_add(1, Ordering::Relaxed);
+        })));
+        fixture.before = memory_gateway_selector_files(&fixture.root);
+        fixture.assert_valid_read();
+        fixture
+    }
+
+    fn read(&self, args: Value) -> Result<Value, String> {
+        self.manager.dispatch_memory_gateway_call("getAgentMemories", &args)
+            .expect("existing memory read command must remain registered")
+    }
+
+    fn assert_unchanged(&self) {
+        assert_eq!(memory_gateway_selector_files(&self.root), self.before,
+            "a memory read must preserve valid/outside files and create no owner or directory");
+        assert_eq!(self.notifications.load(Ordering::Relaxed), 0,
+            "a memory read must not publish a mutation notification");
+    }
+
+    fn assert_valid_read(&self) {
+        assert_eq!(self.read(json!({"id": Self::AGENT_ID})).expect("valid memory read"), self.expected);
+        self.assert_unchanged();
+    }
+}
+
+impl Drop for MemoryGatewaySelectorFixture {
+    fn drop(&mut self) {
+        if let Some(unsubscribe) = self.unsubscribe.take() {
+            unsubscribe();
+        }
+        self.manager.dispose();
+        let cleanup = fs::remove_dir_all(&self.root);
+        if !thread::panicking() {
+            cleanup.expect("remove owned memory selector fixture");
+        }
+    }
+}
+
+#[test]
+fn memory_gateway_rejects_path_selectors_before_external_memory_read() {
+    let fixture = MemoryGatewaySelectorFixture::new();
+    let absolute = fixture.root.join("outside").to_str().expect("UTF-8 fixture path").to_string();
+    for selector in [
+        ".", "..", "../outside", " \t../outside\n", "../outside/.",
+        "memory-selector-agent/../../outside", "memory-selector-agent/memory",
+        r"..\outside", r"memory-selector-agent\memory", r"C:\outside",
+        "memory-selector-agent\0outside", absolute.as_str(),
+    ] {
+        let error = fixture.read(json!({"id": selector}))
+            .expect_err("a path selector must fail before its external memory can become a reply");
+        assert_eq!(error, format!("Invalid Sand agent id: {}", selector.trim()));
+        fixture.assert_valid_read();
+    }
+}
+
+#[test]
+fn memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts() {
+    let fixture = MemoryGatewaySelectorFixture::new();
+    for args in [
+        Value::Null, json!({}), json!({"id": ""}), json!({"id": " \t\n"}),
+        json!({"id": 7}), json!({"id": false}), json!({"id": null}),
+        json!({"id": [MemoryGatewaySelectorFixture::AGENT_ID]}), json!({"id": {"id": "nested"}}),
+    ] {
+        assert_eq!(fixture.read(args).expect_err("required ID contract"), "getAgentMemories requires id");
+        fixture.assert_valid_read();
+    }
+    assert_eq!(fixture.read(json!({
+        "id": format!(" \t{}\n", MemoryGatewaySelectorFixture::AGENT_ID),
+    })).expect("existing trimmed-ID compatibility"), fixture.expected);
+    for missing in ["missing-safe-agent", " missing-safe-agent "] {
+        assert_eq!(fixture.read(json!({"id": missing})).expect("safe missing ID"), json!([]));
+        fixture.assert_valid_read();
+    }
+    assert!(fixture.manager.dispatch_memory_gateway_call(
+        "getAgentMemories.extra", &json!({"id": "../outside"}),
+    ).is_none(), "unknown methods keep the existing unhandled outcome");
+    fixture.assert_valid_read();
+}
+
+#[test]
+fn memory_gateway_preserves_projection_order_and_hundred_record_limit() {
+    use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, memory_id_for};
+
+    let mut fixture = MemoryGatewaySelectorFixture::new();
+    let memory_dir = fixture.root.join("agents")
+        .join(MemoryGatewaySelectorFixture::AGENT_ID).join("memory");
+    fs::write(memory_dir.join("profile.md"), concat!(
+        "# Profiles\n\n- (1970-01-02) Earlier profile\n- (1970-01-03) Later profile\n",
+    )).expect("ordered profile fixture");
+    let log = (0..=100).map(|index| format!("- (1970-01-04) Log {index:03}\n"))
+        .collect::<String>();
+    fs::write(memory_dir.join("log/1970-01.md"), log).expect("bounded log fixture");
+    assert_eq!(FileMemoryStore::new(&memory_dir).list_memories(usize::MAX).len(), 103,
+        "the fixture must exceed the Gateway's existing bound");
+    let mut expected = vec![
+        json!({"id": memory_id_for("Later profile"), "content": "Later profile",
+            "createdAt": 2 * MemoryGatewaySelectorFixture::DAY_MS, "kind": "profile"}),
+        json!({"id": memory_id_for("Earlier profile"), "content": "Earlier profile",
+            "createdAt": MemoryGatewaySelectorFixture::DAY_MS, "kind": "profile"}),
+    ];
+    for index in (3..=100).rev() {
+        let content = format!("Log {index:03}");
+        expected.push(json!({"id": memory_id_for(&content), "content": content,
+            "createdAt": 3 * MemoryGatewaySelectorFixture::DAY_MS, "kind": "log"}));
+    }
+    assert_eq!(expected.len(), 100, "independent bounded projection oracle");
+    fixture.expected = Value::Array(expected);
+    fixture.before = memory_gateway_selector_files(&fixture.root);
+    fixture.assert_valid_read();
 }
 
 #[test]
@@ -525,9 +825,7 @@ impl PendingWakeRuntimePort for ManagerPendingWakeRuntime {
 
     fn watch_cloud_agent(
         &self,
-        _agent_id: &str,
-        _work_id: &str,
-        _quiet_origin: Option<&QuietWakeOrigin>,
+        _marker: &DurablePendingWakeMarker,
     ) -> Result<(), String> {
         Ok(())
     }
@@ -554,6 +852,13 @@ impl PendingWakeRuntimePort for ManagerPendingWakeRuntime {
     }
 
     fn revive_lost_subagent(&self, _wake: LostSubagentWake) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn revive_channel_delivery_failure(
+        &self,
+        _marker: &DurablePendingWakeMarker,
+    ) -> Result<(), String> {
         Ok(())
     }
 
@@ -587,6 +892,10 @@ fn manager_owns_pending_wake_rearm_and_replays_durable_wakes() {
         title: Some("Pending shell".into()),
         subagent_type: None,
         interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
     });
 
     let runtime = Arc::new(ManagerPendingWakeRuntime::default());
@@ -620,6 +929,63 @@ fn manager_owns_pending_wake_rearm_and_replays_durable_wakes() {
     let _ = fs::remove_dir_all(root);
 }
 
+#[test]
+fn manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy() {
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("root");
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(
+        root.join("agents"),
+        500,
+    ));
+    let manager = TranscriptManager::new(&root, sessions);
+    let transcript = manager.transcript_runtime();
+    let store = transcript.pending_wake_store().expect("pending wake owner");
+    let runtime = Arc::new(ManagerPendingWakeRuntime::default());
+    manager.bind_pending_wake_runtime(runtime.clone()).expect("bind owner");
+    assert!(!transcript.has_carryable_pending_wake());
+
+    let marker = DurablePendingWakeMarker {
+        agent_id: "agent-pending".into(),
+        kind: PendingWakeKind::Shell,
+        work_id: "shell-pending".into(),
+        marked_at_ms: chrono::Utc::now().timestamp_millis() as f64,
+        quiet_origin: None,
+        title: Some("Pending shell".into()),
+        subagent_type: None,
+        interrupted_by_recreate: false,
+        delivery_operation_id: None,
+        address_token: None,
+        failure_reason: None,
+        session_key: None,
+    };
+    store.mark_pending_checked(marker.clone()).expect("persist original");
+    let original = fs::read(store.file_path()).expect("original image");
+    let corrupt = serde_json::to_vec(&json!({
+        "version": 1,
+        "pending": [marker, {"agentId": null}]
+    })).expect("malformed row image");
+    fs::write(store.file_path(), &corrupt).expect("persist malformed suffix");
+
+    let error = manager.rearm_pending_wakes().expect_err("whole image must refuse");
+    assert!(error.contains("pending wake"), "{error}");
+    assert!(runtime.shell_watches.lock().expect("watches").is_empty());
+    assert!(runtime.reports.lock().expect("reports").is_empty());
+    assert!(transcript.has_carryable_pending_wake(), "unknown custody cannot authorize idle teardown");
+    assert_eq!(fs::read(store.file_path()).expect("retained image"), corrupt);
+
+    fs::write(store.file_path(), original).expect("restore original image");
+    manager.rearm_pending_wakes().expect("repaired owner resumes original work");
+    assert_eq!(runtime.shell_watches.lock().expect("watches").as_slice(),
+        &[("agent-pending".to_string(), "shell-pending".to_string())]);
+    // Ordinary Shell rearm hands off to its watcher and clears this marker;
+    // the retained-custody policy is specific to the durable wake kinds.
+    assert!(SandPendingWakeStore::new(&root).list_pending_checked()
+        .expect("reopened pending state").is_empty());
+    assert!(!transcript.has_carryable_pending_wake());
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
+
 
 #[test]
 fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
@@ -640,7 +1006,8 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
         source: Some("background-revival".into()),
         automation_id: None,
         automation_run_id: None,
-    });
+        original_work: None,
+    }).expect("durable marker");
     assert_eq!(
         manager.transcript_runtime().upgrade_resume_agent_ids(),
         vec!["agent-upgrade".to_string()]
@@ -648,12 +1015,12 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
 
     let registry = manager.runner_registry();
     assert!(!registry.is_quiescing_for_upgrade());
-    let summary = manager.quiesce_for_upgrade();
+    let summary = manager.quiesce_for_upgrade().expect("durable handoff");
     assert!(summary.quiescing);
     assert_eq!(summary.running_turns, 0);
     assert!(manager.is_quiescing_for_upgrade());
     assert!(registry.is_quiescing_for_upgrade());
-    manager.resume_after_recreate();
+    manager.resume_after_recreate().expect("explicit resume");
     assert!(!manager.is_quiescing_for_upgrade());
     assert!(!registry.is_quiescing_for_upgrade());
 
@@ -661,6 +1028,49 @@ fn manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle() {
     let _ = fs::remove_dir_all(root);
 }
 
+
+#[test]
+fn manager_refuses_failed_marker_handoff_and_preserves_existing_quiesce() {
+    use mahayana_host_runtime::extensions::transcript::sand_upgrade_resume_store::UpgradeResumeMarker;
+
+    let root = temp_root();
+    fs::create_dir_all(&root).unwrap();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let manager = TranscriptManager::new(&root, sessions);
+    let runtime = manager.transcript_runtime();
+    let registry = manager.runner_registry();
+    runtime.begin_provider_run("running");
+    let cancellation = registry.register_routed_provider("running", "marker-refusal-running").unwrap();
+    let store = runtime.upgrade_resume_store().unwrap();
+    fs::write(store.file_path(), b"bad recovery evidence").unwrap();
+    assert!(manager.quiesce_for_upgrade().unwrap_err().contains("malformed"));
+    assert!(!manager.is_quiescing_for_upgrade());
+    assert!(!registry.is_quiescing_for_upgrade());
+    assert!(!cancellation.is_cancelled(), "failed handoff cannot irreversibly cancel the task");
+    assert!(runtime.is_agent_running("running"));
+    assert!(manager.mark_upgrade_resume_pending(UpgradeResumeMarker {
+        agent_id: "other".into(), marked_at_ms: 1.0, source: None,
+        automation_id: None, automation_run_id: None,
+        original_work: None,
+    }).is_err());
+    assert_eq!(fs::read(store.file_path()).unwrap(), b"bad recovery evidence");
+
+    fs::remove_file(store.file_path()).unwrap();
+    assert!(manager.quiesce_for_upgrade().unwrap().quiescing);
+    assert!(manager.is_quiescing_for_upgrade());
+    assert!(registry.is_quiescing_for_upgrade());
+    assert!(cancellation.is_cancelled(), "cancellation follows durable handoff");
+    fs::write(store.file_path(), b"later corruption").unwrap();
+    assert!(manager.quiesce_for_upgrade().is_err());
+    assert!(registry.is_quiescing_for_upgrade(), "a retry refusal cannot undo existing quiesce");
+    assert!(manager.is_quiescing_for_upgrade());
+    assert_eq!(fs::read(store.file_path()).unwrap(), b"later corruption");
+    manager.resume_after_recreate().unwrap();
+    assert!(!registry.is_quiescing_for_upgrade());
+    assert!(!manager.is_quiescing_for_upgrade());
+    manager.dispose();
+    let _ = fs::remove_dir_all(root);
+}
 
 #[test]
 fn manager_emits_active_session_automations_through_the_roster_surface() {
@@ -832,4 +1242,261 @@ fn manager_owns_box_handoff_state_and_handback_settlement() {
 
     manager.dispose();
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn manager_secret_write_refusal_is_redacted_and_does_not_resume_before_repair() {
+    use std::collections::{BTreeMap, BTreeSet};
+    use mahayana_host_runtime::extensions::attachments::attachments_service::{
+        AttachmentsBox, AttachmentsService,
+    };
+    use mahayana_host_runtime::extensions::attachments::generate_image_service::GenerateImageAuth;
+    use mahayana_host_runtime::extensions::content_search::extension::{
+        GLOBAL_SEARCH_GATE, start_production_content_search_extension_with_paths,
+    };
+    use mahayana_host_runtime::extensions::experiments::{HostExperimentsExtension, HostExperimentsOptions};
+    use mahayana_host_runtime::extensions::memory::extension::start_memory_extension;
+    use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
+    use mahayana_host_runtime::extensions::transcript::transcript_manager::TranscriptManagerServices;
+    use mahayana_host_runtime::extensions::trays::extension::HostTraysExtension;
+    use mahayana_host_runtime::extensions::trays::trays_service::TrayEvent;
+
+    // These unrelated attachment ports must never be consumed by this path.
+    // Credential storage, Session, Memory, manager and trays are real owners.
+    struct UnusedAttachmentPorts;
+    impl GenerateImageAuth for UnusedAttachmentPorts {
+        fn get_access_token(&self) -> Result<String, String> {
+            panic!("secret submission must not request attachment authentication")
+        }
+        fn get_machine_id(&self) -> Result<String, String> {
+            panic!("secret submission must not request attachment machine identity")
+        }
+    }
+    impl AttachmentsBox for UnusedAttachmentPorts {
+        fn run_state(&self, _: &str) -> Result<String, String> {
+            panic!("secret submission must not inspect an attachment box")
+        }
+        fn upload_file(&self, _: &str, _: &str, _: &[u8]) -> Result<(), String> {
+            panic!("secret submission must not upload an attachment")
+        }
+    }
+
+    let root = temp_root();
+    fs::create_dir_all(&root).expect("credential manager root");
+    let memory = start_memory_extension(root.join("agents"));
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root_and_dependencies(
+        root.join("agents"), 500, Arc::new(|| None), memory.service(),
+    ));
+    assert!(Arc::ptr_eq(&sessions.memory_service(), &memory.service()), "fixture must share the actual Memory owner");
+    let manager = TranscriptManager::new(&root, Arc::clone(&sessions));
+    let telemetry = Arc::new(HostTelemetryService::open_with_identity_tags(
+        root.join("credential-events.jsonl"), BTreeMap::new(),
+    ).expect("real file-backed telemetry"));
+    let experiments = Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
+        is_dev_build: false, env_gate_overrides: None,
+    }));
+    experiments.replace_feature_flag_overrides(BTreeMap::from([(GLOBAL_SEARCH_GATE.to_string(), false)]));
+    let content_search = Arc::new(start_production_content_search_extension_with_paths(
+        &root, &root.join("agents"), experiments, Arc::new(|_| {}),
+    ));
+    let trays = Arc::new(HostTraysExtension::default());
+    manager.set_production_services(TranscriptManagerServices {
+        telemetry: Arc::clone(&telemetry.brain),
+        product_analytics: telemetry.analytics.clone(),
+        trace_flusher: telemetry.api(),
+        memory: memory.clone(),
+        content_search,
+        attachments: Arc::new(AttachmentsService::new(
+            &root, Arc::new(UnusedAttachmentPorts), Arc::new(UnusedAttachmentPorts), None,
+        )),
+        trays: Arc::clone(&trays),
+    }).expect("bind actual manager services");
+    assert!(Arc::ptr_eq(&manager.production_services().expect("bound services").trays, &trays),
+        "manager must publish to the observed real tray owner");
+    let tray_events = Arc::new(Mutex::new(Vec::<TrayEvent>::new()));
+    let tray_events_capture = Arc::clone(&tray_events);
+    let tray_subscription = trays.subscribe(Arc::new(move |event| {
+        tray_events_capture.lock().expect("tray delivery events").push(event);
+    }));
+    let changed = Arc::new(AtomicU64::new(0));
+    let changed_capture = Arc::clone(&changed);
+    manager.set_channel_config_changed_observer(Some(Arc::new(move || {
+        changed_capture.fetch_add(1, Ordering::SeqCst);
+    })));
+    let resumed = Arc::new(Mutex::new(Vec::<String>::new()));
+    let agent = sessions.materialize_new_session(None, "user", None).expect("credential agent");
+    let other = sessions.materialize_new_session(None, "user", None).expect("other credential agent");
+    for (owner, platform) in [
+        (agent.id.as_str(), "slack"),
+        (agent.id.as_str(), "discord"),
+        (other.id.as_str(), "slack"),
+    ] {
+        assert!(sessions.store_connector_credential(owner, platform, "token", "CCWA-EXISTING")
+            .expect("seed real credential owner"), "valid credential fixture must be admitted");
+    }
+    sessions.append_agent_transcript_entries(&agent.id, &[json!({
+        "id":"manager-checked-secret",
+        "kind":"send-message",
+        "message":{
+            "type":"secret-request",
+            "secretRequest":{
+                "label":"Manager checked token",
+                "target":{"kind":"channel-credential","platform":"slack","field":"token"}
+            }
+        }
+    })]).expect("persist manager credential request");
+    manager.switch_agent(&agent.id, 10.0).expect("stabilize active Agent before refusal baseline");
+    assert!(sessions.memory_service().active_agent_id().as_deref() == Some(agent.id.as_str()),
+        "manager must activate the shared Memory owner");
+    let transcript_before = sessions.read_agent_transcript_entries(&agent.id).expect("request baseline");
+    let obligations_before = manager.ack_obligations().pending_obligations();
+    let store = sessions.connector_secret_store();
+    let path = store.file_path(&agent.id, "slack");
+    let untouched_paths = [
+        sessions.open_channel_store(&agent.id).expect("target channel owner").config_path("slack"),
+        store.file_path(&agent.id, "discord"),
+        sessions.open_channel_store(&agent.id).expect("other platform owner").config_path("discord"),
+        store.file_path(&other.id, "slack"),
+        sessions.open_channel_store(&other.id).expect("other Agent channel owner").config_path("slack"),
+    ];
+    let untouched = untouched_paths.iter().map(|path| {
+        (path.clone(), fs::read(path).expect("snapshot metadata and unrelated credential bytes"))
+    }).collect::<Vec<_>>();
+    let submitted = "  CCWA-MANAGER-SUBMITTED-SECRET  ";
+    let faults: [Option<&[u8]>; 4] = [
+        Some(br#""CCWA-MANAGER-STORED-SENTINEL""#),
+        Some(br#"{"token":"CCWA-MANAGER-STORED-SENTINEL",broken}"#),
+        Some(b"\xffCCWA-MANAGER-STORED-SENTINEL"),
+        None,
+    ];
+    for (index, damaged) in faults.into_iter().enumerate() {
+        if let Some(bytes) = damaged {
+            fs::write(&path, bytes).expect("install real unreadable credential");
+        } else {
+            fs::remove_file(&path).expect("replace fixture file for real read error");
+            fs::create_dir(&path).expect("credential read-error directory");
+            fs::write(path.join("sentinel"), b"CCWA-MANAGER-DIRECTORY-SENTINEL")
+                .expect("read-error directory contents");
+        }
+        let names_before = fs::read_dir(path.parent().expect("credential parent"))
+            .expect("credential neighbors before refusal")
+            .map(|entry| entry.expect("credential neighbor").file_name()).collect::<BTreeSet<_>>();
+        let resumed_capture = Arc::clone(&resumed);
+        let result = manager.submit_secret_with(
+            "manager-checked-secret", submitted, &agent.id, 11.0,
+            move |prompt| {
+                resumed_capture.lock().expect("actual resume calls").push(prompt);
+                Ok(())
+            },
+        );
+        assert!(matches!(result, Ok(false)), "store refusal must preserve the manager accepted=false result");
+        assert!(resumed.lock().expect("actual resume calls").is_empty(), "refusal must not resume or deliver an acknowledgement");
+        assert_eq!(changed.load(Ordering::SeqCst), 0);
+        assert!(sessions.read_agent_transcript_entries(&agent.id).expect("request after refusal") == transcript_before,
+            "refusal must leave the real persisted request incomplete");
+        assert!(manager.ack_obligations().pending_obligations() == obligations_before,
+            "refusal must not create an acknowledgement obligation");
+        if let Some(bytes) = damaged {
+            assert!(fs::read(&path).expect("credential after refusal").as_slice() == bytes,
+                "manager refusal must preserve exact credential bytes");
+        } else {
+            assert!(path.is_dir(), "manager refusal must preserve the read-error directory");
+            assert!(fs::read(path.join("sentinel")).expect("read-error sentinel") == b"CCWA-MANAGER-DIRECTORY-SENTINEL",
+                "manager refusal must preserve directory contents");
+        }
+        let names_after = fs::read_dir(path.parent().expect("credential parent"))
+            .expect("credential neighbors after refusal")
+            .map(|entry| entry.expect("credential neighbor").file_name()).collect::<BTreeSet<_>>();
+        assert!(names_after == names_before, "manager refusal must leave no temporary credential entry");
+        for (unchanged_path, bytes) in &untouched {
+            assert!(fs::read(unchanged_path).expect("unchanged owner bytes") == *bytes,
+                "manager refusal must preserve metadata and other Agent/platform state");
+        }
+        let current_trays = trays.list();
+        assert_eq!(current_trays.len(), 1);
+        let tray = &current_trays[0];
+        assert!(tray.kind == "error" && tray.title == "Could not store the secret",
+            "manager must use its fixed secret-write error tray");
+        assert!(tray.detail == "The secure input could not write the credential to its store.",
+            "manager must use the fixed redacted error detail");
+        assert!(tray.agent_id.as_deref() == Some(agent.id.as_str()), "tray must identify the request's Agent");
+        let dedupe_key = format!("transcript-secret-store:{}:manager-checked-secret", agent.id);
+        assert!(tray.dedupe_key.as_deref() == Some(dedupe_key.as_str()), "tray must use existing request deduplication");
+        assert_eq!(tray.count, Some((index + 1) as u64));
+        assert!(tray.raw_detail.is_none() && tray.error_kind.is_none() && tray.request_id.is_none() && tray.actions.is_none(),
+            "fixed refusal tray must not carry raw error payloads");
+        let serialized = serde_json::to_string(tray).expect("serialize actual error tray");
+        let root_text = root.to_string_lossy();
+        for forbidden in [submitted.trim(), "CCWA-MANAGER-STORED-SENTINEL", "CCWA-MANAGER-DIRECTORY-SENTINEL", root_text.as_ref()] {
+            assert!(!serialized.contains(forbidden), "error tray must not disclose stored/submitted secrets or paths");
+        }
+        let delivered = tray_events.lock().expect("tray delivery events");
+        assert_eq!(delivered.len(), index + 1);
+        assert!(matches!(delivered.last(), Some(TrayEvent::Pushed(delivered_tray)) if delivered_tray == tray),
+            "the real tray owner must publish the same redacted error");
+    }
+
+    fs::remove_dir_all(&path).expect("explicitly repair final directory fault");
+    fs::write(&path, br#"{"token":"CCWA-OLD","nested":{"keep":true},"number":7,"nullable":null}"#)
+        .expect("repair the same credential path without altering the request");
+    let trays_before_success = trays.list();
+    let resumed_capture = Arc::clone(&resumed);
+    let result = manager.submit_secret_with(
+        "manager-checked-secret", submitted, &agent.id, 12.0,
+        move |prompt| {
+            resumed_capture.lock().expect("actual resume calls").push(prompt);
+            Ok(())
+        },
+    );
+    assert!(matches!(result, Ok(true)), "same manager request must succeed after explicit repair");
+    assert_eq!(changed.load(Ordering::SeqCst), 1);
+    {
+        let prompts = resumed.lock().expect("actual resume calls");
+        assert_eq!(prompts.len(), 1);
+        assert!(prompts[0].contains("Manager checked token") && prompts[0].contains("channel-credential"),
+            "resume must receive the actual successful request acknowledgement");
+        assert!(!prompts[0].contains(submitted.trim()) && !prompts[0].contains(root.to_string_lossy().as_ref()),
+            "successful acknowledgement must not expose secret value or path");
+    }
+    let committed_bytes = fs::read(&path).expect("committed manager credential");
+    let committed: Value = serde_json::from_slice(&committed_bytes).expect("valid committed credential object");
+    assert!(committed == json!({"token":"CCWA-MANAGER-SUBMITTED-SECRET","nested":{"keep":true},"number":7,"nullable":null}),
+        "manager repair must merge the trimmed credential and preserve unrelated values");
+    let committed_entries = sessions.read_agent_transcript_entries(&agent.id).expect("committed manager request");
+    assert!(committed_entries.iter().any(|entry| entry["id"] == "manager-checked-secret" && entry["secretProvided"] == true),
+        "successful manager request must durably record its provided flag");
+    let repeated = manager.submit_secret_with(
+        "manager-checked-secret", "CCWA-REPEATED-SECRET", &agent.id, 13.0,
+        |_| panic!("completed secret request must not resume again"),
+    );
+    assert!(matches!(repeated, Ok(false)), "completed request must retain its existing ignored result");
+    assert_eq!(changed.load(Ordering::SeqCst), 1);
+    assert_eq!(resumed.lock().expect("actual resume calls").len(), 1);
+    assert!(trays.list() == trays_before_success, "success and duplicate suppression must not emit a failure tray");
+    assert_eq!(tray_events.lock().expect("tray delivery events").len(), 4);
+    assert!(fs::read(&path).expect("credential after duplicate suppression") == committed_bytes,
+        "completed request must not overwrite the credential again");
+    for (unchanged_path, bytes) in &untouched {
+        assert!(fs::read(unchanged_path).expect("unaffected owner bytes after repair") == *bytes,
+            "successful repair must preserve metadata and unrelated owner state");
+    }
+
+    manager.dispose();
+    drop(manager);
+    drop(sessions);
+    drop(memory);
+    telemetry.dispose().expect("close file-backed telemetry");
+    drop(telemetry);
+    drop(tray_subscription);
+    drop(trays);
+    let reopened = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    assert!(reopened.get_connector_secret(&agent.id, "slack", "token").expect("reopened manager credential").as_deref()
+        == Some("CCWA-MANAGER-SUBMITTED-SECRET"), "fresh owner must observe the repaired credential");
+    assert!(reopened.read_agent_transcript_entries(&agent.id).expect("reopened manager request") == committed_entries,
+        "fresh owner must observe the committed request flag");
+    assert!(fs::read(&path).expect("reopened raw credential") == committed_bytes,
+        "reopening must preserve committed credential bytes");
+    reopened.shutdown();
+    drop(reopened);
+    fs::remove_dir_all(root).expect("remove closed manager credential fixture");
 }

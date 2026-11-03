@@ -1,0 +1,71 @@
+{
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "contract": "CWB-v1",
+  "kind": "literal-read-range-evidence-correction",
+  "decision": "FIX",
+  "decision_before_machine_edit": true,
+  "failed_subject": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+  "source_run": 41562347843,
+  "source_job": 125675644844,
+  "classification": "read-evidence data error; unchanged fail-closed range gate rejected an out-of-bounds terminal line",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "path": "packages/ai/src/providers/openai-chatgpt-responses.ts",
+    "blob_sha": "c6e51477f738eabebe67360c0633dd426e9be673"
+  },
+  "invalid_observation": {
+    "document": "projects/openclaw-rust/inventory/read-observations.json",
+    "document_blob": "9b23d2f34e6f2a7d9cc889303e20ead6bc3e29f1",
+    "entry_index": 53,
+    "read_status": "partial",
+    "span": {
+      "start_line": 1389,
+      "end_line": 1416
+    }
+  },
+  "source_facts": {
+    "utf8_bytes": 51558,
+    "physical_lines_by_python_splitlines": 1415,
+    "ends_with_lf": true,
+    "last_actual_line": "/* oxlint-disable max-lines -- TODO: split this grandfathered oversized file. */",
+    "javascript_split_newline_array_length": 1416,
+    "extra_split_element": "empty terminal string after the final LF; not a physical source line"
+  },
+  "correction": {
+    "from": {
+      "start_line": 1389,
+      "end_line": 1416
+    },
+    "to": {
+      "start_line": 1389,
+      "end_line": 1415
+    },
+    "preserve": "All other ranges, source identity, partial status, source mappings, historical reports and acceptance flags remain unchanged. Append this correction evidence reference; do not clamp or waive the validator."
+  },
+  "rationale": "The original report recorded a terminal range ending at 1416. Exact fixed-U API content has 1415 physical lines. The erroneous endpoint matches the extra empty element from splitting a final LF; that mechanism is inferred, not an independently reconstructed execution of the original reader. Root independently read actual lines 1350 through 1415, including the complete final SSE-header function and terminal comment. The corrected range is a subset of that actual read, not a promotion to full-file or semantic completion.",
+  "historical_record": {
+    "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
+    "blob_sha": "37261b14305e72a8c9423bce4e168fff3b099f73",
+    "field": "read_ledger.upstream[id=U-responses].raw_read_extent_this_followup",
+    "recorded_value": "1389-1416",
+    "disposition": "Preserve the original report verbatim as historical input; this correction explicitly supersedes that impossible terminal line only."
+  },
+  "independent_diagnosis": {
+    "reviewer": "/root/cwb_focused3_general_security",
+    "reported_result": "All 27 added CWB observation objects match their exact-U API and recomputed Git-blob identities; this is the sole out-of-bounds span. Other 26 observations and the 11 full-read endpoints are within actual source bounds.",
+    "limit": "Raw acquisition and line-bound inspection do not create new deep-read facts or execute the materializer/validator."
+  },
+  "validation": {
+    "recorded_phase": "Before the machine edit; later review and CI outcomes are recorded separately",
+    "local_or_htch_product_execution": false,
+    "source_gate_relaxed": false,
+    "production_code_changed": false,
+    "fresh_repair_review": "pending",
+    "new_exact_H_actions": "pending",
+    "scoped_unit_verification": false,
+    "global_acceptance": false
+  }
+}

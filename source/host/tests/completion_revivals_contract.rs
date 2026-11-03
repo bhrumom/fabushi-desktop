@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fs;
-use std::sync::{Arc, Barrier, Mutex};
+use std::sync::{Arc, Barrier, Mutex, mpsc};
+use std::time::Duration;
 
 use mahayana_host_runtime::extensions::transcript::completion_revivals::{
     CompletionRevivalRuntimePort, CompletionRevivals, RevivalExecution, RevivalReport,
@@ -23,14 +24,21 @@ struct FakeRuntime {
     reports: Mutex<Vec<RevivalReport>>,
     errors: Mutex<Vec<String>>,
     block: Mutex<Option<(Arc<Barrier>, Arc<Barrier>)>>,
+    block_once: Mutex<Option<(mpsc::Sender<()>, mpsc::Receiver<()>)>>,
 }
 impl CompletionRevivalRuntimePort for FakeRuntime {
     fn can_execute(&self)->bool{*self.can_execute.lock().unwrap()}
     fn is_agent_deleted(&self,id:&str)->bool{self.deleted.lock().unwrap().contains(id)}
     fn is_agent_gone(&self,id:&str)->bool{self.gone.lock().unwrap().contains(id)}
-    fn clear_pending_wake(&self,a:&str,k:PendingWakeKind,w:&str){self.cleared.lock().unwrap().push((a.into(),k,w.into()));}
+    fn clear_pending_wake(&self,marker: mahayana_host_runtime::extensions::transcript::sand_pending_wake_store::DurablePendingWakeMarker){self.cleared.lock().unwrap().push((marker.agent_id,marker.kind,marker.work_id));}
+    fn clear_pending_wake_by_key(&self,a:&str,k:PendingWakeKind,w:&str){self.cleared.lock().unwrap().push((a.into(),k,w.into()));}
     fn run_background_revival(&self,a:&str,s:&str,p:&str,_:bool,_:&str)->Result<RevivalExecution,String>{
         self.runs.lock().unwrap().push((a.into(),s.into(),p.into()));
+        let block_once = self.block_once.lock().unwrap().take();
+        if let Some((entered, release)) = block_once {
+            entered.send(()).unwrap();
+            release.recv_timeout(Duration::from_secs(10)).unwrap();
+        }
         if let Some((entered, release)) = self.block.lock().unwrap().clone() {
             entered.wait();
             release.wait();
@@ -45,10 +53,10 @@ fn quiet()->QuietWakeOrigin{
     QuietWakeOrigin{automation:Some(AutomationQuietOrigin{id:"r1".into(),name:"Daily".into()})}
 }
 fn sub(id:&str)->SubagentCompletion{
-    SubagentCompletion{parent_agent_id:"p".into(),subagent_agent_id:id.into(),title:"Research".into(),subagent_type:"task".into(),status:"success".into(),result:"done".into(),quiet_origin:None}
+    SubagentCompletion{parent_agent_id:"p".into(),subagent_agent_id:id.into(),title:"Research".into(),subagent_type:"task".into(),status:"success".into(),result:"done".into(),quiet_origin:None,pending_wake_marker:None}
 }
 fn shell(id:&str)->ShellCompletion{
-    ShellCompletion{agent_id:"p".into(),shell_id:id.into(),title:"Build".into(),status:"success".into(),detail:Some("ok".into()),output_path:Some("/tmp/out".into()),quiet_origin:None}
+    ShellCompletion{agent_id:"p".into(),shell_id:id.into(),title:"Build".into(),status:"success".into(),detail:Some("ok".into()),output_path:Some("/tmp/out".into()),quiet_origin:None,pending_wake_marker:None}
 }
 
 #[test]
@@ -162,4 +170,77 @@ fn agent_deletion_clears_in_memory_completion_queues_and_shipping_wires_owner() 
     let manifest_dir=std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main=fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
     assert!(main.contains("completion_revivals.clear_agent_pending_completions(agent_id)"));
+}
+
+#[test]
+fn completion_enqueued_before_idle_is_drained_by_the_current_worker_in_order() {
+    for is_shell in [false, true] {
+        let runtime = Arc::new(FakeRuntime::default());
+        *runtime.can_execute.lock().unwrap() = true;
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        *runtime.block_once.lock().unwrap() = Some((entered_tx, release_rx));
+        let service = Arc::new(CompletionRevivals::new(runtime.clone()));
+        let first_service = Arc::clone(&service);
+        let worker = std::thread::spawn(move || {
+            if is_shell {
+                let mut completion = shell("first");
+                completion.title = "first".into();
+                first_service.handle_background_shell_completion(completion);
+            } else {
+                let mut completion = sub("first");
+                completion.title = "first".into();
+                first_service.handle_background_subagent_completion(completion);
+            }
+        });
+        entered_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+        assert_eq!(service.mid_drain_revival_agent_ids(), vec!["p"]);
+        for id in ["second", "third"] {
+            if is_shell {
+                let mut completion = shell(id);
+                completion.title = id.into();
+                service.handle_background_shell_completion(completion);
+            } else {
+                let mut completion = sub(id);
+                completion.title = id.into();
+                service.handle_background_subagent_completion(completion.clone());
+                service.handle_background_subagent_completion(completion);
+            }
+        }
+        let pending = if is_shell {
+            service.pending_shell_completions("p").into_iter().map(|item| item.shell_id).collect::<Vec<_>>()
+        } else {
+            service.pending_subagent_completions("p").into_iter().map(|item| item.subagent_agent_id).collect::<Vec<_>>()
+        };
+        assert_eq!(pending, vec!["second", "third"]);
+        assert_eq!(runtime.runs.lock().unwrap().len(), 1, "enqueue cannot start a second drain while busy");
+        release_tx.send(()).unwrap();
+        worker.join().unwrap();
+        assert!(!service.has_mid_drain_revival());
+        assert!(service.pending_subagent_completions("p").is_empty());
+        assert!(service.pending_shell_completions("p").is_empty());
+        let runs = runtime.runs.lock().unwrap();
+        assert_eq!(runs.len(), 2);
+        let expected_source = if is_shell { "shell-revival" } else { "subagent-revival" };
+        assert!(runs.iter().all(|run| run.0 == "p" && run.1 == expected_source));
+        assert!(runs[0].2.contains("\"first\""));
+        assert!(runs[1].2.find("\"second\"").unwrap() < runs[1].2.find("\"third\"").unwrap());
+        let kind = if is_shell { PendingWakeKind::Shell } else { PendingWakeKind::Subagent };
+        assert_eq!(runtime.cleared.lock().unwrap().as_slice(), &[
+            ("p".into(), kind.clone(), "first".into()),
+            ("p".into(), kind.clone(), "second".into()),
+            ("p".into(), kind, "third".into()),
+        ]);
+        let reports = runtime.reports.lock().unwrap();
+        assert_eq!(reports.len(), 2);
+        assert_eq!(reports.iter().map(|report| report.completion_count).collect::<Vec<_>>(), vec![1, 2]);
+        for report in reports.iter() {
+            assert_eq!(report.agent_id, "p");
+            assert_eq!(report.kind, if is_shell { "shell" } else { "subagent" });
+            assert_eq!(report.outcome, "delivered");
+            assert_eq!(report.sent_message_count, Some(1));
+            assert_eq!(report.reason, None);
+            assert!(!report.is_quiet_origin);
+        }
+    }
 }

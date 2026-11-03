@@ -22,7 +22,7 @@ use super::subagent_runtime::{
     SubagentLineage, SubagentRecord, SubagentRuntime, SubagentSessionSnapshot,
 };
 use super::turn_observation::TurnObservationHandle;
-use super::{TerminalOutcome, TurnRunFinished, TurnRunOptions};
+use super::{TerminalOutcome, ToolEffectCustodyObservation, TurnRunFinished, TurnRunOptions};
 
 /// Runner-owned shipping facade for provider-backed turns.
 ///
@@ -48,6 +48,16 @@ impl SandAgentRunner {
             background_shell_watches: None,
             computer_use: None,
         }
+    }
+
+    pub fn run_summarization_prompt(
+        &self,
+        system_prompt: &str,
+        user_prompt: &str,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<String, ProviderSessionError> {
+        self.owner
+            .run_summarization_prompt(system_prompt, user_prompt, should_cancel)
     }
 
     pub fn with_generated_agent_runtime(
@@ -231,6 +241,34 @@ impl SandAgentRunner {
         lineage: Option<SubagentLineage>,
         now_ms: u64,
     ) -> Result<Option<PendingWake>, String> {
+        self.begin_generated_subagent_with_lifecycle(
+            parent_agent_id,
+            box_id,
+            subagent_agent_id,
+            subagent_type,
+            tool_call_id,
+            prompt,
+            lineage,
+            "",
+            now_ms,
+        )
+    }
+
+    pub fn begin_generated_subagent_with_lifecycle(
+        &self,
+        parent_agent_id: &str,
+        box_id: &str,
+        subagent_agent_id: &str,
+        subagent_type: &str,
+        tool_call_id: &str,
+        prompt: &str,
+        lineage: Option<SubagentLineage>,
+        lifecycle_revision: &str,
+        now_ms: u64,
+    ) -> Result<Option<PendingWake>, String> {
+        if lifecycle_revision.trim().is_empty() {
+            return Err("generated subagent lifecycle revision is required".into());
+        }
         let Some(runtime) = self.generated_agent_runtime.as_ref() else {
             return Ok(None);
         };
@@ -238,7 +276,7 @@ impl SandAgentRunner {
             .lock()
             .map_err(|_| "generated Agent runtime lock poisoned".to_string())?;
         runtime.register_session(subagent_agent_id, SubagentSessionSnapshot::default());
-        Ok(runtime.dispatch_background_subagent(
+        Ok(runtime.dispatch_background_subagent_with_lifecycle(
             parent_agent_id,
             box_id,
             subagent_agent_id,
@@ -247,6 +285,7 @@ impl SandAgentRunner {
             prompt,
             lineage,
             None,
+            lifecycle_revision,
             now_ms,
         ))
     }
@@ -388,6 +427,10 @@ impl SandAgentRunner {
 
     pub fn last_finished(&self) -> Option<&TurnRunFinished> {
         self.owner.last_finished()
+    }
+
+    pub fn last_tool_effect_custody(&self) -> Option<&ToolEffectCustodyObservation> {
+        self.owner.last_tool_effect_custody()
     }
 
     pub fn run_routed_provider(

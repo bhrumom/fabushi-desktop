@@ -1,4 +1,6 @@
+use crate::carrier::CarrierChannel;
 use crate::protocol::Failure;
+use crate::runner_tool_relay::RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD;
 use serde_json::{Value, json};
 
 pub const HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL: &str = "host-mcp-lifecycle-request";
@@ -18,6 +20,23 @@ pub const MCP_LOGOUT_ACCOUNT_METHOD: &str = "logoutHostMcpAccount";
 pub const MCP_REMOVE_ACCOUNT_METHOD: &str = "removeHostMcpAccount";
 pub const MCP_RENAME_ACCOUNT_METHOD: &str = "renameHostMcpAccount";
 pub const MCP_NOTE_AUTH_COMPLETED_METHOD: &str = "noteHostMcpAuthCompleted";
+
+/// Box configuration, raw MCP payloads and internal Host receipts enter
+/// only through the native main bridge. Other commands retain their owner checks.
+pub fn box_mcp_carrier_allowed(method: &str, channel: CarrierChannel) -> bool {
+    !matches!(
+        method,
+        "loadBoxMcpServers" | "listBoxMcpToolsRaw" | "executeBoxMcpToolRaw"
+            | MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD
+            | RUNNER_RESOLVE_ROUTED_TOOL_GATEWAY_METHOD
+    ) || channel == CarrierChannel::MainData
+}
+
+/// A desktop mutation intent is forwarded only by the native MainData leg.
+/// Renderer Skills sync/status retain their existing Data carrier.
+pub fn desktop_mcp_carrier_allowed(method: &str, channel: CarrierChannel) -> bool {
+    method != "uninstallMcpPlugin" || channel == CarrierChannel::MainData
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HostMcpLifecycleRequest {

@@ -56,15 +56,47 @@ impl SandConnectorSecretStore {
             Ok(Value::Object(record)) => record,
             Ok(_) => SecretRecord::new(),
             Err(error) => {
-                report_session_diagnostic(&SessionDiagnostic {
-                    family: "store_db".into(),
-                    kind: "connector_secrets_unreadable".into(),
-                    metadata: BTreeMap::from([
-                        ("agentId".into(), Value::String(agent_id.to_string())),
-                        ("errorClass".into(), Value::String(format!("{:?}", error.classify()))),
-                    ]),
-                });
+                report_unreadable_class(agent_id, format!("{:?}", error.classify()));
                 SecretRecord::new()
+            }
+        }
+    }
+
+    /// A permissive inspection result is not authority to replace unread data.
+    /// Keep admission failures free of both stored and submitted secret values.
+    fn read_for_write(
+        &self,
+        agent_id: &str,
+        platform: &str,
+    ) -> Result<SecretRecord, ConnectorSecretStoreError> {
+        let raw = match fs::read_to_string(self.file_path(agent_id, platform)) {
+            Ok(raw) => raw,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                return Ok(SecretRecord::new());
+            }
+            Err(error) => {
+                report_unreadable(agent_id, &error);
+                return Err(io::Error::new(
+                    error.kind(),
+                    "existing connector secret file could not be read",
+                ).into());
+            }
+        };
+        match serde_json::from_str::<Value>(&raw) {
+            Ok(Value::Object(record)) => Ok(record),
+            Ok(_) => {
+                report_unreadable_class(agent_id, "NonObject".into());
+                Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "existing connector secret file must contain a JSON object",
+                ).into())
+            }
+            Err(error) => {
+                report_unreadable_class(agent_id, format!("{:?}", error.classify()));
+                Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "existing connector secret file is not valid JSON",
+                ).into())
             }
         }
     }
@@ -83,7 +115,7 @@ impl SandConnectorSecretStore {
             return Ok(false);
         }
         let path = self.file_path(agent_id, platform);
-        let mut merged = self.read(agent_id, platform);
+        let mut merged = self.read_for_write(agent_id, platform)?;
         merged.insert(field.to_string(), Value::String(value.to_string()));
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
@@ -133,6 +165,10 @@ impl SandConnectorSecretStore {
 }
 
 fn report_unreadable(agent_id: &str, error: &io::Error) {
+    report_unreadable_class(agent_id, format!("{:?}", error.kind()));
+}
+
+fn report_unreadable_class(agent_id: &str, error_class: String) {
     report_session_diagnostic(&SessionDiagnostic {
         family: "store_db".into(),
         kind: "connector_secrets_unreadable".into(),
@@ -140,7 +176,7 @@ fn report_unreadable(agent_id: &str, error: &io::Error) {
             ("agentId".into(), Value::String(agent_id.to_string())),
             (
                 "errorClass".into(),
-                Value::String(format!("{:?}", error.kind())),
+                Value::String(error_class),
             ),
         ]),
     });

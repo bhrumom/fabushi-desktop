@@ -1,10 +1,11 @@
 use chrono::{SecondsFormat, Utc};
 use mahayana_node_agent_coordinator::miniapp_management_relay::miniapp_carrier_allowed;
 use mahayana_node_agent_coordinator::carrier::{
-    parse_bootstrap_argument, CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
+    native_attachment_carrier_allowed, parse_bootstrap_argument,
+    CarrierChannel, CarrierEnvelope, CoordinatorBootstrap,
 };
 use mahayana_node_agent_coordinator::control_port_client::{
-    ClientAction, ControlPortClient, ControlPortPhase,
+    ClientAction, ControlPortClient, ControlPortPhase, call_control_command,
 };
 use mahayana_node_agent_coordinator::client_side_tool_v2_relay::{
     ClientSideToolV2Relay, CLIENT_SIDE_TOOL_V2_FAMILY,
@@ -13,7 +14,7 @@ use mahayana_node_agent_coordinator::gateway::gateway_client::{
     CoordinatorGatewayClient, GatewayCommandExecution, GatewayCommandPolicy,
     GatewayCommandSpan, GatewayTransportStage, dispatch_gateway_command, stream_http_events,
 };
-use mahayana_node_agent_coordinator::gateway::gateway_event_families::coordinator_event_family_for_sse_channel;
+use mahayana_node_agent_coordinator::gateway::gateway_event_families::event_family_for_channel;
 use mahayana_node_agent_coordinator::gateway::gateway_reachability::ReachabilityOutcome;
 use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::{
     GatewayDispatchError, dispatch_http_json, failure_for,
@@ -33,7 +34,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     ActiveInferenceStreamRegistry, CoordinatorInferenceRouter, InferenceProvider,
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
-    parse_host_routed_prompt_acceptance, parse_runner_inference_event,
+    parse_host_routed_prompt_acceptance, parse_runner_inference_event, require_runner_start_acceptance,
     agent_inbound_failure_gateway_args, agent_inbound_wake_prefers_urgent_queue,
     prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
     should_append_user_message, should_await_turn,
@@ -67,7 +68,8 @@ use mahayana_node_agent_coordinator::runner_tool_relay::{
 };
 use mahayana_node_agent_coordinator::mcp_lifecycle_relay::{
     HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, MCP_RESOLVE_LIFECYCLE_GATEWAY_METHOD,
-    execute_host_mcp_lifecycle_request, host_mcp_lifecycle_resolution_failure,
+    box_mcp_carrier_allowed, desktop_mcp_carrier_allowed, execute_host_mcp_lifecycle_request,
+    host_mcp_lifecycle_resolution_failure,
 };
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -159,13 +161,21 @@ impl CoordinatorState {
     }
 
     fn post_event(&self, family: &str, payload: Value) {
-        let action = self
-            .renderer_port
-            .lock()
-            .ok()
-            .and_then(|server| server.post_event(family.to_string(), payload));
+        let action = match self.renderer_port.lock() {
+            Ok(server) => server.post_event(family.to_string(), payload),
+            Err(_) => {
+                eprintln!(
+                    "coordinator event delivery failed family={family} error=renderer_port_lock_poisoned"
+                );
+                return;
+            }
+        };
         if let Some(ServerAction::Post(frame)) = action {
-            let _ = self.write_frame(CarrierChannel::Data, &frame);
+            if let Err(error) = self.write_frame(CarrierChannel::Data, &frame) {
+                eprintln!(
+                    "coordinator event delivery failed family={family} error={error}"
+                );
+            }
         }
     }
 
@@ -274,37 +284,13 @@ fn control_command(
     method: &str,
     args: Value,
 ) -> Result<Value, Failure> {
-    let waiter = state
-        .control_port
-        .lock()
-        .map_err(|_| Failure::new(COORDINATOR_DISCONNECTED, "control port lock poisoned"))?
-        .call_waiting(method.to_string(), args)?;
-    let frame = match waiter.action {
-        ClientAction::Post(frame) => frame,
-        _ => {
-            return Err(Failure::new(
-                "COORDINATOR_CONTROL_PROTOCOL_ERROR",
-                "control command did not produce a request frame",
-            ));
-        }
-    };
-    state
-        .write_frame(CarrierChannel::Control, &frame)
-        .map_err(|error| {
-            Failure::new(
-                COORDINATOR_DISCONNECTED,
-                format!("control request write failed: {error}"),
-            )
-        })?;
-    waiter
-        .reply
-        .recv_timeout(Duration::from_secs(15))
-        .map_err(|error| {
-            Failure::new(
-                COORDINATOR_DISCONNECTED,
-                format!("control request {method} did not settle: {error}"),
-            )
-        })?
+    call_control_command(
+        &state.control_port,
+        method,
+        args,
+        Duration::from_secs(15),
+        |frame| state.write_frame(CarrierChannel::Control, frame),
+    )
 }
 
 fn local_exec_error(error: Failure) -> LocalExecSupervisorError {
@@ -1082,9 +1068,7 @@ fn dispatch_gateway_event(state: &Arc<CoordinatorState>, value: Value) {
     ) {
         (Some(channel), Some(payload)) => (
             channel.to_string(),
-            coordinator_event_family_for_sse_channel(channel)
-                .unwrap_or("runtime")
-                .to_string(),
+            event_family_for_channel(channel).to_string(),
             payload.clone(),
         ),
         _ => ("runtime".into(), "runtime".into(), value),
@@ -2166,12 +2150,7 @@ fn execute_local_inference(
             "runner.startRoutedProvider",
             runner_args,
         )?;
-        if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
-            return Err(Failure::new(
-                "INFERENCE_RUNNER_REJECTED",
-                "Host Runner did not accept the routed provider request",
-            ));
-        }
+        require_runner_start_acceptance(&accepted, &stream_id)?;
         if state
             .active_inference_streams
             .mark_accepted(&agent_id, &stream_id)?
@@ -2714,12 +2693,42 @@ fn execute_actions(
                 method,
                 args,
             } => {
+                if !native_attachment_carrier_allowed(&method, channel) {
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed {
+                            failure: Failure::new("ATTACHMENTS_NATIVE_ONLY", "link preview requires native main-data carrier"),
+                        },
+                    );
+                    continue;
+                }
                 if !miniapp_carrier_allowed(&method, channel) {
                     state.complete_request(
                         channel,
                         &request_id,
                         ReplyOutcome::Failed {
                             failure: Failure::new("MINIAPP_NATIVE_ONLY", "mini app intent requires native main-data carrier"),
+                        },
+                    );
+                    continue;
+                }
+                if !box_mcp_carrier_allowed(&method, channel) {
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed {
+                            failure: Failure::new("MCP_BOX_NATIVE_ONLY", "Box MCP requires native main-data carrier"),
+                        },
+                    );
+                    continue;
+                }
+                if !desktop_mcp_carrier_allowed(&method, channel) {
+                    state.complete_request(
+                        channel,
+                        &request_id,
+                        ReplyOutcome::Failed {
+                            failure: Failure::new("MCP_DESKTOP_NATIVE_ONLY", "MCP uninstall intent requires native main-data carrier"),
                         },
                     );
                     continue;

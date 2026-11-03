@@ -1,5 +1,6 @@
 use serde_json::{Map, Value};
 
+use crate::automations::automation::AutomationRun;
 use crate::automations::automation_id::stable_automation_id;
 use crate::automations::automation_trigger::{
     GITHUB_EVENT_KINDS, trigger_matches_event, trigger_members, trigger_schedule,
@@ -41,6 +42,7 @@ pub fn prepare_backend_fire(
     entries: &[AgentAutomationEntry],
     fire: &BackendAutomationFire,
     expected_definition_revision: impl Fn(&AgentAutomationEntry) -> Option<String>,
+    read_run_for_delivery: impl Fn(&AgentAutomationEntry, &str) -> Result<Option<AutomationRun>, String>,
 ) -> PreparedBackendFire {
     let target = entries.iter().find(|entry| {
         entry.agent_id == fire.sand_agent_id
@@ -50,11 +52,26 @@ pub fn prepare_backend_fire(
         return rejected("automation_missing", "Automation not found on the Sand box");
     };
 
-    if let Some(existing) = existing_run_completion(target, &fire.id) {
-        return PreparedBackendFire::Complete {
-            completion: existing,
-            reason: "existing_run",
-        };
+    let existing = match read_run_for_delivery(target, &fire.id) {
+        Ok(existing) => existing,
+        Err(_) => return PreparedBackendFire::Abandon { reason: "run_history_unavailable" },
+    };
+    match existing_run_history(existing.as_ref(), &fire.id) {
+        ExistingRunHistory::Absent => {}
+        ExistingRunHistory::Unavailable => {
+            return PreparedBackendFire::Abandon { reason: "run_history_unavailable" };
+        }
+        ExistingRunHistory::Running => {
+            return PreparedBackendFire::Abandon {
+                reason: "existing_run_unsettled",
+            };
+        }
+        ExistingRunHistory::Terminal(completion) => {
+            return PreparedBackendFire::Complete {
+                completion,
+                reason: "existing_run",
+            };
+        }
     }
     if !target.automation.is_enabled {
         return rejected("automation_disabled", "Automation is disabled on the Sand box");
@@ -68,10 +85,11 @@ pub fn prepare_backend_fire(
             .last_run_at
             .is_some_and(|last_run_at| last_run_at >= fire.timestamp_ms as f64)
     {
-        return rejected(
-            "slot_already_covered",
-            "Legacy automation fire was already covered on the Sand box",
-        );
+        // Bookkeeping may precede a refused admission. Keep this slot from
+        // re-executing without treating its timestamp as a terminal receipt.
+        return PreparedBackendFire::Abandon {
+            reason: "legacy_slot_custody_unresolved",
+        };
     }
 
     if let Some(revision) = fire.definition_revision.as_deref() {
@@ -134,28 +152,48 @@ fn rejected(reason: &'static str, message: &str) -> PreparedBackendFire {
     }
 }
 
-fn existing_run_completion(
-    target: &AgentAutomationEntry,
-    run_uuid: &str,
-) -> Option<FireCompletion> {
-    let run = target.automation.runs.iter().find(|run| {
-        run.id == run_uuid
-            || run
-                .coalesced_run_ids
-                .as_ref()
-                .is_some_and(|ids| ids.iter().any(|id| id == run_uuid))
-    })?;
+enum ExistingRunHistory {
+    Absent,
+    Unavailable,
+    Running,
+    Terminal(FireCompletion),
+}
+
+fn existing_run_history(run: Option<&AutomationRun>, run_id: &str) -> ExistingRunHistory {
+    let Some(run) = run else {
+        return ExistingRunHistory::Absent;
+    };
+    if run.id.is_empty() || !run.started_at.is_finite()
+        || run.coalesced_run_ids.as_ref().is_some_and(|ids| {
+            ids.len() > crate::automations::automation::MAX_EVENTS_IN_AUTOMATION_WAKE
+                || ids.iter().any(String::is_empty)
+        })
+        || !(run.id == run_id || run.coalesced_run_ids.as_ref()
+            .is_some_and(|ids| ids.iter().any(|id| id == run_id)))
+    {
+        return ExistingRunHistory::Unavailable;
+    }
     if run.status == "running" {
-        return None;
+        if run.finished_at.is_some() {
+            return ExistingRunHistory::Unavailable;
+        }
+        // A persisted identity is still owed settlement after volatile Host
+        // ownership is lost. Revalidation must not execute or fail this run.
+        return ExistingRunHistory::Running;
+    }
+    if !run.finished_at.is_some_and(f64::is_finite) {
+        return ExistingRunHistory::Unavailable;
     }
     if run.status == "ok" {
-        Some(FireCompletion::succeeded())
-    } else {
-        Some(FireCompletion::failed(
+        ExistingRunHistory::Terminal(FireCompletion::succeeded())
+    } else if run.status == "error" {
+        ExistingRunHistory::Terminal(FireCompletion::failed(
             run.detail
                 .clone()
                 .unwrap_or_else(|| "Automation run failed on the Sand box".into()),
         ))
+    } else {
+        ExistingRunHistory::Unavailable
     }
 }
 

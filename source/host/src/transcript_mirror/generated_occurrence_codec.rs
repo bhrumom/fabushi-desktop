@@ -24,6 +24,192 @@ pub trait GeneratedToolJsonProjection: Send + Sync {
 
 include!(concat!(env!("OUT_DIR"), "/agent_tool_json_schema.rs"));
 
+const GENERATED_WIRE_NESTING_LIMIT: usize = 100;
+
+pub(crate) enum GeneratedWireValue<'a> {
+    Varint(u64),
+    Bytes(&'a [u8]),
+    Skipped,
+}
+
+/// Read one borrowed field without treating the contents of an unknown group
+/// as fields of its parent. Schema validation remains a separate operation.
+pub(crate) fn read_generated_wire_field<'a>(
+    bytes: &'a [u8],
+    position: &mut usize,
+) -> Result<(u64, u8, GeneratedWireValue<'a>), String> {
+    let (field_number, wire_type) = read_generated_wire_tag(bytes, position)?;
+    let value = match wire_type {
+        0 => GeneratedWireValue::Varint(read_varint(bytes, position)?),
+        2 => GeneratedWireValue::Bytes(read_bytes(bytes, position)?),
+        _ => {
+            skip_generated_unknown_wire(
+                bytes, position, field_number, wire_type, GENERATED_WIRE_NESTING_LIMIT,
+            )?;
+            GeneratedWireValue::Skipped
+        }
+    };
+    Ok((field_number, wire_type, value))
+}
+
+/// Check every declared field, including overwritten oneofs and metadata that
+/// the deliberately partial prost envelope cannot inspect. This borrowed walk
+/// validates wire structure only; the consumer retains its own merge semantics.
+pub(crate) fn validate_generated_agent_tool_call(bytes: &[u8]) -> Result<(), String> {
+    validate_generated_message_wire(bytes, "agent.v1.ToolCall", GENERATED_WIRE_NESTING_LIMIT)
+}
+
+fn validate_generated_message_wire(
+    bytes: &[u8],
+    type_name: &str,
+    remaining_depth: usize,
+) -> Result<(), String> {
+    let descriptor = generated_agent_tool_json_message_descriptor(type_name)
+        .ok_or_else(|| format!("generated wire descriptor is missing for {type_name}"))?;
+    let mut position = 0usize;
+    while position < bytes.len() {
+        let (field_number, wire_type) = read_generated_wire_tag(bytes, &mut position)?;
+        let Some(field) = descriptor.fields.iter().find(|field| field.number == field_number) else {
+            skip_generated_unknown_wire(bytes, &mut position, field_number, wire_type, remaining_depth)?;
+            continue;
+        };
+        match field.kind {
+            AgentToolJsonFieldKind::Scalar(scalar)
+                if field.repeated && wire_type == 2 && scalar_is_packable(scalar) =>
+            {
+                let packed = read_length_delimited(bytes, &mut position, wire_type)?;
+                let mut packed_position = 0usize;
+                while packed_position < packed.len() {
+                    validate_generated_scalar_wire(
+                        packed, &mut packed_position, scalar_wire_type(scalar)?, scalar,
+                    )?;
+                }
+            }
+            AgentToolJsonFieldKind::Enum(_) if field.repeated && wire_type == 2 => {
+                let packed = read_length_delimited(bytes, &mut position, wire_type)?;
+                let mut packed_position = 0usize;
+                while packed_position < packed.len() {
+                    read_varint(packed, &mut packed_position)?;
+                }
+            }
+            kind => validate_generated_field_wire(bytes, &mut position, wire_type, kind, remaining_depth)?,
+        }
+    }
+    Ok(())
+}
+
+fn validate_generated_field_wire(
+    bytes: &[u8],
+    position: &mut usize,
+    wire_type: u8,
+    kind: AgentToolJsonFieldKind,
+    remaining_depth: usize,
+) -> Result<(), String> {
+    match kind {
+        AgentToolJsonFieldKind::Scalar(scalar) => {
+            validate_generated_scalar_wire(bytes, position, wire_type, scalar)
+        }
+        AgentToolJsonFieldKind::Enum(_) => {
+            if wire_type != 0 {
+                return Err("generated enum wire type mismatch".into());
+            }
+            read_varint(bytes, position)?;
+            Ok(())
+        }
+        AgentToolJsonFieldKind::Message(type_name) => {
+            let child = read_length_delimited(bytes, position, wire_type)?;
+            validate_generated_message_wire(child, type_name, next_generated_wire_depth(remaining_depth)?)
+        }
+        AgentToolJsonFieldKind::Map { key_scalar, value } => {
+            let entry = read_length_delimited(bytes, position, wire_type)?;
+            validate_generated_map_wire(entry, key_scalar, value, next_generated_wire_depth(remaining_depth)?)
+        }
+    }
+}
+
+fn validate_generated_map_wire(
+    bytes: &[u8],
+    key_scalar: u64,
+    value_kind: AgentToolJsonMapValueKind,
+    remaining_depth: usize,
+) -> Result<(), String> {
+    let mut position = 0usize;
+    while position < bytes.len() {
+        let (field_number, wire_type) = read_generated_wire_tag(bytes, &mut position)?;
+        match field_number {
+            1 => validate_generated_scalar_wire(bytes, &mut position, wire_type, key_scalar)?,
+            2 => {
+                let kind = match value_kind {
+                    AgentToolJsonMapValueKind::Scalar(scalar) => AgentToolJsonFieldKind::Scalar(scalar),
+                    AgentToolJsonMapValueKind::Enum(values) => AgentToolJsonFieldKind::Enum(values),
+                    AgentToolJsonMapValueKind::Message(type_name) => AgentToolJsonFieldKind::Message(type_name),
+                };
+                validate_generated_field_wire(bytes, &mut position, wire_type, kind, remaining_depth)?;
+            }
+            _ => skip_generated_unknown_wire(bytes, &mut position, field_number, wire_type, remaining_depth)?,
+        }
+    }
+    Ok(())
+}
+
+fn validate_generated_scalar_wire(
+    bytes: &[u8],
+    position: &mut usize,
+    wire_type: u8,
+    scalar: u64,
+) -> Result<(), String> {
+    if wire_type != scalar_wire_type(scalar)? {
+        return Err("generated protobuf scalar wire type mismatch".into());
+    }
+    if wire_type == 2 {
+        let value = read_bytes(bytes, position)?;
+        if scalar == 9 {
+            std::str::from_utf8(value)
+                .map_err(|_| "generated protobuf string is invalid UTF-8".to_string())?;
+        }
+        return Ok(());
+    }
+    skip_wire_value(bytes, position, wire_type)
+}
+
+fn read_generated_wire_tag(bytes: &[u8], position: &mut usize) -> Result<(u64, u8), String> {
+    let tag = read_varint(bytes, position)?;
+    let field_number = tag >> 3;
+    if field_number == 0 || field_number > 0x1fff_ffff {
+        return Err("generated protobuf field number is invalid".into());
+    }
+    Ok((field_number, (tag & 0x07) as u8))
+}
+
+fn next_generated_wire_depth(remaining_depth: usize) -> Result<usize, String> {
+    remaining_depth.checked_sub(1)
+        .ok_or_else(|| "generated protobuf nesting limit exceeded".to_string())
+}
+
+fn skip_generated_unknown_wire(
+    bytes: &[u8],
+    position: &mut usize,
+    field_number: u64,
+    wire_type: u8,
+    remaining_depth: usize,
+) -> Result<(), String> {
+    if wire_type != 3 {
+        return skip_wire_value(bytes, position, wire_type);
+    }
+    let child_depth = next_generated_wire_depth(remaining_depth)?;
+    loop {
+        let (child_number, child_wire) = read_generated_wire_tag(bytes, position)?;
+        if child_wire == 4 {
+            return if child_number == field_number {
+                Ok(())
+            } else {
+                Err("generated protobuf group end field mismatch".into())
+            };
+        }
+        skip_generated_unknown_wire(bytes, position, child_number, child_wire, child_depth)?;
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CanonicalGeneratedToolJsonProjection;
 
@@ -120,9 +306,16 @@ pub fn encode_generated_agent_tool_step(
         write_varint(&mut tool_call, completed_at_ms);
     }
 
+    Ok(encode_generated_agent_tool_step_wire(&tool_call))
+}
+
+/// Preserve a producer's qualified AgentToolCall bytes in the existing step
+/// envelope. The caller owns provenance; this operation does not reinterpret
+/// the tool's arguments, result, identity or timestamps through JSON.
+pub(crate) fn encode_generated_agent_tool_step_wire(tool_call: &[u8]) -> Vec<u8> {
     let mut step = Vec::new();
-    write_length_delimited(&mut step, 2, &tool_call);
-    Ok(step)
+    write_length_delimited(&mut step, 2, tool_call);
+    step
 }
 
 fn normalize_generated_tool_name(name: &str) -> String {
@@ -179,14 +372,10 @@ fn encode_generated_json_message(value: &Value, type_name: &str) -> Result<Vec<u
             let object = value
                 .as_object()
                 .ok_or_else(|| "generated google.protobuf.Struct JSON must be an object".to_string())?;
+            // The fields descriptor wraps each raw member at the Value boundary.
             owned = Value::Object(Map::from_iter([(
                 "fields".to_string(),
-                Value::Object(
-                    object
-                        .iter()
-                        .map(|(key, value)| (key.clone(), generated_value_message(value)))
-                        .collect(),
-                ),
+                Value::Object(object.clone()),
             )]));
             &owned
         }
@@ -196,7 +385,7 @@ fn encode_generated_json_message(value: &Value, type_name: &str) -> Result<Vec<u
                 .ok_or_else(|| "generated google.protobuf.ListValue JSON must be an array".to_string())?;
             owned = Value::Object(Map::from_iter([(
                 "values".to_string(),
-                Value::Array(values.iter().map(generated_value_message).collect()),
+                Value::Array(values.clone()),
             )]));
             &owned
         }
@@ -1031,6 +1220,9 @@ fn read_varint(data: &[u8], position: &mut usize) -> Result<u64, String> {
             .get(*position)
             .ok_or_else(|| "truncated protobuf varint".to_string())?;
         *position += 1;
+        if shift == 63 && byte > 1 {
+            return Err("protobuf varint exceeds 64 bits".into());
+        }
         value |= u64::from(byte & 0x7f) << shift;
         if byte & 0x80 == 0 {
             return Ok(value);

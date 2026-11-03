@@ -10,42 +10,71 @@ use crate::agent_isolation::{
     AgentWorkerPool, ProductionAgentStoreWorkerBackend,
     create_production_agent_store_worker_backend,
 };
+use crate::attachment_paths::{OutgoingMediaCustody, get_agent_media_store_roots};
 use crate::agents::agent_profile::SandAgentProfile;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
+use crate::agents::settings_file::{get_sand_settings_path, write_sand_settings_file};
 
 use super::agent_db::{
-    AgentDbSerdeSnapshot, SandAgentDb, add_persisted_conversation_partner,
-    append_persisted_transcript_entries, clear_persisted_agent_profile_prompt_snapshot,
-    clear_persisted_memory_prompt_snapshot,
-    clear_persisted_transient_state, delete_persisted_transcript_entry,
-    mark_persisted_activity, mark_persisted_read, mark_persisted_unread,
-    mark_persisted_viewed, read_persisted_agent_profile_prompt_snapshot,
-    read_persisted_automation_spend_guard_state,
-    read_persisted_conversation_partner_ids, read_persisted_introduction_pending,
-    read_persisted_newest_divider_anchor_timestamp_ms,
-    record_persisted_episode_turn, record_persisted_request_id,
-    set_persisted_agent_profile_prompt_snapshot, set_persisted_automation_spend_guard_state,
-    set_persisted_introduction_pending, set_persisted_memory_prompt_snapshot,
-    update_persisted_transcript_entry,
+    AgentDbProjectionError, AgentDbSerdeSnapshot, CompactionCommit, CompactionCommitOutcome, CronSessionRunRecord,
+    ChannelInboundAppendAttempt, ChannelInboundAppendFailure, ChannelInboundAppendFailureKind,
+    ChannelInboundAppendOutcome,
+    PendingMemoryMutation,
+    PendingProfileMutation, ProfileFileSnapshot, SandAgentDb,
+    ProviderReviewContinuationOutcome, SessionProviderReview,
+    SessionWorkAdmissionRecord,
+    SessionWorkResultCommitOutcome,
+    OriginalTurnReference, OriginalTurnReceiptCommit, OriginalTurnTerminalRecord,
+    OriginalTurnTerminalFence, SameTurnCompactionBinding,
 };
 use super::agent_db_transcript_pages::{
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
 };
+use super::agent_session::{
+    read_session_model_entry, write_session_model_entry,
+};
+use crate::extensions::inference::model_picker_service::{
+    apply_session_model_selection as apply_model_selection,
+    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult,
+};
+
+fn hide_session_work_receipts(entries: &mut Vec<serde_json::Value>) {
+    entries.retain(|entry| {
+        !matches!(
+            entry.get("kind").and_then(serde_json::Value::as_str),
+            Some("background-result-receipt" | "outgoing-media-settlement")
+        )
+    });
+}
+
+/// Preserve the existing Session view for semantic planning while the fresh
+/// append owner separately retains every physical ID for allocation.
+pub(crate) fn project_agent_transcript_entries(
+    snapshot: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let mut entries = snapshot.iter()
+        .filter(|entry| super::agent_db_serde::is_valid_owner_transcript_entry(entry))
+        .cloned()
+        .collect::<Vec<_>>();
+    hide_session_work_receipts(&mut entries);
+    entries
+}
 use super::call_session::{CallSession, CallSessionStore, CallSignal, transition_target};
 use super::agent_db_serde::{
     AwaitingUserResponse, EpisodeTurn, MemoryPromptSnapshot, SandProfile, SpendGuardState,
     UnreadState,
 };
 use super::session_conversation_state::{
-    ConversationOutlineItem, ResolvedConversationState, SessionConversationState, TranscriptThread,
+    ConversationOutlineItem, PendingConversationTurnRegistry, ResolvedConversationState,
+    SessionConversationState, TranscriptThread,
 };
 use super::conversation_blobs_path::conversation_blobs_path;
 use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
 };
 use super::session_paths::{
-    get_agent_db_path, get_connector_secrets_root, get_native_conversation_db_path,
-    get_native_conversations_root,
+    assert_valid_agent_session_id, get_agent_db_path, get_connector_secrets_root,
+    get_native_conversation_db_path, get_native_conversations_root,
 };
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
@@ -53,10 +82,17 @@ use super::session_store_factories::{
     automation_store_for_db_path_with_time_zone_resolver, channel_store_for_db_path,
     workflow_store_for_db_path_with_time_zone_resolver,
 };
-use crate::extensions::memory::memory_service::{FileMemoryStore, MemoryService};
+use crate::extensions::memory::memory_service::{
+    FileMemoryStore, MemoryKind, MemoryRecoveryRecord, MemoryService, SynthesisApplyResult,
+};
+use crate::extensions::memory::agent_state::{MemoryTier, StateWriteResult, MEMORY_NOTE_PREFIX};
 use crate::extensions::memory::project_membership::AgentProjectMembership;
+use crate::automations::automation::AutomationRecord;
 use crate::automations::automation_store::{FileAutomationStore, UserTimeZoneResolver, agent_has_automations};
 use crate::workflows::workflow_store::{FileWorkflowStore, agent_has_workflows};
+use crate::extensions::mcp::plugin_skills::{
+    PluginSkillsAdmissionQuery, PluginSkillsAdmissionReader,
+};
 use super::session_maintenance::{
     backfill_transcript_from_outline, clear_stale_checkpoint_roots_once,
     recover_conversation_root_if_missing, repair_hidden_transcript_entries_once,
@@ -79,7 +115,14 @@ use super::session_profile_files::{
     get_agent_profile_text as read_agent_profile_text, write_agent_profile_update,
 };
 use super::session_mutations::set_agent_avatar_bytes as mutate_agent_avatar_bytes;
-use super::production_agent_store::{ProductionAgentStore, ProductionWorkerBlobStore};
+use super::session_mutations::{
+    capture_profile_mutation_files, profile_mutation_files_match,
+    restore_profile_mutation_files,
+};
+use super::typed_replay::{TypedReplayEntry, project_typed_replay_entries};
+use super::production_agent_store::{
+    ProductionAgentStore, ProductionAgentCheckpointSnapshot, ProductionWorkerBlobStore,
+};
 use super::native_messaging::{
     FabushiNativeMessagingClient, FabushiRemoteHumanAttachment, FabushiRemoteHumanCall,
     FabushiRemoteHumanCallEvent, FabushiRemoteHumanMessage, fabushi_identity_text,
@@ -88,6 +131,23 @@ use super::native_messaging::{
 pub const PRODUCTION_BLOB_BUSY_TIMEOUT_MS: u64 = 5_000;
 
 pub type ProductionAgentWorkerPool = AgentWorkerPool<ProductionAgentStoreWorkerBackend>;
+
+/// Checked owner data for Runner's blob qualification. The raw SQL fence is
+/// deliberately private and is rechecked by Session after those blob reads.
+pub(crate) struct OriginalTurnTerminalView {
+    pub(crate) original_user_content: String,
+    pub(crate) checkpoint: ProductionAgentCheckpointSnapshot,
+    pub(crate) store: Arc<ProductionAgentStore>,
+    pub(crate) settlement_lifecycle_revision: String,
+    pub(crate) compaction: Option<SameTurnCompactionBinding>,
+    original: OriginalTurnReference,
+    fence: OriginalTurnTerminalFence,
+}
+
+pub(crate) struct OriginalTurnTerminalRead {
+    pub(crate) record: OriginalTurnTerminalRecord,
+    pub(crate) view: OriginalTurnTerminalView,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PreparedAgentBlobStore {
@@ -134,6 +194,13 @@ impl ProductionMaterializedSession {
     }
 }
 
+/// Safe folder names can still collide across the Agent and Human domains.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum SessionDbOwnerKey {
+    Agent(String),
+    Human(String),
+}
+
 /// Shipping Host owner for the Grok session materialization worker boundary.
 ///
 /// The pool is retained for the Host lifetime so per-agent blob workers are
@@ -145,10 +212,12 @@ pub struct ProductionSessionWorkers {
     pool: Arc<ProductionAgentWorkerPool>,
     conversation_size_maintenance: ConversationSizeMaintenance,
     conversation_state: SessionConversationState,
+    pending_conversation_turns: PendingConversationTurnRegistry,
     memory_service: Arc<MemoryService>,
     mint_queue: SessionMintQueue,
-    db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
+    db_owners: Mutex<BTreeMap<SessionDbOwnerKey, Arc<SandAgentDb>>>,
     agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
+    filesystem_mutation_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
     roster_extras_cache: RosterExtrasCache,
     user_time_zone_resolver: UserTimeZoneResolver,
@@ -158,10 +227,74 @@ pub struct ProductionSessionWorkers {
     native_messaging_error: Option<String>,
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
+    provider_review_capabilities: Mutex<BTreeMap<String, ProviderReviewCapabilityState>>,
+    plugin_skills_admission: Arc<SessionPluginSkillsAdmission>,
     busy_timeout_ms: u64,
 }
 
+/// Every Session-opened workflow store keeps this same forwarding handle.
+/// Only the Plugin Skills owner holds refusal facts; an unbound Session keeps
+/// the existing committed-snapshot behavior.
+#[derive(Default)]
+struct SessionPluginSkillsAdmission {
+    reader: Mutex<Option<PluginSkillsAdmissionReader>>,
+}
+
+impl PluginSkillsAdmissionQuery for SessionPluginSkillsAdmission {
+    fn is_denied(&self, plugin_id: &str) -> bool {
+        let reader = match self.reader.lock() {
+            Ok(slot) => slot.clone(),
+            Err(_) => return true,
+        };
+        // Do not enter the owner's query (or any delegate) under our slot lock.
+        reader.is_some_and(|reader| reader.is_denied(plugin_id))
+    }
+}
+
+#[derive(Debug)]
+struct ProviderReviewCapabilityState {
+    agent_id: String,
+    lifecycle_revision: String,
+    review_id: String,
+    next_run_id: String,
+}
+
+/// Host-issued, single-claim provider-review capability. It is deliberately
+/// not serde-serializable; request JSON cannot manufacture one.
+#[derive(Debug)]
+pub struct ProviderReviewAcknowledgment {
+    token: String,
+}
+
 impl ProductionSessionWorkers {
+    pub fn bind_memory_synthesis_gate(self: &Arc<Self>) {
+        let weak = Arc::downgrade(self);
+        self.memory_service.set_synthesis_apply_gate(Some(Arc::new(
+            move |agent_id, store, snapshot, changes, now_ms| {
+                let Some(owner) = weak.upgrade() else {
+                    return SynthesisApplyResult::Invalid;
+                };
+                owner
+                    .with_agent_filesystem_mutation(agent_id, || {
+                        let canonical_location = owner
+                            .memory_service()
+                            .store_for_agent(agent_id)
+                            .get_location();
+                        if store.get_location() != canonical_location {
+                            return Ok(SynthesisApplyResult::Invalid);
+                        }
+                        owner.assert_agent_work_admission_locked(agent_id)?;
+                        Ok(
+                            store
+                                .apply_synthesis(snapshot, changes, now_ms)
+                                .unwrap_or(SynthesisApplyResult::Failed),
+                        )
+                    })
+                    .unwrap_or(SynthesisApplyResult::Invalid)
+            },
+        )));
+    }
+
     pub fn production() -> Self {
         Self::production_with_user_time_zone_resolver(Arc::new(|| None))
     }
@@ -301,9 +434,11 @@ impl ProductionSessionWorkers {
             )),
             conversation_size_maintenance: ConversationSizeMaintenance::default(),
             conversation_state: SessionConversationState::new(busy_timeout_ms),
+            pending_conversation_turns: PendingConversationTurnRegistry::new(),
             mint_queue: SessionMintQueue::default(),
             db_owners: Mutex::new(BTreeMap::new()),
             agent_store_owners: Mutex::new(BTreeMap::new()),
+            filesystem_mutation_locks: Mutex::new(BTreeMap::new()),
             deleting_agents: Mutex::new(BTreeSet::new()),
             roster_extras_cache: RosterExtrasCache::default(),
             user_time_zone_resolver,
@@ -313,8 +448,14 @@ impl ProductionSessionWorkers {
             native_messaging_error,
             call_session_store,
             call_session_store_error,
+            provider_review_capabilities: Mutex::new(BTreeMap::new()),
+            plugin_skills_admission: Arc::new(SessionPluginSkillsAdmission::default()),
             busy_timeout_ms,
         }
+    }
+
+    pub fn pending_conversation_turns(&self) -> PendingConversationTurnRegistry {
+        self.pending_conversation_turns.clone()
     }
 
     pub fn call_session_store_path(&self) -> Result<&Path, String> {
@@ -945,21 +1086,22 @@ impl ProductionSessionWorkers {
         .map_err(|error| error.to_string())?;
         let mut reclaimed = Vec::new();
         for agent_id in candidates {
-            let db_path = self.session_db_path(&agent_id)?;
-            let blob_path = conversation_blobs_path(&db_path);
-            let _ = self.close_agent_store_owner(&agent_id, false);
-            let _ = self.close_agent_db_owner(&agent_id, false);
-            futures::executor::block_on(self.pool.close_store(&blob_path));
-            match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
-                Ok(()) => reclaimed.push(agent_id),
-                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                Err(error) => {
-                    report_materialization_failure(
-                        "placeholder_reclaim_failed",
-                        &agent_id,
-                        &format!("io::{:?}", error.kind()),
-                    );
+            let result = self.with_agent_filesystem_mutation(&agent_id, || {
+                self.retire_agent_owners_locked(&agent_id, false)?;
+                match fs::remove_dir_all(self.agents_root.join(&agent_id)) {
+                    Ok(()) => Ok(true),
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+                    Err(error) => Err(format!("io::{:?}", error.kind())),
                 }
+            });
+            match result {
+                Ok(true) => reclaimed.push(agent_id),
+                Ok(false) => {}
+                Err(error) => report_materialization_failure(
+                    "placeholder_reclaim_failed",
+                    &agent_id,
+                    &error,
+                ),
             }
         }
         Ok(reclaimed)
@@ -1032,6 +1174,7 @@ impl ProductionSessionWorkers {
             .map_err(|error| error.to_string())
         })?;
         let _ = self.open_agent_db_owner(&record.id)?;
+        self.ensure_main_session_work_admission(&record.id)?;
         Ok(record)
     }
 
@@ -1069,6 +1212,7 @@ impl ProductionSessionWorkers {
         })?;
         if let FallbackSession::Created(record) = &result {
             let _ = self.open_agent_db_owner(&record.id)?;
+            self.ensure_main_session_work_admission(&record.id)?;
         }
         Ok(result)
     }
@@ -1078,6 +1222,7 @@ impl ProductionSessionWorkers {
         record: MaterializedAgentRecord,
         prepared: PreparedAgentBlobStore,
     ) -> Result<ProductionMaterializedSession, String> {
+        self.ensure_main_session_work_admission(&record.id)?;
         let db = self.open_agent_db_owner(&record.id)?;
         let agent_store = self.open_agent_store_owner(&record.id)?;
         let memory = self
@@ -1146,9 +1291,26 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_entries()
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
+    }
+
+    /// Preserve the public transcript projection inside an already-held
+    /// filesystem/admission boundary without recursively acquiring its mutex.
+    pub(crate) fn read_agent_transcript_entries_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let mut entries = self
+            .open_agent_db_owner_locked(agent_id)?
+            .get_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
     }
 
     pub fn read_agent_transcript_page(
@@ -1156,9 +1318,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptPageQuery,
     ) -> Result<TranscriptPage, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut page = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_page(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut page.entries);
+        Ok(page)
     }
 
     pub fn read_agent_transcript_window(
@@ -1166,9 +1331,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptWindow<std::collections::BTreeMap<String, usize>>, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut window = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_window(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut window.entries);
+        Ok(window)
     }
 
     pub fn read_agent_transcript_tail(
@@ -1176,9 +1344,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         query: TranscriptWindowQuery,
     ) -> Result<TranscriptPage, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut page = self
+            .open_agent_db_owner(agent_id)?
             .get_transcript_tail(query)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut page.entries);
+        Ok(page)
     }
 
     pub fn read_agent_thread(
@@ -1186,10 +1357,12 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         root_id: &str,
     ) -> Result<TranscriptThread, String> {
-        self.open_agent_db_owner(agent_id)?
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
             .get_thread_entries(root_id)
-            .map(|entries| TranscriptThread { entries })
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(TranscriptThread { entries })
     }
 
     pub fn read_agent_outline(
@@ -1241,6 +1414,75 @@ impl ProductionSessionWorkers {
         ))
     }
 
+    /// Resolve one backend target under the same Session boundary as its
+    /// writers and deletion owner. Only checked directory absence can bypass
+    /// durable admission; a present agent with unavailable state is an error.
+    pub fn find_automation_for_backend_delivery(
+        &self,
+        agent_id: &str,
+        backend_id: &str,
+    ) -> Result<Option<AutomationRecord>, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            if self.deleting_agents.lock()
+                .map_err(|_| "agent deletion state is poisoned".to_string())?
+                .contains(agent_id)
+            {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; backend delivery is not admitted"
+                ));
+            }
+            let agent_dir = db_path.parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            if !Self::checked_backend_agent_directory_exists(agent_dir)? {
+                return Ok(None);
+            }
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let store = automation_store_for_db_path_with_time_zone_resolver(
+                &db_path,
+                Arc::clone(&self.user_time_zone_resolver),
+            );
+            store.find_for_backend_delivery(agent_id, backend_id)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    fn checked_backend_agent_directory_exists(agent_dir: &Path) -> Result<bool, String> {
+        let mut missing = false;
+        // A NotFound below a dangling ancestor does not establish absence.
+        // Walk back only after NotFound until a real directory is checked;
+        // existing root/agent links retain their normal followed semantics.
+        for path in agent_dir.ancestors()
+            .filter(|path| !path.as_os_str().is_empty())
+            .chain(std::iter::once(Path::new(".")))
+        {
+            let metadata = match fs::symlink_metadata(path) {
+                Ok(metadata) => metadata,
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    missing = true;
+                    continue;
+                }
+                Err(error) => return Err(format!(
+                    "backend delivery agent directory {} is unavailable: {error}", path.display()
+                )),
+            };
+            let metadata = if metadata.file_type().is_symlink() {
+                fs::metadata(path).map_err(|error| format!(
+                    "backend delivery agent directory {} is unavailable: {error}", path.display()
+                ))?
+            } else {
+                metadata
+            };
+            if !metadata.is_dir() {
+                return Err(format!(
+                    "backend delivery agent path {} is not a directory", path.display()
+                ));
+            }
+            return Ok(!missing);
+        }
+        Err("backend delivery agent directory absence could not be established".into())
+    }
+
     pub fn agent_has_automations(&self, agent_id: &str) -> Result<bool, String> {
         let db_path = self.session_db_path(agent_id)?;
         let agent_dir = db_path
@@ -1251,10 +1493,27 @@ impl ProductionSessionWorkers {
 
     pub fn open_workflow_store(&self, agent_id: &str) -> Result<FileWorkflowStore, String> {
         let db_path = self.session_db_path(agent_id)?;
+        let reader: PluginSkillsAdmissionReader = self.plugin_skills_admission.clone();
         Ok(workflow_store_for_db_path_with_time_zone_resolver(
             &db_path,
             Arc::clone(&self.user_time_zone_resolver),
-        ))
+        ).with_plugin_skills_admission(reader))
+    }
+
+    pub fn bind_plugin_skills_admission(
+        &self,
+        reader: PluginSkillsAdmissionReader,
+    ) -> Result<(), String> {
+        let mut slot = self.plugin_skills_admission.reader.lock()
+            .map_err(|_| "Session plugin skills admission reader is poisoned".to_string())?;
+        match slot.as_ref() {
+            Some(current) if Arc::ptr_eq(current, &reader) => Ok(()),
+            Some(_) => Err("Session plugin skills admission is already bound to another owner".into()),
+            None => {
+                *slot = Some(reader);
+                Ok(())
+            }
+        }
     }
 
     pub fn agent_has_workflows(&self, agent_id: &str) -> Result<bool, String> {
@@ -1302,16 +1561,19 @@ impl ProductionSessionWorkers {
         field: &str,
         value: &str,
     ) -> Result<bool, String> {
-        let stored = self
-            .connector_secret_store()
-            .set_secret(agent_id, platform, field, value)
-            .map_err(|error| error.to_string())?;
-        if !stored {
-            return Ok(false);
-        }
-        self.open_channel_store(agent_id)?
-            .write_metadata(platform, "")
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let stored = self
+                .connector_secret_store()
+                .set_secret(agent_id, platform, field, value)
+                .map_err(|error| error.to_string())?;
+            if !stored {
+                return Ok(false);
+            }
+            self.open_channel_store(agent_id)?
+                .write_metadata(platform, "")
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_connector_secret(
@@ -1330,19 +1592,41 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         platform: &str,
     ) -> Result<bool, String> {
-        self.connector_secret_store()
-            .remove_agent_platform(agent_id, platform)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.connector_secret_store()
+                .remove_agent_platform(agent_id, platform)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn disconnect_channel(&self, agent_id: &str, platform: &str) -> Result<bool, String> {
-        let _ = self
-            .connector_secret_store()
-            .remove_agent_platform(agent_id, platform)
-            .map_err(|error| error.to_string())?;
-        self.open_channel_store(agent_id)?
-            .remove(platform)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let _ = self
+                .connector_secret_store()
+                .remove_agent_platform(agent_id, platform)
+                .map_err(|error| error.to_string())?;
+            self.open_channel_store(agent_id)?
+                .remove(platform)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn write_agent_settings(
+        &self,
+        agent_id: &str,
+        update: serde_json::Map<String, serde_json::Value>,
+    ) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db_path = self.existing_session_db_path(agent_id)?;
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            write_sand_settings_file(get_sand_settings_path(agent_dir), &update)
+                .map_err(|error| error.to_string())
+        })
     }
 
     fn existing_session_db_path(&self, agent_id: &str) -> Result<PathBuf, String> {
@@ -1357,23 +1641,370 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; owner open is not admitted"
+                ));
+            }
+            self.open_agent_db_owner_locked(agent_id)
+        })
+    }
+
+    /// Open or reuse the per-agent SQLite owner while the caller already
+    /// holds the filesystem/deletion serialization boundary. All owner-open
+    /// recovery must run under that boundary, but mutation producers cannot
+    /// reacquire the non-reentrant filesystem mutex.
+    fn open_agent_db_owner_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        self.open_agent_db_owner_locked_with_recovery(agent_id, true)
+    }
+
+    fn open_agent_db_owner_locked_with_recovery(
+        &self,
+        agent_id: &str,
+        recover_pending: bool,
+    ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
+        // Re-entry must reject a stale cached root before pending recovery can
+        // settle journals or restore files. Release the owner-map lock before
+        // this validation performs blob/DB I/O.
+        let cached_store = self.agent_store_owners.lock()
+            .map_err(|_| "agent store owner map poisoned".to_string())?
+            .get(agent_id).cloned();
+        if let Some(cached_store) = cached_store {
+            cached_store.validate_cached_checkpoint_checked()?;
+        }
+        let blob_store = self.create_agent_blob_store(agent_id)?;
         let mut owners = self
             .db_owners
             .lock()
             .map_err(|_| "agent db owner map poisoned".to_string())?;
-        if let Some(owner) = owners.get(agent_id) {
+        let key = SessionDbOwnerKey::Agent(agent_id.to_string());
+        if let Some(owner) = owners.get(&key) {
+            ProductionAgentStore::validate_persisted_checkpoint_checked(owner, &blob_store)?;
+            self.validate_owner_session_identity(agent_id, owner)?;
+            if recover_pending {
+                self.recover_pending_profile_mutation(agent_id, owner)?;
+                self.recover_pending_memory_mutation(agent_id, owner)?;
+            }
             return Ok(Arc::clone(owner));
         }
-        let owner = Arc::new(
-            SandAgentDb::open(&db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?,
-        );
-        owners.insert(agent_id.to_string(), Arc::clone(&owner));
+        let owner = Arc::new(if recover_pending {
+            SandAgentDb::open_existing_agent(&db_path, self.busy_timeout_ms)
+        } else {
+            SandAgentDb::open_existing_agent_without_recovery(&db_path, self.busy_timeout_ms)
+        }.map_err(|error| error.to_string())?);
+        ProductionAgentStore::validate_persisted_checkpoint_checked(&owner, &blob_store)?;
+        self.validate_owner_session_identity(agent_id, &owner)?;
+        if !recover_pending && owner.read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .is_some_and(|record| record.admitted_media_work_id.is_some()
+                || !record.admitted_media_paths.is_empty())
+        {
+            // Ordinary media recovery runs only on a first open. Do not cache
+            // a strict-open candidate that skipped that required work, or a
+            // later ordinary open would mistake it for an already recovered
+            // owner. Retain the fence for that existing recovery path.
+            return Err("terminal inspection found pending media custody on first open".into());
+        }
+        if recover_pending {
+            self.recover_pending_media_custody(agent_id, &owner)?;
+            self.recover_pending_profile_mutation(agent_id, &owner)?;
+            self.recover_pending_memory_mutation(agent_id, &owner)?;
+        }
+        owners.insert(key, Arc::clone(&owner));
         Ok(owner)
     }
 
+    fn validate_owner_session_identity(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let metadata_agent_id = owner
+            .get_metadata("agentId")
+            .map_err(|error| error.to_string())?
+            .and_then(|value| value.as_str().map(str::trim).map(ToOwned::to_owned));
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if record.session_id != agent_id
+            || metadata_agent_id.as_deref() != Some(agent_id)
+            || record.session_id != metadata_agent_id.as_deref().unwrap_or_default()
+            || record.session_key != expected_session_key
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed or rebound"
+            ));
+        }
+        Ok(())
+    }
+
+    /// Reconcile one durable media fence when an agent database is first
+    /// opened after a process interruption. A committed settlement receipt
+    /// retains its media; without one, only paths proven to remain inside the
+    /// agent media roots are rolled back. Any uncertainty leaves the fence in
+    /// place so archive/delete cannot race an unknown outcome.
+    fn recover_pending_media_custody(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let Some(work_id) = record.admitted_media_work_id.as_deref() else {
+            if record.admitted_media_paths.is_empty() {
+                return Ok(());
+            }
+            return Err("media admission has paths without a work identity".into());
+        };
+        let expected_revision = record.lifecycle_revision.clone();
+        let receipt_id = format!("outgoing-media-settlement:{work_id}");
+        if let Some(receipt) = owner
+            .get_transcript_entry_by_id(&receipt_id)
+            .map_err(|error| error.to_string())?
+        {
+            let valid = receipt.get("kind").and_then(serde_json::Value::as_str)
+                == Some("outgoing-media-settlement")
+                && receipt.get("sessionKey").and_then(serde_json::Value::as_str)
+                    == Some(record.session_key.as_str())
+                && receipt.get("mediaWorkId").and_then(serde_json::Value::as_str)
+                    == Some(work_id)
+                && receipt
+                    .get("lifecycleRevision")
+                    .and_then(serde_json::Value::as_str)
+                    == Some(expected_revision.as_str());
+            if !valid {
+                return Err("outgoing media settlement receipt is malformed or rebound".into());
+            }
+            if !Self::clear_media_fence_from_owner(owner, &expected_revision, work_id)? {
+                return Err("could not clear committed outgoing media fence".into());
+            }
+            return Ok(());
+        }
+        if record.admitted_media_paths.is_empty() {
+            return Err("pending outgoing media has no durable materialized paths".into());
+        }
+        let media_roots = get_agent_media_store_roots(self.agents_root.join(agent_id));
+        let mut custody = OutgoingMediaCustody::default();
+        for raw_path in record.admitted_media_paths {
+            let path = PathBuf::from(raw_path);
+            let Some(verified_path) = Self::verify_pending_media_path(&path, &media_roots)? else {
+                continue;
+            };
+            custody.track(verified_path);
+        }
+        let cleanup_errors = custody.rollback();
+        if !cleanup_errors.is_empty() {
+            return Err(format!(
+                "could not roll back pending outgoing media paths: {} cleanup errors",
+                cleanup_errors.len()
+            ));
+        }
+        if !Self::clear_media_fence_from_owner(owner, &expected_revision, work_id)? {
+            return Err("could not clear rolled-back outgoing media fence".into());
+        }
+        Ok(())
+    }
+
+    fn verify_pending_media_path(
+        path: &Path,
+        media_roots: &[PathBuf; 2],
+    ) -> Result<Option<PathBuf>, String> {
+        let metadata = match fs::symlink_metadata(path) {
+            Ok(metadata) => metadata,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(error) => {
+                return Err(format!(
+                    "could not inspect pending outgoing media path {}: {error}",
+                    path.display()
+                ));
+            }
+        };
+        if metadata.file_type().is_symlink() {
+            return Err(format!(
+                "pending outgoing media path is a symlink: {}",
+                path.display()
+            ));
+        }
+        let canonical_path = fs::canonicalize(path).map_err(|error| {
+            format!(
+                "could not canonicalize pending outgoing media path {}: {error}",
+                path.display()
+            )
+        })?;
+        let inside_media_root = media_roots
+            .iter()
+            .filter_map(|root| {
+                fs::canonicalize(root)
+                    .ok()
+                    .map(|canonical_root| canonical_path.starts_with(canonical_root))
+            })
+            .any(|inside| inside);
+        if !inside_media_root {
+            return Err(format!(
+                "pending outgoing media path is outside the agent media store: {}",
+                path.display()
+            ));
+        }
+        Ok(Some(canonical_path))
+    }
+
+    fn clear_media_fence_from_owner(
+        owner: &SandAgentDb,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<bool, String> {
+        let Some(mut record) = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(false);
+        };
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.admitted_media_work_id.as_deref() != Some(work_id)
+        {
+            return Ok(false);
+        }
+        record.admitted_media_work_id = None;
+        record.admitted_media_paths.clear();
+        owner
+            .compare_and_set_session_work_admission(
+                Some(expected_lifecycle_revision),
+                &record,
+            )
+            .map_err(|error| error.to_string())
+    }
+
+    fn recover_pending_memory_mutation(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(mutation) = owner
+            .read_pending_memory_mutation()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "pending memory mutation has no session admission".to_string())?;
+        if mutation.mutation_id.trim().is_empty()
+            || mutation.session_key != admission.session_key
+            || mutation.session_id != admission.session_id
+            || mutation.lifecycle_revision != admission.lifecycle_revision
+            || !matches!(mutation.operation.as_str(), "remove" | "clear")
+        {
+            return Err("pending memory mutation journal is malformed or rebound".into());
+        }
+        let current_snapshot = owner
+            .get_memory_prompt_snapshot()
+            .map_err(|error| error.to_string())?;
+        if current_snapshot != mutation.prior_snapshot {
+            return Err("pending memory mutation snapshot is rebound or outcome-unknown".into());
+        }
+        let store = self.memory_service.store_for_agent(agent_id);
+        Self::restore_memory_records(&store, &mutation.records)?;
+        if !owner
+            .clear_pending_memory_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("pending memory mutation journal could not be cleared".into());
+        }
+        Ok(())
+    }
+
+    fn recover_pending_profile_mutation(
+        &self,
+        agent_id: &str,
+        owner: &SandAgentDb,
+    ) -> Result<(), String> {
+        let Some(mutation) = owner
+            .read_pending_profile_mutation()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "pending profile mutation has no session admission".to_string())?;
+        if mutation.mutation_id.trim().is_empty()
+            || !matches!(
+                mutation.operation.as_str(),
+                "profile-update" | "avatar-replace" | "avatar-remove"
+            )
+            || mutation.session_key != admission.session_key
+            || mutation.session_id != admission.session_id
+            || mutation.lifecycle_revision != admission.lifecycle_revision
+            || mutation.before_files.is_empty()
+            || mutation.after_files.is_empty()
+        {
+            return Err("pending profile mutation journal is malformed or rebound".into());
+        }
+        if owner
+            .get_sand_profile()
+            .map_err(|error| error.to_string())?
+            != mutation.previous_profile
+        {
+            return Err("pending profile mutation owner state is rebound or outcome-unknown".into());
+        }
+        let db_path = self.session_db_path(agent_id)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        if profile_mutation_files_match(agent_dir, &mutation.before_files) {
+            if !owner
+                .clear_pending_profile_mutation(&mutation)
+                .map_err(|error| error.to_string())?
+            {
+                return Err("could not clear already-before profile mutation journal".into());
+            }
+            return Ok(());
+        }
+        if !profile_mutation_files_match(agent_dir, &mutation.after_files) {
+            return Err("pending profile mutation files do not match before or after state".into());
+        }
+        restore_profile_mutation_files(agent_dir, &mutation.before_files)?;
+        if !owner
+            .clear_pending_profile_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("could not clear rolled-back profile mutation journal".into());
+        }
+        Ok(())
+    }
+
     pub fn close_agent_db_owner(
+        &self,
+        agent_id: &str,
+        checkpoint: bool,
+    ) -> bool {
+        if assert_valid_agent_session_id(agent_id).is_err() {
+            return false;
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self.close_agent_db_owner_locked(agent_id, checkpoint))
+        })
+        .unwrap_or(false)
+    }
+
+    fn close_agent_db_owner_locked(
         &self,
         agent_id: &str,
         checkpoint: bool,
@@ -1382,7 +2013,7 @@ impl ProductionSessionWorkers {
             .db_owners
             .lock()
             .ok()
-            .and_then(|mut owners| owners.remove(agent_id));
+            .and_then(|mut owners| owners.remove(&SessionDbOwnerKey::Agent(agent_id.to_string())));
         if let Some(owner) = owner {
             owner.close(checkpoint);
             true
@@ -1391,24 +2022,78 @@ impl ProductionSessionWorkers {
         }
     }
 
+    /// Retire the exact per-agent owners while holding the same filesystem
+    /// boundary used by deletion. This keeps owner close and blob-worker
+    /// shutdown from interleaving with directory cleanup.
+    pub fn retire_agent_owners(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> Result<bool, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.retire_agent_owners_locked(agent_id, flush)
+        })
+    }
+
+    /// Close the exact per-agent owners while the caller already holds the
+    /// filesystem/deletion boundary.
+    pub(crate) fn retire_agent_owners_locked(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> Result<bool, String> {
+        let db_path = self.session_db_path(agent_id)?;
+        let blob_path = conversation_blobs_path(&db_path);
+        let store_closed = self.close_agent_store_owner_locked(agent_id, flush);
+        let db_closed = self.close_agent_db_owner_locked(agent_id, flush);
+        self.pool.close_store_blocking(&blob_path);
+        Ok(store_closed || db_closed)
+    }
+
     pub fn open_agent_store_owner(
         &self,
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
-        if let Some(owner) = self
-            .agent_store_owners
-            .lock()
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Err(format!(
+                    "agent {agent_id} deletion cleanup is pending; owner open is not admitted"
+                ));
+            }
+            self.open_agent_store_owner_locked(agent_id)
+        })
+    }
+
+    /// Open or reuse the AgentStore while the caller already holds the
+    /// per-agent filesystem/deletion boundary.
+    fn open_agent_store_owner_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Arc<ProductionAgentStore>, String> {
+        self.open_agent_store_owner_locked_with_recovery(agent_id, true)
+    }
+
+    fn open_agent_store_owner_locked_with_recovery(
+        &self,
+        agent_id: &str,
+        recover_pending: bool,
+    ) -> Result<Arc<ProductionAgentStore>, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
+        let cached_owner = self.agent_store_owners.lock()
             .map_err(|_| "agent store owner map poisoned".to_string())?
-            .get(agent_id)
-            .cloned()
-        {
+            .get(agent_id).cloned();
+        if let Some(owner) = cached_owner {
+            owner.validate_cached_checkpoint_checked()?;
+            let _ = self.open_agent_db_owner_locked_with_recovery(agent_id, recover_pending)?;
             return Ok(owner);
         }
 
-        let db = self.open_agent_db_owner(agent_id)?;
+        let db = self.open_agent_db_owner_locked_with_recovery(agent_id, recover_pending)?;
         let blob_store = self.create_agent_blob_store(agent_id)?;
         let candidate = Arc::new(ProductionAgentStore::new(db, blob_store));
-        let _ = candidate.try_reset_from_db();
+        candidate.reset_from_db_checked()?;
 
         let mut owners = self
             .agent_store_owners
@@ -1421,7 +2106,150 @@ impl ProductionSessionWorkers {
         Ok(candidate)
     }
 
+    /// Retain Session's existing filesystem/deletion boundary while preserving
+    /// the strict terminal error type. Only this module supplies the operation;
+    /// no Runner/provider callback runs while the boundary is held.
+    fn with_original_turn_terminal_owner<T>(
+        &self,
+        original: &OriginalTurnReference,
+        operation: impl FnOnce(&SandAgentDb) -> Result<T, AgentDbProjectionError>,
+    ) -> Result<T, AgentDbProjectionError> {
+        original.validate().map_err(AgentDbProjectionError::OriginalTurnInvalid)?;
+        self.with_agent_filesystem_mutation(&original.agent_id, || {
+            Ok((|| {
+                if self.deleting_agents.lock().map_err(|_| {
+                    AgentDbProjectionError::OriginalTurnUnavailable(
+                        "Session deletion registry is poisoned".into(),
+                    )
+                })?.contains(&original.agent_id) {
+                    return Err(AgentDbProjectionError::OriginalTurnStale(
+                        "agent deletion owns the terminal store".into(),
+                    ));
+                }
+                let owner = self.open_agent_db_owner_locked_with_recovery(&original.agent_id, false)
+                    .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+                operation(owner.as_ref())
+            })())
+        }).map_err(AgentDbProjectionError::OriginalTurnUnavailable)?
+    }
+
+    fn original_turn_terminal_view_locked(
+        &self,
+        original: &OriginalTurnReference,
+        owner: &SandAgentDb,
+        fence: OriginalTurnTerminalFence,
+    ) -> Result<OriginalTurnTerminalView, AgentDbProjectionError> {
+        let store = self.open_agent_store_owner_locked_with_recovery(&original.agent_id, false)
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+        let checkpoint = store.checkpoint_snapshot_checked()
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?
+            .ok_or_else(|| AgentDbProjectionError::OriginalTurnUnavailable(
+                "original terminal has no canonical checkpoint".into(),
+            ))?;
+        if checkpoint.root_blob_id != fence.final_root_blob_id {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "checked canonical root differs from the inspected terminal owner".into(),
+            ));
+        }
+        // Worker/blob I/O above does not hold the SQLite connection mutex.
+        owner.recheck_original_turn_terminal_fence(&fence)?;
+        Ok(OriginalTurnTerminalView {
+            original_user_content: fence.original_user_content.clone(),
+            settlement_lifecycle_revision: fence.settlement_lifecycle_revision.clone(),
+            compaction: fence.compaction.clone(),
+            original: original.clone(),
+            checkpoint,
+            store,
+            fence,
+        })
+    }
+
+    pub(crate) fn prepare_original_turn_terminal_view(
+        &self,
+        original: &OriginalTurnReference,
+        expected_final_root: &[u8],
+    ) -> Result<OriginalTurnTerminalView, AgentDbProjectionError> {
+        self.with_original_turn_terminal_owner(original, |owner| {
+            let fence = owner.prepare_original_turn_terminal_fence(original, expected_final_root)?;
+            self.original_turn_terminal_view_locked(original, owner, fence)
+        })
+    }
+
+    fn recheck_original_turn_checkpoint_locked(
+        &self,
+        view: &OriginalTurnTerminalView,
+    ) -> Result<(), AgentDbProjectionError> {
+        let store = self.open_agent_store_owner_locked_with_recovery(&view.original.agent_id, false)
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+        if !Arc::ptr_eq(&store, &view.store) {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "canonical AgentStore owner changed after terminal inspection".into(),
+            ));
+        }
+        let current = store.checkpoint_snapshot_checked()
+            .map_err(AgentDbProjectionError::OriginalTurnUnavailable)?;
+        if current.as_ref() != Some(&view.checkpoint) {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "checked canonical checkpoint changed after terminal qualification".into(),
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn commit_original_turn_terminal_record(
+        &self,
+        view: &OriginalTurnTerminalView,
+        record: &OriginalTurnTerminalRecord,
+    ) -> Result<OriginalTurnReceiptCommit, AgentDbProjectionError> {
+        self.with_original_turn_terminal_owner(&view.original, |owner| {
+            self.recheck_original_turn_checkpoint_locked(view)?;
+            owner.commit_original_turn_terminal_record(&view.fence, record)
+        })
+    }
+
+    pub(crate) fn read_original_turn_terminal_candidate(
+        &self,
+        original: &OriginalTurnReference,
+    ) -> Result<Option<OriginalTurnTerminalRead>, AgentDbProjectionError> {
+        self.with_original_turn_terminal_owner(original, |owner| {
+            let Some((record, fence)) = owner.read_original_turn_terminal_candidate_checked(original)? else {
+                return Ok(None);
+            };
+            let view = self.original_turn_terminal_view_locked(original, owner, fence)?;
+            Ok(Some(OriginalTurnTerminalRead { record, view }))
+        })
+    }
+
+    pub(crate) fn recheck_original_turn_terminal_read(
+        &self,
+        read: &OriginalTurnTerminalRead,
+    ) -> Result<(), AgentDbProjectionError> {
+        if !read.view.fence.contains_record(&read.record) {
+            return Err(AgentDbProjectionError::OriginalTurnStale(
+                "terminal candidate differs from the exact inspected slot".into(),
+            ));
+        }
+        self.with_original_turn_terminal_owner(&read.view.original, |owner| {
+            self.recheck_original_turn_checkpoint_locked(&read.view)?;
+            owner.recheck_original_turn_terminal_fence(&read.view.fence)
+        })
+    }
+
     pub fn close_agent_store_owner(
+        &self,
+        agent_id: &str,
+        flush: bool,
+    ) -> bool {
+        if assert_valid_agent_session_id(agent_id).is_err() {
+            return false;
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self.close_agent_store_owner_locked(agent_id, flush))
+        })
+        .unwrap_or(false)
+    }
+
+    fn close_agent_store_owner_locked(
         &self,
         agent_id: &str,
         flush: bool,
@@ -1459,17 +2287,145 @@ impl ProductionSessionWorkers {
             .unwrap_or_default()
     }
 
-    pub fn begin_agent_delete(&self, agent_id: &str) {
+    /// Serialize per-agent filesystem-backed mutation with the existing
+    /// directory deletion owner. The caller must perform the durable
+    /// admission check while this guard is held.
+    pub fn with_agent_filesystem_mutation<T, F>(
+        &self,
+        agent_id: &str,
+        operation: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce() -> Result<T, String>,
+    {
+        let lock = self
+            .filesystem_mutation_locks
+            .lock()
+            .map_err(|_| "filesystem mutation lock registry is poisoned".to_string())?
+            .entry(agent_id.to_string())
+            .or_insert_with(|| Arc::new(Mutex::new(())))
+            .clone();
+        let _guard = lock
+            .lock()
+            .map_err(|_| format!("filesystem mutation lock is poisoned for agent {agent_id}"))?;
+        operation()
+    }
+
+    /// Serialize an external per-agent mutation and perform the durable
+    /// admission check while the same boundary is held. The operation must
+    /// not call the public admission facade recursively.
+    pub fn with_agent_admitted_filesystem_mutation<T, F>(
+        &self,
+        agent_id: &str,
+        operation: F,
+    ) -> Result<T, String>
+    where
+        F: FnOnce() -> Result<T, String>,
+    {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            operation()
+        })
+    }
+
+    /// Compose admitted filesystem and database mutations without reopening
+    /// the public Session facade while its non-reentrant mutex is held.
+    /// The callback must use this owner or existing locked helpers only.
+    pub(crate) fn with_agent_admitted_db_mutation<T>(
+        &self,
+        agent_id: &str,
+        operation: impl FnOnce(&SandAgentDb) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            operation(owner.as_ref())
+        })
+    }
+
+    pub fn begin_agent_delete(&self, agent_id: &str) -> Result<(), String> {
+        let db_path = self.session_db_path(agent_id)?;
         self.roster_extras_cache.remove(agent_id);
         if let Ok(mut deleting) = self.deleting_agents.lock() {
             deleting.insert(agent_id.to_string());
         }
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            if !db_path.is_file() {
+                return Ok(());
+            }
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(());
+            };
+            if record.deletion_pending {
+                return Ok(());
+            }
+            let expected_revision = record.lifecycle_revision.clone();
+            record.deletion_pending = true;
+            if owner
+                .transition_session_deletion_pending(
+                    Some(&expected_revision),
+                    false,
+                    &record,
+                )
+                .map_err(|error| error.to_string())?
+            {
+                Ok(())
+            } else {
+                Err(format!(
+                    "agent {agent_id} lifecycle changed while publishing deletion fence"
+                ))
+            }
+        });
+        if result.is_err() {
+            let _ = self
+                .deleting_agents
+                .lock()
+                .map(|mut deleting| deleting.remove(agent_id));
+        }
+        result
     }
 
-    pub fn end_agent_delete(&self, agent_id: &str) {
+    pub fn clear_agent_delete_fast_path(&self, agent_id: &str) {
         if let Ok(mut deleting) = self.deleting_agents.lock() {
             deleting.remove(agent_id);
         }
+    }
+
+    pub fn end_agent_delete(&self, agent_id: &str) -> Result<(), String> {
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            self.clear_agent_delete_fast_path(agent_id);
+            let db_path = self.session_db_path(agent_id)?;
+            if !db_path.is_file() {
+                return Ok(());
+            }
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(());
+            };
+            if !record.deletion_pending {
+                return Ok(());
+            }
+            let expected_revision = record.lifecycle_revision.clone();
+            record.deletion_pending = false;
+            if owner
+                .clear_session_deletion_pending(&expected_revision, &record)
+                .map_err(|error| error.to_string())?
+            {
+                Ok(())
+            } else {
+                Err(format!(
+                    "agent {agent_id} lifecycle changed while clearing deletion fence"
+                ))
+            }
+        });
+        result
     }
 
     pub fn is_agent_being_deleted(&self, agent_id: &str) -> bool {
@@ -1479,21 +2435,1070 @@ impl ProductionSessionWorkers {
             .unwrap_or(false)
     }
 
+    /// Reject new session-owned writes while the existing deletion owner has
+    /// custody of the agent directory. Deletion itself uses its own file and
+    /// store owner path and does not call these transcript mutation wrappers.
+    pub fn assert_agent_work_admission(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)
+        })
+    }
+
+    /// Admission check for callers that already hold the per-agent
+    /// filesystem/deletion boundary. This must not call the public admission
+    /// facade, because that facade intentionally acquires the same mutex.
+    fn assert_agent_work_admission_locked(&self, agent_id: &str) -> Result<(), String> {
+        if self.is_agent_being_deleted(agent_id) {
+            return Err(format!(
+                "agent {agent_id} deletion cleanup is pending; new session work is not admitted"
+            ));
+        }
+        self.existing_session_db_path(agent_id)?;
+        let Some(record) = self
+            .open_agent_db_owner_locked(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        else {
+            return Ok(());
+        };
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if record.session_id != agent_id
+            || record.session_key != expected_session_key
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed"
+            ));
+        }
+        if record.deletion_pending {
+            return Err(format!(
+                "agent {agent_id} durable deletion cleanup is pending; new session work is not admitted"
+            ));
+        }
+        Ok(())
+    }
+
+    fn assert_agent_transcript_write_admission_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<(), String> {
+        self.assert_agent_work_admission_locked(agent_id)?;
+        if self
+            .open_agent_db_owner_locked(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .is_some_and(|record| record.archived_at_ms.is_some())
+        {
+            return Err(format!(
+                "agent {agent_id} session is archived; agent-only transcript writes are not admitted"
+            ));
+        }
+        Ok(())
+    }
+
+    fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)
+        })
+    }
+
+    pub fn ensure_main_session_work_admission(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.ensure_main_session_work_admission_locked(agent_id)
+        })
+    }
+
+    fn ensure_main_session_work_admission_locked(&self, agent_id: &str) -> Result<(), String> {
+        let db = self.open_agent_db_owner_locked(agent_id)?;
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if let Some(record) = db
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+        {
+            if record.session_id != agent_id
+                || record.session_key != expected_session_key
+                || record.lifecycle_revision.trim().is_empty()
+            {
+                return Err(format!(
+                    "agent {agent_id} session admission identity is malformed"
+                ));
+            }
+            return Ok(());
+        }
+        let lifecycle_revision = db
+            .ensure_lifecycle_revision()
+            .map_err(|error| error.to_string())?;
+        let record = SessionWorkAdmissionRecord {
+            session_key: format!("agent:{agent_id}:main"),
+            session_id: agent_id.to_string(),
+            lifecycle_revision,
+            deletion_pending: false,
+            archived_at_ms: None,
+            archived_by: None,
+            archive_reason: None,
+            admitted_work_id: None,
+            admitted_media_work_id: None,
+            admitted_media_paths: Vec::new(),
+            terminal_result_idempotency_key: None,
+            provider_review_id: None,
+            provider_review_phase: None,
+            provider_review_continuation_run_id: None,
+            provider_review: None,
+        };
+        let changed = db
+            .compare_and_set_session_work_admission(None, &record)
+            .map_err(|error| error.to_string())?;
+        if changed {
+            return Ok(());
+        }
+        let current = db
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| {
+                format!(
+                    "agent {agent_id} session admission creation lost its race without a record"
+                )
+            })?;
+        if current.session_id != agent_id
+            || current.session_key != expected_session_key
+            || current.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed after create race"
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn assert_session_work_admission(
+        &self,
+        agent_id: &str,
+        session_key: Option<&str>,
+    ) -> Result<(), String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let Some(session_key) = session_key.map(str::trim).filter(|value| !value.is_empty())
+        else {
+            return Ok(());
+        };
+        let Some(record) = self.read_session_work_admission(agent_id)? else {
+            return Ok(());
+        };
+        if record.session_key != session_key {
+            return Err(format!(
+                "session work admission key mismatch: expected {}, got {}",
+                record.session_key, session_key
+            ));
+        }
+        if record.archived_at_ms.is_some() {
+            return Err(format!(
+                "session {session_key} is archived and does not admit new work"
+            ));
+        }
+        Ok(())
+    }
+
+    /// Capture the generation that a background producer is admitting work
+    /// against. The caller must carry this value to its terminal edge and
+    /// recheck it before treating a detached result as committed.
+    pub fn capture_session_work_admission(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        work_id: &str,
+    ) -> Result<String, String> {
+        let session_key = session_key.trim();
+        let work_id = work_id.trim();
+        if session_key.is_empty() || work_id.is_empty() {
+            return Err("session work admission requires a session key and work id".into());
+        }
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.ensure_main_session_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let record = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+            if record.session_key != session_key {
+                return Err(format!(
+                    "session work admission key mismatch: expected {}, got {}",
+                    record.session_key, session_key
+                ));
+            }
+            if record.archived_at_ms.is_some() {
+                return Err(format!(
+                    "session {session_key} is archived and does not admit new work"
+                ));
+            }
+            if let Some(admitted_work_id) = record.admitted_work_id.as_deref() {
+                if admitted_work_id != work_id {
+                    return Err(format!(
+                        "session {session_key} already has admitted background work"
+                    ));
+                }
+                return Ok(record.lifecycle_revision);
+            }
+            let lifecycle_revision = record.lifecycle_revision.clone();
+            let mut next = record;
+            next.admitted_work_id = Some(work_id.to_string());
+            if !owner
+                .compare_and_set_session_work_admission(Some(&lifecycle_revision), &next)
+                .map_err(|error| error.to_string())?
+            {
+                return Err(format!(
+                    "session {session_key} generation changed while admitting work"
+                ));
+            }
+            Ok(lifecycle_revision)
+        })
+    }
+
+    /// Recheck the generation immediately before a background terminal result
+    /// is exposed to its consumer. A missing record, rebound session, archive,
+    /// deletion fence, or changed lifecycle is fail-closed.
+    pub fn assert_session_work_admission_generation(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        expected_lifecycle_revision: &str,
+    ) -> Result<(), String> {
+        self.assert_agent_work_admission(agent_id)?;
+        let record = self
+            .read_session_work_admission(agent_id)?
+            .ok_or_else(|| "session work admission record disappeared".to_string())?;
+        if record.session_key != session_key
+            || record.lifecycle_revision != expected_lifecycle_revision
+            || record.archived_at_ms.is_some()
+        {
+            return Err(format!(
+                "session work admission generation changed for {session_key}"
+            ));
+        }
+        Ok(())
+    }
+
+    /// Capture one durable media-custody identity before an owned attachment
+    /// becomes visible to the transcript/channel path.
+    pub fn capture_session_media_admission(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        work_id: &str,
+        media_path: Option<&Path>,
+    ) -> Result<String, String> {
+        let session_key = session_key.trim();
+        let work_id = work_id.trim();
+        if session_key.is_empty() || work_id.is_empty() {
+            return Err("media custody requires a session key and work id".into());
+        }
+        let media_path = media_path
+            .map(|path| {
+                path.to_str()
+                    .map(ToOwned::to_owned)
+                    .ok_or_else(|| "media custody path must be valid UTF-8".to_string())
+            })
+            .transpose()?;
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let record = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+            if record.session_key != session_key {
+                return Err(format!(
+                    "media custody session key mismatch: expected {}, got {}",
+                    record.session_key, session_key
+                ));
+            }
+            if record.archived_at_ms.is_some() {
+                return Err(format!(
+                    "session {session_key} is archived and does not admit media custody"
+                ));
+            }
+            if record.admitted_media_work_id.is_none() && !record.admitted_media_paths.is_empty() {
+                return Err(format!(
+                    "session {session_key} has media paths without a pending media identity"
+                ));
+            }
+            if let Some(admitted_media_work_id) = record.admitted_media_work_id.as_deref() {
+                if admitted_media_work_id != work_id {
+                    return Err(format!(
+                        "session {session_key} already has pending outgoing media"
+                    ));
+                }
+                let lifecycle_revision = record.lifecycle_revision.clone();
+                let mut next = record;
+                if let Some(path) = media_path.as_deref() {
+                    if !next.admitted_media_paths.iter().any(|known| known == path) {
+                        next.admitted_media_paths.push(path.to_string());
+                        if !owner
+                            .compare_and_set_session_work_admission(
+                                Some(&lifecycle_revision),
+                                &next,
+                            )
+                            .map_err(|error| error.to_string())?
+                        {
+                            return Err(format!(
+                                "session {session_key} generation changed while recording media custody"
+                            ));
+                        }
+                    }
+                }
+                return Ok(lifecycle_revision);
+            }
+            let lifecycle_revision = record.lifecycle_revision.clone();
+            if media_path.is_none() {
+                return Err(
+                    "media custody requires a materialized path for new media work".into(),
+                );
+            }
+            let mut next = record;
+            next.admitted_media_work_id = Some(work_id.to_string());
+            next.admitted_media_paths = media_path.into_iter().collect();
+            if !owner
+                .compare_and_set_session_work_admission(Some(&lifecycle_revision), &next)
+                .map_err(|error| error.to_string())?
+            {
+                return Err(format!(
+                    "session {session_key} generation changed while admitting media custody"
+                ));
+            }
+            Ok(lifecycle_revision)
+        })
+    }
+
+    /// Release media custody only for the captured session generation and
+    /// identity. A failed release intentionally leaves the durable fence in
+    /// place so archive/restore remains fail-closed.
+    pub fn release_session_media_admission(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(false);
+            };
+            if record.lifecycle_revision != expected_lifecycle_revision
+                || record.admitted_media_work_id.as_deref() != Some(work_id.trim())
+            {
+                return Ok(false);
+            }
+            record.admitted_media_work_id = None;
+            record.admitted_media_paths.clear();
+            owner
+                .compare_and_set_session_work_admission(
+                    Some(expected_lifecycle_revision),
+                    &record,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn read_session_work_admission(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
+        if agent_id.trim().is_empty() {
+            return Err("session admission read requires a non-empty agent identity".into());
+        }
+        let record = self
+            .open_agent_db_owner(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?;
+        let Some(record) = record else {
+            return Ok(None);
+        };
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if record.session_id != agent_id
+            || record.session_key != expected_session_key
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed"
+            ));
+        }
+        Ok(Some(record))
+    }
+
+    /// Read one agent-scoped KV projection while retaining the Session owner
+    /// serialization boundary. Tool adapters must not retain a raw
+    /// `SandAgentDb` handle as their production state owner.
+    pub fn read_agent_kv_projection(
+        &self,
+        agent_id: &str,
+        key: &str,
+    ) -> Result<Option<String>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .read_kv(key)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Write one agent-scoped KV projection through the admitted Session
+    /// owner and its per-agent filesystem/deletion boundary.
+    pub fn write_agent_kv_projection(
+        &self,
+        agent_id: &str,
+        key: &str,
+        value: &str,
+    ) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .write_kv(key, value)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Read the purpose projection through the Session owner without exposing
+    /// the general agent database handle to transcript lifecycle producers.
+    pub fn read_agent_purpose(&self, agent_id: &str) -> Result<Option<String>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_agent_purpose()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Read the unread projection through the Session owner without exposing
+    /// the general agent database handle to transcript lifecycle producers.
+    pub fn read_agent_unread_state(&self, agent_id: &str) -> Result<UnreadState, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_unread_state()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Apply a session-scoped model selection while holding the same
+    /// per-agent filesystem/deletion boundary used by every other session
+    /// mutation. The policy evaluator remains the model-picker owner; this
+    /// method owns only admission, serialization, and the owner-local write
+    /// edge.
+    pub fn apply_session_model_selection(
+        &self,
+        agent_id: &str,
+        params: ApplySessionModelSelectionParams<'_>,
+        current_time_ms: u64,
+    ) -> Result<ApplySessionModelSelectionResult, String> {
+        if !params.request.reset_to_default
+            && (params.request.provider.trim().is_empty()
+                || params.request.model.trim().is_empty())
+        {
+            return Err("session model selection requires provider and model".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "session model selection requires session admission".to_string())?;
+            if admission.session_id != agent_id
+                || admission.session_key.trim().is_empty()
+                || admission.lifecycle_revision.trim().is_empty()
+            {
+                return Err("session model selection admission identity is malformed".into());
+            }
+            let expected_lifecycle_revision = admission.lifecycle_revision.clone();
+            let mut state = read_session_model_entry(&db, agent_id)?;
+            let result = apply_model_selection(&mut state, params, current_time_ms);
+            if matches!(&result, ApplySessionModelSelectionResult::Applied(_))
+                && !write_session_model_entry(
+                    &db,
+                    agent_id,
+                    &expected_lifecycle_revision,
+                    &state,
+                )?
+            {
+                return Err("SESSION_MODEL_SELECTION_NOT_COMMITTED_OR_STALE".into());
+            }
+            Ok(result)
+        })
+    }
+
+    /// Register one background automation run as a durable per-run session
+    /// projection. The row remains owned by the agent DB; cleanup and archive
+    /// are intentionally separate reaper responsibilities.
+    pub fn begin_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        started_at_ms: f64,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session run requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session run requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.begin_cron_session_run(
+                &session_key,
+                automation_id,
+                run_id,
+                &session_key,
+                &admission.lifecycle_revision,
+                started_at_ms,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Settle the same per-run projection only against the current session
+    /// identity and lifecycle revision. A changed lifecycle returns false and
+    /// remains visible for the later reconciliation/reaper slice.
+    pub fn finish_cron_session_run(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session settlement requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session run requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.finish_cron_session_run(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                outcome,
+                finished_at_ms,
+                detail,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron session settlement requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron session settlement requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.finish_cron_session_run_with_fences(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                outcome,
+                finished_at_ms,
+                detail,
+                active_controller,
+                pending_outgoing_media,
+                unsettled_subagent,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn publish_cron_session_run_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        active_controller: bool,
+        pending_outgoing_media: bool,
+        unsettled_subagent: bool,
+    ) -> Result<bool, String> {
+        if agent_id.trim().is_empty()
+            || automation_id.trim().is_empty()
+            || run_id.trim().is_empty()
+        {
+            return Err("cron fence publication requires agent, automation, and run identities".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            let admission = db
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "cron fence publication requires session admission".to_string())?;
+            let session_key = format!(
+                "agent:{agent_id}:cron:{automation_id}:{run_id}"
+            );
+            db.publish_cron_session_run_fences(
+                &session_key,
+                &session_key,
+                &admission.lifecycle_revision,
+                active_controller,
+                pending_outgoing_media,
+                unsettled_subagent,
+            )
+            .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn list_cron_session_runs(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<CronSessionRunRecord>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            Ok(self
+                .open_agent_db_owner_locked(agent_id)?
+                .list_cron_session_runs()
+                .map_err(|error| error.to_string())?)
+        })
+    }
+
+    /// Project only rows that are eligible for a future guarded cleanup
+    /// operation. This method never mutates the row or transcript artifacts.
+    pub fn list_expired_cron_session_runs(
+        &self,
+        agent_id: &str,
+        now_ms: f64,
+        retention_ms: Option<u64>,
+    ) -> Result<Vec<CronSessionRunRecord>, String> {
+        let Some(retention_ms) = retention_ms else {
+            return Ok(Vec::new());
+        };
+        if !now_ms.is_finite() || now_ms < 0.0 || retention_ms == 0 {
+            return Ok(Vec::new());
+        }
+        let rows = self.list_cron_session_runs(agent_id)?;
+        let expected_session_key_prefix = format!("agent:{agent_id}:cron:");
+        let now_ms = now_ms.floor();
+        let retention_ms = retention_ms as f64;
+        Ok(rows
+            .into_iter()
+            .filter(|row| {
+                !row.base_session
+                    && !row.automation_id.trim().is_empty()
+                    && !row.run_id.trim().is_empty()
+                    && row.session_key
+                        == format!(
+                            "{}{}:{}",
+                            expected_session_key_prefix,
+                            row.automation_id,
+                            row.run_id
+                        )
+                    && row.session_id == row.session_key
+                    && !row.lifecycle_revision.trim().is_empty()
+                    && row.state == "terminal"
+                    && !row.active_controller
+                    && !row.pending_outgoing_media
+                    && !row.unsettled_subagent
+                    && row.fence_state_known
+                    && row.updated_at_ms.is_finite()
+                    && row.updated_at_ms >= 0.0
+                    && now_ms >= row.updated_at_ms
+                    && now_ms - row.updated_at_ms >= retention_ms
+            })
+            .collect())
+    }
+
+    pub(crate) fn read_session_work_admission_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionWorkAdmissionRecord>, String> {
+        if agent_id.trim().is_empty() {
+            return Err("locked session admission read requires a non-empty agent identity".into());
+        }
+        let record = self
+            .open_agent_db_owner_locked(agent_id)?
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?;
+        let Some(record) = record else {
+            return Ok(None);
+        };
+        let expected_session_key = format!("agent:{agent_id}:main");
+        if record.session_id != agent_id
+            || record.session_key != expected_session_key
+            || record.lifecycle_revision.trim().is_empty()
+        {
+            return Err(format!(
+                "agent {agent_id} session admission identity is malformed"
+            ));
+        }
+        Ok(Some(record))
+    }
+
+    pub fn read_session_communication_policy(
+        &self,
+        agent_id: &str,
+    ) -> Result<
+        Option<super::agent_session::SessionCommunicationPolicyOverride>,
+        String,
+    > {
+        let db = self.open_agent_db_owner(agent_id)?;
+        super::agent_session::read_session_communication_policy(&db, agent_id)
+    }
+
+    pub fn write_session_communication_policy(
+        &self,
+        agent_id: &str,
+        expected_session_id: &str,
+        expected_lifecycle_revision: &str,
+        policy: &super::agent_session::SessionCommunicationPolicyOverride,
+    ) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let db = self.open_agent_db_owner_locked(agent_id)?;
+            if !super::agent_session::write_session_communication_policy(
+                &db,
+                expected_session_id,
+                expected_lifecycle_revision,
+                policy,
+            )? {
+                return Err("SESSION_LIFECYCLE_CHANGED".into());
+            }
+            Ok(())
+        })
+    }
+
+    pub fn compare_and_set_session_work_admission(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: Option<&str>,
+        next: &SessionWorkAdmissionRecord,
+    ) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .compare_and_set_session_work_admission(expected_lifecycle_revision, next)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn read_session_provider_review(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<SessionProviderReview>, String> {
+        self.open_agent_db_owner(agent_id)?
+            .read_session_provider_review()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn record_session_provider_review(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        review: &SessionProviderReview,
+    ) -> Result<SessionProviderReview, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_session_provider_review(expected_lifecycle_revision, review)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn issue_provider_review_acknowledgment(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        review_id: &str,
+        next_run_id: &str,
+    ) -> Result<ProviderReviewAcknowledgment, String> {
+        let agent_id = agent_id.trim();
+        let expected_lifecycle_revision = expected_lifecycle_revision.trim();
+        let review_id = review_id.trim();
+        let next_run_id = next_run_id.trim();
+        if agent_id.is_empty()
+            || expected_lifecycle_revision.is_empty()
+            || review_id.is_empty()
+            || next_run_id.is_empty()
+        {
+            return Err("provider review acknowledgment requires bounded identity".into());
+        }
+        self.assert_agent_work_admission(agent_id)?;
+        let record = self
+            .read_session_work_admission(agent_id)?
+            .ok_or_else(|| "session work admission record is unavailable".to_string())?;
+        let review = record
+            .provider_review
+            .clone()
+            .ok_or_else(|| "provider review is unavailable".to_string())?;
+        let continuation_supported = review
+            .continuation_message
+            .as_deref()
+            .is_some_and(|message| !message.trim().is_empty())
+            && review.provider == "openai"
+            && ((review.runtime_id == "codex"
+                && review.native_thread_id.as_deref().is_some_and(|value| !value.trim().is_empty())
+                && review.native_turn_id.as_deref().is_some_and(|value| !value.trim().is_empty()))
+                || (review.runtime_id == "openclaw"
+                    && review.api.as_deref() == Some("openai-chatgpt-responses")));
+        if record.lifecycle_revision != expected_lifecycle_revision
+            || record.session_id != review.session_id
+            || record.provider_review_id.as_deref() != Some(review_id)
+            || record.provider_review_phase.as_deref() != Some("pending")
+            || review.id != review_id
+            || review.run_id == next_run_id
+            || !continuation_supported
+        {
+            return Err("provider review changed or cannot be continued".into());
+        }
+        let token = Uuid::new_v4().to_string();
+        self.provider_review_capabilities
+            .lock()
+            .map_err(|_| "provider review capability owner is poisoned".to_string())?
+            .insert(
+                token.clone(),
+                ProviderReviewCapabilityState {
+                    agent_id: agent_id.to_string(),
+                    lifecycle_revision: expected_lifecycle_revision.to_string(),
+                    review_id: review_id.to_string(),
+                    next_run_id: next_run_id.to_string(),
+                },
+            );
+        Ok(ProviderReviewAcknowledgment { token })
+    }
+
+    pub fn claim_provider_review_acknowledgment(
+        &self,
+        acknowledgment: ProviderReviewAcknowledgment,
+        next_run_id: &str,
+        provider: &str,
+        model: &str,
+        runtime_id: &str,
+        api: Option<&str>,
+    ) -> Result<SessionProviderReview, String> {
+        let state = self
+            .provider_review_capabilities
+            .lock()
+            .map_err(|_| "provider review capability owner is poisoned".to_string())?
+            .remove(&acknowledgment.token)
+            .ok_or_else(|| "provider review acknowledgment is no longer current".to_string())?;
+        self.with_agent_filesystem_mutation(&state.agent_id, || {
+            self.assert_agent_work_admission_locked(&state.agent_id)?;
+            if provider.trim().is_empty()
+                || model.trim().is_empty()
+                || runtime_id.trim().is_empty()
+                || next_run_id.trim() != state.next_run_id
+            {
+                return Err("provider review run or runtime identity is incomplete or changed".into());
+            }
+            let owner = self.open_agent_db_owner_locked(&state.agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Err("session work admission record is unavailable".into());
+            };
+            let review = record
+                .provider_review
+                .clone()
+                .ok_or_else(|| "provider review is unavailable".to_string())?;
+            if record.lifecycle_revision != state.lifecycle_revision
+                || record.session_id != review.session_id
+                || record.provider_review_id.as_deref() != Some(state.review_id.as_str())
+                || record.provider_review_phase.as_deref() != Some("pending")
+                || record.admitted_work_id.as_deref() != Some(state.next_run_id.as_str())
+                || record.deletion_pending
+                || review.id != state.review_id
+                || review.provider != provider.trim()
+                || review.model != model.trim()
+                || review.runtime_id != runtime_id.trim()
+                || review.api.as_deref() != api.map(str::trim)
+            {
+                return Err("provider review runtime or lifecycle identity changed".into());
+            }
+            record.provider_review_phase = Some("accepted".into());
+            record.provider_review_continuation_run_id = Some(state.next_run_id.clone());
+            if !owner
+                .compare_and_set_session_work_admission(Some(&state.lifecycle_revision), &record)
+                .map_err(|error| error.to_string())?
+            {
+                return Err("provider review acknowledgment lost its lifecycle race".into());
+            }
+            Ok(review)
+        })
+    }
+
+    pub fn settle_provider_review_continuation(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+        outcome: ProviderReviewContinuationOutcome,
+    ) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .settle_provider_review_continuation(
+                    expected_lifecycle_revision,
+                    continuation_run_id,
+                    outcome,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn release_provider_review_continuation(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        continuation_run_id: &str,
+    ) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .release_provider_review_continuation(
+                    expected_lifecycle_revision,
+                    continuation_run_id,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn transition_session_work_archive(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        expected_session_id: &str,
+        expected_lifecycle_revision: Option<&str>,
+        archived: bool,
+        archived_by: Option<&str>,
+        archive_reason: Option<&str>,
+        archived_at_ms: f64,
+    ) -> Result<SessionWorkAdmissionRecord, String> {
+        let expected_key = format!("agent:{agent_id}:main");
+        if session_key.trim() != expected_key {
+            return Err("session archive transition requires the canonical main session key".into());
+        }
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            self.ensure_main_session_work_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .transition_session_work_archive(
+                    session_key,
+                    expected_session_id,
+                    expected_lifecycle_revision,
+                    archived,
+                    archived_by,
+                    archive_reason,
+                    archived_at_ms,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn commit_session_work_result(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+        idempotency_key: &str,
+        content: &str,
+        sent_message_count: usize,
+    ) -> Result<SessionWorkResultCommitOutcome, String> {
+        let publication = self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .commit_session_work_result_deferred(
+                    session_key,
+                    expected_lifecycle_revision,
+                    work_id,
+                    idempotency_key,
+                    content,
+                    sent_message_count,
+                )
+                .map_err(|error| error.to_string())
+        })?;
+        // Listeners may read through this same Session facade. Its non-reentrant
+        // filesystem/deletion boundary and the DB connection are both released.
+        Ok(publication.publish())
+    }
+
+    pub fn release_session_work_admission(
+        &self,
+        agent_id: &str,
+        expected_lifecycle_revision: &str,
+        work_id: &str,
+    ) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let Some(mut record) = owner
+                .read_session_work_admission()
+                .map_err(|error| error.to_string())?
+            else {
+                return Ok(false);
+            };
+            if record.lifecycle_revision != expected_lifecycle_revision
+                || record.admitted_work_id.as_deref() != Some(work_id)
+            {
+                return Ok(false);
+            }
+            record.admitted_work_id = None;
+            owner
+                .compare_and_set_session_work_admission(
+                    Some(expected_lifecycle_revision),
+                    &record,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
 
     pub fn set_agent_sand_profile(
         &self,
         agent_id: &str,
         profile: &SandProfile,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_sand_profile(profile)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_sand_profile(profile)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn mark_agent_activity(&self, agent_id: &str, at: f64) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .mark_activity(at)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .mark_activity(at)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_unread_state(&self, agent_id: &str) -> Result<UnreadState, String> {
@@ -1508,9 +3513,11 @@ impl ProductionSessionWorkers {
         at: f64,
         preserve_manual_unread: bool,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .mark_viewed(at, preserve_manual_unread)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .mark_viewed(at, preserve_manual_unread)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn set_agent_unread(
@@ -1519,13 +3526,15 @@ impl ProductionSessionWorkers {
         unread: bool,
         at: f64,
     ) -> Result<bool, String> {
-        let owner = self.open_agent_db_owner(agent_id)?;
-        if unread {
-            owner.mark_unread(at)
-        } else {
-            owner.mark_read(at)
-        }
-        .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            if unread {
+                owner.mark_unread(at)
+            } else {
+                owner.mark_read(at)
+            }
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_introduction_pending(&self, agent_id: &str) -> Result<bool, String> {
@@ -1539,9 +3548,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         pending: bool,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_introduction_pending(pending)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_introduction_pending(pending)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_automation_spend_guard_state(
@@ -1558,9 +3569,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: &SpendGuardState,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_automation_spend_guard_state(state)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_automation_spend_guard_state(state)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_conversation_partner_ids(
@@ -1577,9 +3590,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         partner_id: &str,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .add_conversation_partner(partner_id)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .add_conversation_partner(partner_id)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_newest_divider_anchor_timestamp_ms(
@@ -1605,9 +3620,11 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         state: Option<&AwaitingUserResponse>,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_awaiting_user_response(state)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_awaiting_user_response(state)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn set_agent_awaiting_user_response_for_tab(
@@ -1617,9 +3634,11 @@ impl ProductionSessionWorkers {
         state: Option<&AwaitingUserResponse>,
         if_since_before: Option<f64>,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_awaiting_user_response_for_tab(tab_id, state, if_since_before)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn record_agent_request_id(
@@ -1630,9 +3649,11 @@ impl ProductionSessionWorkers {
         prompt: Option<&str>,
         source: Option<&str>,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .record_request_id(request_id, at, prompt, source)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_request_id(request_id, at, prompt, source)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn record_agent_episode_turn(
@@ -1640,9 +3661,30 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         turn: &EpisodeTurn,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .record_episode_turn(turn)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .record_episode_turn(turn)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn get_agent_pending_episode_turns(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<EpisodeTurn>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .get_pending_episode_turns()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn clear_agent_pending_episode_turns(&self, agent_id: &str) -> Result<bool, String> {
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_pending_episode_turns()
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_memory_prompt_snapshot(
@@ -1659,15 +3701,190 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_memory_prompt_snapshot(snapshot)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_memory_prompt_snapshot(snapshot)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_memory_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .clear_memory_prompt_snapshot()
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    fn restore_memory_records(
+        store: &FileMemoryStore,
+        records: &[MemoryRecoveryRecord],
+    ) -> Result<(), String> {
+        store
+            .restore_records_exact(records)
             .map_err(|error| error.to_string())
+    }
+
+    fn prepare_memory_mutation(
+        owner: &SandAgentDb,
+        operation: &str,
+        records: Vec<MemoryRecoveryRecord>,
+        prior_snapshot: Option<MemoryPromptSnapshot>,
+    ) -> Result<PendingMemoryMutation, String> {
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "memory mutation requires a session admission".to_string())?;
+        let mutation = PendingMemoryMutation {
+            mutation_id: format!("memory-{operation}:{}", Uuid::new_v4()),
+            operation: operation.to_string(),
+            session_key: admission.session_key,
+            session_id: admission.session_id,
+            lifecycle_revision: admission.lifecycle_revision,
+            records,
+            prior_snapshot,
+        };
+        if !owner
+            .prepare_pending_memory_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("memory mutation could not establish its durable journal".into());
+        }
+        Ok(mutation)
+    }
+
+    fn rollback_memory_mutation(
+        owner: &SandAgentDb,
+        store: &FileMemoryStore,
+        mutation: &PendingMemoryMutation,
+    ) -> Result<(), String> {
+        Self::restore_memory_records(store, &mutation.records)?;
+        if !owner
+            .clear_pending_memory_mutation(mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("memory mutation journal could not be cleared after rollback".into());
+        }
+        Ok(())
+    }
+
+    pub fn write_agent_memory(
+        &self,
+        agent_id: &str,
+        content: &str,
+        tier: MemoryTier,
+    ) -> StateWriteResult {
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let store = self.memory_service.store_for_agent(agent_id);
+            let payload = match tier {
+                MemoryTier::Note => format!("{MEMORY_NOTE_PREFIX}{}", content.trim()),
+                MemoryTier::Profile | MemoryTier::Log => content.trim().to_string(),
+            };
+            let kind = match tier {
+                MemoryTier::Profile => MemoryKind::Profile,
+                MemoryTier::Note | MemoryTier::Log => MemoryKind::Log,
+            };
+            store
+                .add_memory(&payload, chrono::Utc::now().timestamp_millis(), kind)
+                .map_err(|error| error.to_string())
+        });
+        match result {
+            Ok(Some(record)) => StateWriteResult::success(format!(
+                "Remembered in agent memory ({}): {}",
+                match tier {
+                    MemoryTier::Profile => "profile",
+                    MemoryTier::Note => "note",
+                    MemoryTier::Log => "log",
+                },
+                record.content
+            )),
+            Ok(None) => StateWriteResult::failure(
+                "nothing was saved to agent memory - the fact was empty or already recorded.",
+            ),
+            Err(error) => StateWriteResult::failure(format!("could not update agent memory: {error}")),
+        }
+    }
+
+    pub fn remove_agent_memory(&self, agent_id: &str, memory_id: &str) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let prior_snapshot = owner
+                .get_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())?;
+            let store = self.memory_service.store_for_agent(agent_id);
+            let previous = store
+                .list_memories(usize::MAX)
+                .into_iter()
+                .find(|record| record.id == memory_id);
+            let Some(previous) = previous else {
+                return Ok(false);
+            };
+            let mutation = Self::prepare_memory_mutation(
+                &owner,
+                "remove",
+                store.snapshot_for_recovery(&[previous.clone()]),
+                prior_snapshot,
+            )?;
+            let removed = match store.remove_memory(memory_id) {
+                Ok(removed) => removed,
+                Err(error) => {
+                    Self::rollback_memory_mutation(&owner, &store, &mutation)
+                        .map_err(|rollback| format!("memory remove failed: {error}; {rollback}"))?;
+                    return Err(error.to_string());
+                }
+            };
+            if !removed {
+                Self::rollback_memory_mutation(&owner, &store, &mutation)?;
+                return Ok(false);
+            }
+            match owner.commit_pending_memory_mutation(&mutation) {
+                Ok(true) => Ok(true),
+                Ok(false) => {
+                    Self::rollback_memory_mutation(&owner, &store, &mutation)
+                        .map_err(|rollback| format!("memory settlement was rejected; {rollback}"))?;
+                    Err("memory settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "memory settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
+        })
+    }
+
+    pub fn clear_agent_memories(&self, agent_id: &str) -> Result<(), String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let prior_snapshot = owner
+                .get_memory_prompt_snapshot()
+                .map_err(|error| error.to_string())?;
+            let store = self.memory_service.store_for_agent(agent_id);
+            let previous = store.snapshot_for_recovery(&store.list_memories(usize::MAX));
+            let mutation = Self::prepare_memory_mutation(
+                &owner,
+                "clear",
+                previous,
+                prior_snapshot,
+            )?;
+            if let Err(error) = store.clear_memories() {
+                Self::rollback_memory_mutation(&owner, &store, &mutation)
+                    .map_err(|rollback| format!("memory clear failed: {error}; {rollback}"))?;
+                return Err(error.to_string());
+            }
+            match owner.commit_pending_memory_mutation(&mutation) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_memory_mutation(&owner, &store, &mutation)
+                        .map_err(|rollback| format!("memory settlement was rejected; {rollback}"))?;
+                    Err("memory settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "memory settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
+        })
     }
 
     pub fn get_agent_profile_prompt_snapshot(
@@ -1684,21 +3901,48 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         snapshot: &serde_json::Value,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .set_agent_profile_prompt_snapshot(snapshot)
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .set_agent_profile_prompt_snapshot(snapshot)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_profile_prompt_snapshot(&self, agent_id: &str) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .clear_agent_profile_prompt_snapshot()
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_agent_profile_prompt_snapshot()
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_transient_state(&self, agent_id: &str) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .clear_transient_state()
-            .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            self.open_agent_db_owner_locked(agent_id)?
+                .clear_transient_state()
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Commit a pure transcript plan against the existing owner's transaction.
+    /// Keep the planner free of I/O, owner calls and pending-work mutations.
+    /// Publication is deliberately outside the non-reentrant Session lock.
+    pub(crate) fn commit_agent_transcript_entries<T>(
+        &self,
+        agent_id: &str,
+        session_key: Option<&str>,
+        expected_lifecycle_revision: Option<&str>,
+        planner: impl FnOnce(&[serde_json::Value])
+            -> Result<(T, Vec<serde_json::Value>), String>,
+    ) -> Result<T, AgentDbProjectionError> {
+        let committed = self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            Ok(owner.commit_transcript_entries(
+                session_key, expected_lifecycle_revision, planner,
+            ))
+        }).map_err(AgentDbProjectionError::WorkAdmissionInvalid)??;
+        Ok(committed.publish())
     }
 
     pub fn append_agent_transcript_entries(
@@ -1706,9 +3950,189 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entries: &[serde_json::Value],
     ) -> Result<usize, String> {
-        self.open_agent_db_owner(agent_id)?
-            .append_transcript_entries(entries)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_transcript_entries(entries)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn append_agent_transcript_entries_if_session_admitted(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        entries: &[serde_json::Value],
+    ) -> Result<usize, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_transcript_entries_if_session_admitted(session_key, entries)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    /// Keep owner open, one-time preparation and append inside the existing
+    /// non-reentrant filesystem/admission boundary. The DB owner preserves the
+    /// attempt's original binding and returns the durable outcome directly.
+    pub fn append_channel_inbound_entries(
+        &self,
+        agent_id: &str,
+        attempt: &mut Option<ChannelInboundAppendAttempt>,
+        prepare: impl FnOnce(
+            &SessionWorkAdmissionRecord,
+            &[serde_json::Value],
+        ) -> Result<Vec<serde_json::Value>, ChannelInboundAppendFailure>,
+    ) -> ChannelInboundAppendOutcome {
+        let result = self.with_agent_filesystem_mutation(agent_id, || {
+            if self.is_agent_being_deleted(agent_id) {
+                return Ok((ChannelInboundAppendOutcome::NotWritten(ChannelInboundAppendFailure {
+                    kind: ChannelInboundAppendFailureKind::Admission,
+                    detail: "channel append rejected while agent deletion owns cleanup".into(),
+                }), None));
+            }
+            let cached = self.db_owners.lock()
+                .map_err(|_| "agent db owner map poisoned".to_string())?
+                .get(&SessionDbOwnerKey::Agent(agent_id.to_string())).cloned();
+            if cached.as_ref().is_some_and(|owner| owner.is_closed()) {
+                return Ok((ChannelInboundAppendOutcome::NotWritten(ChannelInboundAppendFailure {
+                    kind: ChannelInboundAppendFailureKind::Closed,
+                    detail: "channel append owner is closed".into(),
+                }), None));
+            }
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            Ok(owner.append_channel_inbound_entries_deferred(attempt, prepare))
+        });
+        match result {
+            Ok((outcome, publication)) => {
+                if let Some(publication) = publication {
+                    publication.publish();
+                }
+                outcome
+            }
+            Err(detail) => ChannelInboundAppendOutcome::NotWritten(ChannelInboundAppendFailure {
+                kind: ChannelInboundAppendFailureKind::Storage,
+                detail,
+            }),
+        }
+    }
+
+    /// Append room-owned transcript state while the caller already holds the
+    /// per-agent filesystem/admission boundary. This keeps external producers
+    /// from reacquiring the non-reentrant mutation lock.
+    pub(crate) fn append_agent_transcript_entries_locked(
+        &self,
+        agent_id: &str,
+        session_key: Option<&str>,
+        entries: &[serde_json::Value],
+    ) -> Result<usize, String> {
+        self.assert_agent_transcript_write_admission_locked(agent_id)?;
+        let owner = self.open_agent_db_owner_locked(agent_id)?;
+        match session_key {
+            Some(session_key) => owner
+                .append_transcript_entries_if_session_admitted(session_key, entries)
+                .map_err(|error| error.to_string()),
+            None => owner
+                .append_transcript_entries(entries)
+                .map_err(|error| error.to_string()),
+        }
+    }
+
+    pub fn append_agent_spend_guard_card_if_session_admitted(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        entry: &serde_json::Value,
+        state: &SpendGuardState,
+        activity_at: f64,
+    ) -> Result<bool, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_spend_guard_card_if_session_admitted(
+                    session_key,
+                    entry,
+                    state,
+                    activity_at,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn append_agent_transcript_entries_and_release_media(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        entries: &[serde_json::Value],
+        expected_lifecycle_revision: &str,
+        media_work_id: &str,
+    ) -> Result<usize, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .append_transcript_entries_and_release_media(
+                    entries,
+                    session_key,
+                    expected_lifecycle_revision,
+                    media_work_id,
+                )
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn commit_agent_compaction(
+        &self,
+        agent_id: &str,
+        commit: &CompactionCommit,
+    ) -> Result<CompactionCommitOutcome, String> {
+        self.commit_agent_compaction_with_cancellation(agent_id, commit, &|| false)
+    }
+
+    /// Cancellation is checked only after acquiring each canonical owner lock.
+    /// The reader must not block, panic, or reenter Session/DB methods.
+    pub fn commit_agent_compaction_with_cancellation(
+        &self,
+        agent_id: &str,
+        commit: &CompactionCommit,
+        should_cancel: &dyn Fn() -> bool,
+    ) -> Result<CompactionCommitOutcome, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            if should_cancel() {
+                return Ok(CompactionCommitOutcome::RejectedCancelled);
+            }
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .commit_compaction_with_cancellation(commit, should_cancel)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn read_agent_compacted_transcript_entries(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<serde_json::Value>, String> {
+        let mut entries = self
+            .open_agent_db_owner(agent_id)?
+            .get_compacted_transcript_entries()
+            .map_err(|error| error.to_string())?;
+        hide_session_work_receipts(&mut entries);
+        Ok(entries)
+    }
+
+    /// Read the canonical compacted replay through the strict typed transcript
+    /// boundary. Unsupported rows are rejected before any inference owner can
+    /// serialize them into provider text.
+    pub fn read_agent_typed_compacted_transcript_entries(
+        &self,
+        agent_id: &str,
+    ) -> Result<Vec<TypedReplayEntry>, String> {
+        let entries = self.read_agent_compacted_transcript_entries(agent_id)?;
+        if !entries.iter().any(|entry| {
+            entry.get("kind").and_then(serde_json::Value::as_str) == Some("compaction")
+        }) {
+            return Ok(Vec::new());
+        }
+        project_typed_replay_entries(&entries).map_err(|error| error.to_string())
     }
 
     pub fn update_agent_transcript_entry(
@@ -1717,9 +4141,27 @@ impl ProductionSessionWorkers {
         entry_id: &str,
         next: &serde_json::Value,
     ) -> Result<Option<serde_json::Value>, String> {
-        self.open_agent_db_owner(agent_id)?
-            .update_transcript_entry(entry_id, next)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .update_transcript_entry(entry_id, next)
+                .map_err(|error| error.to_string())
+        })
+    }
+
+    pub fn update_agent_transcript_entry_if_session_admitted(
+        &self,
+        agent_id: &str,
+        session_key: &str,
+        entry_id: &str,
+        next: &serde_json::Value,
+    ) -> Result<Option<serde_json::Value>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .update_transcript_entry_if_session_admitted(session_key, entry_id, next)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn delete_agent_transcript_entry(
@@ -1727,23 +4169,35 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         entry_id: &str,
     ) -> Result<bool, String> {
-        self.open_agent_db_owner(agent_id)?
-            .delete_transcript_entry(entry_id)
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            self.open_agent_db_owner_locked(agent_id)?
+                .delete_transcript_entry(entry_id)
+                .map_err(|error| error.to_string())
+        })
     }
 
     pub fn clear_agent_conversation(&self, agent_id: &str) -> Result<bool, String> {
-        let store = self.create_agent_blob_store(agent_id)?;
-        let db_path = self.existing_session_db_path(agent_id)?;
-        futures::executor::block_on(self.pool.clear_blobs(
-            agent_id,
-            &store.blob_db_path,
-            store.legacy_blob_db_path.as_deref(),
-        ))
-        .map_err(|error| error.to_string())?;
-        self.open_agent_db_owner(agent_id)?
-            .clear_conversation()
-            .map_err(|error| error.to_string())
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_transcript_write_admission_locked(agent_id)?;
+            // Validate and retain the existing owner before deleting the
+            // canonical blob. Reopening it afterwards would reject the root
+            // that this very clear operation has just removed.
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let store = self.create_agent_blob_store(agent_id)?;
+            self.existing_session_db_path(agent_id)?;
+            futures::executor::block_on(self.pool.clear_blobs(
+                agent_id,
+                &store.blob_db_path,
+                store.legacy_blob_db_path.as_deref(),
+            ))
+            .map_err(|error| error.to_string())?;
+            let cleared = owner.clear_conversation().map_err(|error| error.to_string())?;
+            if cleared {
+                self.close_agent_store_owner_locked(agent_id, false);
+            }
+            Ok(cleared)
+        })
     }
 
     pub fn expire_pending_auto_review_approvals(
@@ -1751,13 +4205,14 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         only_request_id: Option<&str>,
     ) -> Result<Vec<String>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        expire_pending_auto_review_approval_entries(
-            &db_path,
-            self.busy_timeout_ms,
-            only_request_id,
-        )
-        .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            expire_pending_auto_review_approval_entries(
+                owner.as_ref(),
+                only_request_id,
+            )
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn expire_pending_local_tool_permission_asks(
@@ -1766,14 +4221,15 @@ impl ProductionSessionWorkers {
         only_request_id: Option<&str>,
         if_pending_before_ms: Option<f64>,
     ) -> Result<Vec<String>, String> {
-        let db_path = self.existing_session_db_path(agent_id)?;
-        expire_pending_local_tool_permission_ask_entries(
-            &db_path,
-            self.busy_timeout_ms,
-            only_request_id,
-            if_pending_before_ms,
-        )
-        .map_err(|error| error.to_string())
+        self.with_agent_admitted_filesystem_mutation(agent_id, || {
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            expire_pending_local_tool_permission_ask_entries(
+                owner.as_ref(),
+                only_request_id,
+                if_pending_before_ms,
+            )
+            .map_err(|error| error.to_string())
+        })
     }
 
     pub fn get_agent_profile_text(
@@ -1781,10 +4237,66 @@ impl ProductionSessionWorkers {
         agent_id: &str,
     ) -> Result<Option<SandAgentProfile>, String> {
         let db_path = self.session_db_path(agent_id)?;
+        if db_path.is_file() {
+            let _owner = self.open_agent_db_owner(agent_id)?;
+        }
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
         Ok(read_agent_profile_text(agent_dir))
+    }
+
+    fn prepare_profile_mutation(
+        owner: &SandAgentDb,
+        operation: &str,
+        before_files: Vec<ProfileFileSnapshot>,
+        next_profile: Option<SandProfile>,
+    ) -> Result<PendingProfileMutation, String> {
+        let admission = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "profile mutation requires a session admission".to_string())?;
+        let previous_profile = owner
+            .get_sand_profile()
+            .map_err(|error| error.to_string())?;
+        let mutation = PendingProfileMutation {
+            mutation_id: format!("profile-{}:{}", operation, Uuid::new_v4()),
+            operation: operation.to_string(),
+            session_key: admission.session_key,
+            session_id: admission.session_id,
+            lifecycle_revision: admission.lifecycle_revision,
+            before_files,
+            after_files: Vec::new(),
+            previous_profile,
+            next_profile,
+        };
+        if !owner
+            .prepare_pending_profile_mutation(&mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("profile mutation could not establish its durable journal".into());
+        }
+        Ok(mutation)
+    }
+
+    fn rollback_profile_mutation(
+        owner: &SandAgentDb,
+        agent_dir: &Path,
+        mutation: &PendingProfileMutation,
+    ) -> Result<(), String> {
+        if !profile_mutation_files_match(agent_dir, &mutation.before_files) {
+            if !profile_mutation_files_match(agent_dir, &mutation.after_files) {
+                return Err("profile mutation rollback found an unknown file state".into());
+            }
+            restore_profile_mutation_files(agent_dir, &mutation.before_files)?;
+        }
+        if !owner
+            .clear_pending_profile_mutation(mutation)
+            .map_err(|error| error.to_string())?
+        {
+            return Err("profile mutation journal could not be cleared after rollback".into());
+        }
+        Ok(())
     }
 
     pub fn update_agent_profile(
@@ -1797,39 +4309,115 @@ impl ProductionSessionWorkers {
         let agent_dir = db_path
             .parent()
             .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        write_agent_profile_update(agent_dir, update)
-            .map_err(|error| error.to_string())?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let before_files = capture_profile_mutation_files(agent_dir, true)?;
+            let mutation = Self::prepare_profile_mutation(
+                &owner,
+                "profile-update",
+                before_files,
+                None,
+            )?;
+            if let Err(error) = write_agent_profile_update(agent_dir, update) {
+                Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                    .map_err(|rollback| format!("profile update failed: {error}; {rollback}"))?;
+                return Err(error.to_string());
+            }
+            let mut sealed = mutation.clone();
+            sealed.after_files = capture_profile_mutation_files(agent_dir, true)?;
+            match owner.seal_pending_profile_mutation(&sealed) {
+                Ok(true) => {}
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                        .map_err(|rollback| format!("profile mutation seal rejected; {rollback}"))?;
+                    return Err("profile mutation seal was rejected by the session owner".into());
+                }
+                Err(error) => {
+                    return Err(format!(
+                        "profile mutation seal outcome unknown; journal retained for recovery: {error}"
+                    ));
+                }
+            }
+            match owner.commit_pending_profile_mutation(&sealed) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &sealed)
+                        .map_err(|rollback| format!("profile settlement was rejected; {rollback}"))?;
+                    Err("profile settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "profile settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
+        })?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
+    }
+
+    pub fn update_agent_profile_fields(
+        &self,
+        agent_id: &str,
+        name: Option<&str>,
+        description: Option<&str>,
+    ) -> Result<(), String> {
+        let current = self
+            .get_agent_profile_text(agent_id)?
+            .unwrap_or_else(|| SandAgentProfile {
+                name: String::new(),
+                description: String::new(),
+                title: String::new(),
+                avatar_shape: String::new(),
+                avatar_color: String::new(),
+            });
+        let update = AgentProfileUpdate {
+            name: name.unwrap_or(&current.name).to_string(),
+            description: description.unwrap_or(&current.description).to_string(),
+            title: Some(current.title),
+            avatar_shape: Some(current.avatar_shape),
+            avatar_color: Some(current.avatar_color),
+        };
+        self.update_agent_profile(agent_id, &update, None)?;
+        Ok(())
     }
 
     pub fn get_agent_avatar(
         &self,
         agent_id: &str,
     ) -> Result<AgentAvatarResponse, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        let agent_dir = db_path
-            .parent()
-            .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        Ok(get_profile_avatar(
-            agent_dir,
-            &db_path,
-            self.busy_timeout_ms,
-        ))
+        self.with_agent_filesystem_mutation(agent_id, || {
+            let db_path = self.session_db_path(agent_id)?;
+            if db_path.is_file() {
+                let _owner = self.open_agent_db_owner_locked(agent_id)?;
+            }
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            Ok(get_profile_avatar(
+                agent_dir,
+                &db_path,
+                self.busy_timeout_ms,
+            ))
+        })
     }
 
     pub fn get_agent_avatar_png(
         &self,
         agent_id: &str,
     ) -> Result<Option<Vec<u8>>, String> {
-        let db_path = self.session_db_path(agent_id)?;
-        let agent_dir = db_path
-            .parent()
-            .ok_or_else(|| "agent database has no parent directory".to_string())?;
-        Ok(get_profile_avatar_png(
-            agent_dir,
-            &db_path,
-            self.busy_timeout_ms,
-        ))
+        self.with_agent_filesystem_mutation(agent_id, || {
+            let db_path = self.session_db_path(agent_id)?;
+            if db_path.is_file() {
+                let _owner = self.open_agent_db_owner_locked(agent_id)?;
+            }
+            let agent_dir = db_path
+                .parent()
+                .ok_or_else(|| "agent database has no parent directory".to_string())?;
+            Ok(get_profile_avatar_png(
+                agent_dir,
+                &db_path,
+                self.busy_timeout_ms,
+            ))
+        })
     }
 
     pub fn set_agent_avatar_bytes(
@@ -1839,7 +4427,67 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
         let db_path = self.existing_session_db_path(agent_id)?;
-        mutate_agent_avatar_bytes(&db_path, self.busy_timeout_ms, png_bytes)?;
+        let agent_dir = db_path
+            .parent()
+            .ok_or_else(|| "agent database has no parent directory".to_string())?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.assert_agent_work_admission_locked(agent_id)?;
+            let owner = self.open_agent_db_owner_locked(agent_id)?;
+            let before_files = capture_profile_mutation_files(agent_dir, false)?;
+            let previous_profile = owner
+                .get_sand_profile()
+                .map_err(|error| error.to_string())?;
+            let next_profile = png_bytes.is_none().then(|| SandProfile {
+                description: previous_profile.description.clone(),
+                avatar_path: None,
+            });
+            let mutation = Self::prepare_profile_mutation(
+                &owner,
+                if png_bytes.is_some() {
+                    "avatar-replace"
+                } else {
+                    "avatar-remove"
+                },
+                before_files,
+                next_profile,
+            )?;
+            if let Err(error) = mutate_agent_avatar_bytes(
+                &db_path,
+                self.busy_timeout_ms,
+                png_bytes,
+                |_| Ok(()),
+            ) {
+                Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                    .map_err(|rollback| format!("avatar mutation failed: {error}; {rollback}"))?;
+                return Err(error);
+            }
+            let mut sealed = mutation.clone();
+            sealed.after_files = capture_profile_mutation_files(agent_dir, false)?;
+            match owner.seal_pending_profile_mutation(&sealed) {
+                Ok(true) => {}
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &mutation)
+                        .map_err(|rollback| format!("avatar mutation seal rejected; {rollback}"))?;
+                    return Err("avatar mutation seal was rejected by the session owner".into());
+                }
+                Err(error) => {
+                    return Err(format!(
+                        "avatar mutation seal outcome unknown; journal retained for recovery: {error}"
+                    ));
+                }
+            }
+            match owner.commit_pending_profile_mutation(&sealed) {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    Self::rollback_profile_mutation(&owner, agent_dir, &sealed)
+                        .map_err(|rollback| format!("avatar settlement was rejected; {rollback}"))?;
+                    Err("avatar settlement was rejected by the session owner".into())
+                }
+                Err(error) => Err(format!(
+                    "avatar settlement outcome unknown; journal retained for recovery: {error}"
+                )),
+            }
+        })?;
         self.summarize_agent_by_id(agent_id, active_agent_id)
     }
 
@@ -1856,10 +4504,6 @@ impl ProductionSessionWorkers {
             .get("participantIds")
             .and_then(serde_json::Value::as_array)
             .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id))))
-    }
-
-    fn native_conversation_owner_key(conversation_id: &str) -> String {
-        format!("conversation:{conversation_id}")
     }
 
     fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
@@ -2069,6 +4713,11 @@ impl ProductionSessionWorkers {
             "reactions".into(),
             serde_json::Value::Array(projected_reactions),
         );
+        let admitted_session_key = owner
+            .read_session_work_admission()
+            .map_err(|error| error.to_string())?
+            .map(|record| record.session_key)
+            .filter(|value| !value.trim().is_empty());
         let existing = owner
             .get_transcript_entries()
             .map_err(|error| error.to_string())?;
@@ -2085,16 +4734,26 @@ impl ProductionSessionWorkers {
             if current == &entry {
                 return Ok(current.clone());
             }
-            return owner
-                .update_transcript_entry(
-                    entry
-                        .get("id")
-                        .and_then(serde_json::Value::as_str)
-                        .ok_or_else(|| "remote Human message projection omitted its id".to_string())?,
-                    &entry,
-                )
-                .map_err(|error| error.to_string())?
-                .ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
+            let entry_id = entry
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .map(ToOwned::to_owned)
+                .ok_or_else(|| "remote Human message projection omitted its id".to_string())?;
+            let updated = if let Some(session_key) = admitted_session_key.as_deref() {
+                entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+                owner
+                    .update_transcript_entry_if_session_admitted(
+                        session_key,
+                        &entry_id,
+                        &entry,
+                    )
+                    .map_err(|error| error.to_string())?
+            } else {
+                owner
+                    .update_transcript_entry(&entry_id, &entry)
+                    .map_err(|error| error.to_string())?
+            };
+            return updated.ok_or_else(|| "remote Human message could not be durably refreshed".to_string());
         }
         if let Some(client_nonce) = entry.get("clientNonce").and_then(serde_json::Value::as_str) {
             if let Some(current) = existing.iter().find(|candidate| {
@@ -2119,13 +4778,41 @@ impl ProductionSessionWorkers {
                 ) {
                     return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
                 }
-                return owner
-                    .settle_transcript_entry_identity(current_id, &entry)
-                    .map_err(|error| error.to_string())?
-                    .ok_or_else(|| "local Human message disappeared before remote identity settlement".to_string());
+                let settled = if let Some(session_key) = admitted_session_key.as_deref() {
+                    entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+                    owner
+                        .settle_transcript_entry_identity_if_session_admitted(
+                            session_key,
+                            current_id,
+                            &entry,
+                        )
+                        .map_err(|error| error.to_string())?
+                } else {
+                    owner
+                        .settle_transcript_entry_identity(current_id, &entry)
+                        .map_err(|error| error.to_string())?
+                };
+                return settled.ok_or_else(|| {
+                    "local Human message disappeared before remote identity settlement".to_string()
+                });
             }
         }
-        if !owner
+        if let Some(session_key) = admitted_session_key {
+            entry["sessionKey"] = serde_json::Value::String(session_key.clone());
+            if owner
+                .append_transcript_entries_if_session_admitted(&session_key, &[entry.clone()])
+                .map_err(|error| error.to_string())?
+                == 0
+            {
+                let replay = owner
+                    .get_transcript_entries()
+                    .map_err(|error| error.to_string())?
+                    .into_iter()
+                    .find(|candidate| candidate.get("id") == entry.get("id"))
+                    .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
+                return Ok(replay);
+            }
+        } else if !owner
             .append_transcript_entry(&entry)
             .map_err(|error| error.to_string())?
         {
@@ -2137,9 +4824,12 @@ impl ProductionSessionWorkers {
                 .ok_or_else(|| "remote Human message was not durably materialized".to_string())?;
             return Ok(replay);
         }
-        let _ = owner
+        if !owner
             .set_metadata("lastActivityAt", serde_json::json!(timestamp_ms))
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| error.to_string())?
+        {
+            return Err("remote Human message activity metadata was not durably updated".into());
+        }
         Ok(entry)
     }
 
@@ -2373,7 +5063,7 @@ impl ProductionSessionWorkers {
         self.db_owners
             .lock()
             .map_err(|_| "conversation db owner map poisoned".to_string())?
-            .insert(Self::native_conversation_owner_key(&conversation_id), Arc::clone(&owner));
+            .insert(SessionDbOwnerKey::Human(conversation_id.clone()), Arc::clone(&owner));
         Ok(serde_json::json!({
             "id": conversation_id,
             "kind": "human",
@@ -2391,7 +5081,7 @@ impl ProductionSessionWorkers {
         if !db_path.is_file() {
             return Err(format!("Human conversation missing: {conversation_id}"));
         }
-        let key = Self::native_conversation_owner_key(conversation_id);
+        let key = SessionDbOwnerKey::Human(conversation_id.to_string());
         let mut owners = self
             .db_owners
             .lock()
@@ -3017,13 +5707,23 @@ impl ProductionSessionWorkers {
         conversation_id: &str,
         agent_id: &str,
         stream_id: &str,
+        session_key: Option<&str>,
         content: &str,
         completed_at_ms: f64,
     ) -> Result<serde_json::Value, String> {
-        let local_human_id = self.local_human_id()?;
         let conversation_id = conversation_id.trim();
         let agent_id = agent_id.trim();
         let stream_id = stream_id.trim();
+        let session_key = match session_key {
+            Some(value) => {
+                let value = value.trim();
+                if value.is_empty() {
+                    return Err("Human handoff Agent result session key must be non-empty".into());
+                }
+                Some(value)
+            }
+            None => None,
+        };
         let content = content.trim();
         if conversation_id.is_empty()
             || agent_id.is_empty()
@@ -3035,6 +5735,49 @@ impl ProductionSessionWorkers {
                     .into(),
             );
         }
+
+        let append = || {
+            self.append_human_agent_message_to_conversation(
+                conversation_id,
+                agent_id,
+                stream_id,
+                session_key,
+                content,
+                completed_at_ms,
+            )
+        };
+        if let Some(session_key) = session_key {
+            // The session key belongs to the source Agent. Keep its lifecycle
+            // boundary through the destination commit; the Human transcript
+            // must never acquire the Agent's admission record.
+            self.with_agent_filesystem_mutation(agent_id, || {
+                self.assert_agent_transcript_write_admission_locked(agent_id)?;
+                let admission = self
+                    .read_session_work_admission_locked(agent_id)?
+                    .ok_or_else(|| {
+                        "Human handoff Agent result requires source session admission"
+                            .to_string()
+                    })?;
+                if admission.session_key != session_key {
+                    return Err("Human handoff Agent result source session key mismatch".into());
+                }
+                append()
+            })
+        } else {
+            append()
+        }
+    }
+
+    fn append_human_agent_message_to_conversation(
+        &self,
+        conversation_id: &str,
+        agent_id: &str,
+        stream_id: &str,
+        session_key: Option<&str>,
+        content: &str,
+        completed_at_ms: f64,
+    ) -> Result<serde_json::Value, String> {
+        let local_human_id = self.local_human_id()?;
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         let is_participant = metadata
@@ -3059,12 +5802,37 @@ impl ProductionSessionWorkers {
             let same_stream =
                 entry.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                if let Some(expected_session_key) = session_key {
+                    if let Some(actual_session_key) = entry
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        if actual_session_key != expected_session_key {
+                            return Err(
+                                "Human handoff stream already identifies a different session key"
+                                    .into(),
+                            );
+                        }
+                    } else {
+                        let mut enriched = entry.clone();
+                        enriched["sessionKey"] = serde_json::Value::String(
+                            expected_session_key.to_string(),
+                        );
+                        return owner
+                            .update_transcript_entry(&entry_id, &enriched)
+                            .map_err(|error| error.to_string())?
+                            .ok_or_else(|| {
+                                "Human handoff Agent result disappeared during provenance settlement"
+                                    .to_string()
+                            });
+                    }
+                }
                 return Ok(entry.clone());
             }
             return Err("Human handoff stream already identifies different Agent content".into());
         }
 
-        let entry = serde_json::json!({
+        let mut entry = serde_json::json!({
             "id": entry_id,
             "kind": "message",
             "role": "assistant",
@@ -3076,10 +5844,13 @@ impl ProductionSessionWorkers {
             "timestampMs": completed_at_ms,
             "delivery": "sent",
         });
-        if !owner
+        if let Some(session_key) = session_key {
+            entry["sessionKey"] = serde_json::Value::String(session_key.to_string());
+        }
+        let inserted = owner
             .append_transcript_entry(&entry)
-            .map_err(|error| error.to_string())?
-        {
+            .map_err(|error| error.to_string())?;
+        if !inserted {
             let replay = owner
                 .get_transcript_entries()
                 .map_err(|error| error.to_string())?
@@ -3093,6 +5864,31 @@ impl ProductionSessionWorkers {
             let same_stream =
                 replay.get("sourceStreamId").and_then(serde_json::Value::as_str) == Some(stream_id);
             if same_agent && same_content && same_stream {
+                if let Some(expected_session_key) = session_key {
+                    if let Some(actual_session_key) = replay
+                        .get("sessionKey")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        if actual_session_key != expected_session_key {
+                            return Err(
+                                "Human handoff stream already identifies a different session key"
+                                    .into(),
+                            );
+                        }
+                    } else {
+                        let mut enriched = replay.clone();
+                        enriched["sessionKey"] = serde_json::Value::String(
+                            expected_session_key.to_string(),
+                        );
+                        return owner
+                            .update_transcript_entry(&entry_id, &enriched)
+                            .map_err(|error| error.to_string())?
+                            .ok_or_else(|| {
+                                "Human handoff Agent result disappeared during replay provenance settlement"
+                                    .to_string()
+                            });
+                    }
+                }
                 return Ok(replay);
             }
             return Err("Human handoff stream already identifies different Agent content".into());
@@ -3184,10 +5980,21 @@ impl ProductionSessionWorkers {
             "reactions".into(),
             serde_json::Value::Array(projected_reactions),
         );
-        owner
-            .update_transcript_entry(entry_id, &next)
-            .map_err(|error| error.to_string())?
-            .ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())
+        let updated = if let Some(session_key) = next
+            .get("sessionKey")
+            .and_then(serde_json::Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            owner
+                .update_transcript_entry_if_session_admitted(session_key, entry_id, &next)
+                .map_err(|error| error.to_string())?
+        } else {
+            owner
+                .update_transcript_entry(entry_id, &next)
+                .map_err(|error| error.to_string())?
+        };
+        updated.ok_or_else(|| "Human reaction target disappeared before durable settlement".to_string())
     }
 
     pub fn search_human_messages(
@@ -3267,12 +6074,21 @@ impl ProductionSessionWorkers {
         active_agent_id: Option<&str>,
     ) -> Result<Vec<AgentSummary>, String> {
         let is_deleting = |agent_id: &str| self.is_agent_being_deleted(agent_id);
+        let open_agent_owner = |agent_id: &str| self.open_agent_db_owner_locked(agent_id);
+        let with_agent_mutation: &dyn for<'a> Fn(
+            &'a str,
+            Box<dyn FnOnce() -> Result<Option<AgentSummary>, String> + 'a>,
+        ) -> Result<Option<AgentSummary>, String> = &|agent_id, operation| {
+            self.with_agent_filesystem_mutation(agent_id, operation)
+        };
         list_agents(
             &self.agents_root,
             self.busy_timeout_ms,
             active_agent_id,
             &is_deleting,
             &self.roster_extras_cache,
+            &open_agent_owner,
+            with_agent_mutation,
         )
     }
 
@@ -3281,7 +6097,23 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         active_agent_id: Option<&str>,
     ) -> Result<Option<AgentSummary>, String> {
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.summarize_agent_by_id_locked(agent_id, active_agent_id)
+        })
+    }
+
+    fn summarize_agent_by_id_locked(
+        &self,
+        agent_id: &str,
+        active_agent_id: Option<&str>,
+    ) -> Result<Option<AgentSummary>, String> {
         let is_deleting = |candidate: &str| self.is_agent_being_deleted(candidate);
+        let owner = self
+            .session_db_path(agent_id)
+            .ok()
+            .filter(|path| path.is_file())
+            .map(|_| self.open_agent_db_owner_locked(agent_id))
+            .transpose()?;
         summarize_agent_by_id(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -3289,6 +6121,7 @@ impl ProductionSessionWorkers {
             active_agent_id,
             &is_deleting,
             &self.roster_extras_cache,
+            owner.as_deref(),
         )
     }
 
@@ -3315,6 +6148,23 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<PreparedAgentBlobStore>, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
+        self.with_agent_filesystem_mutation(agent_id, || {
+            self.prepare_existing_agent_locked(agent_id)
+        })
+    }
+
+    fn prepare_existing_agent_locked(
+        &self,
+        agent_id: &str,
+    ) -> Result<Option<PreparedAgentBlobStore>, String> {
+        if !self.session_db_path(agent_id)?.is_file() {
+            return Ok(None);
+        }
+        // Check durable metadata/root before materialization repair or pending
+        // recovery can write files, journals or admission state.
+        let db_owner = self.open_agent_db_owner_locked(agent_id)?;
+        let store = self.create_agent_blob_store(agent_id)?;
         let Some(materialized) = open_existing_session(
             &self.agents_root,
             self.busy_timeout_ms,
@@ -3324,22 +6174,44 @@ impl ProductionSessionWorkers {
         else {
             return Ok(None);
         };
-        let db_owner = self.open_agent_db_owner(agent_id)?;
-        let store = self.create_agent_blob_store(agent_id)?;
         let session_db_path = materialized.db_path.clone();
 
-        let recovered_root = recover_conversation_root_if_missing(
-            Arc::clone(&self.pool),
-            agent_id,
-            &session_db_path,
-            &store.blob_db_path,
-            self.busy_timeout_ms,
-        )?;
+        // Only a persisted, explicitly empty root may enter legacy repair.
+        // Missing or malformed metadata is not a new empty conversation.
+        let persisted_root = db_owner.read_checkpoint_root_checked()
+            .map_err(|error| error.to_string())?;
+        let recovered_root = if persisted_root.is_none() {
+            recover_conversation_root_if_missing(
+                Arc::clone(&self.pool),
+                agent_id,
+                &session_db_path,
+                &store.blob_db_path,
+                self.busy_timeout_ms,
+                db_owner.as_ref(),
+            )?
+        } else {
+            false
+        };
+        if recovered_root {
+            let cached_store = self.agent_store_owners.lock()
+                .map_err(|_| "agent store owner map poisoned".to_string())?
+                .get(agent_id).cloned();
+            if let Some(cached_store) = cached_store {
+                // Repair advanced durable None to a root: refresh before the
+                // normal re-entry guard compares its prior empty snapshot.
+                cached_store.reset_from_db_checked()?;
+            }
+        }
+        let agent_store = self.open_agent_store_owner_locked(agent_id)?;
+        let persisted_root_blob_id = agent_store.checkpoint_snapshot_checked()?
+            .map(|snapshot| snapshot.root_blob_id)
+            .unwrap_or_default();
         if recovered_root {
             let _ = sync_recovered_profile_name(
                 &session_db_path,
                 self.busy_timeout_ms,
                 &materialized.profile.name,
+                db_owner.as_ref(),
             )?;
         }
         let recovery_turns = if recovered_root {
@@ -3366,6 +6238,7 @@ impl ProductionSessionWorkers {
                 &session_db_path,
                 self.busy_timeout_ms,
                 &recovery_turns,
+                db_owner.as_ref(),
             )?;
         }
         let recovery_outline = recovery_turns
@@ -3376,10 +6249,8 @@ impl ProductionSessionWorkers {
             &session_db_path,
             self.busy_timeout_ms,
             &recovery_outline,
+            db_owner.as_ref(),
         )?;
-        let persisted_root_blob_id = db_owner
-            .get_latest_root_blob_id()
-            .map_err(|error| error.to_string())?;
         let session_state = db_owner
             .serde_snapshot()
             .map_err(|error| error.to_string())?;
@@ -3410,6 +6281,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
         let _ = retire_legacy_store_blobs_once(
             Arc::clone(&self.pool),
@@ -3417,6 +6289,7 @@ impl ProductionSessionWorkers {
             &session_db_path,
             &store.blob_db_path,
             self.busy_timeout_ms,
+            db_owner.as_ref(),
         )?;
 
         let prepared = PreparedAgentBlobStore {
@@ -3509,6 +6382,395 @@ impl ProductionSessionWorkers {
 
 
 #[cfg(test)]
+mod original_turn_terminal_tests {
+    use super::*;
+    use rusqlite::{OptionalExtension, params};
+    use serde_json::json;
+    use crate::extensions::session::agent_db::{
+        CanonicalTurnCommitRecord, OriginalTurnScope, StoredCompletedTerminal,
+        ORIGINAL_TURN_TERMINAL_KEY,
+    };
+    use crate::extensions::session::agent_db_recovery::{
+        AUTOMATION_CUSTODY_UNAVAILABLE_KV, automation_custody_recovery_marker_path,
+    };
+    use crate::extensions::session::agent_db_schema::{GET_KV_SQL, SET_KV_SQL};
+
+    struct Fixture {
+        root: PathBuf,
+        workers: ProductionSessionWorkers,
+        original: OriginalTurnReference,
+        root_id: Vec<u8>,
+    }
+
+    impl Fixture {
+        fn new(label: &str) -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "fabushi-original-terminal-facade-{label}-{}", Uuid::new_v4(),
+            ));
+            let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 0);
+            let materialized = workers.materialize_new_session(None, "user", None).unwrap();
+            let admission = workers.read_session_work_admission(&materialized.id).unwrap().unwrap();
+            let original = OriginalTurnReference {
+                version: 1,
+                scope: OriginalTurnScope::NativeOrdinaryUserV1,
+                agent_id: materialized.id.clone(),
+                session_key: admission.session_key,
+                session_id: materialized.id,
+                original_lifecycle_revision: admission.lifecycle_revision,
+                stream_id: "original-stream".into(),
+                input_digest: "a".repeat(64),
+                client_nonce: Some("original-nonce".into()),
+                user_message_id: "original-user".into(),
+                echo_entry_id: "original-user".into(),
+                request_source: None,
+                provider: "fabushi".into(),
+                model_id: "resolved-native-model".into(),
+            };
+            let db = workers.open_agent_db_owner(&original.agent_id).unwrap();
+            assert!(db.append_transcript_entry(&json!({
+                "id": original.user_message_id, "kind": "message", "role": "user",
+                "content": "original durable user text", "sessionKey": original.session_key,
+                "clientNonce": original.client_nonce, "isStreaming": false,
+            })).unwrap());
+            let store = workers.open_agent_store_owner(&original.agent_id).unwrap();
+            // A real empty protobuf checkpoint gives this facade a nonempty
+            // content-addressed root and actual user confirmation. Neutral
+            // records below are storage data, never Runner completion proofs.
+            let root_id = store.handle_checkpoint_bytes_and_confirm_user_message_blocking(
+                &[], &original.user_message_id,
+            ).unwrap();
+            Self { root, workers, original, root_id }
+        }
+
+        fn db_path(&self) -> PathBuf {
+            self.workers.session_db_path(&self.original.agent_id).unwrap()
+        }
+
+        fn raw_db(&self) -> rusqlite::Connection {
+            rusqlite::Connection::open(self.db_path()).unwrap()
+        }
+
+        fn raw_kv(&self, key: &str) -> Option<String> {
+            self.raw_db().query_row(GET_KV_SQL, params![key], |row| row.get(0)).optional().unwrap()
+        }
+
+        fn rows(&self) -> (Vec<(String, String)>, Vec<(i64, String, String)>) {
+            let db = self.raw_db();
+            let mut statement = db.prepare("SELECT key, value FROM kv ORDER BY key").unwrap();
+            let kv = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+                .unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap();
+            let mut statement = db.prepare("SELECT seq, id, entry FROM transcript_entries ORDER BY seq").unwrap();
+            let entries = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+                .unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap();
+            (kv, entries)
+        }
+
+        fn record(&self, view: &OriginalTurnTerminalView) -> OriginalTurnTerminalRecord {
+            OriginalTurnTerminalRecord {
+                version: 1,
+                original: self.original.clone(),
+                terminal: StoredCompletedTerminal::Completed,
+                final_result_sha256: [7; 32],
+                sent_message_count: 0,
+                reacted: false,
+                custody_json: "{}".into(),
+                canonical: vec![CanonicalTurnCommitRecord {
+                    ordinal: 0,
+                    request_id: self.original.stream_id.clone(),
+                    message_id: self.original.user_message_id.clone(),
+                    prior_root_blob_id: None,
+                    root_blob_id: view.checkpoint.root_blob_id.clone(),
+                    user_blob_id: vec![2; 32],
+                    turn_blob_id: vec![3; 32],
+                    step_blob_ids: vec![vec![4; 32]],
+                    assistant_result_sha256: [7; 32],
+                }],
+                settlement_lifecycle_revision: view.settlement_lifecycle_revision.clone(),
+                compaction: view.compaction.clone(),
+            }
+        }
+
+        fn publish(&self) -> OriginalTurnTerminalRecord {
+            let view = self.workers.prepare_original_turn_terminal_view(&self.original, &self.root_id).unwrap();
+            let record = self.record(&view);
+            assert_eq!(self.workers.commit_original_turn_terminal_record(&view, &record).unwrap(),
+                OriginalTurnReceiptCommit::Inserted);
+            record
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            self.workers.shutdown();
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn checked_facade_reopens_actual_worker_blob_and_preserves_source_bytes() {
+        let fixture = Fixture::new("reopen");
+        let record = fixture.publish();
+        let before = fixture.rows();
+        let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+        assert_ne!(owner.read_metadata().unwrap()["lifecycleRevision"].as_str().unwrap(),
+            fixture.original.original_lifecycle_revision);
+        drop(owner);
+        fixture.workers.shutdown_with_checkpoint();
+        let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+        let read = restarted.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        assert_eq!(read.record, record);
+        assert_eq!(read.view.original_user_content, "original durable user text");
+        assert_eq!(read.view.checkpoint.root_blob_id, fixture.root_id);
+        assert_eq!(read.view.store.get_blob(&fixture.root_id).unwrap(), Some(Vec::new()));
+        restarted.recheck_original_turn_terminal_read(&read).unwrap();
+        let second = restarted.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        restarted.recheck_original_turn_terminal_read(&second).unwrap();
+        assert_eq!(second.record, record);
+        assert_eq!(fixture.rows(), before);
+        restarted.shutdown();
+    }
+
+    #[test]
+    fn final_facade_recheck_refuses_changed_slot_user_and_canonical_root() {
+        for field in ["slot", "user", "root"] {
+            let fixture = Fixture::new(field);
+            fixture.publish();
+            let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+            match field {
+                "slot" => { fixture.raw_db().execute("UPDATE kv SET value = value || ' ' WHERE key = ?1",
+                    params![ORIGINAL_TURN_TERMINAL_KEY]).unwrap(); }
+                "user" => { fixture.raw_db().execute("UPDATE transcript_entries SET entry = entry || ' ' WHERE id = ?1",
+                    params![fixture.original.user_message_id]).unwrap(); }
+                "root" => {
+                    // Actual generated field 17: self_summary_count = 1.
+                    let changed_root = read.view.store.handle_checkpoint_bytes_blocking(&[0x88, 0x01, 0x01]).unwrap();
+                    assert_ne!(changed_root, fixture.root_id);
+                }
+                _ => unreachable!(),
+            }
+            let changed = fixture.rows();
+            assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err(), "{field}");
+            assert!(fixture.workers.commit_original_turn_terminal_record(&read.view, &read.record).is_err(), "{field}");
+            assert_eq!(fixture.rows(), changed);
+        }
+    }
+
+    #[test]
+    fn reopened_owner_or_mutated_candidate_cannot_reuse_an_old_view() {
+        let fixture = Fixture::new("retired-view");
+        fixture.publish();
+        let mut read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        let before = fixture.rows();
+        read.record.reacted = true;
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        read.record.reacted = false;
+        assert!(fixture.workers.retire_agent_owners(&fixture.original.agent_id, true).unwrap());
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        let current = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        fixture.workers.recheck_original_turn_terminal_read(&current).unwrap();
+        assert!(!Arc::ptr_eq(&read.view.store, &current.view.store));
+        assert_eq!(fixture.rows(), before);
+    }
+
+    #[test]
+    fn strict_first_open_retains_pending_recovery_inputs_for_the_ordinary_owner() {
+        for kind in ["memory", "profile", "media"] {
+            let fixture = Fixture::new(kind);
+            fixture.publish();
+            let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+            let mut pending_media_path = None;
+            let mut retained_media_path = None;
+            let (key, raw) = match kind {
+                "memory" => ("pendingExternalMemoryMutation", serde_json::to_string(&PendingMemoryMutation {
+                    mutation_id: "pending-memory".into(), operation: "clear".into(),
+                    session_key: fixture.original.session_key.clone(), session_id: fixture.original.session_id.clone(),
+                    lifecycle_revision: fixture.original.original_lifecycle_revision.clone(),
+                    records: Vec::new(), prior_snapshot: owner.get_memory_prompt_snapshot().unwrap(),
+                }).unwrap()),
+                "profile" => {
+                    let files = capture_profile_mutation_files(fixture.db_path().parent().unwrap(), true).unwrap();
+                    ("pendingExternalProfileMutation", serde_json::to_string(&PendingProfileMutation {
+                        mutation_id: "pending-profile".into(), operation: "profile-update".into(),
+                        session_key: fixture.original.session_key.clone(), session_id: fixture.original.session_id.clone(),
+                        lifecycle_revision: fixture.original.original_lifecycle_revision.clone(),
+                        before_files: files.clone(), after_files: files,
+                        previous_profile: owner.get_sand_profile().unwrap(), next_profile: None,
+                    }).unwrap())
+                }
+                "media" => {
+                    let media_path = fixture.db_path().parent().unwrap()
+                        .join("attachments").join("pending-original-turn.bin");
+                    fs::create_dir_all(media_path.parent().unwrap()).unwrap();
+                    fs::write(&media_path, b"owned pending original-turn media").unwrap();
+                    let retained_path = media_path.with_file_name("unrelated-original-turn.bin");
+                    fs::write(&retained_path, b"unrelated retained media").unwrap();
+                    retained_media_path = Some(retained_path);
+                    fixture.workers.capture_session_media_admission(
+                        &fixture.original.agent_id, &fixture.original.session_key,
+                        "pending-media", Some(&media_path),
+                    ).unwrap();
+                    let admission = owner.read_session_work_admission().unwrap().unwrap();
+                    assert_eq!(admission.admitted_media_work_id.as_deref(), Some("pending-media"));
+                    assert_eq!(admission.admitted_media_paths,
+                        vec![media_path.to_str().unwrap().to_string()]);
+                    pending_media_path = Some(media_path);
+                    ("sessionWorkAdmission", serde_json::to_string(&admission).unwrap())
+                }
+                _ => unreachable!(),
+            };
+            drop(owner);
+            fixture.workers.shutdown_with_checkpoint();
+            if kind != "media" {
+                fixture.raw_db().execute(SET_KV_SQL, params![key, raw]).unwrap();
+            }
+            assert_eq!(fixture.raw_kv(key).as_deref(), Some(raw.as_str()));
+            let before = fixture.rows();
+            let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+            assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err(), "{kind}");
+            assert!(restarted.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).is_err(), "{kind}");
+            assert_eq!(fixture.rows(), before, "strict inspection cannot recover {kind}");
+            assert_eq!(fixture.raw_kv(key).as_deref(), Some(raw.as_str()));
+            if let Some(media_path) = &pending_media_path {
+                assert_eq!(fs::read(media_path).unwrap(), b"owned pending original-turn media");
+                assert_eq!(fs::read(retained_media_path.as_ref().unwrap()).unwrap(), b"unrelated retained media");
+            }
+            // This is the existing ordinary recovery owner, deliberately
+            // called only after the strict path has retained the input.
+            let ordinary = restarted.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+            if kind == "media" {
+                let admission = ordinary.read_session_work_admission().unwrap().unwrap();
+                assert!(admission.admitted_media_work_id.is_none());
+                assert!(admission.admitted_media_paths.is_empty());
+                assert!(!pending_media_path.as_ref().unwrap().exists());
+                assert_eq!(fs::read(retained_media_path.as_ref().unwrap()).unwrap(), b"unrelated retained media");
+            } else {
+                assert!(ordinary.read_kv(key).unwrap().is_none());
+            }
+            restarted.shutdown();
+        }
+    }
+
+    #[test]
+    fn strict_and_ordinary_first_open_retain_unknown_media_without_durable_paths() {
+        let fixture = Fixture::new("unknown-media-no-paths");
+        fixture.publish();
+        let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+        let mut admission = owner.read_session_work_admission().unwrap().unwrap();
+        assert!(admission.admitted_media_work_id.is_none());
+        assert!(admission.admitted_media_paths.is_empty());
+        admission.admitted_media_work_id = Some("unknown-pending-media".into());
+        let raw = serde_json::to_string(&admission).unwrap();
+        drop(owner);
+        fixture.workers.shutdown_with_checkpoint();
+        fixture.raw_db().execute(SET_KV_SQL, params!["sessionWorkAdmission", raw]).unwrap();
+        let before = fixture.rows();
+        let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+        for _ in 0..2 {
+            assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err());
+            assert!(restarted.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).is_err());
+            assert_eq!(fixture.rows(), before, "strict inspection must retain unknown media custody");
+            let error = restarted.open_agent_db_owner(&fixture.original.agent_id)
+                .err().expect("unknown media custody must not be cleared by ordinary open");
+            assert_eq!(error, "pending outgoing media has no durable materialized paths");
+            assert_eq!(fixture.rows(), before);
+            assert_eq!(fixture.raw_kv("sessionWorkAdmission").as_deref(), Some(raw.as_str()));
+            assert_eq!(restarted.active_agent_db_owner_count(), 0,
+                "failed inspection or recovery cannot cache an unrecovered owner");
+        }
+        restarted.shutdown();
+    }
+
+    #[test]
+    fn recovery_markers_block_the_facade_before_an_absent_slot() {
+        let fixture = Fixture::new("marker-before-none");
+        let view = fixture.workers.prepare_original_turn_terminal_view(&fixture.original, &fixture.root_id).unwrap();
+        let record = fixture.record(&view);
+        let marker = automation_custody_recovery_marker_path(&fixture.db_path());
+        fs::write(&marker, []).unwrap();
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(fixture.workers.commit_original_turn_terminal_record(&view, &record).is_err());
+        assert!(fixture.raw_kv(ORIGINAL_TURN_TERMINAL_KEY).is_none());
+        fs::remove_file(&marker).unwrap();
+        fixture.raw_db().execute(SET_KV_SQL, params![AUTOMATION_CUSTODY_UNAVAILABLE_KV, "malformed marker"]).unwrap();
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert_eq!(fixture.raw_kv(AUTOMATION_CUSTODY_UNAVAILABLE_KV).as_deref(), Some("malformed marker"));
+        assert!(fixture.raw_kv(ORIGINAL_TURN_TERMINAL_KEY).is_none());
+    }
+
+    #[test]
+    fn strict_facade_open_does_not_rebuild_corruption() {
+        let fixture = Fixture::new("no-corruption-recovery");
+        fixture.publish();
+        fixture.workers.shutdown_with_checkpoint();
+        let db_path = fixture.db_path();
+        let damaged = b"not a sqlite database: retain the original bytes";
+        fs::write(&db_path, damaged).unwrap();
+        let restarted = ProductionSessionWorkers::with_agents_root(fixture.root.join("agents"), 0);
+        assert!(restarted.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert_eq!(fs::read(&db_path).unwrap(), damaged);
+        assert!(!automation_custody_recovery_marker_path(&db_path).exists());
+        restarted.shutdown();
+    }
+
+    #[test]
+    fn actual_facade_clear_handles_a_nonempty_canonical_root_and_retires_cache() {
+        let fixture = Fixture::new("clear");
+        fixture.publish();
+        let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        assert!(!read.view.checkpoint.root_blob_id.is_empty());
+        assert_eq!(fixture.workers.active_agent_store_owner_count(), 1);
+        assert!(fixture.workers.clear_agent_conversation(&fixture.original.agent_id).unwrap());
+        assert!(fixture.raw_kv(ORIGINAL_TURN_TERMINAL_KEY).is_none());
+        assert_eq!(fixture.workers.active_agent_store_owner_count(), 0);
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        let store = fixture.workers.open_agent_store_owner(&fixture.original.agent_id).unwrap();
+        assert!(store.checkpoint_snapshot_checked().unwrap().is_none());
+        let owner = fixture.workers.open_agent_db_owner(&fixture.original.agent_id).unwrap();
+        assert!(owner.get_transcript_entries().unwrap().is_empty());
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().is_none());
+    }
+
+    #[test]
+    fn failed_clear_keeps_sql_evidence_and_cannot_acknowledge_removed_blobs() {
+        let fixture = Fixture::new("clear-failure");
+        fixture.publish();
+        let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        fixture.raw_db().execute_batch(
+            "CREATE TRIGGER terminal_refuse_clear BEFORE DELETE ON kv
+             WHEN OLD.key = 'original-routed-terminal:current'
+             BEGIN SELECT RAISE(ABORT, 'clear refused'); END;",
+        ).unwrap();
+        let before = fixture.rows();
+        assert!(fixture.workers.clear_agent_conversation(&fixture.original.agent_id).is_err());
+        assert_eq!(fixture.rows(), before);
+        // The existing clear order spans two stores: blob deletion can have
+        // happened before the SQLite failure. No cross-store rollback or
+        // successful terminal acknowledgment is inferred from retained rows.
+        assert!(read.view.store.get_blob(&fixture.root_id).unwrap().is_none());
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+    }
+
+    #[test]
+    fn deletion_boundary_and_missing_directory_cannot_recreate_terminal_authority() {
+        let fixture = Fixture::new("delete");
+        fixture.publish();
+        let read = fixture.workers.read_original_turn_terminal_candidate(&fixture.original).unwrap().unwrap();
+        fixture.workers.begin_agent_delete(&fixture.original.agent_id).unwrap();
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(fixture.workers.recheck_original_turn_terminal_read(&read).is_err());
+        fixture.workers.retire_agent_owners(&fixture.original.agent_id, false).unwrap();
+        let directory = fixture.db_path().parent().unwrap().to_path_buf();
+        fixture.workers.with_agent_filesystem_mutation(&fixture.original.agent_id, || {
+            fs::remove_dir_all(&directory).map_err(|error| error.to_string())
+        }).unwrap();
+        fixture.workers.clear_agent_delete_fast_path(&fixture.original.agent_id);
+        assert!(fixture.workers.read_original_turn_terminal_candidate(&fixture.original).is_err());
+        assert!(!directory.exists());
+    }
+}
+
+#[cfg(test)]
 mod sharebox_shipping_tests {
     use super::*;
 
@@ -3594,6 +6856,113 @@ mod sharebox_shipping_tests {
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
         restarted.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[cfg(test)]
+#[path = "production_fresh_append_tests.rs"]
+mod fresh_append_tests;
+
+#[cfg(test)]
+mod plugin_skills_admission_tests {
+    use super::*;
+    use crate::extensions::mcp::plugin_skills::{
+        LoadedPlugins, PluginSkillsLoader, SandPluginSkillsService,
+    };
+    use serde_json::{Value, json};
+    use std::sync::Weak;
+
+    struct Loader(LoadedPlugins);
+
+    impl PluginSkillsLoader for Loader {
+        fn load(&self) -> Result<LoadedPlugins, String> {
+            Ok(self.0.clone())
+        }
+    }
+
+    fn service(root: &Path, blocked: bool) -> SandPluginSkillsService {
+        let loaded: LoadedPlugins = serde_json::from_value(json!({
+            "plugins":[],
+            "authBlocked": if blocked { vec![json!({"pluginId":"9", "pluginName":"Private"})] }
+                else { Vec::<Value>::new() },
+            "listedPluginIds": if blocked { vec!["9"] } else { Vec::<&str>::new() },
+            "listedCacheKeys":[], "publisherFacts":{}, "currentUserId":12
+        })).unwrap();
+        let service = SandPluginSkillsService::new(root, Arc::new(Loader(loaded)));
+        assert!(service.sync("real-forwarder-fixture").unwrap().is_empty());
+        service
+    }
+
+    #[test]
+    fn first_bind_same_arc_and_non_overwriting_rebind_preserve_real_owner_decisions() {
+        let root = std::env::temp_dir().join(format!("fabushi-plugin-forward-bind-{}", Uuid::new_v4()));
+        let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        assert!(!workers.plugin_skills_admission.is_denied("9"), "standalone unbound behavior");
+        let owner = service(&root, true);
+        let reader = owner.admission_reader();
+        assert!(reader.is_denied("9"));
+        workers.bind_plugin_skills_admission(Arc::clone(&reader)).unwrap();
+        workers.bind_plugin_skills_admission(owner.admission_reader()).unwrap();
+        let unrelated = service(&root.join("unrelated"), false);
+        assert!(!unrelated.admission_reader().is_denied("9"));
+        assert!(workers.bind_plugin_skills_admission(unrelated.admission_reader()).is_err());
+        assert!(workers.plugin_skills_admission.is_denied("9"));
+        assert!(!workers.plugin_skills_admission.is_denied("10"));
+        let slot = workers.plugin_skills_admission.reader.lock().unwrap();
+        assert!(Arc::ptr_eq(slot.as_ref().unwrap(), &reader));
+        drop(slot);
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    struct LockObservingReader {
+        forwarding: Weak<SessionPluginSkillsAdmission>,
+        delegate: PluginSkillsAdmissionReader,
+    }
+
+    impl PluginSkillsAdmissionQuery for LockObservingReader {
+        fn is_denied(&self, plugin_id: &str) -> bool {
+            let forwarding = self.forwarding.upgrade().unwrap();
+            let slot = forwarding.reader.try_lock();
+            assert!(slot.is_ok(), "forwarding must release its slot before calling the real owner");
+            drop(slot);
+            self.delegate.is_denied(plugin_id)
+        }
+    }
+
+    #[test]
+    fn forwarding_releases_its_slot_before_querying_the_real_owner() {
+        let root = std::env::temp_dir().join(format!("fabushi-plugin-forward-unlock-{}", Uuid::new_v4()));
+        let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        let owner = service(&root, true);
+        let observer: PluginSkillsAdmissionReader = Arc::new(LockObservingReader {
+            forwarding: Arc::downgrade(&workers.plugin_skills_admission),
+            delegate: owner.admission_reader(),
+        });
+        workers.bind_plugin_skills_admission(observer).unwrap();
+        assert!(workers.plugin_skills_admission.is_denied("9"));
+        assert!(!workers.plugin_skills_admission.is_denied("10"));
+        workers.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn poisoned_forwarding_slot_refuses_queries_and_rebinding() {
+        let root = std::env::temp_dir().join(format!("fabushi-plugin-forward-poison-{}", Uuid::new_v4()));
+        let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+        let owner = service(&root, true);
+        workers.bind_plugin_skills_admission(owner.admission_reader()).unwrap();
+        assert!(!workers.plugin_skills_admission.is_denied("10"));
+        let poisoned = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _slot = workers.plugin_skills_admission.reader.lock().unwrap();
+            panic!("deliberately poison the actual forwarding slot");
+        }));
+        assert!(poisoned.is_err());
+        assert!(workers.plugin_skills_admission.is_denied("9"));
+        assert!(workers.plugin_skills_admission.is_denied("10"), "poison must not become an empty refusal set");
+        assert!(workers.bind_plugin_skills_admission(owner.admission_reader()).is_err());
+        workers.shutdown();
         let _ = fs::remove_dir_all(root);
     }
 }

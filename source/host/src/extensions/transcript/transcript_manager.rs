@@ -35,6 +35,7 @@ use crate::extensions::trays::trays_service::PushErrorOptions;
 use crate::extensions::turn_execution::turn_execution_service::{
     TurnExecutionError, TurnExecutionRegistry, TurnExecutor,
 };
+use crate::storage::agent_paths::assert_valid_sand_agent_id;
 
 use super::ack_obligations::AckObligations;
 use super::automation_runtime::{AutomationRuntime, automation_records_value};
@@ -149,6 +150,7 @@ pub struct TranscriptManager {
     handoff_service: Mutex<Option<BoxHandoffService>>,
     shared_rooms: Arc<SharedRooms>,
     services: Mutex<Option<TranscriptManagerServices>>,
+    upgrade_handoff_lock: Mutex<()>,
     automation_config_changed_observer: Mutex<Option<AutomationConfigChangedObserver>>,
     channel_config_changed_observer: Arc<Mutex<Option<ChannelConfigChangedObserver>>>,
     listener_connect_observer: Mutex<Option<ListenerConnectObserver>>,
@@ -205,6 +207,7 @@ impl TranscriptManager {
             handoff_service: Mutex::new(None),
             shared_rooms,
             services: Mutex::new(None),
+            upgrade_handoff_lock: Mutex::new(()),
             automation_config_changed_observer: Mutex::new(None),
             channel_config_changed_observer,
             listener_connect_observer: Mutex::new(None),
@@ -430,8 +433,7 @@ impl TranscriptManager {
             .map_err(|_| "transcript pending-wake mutex poisoned".to_string())?
             .clone()
             .ok_or_else(|| "transcript pending-wake runtime is not configured".to_string())?;
-        owner.rearm_pending_wakes();
-        Ok(())
+        owner.rearm_pending_wakes_checked().map_err(|error| error.to_string())
     }
 
     pub fn restore_recreate_pending_wakes(&self, carried: &[Value]) -> Result<usize, String> {
@@ -704,8 +706,9 @@ impl TranscriptManager {
                 .ok_or_else(|| format!("{method} requires {name}"))
         };
         match method {
-            "getAgentMemories" => Some(required("id").map(|agent_id| {
-                Value::Array(
+            "getAgentMemories" => Some(required("id").and_then(|agent_id| {
+                assert_valid_sand_agent_id(agent_id).map_err(|error| error.to_string())?;
+                Ok(Value::Array(
                     self.session_workers
                         .memory_service()
                         .list(agent_id)
@@ -722,28 +725,15 @@ impl TranscriptManager {
                             })
                         })
                         .collect(),
-                )
+                ))
             })),
             "deleteAgentMemory" => Some(required("id").and_then(|agent_id| {
                 let memory_id = required("memoryId")?;
-                let removed = self
-                    .session_workers
-                    .memory_service()
-                    .remove(agent_id, memory_id)
-                    .map_err(|error| error.to_string())?;
-                if removed {
-                    self.session_workers
-                        .clear_agent_memory_prompt_snapshot(agent_id)?;
-                }
+                let removed = self.session_workers.remove_agent_memory(agent_id, memory_id)?;
                 Ok(Value::Bool(removed))
             })),
             "clearAgentMemories" => Some(required("id").and_then(|agent_id| {
-                self.session_workers
-                    .memory_service()
-                    .clear(agent_id)
-                    .map_err(|error| error.to_string())?;
-                self.session_workers
-                    .clear_agent_memory_prompt_snapshot(agent_id)?;
+                self.session_workers.clear_agent_memories(agent_id)?;
                 Ok(Value::Null)
             })),
             _ => None,
@@ -869,27 +859,40 @@ impl TranscriptManager {
         self.transcript_runtime.recreate_carry_pending_wakes()
     }
 
-    pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
+    pub fn quiesce_for_upgrade(&self) -> Result<UpgradeQuiesceSummary, String> {
         if let Some(services) = self.production_services() {
             services.trace_flusher.flush_tracing();
         }
+        // Serialize durable preparation and the cancellation request with
+        // explicit resume. The registry request cancels live tasks, so it
+        // cannot safely be issued before a fallible durable handoff.
+        let _handoff = self.upgrade_handoff_lock.lock()
+            .map_err(|_| "Transcript upgrade handoff lock is poisoned".to_string())?;
+        let summary = self.transcript_runtime.quiesce_for_upgrade()?;
         self.runner_registry.request_quiesce_for_upgrade();
-        self.transcript_runtime.quiesce_for_upgrade()
+        Ok(summary)
     }
 
     pub fn is_quiescing_for_upgrade(&self) -> bool {
         self.transcript_runtime.is_quiescing_for_upgrade()
     }
 
-    pub fn mark_upgrade_resume_pending(&self, marker: UpgradeResumeMarker) {
-        if let Some(store) = self.transcript_runtime.upgrade_resume_store() {
-            store.mark_pending(marker);
-        }
+    pub fn mark_upgrade_resume_pending(&self, marker: UpgradeResumeMarker) -> Result<(), String> {
+        self.mark_upgrade_resume_batch_pending(&[marker])
     }
 
-    pub fn resume_after_recreate(&self) {
+    pub fn mark_upgrade_resume_batch_pending(&self, markers: &[UpgradeResumeMarker]) -> Result<(), String> {
+        let store = self.transcript_runtime.upgrade_resume_store()
+            .ok_or_else(|| "upgrade resume marker store is unavailable".to_string())?;
+        store.mark_pending_batch_checked(markers).map_err(|error| error.to_string())
+    }
+
+    pub fn resume_after_recreate(&self) -> Result<(), String> {
+        let _handoff = self.upgrade_handoff_lock.lock()
+            .map_err(|_| "Transcript upgrade handoff lock is poisoned".to_string())?;
         self.runner_registry.cancel_quiesce_for_upgrade();
         self.transcript_runtime.resume_after_recreate();
+        Ok(())
     }
 
     pub fn is_disposed(&self) -> bool {
@@ -902,6 +905,13 @@ impl TranscriptManager {
         if self.disposed.swap(true, Ordering::AcqRel) {
             return;
         }
+
+        // Revoke inbound tickets before downstream disposal can invoke a late
+        // readiness callback. This queue object must never reopen.
+        self.background_wakes
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .close();
 
         self.set_agent_run_lifecycle_observer(None);
         self.set_automation_config_changed_observer(None);
@@ -934,10 +944,10 @@ impl TranscriptManager {
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .take();
-        *self
-            .background_wakes
+        self.background_wakes
             .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner()) = BackgroundWakes::default();
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .close();
         *self
             .client_side_tool_v2
             .lock()

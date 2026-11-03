@@ -1,6 +1,7 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -9,6 +10,8 @@ pub const PLUGIN_SKILLS_DIRNAME: &str = "plugin-skills";
 pub const PLUGIN_SKILLS_CACHE_FILENAME: &str = "cache.json";
 pub const AGENT_READABLE_SKILL_DIR_MODE: u32 = 0o755;
 pub const AGENT_READABLE_SKILL_FILE_MODE: u32 = 0o644;
+const PLUGIN_SKILLS_CACHE_FORMAT_VERSION: u64 = 1;
+static NEXT_CACHE_STAGE: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -48,6 +51,41 @@ pub struct PluginSkillsCacheWriteIndex {
     pub current_user_id: Option<Option<u64>>,
     pub skills: Vec<Value>,
     pub auth_blocked: Option<Vec<PluginAuthBlock>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PluginSkillsAdmission {
+    LegacyUnblocked,
+    LegacyAmbiguous,
+    Canonical,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct PluginSkillsSnapshot {
+    pub(crate) index: PluginSkillsCache,
+    admission: PluginSkillsAdmission,
+}
+
+impl PluginSkillsSnapshot {
+    pub(crate) fn eligible_skills(&self) -> impl Iterator<Item = &PluginSkillRecord> {
+        self.index.skills.iter().filter(|record| match self.admission {
+            PluginSkillsAdmission::LegacyUnblocked => true,
+            PluginSkillsAdmission::LegacyAmbiguous => false,
+            PluginSkillsAdmission::Canonical => !self
+                .index
+                .auth_blocked
+                .iter()
+                .any(|block| block.plugin_id == record.plugin_id),
+        })
+    }
+
+    pub(crate) fn canonical_auth_blocked(&self) -> &[PluginAuthBlock] {
+        if self.admission == PluginSkillsAdmission::Canonical {
+            &self.index.auth_blocked
+        } else {
+            &[]
+        }
+    }
 }
 
 pub fn get_plugins_root_dir(sand_root: impl AsRef<Path>) -> PathBuf {
@@ -145,8 +183,18 @@ fn parse_auth_block(value: &Value) -> Option<PluginAuthBlock> {
 }
 
 pub fn read_plugin_skills_cache(cache_dir: impl AsRef<Path>) -> Option<PluginSkillsCache> {
+    read_plugin_skills_snapshot(cache_dir).map(|snapshot| snapshot.index)
+}
+
+pub(crate) fn read_plugin_skills_snapshot(
+    cache_dir: impl AsRef<Path>,
+) -> Option<PluginSkillsSnapshot> {
     let text = fs::read_to_string(get_plugin_skills_cache_path(cache_dir)).ok()?;
     let value: Value = serde_json::from_str(&text).ok()?;
+    parse_plugin_skills_snapshot(&value)
+}
+
+fn parse_plugin_skills_snapshot(value: &Value) -> Option<PluginSkillsSnapshot> {
     let record = value.as_object()?;
     let fetched_at = record.get("fetchedAt")?.as_f64()?;
     if !fetched_at.is_finite() {
@@ -157,28 +205,41 @@ pub fn read_plugin_skills_cache(cache_dir: impl AsRef<Path>) -> Option<PluginSki
     for value in raw_skills {
         skills.push(parse_skill(value)?);
     }
-    let auth_blocked = match record.get("authBlocked").and_then(Value::as_array) {
-        Some(values) => {
-            let mut parsed = Vec::with_capacity(values.len());
-            let mut valid = true;
-            for value in values {
-                match parse_auth_block(value) {
-                    Some(value) => parsed.push(value),
-                    None => {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-            if valid { parsed } else { Vec::new() }
-        }
-        None => Vec::new(),
+    let canonical = match record.get("cacheFormatVersion") {
+        None => false,
+        Some(value) if value.as_u64() == Some(PLUGIN_SKILLS_CACHE_FORMAT_VERSION) => true,
+        Some(_) => return None,
     };
-    Some(PluginSkillsCache {
-        fetched_at,
-        current_user_id: positive_id(record.get("currentUserId")),
-        skills,
-        auth_blocked,
+    let auth_blocked = match record.get("authBlocked") {
+        None if !canonical => Vec::new(),
+        Some(Value::Array(values)) => values
+            .iter()
+            .map(parse_auth_block)
+            .collect::<Option<Vec<_>>>()?,
+        _ => return None,
+    };
+    if canonical
+        && auth_blocked
+            .iter()
+            .any(|block| block.plugin_id.is_empty() || block.plugin_id.trim() != block.plugin_id)
+    {
+        return None;
+    }
+    let admission = if canonical {
+        PluginSkillsAdmission::Canonical
+    } else if auth_blocked.is_empty() {
+        PluginSkillsAdmission::LegacyUnblocked
+    } else {
+        PluginSkillsAdmission::LegacyAmbiguous
+    };
+    Some(PluginSkillsSnapshot {
+        index: PluginSkillsCache {
+            fetched_at,
+            current_user_id: positive_id(record.get("currentUserId")),
+            skills,
+            auth_blocked,
+        },
+        admission,
     })
 }
 
@@ -198,11 +259,58 @@ pub fn write_plugin_skills_cache(
     index: &PluginSkillsCacheWriteIndex,
     now: impl FnOnce() -> f64,
 ) -> Result<(), String> {
+    stage_plugin_skills_cache(cache_dir, index, now)?.publish()
+}
+
+pub(crate) struct StagedPluginSkillsCache {
+    temporary_path: PathBuf,
+    destination_path: PathBuf,
+}
+
+impl StagedPluginSkillsCache {
+    pub(crate) fn publish(self) -> Result<(), String> {
+        fs::rename(&self.temporary_path, &self.destination_path)
+            .map_err(|error| error.to_string())?;
+        let parent = self.destination_path.parent()
+            .ok_or_else(|| "plugin skills cache has no parent directory".to_string())?;
+        sync_cache_directory(parent).map_err(|error| error.to_string())
+    }
+}
+
+#[cfg(unix)]
+fn sync_cache_directory(path: &Path) -> std::io::Result<()> {
+    fs::File::open(path)?.sync_all()
+}
+
+#[cfg(not(unix))]
+fn sync_cache_directory(_path: &Path) -> std::io::Result<()> {
+    // Preserve the Host stores' std-only non-Unix limit: synced file plus
+    // atomic rename. A portable directory-handle barrier is unavailable here.
+    Ok(())
+}
+
+impl Drop for StagedPluginSkillsCache {
+    fn drop(&mut self) {
+        // The unique file is created exclusively by this stage. Never remove
+        // a shared cache directory or another publisher's staging path.
+        let _ = fs::remove_file(&self.temporary_path);
+    }
+}
+
+pub(crate) fn stage_plugin_skills_cache(
+    cache_dir: impl AsRef<Path>,
+    index: &PluginSkillsCacheWriteIndex,
+    now: impl FnOnce() -> f64,
+) -> Result<StagedPluginSkillsCache, String> {
     let cache_dir = cache_dir.as_ref();
     fs::create_dir_all(cache_dir).map_err(|error| error.to_string())?;
     chmod(cache_dir, AGENT_READABLE_SKILL_DIR_MODE).map_err(|error| error.to_string())?;
 
     let mut body = serde_json::Map::new();
+    body.insert(
+        "cacheFormatVersion".into(),
+        Value::from(PLUGIN_SKILLS_CACHE_FORMAT_VERSION),
+    );
     body.insert("fetchedAt".into(), serde_json::json!(now()));
     body.insert(
         "authBlocked".into(),
@@ -216,25 +324,119 @@ pub fn write_plugin_skills_cache(
         );
     }
     body.insert("skills".into(), Value::Array(index.skills.clone()));
+    let value = Value::Object(body);
+    parse_plugin_skills_snapshot(&value)
+        .ok_or_else(|| "invalid plugin skills cache snapshot".to_string())?;
     let text = format!(
         "{}\n",
-        serde_json::to_string_pretty(&Value::Object(body))
+        serde_json::to_string_pretty(&value)
             .map_err(|error| error.to_string())?
     );
 
     let path = get_plugin_skills_cache_path(cache_dir);
-    let temp = PathBuf::from(format!("{}.tmp", path.display()));
+    let temp = cache_dir.join(format!(
+        ".{PLUGIN_SKILLS_CACHE_FILENAME}.{}.{}.tmp",
+        std::process::id(),
+        NEXT_CACHE_STAGE.fetch_add(1, Ordering::Relaxed),
+    ));
     let mut options = OpenOptions::new();
-    options.write(true).create(true).truncate(true);
+    options.write(true).create_new(true);
     #[cfg(unix)]
     {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(AGENT_READABLE_SKILL_FILE_MODE);
     }
     let mut file = options.open(&temp).map_err(|error| error.to_string())?;
+    let staged = StagedPluginSkillsCache {
+        temporary_path: temp.clone(),
+        destination_path: path,
+    };
     file.write_all(text.as_bytes()).map_err(|error| error.to_string())?;
-    drop(file);
     chmod(&temp, AGENT_READABLE_SKILL_FILE_MODE).map_err(|error| error.to_string())?;
-    fs::rename(&temp, &path).map_err(|error| error.to_string())?;
-    Ok(())
+    file.sync_all().map_err(|error| error.to_string())?;
+    drop(file);
+    Ok(staged)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TempCache(PathBuf);
+
+    impl TempCache {
+        fn new() -> Self {
+            Self(std::env::temp_dir().join(format!("plugin-cache-stage-{}", uuid::Uuid::new_v4())))
+        }
+    }
+
+    impl Drop for TempCache {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn index() -> PluginSkillsCacheWriteIndex {
+        PluginSkillsCacheWriteIndex {
+            current_user_id: Some(Some(7)),
+            skills: Vec::new(),
+            auth_blocked: Some(Vec::new()),
+        }
+    }
+
+    #[test]
+    fn staged_cache_has_no_public_effect_until_publish_and_discards_only_its_file() {
+        let root = TempCache::new();
+        write_plugin_skills_cache(&root.0, &index(), || 1.0).unwrap();
+        let path = get_plugin_skills_cache_path(&root.0);
+        let old = fs::read(&path).unwrap();
+        let unrelated = root.0.join("cache.json.tmp");
+        fs::write(&unrelated, b"another owned file").unwrap();
+
+        let staged = stage_plugin_skills_cache(&root.0, &index(), || 2.0).unwrap();
+        let temp = staged.temporary_path.clone();
+        assert!(temp.is_file());
+        assert_eq!(fs::read(&path).unwrap(), old);
+        drop(staged);
+        assert!(!temp.exists());
+        assert_eq!(fs::read(&path).unwrap(), old);
+        assert_eq!(fs::read(&unrelated).unwrap(), b"another owned file");
+
+        let staged = stage_plugin_skills_cache(&root.0, &index(), || 3.0).unwrap();
+        let temp = staged.temporary_path.clone();
+        staged.publish().unwrap();
+        assert!(!temp.exists());
+        assert_eq!(read_plugin_skills_cache(&root.0).unwrap().fetched_at, 3.0);
+        assert_eq!(fs::read(&unrelated).unwrap(), b"another owned file");
+    }
+
+    #[test]
+    fn publication_io_failure_preserves_committed_cache() {
+        let root = TempCache::new();
+        write_plugin_skills_cache(&root.0, &index(), || 1.0).unwrap();
+        let path = get_plugin_skills_cache_path(&root.0);
+        let old = fs::read(&path).unwrap();
+        let staged = stage_plugin_skills_cache(&root.0, &index(), || 2.0).unwrap();
+        // Remove this exact owned stage to cause a real rename failure.
+        fs::remove_file(&staged.temporary_path).unwrap();
+        assert!(staged.publish().is_err());
+        assert_eq!(fs::read(&path).unwrap(), old);
+        assert_eq!(read_plugin_skills_cache(&root.0).unwrap().fetched_at, 1.0);
+    }
+
+    #[test]
+    fn constructed_cache_must_pass_the_consumer_parser_before_staging() {
+        let root = TempCache::new();
+        write_plugin_skills_cache(&root.0, &index(), || 1.0).unwrap();
+        let path = get_plugin_skills_cache_path(&root.0);
+        let old = fs::read(&path).unwrap();
+        let mut invalid = index();
+        invalid.skills.push(serde_json::json!({
+            "id":"Invalid-ID", "pluginId":"7", "pluginName":"P", "name":"P",
+            "description":"", "filePath":"/tmp/SKILL.md"
+        }));
+        assert!(write_plugin_skills_cache(&root.0, &invalid, || 2.0).is_err());
+        assert_eq!(fs::read(&path).unwrap(), old);
+        assert_eq!(fs::read_dir(&root.0).unwrap().count(), 1);
+    }
 }

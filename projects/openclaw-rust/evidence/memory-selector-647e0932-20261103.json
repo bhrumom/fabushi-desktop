@@ -1,0 +1,1588 @@
+{
+  "schemaVersion": 1,
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "MGS-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixedUpstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "liveMainObserved": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "source": {
+    "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+    "round": 1,
+    "batch": "MGS-v1",
+    "repository": "bhrumom/fabushi-desktop",
+    "repositoryRoot": "/workspace/scratch/29e7135d8bfe/fabushi-desktop",
+    "base": "6034da1fcc1ecfe95db4fe5532c61cf88872fb5b",
+    "startingHead": "6034da1fcc1ecfe95db4fe5532c61cf88872fb5b",
+    "tree": "c6f462610964747b72a6edfe285ccbef08aedda7",
+    "originalBase": "93130e0a4e1e4753043e714bb64802e5572d863e",
+    "originalReviewTree": "f65b0875ec963c8bd4d5ce1ae692441865296165",
+    "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "files": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "blob": "1af51347c1caf1525da0b59dc17e1e50a3d167c2",
+        "bytes": 200696,
+        "sha256": "73d9cf88316bd84190caa72498e282bf2228fdbd637aaa9480ce0e43605c0188",
+        "identical_to_original_review_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+        "blob": "82006591b8c7fa0ff6c2c29221b11908bd2b407d",
+        "bytes": 4985,
+        "sha256": "8d8aa116ef5029bfbe5526b66f95bc009c4c80ca4d52359c5b7d150cf52b3c9f",
+        "identical_to_original_review_tree": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "blob": "dc202ecc0eee94b8dc869cd1ab686c453659651a",
+        "bytes": 111341,
+        "sha256": "739ae0e00a1950375162e507a5724e5a1d0730410da1261168c87fe355e268c2",
+        "identical_to_original_review_tree": true
+      },
+      {
+        "path": "source/host/src/extensions/transcript/transcript_manager.rs",
+        "blob": "caa2bf73398d4499d51d3152b494ff2d605b4e54",
+        "bytes": 33916,
+        "sha256": "7c21b22f2b605566906dc9ca2fd622d3da1d9b9832b06fa65fed05fd846f1f12",
+        "identical_to_original_review_tree": true
+      },
+      {
+        "path": "source/host/tests/transcript_manager_contract.rs",
+        "blob": "90f026d617c22e7d31b54a625cfee76132e1bc0e",
+        "bytes": 49433,
+        "sha256": "be2d93044219ebdb9ed2dd6ee829965aca8746cbf71277a184ec65ec7ee6e261",
+        "identical_to_original_review_tree": true
+      }
+    ],
+    "diffSha256": "b9071b6087f0151e2c5ce7aa2517032cb47848b10a12efc63402ea609bf3370a",
+    "incomingDisposition": "6034 changes one pre-existing unrelated evidence file only; preserve its exact bytes",
+    "validation": "Git identity/source read only; no local executable product validation"
+  },
+  "independentSourceReviews": [
+    {
+      "lens": "security",
+      "effort": "xhigh",
+      "model": "configured parent inherited",
+      "hostApplied": "spawn_agent explicit effort; structure explicit model; security model omitted/inherited",
+      "reviewedTree": "f65b0875ec963c8bd4d5ce1ae692441865296165",
+      "findings": [],
+      "reportSha256": "0153a246756503971b924c105f34e47523c394b9c7e56598aa528c642085f70a",
+      "report": "# MGS-v1 — R1 independent security / lifetime / spec review\n\n## Verdict\n\n**未发现本轮需要修改的安全、生命周期或 MGS-v1 契约缺陷。源码审查通过；exact-H 编译、测试和产品验收仍未判定。**\n\nActionable findings: **0**。没有以偏好、推测或本批明确未宣称的全量 Memory 能力提出阻断项。\n\n## Immutable subject and method\n\n- Repository: `bhrumom/fabushi-desktop`。\n- Read root: `/workspace/scratch/29e7135d8bfe/fabushi-desktop`。\n- Frozen base / starting HEAD: `93130e0a4e1e4753043e714bb64802e5572d863e`。\n- Reviewed complete candidate tree: `f65b0875ec963c8bd4d5ce1ae692441865296165`。\n- Contract: `MGS-v1`；fixed U: `1440bb1771372334bea23d7642bb52deb7db1845`。\n- Manifest: `/workspace/scratch/403d4d169ac6/memory-review/r1/manifest.json`。\n- Effort: parent 指定 `xhigh`，原因是路径信任边界、实际读写 owner、拒绝后的状态保持；model 按 host 继承。此处记录父任务给出的配置，不以 prompt 文字另作运行时配置证明。\n- 已阅读候选 tree 的根 `AGENTS.md`、OCRM `SOURCE_OF_TRUTH.md`、主 spec 最新 §17、完整 `memory-gateway-selector-boundary.md`、五文件的完整变更及判决所需上下文。生产和测试正文来自 `git show` 固定 tree；差异来自固定 base 与 tree 的 Git diff。未基于可变工作树作判决，未阅读其他 reviewer 报告。\n- 本次只做源码/Git/manifest 阅读。没有执行本地或 `htch-runtime` 的 build、test、lint、generator、schema check 或其他验证，也未修改生产、workflow、ledger 或 spec。\n\n审阅的五文件为：\n\n1. `.github/workflows/rust-desktop-runtime.yml`\n2. `projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md`\n3. `projects/openclaw-rust/requirements-traceability-matrix.json`\n4. `source/host/src/extensions/transcript/transcript_manager.rs`\n5. `source/host/tests/transcript_manager_contract.rs`\n\n下列源码定位均指上述 immutable tree。\n\n## 1. Actual entry, ownership and refusal boundary\n\n`host_gateway_api.rs:175–177` 保留 `getAgentMemories`、`deleteAgentMemory`、`clearAgentMemories` 的 TranscriptManager 注册。shipping `UnifiedGatewayApi::call` 在 `source/host/app/src/main.rs:13615–13620` 调用 manager 并消费其结果。生产 Session 创建仍注入 `production_extensions.memory.service()`（同文件 `15461–15468`），没有新增 Memory owner。\n\n本次读取链准确地是：\n\n`UnifiedGatewayApi::call` → `TranscriptManager::dispatch_memory_gateway_call` → `ProductionSessionWorkers::memory_service` → `MemoryService::list` → `MemoryService::store_for_agent` → `FileMemoryStore::list_memories`。\n\n**该读取分支不打开 `ProductionAgentStore` / `SandAgentDb`。** `ProductionSessionWorkers::memory_service` 只是返回现有 MemoryService 的 Arc（`production.rs:1037–1039`）；`MemoryService::store_for_agent` 直接把 selector join 到已配置的 agents root（`memory_service.rs:1154–1156`）。与读分支不同，删除/清空确实通过 Session 的 DB、admission、filesystem mutation 和 recovery owner。这个区分对于“读请求不能引入 owner-open/recovery 副作用”的判断是关键。\n\n新检查位于 `transcript_manager.rs:709–710`，在任何 `.memory_service().list(agent_id)` 调用之前。它使用现有 `storage::agent_paths::assert_valid_sand_agent_id`，并在 `?` 上同步返回错误；没有先构造 FileMemoryStore 后才拒绝的路径。\n\n`storage/agent_paths.rs:17–21` 调用 canonical `is_safe_folder_id`；`storage/folder_id.rs:1–8` 明确拒绝空串、`.`、`..`、`/`、`\\\\`、NUL。对于本批 Linux/macOS 的 lexical selector 边界，带 parent traversal 或绝对路径的输入因此在 path join 之前失败。validator 未新增第二种 ID 规则。\n\n## 2. Requirement-by-requirement source assessment\n\n| Contract | 源码判断 | 可复核依据 |\n| --- | --- | --- |\n| MGS-01 | 符合；拒绝在 read owner 解析路径之前发生。 | `transcript_manager.rs:709–714`；`agent_paths.rs:17–21`；`folder_id.rs:1–8`。 |\n| MGS-02 | 符合；先完成原有 `as_str`、`trim`、非空检查，随后只增加 canonical ID 校验。安全 ID 的 projection、顺序及 100 条限制沿用原实现。 | `transcript_manager.rs:701–728`；`MemoryService::list` 在 `memory_service.rs:1205–1207` 仍调用 `list_memories(100)`；排序在同文件 `242–257`。 |\n| MGS-03 | 符合本批定义的状态保持；拒绝分支没有进入 MemoryService，没有 Session admission、DB owner-open、写文件、订阅、通知、runner 或 async job。合法读也保留既有只读 store 路径。 | `transcript_manager.rs:696–741`；`memory_service.rs:1128–1156,1205–1207,691–714`；`watched_directory.rs::new/with_reporter` 只初始化对象，watch/create-dir 发生在另一个显式接口。 |\n| MGS-04 | 符合；删除/清空调用、成功 session/lifecycle 后的 active-agent 同步、`switch_agent` 的同步以及 dispose 均未改变。 | `transcript_manager.rs:647–694,730–739,794–814,904–969`；`production.rs:3791–3878`；原 mutation/snapshot contract 完整保留。 |\n\n安全 missing ID 仍走 `FileMemoryStore::facts` 的既有空结果规则：profile 读失败忽略，log 目录缺失产生空集合（`memory_service.rs:691–714,1446–1449`），因此没有为了检查存在性而打开/创建 Session DB。此审查不把该既有兼容行为扩称为严格 I/O 错误报告。\n\n### Error projection\n\n缺失、非字符串、空串和纯空白 ID 仍得到 `getAgentMemories requires id`。校验先于 listing 但后于 trim，所以 `\" \\t../outside\\n\"` 的 canonical error 使用 trim 后的 selector，合法 trimmed ID 仍成功（`transcript_manager.rs:701–710`）。\n\n新错误使用既有 `SandInvalidAgentIdError` 的 `Display`：`Invalid Sand agent id: <id>`。shipping caller 保留 `GatewayCommandError::Internal` 映射（`main.rs:13619`），因此按现有 `GatewayCommandError::status` 为 500；没有擅自改成其他 error class 或回复形状。`gateway_server.rs:1512–1546` 继续通过相同错误响应/telemetry 分支处理。本报告确认的是源码映射，没有声称已经执行 HTTP 错误响应测试。\n\n### Permission and mutation ownership\n\n新增 validator 是 ID/路径准入，不是权限授权。Gateway 的既有 authentication、device role/scope 和 request authorization 仍在调用 shipping API 之前（`gateway_server.rs:1290–1421,1498–1510`），本次没有修改这些控制或新建权限真相。\n\n删除和清空保留 `with_agent_filesystem_mutation` → `assert_agent_work_admission_locked` → DB owner/journal → file mutation → snapshot/journal commit / rollback 路径（`production.rs:3791–3878`）。admission 通过 `existing_session_db_path` → `session_db_path` → `session_paths::get_agent_db_path` 复用 canonical folder-ID 校验（`production.rs:1049–1051,1625–1630,2432–2462`；`session_paths.rs:84–90`）。没有发现读修复削弱删除 fence、journal recovery 或 snapshot invalidation。\n\n### Lifetime and cancellation\n\n改动仅在同步闭包增加一个纯字符串检查和错误返回，不增加锁、持久 handle、worker、callback、await、cancellation token、重试或重启状态。错误路径不会取得 MemoryService Arc，也不会进入 FileMemoryStore。成功路径的 Arc 和临时 store 生命周期保持既有行为。未发现新增的取消/释放次序、死锁或 use-after-dispose 问题。\n\n完整 Gateway 调用仍会先执行既有 `note_desktop_contact`（`main.rs:12849–12856`）；错误分支也可产生既有 Gateway telemetry。因此本结论的“状态保持”限定于 MGS 的 memory bytes、目录、Session/read-owner 副作用与 mutation notification，不能据此声称整个 HTTP Gateway 的所有观测状态都完全不变。\n\n## 3. Test oracle assessment\n\n### Refusal and causal fixture\n\n`transcript_manager_contract.rs:543–655` 使用真实 `ProductionSessionWorkers`、`TranscriptManager` 和 FileMemoryStore。inside profile/log 与 outside `outside/memory/profile.md` 均位于独占临时 root；outside sentinel 在 `611–615` 先通过实际 FileMemoryStore 读回为精确记录，排除了“外部文件格式不可读导致空结果”的假阴性。\n\n`658–672` 覆盖 `.`、`..`、parent traversal、嵌套路径、前后空白、正反斜杠、NUL 和实际绝对路径。每项要求明确 `Err` 及 canonical error 文本，随后执行有效 ID 的真实读，比较完整结果、所有 fixture 文件/目录与 notification 计数。拒绝若变成成功空数组同样会失败。safe ID 使用非 UUID 文本，也避免把新校验误收紧成 UUID-only。\n\n文件快照递归保存相对路径、目录成员与完整字节，且显式不允许 fixture 引入 symlink；排序后精确比较（`555–580,631–640`）。它能发现本批实际文件读路径的附带写入或目录创建。订阅在 fixture 建立后才开始；清理先 unsubscribe，再 dispose 已有 manager，最后只删除独占 root（`617–623,644–654`），没有发现新 fixture 的 owner 泄漏或广域清理问题。\n\n### Compatibility and listing oracle\n\n- `675–696` 检查缺失/错误类型/空白参数，合法 trimmed ID，安全但不存在的 ID，以及 unknown-method 的 `None`；每组继续检查正常读和状态保持。\n- `699–728` 显式写入 2 条 profile 和 101 条 log，先确认实际 store 可读 103 条。expected 独立构造为 profile 新→旧，再按同日文件顺序倒序取 log 100…003，共 100 条；与 `FileMemoryStore::list_memories` 的 profile-first、时间和 order tie-break 相符。它能区分错误的全局日期排序、tie-break 反向和上限丢失。\n- 旧 `manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation`（`461–541`）未删减：精确 projection、delete、clear、snapshot invalidation 和 deletion-fence refusal 均保留。现有 manager composition test 仍覆盖 active-agent 同步与 dispose owner 关闭（同文件 `215–232,302–333`）。\n\n新测试的主要动态 seam 是 `TranscriptManager::dispatch_memory_gateway_call`，没有伪装为 HTTP/桌面 UI E2E。没有 syscall spy 去独立观测“从未打开过外部文件”；该严格先后关系由本轮读到的生产前置检查顺序直接支持。成功返回的 ID oracle 复用了已有 `memory_id_for`，因此不构成该 hash 算法本身的独立验证，也不影响本次 projection/排序/上限判断。\n\n## 4. Workflow and traceability assessment\n\n五文件完整 diff 保留原有 integration targets、app selectors、命令及断言，workflow 仅补 MGS input 身份、必需正例名称与 macOS 专用 receipt。\n\n- macOS 仍为既有 `rust-host` / `macos-15` job；同一 `integration-contracts` 命令已经包含整个 `transcript_manager_contract`（workflow `649–742`）。新 receipt 要求三个新用例和旧 mutation/snapshot 用例各有且仅有一条 `ok`，同时要求 command exit 唯一为 0、HEAD/subject/FABUSHI_TARGET_SHA 一致且 tree 一致（`788–824`）。没有把 step success、编译成功或不存在的日志当成正例。\n- Linux 仍在既有 `channel_pending_recovery` 执行原来的四个 integration targets 与已有 checked-store、paired-device-SSE controls（`1667–1791`）。required names 增加四项，原有检查不删减；每个 case 保留 command、exit、capture error、命名结果、summary、log hash 和失败传播。\n- scope 文本明确未覆盖 symlink、cross-account、full HTTP/UI、Windows 和 whole-Memory acceptance。Linux 的跨平台边界与独立 macOS receipt 没有相互替代。\n- RTM 变更只在 R13/R24/AC13/AC17/AC24 添加本 spec 与现有 contract-test 文件的 evidence refs；没有改变 acceptance status、upstream identity、source reading credit 或任何全局完成 flag。\n\n这证明的是检查定义与来源绑定的源码形状正确。未读取本候选的实际 Actions 日志或执行 receipt，因此测试是否编译/通过、平台是否可运行、H/tree/U 是否在实际执行中一致，仍必须由后续 exact-H evidence 判定。\n\n## 5. Explicit unverified boundaries\n\n本报告没有建立：symlink/硬链接与并发 filesystem replacement 防护、完整 per-agent/cross-account Memory authorization、Windows drive/UNC/特殊文件名语义、文件权限/损坏的严格错误报告、并发 memory mutation 的一致快照、完整 Gateway HTTP transport、desktop UI、真实 provider 消费、重启/取消 E2E、Memory synthesis/retrieval 等价或 packaged acceptance。\n\n这些是 MGS spec 已明确保留或本次静态审查无法建立的边界。当前源码中没有足以证明本轮引入此类缺陷的具体触发场景；故不将其作为本批 blocking finding。原有项目与最终验收责任不因本报告缩减。\n\n"
+    },
+    {
+      "lens": "structure",
+      "effort": "xhigh",
+      "model": "gpt-6.1-sol",
+      "hostApplied": "spawn_agent explicit effort; structure explicit model; security model omitted/inherited",
+      "reviewedTree": "f65b0875ec963c8bd4d5ce1ae692441865296165",
+      "findings": [],
+      "reportSha256": "a130f7b4ef583c7f561a9d64dab38423b7709913a20ed04fd93999b4f75f69cb",
+      "report": "# Memory selector MGS-v1 — Round 1 structure / reuse / CI review\n\n## Verdict\n\n**No actionable defect found in the frozen MGS-v1 change.** The narrow source change keeps the existing production composition and uses the existing canonical agent-folder validator before the Memory read owner receives the selector. The new tests and the two scoped workflow receipt paths are consistent with the declared MGS-v1 behavior. This is a static source/evidence-design verdict; exact-H compilation and executed Linux/macOS results remain pending and are not approved by this report.\n\nFindings: `[]`.\n\n## Frozen scope and execution record\n\n- Inspection repository: `/workspace/scratch/29e7135d8bfe/fabushi-desktop` (recovered Git objects).\n- Base / starting HEAD: `93130e0a4e1e4753043e714bb64802e5572d863e`.\n- Candidate tree: `f65b0875ec963c8bd4d5ce1ae692441865296165`.\n- Fixed upstream U: `1440bb1771372334bea23d7642bb52deb7db1845`, tree `90c8aab39972da11cfad220361781d49e1bc6700`.\n- Contract: `MGS-v1`.\n- Input manifest: `/workspace/scratch/403d4d169ac6/memory-review/r1/manifest.json`.\n- Lens / applied worker setting: `gpt-6.1-sol`, `xhigh`, explicitly selected by the parent under the repository structure/reuse lens policy; scope reason is integration across Gateway dispatch, the storage owner, causal test fixtures and exact-revision CI evidence.\n- Source was read from the immutable candidate through `git show` / `git grep`, and its complete five-file delta was compared against the frozen base. No mutable working-tree source or other review report was used. No repository file was modified.\n- No build, test, lint, schema check, generator, benchmark, local runtime or htch-runtime validation was run. Read-only JSON inspection was content inspection, not a schema/gate execution.\n- The later integration notice names tree `c6f462610964747b72a6edfe285ccbef08aedda7` and reports the same five scoped blob identities. This review remains bound to the original frozen tree; it does not independently certify the extra evidence-only carrier change or the later integrated tree.\n\n## Authority and source coverage\n\nRead root `AGENTS.md`, the active identity/ownership/execution rules in `projects/openclaw-rust/SOURCE_OF_TRUTH.md`, main OCRM Spec's latest §17 (OCRM-EXEC-02), and the complete MGS-v1 spec. The applicable contract preserves a native Fabushi path without claiming new upstream reading, whole-Memory equivalence or any global completion credit.\n\nThe declared scope is exactly:\n\n1. `.github/workflows/rust-desktop-runtime.yml` — full workflow, with particular attention to triggers, checkout/binding, the existing macOS recovery command/diagnostics, the new Memory receipt, Linux recovery command/oracle and artifact preservation.\n2. `projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md` — complete contract and limits.\n3. `projects/openclaw-rust/requirements-traceability-matrix.json` — complete scoped delta, top-level identity/completion fields, every row's status/control metadata, and the full affected rows. Untouched historical evidence/oracle/responsibility arrays are context, not a fresh semantic acceptance audit.\n4. `source/host/src/extensions/transcript/transcript_manager.rs` — complete file, including constructor/composition, both adjacent Gateway facades, Memory dispatch, active-agent synchronization and disposal.\n5. `source/host/tests/transcript_manager_contract.rs` — complete file, including the inherited composition/mutation/recovery tests and all new fixtures/oracles.\n\nAdjacent source inspection included `host_gateway_api.rs` registration, the actual App `UnifiedGatewayApi::call` delegation/error mapping, `ProductionSessionWorkers::memory_service` and the Memory mutation/snapshot owners, `MemoryService::{store_for_agent,list,subscribe,set_active_agent}`, `FileMemoryStore::{new,list_memories,add_memory,facts}`, `storage::agent_paths` and `storage::folder_id`, and Host Cargo dependencies. No new dependency or feature is required by the patch.\n\n## Structure and reuse assessment\n\nThe existing production path is intact:\n\n`host_gateway_api` registry → App `UnifiedGatewayApi::call` → `TranscriptManager::dispatch_memory_gateway_call` → the same `ProductionSessionWorkers` MemoryService → FileMemoryStore.\n\nEvidence anchors at the candidate tree:\n\n- `source/host/src/host_gateway_api.rs:175–177` assigns all three Memory methods to TranscriptManager.\n- `source/host/app/src/main.rs:13615–13620` dispatches to that manager and preserves the existing `GatewayCommandError::Internal` mapping.\n- `source/host/src/extensions/transcript/transcript_manager.rs:696–741` contains the read and the unchanged mutation delegation.\n- `source/host/src/extensions/session/production.rs:1037–1039` returns the existing shared MemoryService Arc.\n- `source/host/src/extensions/memory/memory_service.rs:1154–1156,1205–1207` resolves the agent directory and retains the 100-record listing bound.\n\nThe change at `transcript_manager.rs:709–710` retains required string extraction/trim/empty rejection and calls `assert_valid_sand_agent_id` before invoking `MemoryService::list`. `agent_paths.rs:17–22` delegates folder syntax to `is_safe_folder_id`, rejects nontrimmed identities, and emits the canonical `Invalid Sand agent id` error. `folder_id.rs:1–9` already rejects empty, dot, dot-dot, slash, backslash and NUL identities. The patch therefore adds no alternate validator or identifier format.\n\nThe read path still does not enter Session work admission, create/open a Session DB, publish a transcript or mutate a Memory fact. Delete/clear still delegate to the existing Session mutation owners (`production.rs:3791–3869`) and preserve pending mutation/snapshot/recovery behavior. Active-agent synchronization and disposal continue using the existing MemoryService; the fix does not change lifetime or shared ownership.\n\nThe added spec is a task-level boundary contract referenced by the existing RTM. The RTM delta only appends the spec/test references to R13/R24 and AC13/17/24. It does not create a second inventory/ledger, change source U, assign new product ownership, set acceptance to accepted, or change the eight false completion flags.\n\n## Test and oracle assessment\n\nThe new tests exercise the actual manager and file store, using exclusively owned temporary fixtures (`transcript_manager_contract.rs:543–728`). The outside store is independently written and read back at lines 611–615 before denied selectors are exercised. Removing the new validator lets `../outside` and the absolute selector reach a valid external profile rather than an empty/broken fixture, so the expected-error oracle is causal for the original bypass.\n\nThe selector list covers dot identities, parent traversal, both separators, an absolute native fixture path, a Windows-style path string and NUL. Each refusal is followed by an exact successful valid read and checks that the complete owned directory/file image and notification count remain unchanged. Argument type/absence/whitespace cases preserve the legacy required-field error. Trimmed valid IDs and safe missing IDs retain their behavior. An unknown neighboring method remains unhandled.\n\nThe projection/ordering/bound test constructs 103 real file facts and separately enumerates the exact 100 projected records; it detects a missing bound, wrong preference/order, or added/dropped/renamed projection fields. Reusing `memory_id_for` pins projection of the store's existing ID contract; the test does not claim to independently validate the hash algorithm.\n\nThe inherited mutation test remains present and is explicitly required by both MGS receipt paths (`transcript_manager_contract.rs:460–541`): list projection, delete result, snapshot invalidation, clear result, empty list and deletion-fence refusal are preserved. The existing composition test also retains active-agent synchronization and cleanup assertions.\n\nI found no changed-source Rust type/API issue by inspection: the new closure returns the existing `Result<Value,String>` shape, the canonical error implements Display, `MemoryUnsubscribe` is the existing public `Box<dyn FnOnce() + Send>`, and the fixture uses already-declared crate dependencies. This is not a compilation result.\n\n## CI execution and fail-closed evidence design\n\nThe existing workflow fires for the writer branch push and for workflow dispatch, with relevant paths covering the five-file change. Both relevant jobs check out the event's exact subject SHA, compare actual HEAD against `FABUSHI_TARGET_SHA`, and reject a supplied frozen `expected_subject` that does not match or is not a full lowercase SHA (`rust-desktop-runtime.yml:66–98,1445–1469`). The supplied expected subject remains a dispatch caller input; actual execution must pass the intended frozen H.\n\nFor the intended scoped route (writer push, or dispatch with `validation_scope=ocrm-config`):\n\n- **macOS:** `rust-host` uses `macos-15`. The inherited `integration-contracts` command still selects `--test transcript_manager_contract` and keeps all its other targets (`649–787`). Diagnostics bind H/tree/U, run identity, OS and input hashes, and capture the actual argv/log/exit (`256–367`). The new step (`788–824`) requires each of the three new tests plus the inherited mutation/snapshot test exactly once as a complete `test … ... ok` line; it additionally requires the one actual integration exit record to be zero and HEAD/tree to match the subject and expected event H. Missing files, malformed data, missing/duplicated positives or nonzero integration exit do not yield a passing MGS receipt. The receipt and logs are retained in the existing exact-subject recovery artifact (`833–840`).\n- **Linux:** `sqlite-native-path` uses `ubuntu-24.04` and preserves existing dependency/cache setup. Its existing four-target recovery integration command still selects the manager target and runs serially; the three new names and the mutation/snapshot control are appended without removing inherited positives (`1667–1745`). The existing receipt records H/tree/U/run/OS/rustc/input hashes, exact command vectors, subprocess/capture outcomes, full observed names, summary counts and log SHA-256. A case passes only with successful process/capture, exactly one of every required name and positive successful summaries; the aggregate remains failed until every existing case passes (`1746–1791`). The current artifact upload retains the Memory receipt/logs with exact H/run/attempt (`2166–2173`).\n\nThe macOS addition reuses the original command log rather than rerunning the target. The Linux addition extends the existing receipt rather than introducing another execution owner. Nothing in the MGS patch weakens or removes the inherited app selectors, recovery targets, assertions or macOS gate. Prior unrelated step failure may skip a later normal step; the failed job and absent MGS receipt then remain non-passing, rather than being converted to MGS success.\n\n## Limits and required next evidence\n\nThis report does not claim actual Actions success. A candidate tree is not itself an executed commit H. Before marking this batch verified, inspect the Linux recovery receipt/log and macOS `memory-gateway-selector.receipt.json`/integration log from the exact frozen H, confirm H/tree/U/run/OS and the four required successful names, and retain both job conclusions and compiler outcomes.\n\nThe tests observe return values, fixture bytes/tree and Memory notifications. The source ordering directly establishes validation before `list`; these tests are not a filesystem read-syscall trace or a generalized authorization proof. The declared exclusions remain real: symlink resistance, cross-account policy, Windows filesystem behavior, outer HTTP/UI execution, full Memory synthesis/retrieval/provider equivalence and packaged acceptance are outside this patch's proof. No broader architectural cleanup or governance change is requested by this review.\n"
+    }
+  ],
+  "integrationAssessment": "Root compared every reviewed source blob on the integrated6034 base: all5 unchanged versus original frozen review tree. Incoming6034 only changes pre-existing FC evidence and is preserved. This evidence record does not change reviewed production/contract/CI inputs. Before publication, remote42ee already carried all five identical MGS blobs on the3-file object-staging carrier7d060. Root inspected the complete incoming diff, verified remote commit/tree and5 full file contents, and adopted it without a duplicate product commit.",
+  "sourceAuthority": "Existing Fabushi Memory read-path preservation under OCRM R13/R24 and AC13/17/24. No new upstream deep-read credit, scoped verification or whole Memory equivalence is asserted. Existing inventory/ledger/global flags unchanged.",
+  "behaviorChanges": [
+    "getAgentMemories rejects lexical path selectors with the existing canonical agent ID validator before resolving a memory store",
+    "Existing required/trimmed/missing-safe IDs, projection/order/100-row bound, delete/clear and snapshot behavior retained"
+  ],
+  "verification": {
+    "status": "scoped-linux-command-passed; macOS and full acceptance pending",
+    "environment": "GitHub Actions only",
+    "selection": [
+      "Existing Linux portable recovery command plus required MGS and mutation/snapshot names",
+      "Existing macOS recovery integration command plus fail-closed MGS receipt",
+      "Existing affected shipping Host compilation, source authority and preserved shared contracts"
+    ],
+    "localExecution": "None. Source/Git/API operations and evidence review only.",
+    "subjectCommit": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+    "terminalObservation": "terminalRuntimeObservation",
+    "sourceWorkflowRun": 41531742497,
+    "sourceWorkflowConclusion": "success; structural only"
+  },
+  "unresolved": [
+    "Exact MGS H42ee1165d216a08361e6a1c7f9fe29bd609c8b1c Linux125573405387 compilation/named-positive terminal success is already recorded in terminalRuntimeObservation. Required macOS/platform evidence and full acceptance remain pending. Later MGA/PMS subjects must not be substituted for this historical H or its queued snapshot.",
+    "Full source/dependency/license/review closure and scoped authority remain open",
+    "Symlink/filesystem replacement, full Memory permissions, Windows/HTTP/UI/provider/restart/synthesis and package acceptance unestablished",
+    "All applicable final G01-G12/AC01-AC24, ecosystem/device/platform/UI/security/performance/soak/upgrade/rollback and independent ACCEPT remain incomplete"
+  ],
+  "reviewDecisions": [],
+  "publicationReadback": {
+    "subject_commit": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+    "subject_tree": "d119b337cf4f1d00ab00bb26144998e2c378ee86",
+    "parent": "7d060aca30278db9ef921092f60a5f77278ce8d9",
+    "commitUrl": "https://github.com/bhrumom/fabushi-desktop/commit/42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+    "commitAndFiveFullFileContentsVerifiedThroughGitHubConnector": true,
+    "allFiveBlobsEqualFrozenReview": true,
+    "incomingPreserved": [
+      ".github/ocrm-reviewed-objects/manifest.json",
+      ".github/ocrm-reviewed-objects/object.patch",
+      ".github/workflows/ocrm-stage-reviewed-objects.yml"
+    ],
+    "scope": "Remote source identity only; Actions status remains independent"
+  },
+  "continuedRecovery": {
+    "previewOracleRepair": {
+      "contract": "LPG-APP-ORACLE-01",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "reason": "The old whole-Gateway absence assertion rejected valid inherited Automation/Workflow Host-lane branches; the replacement pins only the actual final shared-service fallback and retains all behavioral/AST negatives.",
+      "subject": "93130e0a4e1e4753043e714bb64802e5572d863e",
+      "tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+      "parent": "f5f6d88fd5e1f96e27558d2a17e490964c6d57a5",
+      "githubReadback": {
+        "commit": true,
+        "branch": true,
+        "fullFileContents": true,
+        "files": [
+          {
+            "path": "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md",
+            "blob": "84f3e31c52302d243232e203803394bf17070a1a",
+            "mode": "100644"
+          },
+          {
+            "path": "source/host/app/src/tests/link_preview_gateway_tests.rs",
+            "blob": "553f0675015cee1d3a7beebd054d69f787536882",
+            "mode": "100644"
+          }
+        ]
+      },
+      "sourceReviews": [
+        {
+          "tree": "6992f0a6275250851ec7635e073accd84266a1dd",
+          "result": "P1 TEST_FLAW LPG-APP-ORACLE-01; runner recorded FIX before changing source"
+        },
+        {
+          "tree": "0cfcf4eec91d1ce37df8124b74b8de5220d25223",
+          "result": "fresh focused fix review approved; no additional findings"
+        },
+        {
+          "tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+          "result": "focused integration review approved; nine incoming Automation files preserved"
+        }
+      ],
+      "execution": {
+        "sourceRun": 41530832703,
+        "runtimeRun": 41530832715,
+        "verdict": "pending",
+        "scope": "Run creation and queued observation are not execution success; later MGS subject includes this fix."
+      },
+      "terminalExecution": {
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "tree_sha": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+        "run_id": 41530832715,
+        "job_id": 125570259012,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832715/job/125570259012",
+        "full_log_pointer": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125570259012/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 1046264,
+        "log_line_count": 13578,
+        "receipt_provenance": {
+          "kind": "JSON printed in the completed GitHub Actions job log",
+          "first_line": 13016,
+          "last_line": 13508
+        },
+        "receipt": {
+          "contract": "LPG-v1",
+          "subject_commit": "93130e0a4e1e4753043e714bb64802e5572d863e",
+          "subject_tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+          "upstream": {
+            "repository": "openclaw/openclaw",
+            "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+          },
+          "run_id": "41530832715",
+          "run_attempt": "1",
+          "job": "sqlite-native-path",
+          "runner_os": "Linux",
+          "inputs_before_sha256": {
+            ".github/workflows/rust-desktop-runtime.yml": "a41d61e68e0c93d9f00b8a0364ae72e3642affd61aefd8237cf47920920b7329",
+            "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md": "9aa943fa3cf23cd115f0c419225255ddc1201cc93b230e904f6ceadc919dadb0",
+            "projects/openclaw-rust/upstream.lock.json": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+            "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+            "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "source/host/app/Cargo.toml": "5a7070c724de5eac06274b1cc1aa8201d5b72649ae0313eddd110ee7e75fe777",
+            "source/host/app/Cargo.lock": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+            "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml": "87d3ad43240bf5bc2e7fdeeb0d660dcfc61b47a5c96e8479d5d5a947fab7b3fe",
+            "source/node-agent-coordinator/Cargo.toml": "a5f8b4542adea2cd03b0977e1e8bfbd8cdcc5ac58b5513e270eb3f6f51191eda",
+            "source/node-agent-coordinator/Cargo.lock": "3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358",
+            "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+            "source/host/src/gateway_server.rs": "bbfd64c3bae6a46737414e27724ec5423f600a5ab6c84eb71d6e15266354ee8a",
+            "source/host/src/gateway_protocol.rs": "25c05412af9366eec45a0fcf4ce22b810a3b7fd368b6c98e3faf836df4bff7db",
+            "source/host/app/src/main.rs": "48a5be85d2f9a08b4f8c60949a45b5fedbc670aae2d60ccae138ec3b2f699685",
+            "source/host/app/src/tests/link_preview_gateway_tests.rs": "21e566af4a7c8b8550eaffbc8f0f24d85e82f27029755d03c9fa35d8e2e9a16a",
+            "source/host/src/extensions/attachments/attachments_service.rs": "b6a4a53c796879ea8b8c5cf4f0aa99976825f2653f4f40945d87ba1efa82060e",
+            "source/host/src/extensions/attachments/safe_link_preview_fetch.rs": "c63b2c8c8b991339a81bb60ffd98c5e8c3f17e5192fb11228f70888334d0a1dd",
+            "source/host/tests/gateway_protocol_contract.rs": "544c3efffc1f3e4e126a891a811f1909a5eb5b68d91f0a9364dbc74bd3ee9936",
+            "source/host/tests/gateway_server_contract.rs": "4c3442575dde4be92869f38ada2b2358f35a82c0612f55337b8e1194bb7c54c4",
+            "source/host/tests/host_runner_composition_production_wiring_contract.rs": "e19d9983f83f6c7b7483950839d709546ea4497a724ff43c98aed110b670a33e",
+            "source/node-agent-coordinator/src/carrier.rs": "32cea55b3fb7f416ca8eda6c4e4fbeb570a8ea696a3ed3ab0fcc29d87d3c0bb4",
+            "source/node-agent-coordinator/src/main.rs": "58823c533364d392ed25ab2ea245f662f35d2b56a618379da1de889063f82161",
+            "source/node-agent-coordinator/tests/coordinator_contract.rs": "3b27282f6c5815a564d6094a9a3c0644f5f7c2a43f419026daed5b53ac3340f7",
+            "source/node-agent-coordinator/tests/production_protocol.rs": "1c68b25532de99a7472f084756c072e187904a64bddb13b21cfc0efcffe81c95",
+            "source/shared/rpc/coordinator-main.ts": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+            "source/electron-main/attachments/attachments.ts": "362b11c60b2d9a9e55eabb91a63599f39c9ad9d47cdb30f0ada50dc304307364",
+            "source/electron-main/adapters/attachment-gateway.ts": "5e90723e57814055ac4488bbaa57d874eebcef5826045fb48038d6eb7cd39dfb",
+            "source/electron-main/coordinator/coordinator-main-port-client.ts": "ce13299b364acd893a45550a7ccbfca7fb7f7d7e8b2e50be671ff8e59fedb706"
+          },
+          "planned_commands": [
+            {
+              "case": "host",
+              "command": [
+                "cargo",
+                "test",
+                "--locked",
+                "--no-fail-fast",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "gateway_protocol_contract",
+                "--test",
+                "gateway_server_contract"
+              ],
+              "required_positive_names": [
+                "native_link_preview_registration_keeps_inventory_and_owner",
+                "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+                "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+                "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+                "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+                "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+                "native_link_preview_nonloopback_configuration_requires_authentication",
+                "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+                "native_link_preview_service_argument_errors_keep_status_and_single_dispatch"
+              ]
+            },
+            {
+              "case": "coordinator",
+              "command": [
+                "cargo",
+                "test",
+                "--locked",
+                "--no-fail-fast",
+                "--target-dir",
+                "source/host/target",
+                "--manifest-path",
+                "source/node-agent-coordinator/Cargo.toml",
+                "--test",
+                "coordinator_contract",
+                "--test",
+                "production_protocol"
+              ],
+              "required_positive_names": [
+                "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+                "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash"
+              ]
+            },
+            {
+              "case": "app",
+              "command": [
+                "cargo",
+                "test",
+                "--locked",
+                "--target-dir",
+                "source/host/target",
+                "--manifest-path",
+                "source/host/app/Cargo.toml",
+                "--bin",
+                "mahayana-app-host",
+                "tests::link_preview_gateway_tests::"
+              ],
+              "required_positive_names": [
+                "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+                "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+                "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+              ]
+            }
+          ],
+          "executions": [
+            {
+              "case": "host",
+              "command": [
+                "cargo",
+                "test",
+                "--locked",
+                "--no-fail-fast",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "gateway_protocol_contract",
+                "--test",
+                "gateway_server_contract"
+              ],
+              "cargo_exit": 0,
+              "capture_exit": 0,
+              "execution_error": null,
+              "required_positive_names": [
+                "native_link_preview_registration_keeps_inventory_and_owner",
+                "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+                "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+                "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+                "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+                "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+                "native_link_preview_nonloopback_configuration_requires_authentication",
+                "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+                "native_link_preview_service_argument_errors_keep_status_and_single_dispatch"
+              ],
+              "observed_passed_test_names": [
+                "gateway_protocol_keeps_frozen_command_inventory_and_upgrade_path",
+                "gateway_protocol_strips_inline_avatars_from_agent_events_only",
+                "gateway_protocol_parses_empty_and_json_command_args",
+                "native_box_mcp_extensions_are_exact_and_resolve_only_to_mcp",
+                "native_cloud_worker_projections_preserve_exact_routes_outside_frozen_inventory",
+                "native_link_preview_registration_keeps_inventory_and_owner",
+                "gateway_protocol_strips_inline_avatars_from_slim_commands",
+                "native_mini_app_extensions_preserve_frozen_inventory_and_mcp_owner",
+                "openclaw_gateway_extensions_preserve_frozen_inventory_and_owners",
+                "device_pairing_owner_authenticates_issued_token_with_role_and_scopes",
+                "gateway_admits_only_explicit_internal_mcp_lifecycle_settlement_method",
+                "gateway_accepts_pairing_owner_device_token_without_gateway_secret",
+                "gateway_avatar_endpoint_serves_versioned_bytes_and_security_headers",
+                "gateway_bearer_auth_is_required_when_configured",
+                "gateway_admits_only_explicit_internal_runner_methods",
+                "gateway_binds_node_token_to_the_addressed_node_before_dispatch",
+                "gateway_command_telemetry_preserves_request_trace_and_server_error_semantics",
+                "gateway_bridge_channels_require_auth_and_round_trip_frames",
+                "gateway_events_negotiate_gzip_for_sse_streams",
+                "gateway_events_stream_retries_filters_and_delivers_runtime_events",
+                "gateway_gzips_only_large_successful_command_json_when_requested",
+                "gateway_health_command_security_and_upgrade_routes_match_grok_contract",
+                "gateway_pairing_join_route_reaches_sqlite_owner_and_burns_code",
+                "gateway_carries_explicit_fabushi_extensions_without_widening_unknown_methods",
+                "gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code",
+                "gateway_rejects_node_token_on_operator_pairing_surface",
+                "gateway_mcp_lifecycle_receipts_require_native_auth_not_paired_operator_write",
+                "gateway_rejects_unknown_commands_before_host_dispatch",
+                "gateway_slim_avatar_projection_matches_grok_contract",
+                "gateway_serves_real_tls_when_cert_and_key_are_configured",
+                "native_box_mcp_configured_secret_cannot_be_replaced_by_headers",
+                "native_box_mcp_http_routes_preserve_arguments_results_and_single_dispatch",
+                "desktop_mcp_management_uses_issued_operator_scopes_without_header_escalation",
+                "native_box_mcp_nonloopback_configuration_requires_authentication",
+                "native_box_mcp_malformed_json_and_unknown_neighbors_never_reach_owner",
+                "native_box_mcp_owner_errors_keep_status_message_and_single_dispatch",
+                "native_box_mcp_rejects_real_node_and_operator_write_device_tokens_before_owner",
+                "internal_mcp_receipts_preserve_real_waiters_until_native_completion",
+                "native_box_mcp_retains_origin_and_unauthenticated_host_checks",
+                "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+                "internal_mcp_events_are_native_only_before_channel_slim_and_gzip_projection",
+                "native_link_preview_nonloopback_configuration_requires_authentication",
+                "native_box_mcp_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+                "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+                "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+                "native_link_preview_service_argument_errors_keep_status_and_single_dispatch",
+                "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+                "openclaw_gateway_device_pairing_handshake_allows_unauthenticated",
+                "openclaw_gateway_device_timestamp_skew_and_nonce_require_authentication",
+                "openclaw_gateway_role_and_scope_enforcement",
+                "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+                "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner"
+              ],
+              "missing_or_nonunique_positive_results": [],
+              "oracle_accepted": true,
+              "log": "host.log",
+              "log_sha256": "6f6c555a5f685556557e40a1b61ab12a8d046324818e4593143a707315ef2949"
+            },
+            {
+              "case": "coordinator",
+              "command": [
+                "cargo",
+                "test",
+                "--locked",
+                "--no-fail-fast",
+                "--target-dir",
+                "source/host/target",
+                "--manifest-path",
+                "source/node-agent-coordinator/Cargo.toml",
+                "--test",
+                "coordinator_contract",
+                "--test",
+                "production_protocol"
+              ],
+              "cargo_exit": 0,
+              "capture_exit": 0,
+              "execution_error": null,
+              "required_positive_names": [
+                "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+                "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash"
+              ],
+              "observed_passed_test_names": [
+                "agent_inbound_failure_gateway_report_preserves_host_owned_error_context",
+                "box_vnc_proxy_maps_primary_and_fork_viewers_without_touching_foreign_urls",
+                "agent_inbound_direct_wake_forwards_selected_images_without_group_fanout",
+                "cancel_aborts_and_settles_the_request",
+                "control_command_retirement::closed_registration_refuses_before_writer_callback",
+                "carrier_bootstrap_and_channels_preserve_grok_process_boundaries",
+                "client_side_tool_v2_relay_fences_epochs_sequences_and_replays_wire_payloads",
+                "control_command_retirement::poisoned_cleanup_retires_only_owned_entries_and_preserves_write_failure",
+                "control_command_retirement::synchronous_callback_reentry_preserves_remote_success_and_failure",
+                "control_port_preserves_client_event_direction_and_rejects_server_events",
+                "control_command_retirement::write_failure_preserves_runner_resolution_while_published_effect_continues",
+                "control_command_retirement::port_closure_and_protocol_settlement_leave_remote_work_running",
+                "coordinator_inference_router_uses_product_fallback_until_settings_override_it",
+                "crash_is_recorded_in_resync_snapshot",
+                "coordinator_shipping_delete_success_wires_agent_queue_purge",
+                "disconnect_rejects_every_pending_control_call",
+                "gateway_client_pause_and_dev_offline_gate_dispatch_without_closing_client",
+                "gateway_client_streams_real_sse_and_honors_bearer_auth",
+                "gateway_client_tracks_endpoint_stream_stall_retry_and_permanent_refusal",
+                "gateway_dispatch_preserves_command_unreachable_and_transport_failures",
+                "gateway_dns_diagnostics_match_cursorvm_target_and_failure_matrix",
+                "gateway_dns_reporter_models_failure_episode_cooldown_and_recovery",
+                "gateway_down_up_is_resynchronizable",
+                "gateway_event_families_match_the_frozen_coordinator_contract",
+                "gateway_host_supervisor_rejects_stale_connection_resolution_after_invalidation",
+                "gateway_json_wire_fidelity::gateway_http_reply_preserves_finite_json_values",
+                "control_command_retirement::timeout_retires_only_owned_waiter_while_remote_effect_continues",
+                "gateway_reachability_matches_http_network_and_base_url_semantics",
+                "gateway_request_dispatcher_posts_real_http_json_and_classifies_errors",
+                "host_gateway_discovery_resolves_local_endpoint_and_bearer_header",
+                "host_restart_settles_old_generation_requests",
+                "gateway_json_wire_fidelity::gateway_sse_event_preserves_finite_json_values_after_connected",
+                "deleted_agent_purge_skips_queued_inference_and_preserves_other_agents",
+                "inference_router_serializes_each_agent_but_allows_parallel_agents",
+                "local_exec_supervisor_matches_grok_spawn_adopt_replace_policy",
+                "mcp_routing_is_explicit_and_generation_bound",
+                "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+                "oauth_forwarder_scopes_loopback_state_ttl_and_listener_lifecycle",
+                "oauth_loopback_listener_binds_dispatches_and_releases_real_http_callback",
+                "priority_peer_cancellation_redrives_agent_wake_exactly_once",
+                "protocol_hello_negotiates_exact_version",
+                "provider_history_projects_host_send_messages_as_assistant_turns",
+                "reconnect_resync_reports_generation_and_pending_state",
+                "redriven_peer_wake_prefers_urgent_queue_without_becoming_priority",
+                "redriven_peer_wake_runs_after_new_priority_but_before_later_normal_work",
+                "request_ids_are_unique_for_the_session",
+                "routed_mcp_bridge_serves_private_json_rpc_and_routes_cached_tools",
+                "server_direction_frames_from_renderer_are_protocol_breaches",
+                "shipping_agent_inbound_execution_admission_is_host_owned_and_precedes_provider_dispatch",
+                "shipping_cursor_agent_inbound_failure_redrives_priority_supersede_before_reporting_error",
+                "shipping_local_inference_uses_host_canonical_history_for_provider_messages",
+                "sse_decoder_preserves_chunk_boundaries_and_utf8_payloads",
+                "transport_stage_recorder_bounds_echo_correlation_and_settles_once",
+                "waitable_control_calls_resolve_reject_and_settle_on_disconnect",
+                "webauthn_provider_models_welcome_consent_sign_and_failure_frames",
+                "inference_router_persists_bounded_transcripts_reactions_and_turn_ids",
+                "coordinator_inference_router_refreshes_default_provider_without_losing_agent_overrides",
+                "local_exec_daemon_files_parse_and_retire_only_the_expected_generation",
+                "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash"
+              ],
+              "missing_or_nonunique_positive_results": [],
+              "oracle_accepted": true,
+              "log": "coordinator.log",
+              "log_sha256": "ef78c61126d92a4f856b2dca0d44dbecf7c5ad9c9d5c130218a963f3d6a40fab"
+            },
+            {
+              "case": "app",
+              "command": [
+                "cargo",
+                "test",
+                "--locked",
+                "--target-dir",
+                "source/host/target",
+                "--manifest-path",
+                "source/host/app/Cargo.toml",
+                "--bin",
+                "mahayana-app-host",
+                "tests::link_preview_gateway_tests::"
+              ],
+              "cargo_exit": 0,
+              "capture_exit": 0,
+              "execution_error": null,
+              "required_positive_names": [
+                "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+                "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+                "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+              ],
+              "observed_passed_test_names": [
+                "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply",
+                "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+                "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane"
+              ],
+              "missing_or_nonunique_positive_results": [],
+              "oracle_accepted": true,
+              "log": "app.log",
+              "log_sha256": "5b372e9b3890c6d1b428f4762d55a5b61845bd6acea53e8c16f75f854b5fd936"
+            },
+            {
+              "case": "reused-mcp-composition",
+              "command": [
+                "cargo",
+                "test",
+                "--locked",
+                "--no-fail-fast",
+                "--manifest-path",
+                "source/host/Cargo.toml",
+                "--test",
+                "automation_run_path_contract",
+                "--test",
+                "automation_run_production_wiring_contract",
+                "--test",
+                "automation_runtime_contract",
+                "--test",
+                "automation_event_fires_contract",
+                "--test",
+                "automation_spend_guard_runtime_contract",
+                "--test",
+                "automation_lifecycle_production_wiring_contract",
+                "--test",
+                "automations_fire_delivery_contract",
+                "--test",
+                "automations_backend_contract",
+                "--test",
+                "host_runner_composition_production_wiring_contract",
+                "--",
+                "--test-threads=1"
+              ],
+              "cargo_exit": 0,
+              "capture_exit": 0,
+              "execution_error": null,
+              "reused_receipt": ".evidence/sqlite-native-path/automation-admission/receipt.json",
+              "required_positive_names": [
+                "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+                "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation"
+              ],
+              "observed_passed_test_names": [
+                "event_fire_queue_sheds_oldest_overflow_and_deduplicates_drop_reporting",
+                "runtime_event_fire_debounces_and_coalesces_run_uuids_into_one_durable_run",
+                "active_store_watcher_reports_agent_change_at_change_time",
+                "frozen_schedule_summary_keeps_subminute_and_timezone_semantics",
+                "production_composition_routes_to_unique_host_structured_log_owner",
+                "real_spend_guard_pause_reports_disabled_after_transition",
+                "real_ui_producer_flushes_pending_agent_delta_before_ui_delta",
+                "real_workflow_ui_wrapper_attributes_scheduled_workflow_creation",
+                "shipping_runtime_owns_all_frozen_lifecycle_sources_and_stable_fields",
+                "background_run_without_durable_history_identity_never_reaches_executor",
+                "cron_retention_policy_and_owner_throttle_fail_closed_at_the_policy_seam",
+                "duplicate_non_event_run_reports_from_atomic_admission_gate",
+                "event_wake_clamps_payloads_and_marks_untrusted_data",
+                "failed_and_interrupted_runs_settle_as_error_and_manual_failures_are_counted",
+                "manual_run_persists_running_then_terminal_success_after_executor_returns",
+                "manual_run_without_history_identity_refuses_before_execution_and_releases_admission",
+                "settled_run_reports_real_timing_schedule_and_event_batch",
+                "typed_run_path_missing_definition_refuses_without_identity_and_allows_repair",
+                "typed_run_path_preserves_admitted_cron_and_settlement_errors",
+                "typed_run_path_preserves_executed_terminal_and_retained_outcomes",
+                "typed_run_path_refusals_preserve_exact_legacy_errors_and_release_occupancy",
+                "wake_timestamp_uses_resolved_user_timezone",
+                "fixture_roots_are_exclusive_at_a_fixed_time_and_cleanup_keeps_siblings",
+                "real_shipping_runtime_reports_after_terminal_settlement",
+                "shipping_composition_uses_canonical_mapper_and_unique_host_owner",
+                "automation_gateway_commands_use_runtime_owner_and_renderer_shape",
+                "runtime_checked_backend_target_lookup_refuses_definition_and_directory_failures",
+                "runtime_manual_run_uses_durable_run_path_and_terminal_executor",
+                "runtime_serializes_mutations_and_derives_lifecycle_actions",
+                "workflow_ui_mutation_uses_same_automation_lifecycle_owner",
+                "background_run_nudges_then_pauses_and_resume_answer_restores_only_guard_paused_routines",
+                "manual_run_is_not_blocked_by_spend_guard",
+                "spend_guard_card_acknowledgment_requires_insertion_for_bound_and_legacy_sessions",
+                "explicitly_settled_history_replays_terminal_success_or_failure_after_reopen",
+                "fire_runtime_config_reset_does_not_impersonate_notify",
+                "fire_runtime_disconnected_and_owed_work_bypass_notify_gate",
+                "fire_runtime_does_not_poll_until_run_execution_is_ready",
+                "fire_runtime_drains_once_while_no_server_schedulable_routines_exist",
+                "fire_runtime_matches_frozen_notify_floor_and_safety_poll_gate",
+                "fire_runtime_never_acks_unconfirmed_completion_or_redispatches_redelivery",
+                "fire_runtime_polls_delivers_reports_and_acks_on_next_poll",
+                "fire_runtime_successful_completion_honors_next_poll_delay",
+                "relay_runtime_backoff_suppresses_immediate_retry",
+                "relay_runtime_preserves_scope_and_repo_degradation_status",
+                "relay_runtime_registers_polls_and_acks_only_accepted_or_unmappable_events",
+                "relay_subscription_request_is_stable_and_deduplicated",
+                "relay_wire_mapping_matches_grok_slack_and_github_shapes",
+                "reopened_backend_abandons_unreadable_malformed_and_ambiguous_authority_without_ack",
+                "reopened_backend_reads_hidden_legacy_running_authority_beyond_display_history",
+                "reopened_running_history_does_not_fence_a_distinct_event_or_schedule",
+                "reopened_running_original_and_alias_never_execute_complete_or_ack",
+                "bare_fire_requires_schedule_and_disambiguates_mixed_triggers",
+                "bounded_platform_event_parsing_rejects_oversized_or_incomplete_payloads",
+                "checked_absence_ignores_stale_display_rows_for_eligible_delivery",
+                "checked_history_errors_precede_projection_and_all_fire_validation",
+                "checked_history_result_governs_delivery_independently_of_display_projection",
+                "checked_running_and_terminal_rows_override_absent_or_stale_display_history",
+                "existing_completed_run_is_not_executed_twice",
+                "invalid_checked_rows_are_abandoned_before_stale_projection_or_disabled_completion",
+                "legacy_schedule_slot_covered_by_last_run_is_rejected",
+                "missing_target_does_not_probe_an_unrelated_history",
+                "prepares_schedule_and_event_delivery_only_after_target_validation",
+                "running_original_and_coalesced_ids_are_abandoned_before_fire_validation",
+                "slack_channel_id_alias_can_match_trigger",
+                "stale_or_unverifiable_definition_never_executes",
+                "terminal_original_and_coalesced_ids_replay_stored_success_and_failure",
+                "typed_history_preserves_literal_aliases_at_the_producer_bound",
+                "unavailable_checked_history_never_falls_back_to_display_or_definition_rejection",
+                "checked_backend_fire_wiring_oracle_rejects_bypasses_and_dead_calls",
+                "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation",
+                "desktop_uninstall_has_its_own_native_registry_group_without_changing_the_frozen_surface",
+                "generated_agent_stream_owns_canonical_stream_attempt_runtime",
+                "group_member_turn_keeps_generated_lifecycle_without_private_state",
+                "host_runner_composition_owns_computer_use_session_lifecycle",
+                "host_runner_composition_owns_shipping_runner_construction",
+                "host_runner_composition_owns_transcript_checkpoint_wiring",
+                "host_runner_composition_owns_turn_decoration_order",
+                "host_runner_composition_owns_turn_state_surface_wiring",
+                "host_runner_composition_settles_only_its_owned_shutdown_surfaces",
+                "runner_construction_oracle_allows_test_only_constructors_and_preserves_source",
+                "runner_construction_scope_refuses_boundaries_inside_incomplete_prefixes",
+                "runner_construction_scope_refuses_missing_duplicate_or_malformed_boundaries",
+                "runner_construction_scope_refuses_production_after_test_module",
+                "shell_terminal_watch_shipping_path_uses_canonical_permission_and_generated_watermark",
+                "shipping_backend_fire_returns_checked_owner_discovery_and_callback_boundary",
+                "shipping_backend_schedule_returns_typed_attempt_to_the_actual_completion_callback",
+                "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+                "shipping_host_has_one_runner_composition_entrypoint",
+                "shipping_skills_cache_and_prompt_use_the_bound_session_store_and_root",
+                "shipping_source_oracle_refuses_ambiguous_or_incomplete_boundaries",
+                "shipping_source_oracle_rejects_production_after_any_test_module_close",
+                "shipping_source_oracle_requires_boundary_and_retains_production_violations",
+                "typed_backend_attempt_wiring_oracle_rejects_wrong_owners_results_and_dead_calls"
+              ],
+              "missing_or_nonunique_positive_results": [],
+              "oracle_accepted": true,
+              "log": ".evidence/sqlite-native-path/automation-admission/tests.log",
+              "log_sha256": "65ef8979e3c70c043526138df33b28b9ebed3eb90d51f9b1ce1c624c43afff11"
+            }
+          ],
+          "result": "passed",
+          "scope": "Actual native HTTP authentication/permissions and AttachmentsService fresh-cache success/refusal; shipping Coordinator binary carrier/forwarding against a controlled peer; actual Linux app helper with closed Host lane and preserved ordinary lane replies, plus source-only shared-Arc/API anchors. Not macOS, cold internet fetch/pinning, concurrency soak, desktop UI/timing, remote-host path portability, full media/platform or OCRM acceptance.",
+          "inputs_after_sha256": {
+            ".github/workflows/rust-desktop-runtime.yml": "a41d61e68e0c93d9f00b8a0364ae72e3642affd61aefd8237cf47920920b7329",
+            "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md": "9aa943fa3cf23cd115f0c419225255ddc1201cc93b230e904f6ceadc919dadb0",
+            "projects/openclaw-rust/upstream.lock.json": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+            "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+            "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "source/host/app/Cargo.toml": "5a7070c724de5eac06274b1cc1aa8201d5b72649ae0313eddd110ee7e75fe777",
+            "source/host/app/Cargo.lock": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+            "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml": "87d3ad43240bf5bc2e7fdeeb0d660dcfc61b47a5c96e8479d5d5a947fab7b3fe",
+            "source/node-agent-coordinator/Cargo.toml": "a5f8b4542adea2cd03b0977e1e8bfbd8cdcc5ac58b5513e270eb3f6f51191eda",
+            "source/node-agent-coordinator/Cargo.lock": "3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358",
+            "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+            "source/host/src/gateway_server.rs": "bbfd64c3bae6a46737414e27724ec5423f600a5ab6c84eb71d6e15266354ee8a",
+            "source/host/src/gateway_protocol.rs": "25c05412af9366eec45a0fcf4ce22b810a3b7fd368b6c98e3faf836df4bff7db",
+            "source/host/app/src/main.rs": "48a5be85d2f9a08b4f8c60949a45b5fedbc670aae2d60ccae138ec3b2f699685",
+            "source/host/app/src/tests/link_preview_gateway_tests.rs": "21e566af4a7c8b8550eaffbc8f0f24d85e82f27029755d03c9fa35d8e2e9a16a",
+            "source/host/src/extensions/attachments/attachments_service.rs": "b6a4a53c796879ea8b8c5cf4f0aa99976825f2653f4f40945d87ba1efa82060e",
+            "source/host/src/extensions/attachments/safe_link_preview_fetch.rs": "c63b2c8c8b991339a81bb60ffd98c5e8c3f17e5192fb11228f70888334d0a1dd",
+            "source/host/tests/gateway_protocol_contract.rs": "544c3efffc1f3e4e126a891a811f1909a5eb5b68d91f0a9364dbc74bd3ee9936",
+            "source/host/tests/gateway_server_contract.rs": "4c3442575dde4be92869f38ada2b2358f35a82c0612f55337b8e1194bb7c54c4",
+            "source/host/tests/host_runner_composition_production_wiring_contract.rs": "e19d9983f83f6c7b7483950839d709546ea4497a724ff43c98aed110b670a33e",
+            "source/node-agent-coordinator/src/carrier.rs": "32cea55b3fb7f416ca8eda6c4e4fbeb570a8ea696a3ed3ab0fcc29d87d3c0bb4",
+            "source/node-agent-coordinator/src/main.rs": "58823c533364d392ed25ab2ea245f662f35d2b56a618379da1de889063f82161",
+            "source/node-agent-coordinator/tests/coordinator_contract.rs": "3b27282f6c5815a564d6094a9a3c0644f5f7c2a43f419026daed5b53ac3340f7",
+            "source/node-agent-coordinator/tests/production_protocol.rs": "1c68b25532de99a7472f084756c072e187904a64bddb13b21cfc0efcffe81c95",
+            "source/shared/rpc/coordinator-main.ts": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+            "source/electron-main/attachments/attachments.ts": "362b11c60b2d9a9e55eabb91a63599f39c9ad9d47cdb30f0ada50dc304307364",
+            "source/electron-main/adapters/attachment-gateway.ts": "5e90723e57814055ac4488bbaa57d874eebcef5826045fb48038d6eb7cd39dfb",
+            "source/electron-main/coordinator/coordinator-main-port-client.ts": "ce13299b364acd893a45550a7ccbfca7fb7f7d7e8b2e50be671ff8e59fedb706"
+          }
+        },
+        "direct_named_required_results": [
+          {
+            "name": "native_link_preview_registration_keeps_inventory_and_owner",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4568281Z test native_link_preview_registration_keeps_inventory_and_owner ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4599906Z test native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4592752Z test native_link_preview_configured_secret_cannot_be_replaced_by_headers ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4600519Z test native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4597223Z test native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4595874Z test native_link_preview_retains_origin_and_unauthenticated_host_checks ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_nonloopback_configuration_requires_authentication",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4594026Z test native_link_preview_nonloopback_configuration_requires_authentication ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4595326Z test native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_service_argument_errors_keep_status_and_single_dispatch",
+            "passed_lines": [
+              "2026-11-02T22:04:28.4596570Z test native_link_preview_service_argument_errors_keep_status_and_single_dispatch ... ok"
+            ]
+          },
+          {
+            "name": "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+            "passed_lines": [
+              "2026-11-02T22:05:05.1019232Z test native_link_preview_carrier_reserves_cache_paths_for_main_data ... ok"
+            ]
+          },
+          {
+            "name": "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash",
+            "passed_lines": [
+              "2026-11-02T22:05:05.1032762Z test unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash ... ok"
+            ]
+          },
+          {
+            "name": "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+            "passed_lines": [
+              "2026-11-02T22:06:31.9239789Z test tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane ... ok"
+            ]
+          },
+          {
+            "name": "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+            "passed_lines": [
+              "2026-11-02T22:06:31.9239036Z test tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract ... ok"
+            ]
+          },
+          {
+            "name": "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply",
+            "passed_lines": [
+              "2026-11-02T22:06:31.9238003Z test tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply ... ok"
+            ]
+          },
+          {
+            "name": "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+            "passed_lines": [
+              "2026-11-02T21:52:29.2539999Z test shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback ... ok"
+            ]
+          },
+          {
+            "name": "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation",
+            "passed_lines": [
+              "2026-11-02T21:51:53.5370005Z test desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation ... ok"
+            ]
+          }
+        ],
+        "direct_test_counts": {
+          "host_gateway_protocol": 9,
+          "host_gateway_server": 43,
+          "coordinator_contract": 58,
+          "shipping_coordinator_production_protocol": 1,
+          "app_helpers": 3
+        },
+        "input_hash_maps_identical_before_after": true,
+        "prior_custody_receipts": [
+          {
+            "contract": "AUTO-RECOVERY-AVAILABILITY-v1/ARA-PATH-01/AUTO-FRESH-CUSTODY-v1",
+            "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+            "subject_tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+            "result": "passed",
+            "log_sha256": "6bd58c72a325d2367b900e888740233e305f0ec94ebe1cf48e352dbf20dcb477",
+            "required_fresh_custody_tests": [
+              "fresh_admission_rejects_lossy_history_before_publication",
+              "fresh_admission_rejects_invalid_identity_inputs_without_rewriting_history",
+              "fresh_admission_preserves_literal_custody_and_legacy_normalization",
+              "fresh_admission_distinguishes_missing_history_from_nonregular_paths_and_links"
+            ],
+            "scope": "Actual Linux native-byte/recovery fixtures and checked Automation FileStore delivery/fresh-history custody, including invalid UTF-8 folder identities, complete raw custody and proposed fresh identities. Existing legacy normalization remains a control. Not all-filesystem, metadata/open races, power-loss or whole-platform acceptance.",
+            "printed_receipt_lines": [
+              1721,
+              1870
+            ]
+          },
+          {
+            "contract": "AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1",
+            "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+            "subject_tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+            "result": "passed",
+            "log_sha256": "65ef8979e3c70c043526138df33b28b9ebed3eb90d51f9b1ce1c624c43afff11",
+            "required_tests": [
+              "typed_run_path_refusals_preserve_exact_legacy_errors_and_release_occupancy",
+              "typed_run_path_missing_definition_refuses_without_identity_and_allows_repair",
+              "typed_run_path_preserves_admitted_cron_and_settlement_errors",
+              "typed_run_path_preserves_executed_terminal_and_retained_outcomes",
+              "real_typed_history_precheck_preserves_bookkeeping_and_legacy_errors",
+              "real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images",
+              "real_typed_spend_guard_refusal_preserves_order_and_recovers",
+              "real_typed_admitted_failures_keep_existing_outcomes_and_outer_errors",
+              "real_full_running_history_refuses_before_cron_or_executor_and_checked_read_obeys_deletion",
+              "real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
+              "real_fresh_admission_nonregular_inputs_return_without_losing_custody",
+              "real_fresh_admission_preserves_regular_history_counts_and_links",
+              "real_manual_history_admission_refuses_corrupt_input_before_execution",
+              "real_scheduled_history_admission_refuses_corrupt_input_before_execution",
+              "real_event_history_admission_refuses_corrupt_input_before_execution",
+              "shipping_backend_schedule_returns_typed_attempt_to_the_actual_completion_callback",
+              "typed_backend_attempt_wiring_oracle_rejects_wrong_owners_results_and_dead_calls"
+            ],
+            "scope": "Actual Linux RunPath/Runtime/Session/FileStore typed refusal, full raw-history fresh admission, observed nonregular input return, legacy/error/retained controls and shipping-source callback wiring. Owned-child receipts remain required by each bounded case. Not actual App execution, macOS/platform or real backend acceptance; legacy covered-slot, metadata/open races and unknown write effects remain open.",
+            "printed_receipt_lines": [
+              7693,
+              8147
+            ]
+          },
+          {
+            "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1",
+            "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+            "subject_tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+            "result": "passed",
+            "required_tests": [
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion",
+              "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+              "tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes"
+            ],
+            "cases": [
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ],
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              },
+              {
+                "name": "tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes",
+                "result": "passed",
+                "outer_and_owned_child_summaries": [
+                  [
+                    "ok",
+                    "1",
+                    "0",
+                    "0"
+                  ]
+                ]
+              }
+            ],
+            "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair. Not a linked production package/startup, real external provider/backend, macOS or whole-platform acceptance. Legacy covered-slot, metadata/open races and unknown write effects remain open.",
+            "printed_receipt_lines": [
+              10407,
+              10947
+            ]
+          }
+        ],
+        "terminal_artifact_id": 13182439550,
+        "terminal_artifact_digest": "sha256:425006bbafab0ea74e4ad7a9565e40b896a8a81d6accfaa24321121bf909a9f4",
+        "scope": "LPG-v1 exact-931 Linux HTTP permissions/cache, controlled shipping Coordinator forwarding, actual App helper and retained original MCP source oracle all passed. This is not RSU/MGS-on-42, macOS, cold internet fetching, full desktop UI, soak or whole migration acceptance."
+      }
+    },
+    "memoryRuntimeObservation": {
+      "subject": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+      "tree": "d119b337cf4f1d00ab00bb26144998e2c378ee86",
+      "observedAt": "2026-11-02T21:54:43Z",
+      "sourceRun": 41531742497,
+      "runtimeRun": 41531742609,
+      "sourceJobs": [
+        {
+          "id": 125573404762,
+          "name": "source-authority",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573407198,
+          "name": "recover-original-host-log",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "runtimeJobs": [
+        {
+          "id": 125573405387,
+          "name": "sqlite-native-path",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573405761,
+          "name": "rust-host",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573405782,
+          "name": "OCRM installation key restore boundary / Linux",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573406034,
+          "name": "renderer",
+          "status": "queued",
+          "conclusion": null
+        },
+        {
+          "id": 125573407134,
+          "name": "Pressure profiler / ${{ matrix.os }}",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 125573484174,
+          "name": "platform-worker",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ],
+      "verdict": "pending; queued or skipped is not success"
+    },
+    "preservation": "The incoming MGS record already preserves the exact frozen source and publication. Retain it as the canonical Memory evidence path instead of committing a duplicate full task-history appendix.",
+    "sourceBoundary": "New RSU-v1 work is independent and not included in the two published subjects above; its own frozen H and execution will be required."
+  },
+  "historicalVerificationAtPublication": {
+    "status": "not-run",
+    "environment": "GitHub Actions only",
+    "selection": [
+      "Existing Linux portable recovery command plus required MGS and mutation/snapshot names",
+      "Existing macOS recovery integration command plus fail-closed MGS receipt",
+      "Existing affected shipping Host compilation, source authority and preserved shared contracts"
+    ],
+    "localExecution": "None. Source/Git/API operations and evidence review only."
+  },
+  "terminalRuntimeObservation": {
+    "subject_commit": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+    "subject_tree": "d119b337cf4f1d00ab00bb26144998e2c378ee86",
+    "run_id": 41531742609,
+    "job_id": 125573405387,
+    "status": "completed",
+    "conclusion": "success",
+    "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573405387/logs",
+    "full_log_characters": 1049967,
+    "observation_utc": "2026-11-02 22:21:00 UTC",
+    "required_mgs_results": [
+      {
+        "name": "memory_gateway_rejects_path_selectors_before_external_memory_read",
+        "count": 1
+      },
+      {
+        "name": "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+        "count": 1
+      },
+      {
+        "name": "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+        "count": 1
+      },
+      {
+        "name": "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+        "count": 1
+      }
+    ],
+    "receipts": [
+      {
+        "contract": "CWR-v1-portable/MGS-v1",
+        "subject_commit": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "subject_tree": "d119b337cf4f1d00ab00bb26144998e2c378ee86",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run_id": "41531742609",
+        "run_attempt": "1",
+        "job": "sqlite-native-path",
+        "runner_os": "Linux",
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "inputs_sha256": {
+          ".github/workflows/rust-desktop-runtime.yml": "73d9cf88316bd84190caa72498e282bf2228fdbd637aaa9480ce0e43605c0188",
+          "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md": "c26d82021cb7b4fe9a6d37b4f6b38d7cb199dcd21a01d27915038b1b2b74ba0f",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md": "8d8aa116ef5029bfbe5526b66f95bc009c4c80ca4d52359c5b7d150cf52b3c9f",
+          "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+          "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+          "source/host/src/extensions/transcript/sand_pending_wake_store.rs": "daa4e5b0792db15e295c4303a9f9ad2b85428b180baa30f63952350735af0638",
+          "source/host/src/extensions/transcript/pending_wake_rearm.rs": "9bdc6f64dd1bddf5b9f0a98f8633cb6a6e32b172ec73c5e98de65d621dde604c",
+          "source/host/src/extensions/transcript/production_runtime.rs": "6b2b213a78e25368fd07cceeef6c617c30de3bd5416f108c22b70c0300e7d6d3",
+          "source/host/src/extensions/transcript/transcript_manager.rs": "7c21b22f2b605566906dc9ca2fd622d3da1d9b9832b06fa65fed05fd846f1f12",
+          "source/host/src/extensions/memory/memory_service.rs": "3979c884087c40815ff9497ab24e11e2cb219b8e1c6721697cd39abdefe9ea84",
+          "source/host/src/storage/agent_paths.rs": "5054ac0abd74991b97012146f21c4f7132198a6dcfe5cd3b50a9e9b9d7c95df4",
+          "source/host/src/storage/folder_id.rs": "903c6fb755ff11d4cf3723bcd4fe57dcaff88dfe8c3db9164add6f9182a6b9ef",
+          "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+          "source/host/src/extensions/transcript/background_wakes.rs": "874fa9b1e3511df9bf05fe331817284d617c7a877ca25abc5920b83067bd4cb0",
+          "source/host/src/gateway_server.rs": "bbfd64c3bae6a46737414e27724ec5423f600a5ab6c84eb71d6e15266354ee8a",
+          "source/host/app/src/main.rs": "48a5be85d2f9a08b4f8c60949a45b5fedbc670aae2d60ccae138ec3b2f699685",
+          "source/host/tests/durable_recovery_stores_contract.rs": "12eb56444d61333c610e504d8c0c624539379344cd9955e52fe07a081dece12c",
+          "source/host/tests/pending_wake_rearm_contract.rs": "ee047795f5abecc197164ef0d9cdeff4790c64c747334cbd61c62ffc88a17e97",
+          "source/host/tests/transcript_manager_contract.rs": "be2d93044219ebdb9ed2dd6ee829965aca8746cbf71277a184ec65ec7ee6e261",
+          "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs": "fa243b2087bbed478438d8f9341c87b3f4daa1c024499f18e0c335b4dc70696d"
+        },
+        "planned_commands": [
+          {
+            "case": "integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "durable_recovery_stores_contract",
+              "--test",
+              "pending_wake_rearm_contract",
+              "--test",
+              "transcript_manager_contract",
+              "--test",
+              "cloud_agent_pending_wake_rearm_production_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "required_positive_names": [
+              "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+              "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+              "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+              "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+              "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+              "matching_pending_wake_admission_compares_every_marker_field",
+              "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+              "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+              "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+              "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+              "channel_rearm_success_retains_complete_marker_across_reopen",
+              "channel_rearm_error_retains_complete_marker_across_reopen",
+              "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+              "recreate_carry_still_excludes_channel_delivery_markers",
+              "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+              "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+              "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+              "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+              "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+              "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+              "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run"
+            ]
+          },
+          {
+            "case": "checked-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "required_positive_names": [
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::poisoned_pending_owner_refuses_reads_admission_and_all_mutations",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes"
+            ]
+          },
+          {
+            "case": "paired-device-sse",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "required_positive_names": [
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+            ]
+          }
+        ],
+        "executions": [
+          {
+            "case": "integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "durable_recovery_stores_contract",
+              "--test",
+              "pending_wake_rearm_contract",
+              "--test",
+              "transcript_manager_contract",
+              "--test",
+              "cloud_agent_pending_wake_rearm_production_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "required_positive_names": [
+              "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+              "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+              "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+              "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+              "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+              "matching_pending_wake_admission_compares_every_marker_field",
+              "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+              "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+              "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+              "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+              "channel_rearm_success_retains_complete_marker_across_reopen",
+              "channel_rearm_error_retains_complete_marker_across_reopen",
+              "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+              "recreate_carry_still_excludes_channel_delivery_markers",
+              "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+              "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+              "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+              "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+              "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+              "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+              "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+              "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run",
+              "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+              "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+              "channel_delivery_failure_marker_round_trips_operation_identity",
+              "checked_ack_reads_fresh_complete_image_and_never_turns_corruption_into_absence",
+              "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+              "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+              "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+              "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+              "checked_upgrade_batch_is_all_or_nothing_and_retains_newest_same_agent_marker",
+              "checked_upgrade_migration_is_whole_image_atomic_and_leaves_legacy_work_unbound",
+              "checked_upgrade_store_accepts_only_absence_explicit_empty_and_complete_legacy_or_v1_rows",
+              "checked_upgrade_store_refuses_corruption_without_replacing_or_clearing_evidence",
+              "checked_upgrade_v2_roundtrips_full_reference_and_exact_clear_rejects_reference_drift",
+              "matching_pending_wake_admission_compares_every_marker_field",
+              "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+              "pending_wake_parser_preserves_frozen_coercion_and_filters_invalid_rows",
+              "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+              "pending_wake_store_upserts_clears_and_prunes_atomically",
+              "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+              "recovery_watch_admission_replaces_only_the_exact_existing_marker",
+              "upgrade_resume_marker_rejects_incomplete_automation_identity",
+              "upgrade_resume_store_clears_only_the_observed_marker",
+              "upgrade_resume_store_coerces_upserts_and_deletes_file_when_empty",
+              "channel_rearm_error_retains_complete_marker_across_reopen",
+              "channel_rearm_success_retains_complete_marker_across_reopen",
+              "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+              "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+              "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+              "cloud_completion_after_armed_check_is_not_resurrected_by_rearm",
+              "cloud_completion_after_snapshot_before_first_armed_check_cannot_start_another_worker",
+              "cloud_completion_during_watch_registration_is_not_resurrected_as_failure",
+              "cloud_rearm_preserves_an_admitted_marker_on_success_and_failure",
+              "cloud_rearm_rejects_a_marker_replaced_after_the_durable_snapshot",
+              "cloud_wake_survives_repeated_rearm_and_store_reopen_until_settlement",
+              "enqueue_refuses_gone_agents_and_appends_for_live_agents",
+              "failed_cloud_rearm_preserves_the_observed_marker_for_retry",
+              "interrupted_recreate_shell_uses_resume_notice_and_group_session_clears_marker",
+              "persists_clears_and_disarms_with_reference_telemetry",
+              "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+              "recreate_carry_filters_before_persisting_and_reports_frozen_outcomes",
+              "recreate_carry_still_excludes_channel_delivery_markers",
+              "manager_dispose_closes_original_queue_before_cleanup_and_rejects_snapshotted_callback_and_ticket",
+              "manager_emits_active_session_automations_through_the_roster_surface",
+              "manager_is_the_single_production_composition_owner",
+              "manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle",
+              "manager_owns_box_handoff_state_and_handback_settlement",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+              "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+              "manager_refuses_failed_marker_handoff_and_preserves_existing_quiesce",
+              "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "runner_registry_owns_turn_execution_and_manager_delegates_to_the_same_owner"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                4,
+                0,
+                0
+              ],
+              [
+                21,
+                0,
+                0
+              ],
+              [
+                18,
+                0,
+                0
+              ],
+              [
+                13,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "integration.log",
+            "log_sha256": "a08c0e096e069ff87ffeb8e9f0a2eecee5f0276adbabe526518745ab24242be8"
+          },
+          {
+            "case": "checked-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::poisoned_pending_owner_refuses_reads_admission_and_all_mutations",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::poisoned_pending_owner_refuses_reads_admission_and_all_mutations"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                3,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "checked-store.log",
+            "log_sha256": "1285a5699dfa36314efb2239c9ca042d60a3597560b5b642efcb97459461f3ba"
+          },
+          {
+            "case": "paired-device-sse",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "required_positive_names": [
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "paired-device-sse.log",
+            "log_sha256": "fb3c72175975a6f290858faa8b2127b074f32be2108237e38b41e9a6271e8edc"
+          }
+        ],
+        "result": "passed",
+        "scope": "Linux actual store, rearm, manager and checked-lock controls, plus an independent paired-device SSE permission control. MGS-v1 exercises the actual Memory dispatch with real outside/inside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and preserved mutation/snapshot behavior. The cloud-agent target is source-wiring only; controlled runtime-port outcomes are not shipping app/provider/quiescence execution. Symlink, cross-account, full HTTP/UI, macOS/Windows, real transport/provider, unknown-effect and platform acceptance remain open."
+      }
+    ],
+    "scope": "Exact Linux command results only. Raw job log read through GitHub API; required positive names and receipt H/tree/U/log digests were checked. No unit/global review, authority, acceptance or shipping-artifact promotion."
+  },
+  "evidenceCarrierScope": "This file revision is an evidence carrier. Exact execution claims refer only to the explicitly identified 42ee1165 and 93130e0a subject commits and their recorded trees; no claim that the carrier is the tested or shipping artifact.",
+  "descendant_f5e_shared_regression_observation": {
+    "subject": {
+      "H": "f5e58a5dd052dd9c74454ae9a77a5b1ed531b981",
+      "tree": "23e13a6efabe861e351ec532eb7c3b284774d32b",
+      "parent": "7eb81e20b7dc2eac5a71516a9a0c78795d252e95",
+      "upstream": {
+        "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      }
+    },
+    "runtime": {
+      "run_id": 41545866179,
+      "attempt": 1,
+      "outer_status": "queued",
+      "outer_conclusion": null,
+      "linux_job_id": 125621214466,
+      "linux_status": "completed",
+      "linux_conclusion": "success",
+      "linux_completed_at": "2026-11-02T23:45:29Z",
+      "macos_job_id": 125621214739,
+      "macos_status": "queued",
+      "macos_conclusion": null,
+      "observed_at": "2026-11-02T23:49:38.796Z",
+      "proof_refs": [
+        "final-status-observation.json",
+        "job-125621214466.log"
+      ]
+    },
+    "scoped_claims": {
+      "MGS-v1": {
+        "status": "scoped-linux-pass",
+        "required_count": 4,
+        "positive_occurrences": {
+          "memory_gateway_rejects_path_selectors_before_external_memory_read": 1,
+          "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts": 1,
+          "memory_gateway_preserves_projection_order_and_hundred_record_limit": 1,
+          "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation": 1
+        },
+        "proof_refs": [
+          "required-literal-results.json",
+          "linux-2-receipt.json"
+        ]
+      }
+    },
+    "shared_app_fixture_recovery": {
+      "status": "scoped-linux-pass",
+      "required_app_cases": 62,
+      "passed_app_cases": 62,
+      "all_case_summaries": [
+        1,
+        0,
+        0
+      ],
+      "actual_commands": 127,
+      "all_command_exits": 0,
+      "startup_required": 7,
+      "startup_summary": [
+        7,
+        0,
+        0
+      ],
+      "app_executable_sha256": "392bd7a3c7c0534261065a59c75dcd1c697641de142bfb0a7f00f3ff1d9197d3",
+      "scope": "Exact shipping cfg(not(test)) check, linked App harness, current 62 actual App cases and seven normal-startup controls. Full packaged/shipping-platform acceptance remains open.",
+      "proof_refs": [
+        "linux-5-receipt.json",
+        "terminal-evidence-reconciliation.json",
+        "required-literal-results.json"
+      ]
+    },
+    "source": {
+      "run_id": 41545866193,
+      "conclusion": "success",
+      "source_job": 125621213696,
+      "source_job_conclusion": "success",
+      "persistence_job": 125621858549,
+      "persistence_conclusion": "success",
+      "source_review_tests": 33,
+      "structural_tests": 21,
+      "tracked_paths": 62130,
+      "canonical_inventory_sha256": "c6d1735e74d172442a6d465ca5e031d616fc177981828b3f26e23e2ed716a448",
+      "persistence_literal": "No new source-derived shard content",
+      "new_carrier": false,
+      "scope": "Scoped G01 tracked-tree/G02 structural only. No source/dependency/semantic closure or full gate promotion.",
+      "proof_refs": [
+        "source-authority-terminal.json",
+        "source-and-renderer-proof.json"
+      ]
+    },
+    "canonical_detail": "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+    "raw_log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125621214466/logs",
+    "raw_log_sha256": "f01dda28aa7fcd880e5af6a3c1281a53b8668fac1d65196df516b7927557c164",
+    "source_proposal_sha256": "7b50d7c996be61eb30a348ffd0d4850e1d8b31d5af16b7dd1c0118aa7ac293f7",
+    "preservation": [
+      "MGA Haae00b9a039ce476896a5f2cbc5eecf3df725518 and PMS Ha50e4222776ce1e3a422d405d40fba26c0ae0594 App/whole-Linux failures remain failed. This descendant result does not edit those runs.",
+      "Every historical pending snapshot and signed source-only review remains literal history; no report hash rewriting.",
+      "Only f5e58a5dd052dd9c74454ae9a77a5b1ed531b981 is the runtime subject. Later branch heads, later Memory edits and evidence/source carriers gain no execution claim from this observation.",
+      "macOS queued and profiler/platform-worker skipped remain non-passing.",
+      "All applicable full G01-G12/AC01-AC24, source/dependency/legal closure, real providers/transports/indexed backends, devices/platform/UI/soak/package/upgrade/rollback and independent ACCEPT remain open. No upstream-read credit, inventory completion or global flag is promoted."
+    ],
+    "carrier_scope": "This is a separately identified descendant observation. It does not change this file original subject, prior failed job or historical source review."
+  }
+}

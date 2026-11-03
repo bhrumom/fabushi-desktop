@@ -5,6 +5,8 @@ use serde_json::Value;
 use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedMcpMetaToolDefinition, RoutedToolDefinition,
 };
+use crate::extensions::session::typed_replay::TypedReplayEntry;
+use crate::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
 
 use super::conversation_state::RecentUserMessage;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
@@ -15,17 +17,19 @@ use super::routed_provider_runtime::RoutedProviderCancellation;
 use super::turn_agent_composition::TurnAgentComposition;
 use super::TurnRunOptions;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProductionTurnInputProjection {
     pub options: TurnRunOptions,
     pub ack_token: Option<String>,
     pub prompt_action: PromptCollectorTurnAction,
+    pub typed_replay: Option<Vec<TypedReplayEntry>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ProductionTurnActionProjection {
     pub lifecycle_messages: Vec<ProviderMessage>,
     pub provider_messages: Vec<ProviderMessage>,
+    pub typed_replay: Option<Vec<TypedReplayEntry>>,
     pub prompt_action: PromptCollectorTurnAction,
 }
 
@@ -33,7 +37,7 @@ pub struct ProductionTurnAgentInputProjection<'a> {
     pub action: ProductionTurnActionProjection,
     pub mcp_tools: Vec<RoutedToolDefinition>,
     pub mcp_meta_tools: Vec<RoutedMcpMetaToolDefinition>,
-    pub base_state_bytes: Vec<u8>,
+    pub expected_base: Option<ProductionAgentCheckpointSnapshot>,
     pub ack_token: Option<String>,
     pub cancel_this_run: RoutedProviderCancellation,
     pub emit_update: &'a mut dyn FnMut(&str, &str),
@@ -48,21 +52,27 @@ pub fn create_production_turn_agent_input_projection<'a>(
     turn_input: &ProductionTurnInputProjection,
     emit_update: &'a mut dyn FnMut(&str, &str),
 ) -> Result<ProductionTurnAgentInputProjection<'a>, ProviderSessionError> {
-    let (mcp_tools, mcp_meta_tools) =
-        composition.snapshot_mcp_projection().unwrap_or_default();
-    let base_state_bytes = match checkpoint_sink {
-        Some(sink) => sink.base_state_bytes()?,
-        None => Vec::new(),
+    let (mcp_tools, mcp_meta_tools) = match composition.snapshot_mcp_projection() {
+        Ok(snapshot) => snapshot,
+        Err(error @ ProviderSessionError::McpCatalog(_)) => return Err(error),
+        // Discovery availability has historically been optional at this boundary.
+        // A received malformed catalog is a separate, permanent admission failure.
+        Err(_) => Default::default(),
+    };
+    let expected_base = match checkpoint_sink {
+        Some(sink) => sink.checked_base_snapshot()?,
+        None => None,
     };
     Ok(ProductionTurnAgentInputProjection {
         action: ProductionTurnActionProjection {
             lifecycle_messages: lifecycle_messages.to_vec(),
             provider_messages: provider_messages.to_vec(),
+            typed_replay: turn_input.typed_replay.clone(),
             prompt_action: turn_input.prompt_action.clone(),
         },
         mcp_tools,
         mcp_meta_tools,
-        base_state_bytes,
+        expected_base,
         ack_token: turn_input.ack_token.clone(),
         cancel_this_run: composition.cancellation(),
         emit_update,
@@ -116,6 +126,9 @@ pub fn create_production_turn_input_projection(
                 .is_some_and(|value| !value.is_null()),
         },
         ack_token: None,
+        // Only the admitted Session owner may supply canonical replay later.
+        // Serialized request fields are not a trusted replay producer.
+        typed_replay: None,
         prompt_action,
     })
 }

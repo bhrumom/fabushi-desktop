@@ -1,0 +1,226 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "contracts": [
+    "HHP-v2",
+    "IPB-v1"
+  ],
+  "integration_parent": "c3c9bea437d4a1bf1e28be12b5431e1a1c158b09",
+  "integration_parent_tree": "316e0198aa7f296320846bf7f6a7ea9a3d117332",
+  "reviewed_base": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+  "reviewed_tree": "cddd06d5f6f3255ae63b76ac7e3955c12ab2e1e2",
+  "complete_diff_sha256": "d5f27d48220c0be38edb6c9b1d8da387973a714a22214fba6f4835d78545c040",
+  "reviewed_paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "matches_frozen_identity": true,
+      "git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "sha256": "294aa876496bb5e0efe2d59d29bfb21bc25fbdb4a4a9c6d0b723a8718d01af61"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "matches_frozen_identity": true,
+      "git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "sha256": "ded8ac231c4c5727fe66c69b8c41aec3fdf4213abe65d62c6f1e1da50fdd429b"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+      "matches_frozen_identity": true,
+      "git_blob": "f7b8acc4cc6e63b88f576e16ae9553940b9572b3",
+      "sha256": "1b1bd3970188dec9aea2a79493637e9079fb5274441dd49b3b571a336a12b1b4"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "matches_frozen_identity": true,
+      "git_blob": "1a6662f0ad9abe1b1a230ddc769a71560ea770b7",
+      "sha256": "f6340483b426b4b31c7614b8ea1033568bcc9e32b39aa46644f9355d37d99cd4"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "matches_frozen_identity": true,
+      "git_blob": "1b56af4674e6634786460bb9d52f3e0b098785b5",
+      "sha256": "4a11a92726c04bfef63fa4419a314a4a0121fa7f614121cf0fbcd9ca1b4a32e1"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "matches_frozen_identity": true,
+      "git_blob": "01d23d9ab56232776c9994abb53320032aa992bd",
+      "sha256": "be77ffa1f3f3b91772dab6bb1a29dbe3eddefe2464d83da21d7101bef536597e"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "matches_frozen_identity": true,
+      "git_blob": "7cfeff678c334320515de0bc01200bdb6af39379",
+      "sha256": "96af84d9fd740f9825111cc64da9d7cfcd82d6e3a03b74dfb0de907d25568830"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "matches_frozen_identity": true,
+      "git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "sha256": "d45556ae26bbd0bc6fcb86440619b063b3455286c442bd722d9c9d6dfc2d4256"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "matches_frozen_identity": true,
+      "git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "sha256": "91c345a94037a0ef218f9d8c64ba64d53762b57d4ec533fe3a06bc53e1450fee"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "matches_frozen_identity": true,
+      "git_blob": "61291cf57b42408cd98c7fe7676d2a0694fa44d0",
+      "sha256": "30bf9699720e33dd9c2bdbc08be5b95a9b42dc4a7ca2a056d62ff3a1a8bfc584"
+    },
+    {
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "matches_frozen_identity": true,
+      "git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "sha256": "09d388e2ead4e0c7a4d78d2f4c0037bbfd60acdf20ff1c1b74159ee1db018586"
+    },
+    {
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "matches_frozen_identity": true,
+      "git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "sha256": "7821f5ce3646864a50446ee823e5fc600176a503326450449052f12794c7de65"
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "matches_frozen_identity": true,
+      "git_blob": "a90b5f913679b7e284f4970c42e8c2b774ee4c94",
+      "sha256": "54e4d35a332617e8774f844e68de8ae2443dd947000e3b152dcc8a97d9c5e608"
+    }
+  ],
+  "reviews": [
+    {
+      "report": "html-png-r1-general.md",
+      "lens": "general/security",
+      "model": "configured",
+      "effort": "xhigh",
+      "bytes": 18320,
+      "sha256": "68507b9abc97c6a52f909b6b2d8bc69cb863c5b79183a410bde1565b2c60d06f",
+      "status": "source-converged; no actionable findings",
+      "scope": "complete immutable 13-file HHP-v2/IPB-v1 candidate",
+      "runtime_acceptance": false
+    },
+    {
+      "report": "html-png-r1-structure.md",
+      "lens": "structure/reuse/performance",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "bytes": 17651,
+      "sha256": "78faa9abf9b9b609a82aad1612e849142398b7ad76287b6680010d089c431205",
+      "status": "source-converged; no actionable findings",
+      "scope": "complete immutable 13-file HHP-v2/IPB-v1 candidate",
+      "runtime_acceptance": false
+    }
+  ],
+  "production_change": {
+    "owner": "Existing Rust Attachments owner; no new runtime, registry, permissions or persistence authority.",
+    "entry": "Existing AttachmentsService loadWebMedia dispatch and load_web_media consumer.",
+    "producer_and_consumer": "Bounded filesystem capture feeds the existing HTML policy; explicit valid .html/.htm returns original HTML bytes as text/html document, invalid input returns invalid-html-publication without image fallthrough.",
+    "policy": "ECMAScript whitespace and Unicode word-boundary behavior; 8192 UTF-16-unit bounded shape scan without slicing UTF-8; provenance missing versus inaccessible error classification remains distinct.",
+    "image": "Existing PNG metadata probe reads bit-depth/color fields only after 26 captured bytes; short-header, actual loader and retry controls are included.",
+    "state": "No new durable state or trust marker. Existing path, root, file-type and byte-limit checks remain; failure has no new write effect.",
+    "public_admission_limit": "Direct Attachments service wiring is covered. loadWebMedia is not registered in the finite public Gateway command registry; no HTTP, renderer, Runner or channel delivery completion is claimed."
+  },
+  "preserved_incoming_commits": [
+    {
+      "sha": "7dd8664f5f5a48864a71accac9d587c419fde5d7",
+      "scope": "device revocation evidence"
+    },
+    {
+      "sha": "ff0d456f322094ca82f063942f548f8d7fe90f00",
+      "scope": "canonical-root expected-panic result parser, 14 same-predicate oracle controls and scoped recovery spec/evidence"
+    },
+    {
+      "sha": "c3c9bea437d4a1bf1e28be12b5431e1a1c158b09",
+      "scope": "prior media recovery evidence; no HHP-v2/IPB-v1 production edits"
+    }
+  ],
+  "integration_review": {
+    "github_compare": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a...c3c9bea437d4a1bf1e28be12b5431e1a1c158b09",
+    "ahead_by": 3,
+    "incoming_paths": 39,
+    "overlap_with_reviewed_paths": [],
+    "decision": "Apply the unchanged reviewed blobs onto the latest parent tree; preserve all incoming source and evidence."
+  },
+  "withdrawn_duplicate": {
+    "tree": "f2d79c3b79ada42853c9f21ab6b69c002e779fb7",
+    "complete_diff_sha256": "1b25f3fc983b6a6a9c3538c4c643406c9b1846a03ab28c64fa3172f58f72ac57",
+    "status": "WITHDRAWN_NOT_PUBLISHED",
+    "reason": "The existing canonical-root owner published ff0d456 first. Its fix is inherited; the duplicate workflow and evidence are not committed. Stopped duplicate reviews do not approve ff0d456."
+  },
+  "prior_subject_evidence": {
+    "subject": "7ba34edf041f0a7e0f67af76fd3a7584b8a49e1a",
+    "runtime_run": 41564137858,
+    "attempt": 1,
+    "source_run": 41564137594,
+    "source": "passed 33 risk qualification and 21 materialization controls; global source closure remains open",
+    "media_windows": {
+      "job": 125681446199,
+      "artifact": 13197219397,
+      "owner_passed": 8,
+      "consumer_passed": 16,
+      "zip_sha256": "8128369c514c3c7031e81d81450c9e25189e5ef27eaf43ac8ea89284353be8a9"
+    },
+    "media_linux": {
+      "job": 125681446695,
+      "artifact": 13197333762,
+      "owner_passed": 7,
+      "consumer_passed": 17,
+      "zip_sha256": "aaa346b08bd4d6c0d0796b91b8e7055fa42ecb5389e750aadb780c8f02659fe3"
+    },
+    "media_macos": {
+      "job": 125681446442,
+      "status_at_read": "queued; no execution evidence"
+    },
+    "shared_failure": {
+      "classification": "TEST_FLAW",
+      "summary_passed": 91,
+      "captured_names": 88,
+      "omitted": "three standard should-panic success names",
+      "artifact": 13198209877,
+      "log_sha256": "a3fff6849b502603f5fd55954c3520821e575447a34538b03161869f832d032f",
+      "receipt": "failed; not relabeled"
+    },
+    "carry_rule": "These results belong only to 7ba; no HHP-v2/IPB-v1 or new-H runtime acceptance follows."
+  },
+  "validation": {
+    "status": "pending exact new-H GitHub Actions; no local or htch executable validation",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "capture": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+    "groups": [
+      "cleanup owner",
+      "cleanup consumer",
+      "HTML provenance/policy",
+      "format",
+      "actual web-media loader",
+      "image operations"
+    ],
+    "source_selected_counts_not_results": {
+      "Linux": 70,
+      "macOS": 70,
+      "Windows": 67
+    },
+    "required": "Match exact subject H and fixed U, input blobs, command/capture exits, raw-log hashes and all required names for each native platform. The corrected shared oracle must qualify on its exact execution subject."
+  },
+  "open_acceptance": [
+    "new exact-H source/runtime/native-platform evidence",
+    "generated-origin producer, durable marker and conditional database prune",
+    "public Gateway/UI/Runner/channel delivery wiring and permission admission",
+    "media file URL confinement and complete local read capability contract",
+    "full MIME/codec/null-alpha/dependency equivalence",
+    "remaining fixed-U source/dependency/legal coverage",
+    "all applicable G01-G12 and AC01-AC24, real provider/channel/plugin/node/device acceptance, UI/timing/security/performance/soak, supported packages, upgrade/rollback and Fabushi regression",
+    "independent ACCEPT and final shipping-SHA correspondence"
+  ],
+  "global_flags_changed": false,
+  "unit_verified_promoted": false,
+  "overall_complete": false
+}

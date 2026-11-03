@@ -13,6 +13,8 @@ struct Deps {
     events: Mutex<Vec<HashMap<String, String>>>,
     confirmed: Mutex<Vec<BTreeMap<String, String>>>,
     calls: Mutex<Vec<String>>,
+    quiesce_error: Mutex<Option<String>>,
+    resume_error: Mutex<Option<String>>,
 }
 
 impl Default for Deps {
@@ -25,6 +27,8 @@ impl Default for Deps {
             events: Mutex::new(Vec::new()),
             confirmed: Mutex::new(Vec::new()),
             calls: Mutex::new(Vec::new()),
+            quiesce_error: Mutex::new(None),
+            resume_error: Mutex::new(None),
         }
     }
 }
@@ -50,11 +54,11 @@ impl HostUpgradeDependencies for Deps {
     }
     fn quiesce_transcript_for_upgrade(&self) -> Result<(), String> {
         self.calls.lock().unwrap().push("quiesce".into());
-        Ok(())
+        self.quiesce_error.lock().unwrap().clone().map_or(Ok(()), Err)
     }
     fn resume_interrupted_upgrade_turns(&self) -> Result<(), String> {
         self.calls.lock().unwrap().push("resume".into());
-        Ok(())
+        self.resume_error.lock().unwrap().clone().map_or(Ok(()), Err)
     }
     fn resolve_bundle_version(&self) -> Result<Option<String>, String> {
         Ok(self.latest.lock().unwrap().clone())
@@ -143,6 +147,22 @@ fn upgrade_preparation_preserves_peer_order_and_resume_is_explicit() {
         *deps.calls.lock().unwrap(),
         vec!["suspend", "sharing", "quiesce", "resume"]
     );
+}
+
+#[test]
+fn failed_upgrade_handoff_and_discovery_propagate_without_staging_or_implicit_resume() {
+    let deps = Arc::new(Deps::ready());
+    let service = HostUpgradeService::new(deps.clone(), false);
+    *deps.quiesce_error.lock().unwrap() = Some("marker write refused".into());
+    assert_eq!(service.prepare_for_upgrade(), Err("marker write refused".into()));
+    assert_eq!(*deps.calls.lock().unwrap(), vec!["suspend", "sharing", "quiesce"]);
+    assert_eq!(service.update_state().staged_version, None);
+    *deps.resume_error.lock().unwrap() = Some("marker discovery refused".into());
+    assert_eq!(service.resume_interrupted_upgrade_turns(), Err("marker discovery refused".into()));
+    assert_eq!(*deps.calls.lock().unwrap(), vec!["suspend", "sharing", "quiesce", "resume"]);
+    *deps.quiesce_error.lock().unwrap() = None;
+    service.prepare_for_upgrade().unwrap();
+    assert_eq!(service.update_state().staged_version, None);
 }
 
 #[test]

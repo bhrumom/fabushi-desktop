@@ -22,6 +22,7 @@ pub enum HostGatewayOwner {
     Mcp,
     ForeverBox,
     CloudAgents,
+    CloudWorkers,
     BoxStore,
     HostUpgrade,
     TeachRecording,
@@ -30,10 +31,75 @@ pub enum HostGatewayOwner {
     Settings,
     WebAuthn,
     Secrets,
+    DevicePairing,
+}
+
+pub const OPENCLAW_GATEWAY_METHODS: &[&str] = &[
+    "device.pair.request",
+    "device.pair.status",
+    "device.pair.approve",
+    "device.pair.reject",
+    "device.pair.list",
+    "device.pair.revoke",
+    "device.pair.rotateToken",
+    "device.token.revoke",
+    "device.token.rotate",
+    "device.pair.setupCode",
+    "node.register",
+    "node.invoke",
+    "node.status",
+    "node.list",
+    "chat.send",
+    "chat.abort",
+    "sessions.list",
+    "sessions.get",
+    "sessions.create",
+    "sessions.patch",
+    "sessions.delete",
+    "sessions.providerReview.continue",
+    "cron.list",
+    "cron.trigger",
+    "config.get",
+    "config.set",
+    "system.info",
+];
+
+pub fn openclaw_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
+    match method {
+        "device.pair.request"
+        | "device.pair.status"
+        | "device.pair.approve"
+        | "device.pair.reject"
+        | "device.pair.list"
+        | "device.pair.revoke"
+        | "device.pair.rotateToken"
+        | "device.token.revoke"
+        | "device.token.rotate"
+        | "device.pair.setupCode"
+        | "node.register"
+        | "node.status"
+        | "node.list" => Some(HostGatewayOwner::DevicePairing),
+        "node.invoke" | "system.info" => Some(HostGatewayOwner::HostControl),
+        "chat.send" | "chat.abort" | "sessions.list" | "sessions.get" => {
+            Some(HostGatewayOwner::TranscriptManager)
+        }
+        "sessions.create" | "sessions.delete" => Some(HostGatewayOwner::AgentLifecycle),
+        "sessions.patch" | "sessions.providerReview.continue" => {
+            Some(HostGatewayOwner::TranscriptManager)
+        }
+        "cron.list" | "cron.trigger" => Some(HostGatewayOwner::Automations),
+        "config.get" | "config.set" => Some(HostGatewayOwner::Settings),
+        _ => None,
+    }
 }
 
 macro_rules! define_host_gateway_registry {
-    ($(($method:literal, $owner:ident)),+ $(,)?; native $(($native:literal, $native_owner:ident)),+ $(,)?) => {
+    ($(($method:literal, $owner:ident)),+ $(,)?;
+     native $(($native:literal, $native_owner:ident)),+ $(,)?;
+     native_cloud_workers $(($cloud:literal, $cloud_owner:ident)),+ $(,)?;
+     native_box_mcp $(($box_mcp:literal, $box_mcp_owner:ident)),+ $(,)?;
+     native_mcp_management $(($mcp_management:literal, $mcp_management_owner:ident)),+ $(,)?;
+     native_attachments $(($attachment:literal, $attachment_owner:ident)),+ $(,)?) => {
         /// Frozen Grok 0.18 public Host gateway surface. Keep this list as the
         /// single public-method registry; protocol exposure and ownership
         /// contracts consume it instead of maintaining parallel string tables.
@@ -43,11 +109,30 @@ macro_rules! define_host_gateway_registry {
         pub const FABUSHI_NATIVE_MINIAPP_GATEWAY_METHODS: &[&str] = &[
             $($native),+
         ];
+        pub const FABUSHI_NATIVE_CLOUD_WORKERS_GATEWAY_METHODS: &[&str] = &[
+            $($cloud),+
+        ];
+        pub const FABUSHI_NATIVE_BOX_MCP_GATEWAY_METHODS: &[&str] = &[
+            $($box_mcp),+
+        ];
+        pub const FABUSHI_NATIVE_MCP_MANAGEMENT_GATEWAY_METHODS: &[&str] = &[
+            $($mcp_management),+
+        ];
+        pub const FABUSHI_NATIVE_ATTACHMENTS_GATEWAY_METHODS: &[&str] = &[
+            $($attachment),+
+        ];
 
         pub fn host_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
+            if let Some(owner) = openclaw_gateway_owner(method) {
+                return Some(owner);
+            }
             match method {
                 $($method => Some(HostGatewayOwner::$owner),)+
                 $($native => Some(HostGatewayOwner::$native_owner),)+
+                $($cloud => Some(HostGatewayOwner::$cloud_owner),)+
+                $($box_mcp => Some(HostGatewayOwner::$box_mcp_owner),)+
+                $($mcp_management => Some(HostGatewayOwner::$mcp_management_owner),)+
+                $($attachment => Some(HostGatewayOwner::$attachment_owner),)+
                 _ => None,
             }
         }
@@ -185,6 +270,23 @@ define_host_gateway_registry!(
     ("installApprovedMiniApp", Mcp),
     ("getInstalledMiniAppResources", Mcp),
     ("uninstallMiniApp", Mcp),
+    ; native_cloud_workers
+    // Existing Fabushi read projections retain their owner and route identity.
+    ("cloudWorkers.status", CloudWorkers),
+    ("cloudWorkers.capabilities", CloudWorkers),
+    ("cloudWorkers.doctor", CloudWorkers),
+    ; native_box_mcp
+    // Electron main-data reaches the existing Host MCP/ForeverBox owner.
+    ("loadBoxMcpServers", Mcp),
+    ("listBoxMcpToolsRaw", Mcp),
+    ("executeBoxMcpToolRaw", Mcp),
+    ; native_mcp_management
+    // Desktop intents use the existing MCP owner and keep native Box authority separate.
+    ("uninstallMcpPlugin", Mcp),
+    ; native_attachments
+    // Electron chooses the cache path through MainData; paired devices and
+    // renderer RPC legs do not acquire native filesystem authority.
+    ("fetchLinkMetadata", Attachments),
 );
 
 pub fn is_sand_agent_purpose(value: &str) -> bool {

@@ -1,0 +1,178 @@
+{
+  "schema": "dvr-focused-source-recovery-carrier-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subjectH": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+  "subjectTree": "17ddcd3b19126ece3cadb722ea7b9bbdc5dcb561",
+  "parent": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "failedOriginalSubject": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+  "archive": {
+    "path": "source-recovery-5593e6d9.tar.gz",
+    "bytes": 621978,
+    "sha256": "5ce001a1454b4e12452e71ebeea1e021202f6c18a787923de219f4b3df918515",
+    "gitBlob": "4e80bdc47445a986e020979981af1ba96c1b8a84"
+  },
+  "members": [
+    {
+      "path": "ci-recovery/dvr-exact/r9-input-identities.json",
+      "bytes": 68665,
+      "sha256": "a501467be837bbbf493acc773344730d7003beadfe49cf5c8dde6d054ca3b2ce",
+      "gitBlob": "5a1538e25ec3816c68d31f5f759438d0326c5eb5",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "ci-recovery/dvr-exact/r9-manifest-check.json",
+      "bytes": 5917,
+      "sha256": "4d947ec250be6dc241e4837eded483533fff0315808127a15611f41923f908d9",
+      "gitBlob": "592e6d3a66fa827059e1fd958182fa9310e83ba8",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "ci-recovery/dvr-exact/r9-rebinding.json",
+      "bytes": 3192,
+      "sha256": "5d39960e091a97413557bec3685532d1d864e2893c06781a960fdf655c94c39b",
+      "gitBlob": "0efc599e668dcfb2380171fc00725ef3fb35ddf2",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "ci-recovery/dvr-exact/r9-source-expectations.json",
+      "bytes": 139461,
+      "sha256": "3e39d3dd50df920bb43e62502b529b259955748e3252cd098c1f82c836751802",
+      "gitBlob": "a9ab684d8225ae0763e2f0c92faa913e52b3f625",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-ci-011-decision.json",
+      "bytes": 2240,
+      "sha256": "f44ecdb8986bf23bb8c70d001f672f0422067c62df1838981a7f914203b038ae",
+      "gitBlob": "9da0a01620a2c66f9f2f37255bf06ad761817e8b",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-ci-012-decision.json",
+      "bytes": 2150,
+      "sha256": "78131a2c964d67b696c81b2c8c2a82a86440277cc3ac5c0e50c4358f1d0599fc",
+      "gitBlob": "6764bf93b6a93838766533e6b7e942acf3b2401e",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-decisions.json",
+      "bytes": 90412,
+      "sha256": "9c531b26c0cea14f2e50aa5b13f54fa0cd2235a839f7bcdd62bd6e0f278c531b",
+      "gitBlob": "c4ab71930f466900fc1b9a0fb427ac919e6d842c",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9-security-review.md",
+      "bytes": 17647,
+      "sha256": "ab6735378eda7437455eb548528a1864a27ee17ac8f57742e39278edb5c26784",
+      "gitBlob": "c4fae8ac6cfbec2ab8cab6f70659ee6de0b34eef",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9-structure-review.md",
+      "bytes": 16812,
+      "sha256": "6728b9175e69114c8ee199f30052b6bb976ee3123ee11c3e4f45154e64d84f26",
+      "gitBlob": "016f0b48da56215cb1c38b41f36cf3141b83d03e",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9/api-readback.json",
+      "bytes": 2394153,
+      "sha256": "07f519410318548745fedb876f2109d1aa4178b4f5b473065531ce8e791fd843",
+      "gitBlob": "c48b1cef89990e25b4a8fd394663cd3b1bd464de",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9/complete.patch",
+      "bytes": 471322,
+      "sha256": "4d11b5b4da00b3bbcddb4beba7befc890dc377ee86c277e39718b12b4b3aaae3",
+      "gitBlob": "aa1898f67fad01916b7e69a321a8ae8c1c5ded4d",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9/fix-delta.patch",
+      "bytes": 12303,
+      "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+      "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9/manifest.json",
+      "bytes": 6319,
+      "sha256": "1b7c84d7fcf864a86f575260a9de06385a29b7637dc285eff61822278c743a12",
+      "gitBlob": "993f2f78dfcfe042283da95cba510e49f0d12009",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9/paths.txt",
+      "bytes": 809,
+      "sha256": "8d6d080f3ce268c3ce00be8ff03a4d400e1391904c387da325a6753123409cd8",
+      "gitBlob": "a2a1ecc9c24dbb9272bb04664f651efe68795cbf",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9/publication.json",
+      "bytes": 5636,
+      "sha256": "ee2dedfafb66f08fe136d8ff7e0b0293fe51b80d27522e22d129d93ab6bb2e43",
+      "gitBlob": "b9cc4e634f2c2a72d7e5c1367911725ebe1319c9",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/dvr-r9/publication.patch",
+      "bytes": 12303,
+      "sha256": "5d683e603d0a4f4c5324512a0309cf1e3f0847759cba90dcd6261d3ffdc2bfb3",
+      "gitBlob": "0735ebfcc86962361e2325bda0a0704aa60f194a",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/freeze_dvr_r9.py",
+      "bytes": 2374,
+      "sha256": "5eb91e992535896e0f8961a038c9d312e32c2d91132159c9b8073c7b3c4a93f6",
+      "gitBlob": "1c91c7de1a531e3bcdb3c9e5ad2a0ea60fd0202b",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "reviews/import_dvr_r9_publication.py",
+      "bytes": 3640,
+      "sha256": "a9699dd8b31408e20112c81ed7099db7de16cca9ea3c27e927662e5c1c64b1a8",
+      "gitBlob": "d54ff79b07494d99048006f119ab53a9aa41d028",
+      "originalBytesPreserved": true
+    },
+    {
+      "path": "state/requirement-checklist.json",
+      "bytes": 42908,
+      "sha256": "4c8fcfe99336b65c1027d5284989a3d76949c03fb68421c84d9ba186e6124164",
+      "gitBlob": "314570761acce331ff2619ce42733972d2f8ff63",
+      "originalBytesPreserved": true
+    }
+  ],
+  "parts": [
+    {
+      "path": "source-recovery-5593e6d9.tar.gz.part0001.bin",
+      "offset": 0,
+      "bytes": 384000,
+      "sha256": "82514d0d39cac56f0bad33cbd529d5593d53533ef59fc9e90909544607db7165",
+      "gitBlob": "a6bd736e9b2a9e96ea81a95700b2df5de4a9b7e3"
+    },
+    {
+      "path": "source-recovery-5593e6d9.tar.gz.part0002.bin",
+      "offset": 384000,
+      "bytes": 237978,
+      "sha256": "5c67fc1e3d7b63c538670fe95375725b686500def2067d216d06f5a64b208cce",
+      "gitBlob": "7b38e003e1f2c3bab844105e703440ce2400dacf"
+    }
+  ],
+  "state": "Frozen source review, root decisions and full remote readback; runtime recovery is pending and is recorded separately.",
+  "limits": [
+    "R9 focused source verdict is not a fresh full-scope reread or runtime approval.",
+    "Mechanical input identities and full API byte readback are not semantic source reading.",
+    "Original failed H8bd and recovery H5593 remain distinct subjects.",
+    "Task-local checklist snapshot does not replace the unique OCRM ledger/inventory/RTM.",
+    "No local or htch product executable validation; serialization only."
+  ],
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "preparedAt": "2026-11-03T01:39:31.621966+00:00"
+}

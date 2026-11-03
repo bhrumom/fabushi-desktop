@@ -15,6 +15,7 @@ use crate::extensions::session::gateway::{
 };
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::session::session_paths::assert_valid_agent_session_id;
 use crate::extensions::transcript::roster_emit::ProductionRosterEmit;
 
 pub type AgentDeletionHook = Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync + 'static>;
@@ -123,10 +124,7 @@ pub fn run_created_agent_kickstart(
         return Ok(true);
     }
 
-    let purpose = sessions
-        .open_agent_db_owner(agent_id)?
-        .get_agent_purpose()
-        .map_err(|error| error.to_string())?;
+    let purpose = sessions.read_agent_purpose(agent_id)?;
     let prompt = kickstart_prompt_for_purpose(purpose.as_deref());
     let first = match runtime.run_hidden(agent_id, prompt, "kickstart") {
         Ok(outcome) => outcome,
@@ -170,10 +168,7 @@ pub fn request_disk_saver_audit(
     runtime: &dyn CreatedAgentKickstartRuntimePort,
     agent_id: &str,
 ) -> Result<bool, String> {
-    let purpose = sessions
-        .open_agent_db_owner(agent_id)?
-        .get_agent_purpose()
-        .map_err(|error| error.to_string())?;
+    let purpose = sessions.read_agent_purpose(agent_id)?;
     if purpose.as_deref() != Some("disk-saver") || runtime.is_disallowed_session(agent_id) {
         return Ok(false);
     }
@@ -280,6 +275,13 @@ impl AgentDeletionRuntimeDeps {
         }
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Default)]
+struct AgentDeletionGuard {
+    expected_session_id: Option<String>,
+    expected_lifecycle_revision: Option<String>,
+    expected_updated_at: Option<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -552,14 +554,16 @@ impl ProductionAgentLifecycle {
         let clone_name = clone_agent_display_name(&summary.name);
         let production = Arc::clone(self.store.production());
         let new_id = production.mint_agent_with(|new_id| {
-            clone_agent_dir(
-                &source_dir,
-                &production.agents_root().join(new_id),
-                new_id,
-                &clone_name,
-                production.busy_timeout_ms(),
-            )
-            .map_err(|error| error.to_string())?;
+            production.with_agent_admitted_filesystem_mutation(source_id, || {
+                clone_agent_dir(
+                    &source_dir,
+                    &production.agents_root().join(new_id),
+                    new_id,
+                    &clone_name,
+                    production.busy_timeout_ms(),
+                )
+                .map_err(|error| error.to_string())
+            })?;
             Ok(new_id.to_string())
         })?;
 
@@ -598,11 +602,94 @@ impl ProductionAgentLifecycle {
         opened
     }
 
+    fn delete_agent_from_args(
+        &self,
+        args: &Value,
+    ) -> Result<Value, AgentLifecycleGatewayError> {
+        let agent_id = required_string(args, "id")?.to_string();
+        let expected_string = |key: &str| -> Result<Option<String>, AgentLifecycleGatewayError> {
+            let Some(value) = args.get(key) else {
+                return Ok(None);
+            };
+            let Some(value) = value.as_str().map(str::trim).filter(|value| !value.is_empty())
+            else {
+                return Err(AgentLifecycleGatewayError::bad(format!(
+                    "{key} must be a non-empty string"
+                )));
+            };
+            Ok(Some(value.to_string()))
+        };
+        let expected_updated_at = if args.get("expectedSessionUpdatedAt").is_some() {
+            Some(
+                args.get("expectedSessionUpdatedAt")
+                    .and_then(Value::as_f64)
+                    .filter(|value| value.is_finite())
+                    .ok_or_else(|| {
+                        AgentLifecycleGatewayError::bad(
+                            "expectedSessionUpdatedAt must be a finite number",
+                        )
+                    })?,
+            )
+        } else {
+            None
+        };
+        let guard = AgentDeletionGuard {
+            expected_session_id: expected_string("expectedSessionId")?,
+            expected_lifecycle_revision: expected_string("expectedLifecycleRevision")?,
+            expected_updated_at,
+        };
+        self.delete_agents_with_guard(std::slice::from_ref(&agent_id), Some(&guard))
+            .map_err(|error| {
+                if error == "SESSION_LIFECYCLE_CHANGED" {
+                    AgentLifecycleGatewayError::bad(error)
+                } else {
+                    AgentLifecycleGatewayError::internal(error)
+                }
+            })
+    }
+
     pub fn delete_agent(&self, agent_id: &str) -> Result<Value, String> {
         self.delete_agents(std::slice::from_ref(&agent_id.to_string()))
     }
 
     pub fn delete_agents(&self, agent_ids: &[String]) -> Result<Value, String> {
+        self.delete_agents_with_guard(agent_ids, None)
+    }
+
+    fn assert_delete_guard(
+        &self,
+        agent_id: &str,
+        guard: &AgentDeletionGuard,
+    ) -> Result<(), String> {
+        let current = self
+            .store
+            .summarize_agent_by_id(agent_id)?
+            .ok_or_else(|| "SESSION_LIFECYCLE_CHANGED".to_string())?;
+        if guard
+            .expected_session_id
+            .as_deref()
+            .is_some_and(|expected| expected != current.id)
+            || guard
+                .expected_lifecycle_revision
+                .as_deref()
+                .is_some_and(|expected| {
+                    current.lifecycle_revision.is_empty()
+                        || expected != current.lifecycle_revision
+                })
+            || guard
+                .expected_updated_at
+                .is_some_and(|expected| expected != current.updated_at)
+        {
+            return Err("SESSION_LIFECYCLE_CHANGED".to_string());
+        }
+        Ok(())
+    }
+
+    fn delete_agents_with_guard(
+        &self,
+        agent_ids: &[String],
+        guard: Option<&AgentDeletionGuard>,
+    ) -> Result<Value, String> {
         let mut seen = HashSet::new();
         let ids = agent_ids
             .iter()
@@ -615,13 +702,24 @@ impl ProductionAgentLifecycle {
             return self.current_transcript();
         }
 
+        // Refuse the whole batch before callbacks or reads can affect either owner.
+        for agent_id in &ids {
+            assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
+        }
+
         let deleting = ids.iter().cloned().collect::<HashSet<_>>();
         let active_before = self.store.read_active_agent_id();
 
         for agent_id in &ids {
+            if let Some(guard) = guard {
+                self.assert_delete_guard(agent_id, guard)?;
+            }
             self.deletion_runtime.mark_deleting(agent_id)?;
             let deleted = (|| {
                 self.deletion_runtime.before_delete(agent_id)?;
+                if let Some(guard) = guard {
+                    self.assert_delete_guard(agent_id, guard)?;
+                }
                 self.store.delete_session(agent_id)?;
                 self.deletion_runtime.after_delete(agent_id)?;
                 Ok::<(), String>(())
@@ -776,12 +874,7 @@ pub fn dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes(
                 .clone_agent(agent_id)
                 .map_err(AgentLifecycleGatewayError::internal)
         }),
-        "deleteAgent" => required_string(args, "id")
-            .and_then(|agent_id| {
-                lifecycle
-                    .delete_agent(agent_id)
-                    .map_err(AgentLifecycleGatewayError::internal)
-            }),
+        "deleteAgent" => lifecycle.delete_agent_from_args(args),
         "deleteAgents" => parse_agent_ids(args)
             .and_then(|ids| {
                 lifecycle

@@ -2,7 +2,8 @@ export const SAND_SUMMARIZATION_MODEL_ID = "gemini-2.5-flash";
 export const SAND_COMPUTER_USE_SUBAGENT_MODEL_ID = "claude-opus-4-8";
 
 export interface SandAgentModelParameter { readonly id: string; readonly value: string; }
-export interface SandAgentModelSelection { readonly modelId: string; readonly maxMode: boolean; readonly parameters: readonly SandAgentModelParameter[]; }
+// Provider is opaque at the desktop transport boundary; Rust Settings validates it.
+export interface SandAgentModelSelection { readonly modelId: string; readonly maxMode: boolean; readonly parameters: readonly SandAgentModelParameter[]; readonly provider?: unknown; }
 
 export const SAND_COMPUTER_USE_MODEL_SELECTION: SandAgentModelSelection = {
   modelId: SAND_COMPUTER_USE_SUBAGENT_MODEL_ID,

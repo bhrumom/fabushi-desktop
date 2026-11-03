@@ -9,6 +9,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     should_append_user_message, should_await_turn,
     parse_host_routed_prompt_acceptance, parse_runner_inference_event,
     prepare_agent_inbound_wake_routes, prepare_workflow_run_now_route, project_runner_turn_context,
+    require_runner_start_acceptance,
 };
 use serde_json::json;
 
@@ -161,6 +162,48 @@ fn host_routed_prompt_acceptance_supplies_authoritative_recovery_identity() {
     assert_eq!(acceptance.user_message_id.as_deref(), Some("user-message:9"));
     assert_eq!(acceptance.recent_user_messages.len(), 2);
     assert!(parse_host_routed_prompt_acceptance(&json!({"accepted":false})).is_err());
+}
+
+#[test]
+fn runner_start_acceptance_preserves_exact_started_and_cancelled_outcomes() {
+    for provider in ["fabushi", "cursor", "codex", "claude-code", "openrouter"] {
+        require_runner_start_acceptance(&json!({
+            "accepted":true, "streamId":"current-stream", "provider":provider,
+        }), "current-stream").expect("an exact accepted worker remains accepted");
+    }
+    let cancelled = require_runner_start_acceptance(&json!({
+        "accepted":false, "cancelled":true, "streamId":"current-stream",
+    }), "current-stream").expect_err("pre-worker cancellation must not await a worker");
+    assert_eq!(cancelled.code, "INFERENCE_PROVIDER_CANCELLED",
+        "use the existing cancellation path that does not record inference failure");
+    let rejected = require_runner_start_acceptance(&json!({
+        "accepted":false, "cancelled":false, "streamId":"current-stream",
+    }), "current-stream").expect_err("ordinary rejection stays an error");
+    assert_eq!(rejected.code, "INFERENCE_RUNNER_REJECTED");
+}
+
+#[test]
+fn runner_start_cancellation_rejects_malformed_foreign_and_contradictory_replies() {
+    for value in [
+        json!(null), json!([]), json!("cancelled"),
+        json!({"accepted":false,"cancelled":true}),
+        json!({"accepted":false,"cancelled":true,"streamId":"other-stream"}),
+        json!({"accepted":false,"cancelled":true,"streamId":" current-stream "}),
+        json!({"accepted":false,"cancelled":true,"streamId":17}),
+        json!({"cancelled":true,"streamId":"current-stream"}),
+        json!({"accepted":null,"cancelled":true,"streamId":"current-stream"}),
+        json!({"accepted":"false","cancelled":true,"streamId":"current-stream"}),
+        json!({"accepted":false,"cancelled":"true","streamId":"current-stream"}),
+        json!({"accepted":false,"cancelled":1,"streamId":"current-stream"}),
+        json!({"accepted":false,"cancelled":null,"streamId":"current-stream"}),
+        json!({"accepted":true,"cancelled":true,"streamId":"current-stream"}),
+        json!({"accepted":true,"streamId":"other-stream"}),
+    ] {
+        let error = require_runner_start_acceptance(&value, "current-stream")
+            .expect_err("unbound or contradictory start response cannot advance the consumer");
+        assert_ne!(error.code, "INFERENCE_PROVIDER_CANCELLED",
+            "only the exact typed cancellation shape may suppress inference failure: {value}");
+    }
 }
 
 #[test]

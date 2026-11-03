@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex, Weak};
 use chrono::{DateTime, NaiveDate, Utc};
 use sha1::{Digest, Sha1};
 use sha2::Sha256;
+use serde::{Deserialize, Serialize};
 
 use super::project_membership::AgentProjectMembership;
 use crate::watched_directory::{ChangeListener, WatchedDirectory};
@@ -34,7 +35,7 @@ const PROFILE_HEADER: &str =
 const LOG_HEADER: &str =
     "# Memory log\n\n<!-- Dated facts, one per line as \"- (YYYY-MM-DD) <fact>\". -->\n\n";
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MemoryKind {
     Profile,
     Log,
@@ -47,7 +48,7 @@ pub struct MemoryFact {
     pub kind: MemoryKind,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct MemoryRecord {
     pub id: String,
     pub content: String,
@@ -55,11 +56,21 @@ pub struct MemoryRecord {
     pub kind: MemoryKind,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MemoryOrigin {
     Explicit,
     Synthesis,
     Legacy,
+}
+
+/// Exact recovery input for a cross-store memory mutation. The record is the
+/// durable fact while origin/tombstone preserve synthesis metadata that is
+/// otherwise changed by the ordinary explicit-memory APIs.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MemoryRecoveryRecord {
+    pub record: MemoryRecord,
+    pub origin: MemoryOrigin,
+    pub tombstoned: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -98,7 +109,21 @@ pub enum SynthesisApplyResult {
     Committed,
     Stale,
     Invalid,
+    /// Store I/O failed; consumers must not mark the temporal review complete.
+    Failed,
 }
+
+pub type SynthesisApplyGate = Arc<
+    dyn Fn(
+            &str,
+            &FileMemoryStore,
+            &SynthesisSnapshot,
+            &[SynthesisChange],
+            i64,
+        ) -> SynthesisApplyResult
+        + Send
+        + Sync,
+>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct MemoryRecall {
@@ -233,6 +258,38 @@ impl FileMemoryStore {
             .collect()
     }
 
+    pub fn snapshot_for_recovery(&self, records: &[MemoryRecord]) -> Vec<MemoryRecoveryRecord> {
+        records
+            .iter()
+            .cloned()
+            .map(|record| MemoryRecoveryRecord {
+                origin: self.memory_origin(&record.content),
+                tombstoned: self.is_tombstoned(&record.content),
+                record,
+            })
+            .collect()
+    }
+
+    pub fn restore_records_exact(&self, records: &[MemoryRecoveryRecord]) -> io::Result<()> {
+        for recovery in records {
+            let _ = self.add_memory(
+                &recovery.record.content,
+                recovery.record.created_at,
+                recovery.record.kind,
+            )?;
+            if self.synthesis_metadata_enabled() {
+                self.clear_origins(&recovery.record.content)?;
+                self.mark_origin(&recovery.record.content, recovery.origin)?;
+                if recovery.tombstoned {
+                    self.mark_tombstone(&recovery.record.content)?;
+                } else {
+                    self.clear_tombstone(&recovery.record.content)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn count_memories(&self) -> usize {
         self.facts().len()
     }
@@ -251,6 +308,8 @@ impl FileMemoryStore {
         if normalized.is_empty() {
             return Ok(None);
         }
+        // Admit the destination before dedupe can change origin/tombstone metadata.
+        let (path, raw) = self.read_append_destination(created_at, kind)?;
         let key = memory_dedupe_key(&normalized);
         if let Some(existing) = self
             .facts()
@@ -265,17 +324,6 @@ impl FileMemoryStore {
             return Ok(None);
         }
 
-        let path = match kind {
-            MemoryKind::Profile => self.profile_file.clone(),
-            MemoryKind::Log => self.log_dir.join(format!(
-                "{}.md",
-                format_memory_date(created_at)
-                    .chars()
-                    .take(7)
-                    .collect::<String>()
-            )),
-        };
-        let raw = fs::read_to_string(&path).unwrap_or_default();
         let header = match kind {
             MemoryKind::Profile => PROFILE_HEADER,
             MemoryKind::Log => LOG_HEADER,
@@ -392,6 +440,19 @@ impl FileMemoryStore {
         let (fingerprint, facts) = self.read_synthesis_state();
         if fingerprint != snapshot.fingerprint {
             return Ok(SynthesisApplyResult::Stale);
+        }
+        // Check every declared append destination before an earlier change can
+        // remove data or mutate metadata. Each append rereads after prior changes.
+        for change in changes {
+            match change {
+                SynthesisChange::Create { content, kind }
+                | SynthesisChange::Update { content, kind, .. } => {
+                    if !normalize_memory_content(content).is_empty() {
+                        self.read_append_destination(now_ms, *kind)?;
+                    }
+                }
+                SynthesisChange::Remove { .. } => {}
+            }
         }
         let allowed = snapshot
             .memories
@@ -596,6 +657,7 @@ impl FileMemoryStore {
     }
 
     fn add_synthesized(&self, content: &str, created_at: i64, kind: MemoryKind) -> io::Result<()> {
+        let (path, raw) = self.read_append_destination(created_at, kind)?;
         if self
             .facts()
             .iter()
@@ -603,17 +665,6 @@ impl FileMemoryStore {
         {
             return Ok(());
         }
-        let path = match kind {
-            MemoryKind::Profile => self.profile_file.clone(),
-            MemoryKind::Log => self.log_dir.join(format!(
-                "{}.md",
-                format_memory_date(created_at)
-                    .chars()
-                    .take(7)
-                    .collect::<String>()
-            )),
-        };
-        let raw = fs::read_to_string(&path).unwrap_or_default();
         let header = match kind {
             MemoryKind::Profile => PROFILE_HEADER,
             MemoryKind::Log => LOG_HEADER,
@@ -631,6 +682,29 @@ impl FileMemoryStore {
         self.dir.write_file_atomic(&path, next.as_bytes())?;
         self.clear_origins(content)?;
         self.mark_origin(content, MemoryOrigin::Synthesis)
+    }
+
+    fn read_append_destination(
+        &self,
+        created_at: i64,
+        kind: MemoryKind,
+    ) -> io::Result<(PathBuf, String)> {
+        let path = match kind {
+            MemoryKind::Profile => self.profile_file.clone(),
+            MemoryKind::Log => self.log_dir.join(format!(
+                "{}.md",
+                format_memory_date(created_at)
+                    .chars()
+                    .take(7)
+                    .collect::<String>()
+            )),
+        };
+        let raw = match fs::read_to_string(&path) {
+            Ok(raw) => raw,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => String::new(),
+            Err(error) => return Err(error),
+        };
+        Ok((path, raw))
     }
 
     fn facts(&self) -> Vec<StoredMemoryFact> {
@@ -1023,6 +1097,7 @@ pub struct MemoryService {
     sand_root: PathBuf,
     agents_root_dir: PathBuf,
     synthesis_bridge: Arc<Mutex<Option<Weak<dyn MemorySynthesisBridge>>>>,
+    synthesis_apply_gate: Arc<Mutex<Option<SynthesisApplyGate>>>,
     active_agent_id: Arc<Mutex<Option<String>>>,
     listeners: Arc<Mutex<HashMap<u64, MemoryChangeListener>>>,
     next_listener_id: Arc<AtomicU64>,
@@ -1062,6 +1137,7 @@ impl MemoryService {
             sand_root: sand_root.into(),
             agents_root_dir: agents_root_dir.into(),
             synthesis_bridge: Arc::new(Mutex::new(None)),
+            synthesis_apply_gate: Arc::new(Mutex::new(None)),
             active_agent_id: Arc::new(Mutex::new(None)),
             listeners: Arc::new(Mutex::new(HashMap::new())),
             next_listener_id: Arc::new(AtomicU64::new(0)),
@@ -1096,6 +1172,31 @@ impl MemoryService {
 
     pub fn store_for_agent(&self, agent_id: &str) -> FileMemoryStore {
         self.create_agent_store(self.agents_root_dir.join(agent_id))
+    }
+
+    pub fn set_synthesis_apply_gate(&self, gate: Option<SynthesisApplyGate>) {
+        *self
+            .synthesis_apply_gate
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = gate;
+    }
+
+    pub fn apply_synthesis_with_gate(
+        &self,
+        agent_id: &str,
+        store: &FileMemoryStore,
+        snapshot: &SynthesisSnapshot,
+        changes: &[SynthesisChange],
+        now_ms: i64,
+    ) -> SynthesisApplyResult {
+        let gate = self
+            .synthesis_apply_gate
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        gate.map_or(SynthesisApplyResult::Invalid, |gate| {
+            gate(agent_id, store, snapshot, changes, now_ms)
+        })
     }
 
     pub fn user_memory_store(

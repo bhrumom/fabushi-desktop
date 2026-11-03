@@ -169,6 +169,7 @@ impl ForeverBoxRunnerResourcePort {
         if let Some(controller) = self.background_read_permission.as_ref() {
             let scope = SandLocalToolScope {
                 agent_id: self.agent_id.clone(),
+                session_key: None,
                 tool_call_id: None,
                 action: Some("read-file".into()),
                 direction_epoch: Some(controller.direction_epoch(&self.agent_id)),

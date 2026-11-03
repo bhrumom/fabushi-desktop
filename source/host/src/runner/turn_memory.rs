@@ -1,9 +1,12 @@
 use std::env;
+use std::sync::Arc;
 
 use crate::extensions::memory::memory_service::{
     FileMemoryStore, MemoryKind,
 };
+use crate::extensions::session::agent_db_serde::EpisodeTurn;
 use crate::extensions::session::agent_db::SandAgentDb;
+use crate::extensions::session::production::ProductionSessionWorkers;
 
 use super::sand_memory::{
     MEMORY_EPISODE_PREFIX, MEMORY_EXTRACTION_ARCHIVE_SCAN_LIMIT,
@@ -54,6 +57,57 @@ pub enum TurnMemoryMode<'a> {
     RecordEvidence(&'a mut dyn FnMut(&TurnExchange)),
 }
 
+pub trait EpisodeProgress: Send + Sync {
+    fn clear_pending_episode_turns(&self) -> Result<bool, String>;
+    fn record_episode_turn(&self, turn: &EpisodeTurn) -> Result<bool, String>;
+    fn get_pending_episode_turns(&self) -> Result<Vec<EpisodeTurn>, String>;
+}
+
+impl EpisodeProgress for SandAgentDb {
+    fn clear_pending_episode_turns(&self) -> Result<bool, String> {
+        self.clear_pending_episode_turns()
+            .map_err(|error| error.to_string())
+    }
+
+    fn record_episode_turn(&self, turn: &EpisodeTurn) -> Result<bool, String> {
+        self.record_episode_turn(turn)
+            .map_err(|error| error.to_string())
+    }
+
+    fn get_pending_episode_turns(&self) -> Result<Vec<EpisodeTurn>, String> {
+        self.get_pending_episode_turns()
+            .map_err(|error| error.to_string())
+    }
+}
+
+pub struct ProductionEpisodeProgress {
+    sessions: Arc<ProductionSessionWorkers>,
+    agent_id: String,
+}
+
+impl ProductionEpisodeProgress {
+    pub fn new(sessions: Arc<ProductionSessionWorkers>, agent_id: impl Into<String>) -> Self {
+        Self {
+            sessions,
+            agent_id: agent_id.into(),
+        }
+    }
+}
+
+impl EpisodeProgress for ProductionEpisodeProgress {
+    fn clear_pending_episode_turns(&self) -> Result<bool, String> {
+        self.sessions.clear_agent_pending_episode_turns(&self.agent_id)
+    }
+
+    fn record_episode_turn(&self, turn: &EpisodeTurn) -> Result<bool, String> {
+        self.sessions.record_agent_episode_turn(&self.agent_id, turn)
+    }
+
+    fn get_pending_episode_turns(&self) -> Result<Vec<EpisodeTurn>, String> {
+        self.sessions.get_agent_pending_episode_turns(&self.agent_id)
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TurnMemoryReport {
     pub evidence_recorded: bool,
@@ -67,7 +121,7 @@ pub struct TurnMemoryReport {
 
 pub fn run_turn_memory_with<Execute>(
     memory_store: &FileMemoryStore,
-    episode_progress: Option<&SandAgentDb>,
+    episode_progress: Option<&dyn EpisodeProgress>,
     turn_timestamp: i64,
     exchange: TurnExchange,
     mode: TurnMemoryMode<'_>,
@@ -98,18 +152,15 @@ where
     let Some(progress) = episode_progress else {
         return report;
     };
-    if progress
-        .record_episode_turn(
-            &crate::extensions::session::agent_db_serde::EpisodeTurn {
-                ts: turn_timestamp as f64,
-                user: exchange.user.clone(),
-                agent: exchange.agent.clone(),
-            },
-        )
-        .is_err()
-    {
+    let Ok(true) = progress.record_episode_turn(&EpisodeTurn {
+        ts: turn_timestamp as f64,
+        user: exchange.user.clone(),
+        agent: exchange.agent.clone(),
+    }) else {
+        // Readable older pending turns do not authorize this episode phase
+        // when the Session owner refused to record the current exchange.
         return report;
-    }
+    };
     report.episode_recorded = true;
 
     let Ok(pending) = progress.get_pending_episode_turns() else {
@@ -134,29 +185,30 @@ where
         .map(|turn| timestamp_ms_i64(turn.ts, turn_timestamp))
         .unwrap_or(turn_timestamp);
 
-    let summary = execute(
+    let Ok(summary) = execute(
         &build_episode_system_prompt(),
         &build_episode_user_prompt(&turns),
-    )
-    .ok()
-    .map(|value| value.split_whitespace().collect::<Vec<_>>().join(" "))
-    .filter(|value| {
-        !value.is_empty()
-            && !value.eq_ignore_ascii_case(MEMORY_EXTRACTION_NONE_SENTINEL)
-    });
+    ) else {
+        // A failed or cancelled request is not an acknowledged no-summary
+        // decision. Keep the Session-owned input for a later ordinary turn.
+        return report;
+    };
+    let summary = summary.split_whitespace().collect::<Vec<_>>().join(" ");
 
-    if let Some(summary) = summary {
-        if memory_store
-            .add_memory(
-                &format!("{MEMORY_EPISODE_PREFIX}{summary}"),
-                latest_timestamp,
-                MemoryKind::Log,
-            )
-            .ok()
-            .flatten()
-            .is_some()
-        {
-            report.episode_memory_added = true;
+    if !summary.is_empty()
+        && !summary.eq_ignore_ascii_case(MEMORY_EXTRACTION_NONE_SENTINEL)
+    {
+        match memory_store.add_memory(
+            &format!("{MEMORY_EPISODE_PREFIX}{summary}"),
+            latest_timestamp,
+            MemoryKind::Log,
+        ) {
+            Ok(Some(_)) => report.episode_memory_added = true,
+            Ok(None) => {}
+            // The pending exchange remains the Session owner's recovery input
+            // until the store acknowledges the append (including a duplicate).
+            // A later ordinary turn can use it after the destination is repaired.
+            Err(_) => return report,
         }
     }
 

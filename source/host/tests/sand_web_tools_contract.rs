@@ -95,7 +95,8 @@ fn box_scoped_subagent_does_not_receive_web_tools() {
             web_executor: Some(Arc::new(FakeWeb)),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     assert!(bridge.list_tools().expect("tools").iter().all(|tool| {
         tool.name != WEB_SEARCH_TOOL_NAME && tool.name != WEB_FETCH_TOOL_NAME
     }));

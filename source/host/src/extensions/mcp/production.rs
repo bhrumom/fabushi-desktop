@@ -17,7 +17,9 @@ use super::extension::{
     AuthRenewalEvent, AuthRenewalPort, McpHostServicePort, McpPluginSkillsService,
     PollingHandle, PollingPort,
 };
-use super::mcp_service::{McpHostService, PluginSkillsPort};
+use super::mcp_service::{
+    McpHostService, PluginSkillsPort, PluginUninstallIntent, PluginUninstallSettlement,
+};
 use super::plugin_skills::{
     PLUGIN_SKILLS_REFRESH_INTERVAL_MS, SandPluginSkillsService,
 };
@@ -293,7 +295,23 @@ impl PluginSkillsPort for SandPluginSkillsService {
     }
 
     fn status(&self) -> serde_json::Value {
-        serde_json::json!({ "authBlocked": self.current_auth_blocked() })
+        let mut status = serde_json::json!({ "authBlocked": self.current_auth_blocked() });
+        if let Some(recovery) = self.uninstall_recovery_status() {
+            status["uninstallRecovery"] = recovery;
+        }
+        status
+    }
+
+    fn begin_uninstall(&self, plugin_id: &str) -> Result<PluginUninstallIntent, String> {
+        SandPluginSkillsService::begin_uninstall(self, plugin_id)
+    }
+
+    fn settle_uninstall(
+        &self,
+        intent: &PluginUninstallIntent,
+        settlement: PluginUninstallSettlement,
+    ) -> Result<(), String> {
+        SandPluginSkillsService::settle_uninstall(self, intent, settlement)
     }
 
     fn remove_live_references(&self, source_urls: &[String]) {

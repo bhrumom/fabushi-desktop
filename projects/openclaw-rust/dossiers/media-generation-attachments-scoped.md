@@ -1,0 +1,180 @@
+# OCRM Technical Dossier — Unit 13: Media Understanding & Generation (`OCRM-UNIT-MEDIA-001`)
+
+**Project ID**: OCRM-001  
+**Module**: OCRM-M23/M24 (Media Understanding, Attachments, Image Generation & Assets Subsystems)  
+**Upstream Target Authority**: `openclaw/openclaw@ad8d12f126d29b0db204187adf5092db80294e70` (tree `04ccce62f1d74dc8e0c88290ae8ded027b7b0f16`)  
+**Target Repository**: `bhrumom/fabushi-desktop`  
+**Working Branch**: `ocrm/round20-snapshot-lifecycle-audit-20261023`  
+**Reviewer**: `xuyao@ombhrum.com`  
+
+---
+
+## 1. Upstream Source Audit & Line-by-Line Reading
+
+The locked-source pass re-read `src/media/local-media-access.ts` in full
+(blob `960de1cd63cb989efba972c7ef8bc9c78e6c1cdc`, 290 lines). It freezes
+canonical roots, rejects filesystem-root and Windows-network escapes,
+enforces inbound/workspace containment, excludes remote-workspace aliases,
+rejects hardlinks where required, bounds file size, and rechecks channel read
+authority around open/read operations. The existing Rust owner boundary and
+verification status remain unchanged.
+
+The following 6 core media caps, generated assets, resolution normalization, local access containment, default model resolution, and base64 sniffing files (totaling 904 lines) were audited line-by-line and mapped into canonical shards:
+
+| Shard | Source File | Blob SHA | Lines | Scope | Mapped Responsibility |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `part-0042` | `src/media/configured-max-bytes.ts` | `0a0c31d1017e765bc1bd399fc7179e1aca4e97f8` | 96 | 1..96 (full-file) | `OCRM-RESP-MEDIA-BYTE-CAPS-001` |
+| `part-0039` | `src/image-generation/image-assets.ts` | `ec73319b6e70662f7b537ae720ce3f4f0b3512a1` | 275 | 1..275 (full-file) | `OCRM-RESP-MEDIA-IMAGE-ASSETS-001` |
+| `part-0039` | `src/image-generation/resolution.ts` | `d5d6f12047a9fce50aecb340f30fff3d99c10fe7` | 15 | 1..15 (full-file) | `OCRM-RESP-MEDIA-RESOLUTION-001` |
+| `part-0042` | `src/media/local-media-access.ts` | `960de1cd63cb989efba972c7ef8bc9c78e6c1cdc` | 290 | 1..290 (full-file) | `OCRM-RESP-MEDIA-LOCAL-ACCESS-001` |
+| `part-0042` | `src/media-understanding/defaults.ts` | `d3ea82eeff26e5f8ca2cb529d1d3b5240b55239f` | 193 | 1..193 (full-file) | `OCRM-RESP-MEDIA-DEFAULT-MODELS-001` |
+| `part-0042` | `src/media/sniff-mime-from-base64.ts` | `109a3e78d1fbadb2c3bec859b9cf8d4264693b4f` | 29 | 1..29 (full-file) | `OCRM-RESP-MEDIA-SNIFF-PREVIEW-001` |
+
+---
+
+## 2. Decomposed Runtime Responsibilities
+
+The audited source code was decomposed into 6 discrete Rust runtime responsibilities registered in `parity-ledger.json`:
+
+1. **`OCRM-RESP-MEDIA-BYTE-CAPS-001`**:
+   - **Behavior**: Enforces `ATTACHMENT_BYTE_LIMIT` (25 MiB), `VIDEO_BYTE_LIMIT` (200 MiB), `resolveGeneratedMediaMaxBytes`, and channel/account media caps.
+   - **Rust Owner**: `source/host/src/media_mime.rs:ATTACHMENT_BYTE_LIMIT`.
+   - **Oracles**: `OCRM-ATTACH-O01`, `OCRM-ATTACH-O02`.
+
+2. **`OCRM-RESP-MEDIA-IMAGE-ASSETS-001`**:
+   - **Behavior**: Generated image assets management, magic-byte sniffing (PNG, JPEG, WEBP), data URL generation, and standard Base64 roundtrip verification.
+   - **Rust Owner**: `source/host/src/extensions/attachments/generate_image_service.rs:SandGenerateImageService`.
+   - **Oracles**: `OCRM-ATTACH-O05`, `OCRM-ATTACH-O06`, `OCRM-ATTACH-O07`.
+
+3. **`OCRM-RESP-MEDIA-RESOLUTION-001`**:
+   - **Behavior**: Image generation resolution input normalization (1K, 2K, 4K), invalid resolution rejection (`ToolInputError`), tool bridge argument validation, and propagation of `GenerateImageToolOptions` with resolution to `GenerateImageToolExecutor` and `SandGenerateImageService::generate_with_options`; live Cursor backend parameter dispatch pending provider capability expansion.
+   - **Rust Owner**: `source/host/src/runner/tools/sand_generate_image_tool.rs:normalize_image_generation_resolution, SandGenerateImageToolBridge`.
+   - **Production Call Chain**: Producer `SandGenerateImageToolBridge::call_tool` → Owner `normalize_image_generation_resolution` → Options `GenerateImageToolOptions` → Consumer `ProductionGenerateImageToolExecutor::generate_with_options` → `SandGenerateImageService::generate_with_options` (blocked from live Cursor AiService dispatch by `BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001`).
+   - **Oracles**: `OCRM-ATTACH-O08` (positive/negative normalization), `OCRM-ATTACH-O09` (invalid rejection + provider options delivery & rejection verification).
+   - **Status**: Honest calibration: `implementation=implemented`, `wiring=not-wired`, `verification=not-run` (`blocker_ids=["BL-CURSOR-BACKEND-IMAGE-RESOLUTION-001"]`: Cursor `/aiserver.v1.AiService/RunGenerateImage` protobuf schema lacks resolution field; live provider parameter dispatch cannot be wired end-to-end until native multi-provider image dispatch or expanded backend proto is integrated).
+
+4. **`OCRM-RESP-MEDIA-LOCAL-ACCESS-001`**:
+   - **Behavior**: Local media filesystem access boundary, canonical boundary path resolution (`resolveCanonicalBoundaryPath`), directory traversal prevention, and assets isolation.
+   - **Rust Owner**: `source/host/src/extensions/attachments/generate_image_resource_accessor.rs:SandGenerateImageResourceAccessor`.
+   - **Oracle**: `OCRM-ATTACH-O03`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
+
+5. **`OCRM-RESP-MEDIA-DEFAULT-MODELS-001`**:
+   - **Behavior**: Media understanding default provider and model resolution (`resolve_default_media_model`), vision/audio capability registration, configured model retrieval, and auto-discovery provider priority sorting (`resolve_auto_media_key_providers`).
+   - **Rust Owner**: `source/host/src/media_understanding_defaults.rs::resolve_default_media_model, resolve_auto_media_key_providers`.
+   - **Production Call Chain**: Producer `CursorGenerateImageOptions::production` → Entrypoint `generate_image_service.rs::configured_generate_image_model_id` → Owner `resolve_default_media_model` → Consumer `SandGenerateImageService::generate`.
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
+   - **Oracle**: `OCRM-ATTACH-O04`.
+
+6. **`OCRM-RESP-MEDIA-SNIFF-PREVIEW-001`**:
+   - **Behavior**: Full-payload canonical Base64 inspection (canonicalPadBits & whitespace tolerance), prefix-bounded MIME detection with hint precedence (MimeSniffHints), attachment text preview classification with filesystem truncation (>64 KiB) vs binary detection, and production wiring into attachment upload and inline image materialization.
+   - **Rust Owner**: `source/host/src/media_mime.rs:sniff_mime_from_base64_with_hints, source/host/src/media_mime.rs:inspect_canonical_base64` and `source/host/src/extensions/attachments/attachments_service.rs:AttachmentTextPreview, read_attachment_text_with_root`.
+   - **Production Call Chain**: Producer `attachments_service.rs::upload, inline_image_materialization.rs::materialize_one` → Owner `media_mime.rs::inspect_canonical_base64, sniff_mime_from_base64_with_hints` → Storage `ingest_attachment_bytes` → Consumer `attachments_service.rs::read_text`.
+   - **Oracles**: `OCRM-ATTACH-O10` (tail corruption, non-canonical pad bits, hints fallback & conflict), `OCRM-ATTACH-O11` (real filesystem text truncation & binary discrimination), `OCRM-ATTACH-O12` (extension dependency graph).
+   - **Status**: `implementation=implemented`, `wiring=wired`, `verification=not-run`, `acceptance=pending`.
+
+---
+
+## 3. Falsifiable Test Oracles (`source/host/tests/openclaw_media_generation_contract.rs`)
+
+The test names below are a historical contract record. They were not executed
+in the current development freeze; exact-head Actions, packaged/runtime, and
+live provider acceptance evidence remain pending.
+
+1. **`OCRM-ATTACH-O01`**: `test_ocrm_attach_o01_byte_limits`
+2. **`OCRM-ATTACH-O02`**: `test_ocrm_attach_o02_directory_names`
+3. **`OCRM-ATTACH-O03`**: `test_ocrm_attach_o03_resource_accessor_containment`
+4. **`OCRM-ATTACH-O04`**: `test_ocrm_attach_o04_media_understanding_default_models`
+5. **`OCRM-ATTACH-O05`**: `test_ocrm_attach_o05_generation_and_persistence`
+6. **`OCRM-ATTACH-O06`**: `test_ocrm_attach_o06_persistence_failure`
+7. **`OCRM-ATTACH-O07`**: `test_ocrm_attach_o07_invalid_base64`
+8. **`OCRM-ATTACH-O08`**: `test_ocrm_attach_o08_resolution_normalization`
+9. **`OCRM-ATTACH-O09`**: `test_ocrm_attach_o09_tool_resolution_validation_and_rejection`
+10. **`OCRM-ATTACH-O10`**: `test_ocrm_attach_o10_sniff_mime_from_base64`
+11. **`OCRM-ATTACH-O11`**: `test_ocrm_attach_o11_attachment_text_preview_truncation_and_binary`
+12. **`OCRM-ATTACH-O12`**: `test_ocrm_attach_o12_extension_id_and_dependencies`
+
+---
+
+## 4. Invariant Verification & Global Conservation
+
+- **Exact Mapped Paths**: 136 (cumulative across Units 1–13)
+- **Omitted Known**: 0
+- **Total Tracked Paths**: 58,750
+- **Unread / Unclassified Paths**: 58,614
+- **Strict Conservation**: $136 + 58614 = 58750$.
+- **All Global Completion Flags**: `false` strictly preserved.
+
+## 5. Current existing-owner content publication — CAP-v1
+
+The native persistence correction is specified in
+`projects/openclaw-rust/docs/specs/attachment-content-publication.md`.
+Discovery H is `4c582ea2b1ddcf1dc6a46d6a6bb5aa7575c0b9f0`; implementation
+base `aa5a448e5758bd2b46aed92e699f56861ad0acdc` and first integration base
+`7eb81e20b7dc2eac5a71516a9a0c78795d252e95` preserve the same attachment
+owner. Fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`.
+
+The actual registered `uploadAttachment` Host-lane path reaches
+`AttachmentsService::upload` -> `ingest_attachment_bytes`. The actual App's
+Session-admitted generated-image persistence closure reaches
+`persist_image_bytes`. Both share the private content-addressed writer. At
+discovery H it accepts an existing partial/corrupt object without reading its
+bytes. The CAP candidate now stages, syncs and publishes without overwrite,
+and verifies exact existing content before those callers report success.
+Independent review and exact-H Actions remain pending. Text/chunk/image and Box
+consumers remain the existing owners. Direct already-owned-path ingestion,
+desktop composer staging and media-store read-scope authority remain separate.
+
+Relevant target source identities at discovery H are:
+
+| Input | Git blob | Review scope |
+| --- | --- | --- |
+| `attachments_service.rs` | `8fe9cdaf49278b180a66ac5fe2a21a84eb4de5a5` | Writer, upload, image persistence, real read/Box consumers and errors |
+| `host_secret_store.rs` | `7b6b47c6d855f0d8077b0221aa08a13b883002dc` | Existing bounded regular-file validation, owned temporary and non-replacing publication pattern; secret permissions are not copied |
+| `host_lock.rs` | `b034b3db5d6387d5e89a52cdbf84f0d60a693b33` | Physical same-profile Host custody; not per-file integrity |
+| `generate_image_service.rs` | `2420b994b0643fdd1b28b7551493d9a1df889c3e` | Actual persistence failure propagation and generated resource return |
+| `attachments_service_contract.rs` | `04234ede560c1a377d82b0e12197b89c1d8a31fb` | Existing real filesystem upload/read/Box and image controls |
+
+The bounded fixed-U source review preserves the earlier historical table rather
+than relabeling it. `src/media/store.ts` is now blob
+`d4342f8f5a4de1834346f131db70d2c6b6e80426`; the current review covers lines
+1–220 and 280–675, including ordinary/scoped publication and stream staging.
+It does not award full-file reading or complete store parity. The entire small
+`src/infra/sibling-temp-file.ts` wrapper, blob
+`dd082f8fae314e5417f5afad855b4c70ffa9ce1b`, delegates to the existing
+`@openclaw/fs-safe/advanced` dependency with private-directory producer
+isolation; that observation is not a full dependency implementation audit.
+`src/media/store.shared.ts`, blob
+`3e06d13268b774a149cdd657983f82e74ee51772`, was read in full: its explicit
+0644 mode keeps media usable by sandbox UIDs. The Fabushi correction preserves
+its own existing creation permissions rather than applying secret-key modes.
+`src/media/staged-inputs.ts`, blob
+`98e3e0cc8d2fec93d0712cef7901961082d36ab0`, was read in full to distinguish
+sandbox input markers/aliases from desktop composer staging. No responsibility
+or review status is silently reassigned from that distinction.
+
+CAP-v1 reuses existing Rust IO/UUID/libc dependencies and the current owner;
+it introduces no source-derived naming algorithm, second resource store or
+new permission truth. Authoring and source review are not execution evidence.
+Exact-candidate Actions, real platform filesystems, provider/UI behavior,
+source/dependency closure and final acceptance remain required. The canonical
+ledger/RTM identities, literal reading facts, historical figures and eight
+completion flags are unchanged by this addition.
+
+### Exact-H CAP observation — 2026-11-03
+
+Published H `f986b457e77d106638f02e8ff23f6b15d3eb792c` has direct Linux media
+evidence in runtime run `41549418649`, attempt 1: 95 passed, zero failed or
+ignored; all 12 new service and nine private publication cases passed, and all
+eight command/capture exits were zero. The four raw-log hashes and all 31 input
+hashes match that H. See
+[`attachment-content-publication-f986b457-20261103.json`](../evidence/attachment-content-publication-f986b457-20261103.json)
+for commands, exact cases, artifacts, source-structural results and limits.
+
+This is scoped Linux evidence, not a whole-unit verified/accepted promotion.
+The shared job failed CGWA's stale cross-owner proof equality oracle, leaving
+dependent Automation, production App and palette gates unexecuted. macOS was
+queued at the recorded observation. CGWA-REOPEN-01 preserves the issuer-bound
+security contract and repairs that test separately. Its next candidate and the
+MAB native transport binding require their own exact-H results. All source,
+real ecosystem/platform and final acceptance gaps above remain open.

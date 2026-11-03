@@ -11,7 +11,11 @@ use crate::extensions::local_tool_permission::local_tool_permission_controller::
     SandLocalToolControllerSubscription, SandLocalToolPermissionController,
     SandLocalToolRequestStatus,
 };
-use crate::extensions::memory::agent_state::{AvatarBoxFileReader, SandAgentState};
+use crate::extensions::memory::agent_state::{
+    AgentAutomationMutation, AgentProjectMembershipMutation, AgentWorkflowMutation,
+    AvatarBoxFileReader, SandAgentState, StateWriteResult,
+};
+use crate::extensions::session::agent_session::SandAgentSessionStore;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::runner::TurnUsage;
 use crate::runner::background_work::{RunnerBackgroundShellWatches, RunnerCloudAgentWatches};
@@ -32,7 +36,9 @@ use crate::runner::shell_terminal_watch::{
 };
 use crate::runner::sand_agent_runner::SandAgentRunner;
 use crate::runner::subagent_runtime::SubagentRuntime;
-use crate::runner::tools::sand_multitask_todo_tool::MultitaskTodoState;
+use crate::runner::tools::sand_multitask_todo_tool::{
+    MultitaskTodoState, ProductionMultitaskTodoState,
+};
 use crate::runner::tools::sand_state_tool::SandStateWriter;
 use crate::runner::turn_agent_composition::TurnAgentComposition;
 use crate::runner::turn_observation::TurnObservationHandle;
@@ -109,7 +115,7 @@ impl HostRunnerComposition {
     /// Resolve turn-scoped state surfaces through the canonical Host composition owner.
     pub fn compose_turn_state_surfaces(
         &self,
-        sessions: &ProductionSessionWorkers,
+        sessions: Arc<ProductionSessionWorkers>,
         agent_id: &str,
         group_member_turn: bool,
         multitask_enabled: bool,
@@ -127,13 +133,174 @@ impl HostRunnerComposition {
             .parent()
             .map(Path::to_path_buf)
             .ok_or_else(|| "production memory agents root has no sand root parent".to_string())?;
-        let mut state = SandAgentState::new(sand_root, agent_id.to_string())?;
+        let session_store = SandAgentSessionStore::new(Arc::clone(&sessions));
+        let (workflow_session_key, workflow_lifecycle_revision, workflows) =
+            session_store.open_workflow_store_for_runner(agent_id)?;
+        let mut state = SandAgentState::new_with_workflow_store(
+            sand_root, agent_id.to_string(), workflows,
+        )?;
         if let Some(reader) = avatar_box_file_reader {
             state = state.with_box_file_reader(reader);
         }
+        let memory_sessions = Arc::clone(&sessions);
+        let memory_agent_id = agent_id.to_string();
+        let write_memory_sessions = Arc::clone(&sessions);
+        let write_memory_agent_id = agent_id.to_string();
+        state = state.with_agent_memory_writer(Arc::new(move |content, tier| {
+            write_memory_sessions.write_agent_memory(&write_memory_agent_id, content, tier)
+        }));
+        state = state.with_agent_memory_remover(Arc::new(move |memory_id| {
+            match memory_sessions.remove_agent_memory(&memory_agent_id, memory_id) {
+                Ok(true) => StateWriteResult::success("Forgot the fact from agent memory."),
+                Ok(false) => StateWriteResult::failure(
+                    "no fact with exactly that text is recorded in agent memory.",
+                ),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update agent memory: {error}"
+                )),
+            }
+        }));
+        let profile_sessions = Arc::clone(&sessions);
+        let profile_agent_id = agent_id.to_string();
+        state = state.with_agent_profile_writer(Arc::new(move |name, description| {
+            match profile_sessions.update_agent_profile_fields(
+                &profile_agent_id,
+                name.as_deref(),
+                description.as_deref(),
+            ) {
+                Ok(()) => StateWriteResult::success("Updated your profile."),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update your profile: {error}"
+                )),
+            }
+        }));
+        let settings_sessions = Arc::clone(&sessions);
+        let settings_agent_id = agent_id.to_string();
+        state = state.with_agent_settings_writer(Arc::new(move |update| {
+            match settings_sessions.write_agent_settings(&settings_agent_id, update) {
+                Ok(()) => StateWriteResult::success("Updated your settings."),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update your settings: {error}"
+                )),
+            }
+        }));
+        let channel_sessions = Arc::clone(&sessions);
+        let channel_agent_id = agent_id.to_string();
+        state = state.with_agent_channel_disconnector(Arc::new(move |platform| {
+            match channel_sessions.disconnect_channel(&channel_agent_id, platform) {
+                Ok(true) => StateWriteResult::success(format!("Disconnected {platform}.")),
+                Ok(false) => StateWriteResult::failure(format!(
+                    "{platform} is not connected."
+                )),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not disconnect {platform}: {error}"
+                )),
+            }
+        }));
+        let automation_sessions = Arc::clone(&sessions);
+        let automation_agent_id = agent_id.to_string();
+        state = state.with_agent_automation_mutator(Arc::new(move |mutation| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&automation_sessions));
+            let result = match mutation {
+                AgentAutomationMutation::Create(spec) => session_store
+                    .create_agent_automation(&automation_agent_id, &spec)
+                    .map(|_| "Saved routine."),
+                AgentAutomationMutation::Update { id, spec } => session_store
+                    .update_agent_automation(&automation_agent_id, &id, &spec)
+                    .map(|_| "Updated routine."),
+                AgentAutomationMutation::SetEnabled { id, enabled } => session_store
+                    .set_agent_automation_enabled(&automation_agent_id, &id, enabled)
+                    .map(|_| if enabled { "Resumed routine." } else { "Paused routine." }),
+                AgentAutomationMutation::Remove { id } => session_store
+                    .remove_agent_automation(&automation_agent_id, &id)
+                    .map(|_| "Deleted routine."),
+            };
+            match result {
+                Ok(message) => StateWriteResult::success(message),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update routine: {error}"
+                )),
+            }
+        }));
+        let workflow_sessions = Arc::clone(&sessions);
+        let workflow_agent_id = agent_id.to_string();
+        state = state.with_agent_workflow_mutator(Arc::new(move |mutation| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&workflow_sessions));
+            let message = match &mutation {
+                AgentWorkflowMutation::Upsert { id: Some(_), .. } => "Updated workflow.",
+                AgentWorkflowMutation::Upsert { id: None, .. } => "Saved workflow.",
+                AgentWorkflowMutation::Remove { .. } => "Deleted workflow.",
+            };
+            match session_store.mutate_agent_workflow_if_generation(
+                &workflow_agent_id,
+                &workflow_session_key,
+                &workflow_lifecycle_revision,
+                &mutation,
+            ) {
+                Ok(_) => StateWriteResult::success(message),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update workflow: {error}"
+                )),
+            }
+        }));
+        let project_sessions = Arc::clone(&sessions);
+        let project_agent_id = agent_id.to_string();
+        state = state.with_agent_project_membership_mutator(Arc::new(move |mutation| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&project_sessions));
+            let result = match mutation {
+                AgentProjectMembershipMutation::Join { slug } => {
+                    session_store.join_agent_project(&project_agent_id, &slug)
+                }
+                AgentProjectMembershipMutation::Leave { slug } => {
+                    session_store.leave_agent_project(&project_agent_id, &slug)
+                }
+            };
+            match result {
+                Ok(true) => StateWriteResult::success("Updated project membership."),
+                Ok(false) => StateWriteResult::failure("project membership was not changed."),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update project membership: {error}"
+                )),
+            }
+        }));
+        let project_creator_sessions = Arc::clone(&sessions);
+        let project_creator_agent_id = agent_id.to_string();
+        state = state.with_agent_project_creator(Arc::new(move |slug, name, description| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&project_creator_sessions));
+            match session_store.create_agent_project(
+                &project_creator_agent_id,
+                &slug,
+                &name,
+                description.as_deref(),
+            ) {
+                Ok(true) => StateWriteResult::success(format!(
+                    "Created and joined project \"{name}\" (folder {slug})."
+                )),
+                Ok(false) => StateWriteResult::success(format!(
+                    "Joined existing project \"{slug}\"."
+                )),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not create or join project \"{slug}\": {error}"
+                )),
+            }
+        }));
+        let avatar_sessions = Arc::clone(&sessions);
+        let avatar_agent_id = agent_id.to_string();
+        state = state.with_agent_avatar_mutator(Arc::new(move |bytes| {
+            let session_store = SandAgentSessionStore::new(Arc::clone(&avatar_sessions));
+            match session_store.set_agent_avatar_bytes_by_id(&avatar_agent_id, bytes.as_deref()) {
+                Ok(_) => StateWriteResult::success("Updated your picture."),
+                Err(error) => StateWriteResult::failure(format!(
+                    "could not update your picture: {error}"
+                )),
+            }
+        }));
         let state_writer: Arc<dyn SandStateWriter> = Arc::new(state);
         let multitask_todo_state = if multitask_enabled {
-            Some(sessions.open_agent_db_owner(agent_id)? as Arc<dyn MultitaskTodoState>)
+            Some(Arc::new(ProductionMultitaskTodoState::new(
+                Arc::clone(&sessions),
+                agent_id,
+            )) as Arc<dyn MultitaskTodoState>)
         } else {
             None
         };
@@ -161,7 +328,10 @@ impl HostRunnerComposition {
         }
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
         let blob_store = Arc::new(sessions.create_agent_blob_store(agent_id)?);
-        let prior_state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let prior_snapshot = agent_store.checkpoint_snapshot_checked()?;
+        let prior_state_bytes = prior_snapshot.as_ref()
+            .map(|snapshot| snapshot.checkpoint_bytes.as_slice())
+            .unwrap_or_default();
         let transcripts_dir = data_dir.join("transcripts");
         let transcript_provider = {
             let mut providers = self
@@ -184,7 +354,7 @@ impl HostRunnerComposition {
         };
         let transcript_mirror = Arc::new(transcript_provider.route_for_session(
             Arc::clone(&blob_store),
-            &prior_state_bytes,
+            prior_state_bytes,
             is_journal_enabled,
         )?);
         let sink = ProductionAgentStateCheckpointSink::new(
@@ -192,7 +362,7 @@ impl HostRunnerComposition {
             agent_store,
             blob_store,
             transcript_mirror,
-            prior_state_bytes,
+            prior_snapshot,
             true,
         )?;
         Ok(Some(Arc::new(sink)))
@@ -209,7 +379,9 @@ impl HostRunnerComposition {
         agent_id: &str,
     ) -> Result<WatermarkResult, String> {
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
-        let state_bytes = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let state_bytes = agent_store.checkpoint_snapshot_checked()?
+            .map(|snapshot| snapshot.checkpoint_bytes)
+            .unwrap_or_default();
         if state_bytes.is_empty() {
             return Ok(WatermarkResult {
                 last_user_message_id: None,
@@ -273,7 +445,9 @@ impl HostRunnerComposition {
         agent_id: &str,
     ) -> Result<u64, String> {
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
-        let state = agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let state = agent_store.checkpoint_snapshot_checked()?
+            .map(|snapshot| snapshot.checkpoint_bytes)
+            .unwrap_or_default();
         conversation_compaction_epoch(&state).map_err(|error| {
             format!("could not decode production conversation compaction epoch for {agent_id}: {error}")
         })
@@ -533,7 +707,7 @@ fn persist_local_permission_event(
             if let Some(description) = event.request.description.as_deref() {
                 ask["description"] = Value::String(description.to_string());
             }
-            let entry = json!({
+            let mut entry = json!({
                 "id": event.request.id,
                 "kind": "send-message",
                 "message": {
@@ -542,9 +716,28 @@ fn persist_local_permission_event(
                 },
                 "timestampMs": now_ms(),
             });
-            sessions
-                .append_agent_transcript_entries(&event.request.agent_id, &[entry])
-                .map(|_| ())
+            let session_key = match event.request.session_key.as_deref() {
+                Some(session_key) => Some(session_key.to_string()),
+                None => sessions
+                    .read_session_work_admission(&event.request.agent_id)?
+                    .map(|record| record.session_key),
+            };
+            if let Some(session_key) = session_key.as_deref() {
+                entry["sessionKey"] = Value::String(session_key.to_string());
+            }
+            if let Some(session_key) = session_key.as_deref() {
+                sessions
+                    .append_agent_transcript_entries_if_session_admitted(
+                        &event.request.agent_id,
+                        session_key,
+                        &[entry],
+                    )
+                    .map(|_| ())
+            } else {
+                sessions
+                    .append_agent_transcript_entries(&event.request.agent_id, &[entry])
+                    .map(|_| ())
+            }
         }
         SandLocalToolControllerEventKind::Settled => {
             let entry_id = event.request.id.as_str();
@@ -566,9 +759,33 @@ fn persist_local_permission_event(
                     Value::String(permission_status(event.request.status).to_string()),
                 );
             }
-            sessions
-                .update_agent_transcript_entry(&event.request.agent_id, entry_id, &entry)
-                .map(|_| ())
+            let session_key = event
+                .request
+                .session_key
+                .as_deref()
+                .map(ToOwned::to_owned)
+                .or_else(|| {
+                    entry
+                        .get("sessionKey")
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                        .map(ToOwned::to_owned)
+                });
+            if let Some(session_key) = session_key.as_deref() {
+                sessions
+                    .update_agent_transcript_entry_if_session_admitted(
+                        &event.request.agent_id,
+                        session_key,
+                        entry_id,
+                        &entry,
+                    )
+                    .map(|_| ())
+            } else {
+                sessions
+                    .update_agent_transcript_entry(&event.request.agent_id, entry_id, &entry)
+                    .map(|_| ())
+            }
         }
     }
 }

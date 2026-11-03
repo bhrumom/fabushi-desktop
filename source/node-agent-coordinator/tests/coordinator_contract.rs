@@ -140,6 +140,305 @@ fn waitable_control_calls_resolve_reject_and_settle_on_disconnect() {
     assert_eq!(failure.code, mahayana_node_agent_coordinator::protocol::COORDINATOR_DISCONNECTED);
 }
 
+mod control_command_retirement {
+    use std::io;
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+    use std::sync::{
+        Arc, Mutex,
+        atomic::{AtomicUsize, Ordering},
+        mpsc::{self, Receiver, Sender, TryRecvError},
+    };
+    use std::thread::{self, JoinHandle};
+    use std::time::Duration;
+
+    use mahayana_node_agent_coordinator::control_port_client::{
+        ClientAction, ControlPortClient, call_control_command,
+    };
+    use mahayana_node_agent_coordinator::protocol::{
+        COORDINATOR_DISCONNECTED, CoordinatorFrame, Failure, ReplyOutcome, ShutdownReason,
+    };
+    use mahayana_node_agent_coordinator::runner_tool_relay::{
+        ROUTED_TOOL_EXECUTE_METHOD, execute_runner_tool_request,
+    };
+    use serde_json::json;
+
+    const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
+
+    fn ready_client() -> Arc<Mutex<ControlPortClient>> {
+        let mut client = ControlPortClient::default();
+        client.handle_frame(CoordinatorFrame::ready());
+        Arc::new(Mutex::new(client))
+    }
+
+    fn counts(client: &Mutex<ControlPortClient>) -> (usize, usize) {
+        let client = client.lock().expect("control client");
+        (client.pending_count(), client.waiter_count())
+    }
+
+    struct HeldRemoteEffect {
+        request_id: String,
+        calls: Arc<AtomicUsize>,
+        release: Option<Sender<()>>,
+        completion: Receiver<Vec<ClientAction>>,
+        worker: Option<JoinHandle<()>>,
+    }
+
+    impl HeldRemoteEffect {
+        fn start(client: Arc<Mutex<ControlPortClient>>, frame: &CoordinatorFrame) -> Self {
+            let CoordinatorFrame::Request { request_id, method, .. } = frame else {
+                panic!("writer must receive the registered request");
+            };
+            assert_eq!(method, ROUTED_TOOL_EXECUTE_METHOD);
+            {
+                let client = client.try_lock().expect("writer may reenter the client");
+                assert!(client.pending_count() > 0);
+                assert!(client.waiter_count() > 0);
+            }
+            let request_id = request_id.clone();
+            let remote_request_id = request_id.clone();
+            let calls = Arc::new(AtomicUsize::new(0));
+            let remote_calls = Arc::clone(&calls);
+            let (entered_tx, entered_rx) = mpsc::channel();
+            let (release_tx, release_rx) = mpsc::channel();
+            let (completion_tx, completion) = mpsc::channel();
+            let worker = thread::spawn(move || {
+                remote_calls.fetch_add(1, Ordering::SeqCst);
+                entered_tx.send(()).expect("remote effect entered");
+                release_rx.recv().expect("release only this remote effect");
+                let actions = client.lock().expect("remote reply client").handle_frame(
+                    CoordinatorFrame::Reply {
+                        request_id: remote_request_id,
+                        outcome: ReplyOutcome::Ok { value: json!({"effect":"completed"}) },
+                    },
+                );
+                let _ = completion_tx.send(actions);
+            });
+            let effect = Self {
+                request_id,
+                calls,
+                release: Some(release_tx),
+                completion,
+                worker: Some(worker),
+            };
+            entered_rx.recv_timeout(PROBE_TIMEOUT).expect("observe remote entry");
+            effect
+        }
+
+        fn assert_running(&self) {
+            assert_eq!(self.calls.load(Ordering::SeqCst), 1);
+            assert!(!self.worker.as_ref().expect("owned remote worker").is_finished());
+            assert!(matches!(self.completion.try_recv(), Err(TryRecvError::Empty)));
+        }
+
+        fn finish(mut self) -> Vec<ClientAction> {
+            self.release.take().expect("remote release").send(()).expect("release remote");
+            let actions = self.completion.recv_timeout(PROBE_TIMEOUT).expect("late remote reply");
+            self.worker.take().expect("owned remote worker").join().expect("remote completed");
+            actions
+        }
+    }
+
+    impl Drop for HeldRemoteEffect {
+        fn drop(&mut self) {
+            if let Some(release) = self.release.take() {
+                let _ = release.send(());
+            }
+            if let Some(worker) = self.worker.take() {
+                let _ = worker.join();
+            }
+        }
+    }
+
+    #[test]
+    fn timeout_retires_only_owned_waiter_while_remote_effect_continues() {
+        let client = ready_client();
+        let unrelated = client.lock().expect("control client")
+            .call_waiting("resolveGatewayConnection", json!({}))
+            .expect("unrelated waiter");
+        let mut effect = None;
+        let failure = call_control_command(
+            &client,
+            ROUTED_TOOL_EXECUTE_METHOD,
+            json!({"toolName":"counted_write"}),
+            Duration::from_millis(10),
+            |frame| {
+                effect = Some(HeldRemoteEffect::start(Arc::clone(&client), frame));
+                Ok(())
+            },
+        ).expect_err("local wait expires while remote work is held");
+        assert_eq!(failure, Failure::new(
+            COORDINATOR_DISCONNECTED,
+            format!("control request {ROUTED_TOOL_EXECUTE_METHOD} did not settle: {}", mpsc::RecvTimeoutError::Timeout),
+        ));
+        let effect = effect.expect("writer published remote work");
+        effect.assert_running();
+        assert_eq!(counts(&client), (1, 1));
+        assert!(client.lock().expect("control client").cancel(&effect.request_id).is_none());
+        assert!(effect.finish().is_empty(), "late reply cannot resolve the retired call");
+        assert_eq!(counts(&client), (1, 1));
+        assert!(matches!(unrelated.reply.try_recv(), Err(TryRecvError::Empty)));
+
+        let actions = client.lock().expect("control client").handle_frame(CoordinatorFrame::Reply {
+            request_id: unrelated.request_id.clone(),
+            outcome: ReplyOutcome::Ok { value: json!({"unrelated":"completed"}) },
+        });
+        assert!(matches!(actions.as_slice(), [ClientAction::Resolve { request_id, .. }]
+            if request_id == &unrelated.request_id));
+        assert_eq!(unrelated.reply.recv_timeout(PROBE_TIMEOUT).expect("surviving waiter"),
+            Ok(json!({"unrelated":"completed"})));
+        assert_eq!(counts(&client), (0, 0));
+    }
+
+    #[test]
+    fn write_failure_preserves_runner_resolution_while_published_effect_continues() {
+        let client = ready_client();
+        let mut effect = None;
+        let resolution = execute_runner_tool_request(
+            &json!({
+                "requestId":"runner-tool-opaque-held",
+                "method":ROUTED_TOOL_EXECUTE_METHOD,
+                "args":{"toolName":"counted_write"},
+            }),
+            |method, args| call_control_command(&client, method, args, PROBE_TIMEOUT, |frame| {
+                effect = Some(HeldRemoteEffect::start(Arc::clone(&client), frame));
+                Err(io::Error::other("carrier flush failed after publication"))
+            }),
+        ).expect("Runner keeps the legacy failed resolution");
+        assert_eq!(resolution, json!({
+            "requestId":"runner-tool-opaque-held",
+            "ok":false,
+            "error":"COORDINATOR_DISCONNECTED: control request write failed: carrier flush failed after publication",
+        }));
+        let effect = effect.expect("writer published before failing");
+        effect.assert_running();
+        assert_eq!(counts(&client), (0, 0));
+        assert!(effect.finish().is_empty());
+        assert_eq!(counts(&client), (0, 0));
+    }
+
+    #[test]
+    fn synchronous_callback_reentry_preserves_remote_success_and_failure() {
+        let client = ready_client();
+        for expected in [
+            Ok(json!({"baseUrl":"http://127.0.0.1:1234"})),
+            Err(Failure::with_transport_kind("DENIED", "credential denied", "permission")),
+        ] {
+            let mut write_calls = 0;
+            let mut settled_request_id = String::new();
+            let result = call_control_command(&client, "resolveGatewayConnection", json!({}), PROBE_TIMEOUT, |frame| {
+                write_calls += 1;
+                let CoordinatorFrame::Request { request_id, method, args } = frame else {
+                    panic!("control request frame");
+                };
+                assert_eq!(method, "resolveGatewayConnection");
+                assert_eq!(args, &json!({}));
+                settled_request_id = request_id.clone();
+                let mut client = client.try_lock().expect("writer runs outside client mutex");
+                assert_eq!((client.pending_count(), client.waiter_count()), (1, 1));
+                let outcome = match &expected {
+                    Ok(value) => ReplyOutcome::Ok { value: value.clone() },
+                    Err(failure) => ReplyOutcome::Failed { failure: failure.clone() },
+                };
+                assert_eq!(client.handle_frame(CoordinatorFrame::Reply {
+                    request_id: request_id.clone(), outcome,
+                }).len(), 1);
+                Ok(())
+            });
+            assert_eq!(result, expected);
+            assert_eq!(write_calls, 1);
+            assert_eq!(counts(&client), (0, 0));
+            assert!(client.lock().expect("control client").handle_frame(CoordinatorFrame::Reply {
+                request_id: settled_request_id,
+                outcome: ReplyOutcome::Ok { value: json!("duplicate") },
+            }).is_empty());
+        }
+    }
+
+    #[test]
+    fn closed_registration_refuses_before_writer_callback() {
+        let client = ready_client();
+        client.lock().expect("control client").handle_port_closed();
+        let mut write_calls = 0;
+        let result = call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |_| {
+            write_calls += 1;
+            Ok(())
+        });
+        assert_eq!(result, Err(Failure::new(COORDINATOR_DISCONNECTED, "control port is settled")));
+        assert_eq!(write_calls, 0);
+        assert_eq!(counts(&client), (0, 0));
+    }
+
+    #[test]
+    fn port_closure_and_protocol_settlement_leave_remote_work_running() {
+        for (settlement_frame, message) in [
+            (None, "control port closed"),
+            (Some(CoordinatorFrame::shutdown(ShutdownReason::Requested, Some("remote shutdown".into()))), "remote shutdown"),
+            (Some(CoordinatorFrame::Event { family: "invalid-direction".into(), payload: json!({}) }), "server posted a client-direction frame"),
+        ] {
+            let client = ready_client();
+            let mut effect = None;
+            let result = call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |frame| {
+                effect = Some(HeldRemoteEffect::start(Arc::clone(&client), frame));
+                let mut client = client.try_lock().expect("settlement may reenter the client");
+                let actions = match settlement_frame {
+                    Some(frame) => client.handle_frame(frame),
+                    None => client.handle_port_closed(),
+                };
+                assert!(matches!(actions.last(), Some(ClientAction::Close)));
+                Ok(())
+            });
+            assert_eq!(result, Err(Failure::new(COORDINATOR_DISCONNECTED, message)));
+            let effect = effect.expect("remote work entered before local settlement");
+            effect.assert_running();
+            assert_eq!(counts(&client), (0, 0));
+            assert!(effect.finish().is_empty());
+            assert_eq!(counts(&client), (0, 0));
+        }
+    }
+
+    #[test]
+    fn poisoned_cleanup_retires_only_owned_entries_and_preserves_write_failure() {
+        let client = ready_client();
+        let unrelated = client.lock().expect("control client")
+            .call_waiting("resolveGatewayConnection", json!({}))
+            .expect("unrelated waiter");
+        let mut retired_request_id = String::new();
+        let result = call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |frame| {
+            let CoordinatorFrame::Request { request_id, .. } = frame else {
+                panic!("control request frame");
+            };
+            retired_request_id = request_id.clone();
+            assert!(catch_unwind(AssertUnwindSafe(|| {
+                let _guard = client.lock().expect("poison only this test client");
+                panic!("controlled client poison");
+            })).is_err());
+            Err(io::Error::other("carrier write failed"))
+        });
+        assert_eq!(result, Err(Failure::new(COORDINATOR_DISCONNECTED,
+            "control request write failed: carrier write failed")));
+        {
+            let mut client = client.lock().unwrap_or_else(|error| error.into_inner());
+            assert_eq!((client.pending_count(), client.waiter_count()), (1, 1));
+            assert!(client.handle_frame(CoordinatorFrame::Reply {
+                request_id: retired_request_id,
+                outcome: ReplyOutcome::Ok { value: json!("late") },
+            }).is_empty());
+            client.handle_frame(CoordinatorFrame::Reply {
+                request_id: unrelated.request_id.clone(),
+                outcome: ReplyOutcome::Ok { value: json!("unrelated") },
+            });
+            assert_eq!((client.pending_count(), client.waiter_count()), (0, 0));
+        }
+        assert_eq!(unrelated.reply.recv_timeout(PROBE_TIMEOUT).expect("unrelated waiter survives"), Ok(json!("unrelated")));
+        let mut write_calls = 0;
+        assert_eq!(call_control_command(&client, ROUTED_TOOL_EXECUTE_METHOD, json!({}), PROBE_TIMEOUT, |_| {
+            write_calls += 1;
+            Ok(())
+        }), Err(Failure::new(COORDINATOR_DISCONNECTED, "control port lock poisoned")));
+        assert_eq!(write_calls, 0);
+    }
+}
+
 #[test]
 fn disconnect_rejects_every_pending_control_call() {
     let mut client = ControlPortClient::default();
@@ -253,14 +552,25 @@ fn crash_is_recorded_in_resync_snapshot() {
 #[test]
 fn gateway_event_families_match_the_frozen_coordinator_contract() {
     use mahayana_node_agent_coordinator::gateway::gateway_event_families::{
-        coordinator_event_family_for_sse_channel, sse_channel_for_family,
+        coordinator_event_family_for_sse_channel, event_family_for_channel, sse_channel_for_family,
     };
 
     assert_eq!(sse_channel_for_family("agents-workflow"), Some("workflows"));
     assert_eq!(sse_channel_for_family("mcp-servers-updated"), Some("mcp-servers"));
     assert_eq!(sse_channel_for_family("host-settings"), Some("host-settings"));
+    assert_eq!(
+        sse_channel_for_family("cloud-workers.status"),
+        Some("cloud-workers.status")
+    );
     assert_eq!(coordinator_event_family_for_sse_channel("automations"), Some("agents-automation"));
+    assert_eq!(
+        coordinator_event_family_for_sse_channel("cloud-workers.status"),
+        Some("cloud-workers.status")
+    );
     assert_eq!(coordinator_event_family_for_sse_channel("unknown"), None);
+    assert_eq!(event_family_for_channel("cloud-workers.status"), "cloud-workers.status");
+    assert_eq!(event_family_for_channel("channel-activity"), "channel-activity");
+    assert_eq!(event_family_for_channel("  "), "runtime");
 }
 
 #[test]
@@ -445,6 +755,21 @@ fn carrier_bootstrap_and_channels_preserve_grok_process_boundaries() {
     assert_eq!(messages[2].channel, CarrierChannel::MainData);
     carrier.close();
     assert!(carrier.post(CarrierChannel::Data, json!({})).is_err());
+}
+
+#[test]
+fn native_link_preview_carrier_reserves_cache_paths_for_main_data() {
+    use mahayana_node_agent_coordinator::carrier::{
+        native_attachment_carrier_allowed, CarrierChannel,
+    };
+    assert!(!native_attachment_carrier_allowed("fetchLinkMetadata", CarrierChannel::Data));
+    assert!(!native_attachment_carrier_allowed("fetchLinkMetadata", CarrierChannel::Control));
+    assert!(native_attachment_carrier_allowed("fetchLinkMetadata", CarrierChannel::MainData));
+    for method in ["readAttachmentText", "uploadAttachment", "fetchLinkMetadata.extra"] {
+        for channel in [CarrierChannel::Data, CarrierChannel::Control, CarrierChannel::MainData] {
+            assert!(native_attachment_carrier_allowed(method, channel), "{method}/{channel:?}");
+        }
+    }
 }
 
 
@@ -1867,6 +2192,325 @@ fn gateway_client_streams_real_sse_and_honors_bearer_auth() {
 }
 
 
+mod gateway_json_wire_fidelity {
+    use std::cell::{Cell, RefCell};
+    use std::collections::BTreeMap;
+    use std::io::{self, Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::{
+        Arc,
+        atomic::{AtomicBool, Ordering},
+        mpsc::{self, Sender},
+    };
+    use std::thread::{self, JoinHandle};
+    use std::time::{Duration, Instant};
+
+    use mahayana_node_agent_coordinator::gateway::gateway_client::stream_http_events;
+    use mahayana_node_agent_coordinator::gateway::gateway_request_dispatcher::dispatch_http_json;
+    use mahayana_node_agent_coordinator::gateway::host_supervisor::GatewayConnection;
+    use serde_json::{Value, json};
+
+    const PEER_TIMEOUT: Duration = Duration::from_secs(10);
+    const MAX_REQUEST_BYTES: usize = 64 * 1024;
+    const EPOCH_BITS: u64 = 4_790_166_932_267_466_758;
+
+    struct ObservedRequest {
+        headers: String,
+        body: Vec<u8>,
+    }
+
+    struct ObservedExchange {
+        request: ObservedRequest,
+        response: Vec<u8>,
+    }
+
+    struct LoopbackPeer {
+        connection: GatewayConnection,
+        release_body: Sender<()>,
+        stop: Arc<AtomicBool>,
+        worker: Option<JoinHandle<io::Result<ObservedExchange>>>,
+    }
+
+    fn remaining(deadline: Instant) -> io::Result<Duration> {
+        deadline.checked_duration_since(Instant::now())
+            .filter(|remaining| !remaining.is_zero())
+            .ok_or_else(|| io::Error::new(io::ErrorKind::TimedOut, "wire fixture deadline expired"))
+    }
+
+    fn read_some(stream: &mut TcpStream, buffer: &mut [u8], deadline: Instant) -> io::Result<usize> {
+        loop {
+            stream.set_read_timeout(Some(remaining(deadline)?))?;
+            match stream.read(buffer) {
+                Ok(0) => return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "incomplete fixture request")),
+                Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+                result => return result,
+            }
+        }
+    }
+
+    fn read_request(stream: &mut TcpStream, deadline: Instant) -> io::Result<ObservedRequest> {
+        let mut request = Vec::new();
+        let mut buffer = [0_u8; 1024];
+        let header_end = loop {
+            let available = MAX_REQUEST_BYTES.saturating_sub(request.len()).min(buffer.len());
+            if available == 0 {
+                return Err(io::Error::new(io::ErrorKind::InvalidData, "fixture request headers too large"));
+            }
+            let count = read_some(stream, &mut buffer[..available], deadline)?;
+            request.extend_from_slice(&buffer[..count]);
+            if let Some(index) = request.windows(4).position(|bytes| bytes == b"\r\n\r\n") {
+                break index + 4;
+            }
+        };
+        let headers = String::from_utf8(request[..header_end].to_vec())
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let content_length = headers.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length").then_some(value.trim())
+        }).unwrap_or("0").parse::<usize>()
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let total = header_end.checked_add(content_length)
+            .filter(|total| *total <= MAX_REQUEST_BYTES)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "fixture request body too large"))?;
+        while request.len() < total {
+            let available = (total - request.len()).min(buffer.len());
+            let count = read_some(stream, &mut buffer[..available], deadline)?;
+            request.extend_from_slice(&buffer[..count]);
+        }
+        Ok(ObservedRequest { headers, body: request[header_end..total].to_vec() })
+    }
+
+    fn write_bytes(stream: &mut TcpStream, mut bytes: &[u8], deadline: Instant) -> io::Result<()> {
+        while !bytes.is_empty() {
+            stream.set_write_timeout(Some(remaining(deadline)?))?;
+            match stream.write(bytes) {
+                Ok(0) => return Err(io::Error::new(io::ErrorKind::WriteZero, "fixture response write stopped")),
+                Ok(count) => bytes = &bytes[count..],
+                Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+                Err(error) => return Err(error),
+            }
+        }
+        stream.set_write_timeout(Some(remaining(deadline)?))?;
+        stream.flush()
+    }
+
+    impl LoopbackPeer {
+        fn start(headers: Vec<u8>, body: Vec<u8>, after_connected: bool) -> Self {
+            let listener = TcpListener::bind("127.0.0.1:0").expect("bind wire fixture");
+            listener.set_nonblocking(true).expect("bound fixture accept loop");
+            let address = listener.local_addr().expect("wire fixture address");
+            let stop = Arc::new(AtomicBool::new(false));
+            let worker_stop = Arc::clone(&stop);
+            let (release_body, released) = mpsc::channel();
+            let worker = thread::spawn(move || {
+                let deadline = Instant::now() + PEER_TIMEOUT;
+                let mut stream = loop {
+                    remaining(deadline)?;
+                    if worker_stop.load(Ordering::Acquire) {
+                        return Err(io::Error::new(io::ErrorKind::Interrupted, "wire fixture cancelled"));
+                    }
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                            thread::sleep(Duration::from_millis(5));
+                        }
+                        Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
+                        Err(error) => return Err(error),
+                    }
+                };
+                // Accepted sockets can inherit a listener's nonblocking mode on macOS.
+                stream.set_nonblocking(false)?;
+                stream.set_read_timeout(Some(remaining(deadline)?))?;
+                stream.set_write_timeout(Some(remaining(deadline)?))?;
+                let request = read_request(&mut stream, deadline)?;
+                write_bytes(&mut stream, &headers, deadline)?;
+                if after_connected {
+                    released.recv_timeout(remaining(deadline)?)
+                        .map_err(|error| {
+                            let kind = match error {
+                                mpsc::RecvTimeoutError::Timeout => io::ErrorKind::TimedOut,
+                                mpsc::RecvTimeoutError::Disconnected => io::ErrorKind::BrokenPipe,
+                            };
+                            io::Error::new(kind, error)
+                        })?;
+                    if worker_stop.load(Ordering::Acquire) {
+                        return Err(io::Error::new(io::ErrorKind::Interrupted, "wire fixture cancelled"));
+                    }
+                }
+                write_bytes(&mut stream, &body, deadline)?;
+                let mut response = headers;
+                response.extend_from_slice(&body);
+                Ok(ObservedExchange { request, response })
+            });
+            Self {
+                connection: GatewayConnection {
+                    base_url: format!("http://{address}"),
+                    headers: BTreeMap::from([("authorization".into(), "Bearer wire-fixture".into())]),
+                },
+                release_body,
+                stop,
+                worker: Some(worker),
+            }
+        }
+
+        fn finish(mut self) -> io::Result<ObservedExchange> {
+            self.stop.store(true, Ordering::Release);
+            let _ = self.release_body.send(());
+            self.worker.take().expect("owned wire peer").join()
+                .map_err(|_| io::Error::other("wire fixture peer panicked"))?
+        }
+    }
+
+    impl Drop for LoopbackPeer {
+        fn drop(&mut self) {
+            self.stop.store(true, Ordering::Release);
+            let _ = self.release_body.send(());
+            if let Some(worker) = self.worker.take() {
+                // All peer I/O and the barrier share one deadline, including on unwind.
+                let _ = worker.join();
+            }
+        }
+    }
+
+    fn expected_entry() -> Value {
+        // No decimal parsing builds the oracle, including the integral and signed-zero controls.
+        json!({
+            "kind": "message", "id": "t-wire-u", "role": "user",
+            "content": "wire fixture\n雪", "isStreaming": false,
+            "timestampMs": f64::from_bits(EPOCH_BITS),
+            "channel": "fixture-channel",
+            "channelSender": {
+                "id": "sender-wire",
+                "nested": [
+                    f64::from_bits(EPOCH_BITS | (1_u64 << 63)),
+                    { "integral": f64::from_bits(0x408f_4000_0000_0000),
+                      "negativeZero": f64::from_bits(0x8000_0000_0000_0000),
+                      "small": f64::from_bits(0x3ddb_7cdf_d9d7_bdbb),
+                      "large": f64::from_bits(0x54b2_49ad_2594_c37d),
+                      "negativeSmall": f64::from_bits(0xbddb_7cdf_d9d7_bdbb) },
+                    [null, true, false, 42, -7, "ordinary JSON", []]
+                ]
+            }
+        })
+    }
+
+    fn float_leaves(value: &Value, path: &str, leaves: &mut Vec<(String, u64)>) {
+        match value {
+            Value::Number(number) if number.is_f64() => {
+                leaves.push((path.to_string(), number.as_f64().expect("fixture finite float").to_bits()));
+            }
+            Value::Array(values) => {
+                for (index, value) in values.iter().enumerate() {
+                    float_leaves(value, &format!("{path}/{index}"), leaves);
+                }
+            }
+            Value::Object(values) => {
+                for (key, value) in values {
+                    let key = key.replace('~', "~0").replace('/', "~1");
+                    float_leaves(value, &format!("{path}/{key}"), leaves);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn record_diagnostic(message: std::fmt::Arguments<'_>) {
+        // The unchanged Cargo command must retain diagnostics for passing probes too.
+        let mut stderr = io::stderr().lock();
+        writeln!(stderr, "{message}").expect("write synthetic wire diagnostic");
+        stderr.flush().expect("flush synthetic wire diagnostic");
+    }
+
+    fn assert_wire_value(label: &str, expected: &Value, actual: &Value, raw_response: &[u8]) {
+        record_diagnostic(format_args!("CJW {label} raw synthetic response: {}", String::from_utf8_lossy(raw_response)));
+        let mut leaves = Vec::new();
+        float_leaves(expected, "", &mut leaves);
+        assert_eq!(leaves.len(), 7, "independent fixture must contain all seven float controls");
+        let observed_bits = leaves.iter().map(|(path, expected_bits)| {
+            let actual_bits = actual.pointer(path).and_then(Value::as_f64).map(f64::to_bits);
+            let observed = actual_bits.map(|bits| format!("0x{bits:016x}"))
+                .unwrap_or_else(|| "missing/non-number".to_string());
+            record_diagnostic(format_args!("CJW {label} {path}: expected=0x{expected_bits:016x} actual={observed}"));
+            actual_bits
+        }).collect::<Vec<_>>();
+        assert_eq!(actual, expected, "{label} must preserve the complete producer JSON value");
+        // Whole-Value equality alone does not distinguish positive and negative zero.
+        for ((path, expected_bits), actual_bits) in leaves.iter().zip(observed_bits) {
+            assert_eq!(actual_bits, Some(*expected_bits), "{label} float bits changed at {path}");
+        }
+    }
+
+    fn assert_request(request: &ObservedRequest, request_line: &str, expected_body: &[u8]) {
+        assert_eq!(request.headers.lines().next(), Some(request_line));
+        for header in ["authorization: Bearer wire-fixture", "x-sand-slim-avatars: 1"] {
+            assert!(request.headers.lines().any(|line| line.eq_ignore_ascii_case(header)),
+                "missing {header}: {}", request.headers);
+        }
+        assert_eq!(request.body.as_slice(), expected_body, "request body must be forwarded unchanged");
+    }
+
+    #[test]
+    fn gateway_http_reply_preserves_finite_json_values() {
+        let expected = json!({ "entries": [expected_entry()], "nextBeforeSeq": null });
+        let body = serde_json::to_vec(&expected).expect("serialize independent HTTP fixture");
+        record_diagnostic(format_args!("CJW HTTP fixture JSON: {}", String::from_utf8_lossy(&body)));
+        let headers = format!(
+            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            body.len(),
+        ).into_bytes();
+        let peer = LoopbackPeer::start(headers, body, false);
+        let args = json!({ "id": "agent-wire" });
+        let expected_request = serde_json::to_vec(&args).expect("serialize fixture request");
+        let result = dispatch_http_json(&peer.connection, "getAgentTranscriptTail", args);
+        let exchange = peer.finish().expect("HTTP fixture must complete before judging numeric fidelity");
+        let actual = result.expect("HTTP transport/decode must succeed before comparing numeric values");
+        assert_request(&exchange.request, "POST /api/getAgentTranscriptTail HTTP/1.1", &expected_request);
+        assert!(exchange.request.headers.lines().any(|line| line.eq_ignore_ascii_case("content-type: application/json")));
+        assert_wire_value("HTTP", &expected, &actual, &exchange.response);
+    }
+
+    #[test]
+    fn gateway_sse_event_preserves_finite_json_values_after_connected() {
+        let expected = json!({
+            "channel": "transcript",
+            "payload": { "type": "appended", "agentId": "agent-wire", "entry": expected_entry() },
+        });
+        let encoded = serde_json::to_vec(&expected).expect("serialize independent SSE fixture");
+        record_diagnostic(format_args!("CJW SSE fixture JSON: {}", String::from_utf8_lossy(&encoded)));
+        let mut body = b"data: ".to_vec();
+        body.extend_from_slice(&encoded);
+        body.extend_from_slice(b"\n\n");
+        let headers = b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: keep-alive\r\n\r\n".to_vec();
+        let peer = LoopbackPeer::start(headers, body, true);
+        let release = peer.release_body.clone();
+        let connected = Cell::new(false);
+        let keep_streaming = Cell::new(true);
+        let events = RefCell::new(Vec::new());
+        let result = stream_http_events(
+            &peer.connection,
+            || {
+                connected.set(true);
+                // No event bytes were sent in the handshake read's initial buffer.
+                release.send(()).expect("release SSE fixture after connection");
+            },
+            |event| {
+                events.borrow_mut().push(event);
+                keep_streaming.set(false);
+            },
+            || keep_streaming.get(),
+        );
+        let exchange = peer.finish().expect("SSE fixture must complete before judging numeric fidelity");
+        result.expect("SSE transport/decode must succeed before comparing numeric values");
+        assert!(connected.get(), "SSE connection callback must release the event");
+        assert_request(&exchange.request, "GET /events HTTP/1.1", &[]);
+        assert!(exchange.request.headers.lines().any(|line| line.eq_ignore_ascii_case("accept: text/event-stream")));
+        let events = events.into_inner();
+        assert_eq!(events.len(), 1, "deliver exactly the synthetic transcript event");
+        assert_wire_value("SSE", &expected, &events[0], &exchange.response);
+    }
+}
+
+
 #[test]
 fn gateway_client_pause_and_dev_offline_gate_dispatch_without_closing_client() {
     use mahayana_node_agent_coordinator::gateway::gateway_client::CoordinatorGatewayClient;
@@ -2029,7 +2673,8 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
         "inbound": {
             "from": {"id":"agent-source","name":"Source"},
             "text":"peer message",
-            "timestampMs":123
+            "timestampMs":123,
+            "replyContext":{"targetId":"outbound-1","quote":"peer message"}
         }
     }))
     .expect("direct peer wake");
@@ -2044,6 +2689,8 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
     assert_eq!(route.send_args["selectedImages"], selected);
     assert_eq!(route.send_args["agentWake"]["priority"], true);
     assert_eq!(route.send_args["agentWake"]["inbound"]["text"], "peer message");
+    assert_eq!(route.send_args["replyContext"]["targetId"], "outbound-1");
+    assert_eq!(route.send_args["replyContext"]["quote"], "peer message");
     assert!(route.send_args.get("groupContext").is_none());
 
     assert!(prepare_agent_inbound_wake_routes(&json!({
@@ -2051,6 +2698,15 @@ fn agent_inbound_direct_wake_forwards_selected_images_without_group_fanout() {
         "sourceAgentId": "agent-source",
         "prompt": "[agent] peer message",
         "selectedImages": "not-an-array"
+    }))
+    .is_err());
+    assert!(prepare_agent_inbound_wake_routes(&json!({
+        "agentId": "agent-target",
+        "sourceAgentId": "agent-source",
+        "prompt": "[agent] peer message",
+        "inbound": {
+            "replyContext": {"targetId": "outbound-1", "quote": " "}
+        }
     }))
     .is_err());
 }

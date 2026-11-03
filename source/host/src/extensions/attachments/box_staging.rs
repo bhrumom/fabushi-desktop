@@ -2,6 +2,8 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use crate::extensions::attachments::media_reference::read_outbound_media_file_bounded;
+
 pub const SAND_BOX_STAGE_MAX_BYTES: u64 = 50 * 1024 * 1024;
 pub const SAND_BOX_UPLOADS_DIR: &str = "/workspace/uploads";
 
@@ -52,7 +54,10 @@ pub fn stage_attachments_into_box(
         let Some(file_name) = host_path.file_name().and_then(|value| value.to_str()) else {
             continue;
         };
-        let Ok(data) = fs::read(host_path) else {
+        let Ok(data) = read_outbound_media_file_bounded(
+            host_path,
+            usize::try_from(SAND_BOX_STAGE_MAX_BYTES).unwrap_or(usize::MAX),
+        ) else {
             continue;
         };
         let box_path = format!("{SAND_BOX_UPLOADS_DIR}/{file_name}");

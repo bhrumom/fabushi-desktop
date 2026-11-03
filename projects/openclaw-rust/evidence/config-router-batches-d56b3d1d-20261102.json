@@ -1,0 +1,2413 @@
+{
+  "schema_version": 1,
+  "evidence_id": "OCRM-CONFIG-ROUTER-BATCHES-d56b3d1d-20261102",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "kind": "bounded-publication-review-and-CI-evidence-compilation",
+  "authored_at": "2026-11-02 22:18:08 UTC",
+  "author": "/root/history_oracle_review_0375",
+  "requested_reasoning_effort": "xhigh",
+  "state": "CONFIG_LINUX_AND_ACK_RENDERER_SOURCE_PASSED_SEPARATELY_FULL_RUNTIME_PENDING",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "document_carrier": {
+    "path": "projects/openclaw-rust/evidence/config-router-batches-d56b3d1d-20261102.json",
+    "publication_commit": null,
+    "publication_tree": null,
+    "publication_status": "Draft evidence file for root read-review and separate cloud publication.",
+    "carrier_is_not_a_product_validation_subject": true,
+    "rule": "A later commit carrying this document must not be substituted for either product subject below. This file does not self-attest its eventual publication or CI."
+  },
+  "evidence_boundary": {
+    "source": "Only the explicitly supplied publications, completed review records, final ACK snapshot and the captured CI snapshot were used.",
+    "direct_activity_in_this_authoring": "Read supplied evidence and assemble this one JSON file. No new source review, independent remote/API re-poll, execution, workflow dispatch or repository publication was performed.",
+    "reported_vs_direct": "Publication readbacks and CI/API/log observations are attributed to their recorded observers. Their complete original records are embedded below, reserialized without changing their values.",
+    "scratch_records_are_not_durable_dependencies": "The complete input JSON objects are embedded so that the published document remains reviewable without access to scratch.",
+    "url_method": "Canonical API/run/job/artifact/file URLs are expanded from the recorded repository and complete identifiers. Constructing these URLs is not a new successful fetch or a claim that an unread artifact body was inspected.",
+    "global_acceptance": false,
+    "unit_verified_for_either_entire_product_subject": false,
+    "parity_ledger_or_RTM_status_promoted": false,
+    "no_local_or_htch_tests_builds_lints_generators_validators": true,
+    "sole_repo_write": "projects/openclaw-rust/evidence/config-router-batches-d56b3d1d-20261102.json"
+  },
+  "upstream_identity": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "commit_url": "https://github.com/openclaw/openclaw/commit/1440bb1771372334bea23d7642bb52deb7db1845",
+    "git_commit_api_url": "https://api.github.com/repos/openclaw/openclaw/git/commits/1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree_api_url": "https://api.github.com/repos/openclaw/openclaw/git/trees/90c8aab39972da11cfad220361781d49e1bc6700",
+    "limit": "Fixed upstream authority identity is retained. These bounded batches claim no new global reading coverage, full semantic parity or complete source closure."
+  },
+  "product_subjects": {
+    "config_revision_input": {
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "parent_commit": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+      "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "git_commit_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "tree_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/trees/802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "archived_at": "2026-11-02 22:15:34 UTC",
+      "verification_reported_by": "root GitHub connector/API",
+      "verification_kind": "github_publication_readback",
+      "publication_readback_reported_complete": true,
+      "readback_scope": [
+        "full commit SHA, parent and tree",
+        "branch ref at publication",
+        "exact changed path set",
+        "complete delivered file contents and full blob SHA"
+      ],
+      "files": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "mode": "100644",
+          "sha": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+          "bytes": 211793,
+          "characters": 211793,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/40dad3d79f3cfffb1301e27e7a8c79a873b66046/.github/workflows/rust-desktop-runtime.yml",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/db8353fedf61f6c93c48f677d6c35017bd31e954"
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+          "mode": "100644",
+          "sha": "69cf16fb81166357b2f097df202b4b9c3d0f9485",
+          "bytes": 20920,
+          "characters": 20888,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/40dad3d79f3cfffb1301e27e7a8c79a873b66046/projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/69cf16fb81166357b2f097df202b4b9c3d0f9485"
+        },
+        {
+          "path": "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+          "mode": "100644",
+          "sha": "51fc3dfb29290bd385b31dccd459fb0bb3be58d1",
+          "bytes": 83290,
+          "characters": 83210,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/40dad3d79f3cfffb1301e27e7a8c79a873b66046/projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/51fc3dfb29290bd385b31dccd459fb0bb3be58d1"
+        },
+        {
+          "path": "source/host/app/src/main.rs",
+          "mode": "100644",
+          "sha": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8",
+          "bytes": 957139,
+          "characters": 957133,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/40dad3d79f3cfffb1301e27e7a8c79a873b66046/source/host/app/src/main.rs",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/3cbfb8304ff7a956408ed0631bb9aca72734bdf8"
+        },
+        {
+          "path": "source/host/app/src/tests/config_secret_boundary_tests.rs",
+          "mode": "100644",
+          "sha": "7cd6584d56c6e89be7570f3b6734864c44b9da17",
+          "bytes": 24876,
+          "characters": 24876,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/40dad3d79f3cfffb1301e27e7a8c79a873b66046/source/host/app/src/tests/config_secret_boundary_tests.rs",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/7cd6584d56c6e89be7570f3b6734864c44b9da17"
+        },
+        {
+          "path": "projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json",
+          "mode": "100644",
+          "sha": "aa2c2d977c2e20866cbc39f6e52c01dfa473c78d",
+          "bytes": 47189,
+          "characters": 47189,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/40dad3d79f3cfffb1301e27e7a8c79a873b66046/projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/aa2c2d977c2e20866cbc39f6e52c01dfa473c78d"
+        }
+      ],
+      "limit": "Publication and content identity only; does not assert compile, behavior or final acceptance. Later remote branch movement does not relabel this subject."
+    },
+    "inference_router_acknowledgement": {
+      "subject_commit": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "subject_tree": "4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+      "parent_commit": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+      "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "git_commit_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "tree_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/trees/4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+      "archived_at": "2026-11-02 22:15:34 UTC",
+      "verification_reported_by": "root GitHub connector/API",
+      "verification_kind": "github_publication_readback",
+      "publication_readback_reported_complete": true,
+      "readback_scope": [
+        "full commit SHA, parent and tree",
+        "branch ref at publication",
+        "exact changed path set",
+        "complete delivered file contents and full blob SHA"
+      ],
+      "files": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "mode": "100644",
+          "sha": "3efb70859e52b80c92a93bab7606573348cd566e",
+          "bytes": 218717,
+          "characters": 218717,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/ca67987e8a1e41262e59f6ffd10fcf45e04957d7/.github/workflows/rust-desktop-runtime.yml",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/3efb70859e52b80c92a93bab7606573348cd566e"
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+          "mode": "100644",
+          "sha": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+          "bytes": 6759,
+          "characters": 6745,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/ca67987e8a1e41262e59f6ffd10fcf45e04957d7/projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/f2daef120c2e0b8b02d0419e9c003913d5cd6df9"
+        },
+        {
+          "path": "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+          "mode": "100644",
+          "sha": "d3928dfa8f75e007b2fd6e0855dea192720f445d",
+          "bytes": 84043,
+          "characters": 83961,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/ca67987e8a1e41262e59f6ffd10fcf45e04957d7/projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/d3928dfa8f75e007b2fd6e0855dea192720f445d"
+        },
+        {
+          "path": "source/electron-main/main-edge.ts",
+          "mode": "100644",
+          "sha": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+          "bytes": 25510,
+          "characters": 25510,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/ca67987e8a1e41262e59f6ffd10fcf45e04957d7/source/electron-main/main-edge.ts",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/9519bda4455c09343f8f868449a9afd6f9fd2498"
+        },
+        {
+          "path": "source/electron-main/main-edge-model.contract.test.ts",
+          "mode": "100644",
+          "sha": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+          "bytes": 31517,
+          "characters": 31517,
+          "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/ca67987e8a1e41262e59f6ffd10fcf45e04957d7/source/electron-main/main-edge-model.contract.test.ts",
+          "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/f42091c0f3f7e4bcead071f1a5f722f426efb582"
+        }
+      ],
+      "limit": "Publication and content identity only; does not assert compile, behavior or final acceptance. Later remote branch movement does not relabel this subject."
+    }
+  },
+  "config_revision_input_batch": {
+    "contracts": [
+      "OCRM-CONFIG-PUBLIC-SECRET-v1",
+      "CS05-INPUT-v1"
+    ],
+    "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+    "behavior_scope": "config.set distinguishes an absent baseHash from a present malformed value. Present non-string or empty values fail before the Settings owner, key admission, persistence and notifications. Nonempty strings retain their original bytes; existing normalized CAS, omission compatibility and legacy Settings writes retain their prior ownership.",
+    "source_review": {
+      "full_review": {
+        "record_id": "cs_full_review",
+        "reviewer": "/root/config_revision_review_0375",
+        "base_commit": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+        "candidate_tree": "84533520b980d1a8c43f29182f8693dd47548176",
+        "verdict": "STATIC_CONVERGED",
+        "findings": []
+      },
+      "integration_review": {
+        "record_id": "cs_integration_review",
+        "base_commit": "e01f51f33134cbd9dd0b6abd0d471dfb5d71d8de",
+        "base_tree": "0de92aba674d01580319e21cd2840184f78f9a30",
+        "candidate_tree": "a97f4a56ef910f55ae1a9e9e1b1ccc85087915c1",
+        "verdict": "STATIC_CONVERGED",
+        "findings": []
+      },
+      "inheritance_to_publication": {
+        "independently_read_remote_git_commit": true,
+        "remote_commit_tree_parent_match": true,
+        "reviewed_candidate": "a97f4a56ef910f55ae1a9e9e1b1ccc85087915c1",
+        "evidence_only_incoming": {
+          "commit": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+          "parent": "e01f51f33134cbd9dd0b6abd0d471dfb5d71d8de",
+          "path": "projects/openclaw-rust/evidence/memory-selector-647e0932-20261103.json",
+          "before_blob": "f3a5503a01ddb323183f931703bd8baa20646371",
+          "after_blob": "ed62de39e518674e8366228d5c8b8894cb892dec"
+        },
+        "proof": "The complete immutable raw diff e01-to-700 and complete reviewed-candidate-a97-to-published-tree-802 diff are identical: the single evidence path and same full before/after blobs. Complete parent700-to-H40dad diff contains exactly the original six root changes plus deletion of the three staging paths; all six delivered blobs match the reviewed a97 freeze. No staging path exists in the published tree. Embedded incoming evidence opinions were not read or used to judge code.",
+        "workflow_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+        "main_blob": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8"
+      },
+      "limit": "These are static review and identity records. Unchanged reviewed blobs do not manufacture runtime results for the published commit."
+    },
+    "authored_new_app_cases": [
+      {
+        "name": "tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects",
+        "oracle": "Ten malformed JSON values across raw/config/settings envelopes; fresh no-key installation, no read-side pre-normalization, unchanged Settings bytes and directory entries, absent key/staging material, zero notifications and no trusted commit callback.",
+        "source_status": "authored and statically reviewed",
+        "execution_result_on_subject": null
+      },
+      {
+        "name": "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
+        "oracle": "Actual A then B persistence, malformed-input refusal preserving B/file/key/listener state, stale and whitespace-altered token controls, independent reopen, then current-token, omitted-token and legacy-null successful writes with exact callback/notification and retained-default controls.",
+        "source_status": "authored and statically reviewed",
+        "execution_result_on_subject": null
+      }
+    ],
+    "linux_exact_selection": {
+      "config_case_count": 8,
+      "retained_config_case_count": 6,
+      "new_config_case_count": 2,
+      "required_names": [
+        "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests",
+        "tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization",
+        "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers",
+        "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry",
+        "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret",
+        "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization",
+        "tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects",
+        "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls"
+      ],
+      "other_retained_app_cases": 10,
+      "combined_app_exact_case_count": 18,
+      "relation_to_macos": "The original full review records both new exact selectors added to the existing macOS App loop with the six existing public-secret cases retained; execution remains separately subject-bound.",
+      "execution_subject": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "observation_time": "2026-11-02T22:11:08.935Z",
+      "job": {
+        "job_id": 125578429715,
+        "run_id": 41533207848,
+        "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41533207848/job/125578429715",
+        "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125578429715",
+        "logs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125578429715/logs"
+      },
+      "step_number": 14,
+      "step_name": "Check and execute the actual Automation and Settings App owners on Linux",
+      "step_status": "in_progress",
+      "shipping_compile_result": null,
+      "test_harness_build_result": null,
+      "config_cases_passed": null,
+      "automation_cases_passed": null,
+      "actual_case_receipt_body_read": false,
+      "result_boundary": "The step had been entered in the captured snapshot. Neither its selected names, authored passed-receipt code, nor successful predecessor steps establishes compilation or any of these eight actual App results."
+    }
+  },
+  "inference_router_acknowledgement_batch": {
+    "contract": "OCRM-ROUTER-SETTINGS-ACK-v1",
+    "subject_commit": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+    "subject_tree": "4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+    "behavior_scope": "The existing served MainEdge router get/set waits for a valid Host configuration acknowledgement before mirroring, orders these methods per edge through validation and synchronous persistence, releases the tail on failure, and reconciles unknown or local-write outcomes only on an explicit later read. Rust retains effective-route policy ownership.",
+    "source_review": {
+      "full_review": {
+        "record_id": "ack_full_review",
+        "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+        "candidate_tree": "e8d4e5543bdeec8de7537ab3e6ee532fbcbea8b9",
+        "verdict": "STATIC_CONVERGED",
+        "findings": []
+      },
+      "incoming_review": {
+        "record_id": "ack_integration_review",
+        "repository": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+        "prior_base": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "prior_reviewed_tree": "e8d4e5543bdeec8de7537ab3e6ee532fbcbea8b9",
+        "new_base_commit": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "new_base_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "candidate_tree": "332ac0c5cb26d71e7a20c022c0f5b12b6a363746",
+        "snapshot": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/snapshot-8e.json",
+        "scope": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/scope-8e.diff",
+        "integration": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/integration-8e.diff",
+        "inherited_full_review": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/verdict.json",
+        "verdict": "STATIC_CONVERGED",
+        "findings": []
+      },
+      "final_publication_identity": {
+        "record_id": "ack_final_snapshot",
+        "base_commit": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+        "base_tree": "952f6c7355354c1f3aedb71e24dc7d422780713d",
+        "candidate_tree": "4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+        "prior_reviewed_tree": "332ac0c5cb26d71e7a20c022c0f5b12b6a363746",
+        "integration_report": "Single unrelated evidence-only incoming path preserved; complete raw before/after identities equal oldBase-to-newBase and reviewedTree-to-candidate; all five ACK blobs unchanged.",
+        "complete_publication_readback_reported_by": "root GitHub connector/API",
+        "all_five_delivered_blob_identities_match_snapshot_and_prior_merged_review": true,
+        "attribution": "The final evidence-only incoming preservation is supplied by the root snapshot/publication record. This authoring does not add a new independent whole-tree source review."
+      }
+    },
+    "authored_cases": {
+      "source_file": "source/electron-main/main-edge-model.contract.test.ts",
+      "source_blob": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+      "total_source_cases": 21,
+      "unchanged_existing_cases": 10,
+      "added_cases": 11,
+      "added_names": [
+        "router set waits for Host acknowledgement and mirrors its canonical provider",
+        "router preserves all five configured providers and reconciles reads with diagnostic fallbacks",
+        "router invalid requests and untrusted frames cause no Host or mirror effects",
+        "router refuses malformed Host replies without local fallback and permits later reconciliation",
+        "router Host refusal releases a queued read and read rejection does not poison later calls",
+        "router unknown transport outcome can follow a Host commit and requires an explicit read",
+        "router local persistence failure leaves the Host commit intact and a later get repairs the mirror",
+        "router orders a held get before set through mirror persistence",
+        "router orders a held set before get through mirror persistence",
+        "router serializes two sets so a late acknowledgement cannot overwrite the later mirror",
+        "a pending router IPC does not order unrelated methods or another MainEdge instance"
+      ],
+      "fixture_boundary": "The fixture uses actual serveMainEdge, the generated dispatcher, registered IPC channels, appWindow trust checks and a file-backed SandSettingsStore. Host I/O ports are controlled; it does not pretend to run a real Host or provider service.",
+      "oracle_summary": "The controls distinguish dispatch, acknowledgement, committed Host state, local bytes, reopened provider, final reply and successor entry. They can falsify eager mirror writes, requested-provider substitution, fallback success, poisoned or missing ordering, Host replay/compensation and local-write swallowing. These are source-level assessments only; no passing result is asserted.",
+      "executed_added_cases": null,
+      "passed_added_cases": null,
+      "aggregate_runtime_count": null,
+      "result": "SOURCE_AUTHORED_AND_STATIC_REVIEW_ONLY; no ca679 executable snapshot was supplied at capture."
+    },
+    "authored_workflow_gate": {
+      "actual_node_targets": [
+        "desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs",
+        "desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs",
+        "desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs",
+        "desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs",
+        "desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+      ],
+      "required_positive_names": [
+        "router set waits for Host acknowledgement and mirrors its canonical provider",
+        "router preserves all five configured providers and reconciles reads with diagnostic fallbacks",
+        "router invalid requests and untrusted frames cause no Host or mirror effects",
+        "router refuses malformed Host replies without local fallback and permits later reconciliation",
+        "router Host refusal releases a queued read and read rejection does not poison later calls",
+        "router unknown transport outcome can follow a Host commit and requires an explicit read",
+        "router local persistence failure leaves the Host commit intact and a later get repairs the mirror",
+        "router orders a held get before set through mirror persistence",
+        "router orders a held set before get through mirror persistence",
+        "router serializes two sets so a late acknowledgement cannot overwrite the later mirror",
+        "a pending router IPC does not order unrelated methods or another MainEdge instance"
+      ],
+      "process_exit": "The Node TAP command runs under bash set -euo pipefail and pipes through tee. A nonzero Node or tee exit fails that step; tee success cannot conceal Node failure. The receipt step is success-conditioned by default and cannot mint a passed receipt after that step fails.",
+      "named_case_and_completion_gate": "All eleven workflow names exactly match the appended source test names. Each requires an anchored top-level ok <number> - <escaped exact name> line. not ok lines, comment diagnostics, missing names and skipped/todo suffixes do not satisfy this pattern. The parser requires tests/pass/fail/cancelled/skipped/todo completion counts, requires tests > 0 and pass == tests, and requires every non-pass count to be zero. Missing counts or required positives fail the receipt step. The inspected source contains unique required names; no synthetic TAP success lines are introduced.",
+      "subject_binding": "Receipt binds checked-out HEAD to the event subject, records its tree, fixed-U lock, run ID/attempt, validation scope, selected input hashes, complete TAP digest/counts and the eleven required names. The scoped statement explicitly disclaims Rust execution and native-job acceptance.",
+      "failure_artifact_limit": "The artifact upload has no always condition: failure TAP is retained in the Actions step log by tee, while successful TAP plus JSON are uploaded. There is no separate failed-run artifact or numeric Node-exit field. This does not create a false pass and the bounded Spec does not require such a failure artifact; do not later describe the workflow as uploading TAP on every failure.",
+      "job_scope": "Existing push-triggered renderer command; native/full/config predicates preserved, no dispatch-only scope and no renderer receipt assertion of native success.",
+      "status": "Static description of authored checks; no actual new-H receipt body or TAP result is claimed."
+    },
+    "execution_observation": {
+      "observed_at": "2026-11-02T22:17:24.973Z",
+      "subject": {
+        "commit": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+        "tree": "4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+        "parent": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+        "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "source_run": 41535579867,
+        "runtime_run": 41535580001,
+        "run_attempt": 1
+      },
+      "status": "ACK_RENDERER_SOURCE_RESTORE_PASSED_NATIVE_PENDING",
+      "complete_observation_path": "projects/openclaw-rust/evidence/router-ack-ca679-d56b3d1d-20261102.json",
+      "complete_observation_blob": "0fcf2b85516f0c275b03a989408c49721abe9c57",
+      "renderer_actual_result": {
+        "job_id": 125586448748,
+        "job_result": "success",
+        "complete_log_fetched": true,
+        "log_characters": 88145,
+        "log_lines": 1182,
+        "subject_commit_seen_in_checkout_and_environment": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+        "validation_scope_seen_in_log": "ocrm-config",
+        "tap_counts": {
+          "tests": 115,
+          "pass": 115,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0,
+          "suites": 0
+        },
+        "top_level_tap_plan": 111,
+        "nested_subtests": 4,
+        "router_named_positives_observed": [
+          {
+            "tap_number": 38,
+            "name": "router set waits for Host acknowledgement and mirrors its canonical provider",
+            "result": "ok"
+          },
+          {
+            "tap_number": 39,
+            "name": "router preserves all five configured providers and reconciles reads with diagnostic fallbacks",
+            "result": "ok"
+          },
+          {
+            "tap_number": 40,
+            "name": "router invalid requests and untrusted frames cause no Host or mirror effects",
+            "result": "ok"
+          },
+          {
+            "tap_number": 41,
+            "name": "router refuses malformed Host replies without local fallback and permits later reconciliation",
+            "result": "ok"
+          },
+          {
+            "tap_number": 42,
+            "name": "router Host refusal releases a queued read and read rejection does not poison later calls",
+            "result": "ok"
+          },
+          {
+            "tap_number": 43,
+            "name": "router unknown transport outcome can follow a Host commit and requires an explicit read",
+            "result": "ok"
+          },
+          {
+            "tap_number": 44,
+            "name": "router local persistence failure leaves the Host commit intact and a later get repairs the mirror",
+            "result": "ok"
+          },
+          {
+            "tap_number": 45,
+            "name": "router orders a held get before set through mirror persistence",
+            "result": "ok"
+          },
+          {
+            "tap_number": 46,
+            "name": "router orders a held set before get through mirror persistence",
+            "result": "ok"
+          },
+          {
+            "tap_number": 47,
+            "name": "router serializes two sets so a late acknowledgement cannot overwrite the later mirror",
+            "result": "ok"
+          },
+          {
+            "tap_number": 48,
+            "name": "a pending router IPC does not order unrelated methods or another MainEdge instance",
+            "result": "ok"
+          }
+        ],
+        "router_named_positive_count": 11,
+        "named_positive_occurrences": "Each of the eleven router controls appears once as a successful top-level TAP line, numbers38 through48.",
+        "receipt_generation_step": 8,
+        "receipt_generation_step_result": "success",
+        "receipt_gate_from_exact_workflow": "Requires current HEAD equal PLUGIN_EXPECTED_SHA, all eleven successful router names, positive TAP test count, pass equal tests and zero fail/cancelled/skipped/todo before writing the exact-subject receipt.",
+        "compiler_scope": "Existing shipping esbuild common options and dependency resolution; no whole-graph strict TypeScript typecheck is claimed.",
+        "acceptance_scope": "Actual served router get/set, per-edge IPC ordering and file-backed display mirror under controlled Host replies. Returned provider is committed Host configuration. No Rust execution, real provider, full picker UI or account acceptance is asserted by the renderer receipt.",
+        "artifact": {
+          "id": 13183946760,
+          "name": "ocrm-plugin-edge-ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+          "bytes": 8338,
+          "digest": "sha256:7ee044bee5d4a9a85bd216725b7dc8e084ad91e2aa37a1c0f0bb416aa57031fd",
+          "head_sha": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+          "uploaded_files": [
+            "ocrm-plugin-edge.json",
+            "ocrm-plugin-edge.tap"
+          ],
+          "archive_body_independently_read": false
+        },
+        "receipt_node_tap_sha256": null,
+        "receipt_body_limit": "Completed TAP log, receipt-generation guard success, current workflow fields and artifact metadata are independently read. The ZIP's JSON body was not materialized: the GitHub download reference and Library prepare calls succeeded, but the prescribed transfer helper returned download failed. No unread body/hash is invented."
+      },
+      "source_run_result": {
+        "status": "completed",
+        "conclusion": "success",
+        "run_attempt": 1,
+        "updated_at": "2026-11-02T22:17:15Z"
+      },
+      "full_runtime_acceptance": false,
+      "limits": [
+        "ACK renderer/source/restore positives above are from ca679 itself. They do not substitute for pending ca679 native or macOS gates.",
+        "At the recorded jobs observation, ca679 sqlite-native-path is still running and rust-host/macOS is queued; no full running-job log was fetched.",
+        "The complete source and renderer logs have no observed failure markers, but workflow-wide/runtime acceptance is not claimed while other required jobs remain open.",
+        "No dispatch, retry, cancellation, repository/source edit or local product test/build/lint/formatter/generator/validator was performed.",
+        "Only exact identities and current-H CI were assessed here. No unchanged ACK source implementation was re-reviewed and no other reviewer opinion was read."
+      ],
+      "scope": "115 selected Node cases passed with all eleven actual router positives; these are controlled-port/file-store evidence for ca679, separate from 40dad native Config proof and real provider/full UI acceptance."
+    }
+  },
+  "config_CI_observation": {
+    "record_id": "CI-CONFIG-40DAD",
+    "observer": "config_revision_review_0375",
+    "observed_at": "2026-11-02T22:22:57.768Z",
+    "subject": {
+      "commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "parent": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+      "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "source_run": 41533207885,
+      "runtime_run": 41533207848,
+      "run_attempt": 1
+    },
+    "snapshot_state": "SOURCE_RENDERER_LINUX_PASSED_MAC_PENDING",
+    "complete_observation_path": "projects/openclaw-rust/evidence/config-input-40dad-d56b3d1d-20261102.json",
+    "complete_observation_blob": "2e5fbfae7b3a361b323598d62e2762d1a381f045",
+    "source_run_result": {
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "updated_at": "2026-11-02T22:10:17Z"
+    },
+    "app_entry_observation": {
+      "job_id": 125578429715,
+      "step_number": 14,
+      "status": "completed",
+      "conclusion": "success",
+      "shipping_compile_result": "exit 0",
+      "test_harness_build_result": "exit 0",
+      "automation_cases_passed": 10,
+      "config_cases_passed": 8,
+      "native_compilation_blocker_observed": false,
+      "receipt_body_read_from_completed_log": true,
+      "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Not a linked production package/startup, real external provider/backend/client, macOS or whole-platform acceptance. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open."
+    },
+    "current_h_config_linux_acceptance": {
+      "result": "passed",
+      "scope": "CS05-INPUT-v1 and existing public Settings secret boundaries on the actual Linux App dispatcher/owner; exact 8-case required suite, shipping cfg(not(test)) cargo check, linked test harness, profile dev/test debug=0 and incremental=0",
+      "whole_platform": false,
+      "macos_observed": false
+    },
+    "entire_subject_runtime_acceptance": false,
+    "artifact_access_limitations": [
+      {
+        "scope": "Artifact ZIP body/JSON receipt extraction",
+        "status": "unavailable_in_current_file_transfer_path",
+        "details": "GitHub artifact API and download connector succeeded and returned exact-H archive references. Direct local transfer failed with unavailable browser-proxy:8889; the prescribed Library transfer helper also returned download failed. Library text-read reports these transient connector files are not visible in that files surface. No access controls, proxy configuration or credentials were changed. Completed job logs and artifact IDs/digests remain readable; unread archive bodies are explicitly not claimed as inspected.",
+        "ci_failure": false
+      }
+    ],
+    "retained_history": "The earlier 22:11:08.935Z full collector snapshot remains embedded under its original source record. Current completed-log fields above supersede only its then-pending observations.",
+    "actual_step_results_reference": "The full fourteen-step observations and six actually printed receipts are preserved in config-input-40dad-d56b3d1d-20261102.json at the exact blob above."
+  },
+  "historical_oracle_decision": {
+    "record_id": "cs_oracle_decision",
+    "decision": {
+      "decision": "BA-ORACLE-INPUT-01",
+      "verdict": "FIX",
+      "classification": "TEST_FLAW",
+      "subject": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+      "run": 41528132530,
+      "job": 125561060134,
+      "test_target": "automation_run_production_wiring_contract",
+      "rationale": "The actual background refusal is the earlier strict delivery-custody reader; the legacy manual mutation reader retains its different invalid-row/duplicate-ID errors. Preserve all side-effect and repair controls and add background unchanged-definition proof. Do not modify production to match an obsolete error-layer assumption.",
+      "recorded_before_fix": true
+    },
+    "frozen_review_record_id": "cs_oracle_review",
+    "frozen_review_tree": "52c70fe65af0c04a474fdf4819144f336ed75257",
+    "source_subject": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+    "source_commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+    "run": {
+      "run_id": 41528132530,
+      "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528132530",
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41528132530",
+      "jobs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41528132530/jobs",
+      "artifacts_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41528132530/artifacts"
+    },
+    "job": {
+      "job_id": 125561060134,
+      "run_id": 41528132530,
+      "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528132530/job/125561060134",
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125561060134",
+      "logs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125561060134/logs"
+    },
+    "observed_target": "automation_run_production_wiring_contract",
+    "observed_target_counts": {
+      "passed": 21,
+      "failed": 2
+    },
+    "failure_signature": "The event child at 2026-11-02T21:31:11.9536509Z and scheduled child at 2026-11-02T21:31:13.6490396Z panic at tests/automation_run_production_wiring_contract.rs:440:36 on error.contains(\"history contains an invalid row\"). The owning target reports 21 passed and 2 failed.",
+    "classification": "TEST_FLAW",
+    "factual_limit": "The old assertion does not print the returned detail. The strict-reader error is established from the frozen source and fixture, not invented as a printed log value. Both failing cases stop before the MixedRows side-effect assertions and before DuplicateIds; neither interrupted case is a complete behavior pass. Run-level queued metadata is not treated as overriding the observed job log or as a completed workflow verdict.",
+    "causal_fix_boundary": "Adjust the error oracle to the actual refusal stage while preserving expect_err, zero-executor/history/cron/in-flight/repair controls; add unchanged background definition bytes. Do not alter production merely to satisfy an obsolete error-layer expectation.",
+    "historical_reader_warning": "The archived 0375/52c70 analysis describes the reader split at that frozen revision. Subsequent AUTO-FRESH-CUSTODY-v1 changed fresh manual custody. The older manual-mutation explanation is not asserted as the current published production behavior; its original record is preserved as historical evidence.",
+    "old_capsule_warning": "The f1a021851d17bbddf44f236a8d1d7a497efc5169 capsule and 5b90cd936294e8f3088af6986207f3cb3fc48eeb target in the original focused report were an old, unexecuted snapshot. They are not the actual staging receipt or published main blob below."
+  },
+  "content_addressed_object_staging": {
+    "record_id": "cs_integration_review",
+    "scope": "Large reviewed main.rs blob delivery only",
+    "subject_kind": "staging carrier, not product validation",
+    "run_id": 41531351468,
+    "job_id": 125572057978,
+    "status": "completed",
+    "conclusion": "success",
+    "observed_receipt": {
+      "base_commit": "6034da1fcc1ecfe95db4fe5532c61cf88872fb5b",
+      "bytes": 957139,
+      "candidate_tree": "db942b466749a8b3fab0fecfaeebfbbd12942d3b",
+      "carrier_commit": "7d060aca30278db9ef921092f60a5f77278ce8d9",
+      "git_blob": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8",
+      "kind": "reviewed-git-object-staging",
+      "patch_sha256": "93c4b3758c09eaafd0926aedbfad62ef228b2d444f694a380763c9573db3205c",
+      "path": "source/host/app/src/main.rs",
+      "product_validation_executed_by_staging_job": false
+    },
+    "artifact": {
+      "id": 13182283079,
+      "name": "ocrm-staged-object-7d060aca30278db9ef921092f60a5f77278ce8d9",
+      "bytes": 479,
+      "digest": "sha256:25a17d5e68738475d4ba6c2fc2b0bc7dabdff5c7ae7dcb02281b210cb6c6a973",
+      "expired": false,
+      "artifact_id": 13182283079,
+      "run_id": 41531351468,
+      "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531351468/artifacts/13182283079",
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182283079",
+      "archive_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182283079/zip",
+      "receipt_read_basis": "GIT_OBJECT_STAGED receipt in completed job log, corroborated by artifact metadata; no new ZIP-body extraction is claimed by this authoring."
+    },
+    "independent_read_basis": "GitHub jobs API reports the exact 7d job completed/success. Its completed log contains the GIT_OBJECT_STAGED receipt above and matching artifact upload ID/digest. The run-artifacts API independently binds that artifact to head7d and the same digest.",
+    "reuse_conclusion": "The new candidate still uses exactly main.rs blob3cbfb8304ff7a956408ed0631bb9aca72734bdf8 at 957139 bytes, so the successful content-addressed object staging can be reused. Its manifest candidate remains db942; that old candidate identity is preserved honestly. The receipt is not runtime validation or a receipt for the new full a97 product tree.",
+    "run": {
+      "run_id": 41531351468,
+      "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531351468",
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41531351468",
+      "jobs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41531351468/jobs",
+      "artifacts_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41531351468/artifacts"
+    },
+    "job": {
+      "job_id": 125572057978,
+      "run_id": 41531351468,
+      "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531351468/job/125572057978",
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125572057978",
+      "logs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125572057978/logs"
+    },
+    "carrier_commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/7d060aca30278db9ef921092f60a5f77278ce8d9",
+    "carrier_git_commit_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/7d060aca30278db9ef921092f60a5f77278ce8d9",
+    "delivered_blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/3cbfb8304ff7a956408ed0631bb9aca72734bdf8",
+    "reuse_boundary": "The staged receipt remains bound to carrier 7d060aca30278db9ef921092f60a5f77278ce8d9 and manifest candidate db942b466749a8b3fab0fecfaeebfbbd12942d3b. Its 957139-byte main.rs blob exactly equals the final publication blob, so object identity can be reused; no compile, test, whole-tree or final-product acceptance can be reused from staging.",
+    "product_validation_executed_by_staging_job": false,
+    "temporary_paths": [
+      ".github/ocrm-reviewed-objects/manifest.json",
+      ".github/ocrm-reviewed-objects/object.patch",
+      ".github/workflows/ocrm-stage-reviewed-objects.yml"
+    ],
+    "cleanup_publication_basis": "The complete immutable raw diff e01-to-700 and complete reviewed-candidate-a97-to-published-tree-802 diff are identical: the single evidence path and same full before/after blobs. Complete parent700-to-H40dad diff contains exactly the original six root changes plus deletion of the three staging paths; all six delivered blobs match the reviewed a97 freeze. No staging path exists in the published tree. Embedded incoming evidence opinions were not read or used to judge code."
+  },
+  "existing_model_evidence_reference": {
+    "path": "projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json",
+    "blob": "aa2c2d977c2e20866cbc39f6e52c01dfa473c78d",
+    "bytes": 47189,
+    "known_publication_carrier": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "file_url": "https://github.com/bhrumom/fabushi-desktop/blob/40dad3d79f3cfffb1301e27e7a8c79a873b66046/projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json",
+    "blob_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/aa2c2d977c2e20866cbc39f6e52c01dfa473c78d",
+    "purpose": "The already-published model evidence retains its own subjects, source materialization and earlier CI history. Its complete historical payload is not duplicated here, and its carrier is not reinterpreted as the subject of all contained runs."
+  },
+  "additional_historical_link_index": {
+    "materialized_subject_commit": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+    "materialized_commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+    "recorded_runtime_run": {
+      "run_id": 41528523432,
+      "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528523432",
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41528523432",
+      "jobs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41528523432/jobs",
+      "artifacts_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41528523432/artifacts"
+    },
+    "source_job_api_only": {
+      "job_id": 125562388883,
+      "run_id": null,
+      "web_url": null,
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125562388883",
+      "logs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125562388883/logs"
+    },
+    "renderer_job": {
+      "job_id": 125562400721,
+      "run_id": 41528523432,
+      "web_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528523432/job/125562400721",
+      "api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125562400721",
+      "logs_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125562400721/logs"
+    },
+    "limit": "These identifiers occur only in the embedded historical reviews. No new status poll was performed. The supplied record does not separately establish the historical source job's run ID, so no guessed web run/job URL is supplied for it."
+  },
+  "outstanding_gates": [
+    "Publish this evidence-only carrier and read back its exact tree/files; it is not the tested product subject.",
+    "40dad macOS shipping job remains queued in the copied observation; Linux compilation/App positives do not satisfy that job or full-platform acceptance.",
+    "ca679 native jobs remain pending in the copied observation; keep any later result bound to that exact H and inputs.",
+    "Artifact-only JSON/TAP archive bodies not directly retrieved remain unread; where a receipt was printed in a completed job log its actual body is separately recorded as such.",
+    "Real provider/channel/plugin/node/device, full UI, process-loss/cancellation, safety/performance/soak, packages/upgrades/rollback and independent project ACCEPT remain required. This evidence changes no source/ledger/RTM/global completion state."
+  ],
+  "embedded_source_records": [
+    {
+      "id": "cs_publication",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/publication.json",
+      "record": {
+        "kind": "github_publication_readback",
+        "repository": "bhrumom/fabushi-desktop",
+        "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "subject": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+        "parent": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+        "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "verified": true,
+        "checked_by": "root GitHub connector/API",
+        "archived_at": "2026-11-02 22:15:34 UTC",
+        "readback": [
+          "full commit SHA, parent and tree",
+          "branch ref at publication",
+          "exact changed path set",
+          "complete delivered file contents and full blob SHA"
+        ],
+        "files": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "mode": "100644",
+            "sha": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+            "bytes": 211793,
+            "characters": 211793
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+            "mode": "100644",
+            "sha": "69cf16fb81166357b2f097df202b4b9c3d0f9485",
+            "bytes": 20920,
+            "characters": 20888
+          },
+          {
+            "path": "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+            "mode": "100644",
+            "sha": "51fc3dfb29290bd385b31dccd459fb0bb3be58d1",
+            "bytes": 83290,
+            "characters": 83210
+          },
+          {
+            "path": "source/host/app/src/main.rs",
+            "mode": "100644",
+            "sha": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8",
+            "bytes": 957139,
+            "characters": 957133
+          },
+          {
+            "path": "source/host/app/src/tests/config_secret_boundary_tests.rs",
+            "mode": "100644",
+            "sha": "7cd6584d56c6e89be7570f3b6734864c44b9da17",
+            "bytes": 24876,
+            "characters": 24876
+          },
+          {
+            "path": "projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json",
+            "mode": "100644",
+            "sha": "aa2c2d977c2e20866cbc39f6e52c01dfa473c78d",
+            "bytes": 47189,
+            "characters": 47189
+          }
+        ],
+        "limits": "Publication and content identity only; does not assert compile, behavior or final acceptance. Later remote branch movement does not relabel this subject."
+      }
+    },
+    {
+      "id": "cs_full_review",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/verdict.json",
+      "record": {
+        "review_kind": "independent-full-scope-read-only-static-review",
+        "reviewer": "/root/config_revision_review_0375",
+        "repo": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+        "base_commit": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+        "frozen_tree": "84533520b980d1a8c43f29182f8693dd47548176",
+        "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+        "effort": {
+          "requested": "xhigh",
+          "reason": "Revision preconditions, real persistence, public-secret boundaries, notifications and exact-test evidence interact across the complete frozen six-path scope.",
+          "effective_setting": "Inherited parent session configuration; no model or effort override attempted. No independently inspectable effective-effort receipt is exposed to this reviewer."
+        },
+        "verdict": "STATIC_CONVERGED",
+        "findings": [],
+        "scope": {
+          "changed_path_count": 6,
+          "paths": [
+            ".github/workflows/rust-desktop-runtime.yml",
+            "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+            "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+            "source/host/app/src/main.rs",
+            "source/host/app/src/tests/config_secret_boundary_tests.rs",
+            "projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json"
+          ],
+          "acquisition": "Read snapshot.json and the saved scope.diff headers; inspected every changed hunk through exact-base Git diffs and every line of the added evidence blob. Product and test subjects came from git show of the immutable frozen tree, not mutable working-tree files. The six statuses and blob identities agree with the supplied manifest/full-index diff.",
+          "authority": "Read repository AGENTS.md, the complete current config-settings-public-secret-boundary.md including CS05-INPUT-v1, OCRM-001 section 17 and its section 12.3 subject/carrier boundary, relevant source-of-truth/module/task and existing ledger/RTM anchors.",
+          "adjacent_source": [
+            "UnifiedGatewayApi::call, call_openclaw_gateway_command, call_openclaw_config_get, call_openclaw_config_set, call_public_settings_command and the legacy Settings delegate",
+            "SettingsService construction, checked loading, public revision-key admission, normalized/public CAS, secret restoration, actual persist, committed receipt, notification enqueue/drain and subscriptions",
+            "GatewayCommandError public error conversion/status, checked default-model reader and validation",
+            "Complete config_secret_boundary_tests module, actual App test module inclusion and Cargo target, retained openclaw_sessions_and_config_contract route/owner controls",
+            "Workflow trigger/checkout/subject binding, existing macOS shipping and App selectors, existing Linux native-path/App compilation/selection/evidence and failure handling"
+          ]
+        },
+        "assessments": [
+          {
+            "requirement": "CS05-INPUT-v1 present-versus-absent revision contract",
+            "result": "static-consistent",
+            "evidence": [
+              "source/host/app/src/main.rs:1558-1568 matches absence to None, a nonempty JSON String to the original borrowed str, and every other present value to one static BadRequest.",
+              "The guard precedes raw parsing, target selection and the sole settings.set_public_host_settings_if_current call at main.rs:1591. It does not trim or transform a valid string.",
+              "The preceding config.get/getHostSettings branch and legacy setHostSettings None branch remain unchanged. GatewayCommandError::BadRequest maps to 400."
+            ]
+          },
+          {
+            "requirement": "Real owner, key, persistence and notification refusal",
+            "result": "static-consistent",
+            "evidence": [
+              "The actual modern and legacy shipping entrypoints still delegate to call_public_settings_command and the same dispatcher; its trusted roster/permission callback executes only after the public writer succeeds (main.rs:3919-3947, 14175-14176).",
+              "SettingsService::new and its three subscription methods do not read, normalize or write Settings or create a revision key.",
+              "The public owner loads revision-key material at settings_service.rs:1365, then performs CAS under the existing writer mutex before restoration/merge/persist. The new malformed-input return occurs before that owner is invoked.",
+              "Actual persist, captured commit and notification enqueue remain in that owner; notifications drain after releasing the writer lock. No owner, storage or notification implementation is changed by this scope."
+            ]
+          },
+          {
+            "requirement": "Fresh no-key malformed-value oracle",
+            "result": "static-consistent; authored, not executed by this reviewer",
+            "evidence": [
+              "config_secret_boundary_tests.rs:218-279 exercises ten malformed Values across raw/config/settings envelopes (30 calls), starting each envelope with a private no-key installation and deliberately unnormalized notification bytes.",
+              "The test checks exact static error/status, unchanged raw Settings bytes, unchanged directory entries, absent key/staging material, zero change/timezone/feature notifications and a panic-on-use trusted commit callback.",
+              "No Settings getter is used while constructing this refusal oracle. The fixture constructor and subscription implementations were inspected to substantiate that precondition."
+            ]
+          },
+          {
+            "requirement": "A/B durable default, reopen and acceptance controls",
+            "result": "static-consistent; authored, not executed by this reviewer",
+            "evidence": [
+              "config_secret_boundary_tests.rs:282-391 commits model A and then model B through the actual Settings owner, captures the current public revision and persisted bytes/key, and submits the old form with null/object/empty revisions.",
+              "Static 400 refusals retain B, exact file/key bytes, directory entries and listener silence. Old valid and whitespace-altered/nonempty tokens retain the existing 409 oracle.",
+              "A distinct SettingsService instance reopens the same actual file and reads model B via the checked default-model reader. Subsequent current-token, omitted-token and legacy-null writes each demonstrate durable zone changes, exactly one trusted callback/change notification, retained model B and unchanged installation key.",
+              "Read controls preserve current/stale/empty/null baseHash semantics and all existing public-secret tests remain intact."
+            ]
+          },
+          {
+            "requirement": "Public secrets, trusted receipt and compatibility",
+            "result": "static-consistent",
+            "evidence": [
+              "Malformed revision errors are a bounded literal with no submitted value, expected/actual digest or secret interpolation.",
+              "For accepted input, the dispatcher still returns the redacted/token projection of its captured committed receipt and sends the trusted receipt only to the existing callback. PublicHostSettingsError continues to discard dynamic internal CAS/error payloads.",
+              "Normalized HMAC CAS, secret restoration, existing unconditional legacy writes, current-owner roster reconciliation and reentrant notification behavior are preserved because their code and routing remain unchanged. Retained App tests cover masked round-trip, disclosure, legacy-current-secret and A/B reentrant receipt behavior."
+            ]
+          },
+          {
+            "requirement": "Actions test and compile selection",
+            "result": "static-consistent; execution approval not granted",
+            "evidence": [
+              "The macOS rust-host lane and locked shipping compilation remain. The existing App loop adds both new exact test names while retaining all six existing public-secret names and the other existing App selectors.",
+              "The existing Linux App step adds all eight Settings tests to its required list without deleting the Automation cases. It retains cargo check --locked for the real mahayana-app-host binary, cargo test --no-run --message-format=json, and one actual compiler-selected App test artifact under the owned target root.",
+              "For each selected Linux test the step requires an exact unique --list match, a successful command and one-passed/zero-failed/zero-ignored completion. Any earlier command/case failure leaves the receipt failed and exits nonzero; no missing case can produce its final passed result.",
+              "The Linux receipt binds actual HEAD/tree, source inputs, binary digest, command exits/log digests and distinct runtime scope. Existing workflow conditions select this lane for ocrm-config dispatch and the authorized working-branch push."
+            ]
+          },
+          {
+            "requirement": "Fixed-U and OCRM section 17 boundary",
+            "result": "static-consistent",
+            "evidence": [
+              "Read the fixed-U raw schema/config.ts, primitives.ts, validation.ts and the config.set handler's validation-before-preparation chain through GitHub read-only APIs. They corroborate optional NonEmptyString, minLength 1 without trimming, and early parameter refusal.",
+              "CS05-INPUT-v1 explicitly preserves Fabushi optional normalized-token semantics and does not claim mandatory raw-source CAS, complete external schema parity or new persistence/cancellation semantics.",
+              "The existing CONFIG-IO-SNAPSHOT and CONFIG-SINGLE-WRITER-LOCK ledger responsibilities already reference this spec and App test module. No inventory/ledger/RTM/global flag mutation occurs in the six-path scope."
+            ]
+          },
+          {
+            "requirement": "Historical evidence subject/carrier separation",
+            "result": "static-consistent as bounded historical carrier data",
+            "evidence": [
+              "The added model-bridge evidence explicitly says its carrier commit is not the subject of the recorded runs. Its e96 implementation tree/parent and 0375 materialized tree/parent match read-only Git object inspection.",
+              "The source-validation entry distinguishes e96 checkout plus eight materialized paths from e96's original unmaterialized tree and names the subsequent 0375 subject. The eight recorded materialization paths/blob identities agree with the Git delta.",
+              "The five embedded historical review/decision objects were inspected only as carrier contents. None was used to judge current CS05 code or replace this independent review.",
+              "Read-only GitHub jobs metadata corroborated the specified staging, source and renderer job identities/subjects and successful bounded jobs. Counts/artifact bytes were not re-executed or independently revalidated here; no whole-H or current-tree passing status is inferred."
+            ]
+          }
+        ],
+        "external_evidence_observation": {
+          "method": "Read-only GitHub Actions jobs API; no dispatch, rerun or remote mutation",
+          "e96_runtime_run": 41528132530,
+          "e96_subject": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+          "e96_sqlite_native_path_job": 125561060134,
+          "e96_sqlite_native_path_conclusion": "failure",
+          "e96_failed_step": "Test typed Automation admission and actual owners on the existing Linux Host cache",
+          "e96_rust_host_observed_status": "queued",
+          "materialized_runtime_run": 41528523432,
+          "materialized_subject": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+          "materialized_source_job": 125562388883,
+          "materialized_source_job_conclusion": "success",
+          "materialized_renderer_job": 125562400721,
+          "materialized_renderer_job_conclusion": "success",
+          "limit": "Point-in-time metadata observations only. The known Automation failure is retained as non-passing and its diagnosis remains with the root; it is not attributed to this CS05 delta. No Actions run for frozen tree 84533520b980d1a8c43f29182f8693dd47548176 is approved by this review."
+        },
+        "remaining_integrator_gates": [
+          "Bind the published implementation commit to the applicable final reviewed tree; any later source, fixture, spec or workflow integration delta requires the corresponding focused re-review.",
+          "Obtain actual exact-subject Actions evidence for affected locked shipping compilation and the eight selected Settings App cases, preserving required existing macOS and owner checks.",
+          "Keep the unrelated Automation failure non-passing until independently diagnosed and resolved; do not infer success from this static verdict, a renderer/source job or historical evidence carrier.",
+          "Full OCRM/source closure, external-client/provider, platform/package and final acceptance obligations remain unchanged."
+        ],
+        "execution_and_independence": {
+          "tests_builds_lints_formatters_generators_validators_run_locally_or_on_htch_runtime": false,
+          "tests_or_workflows_dispatched": false,
+          "reviewed_source_modified": false,
+          "real_staging_index_used_as_scratch": false,
+          "other_current_cs_reviewer_reports_read": false,
+          "subagents_spawned": false,
+          "only_written_path": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/verdict.json"
+        }
+      }
+    },
+    {
+      "id": "cs_oracle_review",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/focused-verdict.json",
+      "record": {
+        "review_kind": "fresh-independent-focused-static-review",
+        "reviewer": "/root/history_oracle_review_0375",
+        "verdict": "STATIC_CONVERGED",
+        "findings": [],
+        "repo": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+        "base_commit": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+        "base_tree": "cf695e47ee28872c08ce29913aeffd1b59a15059",
+        "frozen_tree": "52c70fe65af0c04a474fdf4819144f336ed75257",
+        "effort": {
+          "requested": "xhigh",
+          "reason": "Classify a real CI failure without weakening causal oracles, verify trigger-specific refusal boundaries and retained side-effect controls, and inspect the large-file delivery capsule across the complete frozen scope.",
+          "effective_setting": "Inherited native parent-session configuration; no separate model/effort override or additional worker was started. The host does not expose an independently inspectable effective-effort receipt."
+        },
+        "method": {
+          "source": "Read-only Git diffs/blobs and source-text inspection of the complete eight-path scope, fix-round2 delta, adjacent Runtime/RunPath/FileStore/fixture code, applicable specifications, workflow gates, and staging capsule.",
+          "current_other_reviewer_verdicts_read": false,
+          "historical_evidence_note": "The in-scope model-bridge evidence file embeds older completed reviews; it was read as declared historical evidence, not as a current review verdict or authority for this conclusion.",
+          "product_tests_builds_linters_generators_validators_executed": false,
+          "local_patch_apply_executed": false,
+          "reviewed_source_modified": false,
+          "remote_mutation_performed": false,
+          "identity_operations": "Read-only Git object/tree/diff inspection, git hash-object without -w, git cat-file -s, and SHA-256 of existing patch text and the exact base-to-frozen Git diff."
+        },
+        "ci_evidence": {
+          "subject_commit": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+          "run_id": 41528132530,
+          "job_id": 125561060134,
+          "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41528132530/job/125561060134",
+          "source": "Independently retrieved GitHub job logs and run metadata through read-only GitHub API tools.",
+          "observed_failure": "The event child at 2026-11-02T21:31:11.9536509Z and scheduled child at 2026-11-02T21:31:13.6490396Z panic at tests/automation_run_production_wiring_contract.rs:440:36 on error.contains(\"history contains an invalid row\"). The owning target reports 21 passed and 2 failed.",
+          "evidence_limit": "The old assertion does not print the returned detail. The strict-reader error is established from the frozen source and fixture, not invented as a printed log value. Both failing cases stop before the MixedRows side-effect assertions and before DuplicateIds; neither interrupted case is a complete behavior pass. Run-level queued metadata is not treated as overriding the observed job log or as a completed workflow verdict."
+        },
+        "accepted_fix_assessment": {
+          "id": "BA-ORACLE-INPUT-01",
+          "classification": "TEST_FLAW",
+          "decision": "STATIC_RESOLVED",
+          "causal_chain": [
+            "ShippingAutomation::run passes Some(run_id) for both Schedule and Event, while Manual uses run_agent_automation_now_with without that background UUID precheck (automation_run_production_wiring_contract.rs:327-357).",
+            "AutomationRuntime::run_background_automation_attempt_with enumerates requested primary/alias IDs and calls the strict FileAutomationStore::read_run_for_delivery under the existing Session admission boundary before lifecycle/SpendGuard/RunPath bookkeeping (automation_runtime.rs:869-904). Failures become HistoryPrecheck and the legacy wrapper preserves their original String detail.",
+            "read_run_for_delivery validates every raw row. MixedRows adds a row with nonnumeric startedAt, yielding automation run history contains invalid delivery custody. DuplicateIds clones the valid prior row, yielding automation run identity is claimed by different history rows; this happens even though the requested UUID is distinct (automation_store.rs:107-170).",
+            "Manual reaches fire_automation_inner, whose notice and record_run operations precede begin_run. Production begin_fresh_run reaches read_runs_for_mutation, which preserves its distinct invalid-row and duplicate-run-ID errors (automation_run_path.rs:485-536; automation_store.rs:215-239,353-370).",
+            "CorruptJson is decoded by the common read_run_image path, so its automation store json error category remains common to all three triggers."
+          ],
+          "oracle_preservation": [
+            "The fix changes only the expected diagnostic selected by the actual trigger/fault boundary; it does not accept either reader's error indiscriminately, remove expect_err, modify production readers, or weaken typed/legacy error propagation.",
+            "All original zero-executor, unchanged raw history, no observation, empty cron registration, released in-flight state and explicit repair assertions remain in the helper.",
+            "The repair positive still checks one actual executor entry, fresh running history before execution, original prior row retention, terminal history identity/status, one matching report, background terminal cron fences, and released occupancy.",
+            "Capturing definition bytes before admission and comparing them after background refusal strengthens the boundary oracle: a regression that reaches notice/lastRunAt bookkeeping before rejecting now fails. Manual is correctly excluded because its established refusal occurs after those writes.",
+            "All three real named test entry points and the CorruptJson/MixedRows/DuplicateIds order are retained. The adjacent typed precheck test continues to assert exact HistoryPrecheck stage, preserved legacy detail, complete owner state and explicit repair controls (automation_run_production_wiring_contract.rs:1848-1958)."
+          ],
+          "required_execution": "Run the three retained named manual/event/scheduled cases and their owning automation_run_production_wiring_contract target in the final exact-H Actions scope. Preserve still-valid earlier target evidence only for its own unchanged inputs and revision. This static finding is not an Actions pass."
+        },
+        "complete_scope_context": {
+          "changed_path_count": 8,
+          "paths": [
+            ".github/workflows/rust-desktop-runtime.yml",
+            "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md",
+            "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+            "projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json",
+            "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+            "source/host/app/src/main.rs",
+            "source/host/app/src/tests/config_secret_boundary_tests.rs",
+            "source/host/tests/automation_run_production_wiring_contract.rs"
+          ],
+          "assessment": "The focused delta is limited to the cron spec decision and history-admission helper. The complete scope also carries the separate config.set revision-input guard, its existing-App fixture extensions, exact App selectors and historical model-bridge evidence. Those diffs and owning workflow context were read; this report's primary oracle conclusion does not borrow the separate CS05 review or promote its execution status.",
+          "workflow_observation": "The existing Linux Automation step still executes the complete owning target with process/capture exits and nonempty zero-failure summaries. The App step binds the actual subject and emitted test binary, checks exact named selection, executes the retained Automation and Settings cases, and writes passed only after the required successful cases. Authored future receipt values are not current execution evidence."
+        },
+        "staging_capsule": {
+          "capsule": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/cloud-object-staging",
+          "base_commit": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+          "carrier_tree": "f1a021851d17bbddf44f236a8d1d7a497efc5169",
+          "candidate_tree": "52c70fe65af0c04a474fdf4819144f336ed75257",
+          "target_path": "source/host/app/src/main.rs",
+          "before_blob": "141d3f546dec2858c7305047bc016f94b18b25cd",
+          "after_blob": "5b90cd936294e8f3088af6986207f3cb3fc48eeb",
+          "after_bytes": 956209,
+          "patch_sha256": "6ce547baff81e25030e345145e16fb4e76c70d3e683276cdb2823f4dd307b2ea",
+          "patch_equals_exact_base_to_candidate_target_diff": true,
+          "carrier_changes": [
+            {
+              "status": "A",
+              "mode": "100644",
+              "path": ".github/ocrm-reviewed-objects/manifest.json",
+              "blob": "7fa0c8be191015500d874ee38a9a07a6ded7ead8"
+            },
+            {
+              "status": "A",
+              "mode": "100644",
+              "path": ".github/ocrm-reviewed-objects/object.patch",
+              "blob": "4cefacc2c2585774a7f858479ec6666d7ce9709a"
+            },
+            {
+              "status": "A",
+              "mode": "100644",
+              "path": ".github/workflows/ocrm-stage-reviewed-objects.yml",
+              "blob": "e49742cab3ade8bc93a588ec59e54db54f564162"
+            }
+          ],
+          "capsule_files_match_carrier_blobs": true,
+          "workflow_assessment": "Before its sole repository-write POST /repos/bhrumom/fabushi-desktop/git/blobs, the job binds repository/task/round/target, exact checkout and single parent, exactly three named A paths, preimage blob, patch digest, sole changed index path, final byte length and Git blob, then checks the returned blob SHA. The target is hardcoded to Host main.rs. No Git tree, commit or ref is created. The HTTP client refuses redirects; the receipt explicitly says product_validation_executed_by_staging_job=false.",
+          "verdict": "STATIC_IDENTITY_CONVERGED_FOR_OLD_FROZEN_CAPSULE",
+          "limits": "No capsule was executed or published by this reviewer. candidate_tree is a manifest label, not a proof that a final product commit has that tree. The candidate frozen tree contains none of the three temporary carrier paths."
+        },
+        "remaining_integrator_gates": [
+          "For any actual publication, compare the remote formal product tree with the applicable final reviewed tree, bind the real parent/carrier chain, and verify all three temporary carrier paths were removed.",
+          "The parent reported incoming commit 1573db1356d4e3531efd559ca3718abc4d7eeb22 during this review. That incoming commit and its reconciliation are outside this old frozen verdict. Do not publish the old 52c70fe tree or use the old capsule to overwrite incoming work; require a new immutable reconciliation/capsule review.",
+          "Staging success, static convergence, product Actions verification and final acceptance remain separate. No acceptance, global flag, complete external compatibility or final-H Actions pass is granted."
+        ],
+        "report_only_write": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/focused-verdict.json"
+      }
+    },
+    {
+      "id": "cs_integration_review",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/verdict-e01.json",
+      "record": {
+        "schema_version": 1,
+        "reviewer": "config_revision_review_0375",
+        "review_kind": "read-only narrow e01 integration and staging-object identity review",
+        "verdict": "STATIC_CONVERGED",
+        "findings": [],
+        "subject": {
+          "repository": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+          "base_commit": "e01f51f33134cbd9dd0b6abd0d471dfb5d71d8de",
+          "base_tree": "0de92aba674d01580319e21cd2840184f78f9a30",
+          "parent_commit": "bcada1ae9831aba9b021906fc878ec1a7506532b",
+          "earlier_base": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+          "previous_candidate_tree": "251d0ee6f03ab8c88375f98ed57726731c9fb888",
+          "candidate_tree": "a97f4a56ef910f55ae1a9e9e1b1ccc85087915c1",
+          "manifest": "snapshot-e01.json",
+          "scope": "six original root paths plus deletion of three temporary object-staging paths"
+        },
+        "incoming_preservation": {
+          "incoming_paths": 9,
+          "candidate_delta_paths": 9,
+          "byte_exact_nonworkflow_after_blobs": {
+            "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md": "5df69769563b461554d345fbae285499c468b6e5",
+            "projects/openclaw-rust/evidence/memory-selector-647e0932-20261103.json": "f3a5503a01ddb323183f931703bd8baa20646371",
+            "projects/openclaw-rust/parity-ledger.json": "9c3510d944a0d7c7618f08da7820518340a7a56c",
+            "projects/openclaw-rust/requirements-traceability-matrix.json": "80b490f8670045ce0abd7eec8c2b3418076602c8",
+            "source/host/src/extensions/attachments/media_reference.rs": "acbed906d06b496b481fd4d4b5c604d9fc3eda57",
+            "source/host/src/extensions/cross_user_sharing/production.rs": "c4dfcf00ee24e3e964f0c3329e68d7cad4333da3",
+            "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs": "f9ea7fc7a68c2d0a1e7fe273baf2dd6550244116",
+            "source/host/tests/openclaw_media_reference_contract.rs": "e12bee9bc0a5789f7020b1b50c883c9269b08b8c"
+          },
+          "workflow_base_blob": "fdb98d84318dfe6e694a81c2d20bfc3e7751d698",
+          "workflow_candidate_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+          "proof": "Complete raw diffs 42ee-to-e01 and previous-candidate251d-to-candidatea97 contain the same nine paths. All eight non-workflow entries have identical statuses, modes and full before/after blob IDs. The full incoming workflow diff and full e01-to-candidate workflow diff were read; the latter contains only the already-reviewed CS additions."
+        },
+        "selector_and_receipt_coordination": {
+          "mru_integration_names": [
+            "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+            "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+            "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals"
+          ],
+          "mru_library_names": [
+            "extensions::cross_user_sharing::production::unicode_tests::mru_production_attachment_callback_preserves_unicode_and_refusal_controls",
+            "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals"
+          ],
+          "mru_name_binding": "The three integration function definitions exist in the immutable openclaw_media_reference_contract blob. Both library function definitions exist in production_unicode_tests.rs, and production.rs includes that file as cfg(test) mod unicode_tests, matching the selected module-qualified filter.",
+          "preserved": [
+            "MRU macOS and Linux commands add openclaw_media_reference_contract and channel_attachment_contract to the existing media targets and add the real unicode_tests library filter. Previous media and projection controls remain.",
+            "MRU receipts retain subject identity and input/log digests, add the five named positives, record the separate Unicode command/log, and require all corresponding execution/capture exits to be zero and every required positive exactly once. The MRU scope limitations remain.",
+            "MGS four named controls, its macOS same-subject integration-log receipt and Linux CWR-v1-portable/MGS-v1 receipt remain unchanged by both the incoming MRU delta and the root CS merge.",
+            "FC Store/Runtime/App selections and contracts remain. The actual Linux App set retains ten incoming Automation/mapper cases and appends eight Config cases; its exact selection and completion acceptance logic is unchanged.",
+            "CS two new macOS selectors, Config receipt fields and all eight Linux Config selectors remain. The combined App receipt retains AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1.",
+            "LPG macOS/Linux selectors, named-positive requirements and same-H composition-receipt reuse remain. No root CS hunk removes or rewrites these controls."
+          ]
+        },
+        "linux_storage_diagnostics_preserved": {
+          "contract": "CI-LINUX-STORAGE-01",
+          "job": "sqlite-native-path",
+          "profile_environment": {
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_PROFILE_TEST_DEBUG": "0",
+            "CARGO_INCREMENTAL": "0"
+          },
+          "retained_steps": [
+            "Record Linux build profile and available storage",
+            "Record storage after completed native, media and channel checks",
+            "Save completed Linux owner evidence before Automation and App checks"
+          ],
+          "proof": "The actual candidate retains all three job-level values, the subject/tree/upstream/run-bound build-storage metadata with environment-only result, before/after df and target-size records, and the early owner-evidence upload before Automation/App execution. The complete root workflow diff has no hunk touching these incoming changes.",
+          "limit": "Their presence is statically established; no new-H storage sufficiency or runtime result is inferred."
+        },
+        "unchanged_root_after_blobs": {
+          "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md": "69cf16fb81166357b2f097df202b4b9c3d0f9485",
+          "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md": "51fc3dfb29290bd385b31dccd459fb0bb3be58d1",
+          "source/host/app/src/main.rs": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8",
+          "source/host/app/src/tests/config_secret_boundary_tests.rs": "7cd6584d56c6e89be7570f3b6734864c44b9da17",
+          "projects/openclaw-rust/evidence/model-bridge-batch-d56b3d1d-20261102.json": "aa2c2d977c2e20866cbc39f6e52c01dfa473c78d"
+        },
+        "root_scope_and_cleanup": {
+          "complete_base_to_candidate_path_count": 9,
+          "original_root_path_count": 6,
+          "removed_paths": [
+            ".github/ocrm-reviewed-objects/manifest.json",
+            ".github/ocrm-reviewed-objects/object.patch",
+            ".github/workflows/ocrm-stage-reviewed-objects.yml"
+          ],
+          "proof": "Complete e01-to-a97 raw diff contains exactly the original six root changes plus the three declared deletions. The five non-workflow root blobs are unchanged from all prior coordinated freezes. git ls-tree finds none of the staging paths in the product candidate."
+        },
+        "staging_receipt": {
+          "run_id": 41531351468,
+          "job_id": 125572057978,
+          "status": "completed",
+          "conclusion": "success",
+          "observed_receipt": {
+            "base_commit": "6034da1fcc1ecfe95db4fe5532c61cf88872fb5b",
+            "bytes": 957139,
+            "candidate_tree": "db942b466749a8b3fab0fecfaeebfbbd12942d3b",
+            "carrier_commit": "7d060aca30278db9ef921092f60a5f77278ce8d9",
+            "git_blob": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8",
+            "kind": "reviewed-git-object-staging",
+            "patch_sha256": "93c4b3758c09eaafd0926aedbfad62ef228b2d444f694a380763c9573db3205c",
+            "path": "source/host/app/src/main.rs",
+            "product_validation_executed_by_staging_job": false
+          },
+          "artifact": {
+            "id": 13182283079,
+            "name": "ocrm-staged-object-7d060aca30278db9ef921092f60a5f77278ce8d9",
+            "bytes": 479,
+            "digest": "sha256:25a17d5e68738475d4ba6c2fc2b0bc7dabdff5c7ae7dcb02281b210cb6c6a973",
+            "expired": false
+          },
+          "independent_read_basis": "GitHub jobs API reports the exact 7d job completed/success. Its completed log contains the GIT_OBJECT_STAGED receipt above and matching artifact upload ID/digest. The run-artifacts API independently binds that artifact to head7d and the same digest.",
+          "reuse_conclusion": "The new candidate still uses exactly main.rs blob3cbfb8304ff7a956408ed0631bb9aca72734bdf8 at 957139 bytes, so the successful content-addressed object staging can be reused. Its manifest candidate remains db942; that old candidate identity is preserved honestly. The receipt is not runtime validation or a receipt for the new full a97 product tree."
+        },
+        "limits": [
+          "This is only the requested coordination/preservation review. Media/Memory semantics and unchanged CS implementation were not re-audited.",
+          "No local or htch-runtime test, build, lint, formatter, generator or validator was run. No product/shared file, ledger or prior review was modified; another current reviewer opinion and incoming embedded review evidence were not read.",
+          "STATIC_CONVERGED establishes no new product-H Actions pass. The staging receipt explicitly records product_validation_executed_by_staging_job=false.",
+          "Old f5/931 CI observations remain separate, timestamped partial evidence in ../ci-f5-6034.json and are not attributed to candidatea97 or the future CS product commit."
+        ],
+        "remaining": "Bind the final product commit to the reviewed candidate tree a97f4a56ef910f55ae1a9e9e1b1ccc85087915c1 and intended latest parent, verify temporary paths absent, and assess new exact-H Actions independently.",
+        "sources": [
+          "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531351468",
+          "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531351468/job/125572057978",
+          "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531351468/artifacts/13182283079"
+        ]
+      }
+    },
+    {
+      "id": "cs_oracle_decision",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/config-input/review-decisions.json",
+      "record": {
+        "decision": "BA-ORACLE-INPUT-01",
+        "verdict": "FIX",
+        "classification": "TEST_FLAW",
+        "subject": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+        "run": 41528132530,
+        "job": 125561060134,
+        "test_target": "automation_run_production_wiring_contract",
+        "rationale": "The actual background refusal is the earlier strict delivery-custody reader; the legacy manual mutation reader retains its different invalid-row/duplicate-ID errors. Preserve all side-effect and repair controls and add background unchanged-definition proof. Do not modify production to match an obsolete error-layer assumption.",
+        "recorded_before_fix": true
+      }
+    },
+    {
+      "id": "ack_publication",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/publication.json",
+      "record": {
+        "kind": "github_publication_readback",
+        "repository": "bhrumom/fabushi-desktop",
+        "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "subject": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+        "tree": "4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+        "parent": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+        "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+        "verified": true,
+        "checked_by": "root GitHub connector/API",
+        "archived_at": "2026-11-02 22:15:34 UTC",
+        "readback": [
+          "full commit SHA, parent and tree",
+          "branch ref at publication",
+          "exact changed path set",
+          "complete delivered file contents and full blob SHA"
+        ],
+        "files": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "mode": "100644",
+            "sha": "3efb70859e52b80c92a93bab7606573348cd566e",
+            "bytes": 218717,
+            "characters": 218717
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+            "mode": "100644",
+            "sha": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+            "bytes": 6759,
+            "characters": 6745
+          },
+          {
+            "path": "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+            "mode": "100644",
+            "sha": "d3928dfa8f75e007b2fd6e0855dea192720f445d",
+            "bytes": 84043,
+            "characters": 83961
+          },
+          {
+            "path": "source/electron-main/main-edge.ts",
+            "mode": "100644",
+            "sha": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+            "bytes": 25510,
+            "characters": 25510
+          },
+          {
+            "path": "source/electron-main/main-edge-model.contract.test.ts",
+            "mode": "100644",
+            "sha": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+            "bytes": 31517,
+            "characters": 31517
+          }
+        ],
+        "limits": "Publication and content identity only; does not assert compile, behavior or final acceptance. Later remote branch movement does not relabel this subject."
+      }
+    },
+    {
+      "id": "ack_full_review",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/verdict.json",
+      "record": {
+        "schema_version": 1,
+        "reviewer": "/root/history_oracle_review_0375",
+        "review_kind": "independent full frozen-scope static review",
+        "requested_reasoning_effort": "xhigh",
+        "verdict": "STATIC_CONVERGED",
+        "findings": [],
+        "subject": {
+          "repository": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+          "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+          "base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+          "candidate_tree": "e8d4e5543bdeec8de7537ab3e6ee532fbcbea8b9",
+          "contract": "OCRM-ROUTER-SETTINGS-ACK-v1",
+          "snapshot": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/snapshot.json",
+          "scope": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/scope.diff",
+          "files": [
+            {
+              "path": ".github/workflows/rust-desktop-runtime.yml",
+              "blob": "cb172ca6ed8a2a50b640bf1d7be194d51616e923",
+              "bytes": 215065
+            },
+            {
+              "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+              "blob": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+              "bytes": 6759
+            },
+            {
+              "path": "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+              "blob": "d3928dfa8f75e007b2fd6e0855dea192720f445d",
+              "bytes": 84043
+            },
+            {
+              "path": "source/electron-main/main-edge.ts",
+              "blob": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+              "bytes": 25510
+            },
+            {
+              "path": "source/electron-main/main-edge-model.contract.test.ts",
+              "blob": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+              "bytes": 31517
+            }
+          ]
+        },
+        "method": {
+          "authority": "Exact candidate Git tree and exact base diff; working-tree source is not the review subject.",
+          "coverage": "Read the complete five-path change scope, complete new ACK Spec, complete MainEdge implementation and all 21 test bodies, plus the adjacent served transport, dispatcher, dependency wiring, actual persistence, Coordinator resync, Host Settings projection and effective inference consumer needed to judge this change. Workflow inspection covers the full changed renderer region, triggers, affected job context and unchanged predicate evidence from the exact diff. The Config task review covers its bounded appended entry, not a new audit of historical task claims.",
+          "independence": "No implementer assessment or another current reviewer verdict was read. Later incoming 8e content was not used for this conclusion.",
+          "operations": "Read-only Git/text inspection and one read-only fixed-U GitHub file retrieval. No tests, builds, typechecks, lint, formatter, generator, validator, workflow dispatch, patch application, or source mutation.",
+          "write_boundary": "Only this requested scratch verdict is written. This is review evidence, not executed acceptance."
+        },
+        "owner_and_causal_chain": {
+          "entry": "The real serveMainEdge transport checks the current appWindow sender and top frame; generated serveEdge dispatches the registered handler and translates rejection into the existing failure reply.",
+          "ordering_owner": "createMainEdgeHandlers in source/electron-main/main-edge.ts:94-110 owns one private Promise tail per served instance. Only router get/set use it. Host operation, provider validation, synchronous local persistence and result construction are inside the operation. Both fulfillment and rejection settle the tail for the successor.",
+          "write_port": "The production adapter supplies syncHostSettingsToBox from coordinatorResync.pushHostSettings. Production services delegate to the real Coordinator; its resync chain serializes writes and may convert a transport exception to null. The new bridge rejects that null instead of reporting success.",
+          "read_port": "The production Main RPC read binding calls coordinatorResync.readHostSettings, which reaches the current Coordinator getHostSettings leg. Reads formerly bypassed the write resync chain; the new private router tail now orders router reads with router writes on this edge.",
+          "storage": "SandSettingsStore.setInferenceProvider is synchronous and uses the existing load/update/write temporary file/rename implementation. The new handler does not return before this persistence call settles. It creates no new store or disk queue.",
+          "host_authority": "SettingsService persists the candidate before constructing and returning its committed host_settings_snapshot. That projection always includes a normalized inferenceProvider; absent stored provider projects cursor. A missing wire provider is therefore not a successful stored-default response.",
+          "route_authority": "ProductionInferenceSettings::inference_provider still owns effective routing and forces Fabushi when FABUSHI_PRODUCT_MODE or SAND_PACKAGED is 1. The Electron result describes acknowledged configuration, not that effective route.",
+          "failure_and_restart": "Controlled refusal and lost acknowledgement after Host commit are treated separately. Unknown result or failed local mirror never causes compensation, automatic read, or repeated Host write. A later explicit get repairs the local mirror. Process exit or abandoned IPC adds no rollback/cancellation guarantee; the queue is volatile and reopening local storage proves only its prior local image. External Host writers are outside the adapter's ordering claim."
+        },
+        "requirements": [
+          {
+            "id": "ACK-01",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "main-edge.ts:103-110 returns the validated Host field. settings_service.rs:1772-1778 and 1862-1868 project the configured value; inference/production.rs:133-151 retains the independent packaged/product route override."
+          },
+          {
+            "id": "ACK-02",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "main-edge.ts:154-158 keeps isSandInferenceProvider before runInferenceRouter. The five values remain in shared/inference-router.ts. Test at 411 refuses malformed requests and untrusted frames with zero Host calls and identical mirror bytes, then exercises a valid request."
+          },
+          {
+            "id": "ACK-03",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "The set operation awaits syncHostSettingsToBox before mirrorInferenceRouter. Null fails distinctly; req excludes arrays and primitive replies; isSandInferenceProvider rejects a missing or invalid value. The held-write test at 350 observes unchanged file bytes and reopened cursor until acknowledgement."
+          },
+          {
+            "id": "ACK-04",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "Only record.inferenceProvider is persisted and returned. Tests at 350, 576 and 604 acknowledge a valid provider different from the requested value and assert canonical reply plus reopened mirror."
+          },
+          {
+            "id": "ACK-05",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "getInferenceRouter uses the same validated mirror function after awaited Host read. There is no local-provider or cursor success fallback. Tests at 382 and 435 exercise Host reconciliation and invalid-read refusal."
+          },
+          {
+            "id": "ACK-06",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "Errors reach the real generated dispatcher. Tests at 435 and 459 retain the previous mirror on malformed/null/rejected replies, distinguish a controlled refusal, and demonstrate later recovery. Test 497 independently models Host commit followed by null or rejection without claiming Host no-write."
+          },
+          {
+            "id": "ACK-07",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "The success/rejection tail continuation prevents poison. Tests at 459, 548, 576 and 604 hold the predecessor, assert successor Host dispatch is absent, inspect the predecessor's reopened mirror inside the successor's Host callback, and check reply values/final mirror. Test 634 shows unrelated IPC and another served edge remain independent."
+          },
+          {
+            "id": "ACK-08",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "The synchronous store throw rejects the queued operation; no catch invents success, retry or rollback. Test 521 blocks the actual settings temporary path with a directory, observes Host commit plus unchanged readable local bytes, exercises read-side persistence failure, removes only that fixture obstruction and reconciles via explicit get with exactly one Host write."
+          },
+          {
+            "id": "ACK-09",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "Host usage then local usage then null precedence and local CLI diagnostic function remain intact. Existing appWindow transport is reused. All ten pre-existing default-model, account-scope, migration, Computer Use and trust test bodies remain byte-for-byte unchanged; only mkdirSync was added to the import before the appended router cases."
+          },
+          {
+            "id": "ACK-10",
+            "result": "STATIC_CONSISTENT",
+            "evidence": "Production diff is confined to the private tail, validated mirror helper and two existing handlers. No Rust routing, catalog, storage format, scheduler, durable queue or automatic recovery writer changes are present."
+          }
+        ],
+        "test_source_review": {
+          "source_cases": 21,
+          "preserved_existing_cases": 10,
+          "new_router_cases": 11,
+          "fixture_boundary": "The fixture uses actual serveMainEdge, the generated dispatcher, registered IPC channels, appWindow trust checks and a file-backed SandSettingsStore. Host I/O ports are controlled; it does not pretend to run a real Host or provider service.",
+          "new_case_names": [
+            "router set waits for Host acknowledgement and mirrors its canonical provider",
+            "router preserves all five configured providers and reconciles reads with diagnostic fallbacks",
+            "router invalid requests and untrusted frames cause no Host or mirror effects",
+            "router refuses malformed Host replies without local fallback and permits later reconciliation",
+            "router Host refusal releases a queued read and read rejection does not poison later calls",
+            "router unknown transport outcome can follow a Host commit and requires an explicit read",
+            "router local persistence failure leaves the Host commit intact and a later get repairs the mirror",
+            "router orders a held get before set through mirror persistence",
+            "router orders a held set before get through mirror persistence",
+            "router serializes two sets so a late acknowledgement cannot overwrite the later mirror",
+            "a pending router IPC does not order unrelated methods or another MainEdge instance"
+          ],
+          "oracle_assessment": "The controls distinguish dispatch, acknowledgement, committed Host state, local bytes, reopened provider, final reply and successor entry. They can falsify eager mirror writes, requested-provider substitution, fallback success, poisoned or missing ordering, Host replay/compensation and local-write swallowing. These are source-level assessments only; no passing result is asserted."
+        },
+        "workflow_review": {
+          "scope": "The exact workflow diff changes only the existing renderer test command/receipt/upload region. Existing push triggers and native/full/config job predicates and assertions are unchanged; no dispatch-only scope is introduced.",
+          "actual_node_targets": [
+            "desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs",
+            "desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs",
+            "desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs",
+            "desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs",
+            "desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+          ],
+          "build_binding": "desktop/scripts/build-electron-runtime.mjs:91-111 maps precisely these five TypeScript sources to these bundles using the shipping common esbuild options and Node 24 target. The existing workflow invokes --plugin-skills-contracts before the Node command. This is not a whole-graph strict TypeScript check.",
+          "process_exit": "The Node TAP command runs under bash set -euo pipefail and pipes through tee. A nonzero Node or tee exit fails that step; tee success cannot conceal Node failure. The receipt step is success-conditioned by default and cannot mint a passed receipt after that step fails.",
+          "required_names": "All eleven workflow names exactly match the appended source test names. Each requires an anchored top-level ok <number> - <escaped exact name> line. not ok lines, comment diagnostics, missing names and skipped/todo suffixes do not satisfy this pattern.",
+          "completion_gate": "The parser requires tests/pass/fail/cancelled/skipped/todo completion counts, requires tests > 0 and pass == tests, and requires every non-pass count to be zero. Missing counts or required positives fail the receipt step. The inspected source contains unique required names; no synthetic TAP success lines are introduced.",
+          "subject_binding": "Receipt binds checked-out HEAD to the event subject, records its tree, fixed-U lock, run ID/attempt, validation scope, selected input hashes, complete TAP digest/counts and the eleven required names. The scoped statement explicitly disclaims Rust execution and native-job acceptance.",
+          "failure_capture_limit": "The artifact upload has no always condition: failure TAP is retained in the Actions step log by tee, while successful TAP plus JSON are uploaded. There is no separate failed-run artifact or numeric Node-exit field. This does not create a false pass and the bounded Spec does not require such a failure artifact; do not later describe the workflow as uploading TAP on every failure.",
+          "required_execution": "A published final commit still needs its own existing push-triggered Actions run and separately bound native evidence where applicable. No old-H success, queued native job or source inspection supplies this evidence."
+        },
+        "source_authority": {
+          "fixed_upstream": "openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845",
+          "upstream_path": "src/gateway/server-methods/config-write-flow.ts",
+          "upstream_blob": "f76ff11ab4cb82694d2ee0df957d882011157010",
+          "upstream_read": "Direct read through the GitHub connector at the fixed commit, complete lines 1-356; returned blob matches the Spec. A local Git object lookup could not fetch this unrelated upstream object, so no local-source identity was assumed.",
+          "upstream_url": "https://github.com/openclaw/openclaw/blob/1440bb1771372334bea23d7642bb52deb7db1845/src/gateway/server-methods/config-write-flow.ts",
+          "semantic_use": "commitGatewayConfigWrite awaits replaceConfigFile and returns that commit's config/hash; later get may observe external edits. This supports acknowledgement-after-publication semantics. The current bridge introduces no new upstream feature coverage and does not copy Gateway routing or runtime-application policy.",
+          "base_inheritance": "The Spec's earlier implementation base e01f51f33134cbd9dd0b6abd0d471dfb5d71d8de is not relabelled as the review base. The relevant bridge/test/resync/store/Settings/Inference source paths were checked unchanged from that base to 40dad; this verdict itself is bound exclusively to the five-path 40dad-to-e8d4 scope."
+        },
+        "unverified": [
+          "Compilation and all 21 source cases on the final published commit; no local or remote execution was performed in this review.",
+          "Exact-subject Actions run, receipt contents, artifact availability and actual native/full/config outcomes.",
+          "Real Electron renderer/process transport, live Host/provider service, complete provider-picker UI and cross-process account acceptance.",
+          "Process termination/restart experiments and remote cancellation; only the explicit contract boundaries and absence of automatic replay were inspected.",
+          "Whole-graph strict TypeScript checks and unrelated inherited Rust functionality."
+        ],
+        "conclusion": "No falsifiable blocking defect was found in the complete declared ACK-v1 change scope and the necessary adjacent production chain. Static convergence authorizes neither an executable-passed claim nor a global completion claim. Later incoming integration requires a separately bound delta review."
+      }
+    },
+    {
+      "id": "ack_integration_review",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/verdict-8e.json",
+      "record": {
+        "schema_version": 1,
+        "reviewer": "/root/history_oracle_review_0375",
+        "review_kind": "independent narrow incoming-integration review after the original full-scope review",
+        "requested_reasoning_effort": "xhigh",
+        "verdict": "STATIC_CONVERGED",
+        "findings": [],
+        "subject": {
+          "repository": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+          "prior_base": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+          "prior_reviewed_tree": "e8d4e5543bdeec8de7537ab3e6ee532fbcbea8b9",
+          "new_base_commit": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+          "new_base_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+          "candidate_tree": "332ac0c5cb26d71e7a20c022c0f5b12b6a363746",
+          "snapshot": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/snapshot-8e.json",
+          "scope": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/scope-8e.diff",
+          "integration": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/integration-8e.diff",
+          "inherited_full_review": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/verdict.json"
+        },
+        "identity_and_scope": {
+          "base_identity": "git show confirms 8e554 has sole parent 40dad and tree d8a195bc4d9006770242630f0f15c155dab81cb4.",
+          "new_base_to_candidate": "The complete raw Git diff contains exactly the same five ACK paths, with no other paths or mode changes.",
+          "unchanged_ack_blobs": [
+            {
+              "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+              "blob": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+              "bytes": 6759
+            },
+            {
+              "path": "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+              "blob": "d3928dfa8f75e007b2fd6e0855dea192720f445d",
+              "bytes": 84043
+            },
+            {
+              "path": "source/electron-main/main-edge.ts",
+              "blob": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+              "bytes": 25510
+            },
+            {
+              "path": "source/electron-main/main-edge-model.contract.test.ts",
+              "blob": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+              "bytes": 31517
+            }
+          ],
+          "workflow": {
+            "prior_base_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+            "incoming_blob": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+            "prior_ack_blob": "cb172ca6ed8a2a50b640bf1d7be194d51616e923",
+            "merged_blob": "3efb70859e52b80c92a93bab7606573348cd566e",
+            "merged_bytes": 218717
+          },
+          "preserved_nonworkflow_incoming": [
+            {
+              "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+              "blob": "cd2426e34bbe612b1349be928ccffad5fd396ec6"
+            },
+            {
+              "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+              "blob": "3a3dfa14a5e70598a132819841b40cccffddb0b1"
+            },
+            {
+              "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+              "blob": "a376595c11b9f9d395d78a002cca36df147ffb1c"
+            },
+            {
+              "path": "source/host/src/extensions/transcript/roster_search.rs",
+              "blob": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9"
+            },
+            {
+              "path": "source/host/tests/agent_content_search_contract.rs",
+              "blob": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d"
+            },
+            {
+              "path": "source/host/tests/roster_search_contract.rs",
+              "blob": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5"
+            }
+          ],
+          "preservation_proof": "The complete 40dad-to-8e raw diff contains seven paths: workflow and these six. The complete e8d4-to-332ac raw diff has identical before/after blob identities for all six, while 8e-to-332ac changes none of them. The four ACK blobs match the original reviewed tree exactly. Incoming paths do not alter the private MainEdge/Coordinator/store/Host Settings/inference chain inspected in the full review."
+        },
+        "workflow_integration_review": {
+          "reviewed_diffs": "Read the actual immutable 40dad-to-8e workflow diff and the complete 8e-to-332ac workflow diff, with the supplied integration context. The latter contains only the original ACK renderer hunks, shifted by the 41 incoming lines.",
+          "incoming_preserved": "Both existing native recovery command selections retain agent_content_search_contract and roster_search_contract. Both native evidence input lists retain all eight added RSU paths, both named-positive lists retain all eleven added RSU names, and the native receipt target list/contracts/scope text retain the incoming RSU additions. Original Memory/recovery positives and controls remain in place.",
+          "predicates": "Neither the incoming workflow diff nor the ACK workflow diff changes an existing native/full/config job or step predicate. Existing triggers, scope choices, checkout binding, failure handling and job dependencies are preserved. There is no new dispatch-only validation scope.",
+          "ack_gate_preserved": "The renderer still runs all five existing Node bundles with the TAP reporter under bash pipefail, requires all eleven exact ACK positive names plus successful complete TAP counts, records exact H/tree/U and digest/input hashes, and uploads the success receipt and TAP. The bounded text continues to disclaim native-job success.",
+          "separation": "RSU native additions occur before the renderer region; ACK changes occur only in the renderer command/receipt/upload region. The exact diff demonstrates their coexistence without dropping either side.",
+          "inherited_limit": "The upload remains success-conditioned; failure TAP stays in the job log and does not produce an always-uploaded failure artifact. The original full-review limitation is unchanged."
+        },
+        "review_boundary": {
+          "inherited": "ACK-01 through ACK-10, the complete 21-case source review, the fixed-U direct read and necessary production-owner reasoning inherit from verdict.json by unchanged source identity and unchanged adjacent chain.",
+          "not_reaudited": "The unrelated incoming search algorithm and its test correctness were not re-reviewed; this verdict only establishes exact preservation and shared-workflow integration. No incoming implementation assessment or other reviewer verdict was read.",
+          "operations": "Read-only text/Git inspection only. No local or remote test/build/lint/generator/validator, no workflow dispatch and no repository mutation. Only this requested scratch delta verdict is written.",
+          "unverified": "No exact-subject executable outcome, Actions receipt/artifact, native success, real service, full UI, or overall acceptance is asserted. The final published commit still needs the existing push-triggered evidence bound to its own H/tree; earlier results and queued jobs cannot substitute."
+        },
+        "conclusion": "The original ACK static review carries forward to candidate tree 332ac0c5cb26d71e7a20c022c0f5b12b6a363746. All six nonworkflow incoming blobs and all incoming workflow additions are retained, with the ACK gate intact and unchanged job predicates. No falsifiable integration defect was found."
+      }
+    },
+    {
+      "id": "ack_final_snapshot",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/router-ack/snapshot-7814.json",
+      "record": {
+        "repo": "/workspace/scratch/a707eb82cd6b/fabushi-recovery",
+        "base": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+        "base_tree": "952f6c7355354c1f3aedb71e24dc7d422780713d",
+        "tree": "4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+        "files": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "mode": "100644",
+            "sha": "3efb70859e52b80c92a93bab7606573348cd566e",
+            "bytes": 218717,
+            "characters": 218717
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+            "mode": "100644",
+            "sha": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+            "bytes": 6759,
+            "characters": 6745
+          },
+          {
+            "path": "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+            "mode": "100644",
+            "sha": "d3928dfa8f75e007b2fd6e0855dea192720f445d",
+            "bytes": 84043,
+            "characters": 83961
+          },
+          {
+            "path": "source/electron-main/main-edge.ts",
+            "mode": "100644",
+            "sha": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+            "bytes": 25510,
+            "characters": 25510
+          },
+          {
+            "path": "source/electron-main/main-edge-model.contract.test.ts",
+            "mode": "100644",
+            "sha": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+            "bytes": 31517,
+            "characters": 31517
+          }
+        ],
+        "prior_snapshot_tree": "332ac0c5cb26d71e7a20c022c0f5b12b6a363746",
+        "integration": "Single unrelated evidence-only incoming path preserved; complete raw before/after identities equal oldBase-to-newBase and reviewedTree-to-candidate; all five ACK blobs unchanged."
+      }
+    },
+    {
+      "id": "ci_config_40dad_snapshot",
+      "source_path": "/workspace/scratch/a707eb82cd6b/fusion-review/ci-config-40dad.json",
+      "record": {
+        "schema_version": 1,
+        "repository": "bhrumom/fabushi-desktop",
+        "observer": "config_revision_review_0375",
+        "status": "PARTIAL_SUCCESS_APP_RUNNING",
+        "observed_at": "2026-11-02T22:11:08.935Z",
+        "subject": {
+          "commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+          "tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+          "parent": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+          "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "source_run": 41533207885,
+          "runtime_run": 41533207848,
+          "run_attempt": 1
+        },
+        "publication_identity": {
+          "independently_read_remote_git_commit": true,
+          "remote_commit_tree_parent_match": true,
+          "reviewed_candidate": "a97f4a56ef910f55ae1a9e9e1b1ccc85087915c1",
+          "evidence_only_incoming": {
+            "commit": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+            "parent": "e01f51f33134cbd9dd0b6abd0d471dfb5d71d8de",
+            "path": "projects/openclaw-rust/evidence/memory-selector-647e0932-20261103.json",
+            "before_blob": "f3a5503a01ddb323183f931703bd8baa20646371",
+            "after_blob": "ed62de39e518674e8366228d5c8b8894cb892dec"
+          },
+          "proof": "The complete immutable raw diff e01-to-700 and complete reviewed-candidate-a97-to-published-tree-802 diff are identical: the single evidence path and same full before/after blobs. Complete parent700-to-H40dad diff contains exactly the original six root changes plus deletion of the three staging paths; all six delivered blobs match the reviewed a97 freeze. No staging path exists in the published tree. Embedded incoming evidence opinions were not read or used to judge code.",
+          "workflow_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+          "main_blob": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8"
+        },
+        "source_jobs": [
+          {
+            "id": 125578428034,
+            "name": "source-authority",
+            "status": "completed",
+            "conclusion": "success",
+            "run_id": 41533207885,
+            "logs_url": null,
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1
+              },
+              {
+                "name": "Checkout exact subject",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2
+              },
+              {
+                "name": "Verify checked-out subject and lock",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3
+              },
+              {
+                "name": "Exercise risk review contract and fail-closed counterexamples",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4
+              },
+              {
+                "name": "Acquire exact upstream and verify identity",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5
+              },
+              {
+                "name": "Generate recursive tracked-source inventory",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6
+              },
+              {
+                "name": "Scan LFS pointer candidates without claiming closure",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7
+              },
+              {
+                "name": "Record dependency authority inputs",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8
+              },
+              {
+                "name": "Expand canonical source records and verify P0 G01/G02 structural",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9
+              },
+              {
+                "name": "Upload immutable authority evidence",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 10
+              },
+              {
+                "name": "Post Checkout exact subject",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 20
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 21
+              }
+            ]
+          },
+          {
+            "id": 125578430875,
+            "name": "recover-original-host-log",
+            "status": "completed",
+            "conclusion": "skipped",
+            "run_id": 41533207885,
+            "logs_url": null,
+            "steps": null
+          },
+          {
+            "id": 125582637196,
+            "name": "persist-verified-inventory",
+            "status": "completed",
+            "conclusion": "success",
+            "run_id": 41533207885,
+            "logs_url": null,
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1
+              },
+              {
+                "name": "Checkout guarded original subject",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2
+              },
+              {
+                "name": "Download this exact-subject verified canonical manifest",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3
+              },
+              {
+                "name": "Materialize deterministic shards and dependency declarations in Actions",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4
+              },
+              {
+                "name": "CAS commit derived source shards to the existing branch (non-force)",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5
+              },
+              {
+                "name": "Dispatch scoped checks for the resulting exact branch head",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 6
+              },
+              {
+                "name": "Post Checkout guarded original subject",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 12
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 13
+              }
+            ]
+          }
+        ],
+        "runtime_jobs": [
+          {
+            "id": 125578429715,
+            "name": "sqlite-native-path",
+            "status": "in_progress",
+            "conclusion": null,
+            "run_id": 41533207848,
+            "logs_url": null,
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1
+              },
+              {
+                "name": "Run actions/checkout@v6",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2
+              },
+              {
+                "name": "Bind exact tested HEAD",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3
+              },
+              {
+                "name": "Run dtolnay/rust-toolchain@stable",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4
+              },
+              {
+                "name": "Run Swatinem/rust-cache@v2",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5
+              },
+              {
+                "name": "Install existing Linux Host native dependencies",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6
+              },
+              {
+                "name": "Record Linux build profile and available storage",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7
+              },
+              {
+                "name": "Test native SQLite paths and affected recovery owners",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8
+              },
+              {
+                "name": "Test media input, preview and URL policy, and HTTP failure diagnostics on the existing Linux Host cache",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9
+              },
+              {
+                "name": "Test portable pending-failure recovery and Memory selectors on the existing Linux Host cache",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 10
+              },
+              {
+                "name": "Record storage after completed native, media and channel checks",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 11
+              },
+              {
+                "name": "Save completed Linux owner evidence before Automation and App checks",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 12
+              },
+              {
+                "name": "Test typed Automation admission and actual owners on the existing Linux Host cache",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 13
+              },
+              {
+                "name": "Check and execute the actual Automation and Settings App owners on Linux",
+                "status": "in_progress",
+                "conclusion": null,
+                "number": 14
+              },
+              {
+                "name": "Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache",
+                "status": "pending",
+                "conclusion": null,
+                "number": 15
+              },
+              {
+                "name": "Preserve failed owned native-path and Automation fixtures",
+                "status": "pending",
+                "conclusion": null,
+                "number": 16
+              },
+              {
+                "name": "Upload native SQLite path evidence",
+                "status": "pending",
+                "conclusion": null,
+                "number": 17
+              },
+              {
+                "name": "Post Run Swatinem/rust-cache@v2",
+                "status": "pending",
+                "conclusion": null,
+                "number": 33
+              },
+              {
+                "name": "Post Run actions/checkout@v6",
+                "status": "pending",
+                "conclusion": null,
+                "number": 34
+              }
+            ]
+          },
+          {
+            "id": 125578430085,
+            "name": "rust-host",
+            "status": "queued",
+            "conclusion": null,
+            "run_id": 41533207848,
+            "logs_url": null,
+            "steps": null
+          },
+          {
+            "id": 125578430179,
+            "name": "renderer",
+            "status": "completed",
+            "conclusion": "success",
+            "run_id": 41533207848,
+            "logs_url": null,
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1
+              },
+              {
+                "name": "Run actions/checkout@v6",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2
+              },
+              {
+                "name": "Bind exact tested HEAD",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3
+              },
+              {
+                "name": "Run actions/setup-node@v6",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4
+              },
+              {
+                "name": "Install desktop dependencies",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5
+              },
+              {
+                "name": "Build Grok-shaped Electron runtime",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6
+              },
+              {
+                "name": "Test Plugin Skills, model settings bridge and routed MCP carrier",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7
+              },
+              {
+                "name": "Record exact-subject Plugin Skills edge evidence",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8
+              },
+              {
+                "name": "Upload Plugin Skills edge evidence",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9
+              },
+              {
+                "name": "Check production architecture boundary",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 10
+              },
+              {
+                "name": "Compile Grok Electron boundary contracts",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 11
+              },
+              {
+                "name": "Compile Fabushi product policy contract",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 12
+              },
+              {
+                "name": "Test Grok Electron boundary contracts",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 13
+              },
+              {
+                "name": "Test Fabushi product policy contract",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 14
+              },
+              {
+                "name": "Test recovered window chrome contracts",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 15
+              },
+              {
+                "name": "Check Agent workspace architecture boundary",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 16
+              },
+              {
+                "name": "Check Grok architecture inventory",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 17
+              },
+              {
+                "name": "Typecheck and build renderer",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 18
+              },
+              {
+                "name": "Verify co-staged desktop runtime",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 19
+              },
+              {
+                "name": "Enforce built desktop bundle boundary",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 20
+              },
+              {
+                "name": "Check Grok final architecture gate",
+                "status": "completed",
+                "conclusion": "skipped",
+                "number": 21
+              },
+              {
+                "name": "Post Run actions/setup-node@v6",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 41
+              },
+              {
+                "name": "Post Run actions/checkout@v6",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 42
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 43
+              }
+            ]
+          },
+          {
+            "id": 125578430467,
+            "name": "OCRM installation key restore boundary / Linux",
+            "status": "completed",
+            "conclusion": "success",
+            "run_id": 41533207848,
+            "logs_url": null,
+            "steps": [
+              {
+                "name": "Set up job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 1
+              },
+              {
+                "name": "Run actions/checkout@v6",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 2
+              },
+              {
+                "name": "Bind exact restore test subject",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 3
+              },
+              {
+                "name": "Run dtolnay/rust-toolchain@stable",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 4
+              },
+              {
+                "name": "Run Swatinem/rust-cache@v2",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 5
+              },
+              {
+                "name": "Install canonical Linux native Computer build prerequisites",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 6
+              },
+              {
+                "name": "Compile locked restore contracts as the ordinary runner user",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 7
+              },
+              {
+                "name": "Exercise ordinary restore and real mounted descendants",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 8
+              },
+              {
+                "name": "Upload exact-subject Linux restore evidence",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 9
+              },
+              {
+                "name": "Post Run Swatinem/rust-cache@v2",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 17
+              },
+              {
+                "name": "Post Run actions/checkout@v6",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 18
+              },
+              {
+                "name": "Complete job",
+                "status": "completed",
+                "conclusion": "success",
+                "number": 19
+              }
+            ]
+          },
+          {
+            "id": 125578431875,
+            "name": "platform-worker",
+            "status": "completed",
+            "conclusion": "skipped",
+            "run_id": 41533207848,
+            "logs_url": null,
+            "steps": null
+          },
+          {
+            "id": 125578432783,
+            "name": "Pressure profiler / ${{ matrix.os }}",
+            "status": "completed",
+            "conclusion": "skipped",
+            "run_id": 41533207848,
+            "logs_url": null,
+            "steps": null
+          }
+        ],
+        "completed_logs": [
+          {
+            "job_id": 125578428034,
+            "name": "source-authority",
+            "complete_log_fetched": true,
+            "characters": 31509,
+            "lines": 381,
+            "error_markers_observed": []
+          },
+          {
+            "job_id": 125582637196,
+            "name": "persist-verified-inventory",
+            "complete_log_fetched": true,
+            "characters": 18120,
+            "lines": 217,
+            "error_markers_observed": []
+          },
+          {
+            "job_id": 125578430179,
+            "name": "renderer",
+            "complete_log_fetched": true,
+            "characters": 51437,
+            "lines": 560,
+            "error_markers_observed": []
+          },
+          {
+            "job_id": 125578430467,
+            "name": "installation-key-restore-linux",
+            "complete_log_fetched": true,
+            "characters": 88744,
+            "lines": 1004,
+            "error_markers_observed": []
+          }
+        ],
+        "actual_step_results": [
+          {
+            "job_id": 125578428034,
+            "step_number": 4,
+            "scope": "Risk review contract and fail-closed counterexamples",
+            "command": "python3 projects/openclaw-rust/scripts/test_source_review.py",
+            "test_count": 33,
+            "result": "OK",
+            "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046"
+          },
+          {
+            "job_id": 125578428034,
+            "step_number": 9,
+            "scope": "Inventory materialization unit controls",
+            "command": "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py",
+            "test_count": 21,
+            "result": "OK",
+            "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046"
+          },
+          {
+            "job_id": 125578428034,
+            "step_number": 9,
+            "scope": "Pre-expansion history integrity, canonical reconstruction, G01/G02 structural and committed-source integrity",
+            "result": "PASS",
+            "test_count": null,
+            "counters": {
+              "tracked_paths": 62130,
+              "mapped": 850,
+              "unread_or_partial": 62099,
+              "pending_forward_links": 0
+            },
+            "negative_probes": [
+              "duplicate source path",
+              "unread denominator tamper",
+              "unbacked accepted verdict",
+              "orphan responsibility"
+            ],
+            "note": "Inventory path counters are not test counts; global source closure and semantic acceptance remain open."
+          },
+          {
+            "job_id": 125582637196,
+            "scope": "Source persistence",
+            "result": "success",
+            "test_count": null,
+            "note": "62130 candidate rows across61 shards; dependencies unresolved; actual log says No new source-derived shard content, so no derived commit was written."
+          },
+          {
+            "job_id": 125578430179,
+            "step_number": 7,
+            "scope": "Selected Plugin Skills/model settings bridge/routed MCP carrier tests",
+            "tests": 104,
+            "passed": 104,
+            "failed": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "result": "success",
+            "note": "Other skipped renderer architecture/product/final gates are not counted as passes."
+          },
+          {
+            "job_id": 125578430467,
+            "step_number": 8,
+            "scope": "Ordinary installation-key restore target",
+            "passed": 29,
+            "failed": 0,
+            "ignored": 2,
+            "result": "success"
+          },
+          {
+            "job_id": 125578430467,
+            "step_number": 8,
+            "scope": "linux_bind_mounted_descendant_file_restore_boundary",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 30,
+            "result": "success"
+          },
+          {
+            "job_id": 125578430467,
+            "step_number": 8,
+            "scope": "linux_bind_mounted_descendant_symlink_restore_boundary",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "filtered_out": 30,
+            "result": "success"
+          }
+        ],
+        "receipt_observations": [
+          {
+            "job_id": 125578428034,
+            "source": "completed log and artifact metadata",
+            "body_read": false,
+            "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+            "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+            "artifact_id": 13182892992,
+            "digest": "sha256:b6e00e63e3a40c1e439867ed7cb22d3a5942b986f36ae18a83dcbe543dcc2a38"
+          },
+          {
+            "job_id": 125578430179,
+            "source": "completed log and artifact metadata",
+            "body_read": false,
+            "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+            "artifact_id": 13184450036,
+            "digest": "sha256:da308ecc3ed1168b6df4e4b8599c305916c8a7df40993cb3619dc5a8bd3de10a"
+          },
+          {
+            "job_id": 125578430467,
+            "source": "completed log and artifact metadata",
+            "body_read": false,
+            "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+            "artifact_id": 13183481428,
+            "digest": "sha256:54954f38249e58aa1c4577c30c576e1f624534baa4dfc4f51606998377bdd5a4"
+          },
+          {
+            "job_id": 125578429715,
+            "source": "completed early-upload step metadata and artifact metadata; whole job still running",
+            "body_read": false,
+            "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+            "artifact_id": 13183028407,
+            "digest": "sha256:fdfdd49b2439d3b904c309c2fd8f8390c49be3d0d956b42a23116241df7f2489"
+          }
+        ],
+        "failure_classifications": [],
+        "planned_checks_not_yet_runtime_evidence": {
+          "source": "Exact-subject pre-expansion integrity, locked U, G01/G02 structural and committed source integrity; persistence result separately.",
+          "linux_profile": {
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_PROFILE_TEST_DEBUG": "0",
+            "CARGO_INCREMENTAL": "0",
+            "runtime_observed": false,
+            "metadata_step_status": "success",
+            "receipt_observed": false
+          },
+          "actual_app": {
+            "automation_mapper_cases": 10,
+            "config_cases": 8,
+            "total_exact_cases": 18,
+            "runtime_passed": null
+          },
+          "config_required_names": [
+            "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests",
+            "tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization",
+            "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers",
+            "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry",
+            "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret",
+            "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization",
+            "tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects",
+            "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls"
+          ],
+          "additional_groups": [
+            "FC Store/Runtime/App",
+            "MGS four named Memory controls",
+            "MRU three integration and two library controls",
+            "LPG Host/Coordinator/App plus same-H composition receipt",
+            "macOS Host selected commands and receipts",
+            "renderer scoped tests",
+            "Linux installation-key restore"
+          ]
+        },
+        "historical_evidence_separate_from_this_h": [
+          {
+            "subject": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+            "record": "config-input/verdict.json",
+            "scope": "Earlier independently observed source-authority and renderer positives only; not re-polled in this task.",
+            "current_h_validation": false
+          },
+          {
+            "subjects": [
+              "f5f6d88fd5e1f96e27558d2a17e490964c6d57a5",
+              "93130e0a4e1e4753043e714bb64802e5572d863e"
+            ],
+            "record": "ci-f5-6034.json",
+            "scope": "Timestamped earlier source/renderer/restore and owner-step observations; actual App/LPG/macOS outcomes remained unobserved at its last snapshot.",
+            "current_h_validation": false
+          },
+          {
+            "subject": "7d060aca30278db9ef921092f60a5f77278ce8d9",
+            "run": 41531351468,
+            "job": 125572057978,
+            "artifact": 13182283079,
+            "scope": "Successful content-addressed staging of the identical main blob only; receipt explicitly says no product validation.",
+            "current_h_validation": false
+          }
+        ],
+        "limits": [
+          "All current-H conclusions apply only to H40dad/tree802 and its exact run attempts. Planned selectors and configured profile values are not execution results.",
+          "Complete job logs are fetched only after job completion. Running, pending, queued and skipped jobs are not passes; step metadata alone does not establish named-test counts.",
+          "No dispatch, retry, cancellation, repository edit, local test/build/lint/formatter/generator/validator was performed.",
+          "Test summaries will be attributed per command/target; owned-child and outer summaries will not be blindly added into a misleading unique-test total."
+        ],
+        "current_h_runtime_acceptance": false,
+        "sources": [
+          "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+          "https://github.com/bhrumom/fabushi-desktop/actions/runs/41533207885",
+          "https://github.com/bhrumom/fabushi-desktop/actions/runs/41533207848"
+        ],
+        "source_run_result": {
+          "status": "completed",
+          "conclusion": "success",
+          "run_attempt": 1,
+          "updated_at": "2026-11-02T22:10:17Z"
+        },
+        "evidence_access_limitations": [
+          {
+            "scope": "Artifact ZIP body/JSON receipt extraction",
+            "status": "unavailable_in_current_file_transfer_path",
+            "details": "GitHub artifact API and download connector succeeded and returned exact-H archive references. Direct local transfer failed with unavailable browser-proxy:8889; the prescribed Library transfer helper also returned download failed. Library text-read reports these transient connector files are not visible in that files surface. No access controls, proxy configuration or credentials were changed. Completed job logs and artifact IDs/digests remain readable; unread archive bodies are explicitly not claimed as inspected.",
+            "ci_failure": false
+          }
+        ],
+        "app_entry_observation": {
+          "job_id": 125578429715,
+          "step_number": 14,
+          "status": "in_progress",
+          "preceding_steps_7_through_13": "success",
+          "shipping_compile_result": null,
+          "test_harness_build_result": null,
+          "automation_cases_passed": null,
+          "config_cases_passed": null,
+          "native_compilation_blocker_observed": false,
+          "note": "The step has been entered, but its complete log is not available for review until job completion; absence of an observed blocker is not compilation success."
+        }
+      }
+    }
+  ],
+  "latest_root_update": {
+    "archived_at": "2026-11-02T22:25:51.839363+00:00",
+    "kind": "completed-log observations copied from independent exact-H collector",
+    "config_observed_at": "2026-11-02T22:22:57.768Z",
+    "router_observed_at": "2026-11-02T22:17:24.973Z",
+    "separate_ci_records": [
+      {
+        "path": "projects/openclaw-rust/evidence/config-input-40dad-d56b3d1d-20261102.json",
+        "git_blob": "2e5fbfae7b3a361b323598d62e2762d1a381f045",
+        "subject": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "observed_at": "2026-11-02T22:22:57.768Z",
+        "status": "SOURCE_RENDERER_LINUX_PASSED_MAC_PENDING"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/router-ack-ca679-d56b3d1d-20261102.json",
+        "git_blob": "0fcf2b85516f0c275b03a989408c49721abe9c57",
+        "subject": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+        "observed_at": "2026-11-02T22:17:24.973Z",
+        "status": "ACK_RENDERER_SOURCE_RESTORE_PASSED_NATIVE_PENDING"
+      }
+    ],
+    "unchanged": "Embedded prior reviews/publications/partial observations preserve their original dates and subjects; no old result has been reattributed."
+  }
+}

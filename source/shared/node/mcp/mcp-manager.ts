@@ -46,6 +46,7 @@ export class SandMcpManager {
   private readonly accountDisplayConfigProvider: any;
   private accountPromise: Promise<any> | undefined;
   private generation = 0;
+  private disposed = false;
   private lastDisplay: any = null;
   private lastState: any = null;
   private lastBackendTools: any[] = [];
@@ -122,10 +123,13 @@ export class SandMcpManager {
     });
   }
   private loadAccountServers(): Promise<any> {
+    if (this.disposed) return Promise.resolve(null);
     if (this.accountPromise != null) return this.accountPromise;
     const generation = ++this.generation,
       promise = (this.accountServersProvider?.() ?? Promise.resolve(null)).then(
         (display: any) => {
+          // A retired manager cannot return even a formerly valid account cache.
+          if (this.disposed) return null;
           const cached =
             display?.cacheScope !== undefined &&
             display.cacheScope === this.lastScope
@@ -143,11 +147,14 @@ export class SandMcpManager {
             if (this.lastScope !== undefined) {
               this.lastDisplay = this.lastState = null;
               this.authWatches.clearAllPendingAuthWatchesCancelled();
+              if (this.disposed) return null;
               this.boxRuntime?.invalidateToolsCache();
             }
+            if (this.disposed) return null;
             this.settingsStore.scopeToAccount(display.cacheScope);
             this.lastScope = display.cacheScope;
             this.options.onAccountScopeApplied?.();
+            if (this.disposed) return null;
             this.definitionSource.clearLastKnownAccountConfig();
             this.definitionSource.clearCache();
           }
@@ -162,6 +169,10 @@ export class SandMcpManager {
           );
           this.instructions.migrateCustomInstructions(resolved.servers);
           return resolved;
+        },
+        (error: unknown) => {
+          if (this.disposed) return null;
+          throw error;
         },
       );
     this.accountPromise = promise;
@@ -196,13 +207,16 @@ export class SandMcpManager {
     this.authWatches.setAuthCompletionObserver(observer);
   }
   async listServers() {
+    if (this.disposed) return { servers: [] };
     const display = await this.accountDisplayConfigProvider?.();
+    if (this.disposed) return { servers: [] };
     if (display != null) this.lastDisplay = display;
     const effectiveDisplay =
-        display ??
-        (this.accountServersProvider == null ? this.lastDisplay : null),
-      runtime = await this.definitionSource.getUserServerConfigs(),
-      rows =
+      display ??
+      (this.accountServersProvider == null ? this.lastDisplay : null);
+    const runtime = await this.definitionSource.getUserServerConfigs();
+    if (this.disposed) return { servers: [] };
+    const rows =
         effectiveDisplay?.servers ??
         (this.accountServersProvider == null
           ? Object.entries(runtime).map(([serverIdentifier, config]) => ({
@@ -238,6 +252,7 @@ export class SandMcpManager {
           )
         : [],
       boxByName = new Map<string, any>();
+    if (this.disposed) return { servers: [] };
     const disabledByServer =
       this.settingsStore.getMcpDisabledToolsByServerId?.() ?? {};
     this.lastBackendTools = backend.flatMap((entry: any) => {
@@ -262,6 +277,7 @@ export class SandMcpManager {
         reportMcpHostEdgeFailure("box-settings-list", error);
         unavailable = true;
       }
+    if (this.disposed) return { servers: [] };
     const servers: any[] = [];
     for (const server of visible) {
       if (server.disabledByTeamAdminPolicy)
@@ -417,7 +433,7 @@ export class SandMcpManager {
     if (display == null && this.accountDisplayConfigProvider != null) {
       try {
         display = await this.accountDisplayConfigProvider();
-        if (display != null) this.lastDisplay = display;
+        if (!this.disposed && display != null) this.lastDisplay = display;
       } catch {
         display = this.lastDisplay;
       }
@@ -502,6 +518,7 @@ export class SandMcpManager {
     return this.listServers();
   }
   refreshAccountConfigInBackground(): void {
+    if (this.disposed) return;
     this.generation += 1;
     this.accountPromise = undefined;
     this.definitionSource.refreshInBackground();
@@ -519,9 +536,11 @@ export class SandMcpManager {
     raw: string,
     options?: { requireFreshRead: boolean },
   ) {
+    if (this.disposed) return undefined;
     const id = validateMcpServerId(raw);
     if (options?.requireFreshRead && this.accountServersProvider != null) {
       const display = await this.accountServersProvider();
+      if (this.disposed) return undefined;
       if (display == null || display.unavailable)
         throw new SandMcpConfigError("account display config unavailable");
       return display.servers.find((server: any) => server.id === id);
@@ -535,8 +554,10 @@ export class SandMcpManager {
     try {
       display = await this.accountDisplayConfigProvider();
     } catch (error) {
+      if (this.disposed) return undefined;
       if (options?.requireFreshRead) throw error;
     }
+    if (this.disposed) return undefined;
     if (display != null) this.lastDisplay = display;
     else if (options?.requireFreshRead)
       throw new SandMcpConfigError("account display config unavailable");
@@ -550,9 +571,20 @@ export class SandMcpManager {
     return this.authWatches.noteAuthCompletedElsewhere(id, key);
   }
   async dispose(): Promise<void> {
+    if (this.disposed) return;
+    // Retire publication before watch cleanup can call back into this owner.
+    this.disposed = true;
+    this.generation += 1;
+    this.accountPromise = undefined;
+    this.lastDisplay = this.lastState = null;
+    this.lastBackendTools = [];
+    this.lastScope = undefined;
+    // clearCache/invalidateToolsCache start work; disposal only drops projections.
+    this.definitionSource.clearLastKnownAccountConfig();
     this.authWatches.clearAllPendingAuthWatches();
   }
   async reload(): Promise<void> {
+    if (this.disposed) return;
     this.generation += 1;
     this.accountPromise = undefined;
     this.definitionSource.clearCache();

@@ -164,6 +164,12 @@ fn production_session_workers_use_real_sqlite_backend_and_close_on_host_shutdown
     assert_eq!(read.as_deref(), Some(b"hello".as_slice()));
     assert_eq!(runtime.active_worker_count(), 1);
 
+    // The persisted fixed root must name a valid checkpoint. An empty
+    // ConversationStateStructure is valid protobuf, even under a legacy
+    // caller-supplied root ID; a missing root is a separate recovery refusal.
+    futures::executor::block_on(store.set_blob(&(), &persisted_root, &[]))
+        .expect("persist the declared empty checkpoint root");
+
     let prepared = runtime
         .prepare_existing_agent("agent-live")
         .expect("prepare existing agent")
@@ -362,5 +368,153 @@ fn production_session_exposes_durable_awaiting_user_state_for_runner_send_guard(
     );
 
     runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn background_result_listener_reenters_session_facade_after_both_owner_locks_release() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, mpsc};
+    use mahayana_host_runtime::extensions::session::agent_db::{
+        SessionWorkResultCommitOutcome, SessionWorkResultReceipt,
+    };
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+
+    let root = temp_root("result-listener-reentry");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let session = runtime.materialize_new_session(None, "user", None)
+        .expect("materialize actual Session owner");
+    let mut admission = runtime.read_session_work_admission(&session.id)
+        .expect("read current admission").expect("materialized admission");
+    admission.admitted_work_id = Some("background-work".into());
+    assert!(runtime.compare_and_set_session_work_admission(
+        &session.id, Some(&admission.lifecycle_revision), &admission,
+    ).expect("admit background work"));
+
+    let transcript_notifications = Arc::new(AtomicUsize::new(0));
+    let callback_transcript_notifications = Arc::clone(&transcript_notifications);
+    let transcript_agent_id = session.id.clone();
+    let transcript_subscription = subscribe_transcript_mutations(move |event| {
+        if event.get("agentId").and_then(serde_json::Value::as_str)
+            == Some(transcript_agent_id.as_str())
+        {
+            callback_transcript_notifications.fetch_add(1, Ordering::SeqCst);
+        }
+    });
+    let visible_entry = serde_json::json!({
+        "id": "visible-before-result", "kind": "message", "role": "user", "content": "run it",
+        "sessionKey": admission.session_key,
+    });
+    assert_eq!(runtime.append_agent_transcript_entries_if_session_admitted(
+        &session.id, &admission.session_key, &[visible_entry.clone()],
+    ).expect("append visible presentation control"), 1);
+    let visible_before = runtime.read_agent_transcript_entries(&session.id)
+        .expect("real visible transcript before result");
+    assert!(visible_before.contains(&visible_entry));
+    assert_eq!(transcript_notifications.load(Ordering::SeqCst), 1);
+
+    let owner = runtime.open_agent_db_owner(&session.id).expect("actual cached DB owner");
+    let notifications = Arc::new(AtomicUsize::new(0));
+    let callback_notifications = Arc::clone(&notifications);
+    let callback_runtime = Arc::downgrade(&runtime);
+    let callback_agent_id = session.id.clone();
+    let (callback_sender, callback_receiver) = mpsc::channel();
+    let subscription = owner.subscribe_metadata("sessionWorkAdmission", Arc::new(move || {
+        callback_notifications.fetch_add(1, Ordering::SeqCst);
+        let observed = (|| -> Result<_, String> {
+            let runtime = callback_runtime.upgrade()
+                .ok_or_else(|| "committing Session owner was dropped".to_string())?;
+            // These are the actual facade methods. Releasing only the DB
+            // connection still deadlocks on their filesystem/deletion boundary.
+            let settled = runtime.read_session_work_admission(&callback_agent_id)?
+                .ok_or_else(|| "committed Session admission is missing".to_string())?;
+            let receipt = runtime.open_agent_db_owner(&callback_agent_id)?
+                .get_transcript_entry_by_id("background-result:result-1")
+                .map_err(|error| error.to_string())?
+                .ok_or_else(|| "committed Session receipt is missing".to_string())?;
+            let visible = runtime.read_agent_transcript_entries(&callback_agent_id)?;
+            Ok((settled, receipt, visible))
+        })();
+        let _ = callback_sender.send(observed);
+    }));
+    let committing_runtime = Arc::clone(&runtime);
+    let committing_agent_id = session.id.clone();
+    let committing_admission = admission.clone();
+    let (commit_sender, commit_receiver) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        let outcome = committing_runtime.commit_session_work_result(
+            &committing_agent_id,
+            &committing_admission.session_key,
+            &committing_admission.lifecycle_revision,
+            "background-work", "result-1", "settled output", 3,
+        );
+        let _ = commit_sender.send(outcome);
+    });
+    // Both completions have deadlines before join, including the real facade
+    // read that would block forever if the outer owner lock remained held.
+    let outcome = commit_receiver.recv_timeout(Duration::from_secs(5))
+        .expect("Session result commit and callback must finish before the deadline")
+        .expect("commit Session result");
+    let (observed_admission, observed_receipt, observed_visible) = callback_receiver
+        .recv_timeout(Duration::from_secs(5))
+        .expect("callback must finish its real Session facade reads")
+        .expect("callback reads durable Session state");
+    worker.join().expect("Session result worker returned");
+
+    let receipt = SessionWorkResultReceipt {
+        session_key: admission.session_key.clone(),
+        lifecycle_revision: admission.lifecycle_revision.clone(),
+        work_id: "background-work".into(),
+        idempotency_key: "result-1".into(),
+        content: "settled output".into(),
+        sent_message_count: 3,
+    };
+    assert_eq!(outcome, SessionWorkResultCommitOutcome::Committed(receipt.clone()));
+    let mut settled = admission.clone();
+    settled.admitted_work_id = None;
+    settled.terminal_result_idempotency_key = Some("result-1".into());
+    assert_eq!(observed_admission, settled);
+    assert_eq!(observed_receipt, serde_json::json!({
+        "id": "background-result:result-1", "kind": "background-result-receipt",
+        "sessionKey": admission.session_key, "lifecycleRevision": admission.lifecycle_revision,
+        "workId": "background-work", "idempotencyKey": "result-1",
+        "content": "settled output", "sentMessageCount": 3,
+    }));
+    assert_eq!(observed_visible, visible_before);
+    assert_eq!(notifications.load(Ordering::SeqCst), 1);
+    assert_eq!(transcript_notifications.load(Ordering::SeqCst), 1);
+
+    assert_eq!(runtime.commit_session_work_result(
+        &session.id, &admission.session_key, &admission.lifecycle_revision,
+        "background-work", "result-1", "settled output", 3,
+    ).expect("duplicate Session result"), SessionWorkResultCommitOutcome::AlreadyCommitted(receipt));
+    assert_eq!(runtime.commit_session_work_result(
+        &session.id, &admission.session_key, &admission.lifecycle_revision,
+        "background-work", "result-1", "changed output", 3,
+    ).expect("conflicting Session result"), SessionWorkResultCommitOutcome::ConflictingResult);
+    assert_eq!(runtime.commit_session_work_result(
+        &session.id, &admission.session_key, "stale-revision",
+        "background-work", "result-1", "settled output", 3,
+    ).expect("stale Session result"), SessionWorkResultCommitOutcome::RejectedStale);
+    assert!(runtime.commit_session_work_result(
+        &session.id, &admission.session_key, &admission.lifecycle_revision,
+        "", "result-1", "settled output", 3,
+    ).is_err());
+    assert_eq!(notifications.load(Ordering::SeqCst), 1);
+    assert_eq!(transcript_notifications.load(Ordering::SeqCst), 1);
+    assert_eq!(runtime.read_agent_transcript_entries(&session.id).unwrap(), visible_before);
+    assert_eq!(runtime.read_session_work_admission(&session.id).unwrap(), Some(settled.clone()));
+
+    drop(subscription);
+    transcript_subscription.unsubscribe();
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+    let reopened = ProductionSessionWorkers::with_agents_root(&root, 500);
+    assert_eq!(reopened.read_session_work_admission(&session.id).unwrap(), Some(settled));
+    assert_eq!(reopened.open_agent_db_owner(&session.id).unwrap()
+        .get_transcript_entry_by_id("background-result:result-1").unwrap(), Some(observed_receipt));
+    assert_eq!(reopened.read_agent_transcript_entries(&session.id).unwrap(), visible_before);
+    reopened.shutdown();
     let _ = fs::remove_dir_all(root);
 }

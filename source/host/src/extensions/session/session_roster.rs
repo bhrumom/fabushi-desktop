@@ -2,7 +2,7 @@ use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::UNIX_EPOCH;
 
 use crate::agents::agent_profile::get_sand_profile_path;
@@ -14,6 +14,7 @@ use crate::storage::store_db::{
 use crate::workflows::workflow_store::agent_has_workflows;
 
 use super::agent_db::reseed_minimal_persisted_agent_db_if_missing;
+use super::agent_db::SandAgentDb;
 use super::session_diagnostics::{SessionDiagnostic, report_session_diagnostic};
 use super::session_mutations::recover_agent_with_missing_db;
 use super::session_paths::get_agent_db_path;
@@ -36,6 +37,7 @@ pub struct RosterExtrasCache {
 impl RosterExtrasCache {
     pub fn load(
         &self,
+        owner: &SandAgentDb,
         db_path: &Path,
         busy_timeout_ms: u64,
         dir_name: &str,
@@ -59,6 +61,7 @@ impl RosterExtrasCache {
         }
 
         let extras = load_agent_db_extras(
+            owner,
             db_path,
             busy_timeout_ms,
             dir_name,
@@ -150,6 +153,11 @@ pub fn list_agents(
     active_agent_id: Option<&str>,
     is_agent_being_deleted: &dyn Fn(&str) -> bool,
     extras_cache: &RosterExtrasCache,
+    open_agent_owner: &dyn Fn(&str) -> Result<Arc<SandAgentDb>, String>,
+    with_agent_mutation: &dyn for<'a> Fn(
+        &'a str,
+        Box<dyn FnOnce() -> Result<Option<AgentSummary>, String> + 'a>,
+    ) -> Result<Option<AgentSummary>, String>,
 ) -> Result<Vec<AgentSummary>, String> {
     let entries = match fs::read_dir(root_dir) {
         Ok(entries) => entries.filter_map(Result::ok).collect::<Vec<_>>(),
@@ -174,90 +182,92 @@ pub fn list_agents(
         if is_agent_being_deleted(&dir_name) {
             continue;
         }
-        let db_path = get_agent_db_path(root_dir, &dir_name)
-            .map_err(|error| error.to_string())?;
-        let mtime_ms = file_mtime_ms(&db_path);
-        let footprint = durable_footprint(entry.path().as_path());
+        let summary = with_agent_mutation(&dir_name, Box::new(|| {
+            let db_path = get_agent_db_path(root_dir, &dir_name)
+                .map_err(|error| error.to_string())?;
+            let mtime_ms = file_mtime_ms(&db_path);
+            let footprint = durable_footprint(entry.path().as_path());
 
-        if !db_path.is_file() {
-            match recover_agent_with_missing_db(
-                &db_path,
-                &dir_name,
-                active_agent_id,
-                footprint,
-                live_db_handle_count(&db_path) > 0,
-                || is_agent_being_deleted(&dir_name),
-                |path| {
-                    reseed_minimal_persisted_agent_db_if_missing(path, busy_timeout_ms)
-                        .map_err(|error| error.to_string())
-                },
-            ) {
-                Ok(Some(summary)) => summaries.push(summary),
-                Ok(None) => {}
-                Err(_) => {
-                    report_summary_diagnostic("recovery_build_failed", &dir_name);
-                    summaries.push(minimal_agent_summary(
-                        &dir_name,
-                        &db_path,
-                        mtime_ms,
-                        active_agent_id,
-                    ));
-                }
+            if !db_path.is_file() {
+                return Ok(match recover_agent_with_missing_db(
+                    &db_path,
+                    &dir_name,
+                    active_agent_id,
+                    footprint,
+                    live_db_handle_count(&db_path) > 0,
+                    || is_agent_being_deleted(&dir_name),
+                    |path| {
+                        reseed_minimal_persisted_agent_db_if_missing(path, busy_timeout_ms)
+                            .map_err(|error| error.to_string())
+                    },
+                ) {
+                    Ok(summary) => summary,
+                    Err(_) => {
+                        report_summary_diagnostic("recovery_build_failed", &dir_name);
+                        Some(minimal_agent_summary(
+                            &dir_name,
+                            &db_path,
+                            mtime_ms,
+                            active_agent_id,
+                        ))
+                    }
+                });
             }
-            continue;
-        }
 
-        let primary = (|| -> Result<Option<AgentSummary>, String> {
-            let extras = extras_cache.load(
-                &db_path,
-                busy_timeout_ms,
-                &dir_name,
-                mtime_ms,
-            )?;
-            if is_agent_being_deleted(&dir_name) {
-                return Ok(None);
-            }
-            build_summary(
-                Some(&extras),
-                &db_path,
-                &dir_name,
-                mtime_ms,
-                active_agent_id,
-                false,
-                footprint,
-            )
-        })();
-
-        let summary = match primary {
-            Ok(summary) => summary,
-            Err(_) => {
+            let primary = (|| -> Result<Option<AgentSummary>, String> {
+                let owner = open_agent_owner(&dir_name)?;
+                let extras = extras_cache.load(
+                    owner.as_ref(),
+                    &db_path,
+                    busy_timeout_ms,
+                    &dir_name,
+                    mtime_ms,
+                )?;
                 if is_agent_being_deleted(&dir_name) {
-                    None
-                } else {
-                    report_summary_diagnostic("degraded", &dir_name);
-                    match build_summary(
-                        None,
-                        &db_path,
-                        &dir_name,
-                        mtime_ms,
-                        active_agent_id,
-                        true,
-                        footprint,
-                    ) {
-                        Ok(summary) => summary,
-                        Err(_) => {
-                            report_summary_diagnostic("degraded_failed", &dir_name);
-                            Some(minimal_agent_summary(
-                                &dir_name,
-                                &db_path,
-                                mtime_ms,
-                                active_agent_id,
-                            ))
+                    return Ok(None);
+                }
+                build_summary(
+                    Some(&extras),
+                    &db_path,
+                    &dir_name,
+                    mtime_ms,
+                    active_agent_id,
+                    false,
+                    footprint,
+                )
+            })();
+
+            Ok(match primary {
+                Ok(summary) => summary,
+                Err(_) => {
+                    if is_agent_being_deleted(&dir_name) {
+                        None
+                    } else {
+                        report_summary_diagnostic("degraded", &dir_name);
+                        match build_summary(
+                            None,
+                            &db_path,
+                            &dir_name,
+                            mtime_ms,
+                            active_agent_id,
+                            true,
+                            footprint,
+                        ) {
+                            Ok(summary) => summary,
+                            Err(_) => {
+                                report_summary_diagnostic("degraded_failed", &dir_name);
+                                Some(minimal_agent_summary(
+                                    &dir_name,
+                                    &db_path,
+                                    mtime_ms,
+                                    active_agent_id,
+                                ))
+                            }
                         }
                     }
                 }
-            }
-        };
+            })
+        }))?;
         if let Some(summary) = summary {
             summaries.push(summary);
         }
@@ -279,6 +289,7 @@ pub fn summarize_agent_by_id(
     active_agent_id: Option<&str>,
     is_agent_being_deleted: &dyn Fn(&str) -> bool,
     extras_cache: &RosterExtrasCache,
+    owner: Option<&SandAgentDb>,
 ) -> Result<Option<AgentSummary>, String> {
     if is_reserved_session_namespace(agent_id) || is_agent_being_deleted(agent_id) {
         return Ok(None);
@@ -302,6 +313,7 @@ pub fn summarize_agent_by_id(
         );
     }
     let extras = extras_cache.load(
+        owner.ok_or_else(|| "agent db owner is required for an existing session".to_string())?,
         &db_path,
         busy_timeout_ms,
         agent_id,

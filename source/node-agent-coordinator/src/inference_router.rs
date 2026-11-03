@@ -517,6 +517,27 @@ pub fn prepare_agent_inbound_wake_routes(
     }
     if let Some(inbound) = payload.get("inbound").filter(|value| !value.is_null()) {
         send_args["agentWake"]["inbound"] = inbound.clone();
+        if let Some(reply_context) = inbound.get("replyContext") {
+            let context = reply_context.as_object().ok_or_else(|| {
+                Failure::new(
+                    "INFERENCE_AGENT_WAKE_INVALID",
+                    "agent inbound replyContext must be an object",
+                )
+            })?;
+            for field in ["targetId", "quote"] {
+                if context
+                    .get(field)
+                    .and_then(Value::as_str)
+                    .is_none_or(|value| value.trim().is_empty())
+                {
+                    return Err(Failure::new(
+                        "INFERENCE_AGENT_WAKE_INVALID",
+                        format!("agent inbound replyContext requires non-empty {field}"),
+                    ));
+                }
+            }
+            send_args["replyContext"] = reply_context.clone();
+        }
     }
     Ok(vec![CoordinatorAgentWakeRoute {
         agent_id: target_agent_id,
@@ -569,6 +590,34 @@ pub fn configured_inference_provider(settings_path: &Path) -> Option<InferencePr
     .into_iter()
     .flatten()
     .find_map(|value| value.as_str().and_then(InferenceProvider::parse))
+}
+
+/// A cancelled pre-worker admission has no worker terminal to await. Only the
+/// exact Host response for this stream carries that disposition; a malformed
+/// or unrelated response remains a start failure.
+pub fn require_runner_start_acceptance(
+    response: &Value,
+    expected_stream_id: &str,
+) -> Result<(), Failure> {
+    if !expected_stream_id.trim().is_empty()
+        && response.get("streamId").and_then(Value::as_str) == Some(expected_stream_id)
+    {
+        match (
+            response.get("accepted").and_then(Value::as_bool),
+            response.get("cancelled"),
+        ) {
+            (Some(false), Some(Value::Bool(true))) => {
+                return Err(Failure::new(
+                    "INFERENCE_PROVIDER_CANCELLED", "Host Runner was cancelled before start",
+                ));
+            }
+            (Some(true), None | Some(Value::Bool(false))) => return Ok(()),
+            _ => {}
+        }
+    }
+    Err(Failure::new(
+        "INFERENCE_RUNNER_REJECTED", "Host Runner did not accept the routed provider request",
+    ))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

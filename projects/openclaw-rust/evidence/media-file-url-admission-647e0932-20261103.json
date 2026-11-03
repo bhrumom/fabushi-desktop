@@ -1,0 +1,150 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "FUA-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "review_base": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+  "review_base_tree": "686109128a616195e65d1c9018ccd5b0b9d2cc8a",
+  "fixed_upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "scope": "Existing Attachments web-media local file URL authority, conversion and pre-filesystem admission only; no public Gateway registration or local read authority grant.",
+  "source_review": [
+    {
+      "path": "src/media/web-media.ts",
+      "blob": "f48bca504f6fb77c3d094864eb656cb2b1bf25e2",
+      "ranges": [
+        "530-562",
+        "638-680"
+      ],
+      "type": "product caller/control-flow deep read for scoped file URL and local read admission; not whole-file reading"
+    },
+    {
+      "path": "src/media/web-media.file-url.windows.test.ts",
+      "blob": "bdaedcde111ea2880b96d9afa547a9c1d2a36b42",
+      "ranges": [
+        "1-48"
+      ],
+      "type": "complete native-platform test contract read; no upstream test execution"
+    },
+    {
+      "path": "package.json",
+      "blob": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+      "ranges": [
+        "2404-2416"
+      ],
+      "type": "dependency declaration"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "blob": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+      "ranges": [
+        "288-298",
+        "5154-5156"
+      ],
+      "type": "fixed importer version and package integrity"
+    }
+  ],
+  "actual_dependency": {
+    "name": "@openclaw/fs-safe",
+    "version": "0.27.0",
+    "archive_sha256": "02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c",
+    "archive_sri": "sha512-v9RWszhsnswr7kAg/6ZM1fUxtyY1PItj7uBarnQ2UdeTPgDdUZFS5hXIGUdLtNvSty/JEPJvjE3MWqbKbx9dng==",
+    "members": [
+      {
+        "path": "package/dist/local-file-access.js",
+        "bytes": 3135,
+        "sha256": "7530a957ca9d56f56deba8da1dd06be03c894c6f6472bc8571080937b57bfda8"
+      },
+      {
+        "path": "package/package.json",
+        "bytes": 7327,
+        "sha256": "792e20cdae1e959a5f2a7de5122f46ef8b498bd3854c46375e08dce0beb3418f"
+      },
+      {
+        "path": "package/LICENSE",
+        "bytes": 1137,
+        "sha256": "8d703995c48aeb3726ab83f111a10ee696835e096802ee0329ac50216ab9434e"
+      }
+    ],
+    "license": "MIT; packaged LICENSE read and hashed",
+    "review": "actual advanced export and local-file-access.js file URL/network contract read; generated dependency output contract/use review, not full package/generator reading or recursive closure",
+    "disposition": "Reimplement this local file URL admission behavior in the existing Rust owner; no Node runtime/native helper/package is added."
+  },
+  "target_dependency": {
+    "name": "url",
+    "version": "2.5.8",
+    "crate_checksum": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
+    "locks": [
+      "source/host/Cargo.lock",
+      "source/host/app/Cargo.lock"
+    ],
+    "version_source_commit": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce",
+    "version_source_blob": "f1558682b6287d0cba1cd93d84cee6cf6cbeaf44",
+    "read_ranges": [
+      "2694-2757",
+      "3060-3113",
+      "3116-3191"
+    ],
+    "limitation": "Version-matched source contract inspected; exact crate archive not acquired in this batch; no dependency change."
+  },
+  "causal_finding": {
+    "windows": "A nonlocal host other than the hardcoded attacker prefix converts directly to UNC and could reach root canonicalization or metadata/open before refusal. No live share or authentication effect is claimed.",
+    "unix": "Rejected URL conversion was recovered by stripping slashes and treating its authority as a local first path component; the new real fixture tests an allowed local alias without network access."
+  },
+  "production_boundary": {
+    "entry": "AttachmentsService::dispatch_gateway loadWebMedia -> load_web_media",
+    "owner": "source/host/src/extensions/attachments/web_media.rs",
+    "admission": "Structural URL scheme/host/path checks and successful native conversion; final resolved-path guard; private callback only after those checks.",
+    "effects": "The callback owns the existing root canonicalization, bounded read, byte cap, HTML policy and image finalization; no public injected reader and no new persistent state.",
+    "error_and_recovery": "Typed invalid-file-url/network-path-not-allowed before entry; local-body errors propagated without retry; later valid calls remain usable.",
+    "exposure": "Finite public Gateway registry excludes loadWebMedia; direct service invocation is not HTTP/renderer/Runner/channel acceptance."
+  },
+  "oracles": {
+    "owner": [
+      "remote_file_authorities_never_enter_local_reader",
+      "invalid_file_urls_never_enter_local_reader",
+      "network_paths_never_enter_local_reader",
+      "local_path_enters_reader_once_with_original_options",
+      "local_reader_error_is_returned_without_retry"
+    ],
+    "windows_extra": "verbatim_drive_workspace_enters_local_reader",
+    "integration": [
+      "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+      "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+      "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed"
+    ],
+    "unix_extra": "test_ocrm_web_media_file_url_authority_alias_is_not_read",
+    "counter_limit": "Zero callback entries plus source-established purity, not syscall interception. All remote Windows negatives remain in pure conversion or private injected boundary; no actual network share is contacted.",
+    "qualification": "Existing exact-name/summary/exit oracle and its 13 synthetic controls retained unchanged."
+  },
+  "validation": {
+    "status": "pending immutable source review and exact-H Actions",
+    "source_selected_counts_not_results": {
+      "Linux": 79,
+      "macOS": 79,
+      "Windows": 76
+    },
+    "capture": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "local_or_htch_executable_validation": false
+  },
+  "unchanged_acceptance": {
+    "unit": "OCRM-UNIT-MEDIA-010",
+    "responsibility": "OCRM-RESP-MEDIA-WEB-PIPELINE-001",
+    "verification": "not-run",
+    "wiring": "not-wired",
+    "acceptance": "pending",
+    "historical_read_facts": "preserved without upgrading the current scoped dependency-contract review",
+    "completion_flags": "all eight false, unchanged"
+  },
+  "open": [
+    "exact-H native execution and review convergence",
+    "default/session roots, actual safe-reader capability and sandbox boolean bypass",
+    "file identity/concurrent replacement/read publication and generated origin",
+    "full Node/Rust file URL/filesystem alias behavior and complete dependencies/legal closure",
+    "actual public Gateway/UI/Runner/channel consumers",
+    "full G01-G12/AC01-AC24 and independent ACCEPT for final shipping artifacts"
+  ]
+}

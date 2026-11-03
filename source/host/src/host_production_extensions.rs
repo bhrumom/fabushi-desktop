@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 use std::thread;
 
 use crate::host_paths::get_sand_root_dir;
@@ -57,6 +57,9 @@ use crate::extensions::browser_ua::{
 use crate::extensions::cloud_agents::extension::{
     CloudAgentsExtension, start_cloud_agents_extension,
 };
+use crate::extensions::cloud_workers::extension::{
+    CloudWorkerProvisioningExtension, start_cloud_worker_provisioning_extension,
+};
 use crate::extensions::content_search::extension::{
     ProductionContentSearchExtension, start_production_content_search_extension,
 };
@@ -99,7 +102,7 @@ use crate::extensions::mcp::mcp_service::{
     McpHostService, McpManagerBackend, PluginSkillsPort,
 };
 use crate::extensions::mcp::plugin_skills::{
-    PluginSkillsLoader, SandPluginSkillsService,
+    PluginSkillsLoader, PluginSkillsSyncEvent, SandPluginSkillsService,
 };
 use crate::extensions::mcp::production::{
     LegacyMcpAuthCleanupOutcome, RealPluginSkillsPolling,
@@ -107,6 +110,18 @@ use crate::extensions::mcp::production::{
 };
 use crate::extensions::local_exec::extension::{
     HostLocalExecExtension, start_local_exec_extension,
+};
+use crate::extensions::plugins::compat::validate_all_records;
+use crate::extensions::plugin_sdk::channel_entry::{
+    BundledChannelEntryContract, PluginRegistrationMode,
+};
+use crate::extensions::plugins::capability_catalog::{
+    CapabilityProviderEntry, PluginCapabilityCatalog, PluginOrigin,
+    CAPABILITY_FAMILY_WORKER_PROVIDERS,
+};
+use crate::extensions::plugins::installed_index_store::BundledInstallGuard;
+use crate::connectors::channel_delivery::{
+    ChannelDeliveryPort, ChannelDeliveryRouter, HostChannelDelivery,
 };
 use crate::extensions::local_tool_permission::extension::{
     HostLocalToolPermissionExtension, start_local_tool_permission_extension,
@@ -220,6 +235,7 @@ pub const CURRENT_SHIPPING_PRODUCTION_EXTENSION_IDS: &[HostExtensionId] = &[
     HostExtensionId::Mcp,
     HostExtensionId::BoxStoreSync,
     HostExtensionId::CloudAgents,
+    HostExtensionId::CloudWorkers,
     HostExtensionId::ActionAudit,
     HostExtensionId::HostUpgrade,
     HostExtensionId::AutoReview,
@@ -451,6 +467,119 @@ fn unpin_structured_log_domain_reporters() {
     pin_host_diagnostics_reporter(None);
 }
 
+/// Retains composition references only. Admission facts stay in the existing
+/// Plugin Skills owner; an escaped Session reader must never be rebound by
+/// mistaking a stopped MCP runtime for an owner that never existed.
+#[derive(Default)]
+struct PluginSkillsBinding {
+    latest: Option<Arc<SandPluginSkillsService>>,
+    session: Option<Weak<ProductionSessionWorkers>>,
+}
+
+impl PluginSkillsBinding {
+    fn session_root(agents_root: &Path) -> Result<&Path, String> {
+        agents_root.parent()
+            .ok_or_else(|| "production Session agents root has no SAND root parent".to_string())
+    }
+
+    fn register_session(&mut self, store: &Arc<ProductionSessionWorkers>) -> Result<(), String> {
+        if let Some(registered) = &self.session {
+            let registered = registered.upgrade()
+                .ok_or_else(|| "production Plugin Skills Session binding is unavailable".to_string())?;
+            if !Arc::ptr_eq(&registered, store) {
+                return Err("production Plugin Skills is already bound to another Session owner".into());
+            }
+        }
+        let root = Self::session_root(store.agents_root())?;
+        if let Some(service) = &self.latest {
+            if service.sand_root_dir() != root {
+                return Err("production Plugin Skills root differs from the Session SAND root".into());
+            }
+            store.bind_plugin_skills_admission(service.admission_reader())?;
+        }
+        self.session = Some(Arc::downgrade(store));
+        Ok(())
+    }
+
+    fn session_for_root(
+        &self,
+        sand_root_dir: &Path,
+    ) -> Result<Option<Arc<ProductionSessionWorkers>>, String> {
+        let session = self.session.as_ref().map(|registered| {
+            registered.upgrade()
+                .ok_or_else(|| "production Plugin Skills Session binding is unavailable".to_string())
+        }).transpose()?;
+        if let Some(store) = &session {
+            if Self::session_root(store.agents_root())? != sand_root_dir {
+                return Err("production MCP root differs from the Session SAND root".into());
+            }
+        }
+        Ok(session)
+    }
+
+    fn prepare_service(
+        &mut self,
+        sand_root_dir: &Path,
+        loader: Arc<dyn PluginSkillsLoader>,
+        reporter: Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>,
+        prepared: SandPluginSkillsService,
+    ) -> Result<Arc<SandPluginSkillsService>, String> {
+        // Recovery was read outside this binding lock. Repeat root/currentness
+        // checks after that I/O; a concurrently installed same-root owner wins
+        // over the prepared disk snapshot and retains its shared reader/facts.
+        let session = self.session_for_root(sand_root_dir)?;
+        // Root checks precede the one-shot retirement. Handoff takes old P/S
+        // and performs no I/O or external callback while this binding is held.
+        let service = match &self.latest {
+            Some(previous) if previous.sand_root_dir() == sand_root_dir => {
+                previous.successor_with_loader(loader)?
+            }
+            Some(previous) => {
+                // A registered Session cannot reach this different-root arm.
+                previous.retire_for_replacement()?;
+                prepared
+            }
+            None => prepared,
+        };
+        let service = Arc::new(service.with_reporter(reporter));
+        // Keep the newest owner even if binding refuses. A retry must never
+        // fork an already-consumed predecessor or drop its live refusals.
+        self.latest = Some(Arc::clone(&service));
+        if let Some(store) = session {
+            store.bind_plugin_skills_admission(service.admission_reader())?;
+        }
+        Ok(service)
+    }
+}
+
+fn register_plugin_skills_session(
+    binding: &Mutex<PluginSkillsBinding>,
+    store: &Arc<ProductionSessionWorkers>,
+) -> Result<(), String> {
+    binding.lock()
+        .map_err(|_| "production Plugin Skills binding lock poisoned".to_string())?
+        .register_session(store)
+}
+
+fn prepare_plugin_skills_service(
+    binding: &Mutex<PluginSkillsBinding>,
+    sand_root_dir: &Path,
+    loader: Arc<dyn PluginSkillsLoader>,
+    reporter: Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>,
+) -> Result<Arc<SandPluginSkillsService>, String> {
+    {
+        let current = binding.lock()
+            .map_err(|_| "production Plugin Skills binding lock poisoned".to_string())?;
+        // Reject a known wrong root before filesystem reads. This short check
+        // does not replace the repeated check at installation after recovery.
+        current.session_for_root(sand_root_dir)?;
+    }
+    let prepared = SandPluginSkillsService::new(sand_root_dir, Arc::clone(&loader));
+    binding.lock()
+        .map_err(|_| "production Plugin Skills binding lock poisoned".to_string())?
+        .prepare_service(sand_root_dir, loader, reporter, prepared)
+}
+
 pub struct ProductionHostExtensions {
     pub telemetry: HostTelemetryExtension,
     pub auth: Arc<HostAuthExtension>,
@@ -476,6 +605,13 @@ pub struct ProductionHostExtensions {
     pub webauthn_proxy: Arc<HostWebAuthnProxyExtension>,
     pub action_audit: ActionAuditExtension,
     pub cloud_agents: CloudAgentsExtension,
+    pub cloud_workers: CloudWorkerProvisioningExtension,
+    /// Canonical plugin/channel capability catalog shared by production registration paths.
+    pub plugin_capability_catalog: Arc<PluginCapabilityCatalog>,
+    /// Canonical channel delivery boundary consumed by Gateway and channel adapters.
+    pub channel_delivery: HostChannelDelivery,
+    /// Provider registration surface behind the canonical channel delivery boundary.
+    channel_delivery_router: ChannelDeliveryRouter,
     pub turn_execution: Arc<Mutex<TurnExecutionRegistry>>,
     session: Mutex<Option<SessionExtension>>,
     auto_review: Mutex<Option<Arc<HostAutoReviewExtension>>>,
@@ -485,11 +621,59 @@ pub struct ProductionHostExtensions {
     teach_recording: Mutex<Option<TeachRecordingExtension<SandTeachRecordingService>>>,
     backend_url: String,
     mcp: Mutex<Option<McpExtensionRuntime>>,
+    plugin_skills_binding: Mutex<PluginSkillsBinding>,
     box_store_sync: Mutex<Option<BoxStoreSyncExtension<ProductionBoxStoreSyncService>>>,
     state_backstop: Mutex<Option<HostStateBackstopExtension>>,
     automations: Mutex<Option<Arc<ProductionAutomationsLifecycle>>>,
     // Keep the Experiments lifecycle owner last so dependent extensions settle first.
     _statsig_bootstrap: ProductionStatsigBootstrapRuntime,
+}
+
+/// Publishes bundled channel discoverability to the Host-owned catalog.
+///
+/// This is deliberately capability metadata only: it does not create a
+/// transport, credentials, session state, or delivery provider. A channel
+/// adapter must still register a real `ChannelDeliveryPort` before delivery
+/// can succeed.
+fn register_bundled_channel_capabilities(catalog: &PluginCapabilityCatalog) -> Result<(), String> {
+    for channel_id in BundledInstallGuard::IMMUTABLE_BUNDLED_PLUGINS {
+        let label = match *channel_id {
+            "telegram" => "Telegram",
+            "discord" => "Discord",
+            "slack" => "Slack",
+            "whatsapp" => "WhatsApp",
+            "signal" => "Signal",
+            "imessage" => "iMessage",
+            _ => *channel_id,
+        };
+        let entry = BundledChannelEntryContract::new(
+            *channel_id,
+            label,
+            "Bundled channel capability metadata",
+        );
+        catalog.register_bundled_channel_entry(
+            &entry,
+            PluginOrigin::Bundled,
+            None,
+            PluginRegistrationMode::Capabilities,
+        )?;
+    }
+    Ok(())
+}
+
+/// Registers the bundled Crabbox worker-provider contract as capability
+/// metadata only. This mirrors the upstream plugin manifest's
+/// `workerProviders: ["crabbox"]` declaration without creating a provider
+/// process, resolving credentials, enrolling a device, or changing worker
+/// readiness. The Cloud Worker owner remains the sole lifecycle/state owner.
+fn register_bundled_worker_capabilities(catalog: &PluginCapabilityCatalog) {
+    catalog.register_capability(CapabilityProviderEntry {
+        family: CAPABILITY_FAMILY_WORKER_PROVIDERS.into(),
+        provider_id: "crabbox".into(),
+        plugin_id: "crabbox".into(),
+        label: Some("Crabbox Worker Provider".into()),
+        aliases: Vec::new(),
+    });
 }
 
 impl Drop for ProductionHostExtensions {
@@ -510,6 +694,12 @@ pub fn start_production_host_extensions(
     app_data_dir: &Path,
     events: SandHostEventBus,
 ) -> Result<ProductionHostExtensions, String> {
+    validate_all_records().map_err(|errors| {
+        format!(
+            "plugin compatibility registry failed production validation: {}",
+            errors.join("; ")
+        )
+    })?;
     let auth_options = HostAuthServiceOptions::production(|message| {
         eprintln!("mahayana-host-auth {message}");
     })
@@ -594,6 +784,10 @@ pub fn start_production_host_extensions(
         Arc::clone(&auth),
         production_cloud_agent_trace_converter(),
     );
+    let cloud_workers = start_cloud_worker_provisioning_extension(
+        app_data_dir.join("cloud-workers").join("state.json"),
+    )
+    .map_err(|error| format!("failed to start CloudWorkers extension: {error}"))?;
     let notify_bus = start_notify_bus_extension(
         Arc::clone(&auth),
         Arc::clone(&experiments),
@@ -646,6 +840,11 @@ pub fn start_production_host_extensions(
 
     let (_, turn_execution_registry) = turn_execution_extension();
     let turn_execution = Arc::new(Mutex::new(turn_execution_registry));
+    let plugin_capability_catalog = Arc::new(PluginCapabilityCatalog::new());
+    register_bundled_channel_capabilities(&plugin_capability_catalog)?;
+    register_bundled_worker_capabilities(&plugin_capability_catalog);
+    let channel_delivery_router = ChannelDeliveryRouter::new();
+    let channel_delivery = HostChannelDelivery::new(Arc::new(channel_delivery_router.clone()));
 
     pin_structured_log_domain_reporters(telemetry.logs.clone());
 
@@ -672,6 +871,10 @@ pub fn start_production_host_extensions(
         webauthn_proxy,
         action_audit,
         cloud_agents,
+        cloud_workers,
+        plugin_capability_catalog,
+        channel_delivery,
+        channel_delivery_router,
         turn_execution,
         session: Mutex::new(None),
         auto_review: Mutex::new(None),
@@ -681,6 +884,7 @@ pub fn start_production_host_extensions(
         teach_recording: Mutex::new(None),
         backend_url,
         mcp: Mutex::new(None),
+        plugin_skills_binding: Mutex::new(PluginSkillsBinding::default()),
         box_store_sync: Mutex::new(None),
         state_backstop: Mutex::new(None),
         automations: Mutex::new(None),
@@ -690,6 +894,56 @@ pub fn start_production_host_extensions(
 
 
 impl ProductionHostExtensions {
+    /// Registers a provider port only after the channel is present in the
+    /// canonical plugin capability catalog. This keeps plugin discovery and
+    /// delivery registration on one Host-owned boundary.
+    pub fn register_channel_delivery_provider(
+        &self,
+        channel_id: &str,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        self.channel_delivery_router.register(channel_id, port)
+    }
+
+    pub fn replace_channel_delivery_provider(
+        &self,
+        channel_id: &str,
+        port: Arc<dyn ChannelDeliveryPort>,
+    ) -> Result<(), String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        self.channel_delivery_router.replace(channel_id, port)
+    }
+
+    pub fn unregister_channel_delivery_provider(&self, channel_id: &str) -> Result<bool, String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        Ok(self.channel_delivery_router.unregister(channel_id))
+    }
+
+    /// Revokes a bundled channel's provider and discovery metadata together.
+    ///
+    /// Provider revocation happens first so no new delivery can be admitted
+    /// after the capability entry is removed. The catalog gate rejects unknown
+    /// channels and prevents this lifecycle operation from becoming a second
+    /// plugin registry.
+    pub fn revoke_bundled_channel(&self, channel_id: &str) -> Result<bool, String> {
+        if self.plugin_capability_catalog.get_channel(channel_id).is_none() {
+            return Err(format!("channel is not registered: {channel_id}"));
+        }
+        let provider_removed = self.channel_delivery_router.unregister(channel_id);
+        let catalog_removed = self
+            .plugin_capability_catalog
+            .unregister_channel(channel_id)
+            .is_some();
+        Ok(provider_removed || catalog_removed)
+    }
+
     pub fn stop_structured_log_domain_reporters(&self) {
         unpin_structured_log_domain_reporters();
     }
@@ -851,6 +1105,7 @@ impl ProductionHostExtensions {
         if slot.is_some() {
             return Err("production Session runtime is already started".into());
         }
+        register_plugin_skills_session(&self.plugin_skills_binding, &store)?;
         let extension = start_session_extension(
             Arc::clone(&self.experiments),
             store,
@@ -1089,20 +1344,19 @@ impl ProductionHostExtensions {
         let loader: Arc<dyn PluginSkillsLoader> =
             Arc::new(CoordinatorPluginSkillsLoader::new(relay));
         let plugin_sync_logs = self.telemetry.logs.clone();
-        let plugin_skills = Arc::new(
-            SandPluginSkillsService::new(sand_root_dir.to_path_buf(), loader).with_reporter(
-                Arc::new(move |report| {
-                    let _ = plugin_sync_logs.report_plugin_skills_sync(
-                        &report.trigger,
-                        &report.outcome,
-                        report.changed,
-                        report.skill_count,
-                        report.error_class.as_deref(),
-                        report.duration_ms,
-                    );
-                }),
-            ),
-        );
+        let reporter: Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync> = Arc::new(move |report| {
+            let _ = plugin_sync_logs.report_plugin_skills_sync(
+                &report.trigger,
+                &report.outcome,
+                report.changed,
+                report.skill_count,
+                report.error_class.as_deref(),
+                report.duration_ms,
+            );
+        });
+        let plugin_skills = prepare_plugin_skills_service(
+            &self.plugin_skills_binding, sand_root_dir, loader, reporter,
+        )?;
         let plugin_port: Arc<dyn PluginSkillsPort> = plugin_skills.clone();
         let backend_for_sweep = Arc::clone(&backend);
         let service = Arc::new(McpHostService::new(backend, Some(plugin_port)));
@@ -1304,6 +1558,25 @@ impl ProductionHostExtensions {
         Ok(slot.as_ref().map(|extension| extension.api()))
     }
 
+    pub fn state_backstop_is_enabled(&self) -> Result<bool, String> {
+        let slot = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?;
+        Ok(slot.as_ref().is_some_and(HostStateBackstopExtension::is_enabled))
+    }
+
+    pub fn schedule_state_backstop_snapshot(&self, agent_id: &str) -> Result<(), String> {
+        let slot = self
+            .state_backstop
+            .lock()
+            .map_err(|_| "production StateBackstop runtime lock poisoned".to_string())?;
+        if let Some(extension) = slot.as_ref() {
+            extension.schedule_snapshot(agent_id.to_string());
+        }
+        Ok(())
+    }
+
     pub fn stop_box_store_sync(&self) -> Result<(), String> {
         let state_backstop = self
             .state_backstop
@@ -1335,7 +1608,8 @@ pub struct ProductionHostBoxExtensions {
 }
 
 impl ProductionHostBoxExtensions {
-    pub fn stop(&self) {
+    pub fn stop(&mut self) {
+        self.attachments.stop_lifecycle_worker();
         self.secrets.stop();
         self.forever_box.dispose();
     }
@@ -1344,7 +1618,7 @@ impl ProductionHostBoxExtensions {
 pub fn start_production_host_box_extensions(
     core: &ProductionHostExtensions,
     environment: ProductionBoxEnvironment,
-) -> ProductionHostBoxExtensions {
+) -> Result<ProductionHostBoxExtensions, String> {
     let lifecycle: Arc<dyn ForeverBoxLifecycle> = core.box_lifecycle.clone();
     let forever_box = start_forever_box_extension_with_telemetry(
         environment,
@@ -1359,14 +1633,500 @@ pub fn start_production_host_box_extensions(
         Some(Arc::new(move |diagnostic| {
             let _ = attachment_logs.report_host_extension_diagnostic(&diagnostic);
         })),
-    );
+    )?;
     let secrets = Arc::new(start_secrets_extension(
         Arc::clone(&forever_box),
         production_secrets_log(),
     ));
-    ProductionHostBoxExtensions {
+    Ok(ProductionHostBoxExtensions {
         forever_box,
         attachments,
         secrets,
+    })
+}
+
+#[cfg(test)]
+mod plugin_skills_binding_tests {
+    use super::*;
+    use std::collections::HashMap;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use crate::extensions::mcp::extension::{
+        AuthRenewalEvent, McpHostServicePort, PollingHandle,
+    };
+    use crate::extensions::mcp::plugin_skills::{
+        InstalledPlugin, InstalledSkill, ListedCacheKey, LoadedPlugins, PluginIdentifier,
+    };
+    use crate::extensions::mcp::plugin_skills_cache::{
+        PluginAuthBlock, get_plugin_skills_cache_path, get_plugin_skills_dir,
+    };
+
+    struct Profile(PathBuf);
+    impl Profile {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!("plugin-host-binding-{}", uuid::Uuid::new_v4()));
+            fs::create_dir_all(&root).unwrap();
+            Self(root)
+        }
+        fn sand(&self) -> PathBuf { self.0.join("sand-data") }
+        fn app_data(&self) -> PathBuf { self.0.join("fabushi-runtime") }
+        fn loaded(&self) -> LoadedPlugins {
+            let install = self.sand().join("plugins/cache/market/plugin");
+            fs::create_dir_all(install.join("skills/host-bound")).unwrap();
+            fs::write(install.join("skills/host-bound/SKILL.md"),
+                "---\nname: Host bound skill\ndescription: Actual Session root\n---\nBound workflow body\n").unwrap();
+            LoadedPlugins {
+                plugins: vec![InstalledPlugin {
+                    identifier: PluginIdentifier {
+                        source: "cursor-third-party".into(),
+                        name: "plugin".into(),
+                        plugin_db_id: Some("9".into()),
+                        version: Some("v1".into()),
+                    },
+                    display_name: None,
+                    load_error: None,
+                    install_path: install,
+                    skills: vec![InstalledSkill {
+                        name: Some("Host bound skill".into()),
+                        description: Some("Actual Session root".into()),
+                        path: "skills/host-bound/SKILL.md".into(),
+                    }],
+                }],
+                auth_blocked: vec![],
+                listed_plugin_ids: vec!["9".into()],
+                listed_cache_keys: vec![ListedCacheKey {
+                    marketplace_slug: "market".into(), plugin_id: "plugin".into(),
+                }],
+                publisher_facts: HashMap::new(),
+                current_user_id: Some(12),
+            }
+        }
+        fn denied(&self) -> LoadedPlugins {
+            let mut loaded = self.loaded();
+            loaded.plugins.clear();
+            loaded.auth_blocked.push(PluginAuthBlock {
+                plugin_id: "9".into(), plugin_name: "plugin".into(), marketplace_name: None,
+            });
+            loaded
+        }
+        fn sessions(&self) -> Arc<ProductionSessionWorkers> {
+            Arc::new(ProductionSessionWorkers::with_agents_root(self.sand().join("agents"), 500))
+        }
+        fn cache_path(&self) -> PathBuf {
+            get_plugin_skills_cache_path(get_plugin_skills_dir(self.sand()))
+        }
+    }
+    impl Drop for Profile {
+        fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); }
+    }
+
+    struct MutableLoader {
+        value: Mutex<LoadedPlugins>,
+        calls: AtomicUsize,
+    }
+    impl MutableLoader {
+        fn new(value: LoadedPlugins) -> Arc<Self> {
+            Arc::new(Self { value: Mutex::new(value), calls: AtomicUsize::new(0) })
+        }
+        fn set(&self, value: LoadedPlugins) { *self.value.lock().unwrap() = value; }
+    }
+    impl PluginSkillsLoader for MutableLoader {
+        fn load(&self) -> Result<LoadedPlugins, String> {
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            Ok(self.value.lock().unwrap().clone())
+        }
+    }
+    fn no_reporter() -> Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync> {
+        Arc::new(|_| {})
+    }
+    fn prepare(
+        binding: &Mutex<PluginSkillsBinding>, profile: &Profile, loader: Arc<MutableLoader>,
+    ) -> Result<Arc<SandPluginSkillsService>, String> {
+        prepare_plugin_skills_service(binding, &profile.sand(), loader, no_reporter())
+    }
+
+    #[test]
+    fn startup_orders_bind_preopened_session_stores_to_the_actual_sand_root() {
+        for session_first in [true, false] {
+            let profile = Profile::new();
+            let sessions = profile.sessions();
+            let record = sessions.materialize_new_session(None, "user", None).unwrap();
+            let old_store = sessions.open_workflow_store(&record.id).unwrap();
+            let binding = Mutex::new(PluginSkillsBinding::default());
+            if session_first { register_plugin_skills_session(&binding, &sessions).unwrap(); }
+            let loader = MutableLoader::new(profile.loaded());
+            let obsolete = profile.sand().join("plugins/cache/market/obsolete/SKILL.md");
+            let separate = profile.app_data().join("plugins/cache/market/obsolete/SKILL.md");
+            fs::create_dir_all(obsolete.parent().unwrap()).unwrap();
+            fs::create_dir_all(separate.parent().unwrap()).unwrap();
+            fs::write(&obsolete, "old SAND materialization").unwrap();
+            fs::write(&separate, "unrelated app-data must remain").unwrap();
+            let service = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+            let rows = service.sync("startup").unwrap();
+            assert_eq!(rows.len(), 1);
+            assert_eq!(service.sand_root_dir(), profile.sand());
+            assert!(profile.cache_path().is_file());
+            assert!(!obsolete.exists(), "the actual owner must prune in its selected SAND root");
+            assert_eq!(fs::read_to_string(&separate).unwrap(), "unrelated app-data must remain");
+            assert!(!get_plugin_skills_cache_path(get_plugin_skills_dir(profile.app_data())).exists());
+            if !session_first { register_plugin_skills_session(&binding, &sessions).unwrap(); }
+            register_plugin_skills_session(&binding, &sessions).unwrap();
+            let id = &rows[0].id;
+            assert!(old_store.get(id).unwrap().body.contains("Bound workflow body"));
+            loader.set(profile.denied());
+            assert!(service.sync("current-denial").unwrap().is_empty());
+            assert!(service.admission_reader().is_denied("9"));
+            assert!(old_store.get(id).is_none(), "store opened before binding must use its live delegate");
+            assert!(sessions.open_workflow_store(&record.id).unwrap().get(id).is_none());
+            assert_eq!(loader.calls.load(Ordering::SeqCst), 2);
+            service.dispose();
+        }
+    }
+
+    struct DormantAuth;
+    impl AuthRenewalPort for DormantAuth {
+        fn peek_access_token(&self) -> Option<String> { None }
+        fn subscribe_to_renewal(
+            &self, _: Arc<dyn Fn(AuthRenewalEvent) + Send + Sync>,
+        ) -> Box<dyn FnOnce() + Send> { Box::new(|| {}) }
+    }
+    struct NeverPoll;
+    impl PollingPort for NeverPoll {
+        fn start(&self, _: Arc<dyn Fn() + Send + Sync>) -> Box<dyn PollingHandle> {
+            panic!("an unauthenticated dormant runtime must not poll");
+        }
+    }
+    struct DisposalProbe(Arc<AtomicUsize>);
+    impl McpHostServicePort for DisposalProbe {
+        fn dispose(&self) -> Result<(), String> {
+            self.0.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn same_root_handoff_retains_failed_refusal_across_a_delayed_old_runtime_stop() {
+        let profile = Profile::new();
+        let sessions = profile.sessions();
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let old_store = sessions.open_workflow_store(&record.id).unwrap();
+        let loader = MutableLoader::new(profile.loaded());
+        let cache_dir = get_plugin_skills_dir(profile.sand());
+        let samples = Arc::new(AtomicUsize::new(0));
+        let clock_samples = Arc::clone(&samples);
+        // Existing production clock callback reaches the second pass's real
+        // pre-rename boundary after seed/start/serialization samples.
+        let previous = Arc::new(SandPluginSkillsService::new(profile.sand(), loader.clone())
+            .with_now(Arc::new(move || {
+                if clock_samples.fetch_add(1, Ordering::SeqCst) == 5 {
+                    let staged = fs::read_dir(&cache_dir).unwrap().map(Result::unwrap)
+                        .filter(|entry| entry.file_name().to_string_lossy().ends_with(".tmp"))
+                        .map(|entry| entry.path()).collect::<Vec<_>>();
+                    assert_eq!(staged.len(), 1, "remove only this isolated pass's owned stage");
+                    fs::remove_file(&staged[0]).unwrap();
+                }
+                1_000
+            })));
+        let binding = Mutex::new(PluginSkillsBinding {
+            latest: Some(Arc::clone(&previous)), session: None,
+        });
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let rows = previous.sync("seed").unwrap();
+        let id = rows[0].id.clone();
+        assert!(old_store.get(&id).is_some());
+        let old_bytes = fs::read(profile.cache_path()).unwrap();
+        loader.set(profile.denied());
+        assert!(previous.sync("failed-denial-publication").is_err());
+        assert_eq!(fs::read(profile.cache_path()).unwrap(), old_bytes);
+        assert!(old_store.get(&id).is_none());
+        let reader = previous.admission_reader();
+        assert!(reader.is_denied("9"));
+
+        let disposed = Arc::new(AtomicUsize::new(0));
+        let old_runtime = McpExtensionRuntime::new(
+            PluginSkillsAuthenticatedStartup::start(
+                Arc::new(DormantAuth), previous.clone(), Arc::new(NeverPoll), None,
+            ),
+            Arc::new(DisposalProbe(Arc::clone(&disposed))), Arc::new(()),
+        );
+        let mut unresolved = profile.loaded();
+        unresolved.plugins.clear();
+        let next_loader = MutableLoader::new(unresolved);
+        let successor = prepare(&binding, &profile, Arc::clone(&next_loader)).unwrap();
+        assert!(Arc::ptr_eq(&reader, &successor.admission_reader()));
+        assert!(previous.successor_with_loader(next_loader.clone()).is_err(),
+            "the consumed predecessor cannot fork a second writer");
+        old_runtime.stop().unwrap();
+        old_runtime.stop().unwrap();
+        assert_eq!(disposed.load(Ordering::SeqCst), 1);
+        assert!(successor.sync("partial-after-old-stop").unwrap().is_empty());
+        assert!(reader.is_denied("9"));
+        assert!(old_store.get(&id).is_none());
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 2);
+
+        next_loader.set(profile.loaded());
+        assert_eq!(successor.sync("fresh-committed-success").unwrap().len(), 1);
+        assert!(!reader.is_denied("9"));
+        assert!(old_store.get(&id).is_some());
+        previous.dispose();
+        assert_eq!(successor.sync("still-active").unwrap().len(), 1,
+            "late old disposal cannot dispose the successor");
+        assert_eq!(next_loader.calls.load(Ordering::SeqCst), 3);
+    }
+
+    #[test]
+    fn registered_root_mismatch_and_expired_session_cannot_retire_or_replace_the_owner() {
+        let profile = Profile::new();
+        let other = Profile::new();
+        let sessions = profile.sessions();
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let escaped_store = sessions.open_workflow_store(&record.id).unwrap();
+        let weak = Arc::downgrade(&sessions);
+        let binding = Mutex::new(PluginSkillsBinding::default());
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let loader = MutableLoader::new(profile.loaded());
+        let owner = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+        let wrong_loader = MutableLoader::new(other.loaded());
+        let error = prepare(&binding, &other, Arc::clone(&wrong_loader)).err().unwrap();
+        assert!(error.contains("root differs"));
+        assert_eq!(wrong_loader.calls.load(Ordering::SeqCst), 0);
+        assert!(Arc::ptr_eq(binding.lock().unwrap().latest.as_ref().unwrap(), &owner));
+        assert!(register_plugin_skills_session(&binding, &other.sessions()).is_err());
+        let rows = owner.sync("old-owner-still-active").unwrap();
+        assert!(escaped_store.get(&rows[0].id).is_some());
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+        drop(sessions);
+        assert!(weak.upgrade().is_none());
+        assert!(prepare(&binding, &other, wrong_loader).err().unwrap().contains("unavailable"));
+        assert!(register_plugin_skills_session(&binding, &profile.sessions())
+            .unwrap_err().contains("unavailable"));
+        assert!(Arc::ptr_eq(binding.lock().unwrap().latest.as_ref().unwrap(), &owner));
+        assert_eq!(owner.sync("still-owned-after-expiry").unwrap().len(), 1);
+        assert!(PluginSkillsBinding::session_root(Path::new("")).is_err());
+        assert_eq!(PluginSkillsBinding::session_root(&profile.sand().join("agents")).unwrap(), profile.sand());
+    }
+
+    #[test]
+    fn unbound_different_root_replacement_keeps_old_refusals_separate() {
+        let a = Profile::new();
+        let b = Profile::new();
+        let binding = Mutex::new(PluginSkillsBinding::default());
+        let old = prepare(&binding, &a, MutableLoader::new(a.denied())).unwrap();
+        old.sync("deny-a").unwrap();
+        let old_reader = old.admission_reader();
+        assert!(old_reader.is_denied("9"));
+        let next = prepare(&binding, &b, MutableLoader::new(b.loaded())).unwrap();
+        assert!(!Arc::ptr_eq(&old_reader, &next.admission_reader()));
+        let rows = next.sync("allow-b").unwrap();
+        assert_eq!(rows.len(), 1);
+        assert!(old_reader.is_denied("9"), "success in B cannot release A's retained refusal");
+        assert!(old.retire_for_replacement().is_err());
+        let sessions_b = b.sessions();
+        let record = sessions_b.materialize_new_session(None, "user", None).unwrap();
+        let store_b = sessions_b.open_workflow_store(&record.id).unwrap();
+        register_plugin_skills_session(&binding, &sessions_b).unwrap();
+        assert!(store_b.get(&rows[0].id).is_some());
+        assert!(register_plugin_skills_session(&binding, &a.sessions()).is_err());
+        assert!(Arc::ptr_eq(binding.lock().unwrap().latest.as_ref().unwrap(), &next));
+    }
+
+    #[test]
+    fn failed_reader_binding_keeps_the_newest_one_shot_owner_for_the_next_attempt() {
+        let profile = Profile::new();
+        let sessions = profile.sessions();
+        let unrelated = SandPluginSkillsService::new(profile.sand(), MutableLoader::new(profile.loaded()));
+        sessions.bind_plugin_skills_admission(unrelated.admission_reader()).unwrap();
+        let binding = Mutex::new(PluginSkillsBinding::default());
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let loader = MutableLoader::new(profile.loaded());
+        assert!(prepare(&binding, &profile, Arc::clone(&loader)).is_err());
+        let first = binding.lock().unwrap().latest.clone().expect("retain constructed owner before bind");
+        let first_reader = first.admission_reader();
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
+        assert!(prepare(&binding, &profile, Arc::clone(&loader)).is_err());
+        let second = binding.lock().unwrap().latest.clone().unwrap();
+        assert!(!Arc::ptr_eq(&first, &second));
+        assert!(Arc::ptr_eq(&first_reader, &second.admission_reader()));
+        assert!(first.successor_with_loader(loader.clone()).is_err());
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 0,
+            "a failed binding cannot start loading or authenticated polling");
+    }
+
+    #[test]
+    fn fresh_host_binding_recovers_uninstall_custody_before_either_startup_order() {
+        use crate::extensions::mcp::mcp_service::PluginUninstallSettlement;
+
+        for session_first in [true, false] {
+            for confirmed in [true, false] {
+                let profile = Profile::new();
+                let seed_loader = MutableLoader::new(profile.loaded());
+                let seed = SandPluginSkillsService::new(profile.sand(), seed_loader);
+                let rows = seed.sync("seed").unwrap();
+                let intent = seed.begin_uninstall("9").unwrap();
+                if confirmed {
+                    seed.settle_uninstall(&intent, PluginUninstallSettlement::Removed).unwrap();
+                }
+                let prior_reader = seed.admission_reader();
+                let expected_status = seed.uninstall_recovery_status().unwrap();
+                let cache = fs::read(profile.cache_path()).unwrap();
+                seed.dispose();
+                drop(seed);
+
+                let sessions = profile.sessions();
+                let record = sessions.materialize_new_session(None, "user", None).unwrap();
+                let retained_store = sessions.open_workflow_store(&record.id).unwrap();
+                let binding = Mutex::new(PluginSkillsBinding::default());
+                if session_first {
+                    register_plugin_skills_session(&binding, &sessions).unwrap();
+                }
+                let loader = MutableLoader::new(profile.loaded());
+                let recovered = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+                if !session_first {
+                    register_plugin_skills_session(&binding, &sessions).unwrap();
+                }
+                assert!(!Arc::ptr_eq(&prior_reader, &recovered.admission_reader()),
+                    "fresh Host must reconstruct its admission from durable state");
+                assert!(recovered.admission_reader().is_denied("9"));
+                assert_eq!(recovered.uninstall_recovery_status(), Some(expected_status));
+                assert!(recovered.current().is_empty());
+                assert!(retained_store.get(&rows[0].id).is_none());
+                assert!(sessions.open_workflow_store(&record.id).unwrap().get(&rows[0].id).is_none());
+                assert_eq!(fs::read(profile.cache_path()).unwrap(), cache);
+                assert_eq!(loader.calls.load(Ordering::SeqCst), 0,
+                    "recovering an uninstall does not trigger a loader or remote retry");
+                recovered.dispose();
+                sessions.shutdown();
+            }
+        }
+    }
+
+    #[test]
+    fn prepared_disk_recovery_cannot_replace_a_newer_same_root_reader() {
+        use crate::extensions::mcp::mcp_service::PluginUninstallSettlement;
+
+        let profile = Profile::new();
+        let sessions = profile.sessions();
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let binding = Mutex::new(PluginSkillsBinding::default());
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let loader = MutableLoader::new(profile.loaded());
+        let owner = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+        let rows = owner.sync("seed").unwrap();
+        let retained_store = sessions.open_workflow_store(&record.id).unwrap();
+        assert!(retained_store.get(&rows[0].id).is_some());
+
+        // This is the real disk preparation that can race an operation between
+        // the wrapper's first root check and its final binding lock acquisition.
+        let prepared = SandPluginSkillsService::new(profile.sand(), loader.clone());
+        assert!(prepared.uninstall_recovery_status().is_none());
+        let intent = owner.begin_uninstall("9").unwrap();
+        let reader = owner.admission_reader();
+        let status = owner.uninstall_recovery_status();
+        let successor = binding.lock().unwrap().prepare_service(
+            &profile.sand(), loader.clone(), no_reporter(), prepared,
+        ).unwrap();
+        assert!(Arc::ptr_eq(&reader, &successor.admission_reader()));
+        assert_eq!(successor.uninstall_recovery_status(), status);
+        assert!(retained_store.get(&rows[0].id).is_none());
+        assert!(owner.settle_uninstall(&intent, PluginUninstallSettlement::NotRemoved).is_err());
+        assert!(successor.admission_reader().is_denied("9"));
+        assert_eq!(successor.uninstall_recovery_status(), status);
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+        successor.dispose();
+        sessions.shutdown();
+    }
+
+    #[test]
+    fn initialized_uninstall_state_loss_blocks_the_real_host_binding() {
+        let profile = Profile::new();
+        let loader = MutableLoader::new(profile.loaded());
+        let seed = SandPluginSkillsService::new(profile.sand(), loader.clone());
+        let rows = seed.sync("seed").unwrap();
+        let cache = fs::read(profile.cache_path()).unwrap();
+        seed.dispose();
+        drop(seed);
+        let marker = get_plugin_skills_dir(profile.sand()).join("uninstall-state.version");
+        fs::write(&marker, b"1\n").unwrap();
+
+        let sessions = profile.sessions();
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let retained_store = sessions.open_workflow_store(&record.id).unwrap();
+        let binding = Mutex::new(PluginSkillsBinding::default());
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let recovered = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+        assert!(recovered.admission_reader().is_denied("9"));
+        assert!(recovered.admission_reader().is_denied("unlisted-control"));
+        assert_eq!(recovered.uninstall_recovery_status().unwrap()["fault"],
+            serde_json::json!("uninstall-state-unavailable"));
+        assert!(recovered.sync("must-not-reset").is_err());
+        assert!(retained_store.get(&rows[0].id).is_none());
+        assert!(sessions.open_workflow_store(&record.id).unwrap().get(&rows[0].id).is_none());
+        assert_eq!(fs::read(profile.cache_path()).unwrap(), cache);
+        assert_eq!(fs::read(&marker).unwrap(), b"1\n");
+        assert!(!get_plugin_skills_dir(profile.sand()).join("uninstall-state.json").exists());
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+        recovered.dispose();
+        sessions.shutdown();
+    }
+
+    struct ReadyAuth;
+    impl AuthRenewalPort for ReadyAuth {
+        fn peek_access_token(&self) -> Option<String> { Some("controlled-account".into()) }
+        fn subscribe_to_renewal(
+            &self, _: Arc<dyn Fn(AuthRenewalEvent) + Send + Sync>,
+        ) -> Box<dyn FnOnce() + Send> { Box::new(|| {}) }
+    }
+    struct PollHandle;
+    impl PollingHandle for PollHandle { fn dispose(&mut self) {} }
+    struct ImmediatePoll {
+        binding: Arc<Mutex<PluginSkillsBinding>>,
+        calls: Arc<AtomicUsize>,
+    }
+    impl PollingPort for ImmediatePoll {
+        fn start(&self, callback: Arc<dyn Fn() + Send + Sync>) -> Box<dyn PollingHandle> {
+            assert!(self.binding.try_lock().is_ok(), "poll callback must run outside Host binding");
+            self.calls.fetch_add(1, Ordering::SeqCst);
+            callback();
+            Box::new(PollHandle)
+        }
+    }
+
+    #[test]
+    fn actual_authenticated_startup_and_reports_run_after_binding_is_released() {
+        let profile = Profile::new();
+        let sessions = profile.sessions();
+        let binding = Arc::new(Mutex::new(PluginSkillsBinding::default()));
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let reports = Arc::new(AtomicUsize::new(0));
+        let report_binding = Arc::downgrade(&binding);
+        let report_count = Arc::clone(&reports);
+        let service = prepare_plugin_skills_service(
+            &binding, &profile.sand(), MutableLoader::new(profile.loaded()),
+            Arc::new(move |_| {
+                assert!(report_binding.upgrade().unwrap().try_lock().is_ok(), "report may reenter composition");
+                report_count.fetch_add(1, Ordering::SeqCst);
+            }),
+        ).unwrap();
+        let polls = Arc::new(AtomicUsize::new(0));
+        let post_sync = Arc::new(AtomicUsize::new(0));
+        let post_binding = Arc::clone(&binding);
+        let post_count = Arc::clone(&post_sync);
+        let startup = PluginSkillsAuthenticatedStartup::start(
+            Arc::new(ReadyAuth), service.clone(),
+            Arc::new(ImmediatePoll { binding: Arc::clone(&binding), calls: Arc::clone(&polls) }),
+            Some(Arc::new(move || {
+                assert!(post_binding.try_lock().is_ok(), "legacy cleanup callback may reenter composition");
+                post_count.fetch_add(1, Ordering::SeqCst);
+            })),
+        );
+        assert!(startup.is_started());
+        assert_eq!(polls.load(Ordering::SeqCst), 1);
+        assert_eq!(reports.load(Ordering::SeqCst), 1);
+        assert_eq!(post_sync.load(Ordering::SeqCst), 1);
+        assert_eq!(service.current().len(), 1);
+        startup.dispose();
+        startup.dispose();
     }
 }

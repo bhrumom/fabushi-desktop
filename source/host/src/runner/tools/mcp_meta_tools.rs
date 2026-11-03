@@ -10,6 +10,9 @@ use crate::extensions::inference::provider_session::{
     RoutedToolDefinition,
 };
 use crate::runner::routed_provider_runtime::RoutedToolBridge;
+use crate::runner::production_turn_run_shell_adapter::{
+    RoutedProviderAttemptControl, ToolEffectResultTracker, ToolEffectUnknownResult,
+};
 
 pub const GET_MCP_TOOLS_TOOL_NAME: &str = "GetMcpTools";
 pub const CALL_MCP_TOOL_NAME: &str = "CallMcpTool";
@@ -100,17 +103,17 @@ pub fn build_tool_call_execution_timed_out_message(
     execution_timeout_ms: u64,
 ) -> String {
     let shell_hint = if tool_name.eq_ignore_ascii_case("shell") {
-        " For long-running commands, re-run with block_until_ms set to a small value (or 0) so the command runs in the background, then poll its output instead of blocking on it."
+        " For later long-running commands, use a small block_until_ms (or 0) and poll their output. Check this command's state before repeating it."
     } else {
         ""
     };
     if execution_timeout_ms == 0 {
         format!(
-            "The {tool_name} tool call could not start because activity setup exceeded the per-call time limit. The execution environment may be slow or overloaded.{shell_hint}"
+            "The wait for the {tool_name} tool call expired before a result was received. Its outcome is unknown and it may still be running.{shell_hint}"
         )
     } else {
         format!(
-            "The {tool_name} tool call timed out after {} seconds and was terminated. The execution environment may be unresponsive, or the operation needs longer than the per-call time limit.{shell_hint}",
+            "The {tool_name} tool call timed out after {} seconds. Its outcome is unknown and it may still be running; do not automatically repeat it.{shell_hint}",
             execution_timeout_ms / 1_000
         )
     }
@@ -129,18 +132,39 @@ pub fn execute_routed_tool_with_timeout<F>(
     tool: &RoutedToolDefinition,
     args: &Value,
     is_computer_use_subagent: bool,
+    attempt: &RoutedProviderAttemptControl,
     operation: F,
 ) -> Result<Value, ProviderSessionError>
+where
+    F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
+{
+    execute_routed_tool_with_delivery_tracker(
+        tool, args, is_computer_use_subagent, attempt, operation,
+    ).0
+}
+
+/// MCP retains this invocation's tracker until its response is written. Direct
+/// provider callers use the ordinary result through the same execution owner.
+pub(crate) fn execute_routed_tool_with_delivery_tracker<F>(
+    tool: &RoutedToolDefinition,
+    args: &Value,
+    is_computer_use_subagent: bool,
+    attempt: &RoutedProviderAttemptControl,
+    operation: F,
+) -> (Result<Value, ProviderSessionError>, Option<ToolEffectResultTracker>)
 where
     F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
 {
     let tool_name = effective_meta_invocation_tool_name(tool, args);
     let execution_timeout_ms =
         tool_call_execution_guard_ms(&tool_name, args, is_computer_use_subagent);
-    execute_with_timeout_ms(tool_name, execution_timeout_ms, operation)
+    execute_with_timeout_ms_tracked(attempt, tool_name, execution_timeout_ms, operation)
 }
 
-fn execute_with_timeout_ms<F>(
+/// Execute with an owner-selected deadline. The receipt stays in the worker;
+/// the caller timing out records result loss without pretending to stop it.
+pub fn execute_routed_tool_with_timeout_ms<F>(
+    attempt: &RoutedProviderAttemptControl,
     tool_name: String,
     execution_timeout_ms: u64,
     operation: F,
@@ -148,30 +172,65 @@ fn execute_with_timeout_ms<F>(
 where
     F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
 {
+    execute_with_timeout_ms_tracked(attempt, tool_name, execution_timeout_ms, operation).0
+}
+
+fn execute_with_timeout_ms_tracked<F>(
+    attempt: &RoutedProviderAttemptControl,
+    tool_name: String,
+    execution_timeout_ms: u64,
+    operation: F,
+) -> (Result<Value, ProviderSessionError>, Option<ToolEffectResultTracker>)
+where
+    F: FnOnce() -> Result<Value, ProviderSessionError> + Send + 'static,
+{
+    let receipt = match attempt.admit_tool() {
+        Ok(receipt) => receipt,
+        Err(error) => return (Err(error), None),
+    };
+    let result_tracker = receipt.result_tracker();
+    let worker_result_tracker = result_tracker.clone();
+    let worker_attempt = attempt.clone();
     let (sender, receiver) = mpsc::sync_channel(1);
-    thread::Builder::new()
+    let worker = thread::Builder::new()
         .name(format!("mahayana-tool-guard-{}", sanitize_thread_label(&tool_name)))
         .spawn(move || {
-            let _ = sender.send(operation());
-        })
-        .map_err(|error| {
-            ProviderSessionError::Tool(format!(
+            let result = worker_attempt.check().and_then(|()| operation());
+            if matches!(&result, Err(ProviderSessionError::ToolOutcomeUnknown(_))) {
+                // The Host waiter ended, but the downstream execution has no
+                // definitive result. Preserve that fact before releasing the
+                // local worker receipt or serializing an ordinary tool error.
+                worker_result_tracker.mark_unknown(
+                    ToolEffectUnknownResult::DownstreamOutcomeUnknown,
+                );
+            }
+            receipt.complete();
+            if sender.send(result).is_err() {
+                worker_result_tracker.mark_unknown(ToolEffectUnknownResult::DiscardedResult);
+            }
+        });
+    if let Err(error) = worker {
+        return (Err(ProviderSessionError::Tool(format!(
                 "could not start {tool_name} tool execution guard: {error}"
-            ))
-        })?;
-
-    match receiver.recv_timeout(Duration::from_millis(execution_timeout_ms)) {
-        Ok(result) => result,
-        Err(mpsc::RecvTimeoutError::Timeout) => Err(ProviderSessionError::Tool(
-            build_tool_call_execution_timed_out_message(
-                &tool_name,
-                execution_timeout_ms,
-            ),
-        )),
-        Err(mpsc::RecvTimeoutError::Disconnected) => Err(ProviderSessionError::Tool(
-            format!("{tool_name} tool execution ended without a result"),
-        )),
+            ))), Some(result_tracker));
     }
+
+    let result = match receiver.recv_timeout(Duration::from_millis(execution_timeout_ms)) {
+        Ok(result) => result,
+        Err(mpsc::RecvTimeoutError::Timeout) => {
+            result_tracker.mark_unknown(ToolEffectUnknownResult::TimedOut);
+            Err(ProviderSessionError::Tool(
+                build_tool_call_execution_timed_out_message(&tool_name, execution_timeout_ms),
+            ))
+        }
+        Err(mpsc::RecvTimeoutError::Disconnected) => {
+            result_tracker.mark_unknown(ToolEffectUnknownResult::WorkerLost);
+            Err(ProviderSessionError::Tool(
+                format!("{tool_name} tool execution ended without a result; its outcome is unknown"),
+            ))
+        }
+    };
+    (result, Some(result_tracker))
 }
 
 fn sanitize_thread_label(value: &str) -> String {
@@ -487,17 +546,30 @@ mod tests {
 
     #[test]
     fn timeout_worker_returns_success_and_times_out_without_blocking_caller() {
+        let runtime = Arc::new(crate::runner::StreamAttemptRuntime::new(
+            crate::runner::StreamAttemptPolicy::default(),
+        ));
+        let attempt = RoutedProviderAttemptControl::new(
+            Arc::clone(&runtime), runtime.begin_attempt(),
+            crate::runner::routed_provider_runtime::RoutedProviderCancellation::default(),
+        );
         assert_eq!(
-            execute_with_timeout_ms("fast".into(), 100, || Ok(json!({"ok":true})))
+            execute_routed_tool_with_timeout_ms(&attempt, "fast".into(), 100, || Ok(json!({"ok":true})))
                 .expect("fast tool"),
             json!({"ok":true})
         );
 
-        let error = execute_with_timeout_ms("slow".into(), 5, || {
+        let error = execute_routed_tool_with_timeout_ms(&attempt, "slow".into(), 5, || {
             thread::sleep(Duration::from_millis(50));
             Ok(json!({"late":true}))
         })
         .expect_err("slow tool should time out");
         assert!(error.to_string().contains("timed out"));
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while runtime.effect_custody().pending_effects != 0 && std::time::Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(1));
+        }
+        assert_eq!(runtime.effect_custody().pending_effects, 0);
+        assert!(runtime.effect_custody().unknown_result.is_some());
     }
 }

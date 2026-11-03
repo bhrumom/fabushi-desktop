@@ -489,10 +489,12 @@ export class FabushiAuthService implements AuthServicePort {
   }
 
   async peekAccessToken(): Promise<string | null> {
+    // A login's epoch starts before it replaces the previously stored account.
+    if (this.loginAbort != null) return null;
     const epoch = this.operationEpoch;
     try {
       const session = await this.currentSession();
-      if (!this.isOperationCurrent(epoch)) return null;
+      if (this.loginAbort != null || !this.isOperationCurrent(epoch)) return null;
       return session?.issuer === this.baseUrl && session.issuer !== FABUSHI_CI_ISOLATED_AUTH_BASE_URL
         ? session.accessToken
         : null;

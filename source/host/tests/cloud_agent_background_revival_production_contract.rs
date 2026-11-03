@@ -25,7 +25,8 @@ fn cloud_agent_watch_persists_and_revives_through_the_frozen_runtime_owners() {
 
 #[test]
 fn background_revival_clears_durable_wakes_and_emits_async_task_projection() {
-    assert!(SHIPPING_HOST.contains("store.clear_one(agent_id, kind, work_id)"));
+    assert!(SHIPPING_HOST.contains("store.clear_if_matches(&marker)"));
+    assert!(SHIPPING_HOST.contains("clear_pending_wake_by_key"));
     assert!(SHIPPING_HOST.contains("emit_async_tasks_for_agent(agent_id)"));
     assert!(SHIPPING_HOST.contains("\"channel\": \"async-tasks\""));
 }

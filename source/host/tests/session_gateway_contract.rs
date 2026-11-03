@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
-    persist_accepted_send_prompt,
+    persist_accepted_send_prompt, persist_accepted_send_prompt_context,
 };
 use mahayana_host_runtime::extensions::session::native_messaging::FabushiNativeMessagingClient;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
@@ -23,6 +23,46 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-session-gateway-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+fn observe_durable_echo(
+    db: &rusqlite::Connection,
+    entries: &[serde_json::Value],
+    echo: &serde_json::Value,
+    case: &str,
+) {
+    use rusqlite::OptionalExtension;
+
+    let id = echo.get("id").and_then(serde_json::Value::as_str);
+    let visible = entries.iter().find(|entry| entry.get("id") == echo.get("id"));
+    let raw = db.query_row(
+        "SELECT entry FROM transcript_entries WHERE id = ?1",
+        [id.unwrap_or("<missing echo identity>")],
+        |row| row.get::<_, String>(0),
+    ).optional();
+    let decoded = raw.as_ref().ok().and_then(|value| value.as_deref())
+        .map(serde_json::from_str::<serde_json::Value>);
+    let decoded_value = decoded.as_ref().and_then(|value| value.as_ref().ok());
+    let bits = |entry: &serde_json::Value| {
+        entry.get("timestampMs").and_then(serde_json::Value::as_f64).map(f64::to_bits)
+    };
+    // These are exclusively synthetic fixture rows. Capture the complete
+    // boundary evidence before a failed equality hides the differing field.
+    let diagnostic = json!({
+        "case":case, "id":id, "echo":echo, "visible":visible,
+        "raw":raw.as_ref().ok(), "sqlError":raw.as_ref().err().map(ToString::to_string),
+        "decoded":decoded_value,
+        "decodeError":decoded.as_ref().and_then(|value| value.as_ref().err()).map(ToString::to_string),
+        "echoTimestampBits":bits(echo), "visibleTimestampBits":visible.and_then(bits),
+    });
+    eprintln!("gateway-echo evidence: {diagnostic}");
+    assert!(id.is_some(), "the returned echo has an identity: {diagnostic}");
+    let raw = raw.as_ref().expect("read independent durable echo row");
+    assert_eq!(raw.as_deref(), Some(echo.to_string().as_str()),
+        "the exact serialized echo was committed: {diagnostic}");
+    assert!(decoded.as_ref().is_some_and(|value| value.is_ok()),
+        "the committed row decodes: {diagnostic}");
+    assert_eq!(decoded_value, visible, "public readback matches the committed JSON: {diagnostic}");
 }
 
 fn dispatch(
@@ -199,6 +239,115 @@ fn production_gateway_composes_channel_metadata_and_secrets() {
 }
 
 #[test]
+fn production_gateway_refuses_unreadable_channel_credentials_without_metadata_changes() {
+    fn optional_bytes(path: &std::path::Path) -> Option<Vec<u8>> {
+        match fs::read(path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(_) => panic!("fixture metadata must be readable or absent"),
+        }
+    }
+
+    let old_secret = "stored-credential-sentinel-ccwa";
+    let submitted_secret = "submitted-credential-sentinel-ccwa";
+    let fixtures = [
+        ("truncated", format!("{{\"token\":\"{old_secret}\", ").into_bytes(), true),
+        ("scalar", serde_json::to_vec(old_secret).expect("encode fixture"), false),
+        ("invalid-utf8", vec![0xff, 0xfe, 0xfd], true),
+        ("null", b"null".to_vec(), false),
+    ];
+    for (case, corrupt, existing_metadata) in fixtures {
+        let root = temp_root(&format!("channel-write-admission-{case}"));
+        let agents = root.join("agents");
+        let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+        let record = runtime.materialize_new_session(None, "user", None).expect("agent");
+        let other = runtime.materialize_new_session(None, "user", None).expect("other agent");
+        for (agent_id, platform) in [(&record.id, "discord"), (&other.id, "slack")] {
+            assert!(runtime.store_connector_credential(agent_id, platform, "token", "unrelated-value")
+                .expect("seed unrelated credential"));
+        }
+        let secret_store = runtime.connector_secret_store();
+        let secret_path = secret_store.file_path(&record.id, "slack");
+        fs::create_dir_all(secret_path.parent().expect("credential parent")).expect("create fixture parent");
+        fs::write(&secret_path, &corrupt).expect("seed rejected input");
+        let channel_store = runtime.open_channel_store(&record.id).expect("channel owner");
+        let metadata_path = channel_store.config_path("slack");
+        if existing_metadata {
+            assert!(channel_store.write_metadata("slack", "Preserve this label").expect("seed metadata"));
+        }
+        let metadata_before = optional_bytes(&metadata_path);
+        assert_eq!(metadata_before.is_some(), existing_metadata);
+        let unrelated_paths = [
+            secret_store.file_path(&record.id, "discord"),
+            channel_store.config_path("discord"),
+            secret_store.file_path(&other.id, "slack"),
+            runtime.open_channel_store(&other.id).expect("other channel owner").config_path("slack"),
+        ];
+        let unrelated_before: Vec<_> = unrelated_paths.iter()
+            .map(|path| fs::read(path).expect("read unrelated fixture")).collect();
+        let args = json!({"id":record.id,"platform":"slack","token":submitted_secret});
+        let result = dispatch_production_session_gateway_call(&runtime, "connectChannel", &args)
+            .expect("registered channel method");
+        match result {
+            Err(SessionGatewayError::Internal(message)) => {
+                assert!(!message.contains(old_secret) && !message.contains(submitted_secret),
+                    "credential refusal must be redacted");
+            }
+            _ => panic!("unreadable credential input must refuse the gateway write"),
+        }
+        assert!(fs::read(&secret_path).expect("read rejected input") == corrupt,
+            "refusal must preserve original credential bytes");
+        assert!(optional_bytes(&metadata_path) == metadata_before,
+            "refusal must preserve existing or absent metadata");
+        for (path, before) in unrelated_paths.iter().zip(&unrelated_before) {
+            assert!(fs::read(path).expect("read unrelated fixture") == *before,
+                "refusal must not modify another Agent or platform");
+        }
+        runtime.shutdown();
+        drop(runtime);
+
+        let reopened = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+        match dispatch_production_session_gateway_call(&reopened, "connectChannel", &args)
+            .expect("registered reopened channel method")
+        {
+            Err(SessionGatewayError::Internal(message)) => {
+                assert!(!message.contains(old_secret) && !message.contains(submitted_secret),
+                    "reopened refusal must be redacted");
+            }
+            _ => panic!("reopened owner must refuse the same unreadable input"),
+        }
+        assert!(fs::read(&secret_path).expect("read reopened rejected input") == corrupt,
+            "reopened refusal must preserve original credential bytes");
+        assert!(optional_bytes(&metadata_path) == metadata_before,
+            "reopened refusal must preserve metadata");
+
+        let repaired = json!({"workspace":{"name":"retained"},"quota":3});
+        fs::write(&secret_path, serde_json::to_vec(&repaired).expect("encode repair"))
+            .expect("explicitly repair fixture");
+        let connected = dispatch(&reopened, "connectChannel", args);
+        let reply = connected.to_string();
+        assert!(!reply.contains(old_secret) && !reply.contains(submitted_secret),
+            "successful channel projection must not expose credentials");
+        let persisted: serde_json::Value = serde_json::from_slice(
+            &fs::read(&secret_path).expect("read admitted credential"),
+        ).expect("valid admitted credential record");
+        assert!(persisted["token"] == submitted_secret, "repair must admit the requested credential");
+        assert!(persisted["workspace"] == repaired["workspace"] && persisted["quota"] == repaired["quota"],
+            "admitted write must preserve unrelated structured values");
+        assert!(metadata_path.is_file(), "admitted connection must persist channel metadata");
+        for (path, before) in unrelated_paths.iter().zip(&unrelated_before) {
+            assert!(fs::read(path).expect("read unrelated fixture after repair") == *before,
+                "repair must not modify another Agent or platform");
+        }
+        dispatch(&reopened, "disconnectChannel", json!({"id":record.id,"platform":"slack"}));
+        assert!(!secret_path.exists() && !metadata_path.exists(), "explicit disconnect remains available");
+        reopened.shutdown();
+        drop(reopened);
+        fs::remove_dir_all(root).expect("remove owned fixture");
+    }
+}
+
+#[test]
 fn production_gateway_creates_a_real_session_record_for_the_shipping_new_chat_path() {
     let root = temp_root("create-agent");
     let agents = root.join("agents");
@@ -335,11 +484,17 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
     let record = runtime
         .materialize_new_session(None, "user", None)
         .expect("agent");
+    let session_key = runtime
+        .read_session_work_admission(&record.id)
+        .expect("admission")
+        .expect("admission record")
+        .session_key;
 
     persist_accepted_send_prompt(
         &runtime,
         &json!({
             "agentId": record.id,
+            "sessionKey": session_key,
             "prompt": "",
             "attachmentPaths": ["/tmp/attachment-only.txt"],
             "attachmentNames": ["attachment-only.txt"],
@@ -365,6 +520,14 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
     assert_eq!(entries[0]["file_path"], "/tmp/attachment-only.txt");
     assert_eq!(entries[0]["file_name"], "attachment-only.txt");
     assert_eq!(entries[0]["clientNonce"], "nonce-attachment-only");
+    assert_eq!(
+        entries[0].get("sessionKey").and_then(serde_json::Value::as_str),
+        runtime
+            .read_session_work_admission(&record.id)
+            .expect("admission")
+            .as_ref()
+            .map(|record| record.session_key.as_str())
+    );
     assert!(entries[0]["batchId"].as_str().is_some_and(|value| !value.is_empty()));
 
     // Production nonce admission normally coalesces this before persistence.
@@ -392,6 +555,53 @@ fn accepted_send_prompt_is_persisted_into_the_rust_authoritative_transcript() {
         Some(1)
     );
 
+
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn session_key_send_prompt_rechecks_admission_at_transcript_write() {
+    let root = temp_root("send-prompt-admission");
+    let agents = root.join("agents");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(&agents, 500));
+    let record = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("agent");
+    let session_key = format!("agent:{}:main", record.id);
+    let admission = runtime
+        .read_session_work_admission(&record.id)
+        .expect("read admission")
+        .expect("admission");
+    runtime
+        .transition_session_work_archive(
+            &record.id,
+            &session_key,
+            &record.id,
+            Some(&admission.lifecycle_revision),
+            true,
+            Some("contract"),
+            Some("write-fence"),
+            1000.0,
+        )
+        .expect("archive session");
+
+    let error = persist_accepted_send_prompt(
+        &runtime,
+        &json!({
+            "agentId": record.id,
+            "sessionKey": session_key,
+            "prompt": "must be rejected",
+            "clientNonce": "nonce-archived",
+        }),
+        &json!({"accepted": true}),
+    )
+    .expect_err("archived session write must be rejected");
+    assert!(matches!(error, SessionGatewayError::Internal(message) if message.contains("not admitted")));
+    assert!(runtime
+        .read_agent_transcript_entries(&record.id)
+        .expect("read transcript")
+        .is_empty());
 
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
@@ -439,6 +649,414 @@ fn accepted_send_prompt_uses_frozen_entry_ids_and_reply_fork_stamping() {
     assert_eq!(entries[1]["sentWhileOfflineAtMs"], 2000.0);
 
 
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn fresh_gateway_channel_and_legacy_agent_messages_share_the_physical_id_namespace() {
+    use mahayana_host_runtime::extensions::session::agent_db::ChannelInboundAppendOutcome;
+    use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::persist_agent_inbound_message;
+    use mahayana_host_runtime::extensions::transcript::transcript_entry_ids::{
+        next_entry_id, TranscriptEntryIdKind,
+    };
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+    use std::collections::HashSet;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    // Each producer goes first once. A recognized hidden receipt reserves an
+    // ID and satisfies the channel owner's stricter checked-history contract.
+    for producer_order in [[0, 1, 2], [1, 2, 0], [2, 0, 1]] {
+        let root = temp_root("fresh-shared-namespace");
+        let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let target = runtime.materialize_new_session(None, "user", None).expect("target");
+        let source = runtime.materialize_new_session(None, "user", None).expect("source");
+        let admission = runtime.read_session_work_admission(&target.id).unwrap().unwrap();
+        let db_path = runtime.session_db_path(&target.id).unwrap();
+        let db = rusqlite::Connection::open(&db_path).unwrap();
+        let hidden_receipt = json!({
+            "id":"t0u","kind":"background-result-receipt","clientNonce":"shared-nonce",
+            "sessionKey":admission.session_key,"lifecycleRevision":admission.lifecycle_revision,
+            "workId":"prior-work","idempotencyKey":"prior-result",
+            "content":"retained receipt","sentMessageCount":0,
+        });
+        db.execute(
+            "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+            rusqlite::params!["t0u", hidden_receipt.to_string()],
+        ).unwrap();
+        assert!(runtime.read_agent_transcript_entries(&target.id).unwrap().is_empty());
+        let attachment = root.join("shared.txt");
+        fs::write(&attachment, b"shared attachment").unwrap();
+        let args = json!({
+            "agentId":target.id,
+            "prompt":"direct prompt",
+            "attachmentPaths":[attachment],
+            "attachmentNames":["shared.txt"],
+            "clientNonce":"shared-nonce",
+        });
+        let mut direct_context = None;
+        for producer in producer_order {
+            match producer {
+                0 => {
+                    direct_context = Some(persist_accepted_send_prompt_context(
+                        &runtime, &args, &json!({"accepted":true}),
+                    ).expect("fresh direct prompt"));
+                }
+                1 => {
+                    let mut attempt = None;
+                    assert_eq!(runtime.append_channel_inbound_entries(
+                        &target.id, &mut attempt, |captured, history| Ok(vec![json!({
+                            "id":next_entry_id(history, TranscriptEntryIdKind::UserMessage),
+                            "kind":"message","role":"user","content":"channel prompt",
+                            "channel":{"platform":"fixture"},"sessionKey":captured.session_key,
+                        })]),
+                    ), ChannelInboundAppendOutcome::Committed { inserted_count: 1 });
+                    let committed = attempt.expect("channel retains confirmed preparation").entries.unwrap();
+                    assert_eq!(committed.len(), 1);
+                    assert_eq!(committed[0]["content"], "channel prompt");
+                }
+                2 => assert!(persist_agent_inbound_message(
+                    &runtime,
+                    &target.id,
+                    &json!({"from":{"id":source.id},"text":"legacy agent prompt","timestampMs":50}),
+                ).expect("fresh legacy inbound")),
+                _ => unreachable!(),
+            }
+        }
+        let entries = runtime.read_agent_transcript_entries(&target.id).unwrap();
+        assert_eq!(entries.len(), 4, "all three messages and the attachment survive");
+        let ids = entries.iter().map(|entry| entry["id"].as_str().unwrap()).collect::<HashSet<_>>();
+        assert_eq!(ids.len(), entries.len());
+        for id in ["t1u", "t2u", "t3u"] {
+            assert!(ids.contains(id), "the frozen allocator skips occupied physical IDs");
+        }
+        let context = direct_context.unwrap();
+        assert!(context.accepted_durably);
+        assert!(context.acceptance_effects_applied);
+        assert_eq!(context.accepted_echoes.len(), 2);
+        for (index, echo) in context.accepted_echoes.iter().enumerate() {
+            observe_durable_echo(&db, &entries, &echo.entry,
+                &format!("shared-namespace order={producer_order:?} echo={index}"));
+            assert!(entries.contains(&echo.entry), "echo is the actual committed entry");
+        }
+        assert_eq!(context.accepted_echoes[0].entry["kind"], "user-attachment");
+        assert_eq!(context.accepted_echoes[0].entry["byteSize"], 17);
+        assert_eq!(context.recent_user_messages.len(), 1);
+        assert_eq!(context.recent_user_messages[0].text, "direct prompt");
+        assert_eq!(context.user_message_id.as_deref(), Some(context.recent_user_messages[0].id.as_str()));
+        assert_eq!(context.echo_entry_id, context.user_message_id);
+        let retained: String = db.query_row(
+            "SELECT entry FROM transcript_entries WHERE id = 't0u'", [], |row| row.get(0),
+        ).unwrap();
+        assert_eq!(serde_json::from_str::<serde_json::Value>(&retained).unwrap(), hidden_receipt);
+
+        let events = Arc::new(AtomicUsize::new(0));
+        let subscription = subscribe_transcript_mutations({
+            let events = Arc::clone(&events);
+            let expected_agent = target.id.clone();
+            move |event| {
+                if event.get("agentId").and_then(serde_json::Value::as_str) == Some(expected_agent.as_str()) {
+                    events.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+        });
+        let replay = persist_accepted_send_prompt_context(
+            &runtime, &args, &json!({"accepted":true}),
+        ).expect("existing nonce");
+        assert_eq!(replay.echo_entry_id, context.echo_entry_id);
+        assert_eq!(replay.user_message_id, context.user_message_id);
+        assert_eq!(replay.recent_user_messages, context.recent_user_messages);
+        assert!(replay.accepted_echoes.is_empty());
+        assert!(!replay.acceptance_effects_applied);
+        assert!(!replay.accepted_durably, "an existing nonce is not a fresh commit");
+        assert_eq!(events.load(Ordering::SeqCst), 0);
+        assert_eq!(runtime.read_agent_transcript_entries(&target.id).unwrap(), entries);
+        subscription.unsubscribe();
+        drop(db);
+        runtime.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn fresh_gateway_and_legacy_agent_messages_preserve_opaque_namespace_and_nonce_semantics() {
+    use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::persist_agent_inbound_message;
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+    use std::collections::HashSet;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    for gateway_first in [true, false] {
+        let root = temp_root("fresh-opaque-producers");
+        let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let target = runtime.materialize_new_session(None, "user", None).unwrap();
+        let source = runtime.materialize_new_session(None, "user", None).unwrap();
+        let db = rusqlite::Connection::open(runtime.session_db_path(&target.id).unwrap()).unwrap();
+        let opaque = json!({
+            "id":"t0u","kind":"future-entry","payload":"retained","clientNonce":"shared-nonce",
+        });
+        db.execute("INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+            rusqlite::params!["t0u", opaque.to_string()]).unwrap();
+        assert!(runtime.read_agent_transcript_entries(&target.id).unwrap().is_empty());
+        let attachment = root.join("shared.txt");
+        fs::write(&attachment, b"shared attachment").unwrap();
+        let args = json!({
+            "agentId":target.id,"prompt":"direct prompt","attachmentPaths":[attachment],
+            "attachmentNames":["shared.txt"],"clientNonce":"shared-nonce",
+        });
+        let mut direct_context = None;
+        for gateway in [gateway_first, !gateway_first] {
+            if gateway {
+                direct_context = Some(persist_accepted_send_prompt_context(
+                    &runtime, &args, &json!({"accepted":true}),
+                ).expect("opaque history cannot accept the Gateway nonce"));
+            } else {
+                assert!(persist_agent_inbound_message(&runtime, &target.id,
+                    &json!({"from":{"id":source.id},"text":"legacy agent prompt","timestampMs":50}),
+                ).expect("legacy inbound reserves the opaque ID"));
+            }
+        }
+        let entries = runtime.read_agent_transcript_entries(&target.id).unwrap();
+        assert_eq!(entries.len(), 3, "both messages and the attachment survive");
+        let ids = entries.iter().map(|entry| entry["id"].as_str().unwrap()).collect::<HashSet<_>>();
+        assert_eq!(ids.len(), entries.len());
+        assert!(ids.contains("t1u") && ids.contains("t2u"));
+        let context = direct_context.unwrap();
+        assert!(context.accepted_durably && context.acceptance_effects_applied);
+        assert_eq!(context.accepted_echoes.len(), 2);
+        for (index, echo) in context.accepted_echoes.iter().enumerate() {
+            observe_durable_echo(&db, &entries, &echo.entry,
+                &format!("opaque-namespace gateway_first={gateway_first} echo={index}"));
+            assert!(entries.contains(&echo.entry), "the returned echo was committed");
+        }
+        assert_eq!(context.accepted_echoes[0].entry["kind"], "user-attachment");
+        assert_eq!(context.accepted_echoes[0].entry["byteSize"], 17);
+        assert_eq!(context.recent_user_messages.len(), 1);
+        assert_eq!(context.recent_user_messages[0].text, "direct prompt");
+        assert_eq!(context.user_message_id.as_deref(), Some(context.recent_user_messages[0].id.as_str()));
+        assert_eq!(context.echo_entry_id, context.user_message_id);
+        let retained: String = db.query_row("SELECT entry FROM transcript_entries WHERE id = 't0u'", [],
+            |row| row.get(0)).unwrap();
+        assert_eq!(serde_json::from_str::<serde_json::Value>(&retained).unwrap(), opaque);
+        assert_eq!(db.query_row("SELECT count(*) FROM transcript_entries", [],
+            |row| row.get::<_, i64>(0)).unwrap(), 4);
+
+        let events = Arc::new(AtomicUsize::new(0));
+        let subscription = subscribe_transcript_mutations({
+            let events = Arc::clone(&events);
+            let expected_agent = target.id.clone();
+            move |event| {
+                if event.get("agentId").and_then(serde_json::Value::as_str) == Some(expected_agent.as_str()) {
+                    events.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+        });
+        let replay = persist_accepted_send_prompt_context(&runtime, &args, &json!({"accepted":true})).unwrap();
+        assert_eq!(replay.echo_entry_id, context.echo_entry_id);
+        assert_eq!(replay.user_message_id, context.user_message_id);
+        assert_eq!(replay.recent_user_messages, context.recent_user_messages);
+        assert!(replay.accepted_echoes.is_empty());
+        assert!(!replay.acceptance_effects_applied);
+        assert!(!replay.accepted_durably, "an existing nonce is not a fresh commit");
+        assert_eq!(events.load(Ordering::SeqCst), 0);
+        assert_eq!(runtime.read_agent_transcript_entries(&target.id).unwrap(), entries);
+        subscription.unsubscribe();
+        drop(db);
+        runtime.shutdown();
+        let _ = fs::remove_dir_all(root);
+    }
+}
+
+#[test]
+fn gateway_echoes_preserve_fractional_timestamps_through_durable_reopen() {
+    use mahayana_host_runtime::storage::store_db::get_sand_agent_db_write_generation;
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    for (case, composed_at_ms) in [
+        ("integral", 1000.0_f64),
+        ("fractional", 1_793_000_000_000.0_f64 + 6.0 / 4096.0),
+    ] {
+        let root = std::env::temp_dir().join(format!("fabushi-gateway-echo-{}", uuid::Uuid::new_v4()));
+        fs::create_dir(&root).expect("exclusively reserve echo fixture");
+        let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let target = runtime.materialize_new_session(None, "user", None).unwrap();
+        let args = json!({
+            "agentId":target.id, "prompt":"exact durable echo", "clientNonce":"fractional-echo",
+            "composedAtMs":composed_at_ms,
+        });
+        let context = persist_accepted_send_prompt_context(&runtime, &args, &json!({"accepted":true}))
+            .expect("fresh echo through the actual Gateway");
+        assert!(context.accepted_durably && context.acceptance_effects_applied);
+        assert_eq!(context.accepted_echoes.len(), 1);
+        let echo = context.accepted_echoes[0].entry.clone();
+        let initial = runtime.read_agent_transcript_entries(&target.id).unwrap();
+        let db_path = runtime.session_db_path(&target.id).unwrap();
+        let db = rusqlite::Connection::open(&db_path).unwrap();
+        observe_durable_echo(&db, &initial, &echo, &format!("{case} before-reopen"));
+        drop(db);
+        runtime.shutdown();
+        drop(runtime);
+
+        let reopened = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+        let entries = reopened.read_agent_transcript_entries(&target.id).unwrap();
+        let db = rusqlite::Connection::open(&db_path).unwrap();
+        observe_durable_echo(&db, &entries, &echo, &format!("{case} after-reopen"));
+        let raw_rows = || {
+            let mut statement = db.prepare(
+                "SELECT seq, id, entry FROM transcript_entries ORDER BY seq",
+            ).unwrap();
+            let rows = statement.query_map([], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+            }).unwrap();
+            rows.collect::<Result<Vec<_>, _>>().unwrap()
+        };
+        let events = Arc::new(AtomicUsize::new(0));
+        let subscription = subscribe_transcript_mutations({
+            let events = Arc::clone(&events);
+            let agent_id = target.id.clone();
+            move |event| {
+                if event.get("agentId").and_then(serde_json::Value::as_str) == Some(agent_id.as_str()) {
+                    events.fetch_add(1, Ordering::SeqCst);
+                }
+            }
+        });
+        let rows_before_replay = raw_rows();
+        let generation_before_replay = get_sand_agent_db_write_generation(&db_path);
+        let replay = persist_accepted_send_prompt_context(&reopened, &args, &json!({"accepted":true}))
+            .expect("the original nonce survives owner restart");
+        assert_eq!(replay.echo_entry_id, context.echo_entry_id);
+        assert_eq!(replay.user_message_id, context.user_message_id);
+        assert_eq!(replay.recent_user_messages, context.recent_user_messages);
+        assert!(replay.accepted_echoes.is_empty());
+        assert!(!replay.accepted_durably && !replay.acceptance_effects_applied);
+        assert_eq!(raw_rows(), rows_before_replay, "nonce replay preserves physical rows: {case}");
+        assert_eq!(get_sand_agent_db_write_generation(&db_path), generation_before_replay,
+            "nonce replay preserves write generation: {case}");
+        assert_eq!(events.load(Ordering::SeqCst), 0);
+        assert_eq!(reopened.read_agent_transcript_entries(&target.id).unwrap(), entries);
+        subscription.unsubscribe();
+        drop(db);
+        reopened.shutdown();
+        drop(reopened);
+
+        // Adjudicate complete equality after collecting both durable views.
+        // Do not round the expectation or hide a timestamp difference.
+        assert_eq!(echo["timestampMs"].as_f64().unwrap().to_bits(), composed_at_ms.to_bits());
+        assert_eq!(echo["sentWhileOfflineAtMs"].as_f64().unwrap().to_bits(), composed_at_ms.to_bits());
+        assert_eq!(initial, vec![echo.clone()], "exact echo before reopen: {case}");
+        assert_eq!(entries, vec![echo], "exact echo after reopen: {case}");
+        fs::remove_dir_all(root).expect("remove the completed owned echo fixture");
+    }
+}
+
+#[test]
+fn fresh_gateway_keeps_the_legacy_no_admission_path_without_inventing_a_selector() {
+    let root = temp_root("fresh-legacy-admission");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let target = runtime.materialize_new_session(None, "user", None).unwrap();
+    let owner = runtime.open_agent_db_owner(&target.id).unwrap();
+    assert!(owner.delete_kv("sessionWorkAdmission").unwrap());
+    let context = persist_accepted_send_prompt_context(
+        &runtime,
+        &json!({"agentId":target.id,"prompt":"legacy prompt","clientNonce":"legacy-nonce"}),
+        &json!({"accepted":true}),
+    ).expect("legacy fresh commit");
+    assert_eq!(context.user_message_id.as_deref(), Some("t0u"));
+    assert!(context.accepted_durably);
+    assert_eq!(context.accepted_echoes.len(), 1);
+    assert!(context.accepted_echoes[0].entry.get("sessionKey").is_none());
+    assert!(runtime.read_session_work_admission(&target.id).unwrap().is_none());
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn fresh_gateway_uses_visible_rows_for_nonce_thread_and_recovery_semantics() {
+    let root = temp_root("fresh-semantic-projection");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let target = runtime.materialize_new_session(None, "user", None).unwrap();
+    let db = rusqlite::Connection::open(runtime.session_db_path(&target.id).unwrap()).unwrap();
+    for row in [
+        json!({"id":"t0u","kind":"future-entry","clientNonce":"semantic-nonce"}),
+        json!({"id":"malformed-message","kind":"message","role":"user","content":17,"clientNonce":"semantic-nonce"}),
+        json!({"id":"hidden-receipt","kind":"background-result-receipt","clientNonce":"semantic-nonce"}),
+    ] {
+        db.execute(
+            "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+            rusqlite::params![row["id"].as_str().unwrap(), row.to_string()],
+        ).unwrap();
+    }
+    assert!(runtime.read_agent_transcript_entries(&target.id).unwrap().is_empty());
+    let context = persist_accepted_send_prompt_context(
+        &runtime,
+        &json!({
+            "agentId":target.id,"prompt":"visible prompt","clientNonce":"semantic-nonce",
+            "replyToId":"malformed-message","isFork":true,
+        }),
+        &json!({"accepted":true}),
+    ).expect("opaque rows reserve IDs but cannot accept this nonce");
+    assert_eq!(context.user_message_id.as_deref(), Some("t1u"));
+    assert!(context.accepted_durably);
+    assert_eq!(context.accepted_echoes.len(), 1);
+    let entry = &context.accepted_echoes[0].entry;
+    assert!(entry.get("replyTo").is_none());
+    assert_ne!(entry.get("branched").and_then(serde_json::Value::as_bool), Some(true));
+    assert_eq!(context.recent_user_messages.len(), 1);
+    assert_eq!(context.recent_user_messages[0].text, "visible prompt");
+    assert_eq!(runtime.read_agent_transcript_entries(&target.id).unwrap(), vec![entry.clone()]);
+    let count: i64 = db.query_row("SELECT COUNT(*) FROM transcript_entries", [], |row| row.get(0)).unwrap();
+    assert_eq!(count, 4);
+    drop(db);
+    runtime.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn gateway_fresh_attachment_batch_rolls_back_when_the_message_insert_is_ignored() {
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    let root = temp_root("fresh-batch-refusal");
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
+    let target = runtime.materialize_new_session(None, "user", None).unwrap();
+    let db_path = runtime.session_db_path(&target.id).unwrap();
+    let db = rusqlite::Connection::open(&db_path).unwrap();
+    db.execute_batch(
+        "CREATE TRIGGER ignore_gateway_message BEFORE INSERT ON transcript_entries
+         WHEN json_extract(NEW.entry, '$.kind') = 'message'
+         BEGIN SELECT RAISE(IGNORE); END;",
+    ).unwrap();
+    let events = Arc::new(AtomicUsize::new(0));
+    let subscription = subscribe_transcript_mutations({
+        let events = Arc::clone(&events);
+        let expected_agent = target.id.clone();
+        move |event| {
+            if event.get("agentId").and_then(serde_json::Value::as_str) == Some(expected_agent.as_str()) {
+                events.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+    });
+    let args = json!({
+        "agentId":target.id,"prompt":"must commit with attachment",
+        "attachmentPaths":["/tmp/fresh-append-control.txt"],"clientNonce":"batch-nonce",
+    });
+    assert!(persist_accepted_send_prompt_context(
+        &runtime, &args, &json!({"accepted":true}),
+    ).is_err());
+    let count: i64 = db.query_row("SELECT COUNT(*) FROM transcript_entries", [], |row| row.get(0)).unwrap();
+    assert_eq!(count, 0, "the earlier attachment insert must roll back");
+    assert_eq!(events.load(Ordering::SeqCst), 0);
+    db.execute_batch("DROP TRIGGER ignore_gateway_message").unwrap();
+    let committed = persist_accepted_send_prompt_context(
+        &runtime, &args, &json!({"accepted":true}),
+    ).expect("explicit retry after known refusal");
+    assert_eq!(committed.echo_entry_id.as_deref(), Some("t0u"));
+    assert_eq!(committed.accepted_echoes[0].entry["id"], "t0ua0");
+    assert_eq!(committed.accepted_echoes.len(), 2);
+    assert_eq!(events.load(Ordering::SeqCst), 1);
+    assert_eq!(runtime.read_agent_transcript_entries(&target.id).unwrap().len(), 2);
+    subscription.unsubscribe();
+    drop(db);
     runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }
@@ -742,6 +1360,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
             &conversation_id,
             &agent.id,
             "runner-stream-1",
+            None,
             "trusted Agent result",
             2345.0,
         )
@@ -756,6 +1375,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
                 &conversation_id,
                 &agent.id,
                 "runner-stream-1",
+                None,
                 "trusted Agent result",
                 2345.0,
             )
@@ -768,11 +1388,51 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
                 &conversation_id,
                 &agent.id,
                 "runner-stream-1",
+                None,
                 "different Agent result",
                 2345.0,
             )
             .is_err(),
         "one Runner stream must not identify different Human-transcript content"
+    );
+
+    let session_key = format!("agent:{}:main", agent.id);
+    let bound_agent_result = runtime
+        .append_human_agent_message(
+            &conversation_id,
+            &agent.id,
+            "runner-stream-bound",
+            Some(&session_key),
+            "session-bound Agent result",
+            2346.0,
+        )
+        .expect("session-bound Human handoff Agent result");
+    assert_eq!(bound_agent_result["sessionKey"], session_key);
+    assert_eq!(
+        runtime
+            .append_human_agent_message(
+                &conversation_id,
+                &agent.id,
+                "runner-stream-bound",
+                Some(&session_key),
+                "session-bound Agent result",
+                2346.0,
+            )
+            .expect("idempotent session-bound Agent result replay"),
+        bound_agent_result
+    );
+    assert!(
+        runtime
+            .append_human_agent_message(
+                &conversation_id,
+                &agent.id,
+                "runner-stream-bound",
+                Some("agent:other:main"),
+                "session-bound Agent result",
+                2346.0,
+            )
+            .is_err(),
+        "one Human handoff stream must not be rebound to another session key"
     );
     assert!(
         dispatch_production_session_gateway_call(
@@ -794,11 +1454,22 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
         "getHumanConversationTranscript",
         json!({"conversationId": conversation_id}),
     );
-    assert_eq!(transcript.as_array().map(Vec::len), Some(4));
+    assert_eq!(transcript.as_array().map(Vec::len), Some(5));
     assert_eq!(transcript[0]["id"], "human-message:human-nonce-1");
     assert_eq!(transcript[1], reply);
     assert_eq!(transcript[2], attachment_only);
     assert_eq!(transcript[3], agent_result);
+    assert_eq!(transcript[4], bound_agent_result);
+    assert_eq!(
+        human_db.get_metadata("agentId").expect("Human identity remains distinct"),
+        None
+    );
+    assert_eq!(
+        human_db
+            .read_session_work_admission()
+            .expect("Human admission remains absent"),
+        None
+    );
 
     let human_tail = dispatch(
         &runtime,
@@ -808,7 +1479,10 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
             "limit": 2
         }),
     );
-    assert_eq!(human_tail["entries"], json!([attachment_only.clone(), agent_result.clone()]));
+    assert_eq!(
+        human_tail["entries"],
+        json!([agent_result.clone(), bound_agent_result.clone()])
+    );
     let older_cursor = human_tail["nextBeforeSeq"]
         .as_i64()
         .expect("Human transcript tail should expose an older-page cursor");
@@ -821,8 +1495,24 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
             "beforeSeq": older_cursor
         }),
     );
-    assert_eq!(human_older["entries"], json!([first.clone(), reply.clone()]));
-    assert!(human_older["nextBeforeSeq"].is_null());
+    assert_eq!(
+        human_older["entries"],
+        json!([reply.clone(), attachment_only.clone()])
+    );
+    let oldest_cursor = human_older["nextBeforeSeq"]
+        .as_i64()
+        .expect("five entries require one final older page");
+    let human_oldest = dispatch(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        json!({
+            "conversationId": conversation_id,
+            "limit": 2,
+            "beforeSeq": oldest_cursor
+        }),
+    );
+    assert_eq!(human_oldest["entries"], json!([first.clone()]));
+    assert!(human_oldest["nextBeforeSeq"].is_null());
 
     let attachment_search = dispatch(
         &runtime,
@@ -858,7 +1548,7 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert!(matches!(empty_search, SessionGatewayError::BadRequest(_)));
 
     let conversations_after_send = dispatch(&runtime, "listHumanConversations", json!({}));
-    assert_eq!(conversations_after_send[0]["updatedAt"], 2345.0);
+    assert_eq!(conversations_after_send[0]["updatedAt"], 2346.0);
 
     let conflicting = dispatch_production_session_gateway_call(
         &runtime,
@@ -928,6 +1618,232 @@ fn human_conversation_uses_session_transcript_owner_without_becoming_an_agent() 
     assert!(matches!(foreign_search, SessionGatewayError::Internal(_)));
     foreign.shutdown();
     restarted.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn human_agent_handoff_checks_source_admission_before_destination_mutation() {
+    let root = temp_root("human-handoff-admission");
+    let agents = root.join("agents");
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(
+            agents.clone(),
+        ),
+    );
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+        &agents,
+        500,
+        Some("human-local".into()),
+        Arc::new(|| None),
+        memory,
+    ));
+    let agent = runtime
+        .materialize_new_session(None, "user", None)
+        .expect("source Agent");
+    let source_admission = runtime
+        .read_session_work_admission(&agent.id)
+        .expect("source admission")
+        .expect("admitted source");
+    let created = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-peer",
+            "title": "Handoff destination"
+        }),
+    );
+    let conversation_id = created["id"].as_str().expect("conversation id");
+    let human_db = runtime
+        .open_human_conversation_db_owner(conversation_id)
+        .expect("Human transcript owner");
+    let legacy = runtime
+        .append_human_agent_message(
+            conversation_id,
+            &agent.id,
+            "runner-legacy",
+            None,
+            "legacy result",
+            10.0,
+        )
+        .expect("legacy unbound result");
+    assert!(legacy.get("sessionKey").is_none());
+
+    let barrier = std::sync::Barrier::new(2);
+    let duplicates = thread::scope(|scope| {
+        let calls = (0..2)
+            .map(|_| {
+                scope.spawn(|| {
+                    barrier.wait();
+                    runtime
+                        .append_human_agent_message(
+                            conversation_id,
+                            &agent.id,
+                            "runner-bound",
+                            Some(&source_admission.session_key),
+                            "bound result",
+                            11.0,
+                        )
+                        .expect("concurrent bound result")
+                })
+            })
+            .collect::<Vec<_>>();
+        calls
+            .into_iter()
+            .map(|call| call.join().expect("handoff worker"))
+            .collect::<Vec<_>>()
+    });
+    assert_eq!(duplicates[0], duplicates[1]);
+    let bound = &duplicates[0];
+    assert_eq!(bound["sessionKey"], source_admission.session_key);
+    let rows_before = human_db.get_transcript_entries().expect("initial Human rows");
+    assert_eq!(rows_before, vec![legacy.clone(), bound.clone()]);
+    let metadata_before = human_db.read_metadata().expect("initial Human metadata");
+    let assert_destination_unchanged = || {
+        assert_eq!(
+            human_db
+                .get_transcript_entries()
+                .expect("Human rows after rejection"),
+            rows_before
+        );
+        assert_eq!(
+            human_db.read_metadata().expect("Human metadata after rejection"),
+            metadata_before
+        );
+    };
+    // Exercise a new row, provenance enrichment, and an existing bound replay
+    // at every refusal boundary. None may bypass source admission.
+    let rejected_cases = [
+        ("runner-rejected", "new result"),
+        ("runner-legacy", "legacy result"),
+        ("runner-bound", "bound result"),
+    ];
+    let assert_rejected = |session_key: &str, expected_error: &str| {
+        for (stream_id, content) in rejected_cases {
+            let error = runtime
+                .append_human_agent_message(
+                    conversation_id,
+                    &agent.id,
+                    stream_id,
+                    Some(session_key),
+                    content,
+                    999.0,
+                )
+                .expect_err("source gate must reject append, enrichment, and replay");
+            assert!(error.contains(expected_error), "unexpected refusal: {error}");
+            assert_destination_unchanged();
+        }
+    };
+    assert_rejected("agent:other:main", "source session key mismatch");
+
+    runtime
+        .transition_session_work_archive(
+            &agent.id,
+            &source_admission.session_key,
+            &source_admission.session_id,
+            Some(&source_admission.lifecycle_revision),
+            true,
+            Some("human-local"),
+            Some("handoff archive contract"),
+            30.0,
+        )
+        .expect("archive source");
+    assert_rejected(&source_admission.session_key, "session is archived");
+    let archived = runtime
+        .read_session_work_admission(&agent.id)
+        .expect("archived source admission")
+        .expect("source admission remains");
+    runtime
+        .transition_session_work_archive(
+            &agent.id,
+            &archived.session_key,
+            &archived.session_id,
+            Some(&archived.lifecycle_revision),
+            false,
+            Some("human-local"),
+            None,
+            32.0,
+        )
+        .expect("restore source");
+
+    runtime
+        .begin_agent_delete(&agent.id)
+        .expect("fence source deletion");
+    assert_rejected(&source_admission.session_key, "new session work is not admitted");
+    runtime.clear_agent_delete_fast_path(&agent.id);
+    assert_rejected(&source_admission.session_key, "durable deletion cleanup is pending");
+    runtime
+        .end_agent_delete(&agent.id)
+        .expect("clear source deletion fence");
+
+    // A legacy Agent database can exist without an admission record. A bound
+    // projection must reject that state instead of manufacturing authority.
+    let legacy_agent =
+        mahayana_host_runtime::extensions::session::session_materialization::materialize_new_session(
+            &agents, 500, None, "user", None,
+        )
+        .expect("legacy Agent without admission");
+    let missing_error = runtime
+        .append_human_agent_message(
+            conversation_id,
+            &legacy_agent.id,
+            "runner-missing-admission",
+            Some(&format!("agent:{}:main", legacy_agent.id)),
+            "missing source admission",
+            50.0,
+        )
+        .expect_err("missing source admission must reject");
+    assert!(missing_error.contains("requires source session admission"));
+    assert_eq!(
+        runtime
+            .read_session_work_admission(&legacy_agent.id)
+            .expect("legacy admission"),
+        None
+    );
+    assert_destination_unchanged();
+
+    let enriched = runtime
+        .append_human_agent_message(
+            conversation_id,
+            &agent.id,
+            "runner-legacy",
+            Some(&source_admission.session_key),
+            "legacy result",
+            60.0,
+        )
+        .expect("enrich legacy result after source admission resumes");
+    let mut expected_enriched = legacy;
+    expected_enriched["sessionKey"] = json!(source_admission.session_key);
+    assert_eq!(enriched, expected_enriched);
+    assert_eq!(
+        runtime
+            .append_human_agent_message(
+                conversation_id,
+                &agent.id,
+                "runner-legacy",
+                Some(&source_admission.session_key),
+                "legacy result",
+                61.0,
+            )
+            .expect("enriched result replay"),
+        enriched
+    );
+    assert_eq!(
+        human_db.get_transcript_entries().expect("final Human rows"),
+        vec![enriched, bound.clone()]
+    );
+    assert_eq!(
+        human_db.get_metadata("agentId").expect("Human remains non-Agent"),
+        None
+    );
+    assert_eq!(
+        human_db
+            .read_session_work_admission()
+            .expect("Human admission remains absent"),
+        None
+    );
+
+    runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }
 

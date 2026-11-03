@@ -3,6 +3,13 @@ const INFERENCE_PRODUCTION: &str = include_str!("../src/extensions/inference/pro
 const TRANSCRIPT_RUNTIME: &str = include_str!("../src/extensions/transcript/production_runtime.rs");
 const TURN_OBSERVATION: &str = include_str!("../src/runner/turn_observation.rs");
 
+fn shipping_production_source() -> &'static str {
+    SHIPPING_HOST
+        .split("\n#[cfg(test)]\nmod tests {")
+        .next()
+        .expect("shipping Host production source")
+}
+
 #[test]
 fn shipping_host_wires_frozen_turn_telemetry_sources() {
     for needle in [
@@ -45,7 +52,6 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
         "reason: \"agent_deleted\".into()",
         "let was_in_flight = transcript_runtime.is_agent_running(agent_id)",
         "runner_registry.cancel_agent(agent_id, \"agent deleted\") > 0",
-        "self.runner_registry.agent_id_for_stream(stream_id)",
         "reason.to_ascii_lowercase().contains(\"superseded\")",
         "reason: \"superseded\".into()",
         "had_active_run: cancelled",
@@ -54,6 +60,54 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
             SHIPPING_HOST.contains(needle),
             "shipping Host must preserve frozen turn telemetry wiring through the typed Host facade: {needle}"
         );
+    }
+
+    let production = shipping_production_source();
+    let gateway = production
+        .split("if method == RUNNER_CANCEL_ROUTED_PROVIDER_GATEWAY_METHOD {")
+        .nth(1)
+        .expect("actual cancellation Gateway branch")
+        .split("if method == \"acceptAgentInboundMessage\" {")
+        .next()
+        .unwrap();
+    for needle in [
+        "return request_routed_provider_cancellation(",
+        "&self.runner_registry,",
+        "&self.transcript_runtime,",
+        "&self.telemetry_logs,",
+    ] {
+        assert!(gateway.contains(needle), "Gateway must wire the existing cancellation telemetry owners: {needle}");
+    }
+    let request = production
+        .split("fn request_routed_provider_cancellation(")
+        .nth(1)
+        .expect("cancellation request helper")
+        .split("struct RoutedProviderTerminal {")
+        .next()
+        .unwrap();
+    for needle in [
+        "runner_registry.agent_id_for_stream(stream_id)",
+        "transcript_runtime.is_agent_running(agent_id)",
+        "let cancelled = cancel_routed_stream_request(",
+        "runner_registry, transcript_runtime, stream_id, cancelled_agent_id.as_deref(), reason,",
+        "let fields = TurnInterruptFields {",
+        "had_active_run: cancelled,",
+        "was_in_flight,",
+        "telemetry_logs.report_turn_interrupt(&fields)",
+    ] {
+        assert!(request.contains(needle), "request helper must report live registry/runtime interruption facts: {needle}");
+    }
+    let cancellation = production
+        .split("fn cancel_routed_stream_request(").nth(1)
+        .expect("actual shared cancellation helper")
+        .split("fn request_openclaw_chat_abort(").next().unwrap();
+    for needle in [
+        "transcript_runtime.request_routed_turn_cancellation(stream_id, agent_id, reason)",
+        "return changed;",
+        "runner_registry.cancel_stream_for_agent(agent_id, stream_id, reason)",
+        "runner_registry.cancel_stream(stream_id, reason)",
+    ] {
+        assert!(cancellation.contains(needle), "cancellation must use the captured lease or existing registry owner: {needle}");
     }
 
     for needle in [
@@ -112,11 +166,48 @@ fn shipping_turn_telemetry_uses_typed_host_facade_and_closing_send_delivery_owne
 
     assert!(SEND_TOOL.contains("if result.is_ok()"));
     assert!(SEND_TOOL.contains("self.counter.record_success()"));
-    assert!(SHIPPING_HOST.contains("let sent_message_count = send_message_delivery_counter.count()"));
-    assert!(SHIPPING_HOST.contains("let reacted = reaction_delivery_counter.count() > 0"));
-    assert!(SHIPPING_HOST.contains("let terminal_projection = project_turn_terminal("));
-    assert!(SHIPPING_HOST.contains("sent_message_count,"));
-    assert!(SHIPPING_HOST.contains("reacted,"));
+    let production = shipping_production_source();
+    let runner = production
+        .split("fn start_routed_provider_task(")
+        .nth(1)
+        .expect("production routed worker")
+        .split("impl GatewayApi for UnifiedGatewayApi")
+        .next()
+        .unwrap();
+    let capture_call = "let terminal = RoutedProviderTerminal::capture(";
+    assert_eq!(runner.matches(capture_call).count(), 1, "worker freezes terminal inputs once");
+    let capture_inputs = runner
+        .split(capture_call)
+        .nth(1)
+        .unwrap()
+        .split("\n            );")
+        .next()
+        .unwrap();
+    for needle in [
+        "&worker_stream_id,",
+        "waiting_user,",
+        "&worker_cancellation,",
+        "result,",
+        "send_message_delivery_counter.count(),",
+        "reaction_delivery_counter.count() > 0,",
+    ] {
+        assert!(capture_inputs.contains(needle), "terminal snapshot must consume live worker facts: {needle}");
+    }
+    let capture_owner = production
+        .split("impl RoutedProviderTerminal {")
+        .nth(1)
+        .expect("terminal snapshot implementation")
+        .split("fn finalize_observations(")
+        .next()
+        .unwrap();
+    for needle in [
+        "let projection = project_turn_terminal(",
+        "waiting_user, cancelled, succeeded, sent_message_count, reacted,",
+        "\"sentMessageCount\": sent_message_count,",
+        "\"reacted\": reacted,",
+    ] {
+        assert!(capture_owner.contains(needle), "snapshot must bind the existing projection and delivery event facts: {needle}");
+    }
     assert!(SHIPPING_HOST.contains("delivered: !is_delivery_owed("));
     assert!(SHIPPING_HOST.contains("reaction_delivery_counter.count() > 0"));
     assert!(SHIPPING_HOST.contains("aborted: worker_cancellation.is_cancelled()"));

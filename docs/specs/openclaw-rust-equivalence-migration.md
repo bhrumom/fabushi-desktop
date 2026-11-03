@@ -2,8 +2,8 @@
 
 Status: active  
 Spec ID: OCRM-001  
-Revision: 2  
-Last updated: 2026-11-02（Asia/Shanghai）  
+Revision: 3
+Last updated: 2026-11-02（Asia/Shanghai）
 Owner: Fabushi Desktop  
 Canonical target: `bhrumom/fabushi-desktop` 当前 `main` 及从它推进的已核验实现分支  
 Project: [`projects/openclaw-rust`](../../projects/openclaw-rust/SOURCE_OF_TRUTH.md)  
@@ -62,16 +62,83 @@ Fabushi 已有 React/Electron 产品表面、独立 Rust Coordinator、Host/Runn
 
 | 项目 | 固定身份 | 含义 |
 | --- | --- | --- |
-| OpenClaw `main` | commit `e8cde7518c558f1b4e44cb8139a149289b9719ad` | 本次 discovery 输入，不是未来永远的 latest |
-| OpenClaw tree | `25c8ee611b72762ae1a0170124fa1fee9e519704` | 所有本次上游引用固定于此树 |
+| OpenClaw `main` | commit `e8cde7518c558f1b4e44cb8139a149289b9719ad` | 历史 discovery 输入；不是当前 source authority，也不是未来永远的 latest |
+| OpenClaw tree | `25c8ee611b72762ae1a0170124fa1fee9e519704` | 历史 discovery tree；不代表当前 lock、递归闭包或本轮所有上游引用已固定于此树 |
 | Fabushi `main` | commit `ba9ecce728ef021fee609796c8704d8af6fe4b5a` | 本 Spec 编辑前的目标架构基线；文档提交后须重读 live main |
 | Fabushi tree | `29e6837e6ea9098d64c5de3e0952b3960abbfc86` | 本次 owner 研究输入 |
 | OpenClaw 根 LICENSE | blob `ed064819ab537575d0cad902f7e5af4a3488b1d0` | MIT，另须审计第三方 notices 与依赖 |
 | OpenClaw plugin inventory | blob `e575a2790c20d14b196fd4956619c384e343294c` | 本次文档列 73 core、99 official external、3 source-only 插件 |
 
-本次目录级发现为 `src` 77、`extensions` 176、`skills` 50、`custodian-skills` 4、`packages` 24、`apps` 8、`crates` 2 个直接子目录。`extensions/test-support` 不是第 176 个产品插件；`apps/.i18n` 不是独立平台。上述计数不是递归文件总数，不证明 source completeness。
+本次历史目录级发现为 `src` 77、`extensions` 176、`skills` 50、`custodian-skills` 4、`packages` 24、`apps` 8、`crates` 2 个直接子目录。`extensions/test-support` 不是第 176 个产品插件；`apps/.i18n` 不是独立平台。上述计数不是递归文件总数，不证明 source completeness，也不能覆盖下方 live candidate 的 rebaseline 要求。
+
+### 4.1.1 2026-10-30 live revalidation
+
+本轮只读核对的 Fabushi `origin/main` 为 `cfef45568293a22deb32a6cdef17916f3ec19648`；当前专用工作分支从已结束写手的 clean `074d17dcd8508ef6ca45bc5932553e7429cf62f9` 建立，tree 为 `3529384ecb252ef3cdda85816334c82ed20fb3f6`。远端 PR #169/#180/#181 当前分别为 `b5db35fa272c83833685d70a730b5f8285fa1176`、`2225400ea73392523586a110301edeb87c986001`、`ab4eaa0560a5b767f46d0c91e36eb6e3cfd4344a`，均不是 canonical `main`。此前发现的 OpenClaw live `main` `87facf07d6b4907846c4a8e4c7ae551f85571420`/`f72fbc794bbb23a04bc5afea875d4877048015c9`、c49/fcd6e0b9b42da1e3d39ca89c69ac779294cc3bfb 及 d67/1999145af25baef58520f40daf89e0be3b39988a0 已被后续只读核对 supersede：当前候选为 commit `c32556b0cea7f63b33db0ac393affd71ecb0015b`、tree `e08d361d83ca9cae55aa93d49462d991d0a39efc`，递归 tree API 返回 `truncated=false`，共 63,485 条 tree entry（61,246 blobs、2,239 directories）。这仍只是 live discovery，尚未闭合 submodule/LFS、包 integrity、递归外部依赖、生成输入、许可证或 Actions evidence envelope。现有 OCRM inventory/shards 仍绑定上一轮候选，不能被编辑性地重标为当前来源；待 P0 重新获取递归 inventory、依赖闭包和 provenance 后才能成为本轮锁定来源。以上 live facts 不构成 Actions 验证或产品验收。
 
 OpenClaw 当前协议为 v4；authenticated node 和轻量 probe 有 N-1/v3 窗口。包版本与 wire version 不同。当前 automation 文档已经移除 shared Tasks ledger、TaskFlow API/webhooks 和 inferred commitments；旧 heartbeat monitors 迁入普通 automation jobs。实现必须以 pinned 源码和合同重新核对，不凭历史印象设计。
+
+随后只读获取到更新的 OpenClaw `main` candidate：commit
+`d67aa608643f6583a6c6102c522043794aafe064`、root tree
+`1999145af25baef58520f40daf89e0be3b39988a0`；限定
+`src/node-host/` 与 `crates/openclaw-node-host/` 递归 listing 为 227 条路径。
+它是 discovery-only candidate，不替代当前 lock，也不能复用 c49 或旧
+inventory 的未经重核结论；需在同一 exact subject 上重新生成 inventory、
+依赖闭包与 Actions provenance 后才可提升 authority。
+
+随后只读核对发现 OpenClaw `main` 再次漂移到 commit
+`c32556b0cea7f63b33db0ac393affd71ecb0015b`、root tree
+`e08d361d83ca9cae55aa93d49462d991d0a39efc`；限定
+`src/node-host/` 与 `crates/openclaw-node-host/` 仍为 227 条路径。该结果
+仍为 discovery-only，不替代 lock，也不能复用 d67、c49 或旧 inventory；
+必须对 c325 exact subject 重新取得完整 inventory、依赖闭包与 Actions
+provenance。该 c325 subject 已被 2026-10-31 的后续 live revalidation supersede，不能再视为当前候选。
+
+### 4.1.2 2026-10-31 current live discovery revalidation
+
+当前 OpenClaw `main` 以 `upstream.lock.json::live_candidate` 为准：commit
+`8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c`、tree
+`f4e34cf339e1645079baa9c8a6bdf1b9a169fa4f`，递归 tree 未截断，共 64,075
+条 entry（61,834 blobs、2,241 directories、0 gitlinks）。该 subject 仍为
+discovery-only；未取得绑定本 exact subject 的 Actions inventory、递归依赖
+闭包、LFS/完整性或 evidence envelope，不得复用任何旧 candidate 的 closure
+或提升 authority/global flag。
+
+2026-10-31 当前治理快照以 `upstream.lock.json::live_candidate` 为准：
+OpenClaw `main` commit=`8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c`、tree
+`f4e34cf339e1645079baa9c8a6bdf1b9a169fa4f`，递归 tree 未截断，共 64,075
+entries（61,834 blobs、2,241 directories、0 gitlinks）。它 supersede 以上
+更早的 live 候选作为当前 discovery reference，但仍未取得绑定该 exact
+subject 的 Actions inventory、递归依赖闭包、LFS/完整性、许可证和 evidence
+envelope；不得复用旧 candidate 的 closure，也不得提升任何 global flag。
+
+当前 exact subject 的根输入 identity probe 已记录在
+[`upstream-current-candidate-probe-8c69e8b7-20261031.md`](../../projects/openclaw-rust/dossiers/upstream-current-candidate-probe-8c69e8b7-20261031.md)
+它只确认该 exact subject 的 pnpm/workspace/license root blob identity，不等价于递归
+dependency closure；`source_closure_ready`、`baseline_identity_accepted` 和
+其余 global flags 继续为 `false`。
+
+同一 exact subject 的 declaration-input frontier 已记录在
+[`upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`](../../projects/openclaw-rust/dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md)：当前树有 246 个依赖/构建声明文件，较固定实现基线清单的 244 个路径出现 6 个消失、8 个新增和 208 个 shared blob 变化。该 frontier 只扩大 exact-tree 输入证据，不等价于递归依赖闭包，也不改变固定 baseline、inventory 或 flags。
+
+此前只读核对（现已被后续候选 supersede）发现 OpenClaw `main` 漂移到 commit
+`298546d88934bf05bc7e208d13bf6ce2c538e3f2`、tree
+`120f973ab7da856b4bc1c545c437dd94d35ef9eb`。GitHub recursive-tree API 返回
+`truncated=false`，共 63,847 条 tree entry（61,606 blobs、2,241 directories）。
+当前候选根输入 blob 为 `package.json`=`3b8d23201d08859353b3ada3915f9e6fe5266dcf`、
+`pnpm-lock.yaml`=`83b4975eb96942ec007a2eb9847ccfe98d380bda`、
+`pnpm-workspace.yaml`=`32ce4d83de4aac6a1e3665baba09a3aa9582960c`；其余
+`.gitattributes`、LICENSE、THIRD_PARTY_NOTICES 与上一候选相同，根目录仍无
+`.gitmodules`。这仍是 discovery-only：未取得该 exact subject 的 Actions
+inventory、依赖闭包、LFS/完整性、生成输入、许可证和 evidence envelope，旧
+inventory/shards/closure 不得复用或编辑性重标。
+
+此前只读核对曾发现 OpenClaw `main` 漂移到 commit
+`89734994c6c9d3572e2927be0cdae8d7da1998ca`、root tree
+`bcb3914c8418e2f92927dd3e60c635fc4345a858`；递归 tree API 返回
+`truncated=false`，共 63,519 条 tree entry（61,279 blobs、2,240 directories）。
+该结果仅保留为历史 discovery evidence；当前 identity 以 `upstream.lock.json`
+及本节后面的 `510e168…/8260de…` 为准，不能复用该 candidate 或更早 candidate 的旧
+inventory、依赖闭包与 provenance。
 
 ### 4.2 当前 Fabushi 接线事实
 
@@ -81,6 +148,14 @@ OpenClaw 当前协议为 v4；authenticated node 和轻量 probe 有 N-1/v3 窗�
 - 当前 main 已有 Human 消息和 CallSession 接缝，不能照抄旧 owner inventory 中的“尚不存在”结论。
 - 外部 channel 存在 `connectors/channel_delivery.rs` 接缝，但其 default 是 `UnregisteredChannelDeliveryPort`；Host app 本次读取仍注入 `HostChannelDelivery::default()`。这不能证明任一 OpenClaw channel 已生产可用。
 - 当前 main 的 Browser/Memory/Plugins 等源码存在，不等于其已覆盖全部 OpenClaw 行为，也不等于取得当前 HEAD 的 packaged acceptance。
+
+2026-10-31T04:25:12Z 的再次只读核对发现 OpenClaw `main` 已漂移到
+commit=`10d93efc9c8730b7a2fad831c20c649adec7176b`、root tree
+`d33ed7c344544baf60148a41afab9e9a9547e9f4`；递归 tree 未截断，共 63,881
+entries（61,640 blobs、2,241 directories）。根输入 identities 与上一候选
+相同，`.gitmodules` 仍不存在。该 candidate 仍是 discovery-only；不得复用
+旧 inventory、依赖闭包、LFS/完整性、许可证或 Actions provenance，必须对该
+exact subject 重新取得完整 inventory、依赖闭包和 evidence envelope。
 
 这些是只读源码观察。未在本次执行任何构建、测试或产品验收。
 
@@ -135,7 +210,7 @@ Git tree API 被截断时必须分子树继续枚举并核对集合；GitHub sea
 
 ### 6.2 文件记录
 
-每个路径至少记录：`source_repository`、`source_commit`、`source_tree`、`path`、`blob_sha`、`mode/type`、`size`、`language/kind`、`module_id`、`dependency_edges`、`read_state`、`read_ranges/content_identity`、`responsibility_ids`、`disposition`、`license/provenance`、`reviewer`、`evidence_refs`。
+每个路径至少记录：`source_repository`、`source_commit`、`source_tree`、`path`、`blob_sha`、`mode/type`、`size`、`language/kind`、`module_id`、`dependency_edges`、`read_state`、`read_ranges/content_identity`、`responsibility_ids`、`applicability_status`、`disposition_status`、`disposition`、`license/provenance`、`reviewer`、`evidence_refs`。`applicability_status` 与语义 `read_state` 独立；`disposition_status=grouped-evidence` 必须指向可复核的生成关系、引用、许可证、静态扫描或抽样证据，`unknown/pending` 不能计入 AC02 closure。
 
 同一 blob 位于多个路径时，可引用同一内容阅读记录，但路径用途、caller、构建条件与责任仍分别登记。不能重复计算 source coverage。生成文件必须追溯 schema、template、generator、使用方和生成结果；可以重建实现方式，不能省略生成出来的合同。二进制/资源按完整内容身份、用途、交互/版权/替换关系检查，不伪造行级阅读全文。
 
@@ -151,9 +226,16 @@ Git tree API 被截断时必须分子树继续枚举并核对集合；GitHub sea
 
 每条责任至少包含：`id`、`responsibility_kind`、源 path/blob/symbol/range、行为描述、前后置条件、不变量、capability/requirement IDs、source oracle、所有候选 existing owners 与选择原因、target path/symbol/artifact/language、commands/events/schema、state/lifecycle、dependencies、按类型的 integration path、`required_evidence_dimensions`、`required_gate_ids`、测试、差异 ADR、迁移/回滚、风险、阻塞、当前证据。运行时 integration path 必须记录 production entrypoint/producer/owner/consumer。
 
+项目级 RTM 只登记本 Spec 的顶层 `OCRM-Rxx` 与 `OCRM-ACxx` requirement/acceptance
+行。具体实施任务可以在其自身的受审任务文档中定义 task-local criteria（例如
+`OCRM-P1-Fxx`、`OCRM-P1-ACxx` 及其 task-local oracle）；这些 ID 必须能解析回
+唯一任务、不能伪装成项目 RTM 行，也不能单独产生项目级 verified/accepted 或
+completion flag。责任仍应同时关联适用的项目级 requirement/AC，除非该任务明确
+记录其 task-local 范围与尚未提升为项目级标准的原因。
+
 | 维度 | 可记录状态 | 升级条件 |
 | --- | --- | --- |
-| 来源读取 | unread / partial / read-complete | 完整内容与责任阅读记录；没有未读区间 |
+| 来源读取 | unread / partial / read-complete | 该路径的完整内容与责任阅读记录；仅该路径没有未读区间（不表示全量 inventory 或 AC02 必须 unread=0） |
 | 责任分析 | unclassified / mapped / reviewed | owner、行为、依赖、oracle 和具体覆盖经复核 |
 | 实现 | not-started / implementing / implemented | 按 §6.4.1 类型合同有真实实现或交付物；业务责任必须 Rust，不是 stub |
 | 生产/交付接入 | not-wired / wired | 对应类型的真实 consumer 已接入；运行时必须实际 packaged entrypoint 可到达 owner 和 consumer |
@@ -175,6 +257,15 @@ Git tree API 被截断时必须分子树继续枚举并核对集合；GitHub sea
 | `documentation-governance` | 文档、操作合同、示例或有理由的不转入处置保留准确来源与行为关系 | canonical 文档/配置/开发流程中的实际引用或逐项处置证明；源审读、G02 引用/状态检查及相关产品责任证据，不虚构 runtime 入口 |
 | `asset-license` | 二进制、图标、字体、模板、版权与 notices 有内容身份、替换关系及合法 provenance | 应分发内容进入实际 artifact/NOTICE/SBOM；不分发项有经审查处置；Actions 包内容证据与许可审查 |
 | `non-product-disposition` | 对具体责任给出完整源证据、适用性分析和独立审查；不能用于未实现或受阻功能 | G02 校验处置及引用；不要求不存在的运行时实现，但该责任仍在分母，审查不通过即未闭合 |
+
+现有 ledger 还允许以下仓库级细分 kind：`dependency-authority`、
+`integration-adapter`、`platform-adapter`、`projection`、
+`security-evidence`。它们是对上述合同的责任细分，不是绕过类型合同的第
+二套状态机：`dependency-authority` 与 `security-evidence` 继承
+`documentation-governance`/`test-oracle` 的证据合同，`integration-adapter`
+与 `platform-adapter` 继承 `platform-bridge` 的边界合同，`projection`
+继承 `presentation` 的 typed consumer 合同；各项仍须保留独立 owner、
+source/oracle、接入、验证和验收证据。
 
 mixed 文件必须拆出所有不同类型的责任，不能把带业务的 UI、脚本、插件、schema 或文档整体改标为非运行时。`dimension-not-applicable` 仅用于上述合同确实不要求的某个维度，记录 `dimension/reason/source_evidence/reviewer`；缺少必要的实现、账号、服务、设备或证据不是维度不适用。所有 responsibility 仍需完成自己的实现/处置、接入/消费、验证和独立验收合同；某维度不适用不等于整个责任已接受。
 
@@ -367,6 +458,34 @@ bounded queues/cache/retry、backpressure、cancellation-safe async、timer/task
 
 ## 12. GitHub Actions 验证与证据合同
 
+### 12.0 开发期验证冻结与最终集中验收
+
+为避免开发期每次文档、审读记录、inventory、ledger 或实现小步提交都
+触发并等待同一组长时 OCRM 工作流，本项目采用两阶段验证节奏：
+
+1. **开发期冻结**：在最终受验 target 尚未冻结前，不主动触发、等待或
+   重跑 OCRM P0、Rust desktop runtime 或其他 OCRM 验收工作流；不得使用
+   `workflow_dispatch`，也不得为了等待 CI 推送临时 head。开发期可以继续
+   做锁定源的逐文件审读、依赖闭包、双向映射、Spec/ledger/dossier 修正、
+   Rust/测试实现、真实 owner 生产接线和只读证据分析。所有受影响责任的
+   `verification` 保持 `not-run`/`pending`，`acceptance` 保持 `pending`，
+   八项 global flags 不得因延期验证而升级。
+2. **最终冻结**：当实现、适用 owner/consumer 接线、正反 oracle、UI/生态/
+   数据/平台/服务/打包准备和 blocker 处理完成后，冻结一个 exact target
+   `H`。只对 `H` 集中执行适用的 P0→P5 Actions、真实服务/设备/平台/安装包
+   验收与 OCRM-AC01–AC24 独立终验；每份 receipt 必须绑定 `H`、上游锁和
+   完整 subject inputs。失败项按证据状态修复后重新冻结新的 `H`，不得把
+   旧 head 的结果转移到新 head。
+3. **自动触发边界**：仓库既有 PR 事件可能自动启动非 OCRM 工作流；开发期
+   不把这些运行当作验收，不等待其完成，也不修改 shared workflow 影响其他
+   项目。若本任务 PR 已产生开发期运行，只取消属于本 PR/本分支的运行，
+   不取消 main、其他 PR 或项目级工作流，并在本地记录 run ID 与取消原因。
+
+该节只调整验证时机，不降低 §12.2 gate、§12.3 evidence envelope、§15
+Definition of Done 或 AGENTS.md 的“可执行验证只在 GitHub Actions”要求。
+取消、未运行、失败和缺证据都不是通过；最终冻结前不得把任何状态投影为
+`verified`/`accepted`。
+
 ### 12.1 执行环境
 
 本项目的 build、test、lint、generator、schema check、benchmark、fuzz、integration、E2E、visual/a11y、package、install/upgrade/rollback 和验收执行 **只在 GitHub Actions**。本项目不采用仓库其他地方的 `htch-runtime` 例外；不在 bhrum2、用户 Mac/Windows 或 assistant container 运行这些任务。
@@ -483,7 +602,7 @@ OpenClaw 导入路径包括配置、workspace instructions、Agent profile、ski
 | `ui_accepted` | 全部产品能力的 canonical UI/CLI/TUI 等适用交互、状态、可访问性和一致性经接受 | G07/G09/G12；AC16 | 缺入口/状态/交互证据、仅开发入口、相关视图/typed contract 变化 |
 | `release_accepted` | 其余 flags 均 true；全部类型责任 accepted，全部 AC01–AC24 通过，零 in-scope blocker，当前 H 的完整发布/独立验收 ACCEPT | 全部适用 G01–G12、当前 H 的聚合 receipt、签名/安装/升级/回滚产物 | 任一必需证据失效/过期、未配置/未测、open blocker/严重缺陷或当前 target 已改变 |
 
-P0 通常只能建立前两个 flags 的正面证据；完整语义映射可以在后续逐模块阅读中完成。G02 structural 的绿色不允许把 `responsibility_mapping_complete` 置 true；Rust 实现通过也不允许提升 wiring、ecosystem、UI 或 release。只有全部完成且证据可核验才能对外宣称完整迁移。
+P0 通常只能建立前两个 flags 的正面证据；完整适用责任映射和 disposition closure 可以在后续逐模块深读中完成。G02 structural 的绿色不允许把 `responsibility_mapping_complete` 置 true；Rust 实现通过也不允许提升 wiring、ecosystem、UI 或 release。只有全部完成且证据可核验才能对外宣称完整迁移。`unread` 统计继续如实保留，用于表示尚未深读的路径集合，不得被改写为 0，也不再被单独当作 AC02 失败理由。
 
 ## 16. References / provenance
 
@@ -498,12 +617,15 @@ P0 通常只能建立前两个 flags 的正面证据；完整语义映射可以�
 
 ### 16.2 OpenClaw 固定来源
 
-- [commit / tree](https://github.com/openclaw/openclaw/commit/e8cde7518c558f1b4e44cb8139a149289b9719ad)。
-- [README](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/README.md)、[源码](https://github.com/openclaw/openclaw/tree/e8cde7518c558f1b4e44cb8139a149289b9719ad/src)、[packages](https://github.com/openclaw/openclaw/tree/e8cde7518c558f1b4e44cb8139a149289b9719ad/packages)。
-- [plugin inventory](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/e8cde7518c558f1b4e44cb8139a149289b9719ad/extensions)、[channels](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/docs/channels/index.md)。
-- [Gateway architecture](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/docs/concepts/architecture.md)、[protocol package](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/packages/gateway-protocol/README.md)、[versioning / state owner](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/docs/gateway/protocol/versioning.md)。
-- [automation / retired surfaces](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/docs/automation/index.md)、[schedule source](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/src/cron/schedule.ts)、[node runtime manifest](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/src/node-host/runtime-manifest.ts)。
-- [LICENSE](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/LICENSE)、[THIRD_PARTY_NOTICES](https://github.com/openclaw/openclaw/blob/e8cde7518c558f1b4e44cb8139a149289b9719ad/THIRD_PARTY_NOTICES.md)。
+- [historical live candidate c49 commit / tree](https://github.com/openclaw/openclaw/commit/c49e07385f8d17601efbed7746381213d5326ba9)（只读 discovery；已被后续候选 supersede）。
+- [historical live candidate d67 commit / tree](https://github.com/openclaw/openclaw/commit/d67aa608643f6583a6c6102c522043794aafe064)（只读 discovery；已被后续候选 supersede）。
+- [current observed live candidate commit / tree](https://github.com/openclaw/openclaw/commit/8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c)（tree `f4e34cf339e1645079baa9c8a6bdf1b9a169fa4f`；只读 discovery；未取得本轮 Actions authority，不能复用旧 inventory）。
+- [historical discovery commit / tree](https://github.com/openclaw/openclaw/commit/002f25a97fccb7eff05b768a3fd7bc7e13488ed6)（仅作为早期研究输入，不是当前 source lock）。
+- [README](https://github.com/openclaw/openclaw/blob/8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c/README.md)、[源码](https://github.com/openclaw/openclaw/tree/8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c/src)、[packages](https://github.com/openclaw/openclaw/tree/8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c/packages)。
+- [plugin inventory](https://github.com/openclaw/openclaw/blob/8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c/docs/plugins/plugin-inventory.md)、[extensions](https://github.com/openclaw/openclaw/tree/8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c/extensions)、[channels](https://github.com/openclaw/openclaw/blob/8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c/docs/channels/index.md)。
+- [Gateway architecture](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/docs/concepts/architecture.md)、[protocol package](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/packages/gateway-protocol/README.md)、[versioning / state owner](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/docs/gateway/protocol/versioning.md)。
+- [automation / retired surfaces](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/docs/automation/index.md)、[schedule source](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/src/cron/schedule.ts)、[node runtime manifest](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/src/node-host/runtime-manifest.ts)。
+- [LICENSE](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/LICENSE)、[THIRD_PARTY_NOTICES](https://github.com/openclaw/openclaw/blob/b924498923dff81a02fb8a89d57828717c6e160d/THIRD_PARTY_NOTICES.md)。
 
 ### 16.3 Fabushi 固定来源
 
@@ -514,6 +636,16 @@ P0 通常只能建立前两个 flags 的正面证据；完整语义映射可以�
 
 ## 17. Spec compliance 与本次交付记录
 
+### 17.1 2026-10-31 governance amendment
+
+OCRM-AC02 and G02 final close the source set by requiring zero omitted paths,
+zero undispositioned paths, zero unassessed applicable product
+responsibilities, and zero applicable orphan/unmapped responsibilities. Honest
+`unread`/`unclassified` progress for ordinary non-product grouped evidence
+remains reportable and is not an independent AC02 failure predicate. This
+amendment does not promote any source-closure, implementation, wiring,
+verification, acceptance, or global flag state.
+
 | 对象 | 状态 | 说明 |
 | --- | --- | --- |
 | 需求/范围/架构/接口/实施/验收规范 | 本次已定义，待后续按规范实施 | 对应本文件、module map 与 P0 task |
@@ -523,6 +655,18 @@ P0 通常只能建立前两个 flags 的正面证据；完整语义映射可以�
 | 所有完成 flags | false | 递归总量与全量进度尚未建立，不填虚构百分比 |
 
 执行阶段每次更新真实责任与 evidence，最终每个适用 AC 只能 `passed`（有证据）或保持 `blocked`；具体非产品事项的 `not-applicable` 必须有源证据，不能豁免最终功能。下一项工作为 [`P0-source-baseline-and-owner-audit.md`](../../projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md)。
+
+### Historical 2026-10-31 live-source drift amendment
+
+只读 GitHub 核对显示 OpenClaw `main` 已推进到
+`8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c` / tree
+`f4e34cf339e1645079baa9c8a6bdf1b9a169fa4f`，递归 tree 未截断，共 64,075
+entries（61,834 blobs、2,241 directories、0 gitlinks）。该 identity 只更新
+`upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用前一
+candidate 的 inventory、dependency closure、LFS/integrity 或 Actions
+provenance，也不改变 fixed implementation subject、AC01/AC02 状态或任何
+global flag。新的 exact-subject inventory、依赖闭包和 evidence envelope
+仍需在最终解冻后的 Actions 流程中重新取得。
 
 ## 17. OCRM-EXEC-02 — 产品批次与风险分层执行（2026-11-02）
 

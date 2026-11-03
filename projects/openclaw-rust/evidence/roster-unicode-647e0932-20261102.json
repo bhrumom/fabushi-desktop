@@ -1,0 +1,3017 @@
+{
+  "format_version": 1,
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "RSU-v1",
+  "scope": "Existing Fabushi Session search Unicode match projection; no new upstream semantic review or equivalence credit.",
+  "subject_target": {
+    "subjectCommit": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+    "subjectTree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+    "verified": true,
+    "remoteReadback": [
+      {
+        "kind": "ref",
+        "sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "matched": true
+      },
+      {
+        "kind": "commit",
+        "sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "parent": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "matched": true
+      },
+      {
+        "kind": "file",
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 215445
+      },
+      {
+        "kind": "file",
+        "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "sha": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 4846
+      },
+      {
+        "kind": "file",
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "sha": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 112441
+      },
+      {
+        "kind": "file",
+        "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+        "sha": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 6463
+      },
+      {
+        "kind": "file",
+        "path": "source/host/src/extensions/transcript/roster_search.rs",
+        "sha": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 9667
+      },
+      {
+        "kind": "file",
+        "path": "source/host/tests/agent_content_search_contract.rs",
+        "sha": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 6336
+      },
+      {
+        "kind": "file",
+        "path": "source/host/tests/roster_search_contract.rs",
+        "sha": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+        "identityMatched": true,
+        "fullContentMatched": true,
+        "receivedCharacters": 17111
+      }
+    ],
+    "runs": [
+      {
+        "id": 41534582934,
+        "name": "Rust desktop runtime",
+        "head_sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "status": "queued",
+        "conclusion": null,
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41534582934"
+      },
+      {
+        "id": 41534582857,
+        "name": "OCRM P0 source authority",
+        "head_sha": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "status": "in_progress",
+        "conclusion": null,
+        "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41534582857"
+      }
+    ]
+  },
+  "frozen_source": {
+    "contract": "RSU-v1",
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+    "candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+    "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "patch_sha256": "49aa32f4eb54bd4b84577ccd3f76f924b3c1bd4c3a817cde12b336c9a40da2b4",
+    "scope": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "before_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+        "after_blob": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+        "bytes": 215445,
+        "sha256": "5eaef67431e4043cd30d5de7edd40e8b09b8b3fb5e20b17f61e84fda7621b2e9"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+        "before_blob": null,
+        "after_blob": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+        "bytes": 4851,
+        "sha256": "9a14803cd7f3ecd46c43453e28c5a7395b1c760b2fe8a02d67755b23ca6a69fd"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "before_blob": "80b490f8670045ce0abd7eec8c2b3418076602c8",
+        "after_blob": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+        "bytes": 112441,
+        "sha256": "f90f77e8dc722f5869a5dddac58c27b1598a447a743e0b6e31e2975f23899020"
+      },
+      {
+        "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+        "before_blob": "49ef853b73fdea376a13156631ace97004eb482c",
+        "after_blob": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+        "bytes": 6468,
+        "sha256": "8d3321c4f0918922d05b9bbc8e94ea28d99810bca4cdf2b0a5946262680a6e3d"
+      },
+      {
+        "path": "source/host/src/extensions/transcript/roster_search.rs",
+        "before_blob": "9040ebf8d4738bf7688969339ae4df64d64db85a",
+        "after_blob": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+        "bytes": 9667,
+        "sha256": "c2a91b65b69404d7c07d83bd0666acfe8d9a5f3e116fc09c80eb44bc6525c17b"
+      },
+      {
+        "path": "source/host/tests/agent_content_search_contract.rs",
+        "before_blob": "37e59b0349fccc1a79176091708781f5ac95cc92",
+        "after_blob": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+        "bytes": 6426,
+        "sha256": "4d1759e94a2312c8758181fa8a6da5386a5736780eb08d633c59ccbb0424dc0a"
+      },
+      {
+        "path": "source/host/tests/roster_search_contract.rs",
+        "before_blob": "d0b5720c71846ebc3ef42a040bd8375fc1be91ce",
+        "after_blob": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+        "bytes": 17190,
+        "sha256": "c8a7311884d10022c8d4a254099904c42424931ed41f188356801b37634d05bc"
+      }
+    ],
+    "incoming_preserved": "e01 media Unicode/storage profile and 40dad config input/temporary staging cleanup, including their workflow tests; no other source mutations",
+    "review_execution": {
+      "functional": {
+        "model": "inherited configured model",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "reuse_structure_performance": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      }
+    },
+    "local_executable_validation_performed": false,
+    "runtime_evidence": "pending exact-H GitHub Actions; source review alone grants no verified/equivalence status"
+  },
+  "independent_reviews": [
+    {
+      "schema_version": 1,
+      "contract": "RSU-v1",
+      "round": 1,
+      "review_role": "independent functional, safety and behavior source review",
+      "reviewer_identity": {
+        "task": "/root/rsu_functional_review",
+        "model": "inherited configured model; model override omitted",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none",
+        "provenance": "Parent launch record explicitly reports successful spawn with fork_turns=none and reasoning_effort=xhigh, with model omitted to inherit the configured model. The child has no runtime model/effort introspection surface; these applied settings are recorded from that launch record.",
+        "adapter_fallback": false,
+        "independent_current_round": true,
+        "other_current_round_reports_consulted": false
+      },
+      "subject": {
+        "repository_root": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+        "repository": "bhrumom/fabushi-desktop",
+        "exact_base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "exact_base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+        "frozen_candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+        "manifest": "/workspace/scratch/403d4d169ac6/rsu-review/r1/manifest.json",
+        "candidate_patch": "/workspace/scratch/403d4d169ac6/rsu-review/r1/candidate.patch",
+        "patch_sha256_from_manifest": "49aa32f4eb54bd4b84577ccd3f76f924b3c1bd4c3a817cde12b336c9a40da2b4",
+        "identity_assessment": "Read-only git diff --raw --abbrev=40 confirms exactly the declared seven paths and all before/after blob identities; git rev-parse confirms the base tree. Frozen upstream.lock.json confirms fixed U. Source was read using git show on the frozen tree, not inferred from the manifest or a mutable working-tree summary.",
+        "candidate_commit_runtime_subject": null
+      },
+      "execution_boundary": {
+        "local_executable_validation_performed": false,
+        "htch_runtime_validation_performed": false,
+        "github_actions_executed_by_reviewer": false,
+        "prohibited_checks_not_run": [
+          "build",
+          "compile",
+          "test",
+          "lint",
+          "validator",
+          "schema",
+          "generator",
+          "benchmark"
+        ],
+        "operations": "Only read-only shell/Git source inspection and writing this owned review JSON.",
+        "production_or_shared_files_modified": false,
+        "evidence_level": "Static source, contract, oracle and workflow review only; no runtime verification or equivalence acceptance."
+      },
+      "governing_context": [
+        "Current AGENTS.md, especially immutable independent review, effort/model inheritance and OCRM Actions-only execution.",
+        "Current projects/openclaw-rust/SOURCE_OF_TRUTH.md, current fixed-U amendment and explicit incomplete acceptance.",
+        "docs/specs/openclaw-rust-equivalence-migration.md §17 OCRM-EXEC-02, including actual consumer closure, source/evidence separation and retained full acceptance.",
+        "Relevant existing-owner entries in projects/openclaw-rust/module-map.md.",
+        "Frozen projects/openclaw-rust/docs/specs/roster-search-unicode-match.md in full."
+      ],
+      "coverage": {
+        "declared_scope_complete": true,
+        "files": [
+          {
+            "path": ".github/workflows/rust-desktop-runtime.yml",
+            "before_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+            "after_blob": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+            "depth": "Every changed hunk, exact-subject triggers/setup, actual macOS and Linux command/receipt paths, retained adjacent MGS/MRU/Automation/config/storage/artifact gates."
+          },
+          {
+            "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+            "before_blob": null,
+            "after_blob": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+            "depth": "Complete contract, controls, exclusions and runtime evidence requirements."
+          },
+          {
+            "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+            "before_blob": "80b490f8670045ce0abd7eec8c2b3418076602c8",
+            "after_blob": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+            "depth": "All four changed evidence-ref hunks plus relevant row/top-level state. No state promotion is present in the full diff."
+          },
+          {
+            "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+            "before_blob": "49ef853b73fdea376a13156631ace97004eb482c",
+            "after_blob": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+            "depth": "Complete frozen source and exact-base delta."
+          },
+          {
+            "path": "source/host/src/extensions/transcript/roster_search.rs",
+            "before_blob": "9040ebf8d4738bf7688969339ae4df64d64db85a",
+            "after_blob": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+            "depth": "Complete frozen source and exact-base delta, including indexed/media and linear paths."
+          },
+          {
+            "path": "source/host/tests/agent_content_search_contract.rs",
+            "before_blob": "37e59b0349fccc1a79176091708781f5ac95cc92",
+            "after_blob": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+            "depth": "Complete frozen tests and exact-base delta; independent Unicode/context expectations and preserved legacy controls."
+          },
+          {
+            "path": "source/host/tests/roster_search_contract.rs",
+            "before_blob": "d0b5720c71846ebc3ef42a040bd8375fc1be91ce",
+            "after_blob": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+            "depth": "Complete frozen tests and exact-base delta; gateway, actual persisted rows, reopen, index fallback and ready-index controls."
+          }
+        ],
+        "adjacent_chain": [
+          "source/host/src/host_gateway_api.rs:156 — searchAgents remains registered to TranscriptManager.",
+          "source/host/src/extensions/transcript/transcript_manager.rs:668-688 — production services supply the existing RosterContentSearch and dispatch the same Session gateway.",
+          "source/host/src/extensions/session/gateway.rs:318-385 — real dispatch entry, query extraction, default/explicit limit and JSON serialization.",
+          "source/host/src/extensions/session/production.rs:343-435,1283-1310,3930-3941,6058-6080,6337-6368 — real owner construction, read/append, roster discovery and shutdown.",
+          "source/host/src/extensions/session/agent_db.rs:4134-4185,5659-5677,7493-7505 — committed SQLite append, owner reads and ordered row decoding.",
+          "source/host/src/extensions/session/agent_db_schema.rs:18-23,97-98,177-180 — actual table, seq order and insert SQL.",
+          "source/host/src/extensions/session/agent_db_serde.rs:137-188 — fixtures satisfy the actual persisted-entry decoder.",
+          "source/host/src/extensions/content_search/extension.rs:175-220 — existing production readiness and indexed service delegation.",
+          "source/host/Cargo.toml:1-6, dependencies — edition 2024, rusqlite and serde_json are already declared; no new dependency.",
+          "frontend/src/production/command-palette-message-provider.ts:40-77,126-175 — accepted JSON shape, unchanged original snippet, request cancellation/stale response handling.",
+          "frontend/src/production/command-palette-model.ts:45-67,112-145,176-207 — snippet as label/keywords and the actual second filtering consumer.",
+          "frontend/src/production/CommandPalette.tsx:357-381 — snippet rendered as ordinary React text."
+        ]
+      },
+      "findings": [],
+      "finding_counts_for_candidate_delta": {
+        "IMPL_BUG": 0,
+        "TEST_FLAW": 0,
+        "ENV": 0
+      },
+      "decision": {
+        "status": "APPROVE_SOURCE_REVIEW_ONLY",
+        "blocking_findings": 0,
+        "required_changes_to_current_frozen_scope": [],
+        "explanation": "No falsifiable implementation, safety, behavior or oracle defect introduced by this seven-file frozen candidate was found. The patch is suitable to proceed to its exact-H Actions campaign. This is not runtime verification, indexed-backend equivalence, UI acceptance or overall OCRM acceptance.",
+        "global_flags_may_be_promoted": false
+      },
+      "contract_assessment": [
+        {
+          "requirement": "RSU-01",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "agent_content_search.rs:86-88 performs one whole-string to_lowercase() and substring lookup.",
+            "agent_content_search.rs:97-105 maps the normalized start and end to complete original source characters; a match starting or ending inside the i + combining-dot expansion includes all of original İ.",
+            "Whole-string contextual Σ -> ς/σ is retained for lookup. The per-character pass computes only lengths; the contextual sigma alternatives have equal UTF-8 length.",
+            "agent_content_search_contract.rs:81-118 specifies expansion, contraction, partial expansion, across-expansion and contextual/case-ignorable sigma expectations independently."
+          ],
+          "reasoning": "The strict cumulative-end > match_start selects the source character containing the first matched byte; cumulative-end >= match_end selects the source character containing the final matched byte. Both returned offsets come from original char_indices/len_utf8, so later slices cannot bisect a matched UTF-8 character."
+        },
+        {
+          "requirement": "RSU-02",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "agent_content_search.rs:59-75 collapses the same Unicode whitespace categories used by the prior roster split_whitespace implementation.",
+            "agent_content_search.rs:127-150 keeps separate 30/60-character and 30/60-byte windows.",
+            "roster_search.rs:102-104 delegates only to the byte-context entry point.",
+            "agent_content_search_contract.rs:64-77,122-138 and roster_search_contract.rs:116-136 contain independent ASCII, character-window, UTF-8 inward-rounding, whitespace and empty/no-match controls."
+          ],
+          "reasoning": "The typed character branch includes exactly up to thirty preceding and sixty following original characters. The byte branch rounds a leading byte boundary forward and trailing boundary backward; neither can cross the already mapped matched span. Empty/no-match behavior and ellipsis placement remain consistent.",
+          "concrete_expected_outputs": [
+            "90 × İ + Needle -> roster: ellipsis + 15 × İ + Needle; typed: ellipsis + 30 × İ + Needle.",
+            "90 × K + Needle -> roster: ellipsis + 10 × K + Needle; typed: ellipsis + 30 × K + Needle.",
+            "10 × 🙂 + Needlez + 20 × 🙂 -> roster: ellipsis + 7 × 🙂 + Needlez + 14 × 🙂 + ellipsis."
+          ]
+        },
+        {
+          "requirement": "RSU-03",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "roster_search_contract.rs:171-220 persists six concrete fixtures, verifies their real SQLite JSON, invokes the actual Session gateway and reopens the Session owner.",
+            "roster_search_contract.rs:247-264 covers absent index, unready index and ready-but-unavailable index using the same gateway fixture.",
+            "roster_search_contract.rs:361-413 retains ready-index message/media controls and now inserts a real, newer matching fallback row that must not replace the indexed result.",
+            "roster_search.rs:154-197 preserves None-triggered fallback and Some(indexed-results) short-circuit, including available empty results."
+          ],
+          "reasoning": "The unavailable-index fixture returns None; the unready fixture must never receive a message query. Exactly five nonempty/nonzero searches occur across initial search, sigma, partial expansion, missing query and reopen; whitespace and zero limit return before readiness inspection, explaining the count assertions."
+        },
+        {
+          "requirement": "RSU-04",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "roster_search.rs:18-26,106-197,248-287 preserves result fields, hidden-peer filtering, reverse-entry traversal, role/timestamp projection, global sorting/truncation and stale indexed-agent filtering.",
+            "roster_search_contract.rs:196-217 compares the complete expected JSON and exact persisted raw entry strings before/after searching and reopening.",
+            "roster_search_contract.rs:268-298 pins the newest five matches from one agent, hidden-newest exclusion, ordering across two agents and a smaller global limit.",
+            "Existing indexed-message and indexed-media deleted-agent controls remain present."
+          ],
+          "reasoning": "The production change is a synchronous pure string projection. It introduces no persistence, notification, permission or cancellation owner. The test's persisted comparison is transcript row text preservation, not a claim that every database file byte or filesystem metadata is unchanged."
+        },
+        {
+          "requirement": "RSU-05",
+          "source_review": "PASS",
+          "runtime_evidence": "PENDING",
+          "evidence": [
+            "agent_content_search.rs:59-105 performs flattening, whole-string lowercasing, the underlying substring search and one forward source-span mapping pass.",
+            "agent_content_search.rs:127-150 scans only bounded context around the match.",
+            "The roster's former second independent lowercase/slice algorithm and boundary helpers are removed; its public wrapper delegates to the existing content-search owner."
+          ],
+          "reasoning": "No growing prefixes are repeatedly lowercased, no second index/store/task is introduced, and the code remains linear in input plus the underlying substring search. No measured runtime or performance result is claimed."
+        }
+      ],
+      "oracle_and_compile_review": {
+        "independent_expectations": "Expected snippets use fixed counts and literal original characters. They are not produced by another call to the snippet implementation. Full JSON equality detects dropped/renamed/extra fields, wrong role/timestamp/order and lost matched casing.",
+        "actual_storage": "stored_transcript_rows opens the actual agent.db_path with SQLITE_OPEN_READ_ONLY and reads id plus raw entry text ordered by seq. The fixture proves all input entries exist before searching, compares complete raw rows after the reads, drops the original Session owner, constructs a new owner for the same root, repeats the meaningful search and compares rows again.",
+        "decoder_compatibility": "The message/send-message/notice fixtures have the actual fields required by agent_db_serde::is_valid_transcript_entry. The hidden peer row is valid persisted input and is excluded by roster policy rather than silently discarded as a malformed fixture.",
+        "edition_2024": "source/host/Cargo.toml declares edition=2024. The stored_transcript_rows tail-expression temporary chain must be assessed under Rust 2024's shortened tail-expression temporary scope; it does not justify an old-edition E0597 finding. The collected result is an owned Vec<(String,String)> and no row/statement borrow escapes. This is source-level type/lifetime assessment, not a compiler result.",
+        "other_type_checks": "char::len_utf8 is used as a char -> usize iterator mapper; query_map error/row types are constrained by Result collection and the helper return type. serde_json::json! and assert_eq! borrow repeated field expressions as used here. Existing rusqlite/serde_json dependencies and ordinary auto-discovered integration targets suffice by declaration inspection.",
+        "existing_tests_retained": true,
+        "inferred_target_test_counts_not_executed": {
+          "agent_content_search_contract": 7,
+          "roster_search_contract": 8
+        }
+      },
+      "workflow_assessment": {
+        "source_review": "PASS",
+        "execution_result": "PENDING",
+        "changed_execution_surface": "Only the two real existing integration targets are added to the existing macOS recovery command and existing Linux recovery target list. No parallel runner or new store of completion truth is introduced.",
+        "exact_identity": "Both jobs retain checkout/binding to FABUSHI_TARGET_SHA and optional frozen expected_subject rejection. Receipts bind H/tree/U/run/attempt/OS and inputs/log hashes. The fixed lock still names the required U.",
+        "required_named_positives_added": [
+          "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
+          "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
+          "unicode_snippet_keeps_character_windows_and_whitespace_contract",
+          "roster_snippet_preserves_ascii_and_utf8_byte_context_windows",
+          "production_gateway_unicode_fallback_without_index_preserves_storage_and_reopens",
+          "production_gateway_unicode_fallback_with_unready_index_never_queries_it",
+          "production_gateway_unicode_fallback_with_unavailable_index_queries_then_scans",
+          "production_gateway_fallback_preserves_unicode_match_limits_and_recency",
+          "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
+          "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
+          "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window"
+        ],
+        "positive_name_check": "All eleven names are concrete top-level #[test] functions in the two selected targets. Both receipt paths require exactly one complete test-name ... ok line per required name, so zero selected tests, ignored tests, duplicates and absent results cannot satisfy those positive checks.",
+        "macos": "rust-desktop-runtime.yml:683-870 records the actual integration command and exit. The added receipt step reuses that log, requires the single integration-contracts exit record to be zero, verifies current HEAD/tree against the subject and requires all retained MGS plus added RSU positives. The exact-subject recovery artifact upload remains at lines 881-889.",
+        "linux": "rust-desktop-runtime.yml:1778-1927 executes the existing three-case recovery plan. The integration case selects the two additional targets; each case requires successful process/capture, all named positives exactly once, and positive zero-failed summaries. The aggregate remains failed/incomplete until every existing case passes.",
+        "inherited_gates_retained": [
+          "All four existing MGS Memory selector/mutation positives remain in both named-evidence paths.",
+          "MRU typed and actual sharing callback/ordered-publisher commands, required names and exit/capture checks remain unchanged.",
+          "Automation integration/actual App command selection, owned-child evidence and exact-case controls remain unchanged.",
+          "CS05-INPUT-v1 malformed base-hash and intervening durable-default/reopen tests remain required in the actual App selectors/receipts.",
+          "CI-LINUX-STORAGE-01 retains CARGO_PROFILE_DEV_DEBUG=0, CARGO_PROFILE_TEST_DEBUG=0 and CARGO_INCREMENTAL=0 without disabling test assertions.",
+          "The storage observation and always-conditioned early owner artifact upload remain before later Automation/App checks.",
+          "No retained target, required positive, guard or assertion is removed by the complete workflow diff."
+        ],
+        "receipt_contract_names": "The existing receipt paths now explicitly include RSU-v1 in their composite contract labels. No executable consumer requiring the old exact contract string was found in the examined workflow/scripts paths.",
+        "evidence_limits": "A failed/skipped prerequisite may prevent a later normal step from executing; the resulting failed job or absent receipt remains non-passing. This source assessment does not claim that either job actually ran or passed."
+      },
+      "rtm_assessment": {
+        "source_review": "PASS",
+        "change": "Only spec/test evidence_refs are appended to OCRM-R05, OCRM-R24, OCRM-AC13 and OCRM-AC24.",
+        "status_promotions": false,
+        "global_completion_flags_changed": false,
+        "fixed_upstream_changed": false,
+        "interpretation": "These references identify the batch contract and authored tests; they do not create executed evidence, new upstream reading credit or equivalence acceptance."
+      },
+      "pre_existing_adjacent_findings": [
+        {
+          "id": "RSU-FUNCTIONAL-CONTEXT-01",
+          "classification": "IMPL_BUG",
+          "severity": "P2 / medium user-visible search omission",
+          "introduced_by_candidate": false,
+          "current_round_blocking": false,
+          "scope": "Existing frontend consumer behavior; unchanged from exact base.",
+          "title": "Greek final-sigma Host hits can be discarded by the palette's second filter",
+          "evidence_level": "Deterministic source-derived reproduction; not executed.",
+          "evidence": [
+            "frontend/src/production/command-palette-model.ts:49-65 lowercases each source code point separately in normalizePaletteSearch.",
+            "frontend/src/production/command-palette-model.ts:115 uses the original message snippet as both label and keyword.",
+            "frontend/src/production/command-palette-model.ts:131-145 returns null when a query token cannot match any normalized candidate.",
+            "frontend/src/production/command-palette-model.ts:198-207 removes null-scored message entries.",
+            "source/host/src/extensions/transcript/roster_search.rs:160-164 and agent_content_search.rs:86-88 use whole-string lowercase; the candidate preserves this pre-existing roster lookup behavior.",
+            "The exact-base-to-candidate seven-file diff contains no frontend change, establishing that this UI behavior was already present."
+          ],
+          "minimum_reproduction": {
+            "host_input": "A stored message with content ΟΣ and a searchAgents query of ος.",
+            "host_expected_by_current_source": "Whole-string lowercase of ΟΣ is ος, so Host returns a message hit with original snippet ΟΣ.",
+            "pure_consumer_input": "commandPaletteEntries({ agents: [], commands: [], messages: [{ agentId: 'a', entryId: 'e', role: 'user', timestampMs: 1, snippet: 'ΟΣ' }], query: 'ος', tab: 'messages' })",
+            "consumer_actual_by_source": "normalizePaletteSearch('ΟΣ') becomes οσ because Σ is lowercased alone; normalizePaletteSearch('ος') remains ος. The token does not match and the returned message list is empty."
+          },
+          "consequence": "A lower-case Greek final-sigma query can lose a correct Host result at the real UI consumer. The current gateway tests do not establish full UI Unicode equivalence.",
+          "minimum_followup": "Handle in a separately declared consumer-closure change: retain server-authoritative message matches through local ranking/filtering, or make the message filtering semantics compatible with the Host's whole-string lowercase contract. Add the concrete lowercase-query/uppercase-original consumer test and an actual UI path check. Preserve existing participant/command normalization semantics rather than silently broadening all palette search behavior.",
+          "disposition": "NON_BLOCKING for the present frozen RSU delta; explicit follow-up product defect, not a global UI or migration acceptance exemption.",
+          "parent_direction": "Parent explicitly requested this inherited limitation be preserved with evidence/minimal reproduction while retaining the current frozen-scope conclusion; no source or spec was edited."
+        }
+      ],
+      "remaining_required_evidence": [
+        "Materialize the intended candidate commit H and bind its actual tree to this reviewed frozen tree. Any accepted source/fixture/contract fix requires the corresponding focused re-review and invalidated evidence to be rerun.",
+        "Run the already-authored affected compilation and both contract targets only in GitHub Actions; inspect exact-H Linux and macOS receipts/logs for H/tree/U, commands/exits, named positives and hashes.",
+        "Retain and assess the existing MGS, MRU, Automation, CS05 and storage/artifact gates on that actual H instead of relabeling older evidence.",
+        "Keep full HTTP/UI behavior, actual indexed backend equivalence, Windows/platform/package acceptance and complete OCRM gates pending until they have their own applicable evidence.",
+        "Resolve the concrete inherited final-sigma UI consumer defect through the parent-managed follow-up closure; the narrow batch scope does not waive the final product requirement."
+      ],
+      "summary": "The frozen seven-file RSU-v1 delta is statically coherent and has causal, independently specified persisted-gateway controls. No new blocking IMPL_BUG or TEST_FLAW was found and no ENV incident was observed because execution was intentionally not performed. Approve source review only; exact-H runtime evidence remains pending. Separately preserve the concrete pre-existing Greek final-sigma UI filtering defect for follow-up."
+    },
+    {
+      "contract": "RSU-v1",
+      "review_identity": {
+        "reviewer": "/root/rsu_structure_review",
+        "lenses": [
+          "code_reuse",
+          "architecture_and_structure",
+          "simplification",
+          "performance",
+          "complete_frozen_scope"
+        ],
+        "repository": "bhrumom/fabushi-desktop",
+        "repository_root": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+        "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+        "base_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+        "candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+        "patch_sha256": "49aa32f4eb54bd4b84577ccd3f76f924b3c1bd4c3a817cde12b336c9a40da2b4",
+        "requested_model": "gpt-6.1-sol",
+        "actual_model_basis": "父侧显式 spawn 调用记录：model=gpt-6.1-sol，reasoning_effort=xhigh，fork_turns=none；父侧确认工具接受且没有 fallback。本 worker 没有独立 introspection 接口，因此不声称另行验证模型配置。",
+        "reasoning_effort": "xhigh",
+        "effort_reason": "完整冻结范围跨共享 Unicode 匹配、两种窗口合同、Session/SQLite/索引/UI 消费者与共享 CI 验收链，涉及上下文大小写、UTF-8 边界、实际持久化 oracle 和逐名证据判断。",
+        "blind_independence": "未读取任何其他审查报告或前轮裁决。",
+        "allowed_write": "/workspace/scratch/403d4d169ac6/rsu-review/r1/structure-review.json",
+        "production_edits_performed": false
+      },
+      "review_method": {
+        "source_authority": "产品源码、测试和 workflow 均从 git show d8a195bc4d9006770242630f0f15c155dab81cb4:path 读取；基线从 exact base Git 对象读取；不依赖可变 worktree 内容作产品结论。",
+        "scope_binding": "git diff --name-status / --raw --no-abbrev 显示恰好 7 个变更路径，before/after blobs 与 manifest 逐项相符；candidate.patch 的 sha256sum 与 manifest 一致。",
+        "depth": "已检查全部 7 个变更路径及每个变更 hunk；两份生产实现和两份合同测试完整阅读，workflow/RTM 阅读全部变更及相关执行、证据、保留控制上下文。",
+        "executable_validation": {
+          "performed": false,
+          "prohibited_and_not_run": [
+            "local builds",
+            "htch-runtime builds",
+            "tests",
+            "lint",
+            "benchmarks",
+            "generators",
+            "validators",
+            "schema checks"
+          ],
+          "allowed_operations_used": [
+            "read-only Git object reads and diffs",
+            "read-only text search",
+            "patch checksum",
+            "official Rust source-page reading",
+            "author this review JSON"
+          ],
+          "runtime_status": "pending exact-H GitHub Actions"
+        }
+      },
+      "authorities_read": [
+        "AGENTS.md：根约束、冻结完整 scope、独立只读审查、模型/effort 记录、OCRM 仅 Actions 与 §17 执行规则。",
+        "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md：完整 RSU-01 至 RSU-05、oracle、共享 owner、窗口与 CI 证据合同。",
+        "docs/specs/openclaw-rust-equivalence-migration.md：§17、OCRM-EXEC-02 §17.1–17.5；批次源审查/接线/执行/接受分离，完整终验收不缩减。",
+        "projects/openclaw-rust/SOURCE_OF_TRUTH.md：本轮固定身份、既有 owner、仅 Actions、未完成状态和最新 §17 优先规则。",
+        "projects/openclaw-rust/module-map.md：现有 Session/Transcript、search 和共享合同职责及导航不构成验收的约束。",
+        "projects/openclaw-rust/upstream.lock.json：固定 U/tree 与 source/acceptance flags 仍为 false 的 metadata。"
+      ],
+      "full_scope": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "before_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+          "after_blob": "ed060139e7fa9473cc2746f11383cd6ed9bce6a0",
+          "review": "全部 workflow diff 和受影响 macOS recovery / Linux Host 复用步骤、输入哈希、逐名收据、退出码、精确 H/tree/U、磁盘/profile、早 artifact 及现有 MGS/MRU/Automation/CS05 控制上下文。",
+          "disposition": "合格的增量复用；没有新增 workflow/job 或放宽已有 oracle。"
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
+          "before_blob": null,
+          "after_blob": "cd2426e34bbe612b1349be928ccffad5fd396ec6",
+          "review": "完整规格及所有 RSU 需求、owner、成功/负例、恢复、CI 和非目标。",
+          "disposition": "行为边界与实现相符；显式保留 Actions 和全迁移接受待办。"
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "before_blob": "80b490f8670045ce0abd7eec8c2b3418076602c8",
+          "after_blob": "3a3dfa14a5e70598a132819841b40cccffddb0b1",
+          "review": "OCRM-R05、R24、AC13、AC24 四处完整 diff。",
+          "disposition": "仅增加 spec/两份测试的 evidence_refs；没有状态、flag、source-read 或接受程度提升。"
+        },
+        {
+          "path": "source/host/src/extensions/content_search/agent_content_search.rs",
+          "before_blob": "49ef853b73fdea376a13156631ace97004eb482c",
+          "after_blob": "a376595c11b9f9d395d78a002cca36df147ffb1c",
+          "review": "完整 candidate 文件、基线 matcher/window，以及所有调用关系。",
+          "disposition": "既有纯 helper 是唯一 normalization/match-span/snippet owner；字符与字节窗口复用该 owner。"
+        },
+        {
+          "path": "source/host/src/extensions/transcript/roster_search.rs",
+          "before_blob": "9040ebf8d4738bf7688969339ae4df64d64db85a",
+          "after_blob": "e8fdd0d0f44a7820aec4ffd68aa0e6f7127660d9",
+          "review": "完整 candidate 文件及基线差异；Session/index/JSON/ordering/limit/hidden-peer/media 分支。",
+          "disposition": "仅 snippet 委托和删除重复常量/UTF-8 边界 helper；roster 投影、调度、fallback 与索引消费保留。"
+        },
+        {
+          "path": "source/host/tests/agent_content_search_contract.rs",
+          "before_blob": "37e59b0349fccc1a79176091708781f5ac95cc92",
+          "after_blob": "24d339aa7f95f02b0ee6bfef136a5cf8f1aa042d",
+          "review": "完整原有和新增所有 assertions。",
+          "disposition": "新增 oracle 独立指定预期文本；保留原有 limits、entry projection、whitespace、ASCII、role/order/hidden-peer 与 zero/empty 控制。"
+        },
+        {
+          "path": "source/host/tests/roster_search_contract.rs",
+          "before_blob": "d0b5720c71846ebc3ef42a040bd8375fc1be91ce",
+          "after_blob": "92eda442dffac5bec32ca3b8cc1e79eb9c5a99c5",
+          "review": "完整原有和新增所有 assertions、实际 Session/SQLite fixture、gateway seam、reopen、索引控制及 counters。",
+          "disposition": "新增用例有真实生产持久化前置和 readback；原有测试及 indexed/media/stale-agent assertions 未移除，ready-index 增加竞争的 linear-only 数据使分支控制更强。"
+        }
+      ],
+      "adjacent_production_evidence": [
+        {
+          "path": "frontend/src/production/ProductionRenderer.tsx:834; frontend/src/production/command-palette-message-provider.ts:46-76,128-155; frontend/src/production/command-palette-model.ts:112-115",
+          "conclusion": "生产 provider 请求 searchAgents，解析原 JSON fields 并保留 snippet；palette 将 snippet 同时用作 label 与匹配关键词，因此修正原始匹配 span 对实际消费者有因果意义。"
+        },
+        {
+          "path": "source/host/src/host_gateway_api.rs:156; source/host/src/extensions/transcript/transcript_manager.rs:668-687; source/host/src/extensions/session/gateway.rs:341-370",
+          "conclusion": "searchAgents 已注册到 TranscriptManager；manager 传实际 content_search 服务与 Session 到既有 gateway；gateway 使用原 limit/default 与序列化合同进入 roster search，没有新增 dispatch owner。"
+        },
+        {
+          "path": "source/host/src/extensions/session/production.rs:343-440,1283-1292,3930-3940,6058-6078,6337-6364; source/host/src/extensions/session/agent_db.rs:4134-4170,5659-5672,7493-7504",
+          "conclusion": "fixture 构造真实 ProductionSessionWorkers/AgentDb owner，经现有 transaction append 保存原 JSON，搜索读取该 owner 的 transcript entries；shutdown 关闭 owner/pool，reopen 从同一路径重取，非内存 fake transcript。"
+        },
+        {
+          "path": "source/host/src/extensions/content_search/extension.rs:177-215; source/host/src/extensions/content_search/search_index_service.rs:288-320; source/host/src/extensions/content_search/search_index_db.rs:142-196",
+          "conclusion": "可用索引仍由既有 readiness/SQLite FTS owner 供给自身 snippet；服务 None 表示 unavailable/error 并回退，Some(rows) 包括 Some(empty) 继续保持既有可用索引语义。RSU 不声称所有 indexed-backend Unicode 等价。"
+        },
+        {
+          "path": "source/host/Cargo.toml",
+          "conclusion": "两个 integration test 文件由既有标准 tests 目录承载；rusqlite/serde_json 已是现有依赖，没有新增 crate、构建边或依赖。"
+        }
+      ],
+      "lens_conclusions": {
+        "code_reuse": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "agent_content_search.rs:78-174 持有整串 normalization、span 映射与 snippet 拼装；roster_search.rs:7,102-104 仅 import + 委托。",
+            "删除 roster 原有独立 flatten/lowercase/window/slicing 实现及 char_boundary_at_or_after/before，未遗留同一 mapping 的第二个实现。",
+            "新增 SnippetContext 只有现有两个真实窗口消费者；byte helper 为 pub(crate)，保留原 typed 和 roster public 函数形状，不引入宽泛公用层。"
+          ]
+        },
+        "architecture_and_structure": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "helper 仍为纯同步读投影，无 I/O、状态、task、callback、权限或索引生命周期；Session/SQLite、TranscriptManager/roster、index readiness 与 renderer projection 责任保持。",
+            "content_search 的纯 helper 不反向依赖 transcript/Session，因此委托没有形成新的模块环。",
+            "规范记录 existing-owner-first 的具体复用，并明确 UI/remote/platform/Memory citation/full-migration 仍待独立验收。"
+          ]
+        },
+        "simplification": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "窗口单位以私有 enum 参数表达，公共文本处理路径只保留一份，既没有复制 Unicode 算法，也无需把 Session/索引数据模型合并。",
+            "原 typed helper 的 flat chars、query chars、lowered chars 和 source_index Vec 及朴素逐位置字符切片比较被整串 lowercase + str::find + 单次来源扫描替代。",
+            "当前变更没有证据支持额外抽象或进一步 churn；不存在仅凭偏好提出的重构 finding。"
+          ]
+        },
+        "unicode_correctness": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "agent_content_search.rs:86-105 在 flat.to_lowercase() 上查找，不会用逐字符 lowercase 破坏最终 sigma；随后只用 ch.to_lowercase() 的 UTF-8 长度累加定位原字符。",
+            "严格大于 match_start 选择首个来源字符，大于等于 match_end 选择末个来源字符的完整结尾；在字符边界、İ 展开内部和跨展开匹配时都包含完整原字符，不会按 normalized byte offset 切原文。",
+            "来源长度与整串 mapping 的已知差异是 Σ 的上下文 σ/ς，二者均为两个 UTF-8 bytes；其他字符使用同一 unconditional conversion。官方 alloc/core source 交叉阅读支持该设计；不是以逐字符值替代整串 lookup。",
+            "Characters 分支反向取最多 30 个前置字符并正向取 60 个尾随字符；Bytes 分支在 original match 两端加 30/60 bytes 后向内修正 UTF-8 boundary；两者均先取得合法且完整的 original span。",
+            "flatten_whitespace 保留原 typed 流程，和 roster 原 split_whitespace().join(\" \") 的 Unicode whitespace collapsing 结果一致；empty/no-match/ellipses 与 ASCII 窗口保持。"
+          ]
+        },
+        "performance": {
+          "result": "APPROVED_SOURCE_ONLY",
+          "evidence": [
+            "新增映射对 original flat.char_indices() 单向最多遍历一次，未 lowercase growing prefixes、没有回头扫描 origin map；每字符 lowercase iterator 大小有界。",
+            "除底层 whole-string lowercase 和 substring search 外，flatten 与来源映射为 O(input)，窗口查找只遍历固定 30/60 字符，UTF-8 byte rounding 最多跨一个标量的余下 bytes。",
+            "保留 flat 与 lowered String，临时空间仍 O(input)，但不再为每个来源字符及每个 lowercase 字符保存多个 Vec；roster 原有的 split Vec 也移除。",
+            "这是源码复杂度判断，没有运行 benchmark、分配测量或平台性能验收，不声称测得加速。"
+          ]
+        }
+      },
+      "test_oracle_review": {
+        "result": "APPROVED_SOURCE_ONLY",
+        "new_helper_controls": [
+          "90 个 İ 与 K 前缀独立预期 30 个原字符，分开覆盖 UTF-8 扩张和收缩。",
+          "i、combining dot、i+dot、跨展开的 dot+y 都期望完整原始 İ。",
+          "ΟΣ/ΟΣΑ/孤立 Σ 及 case-ignorable combining mark 提供整串 contextual sigma 正负例。",
+          "emoji/CJK 明确的字符窗口，Unicode whitespace，空串、全空白、空 query、no-match。"
+        ],
+        "actual_gateway_controls": [
+          "roster_search_contract.rs:171-217 使用真实 Session append 并从 agent.db_path 的 read-only SQLite connection 核对每个 fixture 的原 JSON，再比较完整 JSON 结果。",
+          "预期片段直接为 15 个 İ、10 个 K、7/14 个 emoji、30 个 z/20 个 CJK 等固定数学窗口；不调用另一份实现生成期望。",
+          "absent、unready、ready-but-None 三条 fallback 均执行完整 Unicode/隐藏 peer/roles/timestamps/no-match/empty/limit0/read-only/reopen 检查。",
+          "unready 的 readiness_calls=5、message_calls=0；unavailable 的两项均为5，符合四次有效查询加 reopen 查询；empty 与 limit0 提前返回不记调用。",
+          "unicode limits 用两个真实 agent、七条命中与 newest hidden 行，独立预期 recency/per-agent=5/global explicit limit=3。",
+          "ready-index 用例新增 timestamp=2000 的 linear-only Unicode 命中，却仍要求 indexed-message，能识别意外跳过 index；原 stale-agent/media/type/dimensions 控制完整保留。"
+        ],
+        "retained_assertions": "两份测试基线中的所有测试函数和 assertions 保留；diff 只新增测试、辅助读取/网关封装及 ready-index 的匹配 fallback fixture。",
+        "scope_limit": "这些测试的源码可判定 oracle 合理；本审查没有执行它们，也没有把 controlled index/Session seam 当成完整 UI/HTTP/全部真实 backend 验收。"
+      },
+      "workflow_review": {
+        "result": "APPROVED_SOURCE_ONLY",
+        "linux": {
+          "evidence": ".github/workflows/rust-desktop-runtime.yml:1777-1922",
+          "conclusion": "复用 channel_pending_recovery 原 command/cache；既有四个 target 后加入 agent_content_search_contract 与 roster_search_contract。11 个 RSU 关键名称均是实际函数名，并在 required_integration 中逐项要求 passed.count(name)==1。每 case 同时要求 cargo/capture exit=0、有效且正数的 test summaries、没有 missing/nonunique positives；总 receipt 仅全部 case 接受才 passed。H/tree/U、command、run identity、输入/log hashes 与初始 failed-or-incomplete 保留。"
+        },
+        "macos": {
+          "evidence": ".github/workflows/rust-desktop-runtime.yml:300-326,700-733,824-870,1235",
+          "conclusion": "在现有 integration-contracts command 中各加一次两个 target；既有 MGS receipt 增列同样11个 RSU required test names，要求唯一成功名称、恰好一条 integration-contracts=0 exit、当前 H/tree 与 subject 一致；主命令失败/缺名/重复名均不能取得该 receipt 的 passed。输入绑定增加 spec/helper/roster/gateway/tests/UI consumer。"
+        },
+        "preserved_incoming_controls": [
+          "MGS 原四个 required names、transcript_manager_contract target、原 assertions 与 scope 限制完整保留。",
+          "MRU/media command/required positives/receipt 未改变；candidate diff 没有删除或重写其 oracle。",
+          "macOS recovery 的既有 Automation targets、lib filters、owned-fixture 捕获仍保留；Linux Automation admission/App 步骤、exact binary test selection、failed 初始 receipt 与 named positives 未变。",
+          "CS05-INPUT 的 malformed base hash / newer commit / legacy controls 与原 input staging cleanup 生产路径均不在 source change scope；workflow required test names 在原位置保留。",
+          "Linux CARGO_PROFILE_DEV_DEBUG=0、CARGO_PROFILE_TEST_DEBUG=0、CARGO_INCREMENTAL=0、仅去 debug/incremental 而保留断言的设置未变；build-storage subject 与 df/du 前后记录保留。",
+          "Automation/App 前的 always early upload-artifact 仍在1933-1940，后续总 upload 与 failure fixture 捕获保留；RSU 复用已有 evidence 目录进入该保存链。"
+        ],
+        "runtime_limit": "该结论只证明声明的验收链未见假绿漏洞；只有冻结 candidate tree 物化为最终 H 并在 GitHub Actions 产生实际 commands/exits/named receipts/artifacts 后，才可 adjudicate 本批运行结果。"
+      },
+      "requirement_disposition": [
+        {
+          "id": "RSU-01",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "shared helper 78-105；typed Unicode tests 81-118；真实 gateway fixtures 177-207"
+        },
+        {
+          "id": "RSU-02",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "shared helper 116-174；typed tests 64-77,121-136；roster tests115-136"
+        },
+        {
+          "id": "RSU-03",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "roster search164-194；三种实际 gateway fallback tests171-264；ready index control360-401"
+        },
+        {
+          "id": "RSU-04",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "保留 roster投影/排序/limits/stale filtering；SQLite raw before/after/reopen；tests267-298及 retained assertions"
+        },
+        {
+          "id": "RSU-05",
+          "source_review": "satisfied",
+          "runtime": "pending",
+          "evidence": "单 shared owner、单向映射、无 prefix lowercasing、无新增 persistent/runtime owner"
+        }
+      ],
+      "findings": [],
+      "limitations": [
+        "未执行任何本地或 htch-runtime 可执行验证；exact-H Actions、目标平台和完整迁移独立接受仍 pending。",
+        "本地 Fabushi 对象库不含固定 OpenClaw U 的产品 Git 对象。已直接读取 candidate 内 upstream.lock 与本轮 source authority metadata；依父侧补充，本批是现有 Fabushi consumer 缺陷修复，不需要为此读取无关 U 产品树。没有宣称读取上游产品源码或取得新 read/equivalence credit。",
+        "官方 Rust alloc/core source 页面用于交叉核对大小写映射机制；1.97.1 版本页面当前读取不可用，所读是官方公开源页面，不冒充精确 CI toolchain 的执行证据。",
+        "没有可复核证据支持把未运行判作 IMPL_BUG、TEST_FLAW 或 ENV failure；因此不为待执行验收捏造 finding。"
+      ],
+      "references": {
+        "official_rust_str_source": "https://doc.rust-lang.org/src/alloc/str.rs.html",
+        "official_rust_char_source": "https://doc.rust-lang.org/src/core/char/methods.rs.html",
+        "official_source_observation": "str::to_lowercase 的 contextual sigma 分支与其他 conversions::to_lower 分支；char::to_lowercase 的同一 conversions::to_lower 输入。"
+      },
+      "decision": {
+        "verdict": "APPROVE_SOURCE_REVIEW_ONLY",
+        "blocking_findings": 0,
+        "nonblocking_findings": 0,
+        "rationale": "在完整冻结 7 文件变更和必要生产上下游范围内，没有发现可证伪的复用、架构、简化、性能、实现或 oracle 缺陷。唯一共享 helper、原字符 span 映射、双窗口兼容和实际 Session 持久化测试设计满足 RSU-v1；共享 CI 的原有控制保留且逐名证据失败关闭。",
+        "implementation_verified": false,
+        "equivalence_accepted": false,
+        "source_review_is_not_exact_h_runtime_acceptance": true,
+        "next_gate": "集成人冻结与本 candidate tree 对应的实际 H，在 GitHub Actions 取得 RSU 受影响 target 的编译、全部测试及逐名收据；按真实结果区分 IMPL_BUG/TEST_FLAW/ENV，并保留所有完整 OCRM/平台/UI/服务最终门。"
+      }
+    }
+  ],
+  "root_decisions": {
+    "contract": "RSU-v1",
+    "base_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "candidate_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+    "source_review_decision": "APPROVED_SOURCE_ONLY",
+    "blocking_findings": 0,
+    "review_driven_product_changes": [],
+    "decisions": [
+      {
+        "finding": "RSU-FUNCTIONAL-CONTEXT-01",
+        "classification": "IMPL_BUG",
+        "severity": "P2",
+        "disposition": "DEFER",
+        "current_scope_effect": "NON_BLOCKING: unchanged adjacent UI, not introduced by the frozen seven-file candidate",
+        "rationale": "Root independently read the palette code-point normalization and null-score rejection. Lowercase final-sigma query can still discard a valid Rust search hit. Preserve this as an open product defect; current native Session fallback scope is not full UI acceptance or a whole-migration exemption. A separate actual-consumer contract is being inspected before editing.",
+        "required_followup": "Keep existing Rust search admission and ensure current authoritative message results survive renderer presentation with stale-request negatives; retain participant/command behavior and exact-H evidence."
+      }
+    ],
+    "excluded_uncommitted_paths": [
+      {
+        "paths": [
+          ".github/ocrm-reviewed-objects/manifest.json",
+          ".github/ocrm-reviewed-objects/object.patch",
+          ".github/workflows/ocrm-stage-reviewed-objects.yml"
+        ],
+        "reason": "Unexpected untracked copies of exact old 7d staging blobs appeared after incoming40dad removal; current task did not author them and they are excluded/preserved. Frozen tree retains incoming removals."
+      }
+    ],
+    "runtime": "pending exact-H GitHub Actions; no local execution or status promotion"
+  },
+  "retained_parent_ci_evidence": {
+    "observation_window_utc": {
+      "status_started": "2026-11-02T22:01:12Z",
+      "status_finished": "2026-11-02T22:01:13Z",
+      "terminal_logs_and_artifact_metadata_finished": "2026-11-02T22:01:33Z"
+    },
+    "subjects": {
+      "mgs": {
+        "sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "tree": "d119b337cf4f1d00ab00bb26144998e2c378ee86",
+        "source": 41531742497,
+        "runtime": 41531742609,
+        "source_job": 125573404762,
+        "restore_job": 125573405782,
+        "renderer_job": 125573406034
+      },
+      "lpg": {
+        "sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "tree": "1d1397f46887d11bd06b015874c34d6c05dbd64d",
+        "source": 41530832703,
+        "runtime": 41530832715,
+        "source_job": 125570257337,
+        "restore_job": 125570259010,
+        "renderer_job": 125570258624
+      }
+    },
+    "completed_evidence": [
+      {
+        "subject": "mgs",
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "kind": "source",
+        "run_id": 41531742497,
+        "job_id": 125573404762,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742497/job/125573404762",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573404762/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 31522,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "test_commands": [
+          "python3 projects/openclaw-rust/scripts/test_source_review.py",
+          "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py"
+        ],
+        "actual_counts": {
+          "source_review_tests": 33,
+          "inventory_materialization_tests": 21
+        },
+        "structural_results": {
+          "g01_g02": "PASS",
+          "source_paths": 62130,
+          "mapped": 850,
+          "unread_or_partial": 62099,
+          "pending_forward_links": 0,
+          "source_closure": "open"
+        },
+        "claim_limit": "Source structural authority and contract checks only; no semantic migration or product acceptance."
+      },
+      {
+        "subject": "mgs",
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "kind": "renderer",
+        "run_id": 41531742609,
+        "job_id": 125573406034,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742609/job/125573406034",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573406034/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 51518,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "tests": 104,
+          "passed": 104,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "commands": [
+          "2026-11-02T21:57:12.5565686Z ##[group]Run npm --prefix desktop run build:electron -- --plugin-skills-contracts",
+          "2026-11-02T21:57:15.0423934Z ##[group]Run node --test desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+        ],
+        "claim_limit": "Selected Electron build plus Plugin Skills/model-settings/MCP/carrier contract tests. Later broad architecture, renderer build/typecheck, co-staging and final gates were skipped."
+      },
+      {
+        "subject": "mgs",
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "kind": "restore",
+        "run_id": 41531742609,
+        "job_id": 125573405782,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742609/job/125573405782",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573405782/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 88575,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "ordinary": {
+            "passed": 29,
+            "failed": 0,
+            "ignored": 2
+          },
+          "mounted_file": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "mounted_symlink": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "distinct_passed": 31
+        },
+        "commands": [
+          "2026-11-02T21:58:24.3486758Z Executing [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--nocapture\"]",
+          "2026-11-02T21:58:25.2963924Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_file_restore_boundary\", \"--ignored\", \"--nocapture\"]",
+          "2026-11-02T21:58:25.3181320Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_symlink_restore_boundary\", \"--ignored\", \"--nocapture\"]"
+        ],
+        "claim_limit": "Linux ordinary restore and real private-mount descendant file/symlink controls; not macOS, complete backup/client compatibility, or exclusion of concurrent external namespace mutation."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "source",
+        "run_id": 41530832703,
+        "job_id": 125570257337,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832703/job/125570257337",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125570257337/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 31514,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "test_commands": [
+          "python3 projects/openclaw-rust/scripts/test_source_review.py",
+          "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py"
+        ],
+        "actual_counts": {
+          "source_review_tests": 33,
+          "inventory_materialization_tests": 21
+        },
+        "structural_results": {
+          "g01_g02": "PASS",
+          "source_paths": 62130,
+          "mapped": 850,
+          "unread_or_partial": 62099,
+          "pending_forward_links": 0,
+          "source_closure": "open"
+        },
+        "claim_limit": "Source structural authority and contract checks only; no semantic migration or product acceptance."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "renderer",
+        "run_id": 41530832715,
+        "job_id": 125570258624,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832715/job/125570258624",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125570258624/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 51434,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "tests": 104,
+          "passed": 104,
+          "failed": 0,
+          "cancelled": 0,
+          "skipped": 0
+        },
+        "commands": [
+          "2026-11-02T21:48:18.1539864Z ##[group]Run npm --prefix desktop run build:electron -- --plugin-skills-contracts",
+          "2026-11-02T21:48:20.9719209Z ##[group]Run node --test desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+        ],
+        "claim_limit": "Selected Electron build plus Plugin Skills/model-settings/MCP/carrier contract tests. Later broad architecture, renderer build/typecheck, co-staging and final gates were skipped."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "restore",
+        "run_id": 41530832715,
+        "job_id": 125570259010,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832715/job/125570259010",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125570259010/logs",
+        "full_log_retrieved": true,
+        "log_character_count": 88663,
+        "inspection_scope": "Exact checkout identity, executed commands, direct named positives and test summaries relevant to this completed target.",
+        "actual_counts": {
+          "ordinary": {
+            "passed": 29,
+            "failed": 0,
+            "ignored": 2
+          },
+          "mounted_file": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "mounted_symlink": {
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0
+          },
+          "distinct_passed": 31
+        },
+        "commands": [
+          "2026-11-02T21:50:06.7269250Z Executing [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--nocapture\"]",
+          "2026-11-02T21:50:07.6912990Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_file_restore_boundary\", \"--ignored\", \"--nocapture\"]",
+          "2026-11-02T21:50:07.7137713Z Executing [\"sudo\", \"-n\", \"unshare\", \"--mount\", \"--propagation\", \"private\", \"--\", \"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005\", \"--exact\", \"linux_bind_mounted_descendant_symlink_restore_boundary\", \"--ignored\", \"--nocapture\"]"
+        ],
+        "claim_limit": "Linux ordinary restore and real private-mount descendant file/symlink controls; not macOS, complete backup/client compatibility, or exclusion of concurrent external namespace mutation."
+      },
+      {
+        "subject": "lpg",
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "kind": "inventory_persistence",
+        "run_id": 41530832703,
+        "job_id": 125573880197,
+        "job_conclusion": "success",
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832703/job/125573880197",
+        "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125573880197/logs",
+        "full_log_retrieved": true,
+        "inspection_scope": "Complete 217-line persistence job log",
+        "result": "Successful no-op: no new source-derived shard content; no new commit created, scoped dispatch skipped.",
+        "materialized": false
+      }
+    ],
+    "mgs_memory_step": {
+      "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+      "job_id": 125573405387,
+      "step_number": 9,
+      "step_name": "Test portable pending-failure recovery and Memory selectors on the existing Linux Host cache",
+      "status": "completed",
+      "conclusion": "success",
+      "evidence_level": "GitHub Actions step conclusion on exact MGS H; no full sqlite job log or Memory receipt retrieved while the job remains in_progress.",
+      "required_names_from_previously_read_exact_H_workflow": [
+        "memory_gateway_rejects_path_selectors_before_external_memory_read",
+        "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+        "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+        "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation"
+      ],
+      "workflow_source_url": "https://github.com/bhrumom/fabushi-desktop/blob/42ee1165d216a08361e6a1c7f9fe29bd609c8b1c/.github/workflows/rust-desktop-runtime.yml",
+      "direct_named_output_observed_this_round": false,
+      "counts_from_direct_output": null,
+      "boundary": "The successful step is positive gate-level evidence. Do not present the required-name list as individually extracted runtime output or invent counts."
+    },
+    "runs": [
+      {
+        "id": 41531742497,
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "status": "queued",
+        "conclusion": null,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742497",
+        "artifact_metadata": [
+          {
+            "id": 13181829233,
+            "name": "ocrm-p0-authority-42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+            "size_in_bytes": 4938775,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181829233",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181829233/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:57:43Z",
+            "expires_at": "2026-12-02T21:57:42Z",
+            "updated_at": "2026-11-02T21:57:43Z",
+            "digest": "sha256:284b9c5c471258e810465d155ace76fc9c5247d32406a951ef0d98a3345fe32c",
+            "workflow_run": {
+              "id": 41531742497,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c"
+            }
+          }
+        ]
+      },
+      {
+        "id": 41531742609,
+        "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+        "status": "queued",
+        "conclusion": null,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41531742609",
+        "artifact_metadata": [
+          {
+            "id": 13183175955,
+            "name": "ocrm-plugin-edge-42ee1165d216a08361e6a1c7f9fe29bd609c8b1c",
+            "size_in_bytes": 2659,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13183175955",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13183175955/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:57:16Z",
+            "expires_at": "2027-01-31T21:48:48Z",
+            "updated_at": "2026-11-02T21:57:16Z",
+            "digest": "sha256:8c341669bc8faae3546eaf9805df447443c7de7c15e3ceb909511ae1691b6f15",
+            "workflow_run": {
+              "id": 41531742609,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c"
+            }
+          },
+          {
+            "id": 13182178702,
+            "name": "ocrm-config-restore-linux-42ee1165d216a08361e6a1c7f9fe29bd609c8b1c-41531742609-1",
+            "size_in_bytes": 47487,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182178702",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13182178702/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:58:25Z",
+            "expires_at": "2027-01-31T21:48:48Z",
+            "updated_at": "2026-11-02T21:58:25Z",
+            "digest": "sha256:076ec8b672fe3726536ecc8b389f019b1f8c099d54373f16133873c89b2a1b10",
+            "workflow_run": {
+              "id": 41531742609,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "42ee1165d216a08361e6a1c7f9fe29bd609c8b1c"
+            }
+          }
+        ]
+      },
+      {
+        "id": 41530832703,
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832703",
+        "artifact_metadata": [
+          {
+            "id": 13181688473,
+            "name": "ocrm-p0-authority-93130e0a4e1e4753043e714bb64802e5572d863e",
+            "size_in_bytes": 4938772,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181688473",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181688473/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:49:39Z",
+            "expires_at": "2026-12-02T21:49:38Z",
+            "updated_at": "2026-11-02T21:49:39Z",
+            "digest": "sha256:764fc696ceb1490ae86dc40b72159f5faf7abf18b1731faa14649f14a1cff3d6",
+            "workflow_run": {
+              "id": 41530832703,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e"
+            }
+          }
+        ]
+      },
+      {
+        "id": 41530832715,
+        "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e",
+        "status": "queued",
+        "conclusion": null,
+        "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41530832715",
+        "artifact_metadata": [
+          {
+            "id": 13181632960,
+            "name": "ocrm-plugin-edge-93130e0a4e1e4753043e714bb64802e5572d863e",
+            "size_in_bytes": 2658,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181632960",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181632960/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:48:22Z",
+            "expires_at": "2027-01-31T21:42:45Z",
+            "updated_at": "2026-11-02T21:48:22Z",
+            "digest": "sha256:b749bf17b0a108a1b787bfb2f80595e142e73b92d9070d485aaaff6032f9d30f",
+            "workflow_run": {
+              "id": 41530832715,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e"
+            }
+          },
+          {
+            "id": 13181269010,
+            "name": "ocrm-config-restore-linux-93130e0a4e1e4753043e714bb64802e5572d863e-41530832715-1",
+            "size_in_bytes": 47448,
+            "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181269010",
+            "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13181269010/zip",
+            "expired": false,
+            "created_at": "2026-11-02T21:50:08Z",
+            "expires_at": "2027-01-31T21:42:45Z",
+            "updated_at": "2026-11-02T21:50:08Z",
+            "digest": "sha256:0a62595e14301ec6cd6a9ba363528a32a9104e7161af4389c75378216b0861c5",
+            "workflow_run": {
+              "id": 41530832715,
+              "repository_id": 1375312893,
+              "head_repository_id": 1375312893,
+              "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+              "head_sha": "93130e0a4e1e4753043e714bb64802e5572d863e"
+            }
+          }
+        ]
+      }
+    ],
+    "failure_assessment": {
+      "completed_failure_observed": false,
+      "implementation_failure": null,
+      "test_oracle_failure": null,
+      "environment_failure": null,
+      "actionable_faults": [],
+      "reason": "Every completed non-skipped job in this single observation succeeded. The remaining sqlite jobs are in_progress and rust-host jobs queued; no terminal failure log is available for causal classification.",
+      "historical_lpg_oracle": "The already-recorded LPG source-oracle TEST_FLAW remains historical; neither current observed runtime has reached a terminal LPG verdict."
+    },
+    "pending_gaps": [
+      "MGS source persist-verified-inventory job 125577897519 remains queued.",
+      "MGS sqlite 125573405387: typed Automation step 10 in_progress; actual Automation App step 11 and LPG step 12 pending.",
+      "LPG sqlite 125570259012: actual Automation App step 11 in_progress; LPG step 12 pending.",
+      "Full sqlite logs/receipts needed for direct MGS per-name output, actual counts, preserved Automation custody and LPG evidence.",
+      "MGS rust-host 125573405761 and LPG rust-host 125570258884 remain queued; no actual macOS acceptance.",
+      "Both runtime workflows retain skipped platform-worker/Pressure profiler and skipped later renderer-wide gates.",
+      "Source closure, full migration and final candidate acceptance remain open; no evidence transfer to a later RSU H."
+    ],
+    "scope": "Historical exact-subject positives remain attributed to their own H; they are not RSU runtime verification."
+  },
+  "runtime_status": "Exact RSU H8e5545b61ad916bb9781539dfe0f28543ffc68dd Linux job125583072608 completed success; all eleven required RSU names appeared exactly once. macOS and real UI/indexed-backend/platform/final OCRM acceptance remain pending.",
+  "open_acceptance": [
+    "RSU macOS and remaining platform/UI/indexed-backend acceptance remain open; exact RSU H8e5545b61ad916bb9781539dfe0f28543ffc68dd Linux125583072608 success and eleven required named positives are already recorded in terminal_runtime_observation.",
+    "RSU-FUNCTIONAL-CONTEXT-01 now has scoped PMS-v1 Rust-to-consumer proof on exact Ha50e4222776ce1e3a422d405d40fba26c0ae0594; full rendered UI interaction/accessibility/visual and real transport/indexed-backend acceptance remain open. Preserve the historical RSU DEFER decision.",
+    "Preserve the separately recorded historical MGS42ee1165 and LPG93130e0a Linux successes. On exact MGAaae00b9a and PMSa50e4222, independent preview checks passed, while the shipping Automation/Settings/channel App step failed TEST_FLAW after18 passes and left33 selected cases unexecuted. Required macOS and remaining App/platform evidence are not established by these runs.",
+    "Complete fixed-U dependency/resource/legal closure and risk-appropriate reviews",
+    "All applicable full G01-G12/AC01-AC24, real services/devices/UI/soak/packages/upgrades/rollback/Fabushi regressions and independent ACCEPT"
+  ],
+  "evidence_carrier": "The commit storing this JSON is an evidence carrier only. Runtime claims refer to explicit subject_target or retained parent exact H; no shipping SHA or final artifact is asserted.",
+  "local_executable_validation_performed": false,
+  "global_completion_flags_promoted": false,
+  "historical_runtime_status_at_publication": "Awaiting exact 8e5545b61ad916bb9781539dfe0f28543ffc68dd Actions; source review and API delivery do not establish execution.",
+  "terminal_runtime_observation": {
+    "subject_commit": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+    "subject_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+    "run_id": 41534582934,
+    "job_id": 125583072608,
+    "status": "completed",
+    "conclusion": "success",
+    "log_api_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125583072608/logs",
+    "full_log_characters": 1211479,
+    "observation_utc": "2026-11-02T22:28:07Z",
+    "required_rsu_results": [
+      {
+        "name": "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
+        "count": 1
+      },
+      {
+        "name": "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
+        "count": 1
+      },
+      {
+        "name": "unicode_snippet_keeps_character_windows_and_whitespace_contract",
+        "count": 1
+      },
+      {
+        "name": "roster_snippet_preserves_ascii_and_utf8_byte_context_windows",
+        "count": 1
+      },
+      {
+        "name": "production_gateway_unicode_fallback_without_index_preserves_storage_and_reopens",
+        "count": 1
+      },
+      {
+        "name": "production_gateway_unicode_fallback_with_unready_index_never_queries_it",
+        "count": 1
+      },
+      {
+        "name": "production_gateway_unicode_fallback_with_unavailable_index_queries_then_scans",
+        "count": 1
+      },
+      {
+        "name": "production_gateway_fallback_preserves_unicode_match_limits_and_recency",
+        "count": 1
+      },
+      {
+        "name": "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
+        "count": 1
+      },
+      {
+        "name": "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
+        "count": 1
+      },
+      {
+        "name": "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window",
+        "count": 1
+      }
+    ],
+    "receipts": [
+      {
+        "contract": "CWR-v1-portable/MGS-v1/RSU-v1",
+        "subject_commit": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+        "subject_tree": "d8a195bc4d9006770242630f0f15c155dab81cb4",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run_id": "41534582934",
+        "run_attempt": "1",
+        "job": "sqlite-native-path",
+        "runner_os": "Linux",
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "inputs_sha256": {
+          ".github/workflows/rust-desktop-runtime.yml": "5eaef67431e4043cd30d5de7edd40e8b09b8b3fb5e20b17f61e84fda7621b2e9",
+          "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md": "c26d82021cb7b4fe9a6d37b4f6b38d7cb199dcd21a01d27915038b1b2b74ba0f",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md": "8d8aa116ef5029bfbe5526b66f95bc009c4c80ca4d52359c5b7d150cf52b3c9f",
+          "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+          "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+          "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md": "9a14803cd7f3ecd46c43453e28c5a7395b1c760b2fe8a02d67755b23ca6a69fd",
+          "source/host/src/extensions/content_search/agent_content_search.rs": "8d3321c4f0918922d05b9bbc8e94ea28d99810bca4cdf2b0a5946262680a6e3d",
+          "source/host/src/extensions/transcript/roster_search.rs": "c2a91b65b69404d7c07d83bd0666acfe8d9a5f3e116fc09c80eb44bc6525c17b",
+          "source/host/src/extensions/session/gateway.rs": "b18abd2ef360e0b67c2d94a6421d08ea05f12e9546684ec7c9a88200ce24a22b",
+          "source/host/tests/agent_content_search_contract.rs": "4d1759e94a2312c8758181fa8a6da5386a5736780eb08d633c59ccbb0424dc0a",
+          "source/host/tests/roster_search_contract.rs": "c8a7311884d10022c8d4a254099904c42424931ed41f188356801b37634d05bc",
+          "frontend/src/production/command-palette-message-provider.ts": "777f744c5f0809175630a67c4bf1412267bb6d5e5ac9341875afec5dd72624ca",
+          "frontend/src/production/command-palette-model.ts": "ed2e06f039fe8312b1849489c1bf394fc3585987240d06e018f88c12ecd2b150",
+          "source/host/src/extensions/transcript/sand_pending_wake_store.rs": "daa4e5b0792db15e295c4303a9f9ad2b85428b180baa30f63952350735af0638",
+          "source/host/src/extensions/transcript/pending_wake_rearm.rs": "9bdc6f64dd1bddf5b9f0a98f8633cb6a6e32b172ec73c5e98de65d621dde604c",
+          "source/host/src/extensions/transcript/production_runtime.rs": "6b2b213a78e25368fd07cceeef6c617c30de3bd5416f108c22b70c0300e7d6d3",
+          "source/host/src/extensions/transcript/transcript_manager.rs": "7c21b22f2b605566906dc9ca2fd622d3da1d9b9832b06fa65fed05fd846f1f12",
+          "source/host/src/extensions/memory/memory_service.rs": "3979c884087c40815ff9497ab24e11e2cb219b8e1c6721697cd39abdefe9ea84",
+          "source/host/src/storage/agent_paths.rs": "5054ac0abd74991b97012146f21c4f7132198a6dcfe5cd3b50a9e9b9d7c95df4",
+          "source/host/src/storage/folder_id.rs": "903c6fb755ff11d4cf3723bcd4fe57dcaff88dfe8c3db9164add6f9182a6b9ef",
+          "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+          "source/host/src/extensions/transcript/background_wakes.rs": "874fa9b1e3511df9bf05fe331817284d617c7a877ca25abc5920b83067bd4cb0",
+          "source/host/src/gateway_server.rs": "bbfd64c3bae6a46737414e27724ec5423f600a5ab6c84eb71d6e15266354ee8a",
+          "source/host/app/src/main.rs": "6ac3b6dbb01a26d189d05ea64e3a93d448c316e6072197746506c9a7aa5aae58",
+          "source/host/tests/durable_recovery_stores_contract.rs": "12eb56444d61333c610e504d8c0c624539379344cd9955e52fe07a081dece12c",
+          "source/host/tests/pending_wake_rearm_contract.rs": "ee047795f5abecc197164ef0d9cdeff4790c64c747334cbd61c62ffc88a17e97",
+          "source/host/tests/transcript_manager_contract.rs": "be2d93044219ebdb9ed2dd6ee829965aca8746cbf71277a184ec65ec7ee6e261",
+          "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs": "fa243b2087bbed478438d8f9341c87b3f4daa1c024499f18e0c335b4dc70696d"
+        },
+        "planned_commands": [
+          {
+            "case": "integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "durable_recovery_stores_contract",
+              "--test",
+              "pending_wake_rearm_contract",
+              "--test",
+              "transcript_manager_contract",
+              "--test",
+              "cloud_agent_pending_wake_rearm_production_contract",
+              "--test",
+              "agent_content_search_contract",
+              "--test",
+              "roster_search_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "required_positive_names": [
+              "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+              "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+              "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+              "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+              "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+              "matching_pending_wake_admission_compares_every_marker_field",
+              "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+              "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+              "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+              "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+              "channel_rearm_success_retains_complete_marker_across_reopen",
+              "channel_rearm_error_retains_complete_marker_across_reopen",
+              "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+              "recreate_carry_still_excludes_channel_delivery_markers",
+              "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+              "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+              "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+              "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
+              "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
+              "unicode_snippet_keeps_character_windows_and_whitespace_contract",
+              "roster_snippet_preserves_ascii_and_utf8_byte_context_windows",
+              "production_gateway_unicode_fallback_without_index_preserves_storage_and_reopens",
+              "production_gateway_unicode_fallback_with_unready_index_never_queries_it",
+              "production_gateway_unicode_fallback_with_unavailable_index_queries_then_scans",
+              "production_gateway_fallback_preserves_unicode_match_limits_and_recency",
+              "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
+              "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
+              "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window",
+              "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+              "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+              "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+              "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run"
+            ]
+          },
+          {
+            "case": "checked-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "required_positive_names": [
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::poisoned_pending_owner_refuses_reads_admission_and_all_mutations",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes"
+            ]
+          },
+          {
+            "case": "paired-device-sse",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "required_positive_names": [
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+            ]
+          }
+        ],
+        "executions": [
+          {
+            "case": "integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "durable_recovery_stores_contract",
+              "--test",
+              "pending_wake_rearm_contract",
+              "--test",
+              "transcript_manager_contract",
+              "--test",
+              "cloud_agent_pending_wake_rearm_production_contract",
+              "--test",
+              "agent_content_search_contract",
+              "--test",
+              "roster_search_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "required_positive_names": [
+              "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+              "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+              "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+              "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+              "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+              "matching_pending_wake_admission_compares_every_marker_field",
+              "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+              "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+              "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+              "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+              "channel_rearm_success_retains_complete_marker_across_reopen",
+              "channel_rearm_error_retains_complete_marker_across_reopen",
+              "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+              "recreate_carry_still_excludes_channel_delivery_markers",
+              "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+              "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+              "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+              "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
+              "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
+              "unicode_snippet_keeps_character_windows_and_whitespace_contract",
+              "roster_snippet_preserves_ascii_and_utf8_byte_context_windows",
+              "production_gateway_unicode_fallback_without_index_preserves_storage_and_reopens",
+              "production_gateway_unicode_fallback_with_unready_index_never_queries_it",
+              "production_gateway_unicode_fallback_with_unavailable_index_queries_then_scans",
+              "production_gateway_fallback_preserves_unicode_match_limits_and_recency",
+              "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
+              "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
+              "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window",
+              "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+              "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+              "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+              "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "frozen_limits_and_entry_text_projection_match_grok",
+              "matches_walk_newest_first_skip_hidden_peers_and_preserve_roles",
+              "snippet_collapses_whitespace_preserves_case_and_applies_frozen_window",
+              "unicode_snippet_keeps_character_windows_and_whitespace_contract",
+              "unicode_snippet_maps_expanding_and_contracting_lowercase_to_original_text",
+              "unicode_snippet_preserves_whole_string_contextual_sigma_matching",
+              "zero_limit_and_empty_query_return_no_matches",
+              "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+              "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run",
+              "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+              "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+              "channel_delivery_failure_marker_round_trips_operation_identity",
+              "checked_ack_reads_fresh_complete_image_and_never_turns_corruption_into_absence",
+              "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+              "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+              "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+              "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+              "checked_upgrade_batch_is_all_or_nothing_and_retains_newest_same_agent_marker",
+              "checked_upgrade_migration_is_whole_image_atomic_and_leaves_legacy_work_unbound",
+              "checked_upgrade_store_accepts_only_absence_explicit_empty_and_complete_legacy_or_v1_rows",
+              "checked_upgrade_store_refuses_corruption_without_replacing_or_clearing_evidence",
+              "checked_upgrade_v2_roundtrips_full_reference_and_exact_clear_rejects_reference_drift",
+              "matching_pending_wake_admission_compares_every_marker_field",
+              "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+              "pending_wake_parser_preserves_frozen_coercion_and_filters_invalid_rows",
+              "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+              "pending_wake_store_upserts_clears_and_prunes_atomically",
+              "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+              "recovery_watch_admission_replaces_only_the_exact_existing_marker",
+              "upgrade_resume_marker_rejects_incomplete_automation_identity",
+              "upgrade_resume_store_clears_only_the_observed_marker",
+              "upgrade_resume_store_coerces_upserts_and_deletes_file_when_empty",
+              "channel_rearm_error_retains_complete_marker_across_reopen",
+              "channel_rearm_success_retains_complete_marker_across_reopen",
+              "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+              "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+              "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+              "cloud_completion_after_armed_check_is_not_resurrected_by_rearm",
+              "cloud_completion_after_snapshot_before_first_armed_check_cannot_start_another_worker",
+              "cloud_completion_during_watch_registration_is_not_resurrected_as_failure",
+              "cloud_rearm_preserves_an_admitted_marker_on_success_and_failure",
+              "cloud_rearm_rejects_a_marker_replaced_after_the_durable_snapshot",
+              "cloud_wake_survives_repeated_rearm_and_store_reopen_until_settlement",
+              "enqueue_refuses_gone_agents_and_appends_for_live_agents",
+              "failed_cloud_rearm_preserves_the_observed_marker_for_retry",
+              "interrupted_recreate_shell_uses_resume_notice_and_group_session_clears_marker",
+              "persists_clears_and_disarms_with_reference_telemetry",
+              "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+              "recreate_carry_filters_before_persisting_and_reports_frozen_outcomes",
+              "recreate_carry_still_excludes_channel_delivery_markers",
+              "frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter",
+              "production_gateway_consumes_ready_content_search_for_indexed_messages_and_media",
+              "production_gateway_fallback_preserves_unicode_match_limits_and_recency",
+              "production_gateway_unicode_fallback_with_unavailable_index_queries_then_scans",
+              "production_gateway_unicode_fallback_with_unready_index_never_queries_it",
+              "production_gateway_unicode_fallback_without_index_preserves_storage_and_reopens",
+              "production_search_agents_scans_real_session_transcripts_and_gateway_dispatches_it",
+              "roster_snippet_preserves_ascii_and_utf8_byte_context_windows",
+              "manager_dispose_closes_original_queue_before_cleanup_and_rejects_snapshotted_callback_and_ticket",
+              "manager_emits_active_session_automations_through_the_roster_surface",
+              "manager_is_the_single_production_composition_owner",
+              "manager_is_the_upgrade_resume_facade_for_shipping_host_lifecycle",
+              "manager_owns_box_handoff_state_and_handback_settlement",
+              "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+              "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+              "manager_refuses_failed_marker_handoff_and_preserves_existing_quiesce",
+              "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+              "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+              "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+              "memory_gateway_rejects_path_selectors_before_external_memory_read",
+              "runner_registry_owns_turn_execution_and_manager_delegates_to_the_same_owner"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                7,
+                0,
+                0
+              ],
+              [
+                4,
+                0,
+                0
+              ],
+              [
+                21,
+                0,
+                0
+              ],
+              [
+                18,
+                0,
+                0
+              ],
+              [
+                8,
+                0,
+                0
+              ],
+              [
+                13,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "integration.log",
+            "log_sha256": "df6fd265d78df6866cbf4344350e94ac057a08ed13bd121be83f0df7c2923090"
+          },
+          {
+            "case": "checked-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::poisoned_pending_owner_refuses_reads_admission_and_all_mutations",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::poisoned_pending_owner_refuses_reads_admission_and_all_mutations"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                3,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "checked-store.log",
+            "log_sha256": "7bba3993a44840607e96a93cb696f640d624e43dd6f287b764c5a46871041d10"
+          },
+          {
+            "case": "paired-device-sse",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "required_positive_names": [
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "paired-device-sse.log",
+            "log_sha256": "85e885c163b7b7c4b02ee375daa6fc6bc8b2425015d124bd80f20afacc2fb25b"
+          }
+        ],
+        "result": "passed",
+        "scope": "Linux actual store, rearm, manager and checked-lock controls, plus an independent paired-device SSE permission control. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal, projection/order/bound and mutation/snapshot behavior. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, shared match mapping, preserved character/byte windows, ordering/limits and ready-index controls. Cloud-agent checks are source-wiring only. Full HTTP/UI, symlink, cross-account, macOS/Windows, indexed-backend and real provider equivalence, unknown-effect and platform acceptance remain open."
+      }
+    ],
+    "scope": "Exact Linux command results only. Raw job log read through GitHub API; required positive names and receipt H/tree/U/log digests were checked. No unit/global review, authority, acceptance or shipping-artifact promotion."
+  },
+  "source_workflow_terminal": {
+    "run_id": 41534582857,
+    "conclusion": "success",
+    "scope": "33 source-review tests, 21 inventory tests and G01/G02 structural checks; no source-closure or final acceptance claim"
+  },
+  "consumer_followup": {
+    "contract": "PMS-v1",
+    "resolves": "RSU-FUNCTIONAL-CONTEXT-01",
+    "source_decision": "FIX implemented and published; exact-H executable evidence and complete rendered UI acceptance are separate. Historical RSU DEFER decision remains a record of its earlier scope.",
+    "published_subject": {
+      "repository": "bhrumom/fabushi-desktop",
+      "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+      "sha": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+      "tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+      "parent": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+      "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/a50e4222776ce1e3a422d405d40fba26c0ae0594",
+      "branch_ref_readback": true,
+      "git_commit_readback": true,
+      "changed_file_mapping_readback": true,
+      "full_file_contents_readback": true,
+      "files": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "blob": "04478011065d7043b27a0b1fc9070b0ff9e1500a",
+          "bytes": 255899,
+          "sha256": "3c9698cd98767866d6f0d36fbf39fed5456f122f9e9b62d426d08d10a27646fc",
+          "full_api_content_equal_frozen_tree": true
+        },
+        {
+          "path": "frontend/src/production/CommandPalette.tsx",
+          "blob": "f944c83abbae07c8092800c5876fe57af58d9cb5",
+          "bytes": 21698,
+          "sha256": "b2083fdf75c5ab8552faf7d0f766ade2225f382582bf2d675804102c1ab0cc91",
+          "full_api_content_equal_frozen_tree": true
+        },
+        {
+          "path": "frontend/src/production/command-palette-message-provider.ts",
+          "blob": "5f2531682beb8b2a952fb55c5357acfcea14998d",
+          "bytes": 8849,
+          "sha256": "3bccd55877d41d59e7f4157bef22bde5db5c0a0467db50fc3ee185b3b1324268",
+          "full_api_content_equal_frozen_tree": true
+        },
+        {
+          "path": "frontend/src/production/command-palette-model.ts",
+          "blob": "c61a1b9531f02a74b0ddc3e22c50448a06ee2588",
+          "bytes": 14822,
+          "sha256": "9ed53129cd1df211f434554eff8549c153d9a3199483e920d815e676bc32bc7c",
+          "full_api_content_equal_frozen_tree": true
+        },
+        {
+          "path": "frontend/src/production/command-palette-message-search.contract.test.ts",
+          "blob": "c99db39cdc0b96dd463673c20e7c15dc7f772808",
+          "bytes": 26680,
+          "sha256": "2dfd82cb83564ec0ec0f949301e7b80878a37a5f1371090641110ef507c49abe",
+          "full_api_content_equal_frozen_tree": true
+        },
+        {
+          "path": "source/host/tests/palette_message_gateway_contract.rs",
+          "blob": "8a1544eb617d59e9868d82df7100ef82712f5985",
+          "bytes": 7147,
+          "sha256": "e729dc5e400d0147c53beab865d85d2631751c0165bbd5d525e51564790a702a",
+          "full_api_content_equal_frozen_tree": true
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
+          "blob": "41005d82b4bc1d002218c031838a64a80bbbc6d8",
+          "bytes": 6128,
+          "sha256": "8097218c238a8a1b2a739adbac170acb98b960a273e5b891147a34da9bcbdf1b",
+          "full_api_content_equal_frozen_tree": true
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "blob": "1c58580e035ac6b11367ad8bdf5a4608c3d8d727",
+          "bytes": 117916,
+          "sha256": "646289838154f0fe09ed7a25428b45888e9c66730a769051b5aedf02a63a918f",
+          "full_api_content_equal_frozen_tree": true
+        }
+      ],
+      "verified": true,
+      "execution_claim": "Delivery only; exact-H Actions and final acceptance are separate."
+    },
+    "independent_source_reviews": [
+      {
+        "report_sha256": "327cb4c7dbb87045701ad400a06dfc94eae6e2130bd05a9aaa8df0286ca35c0d",
+        "report": {
+          "schema_version": 1,
+          "contract": "PMS-v1",
+          "round": 1,
+          "task_round": 1,
+          "review_round": "r2",
+          "review_lens": "security-functional-lifetime",
+          "review_mode": "focused integration-delta review with the complete eight-path PMS scope retained",
+          "decision": "source-only-approve",
+          "summary": "The integration delta preserves the reviewed PMS implementation and the shared verification union. No actionable new security, functional or lifetime defect was identified. The r1 source-only conclusions carry forward for the seven unchanged PMS blobs and unchanged production caller/search-owner context. Exact-H execution and UI/full OCRM acceptance remain pending.",
+          "settings": {
+            "model": "inherited configured model",
+            "reasoning_effort": "xhigh",
+            "application": "Same review worker and inherited configuration as r1; no override or additional worker was created.",
+            "scope_reason": "The integration changes shared executable evidence selection and an admission-sensitive fixture, so it requires source judgment against the actual Session/Memory boundary."
+          },
+          "subject": {
+            "repository": "bhrumom/fabushi-desktop",
+            "repository_root": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+            "base_commit": "09c28272aa4f146db5e2d126e1db2cde525ca915",
+            "base_tree": "1a96172529b16f6b797eb839ffcdbd53aeb6613f",
+            "review_tree": "0ed0c60d8b7387de2182e9c69da1d71e9c5f33d7",
+            "prior_review_tree": "a9efbbb916dcd03395257c592456e7ee58f8d9f2",
+            "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+            "manifest": "/workspace/scratch/403d4d169ac6/pms-review/r2/manifest.json",
+            "patch": "/workspace/scratch/403d4d169ac6/pms-review/r2/candidate.patch",
+            "patch_sha256": "dc2c4741c52fddb3d6179c040785f36a717cb639ba12a802b93d9df8f7f63c2f",
+            "integration_delta": "/workspace/scratch/403d4d169ac6/pms-review/r2/integration-delta.patch",
+            "integration_delta_sha256": "008e56683b3784bd6729760b26d9236600d32e695a8d5e22fcb584372da5f25a",
+            "prior_own_review": "/workspace/scratch/403d4d169ac6/pms-review/r1/security-review.json",
+            "identity_checks": [
+              "Read the new manifest, candidate patch and complete integration delta; independently inspected the relevant frozen source and Git differences.",
+              "The new base commit resolves to base tree 1a96172529b16f6b797eb839ffcdbd53aeb6613f.",
+              "The full PMS diff against the new base still contains exactly the eight declared paths.",
+              "The review-tree-to-review-tree difference contains only the workflow, memory-append-read-integrity.md and memory_service_contract.rs.",
+              "The seven non-workflow PMS blobs are identical to r1, and the independently listed after blobs match the r2 manifest.",
+              "Read-only hashes of candidate.patch and integration-delta.patch match the identities recorded here.",
+              "The Session claim production files, production Memory admission implementation, ProductionRenderer and PMS producer/search owners are unchanged between the review trees."
+            ],
+            "round_identity": "Manifest round: 1 is the user-specified MAHAYANA task round for task 647e0932-bea4-4113-9a61-65ae3db58955. The r2 directory identifies this integration review round. Accordingly task_round remains 1 and review_round is r2; the manifest is consistent and was not modified."
+          },
+          "independence_and_execution": {
+            "other_review_reports_read": false,
+            "runner_decisions_read": false,
+            "production_workflow_or_ledger_files_modified": false,
+            "local_build_test_lint_schema_generator_or_runtime_execution": false,
+            "actions_execution_assessed": false,
+            "written_in_this_followup": "/workspace/scratch/403d4d169ac6/pms-review/r2/security-review.json",
+            "method": "Source, static Git identity/diff and read-only evidence inspection only. No cargo, node, tsc, test, schema, validator or generator was executed."
+          },
+          "complete_scope": [
+            {
+              "path": ".github/workflows/rust-desktop-runtime.yml",
+              "after_blob": "cf44341a2a3291649f25711d504cb0484ca86928",
+              "review": "focused deep integration re-review plus retained full PMS workflow context"
+            },
+            {
+              "path": "frontend/src/production/CommandPalette.tsx",
+              "after_blob": "f944c83abbae07c8092800c5876fe57af58d9cb5",
+              "review": "r1 deep source review retained; exact blob unchanged"
+            },
+            {
+              "path": "frontend/src/production/command-palette-message-provider.ts",
+              "after_blob": "5f2531682beb8b2a952fb55c5357acfcea14998d",
+              "review": "r1 deep provenance/lifetime review retained; exact blob unchanged"
+            },
+            {
+              "path": "frontend/src/production/command-palette-model.ts",
+              "after_blob": "c61a1b9531f02a74b0ddc3e22c50448a06ee2588",
+              "review": "r1 deep functional/non-message regression review retained; exact blob unchanged"
+            },
+            {
+              "path": "frontend/src/production/command-palette-message-search.contract.test.ts",
+              "after_blob": "c99db39cdc0b96dd463673c20e7c15dc7f772808",
+              "review": "r1 complete twelve-control oracle review retained; exact blob unchanged"
+            },
+            {
+              "path": "source/host/tests/palette_message_gateway_contract.rs",
+              "after_blob": "8a1544eb617d59e9868d82df7100ef82712f5985",
+              "review": "r1 full real persisted/reopened Session/Gateway producer review retained; exact blob unchanged"
+            },
+            {
+              "path": "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
+              "after_blob": "41005d82b4bc1d002218c031838a64a80bbbc6d8",
+              "review": "r1 full PMS contract review retained; exact blob unchanged"
+            },
+            {
+              "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+              "after_blob": "c73aa6b4c73294021ed00a700a9d9539200df775",
+              "review": "r1 changed-reference and unadvanced-completion-state review retained; exact blob unchanged"
+            }
+          ],
+          "integration_assessments": [
+            {
+              "path": ".github/workflows/rust-desktop-runtime.yml",
+              "symbols": [
+                "channel_pending_recovery",
+                "required_integration",
+                "claim_integration",
+                "required_claim_integration",
+                "required_fresh",
+                "cases",
+                "palette_export",
+                "same-subject palette consumer"
+              ],
+              "result": "source-supported; exact-H execution pending",
+              "assessment": "The workflow keeps the original four shared Linux case groups and appends the two incoming Session claim groups. All six groups must be accepted before the shared producer step succeeds. The new claim targets use the existing Cargo integration-test and library-test owners. The nine required integration names and four qualified fresh-append names correspond to source functions in the selected targets/modules. The new canonical-store Memory positive is required in the already-selected memory_service_contract target on Linux and in the macOS named-positive check. No existing PMS/MGS/MGA/RSU/MWR command or positive name is removed by this delta."
+            },
+            {
+              "path": ".github/workflows/rust-desktop-runtime.yml",
+              "symbols": [
+                "PMS-v1-Rust-producer",
+                "OCRM_PALETTE_FIXTURE_PATH",
+                "Consume actual Rust message results and typecheck the production palette"
+              ],
+              "result": "source-supported; exact-H execution pending",
+              "assessment": "The union preserves the fresh per-run/attempt Rust export and the PMS consumer's commit/tree/fixture binding, twelve positive-name/TAP checks, and production typecheck. Appending separate Session groups does not rename the producer integration case read by the Node receipt. Shared-group failure remains non-passing and prevents a PMS success claim; it cannot be mistaken for a successful Node/UI result. The Session receipt explicitly preserves its final-write admission and durable correlation limitations."
+            },
+            {
+              "path": "source/host/tests/memory_service_contract.rs",
+              "symbol": "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "scope_role": "new-base integration context, not an additional PMS changed path",
+              "result": "source-supported fixture repair; execution pending",
+              "assessment": "The original positive used an uncreated agent ID despite the production gate requiring an existing Session DB. The repaired positive calls the actual ProductionSessionWorkers materializer, uses its issued agent ID and asserts its durable admission exists. The original canonical Committed and foreign-path Invalid assertions remain. Additional controls require an uncreated Session to remain Invalid, use a nonempty foreign proposal with unchanged sentinel bytes, and prove a subsequent canonical write still succeeds. The production admission gate itself is unchanged."
+            },
+            {
+              "path": "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+              "scope_role": "new-base integration context",
+              "result": "source-supported documentation boundary",
+              "assessment": "The added text describes the fixture precondition repair and preserves failed-subject history and the requirement for new exact-H evidence. This source review does not independently adjudicate the cited historical Actions runs or convert them to pass."
+            }
+          ],
+          "additional_adjacent_sources_read": [
+            "source/host/src/extensions/session/production.rs::bind_memory_synthesis_gate, with_agent_filesystem_mutation, assert_agent_work_admission_locked and existing materialize_new_session path",
+            "source/host/src/extensions/memory/memory_service.rs::FileMemoryStore construction, prepare_synthesis, read_synthesis_state, apply_synthesis, list_memories, create_agent_store, store_for_agent and apply_synthesis_with_gate",
+            "source/host/src/watched_directory.rs::new/with_reporter: constructing the missing-agent store does not create its directory",
+            "source/host/tests/openclaw_sessions_and_config_contract.rs: required claim-control function identities and session_turn_claim_settlement module",
+            "source/host/tests/agent_to_agent_messaging_contract.rs: required selected integration-control identities",
+            "source/host/src/extensions/session/agent_db.rs: required fresh-append control identities and cfg(test) module selection",
+            "projects/openclaw-rust/docs/specs/session-communication-production-boundary.md: existing ownership and incomplete acceptance boundary"
+          ],
+          "retained_pms_conclusions": [
+            "Current parsed-array provenance remains private to the existing provider and bound to the exact trimmed query and live generation/availability/disposal state.",
+            "Loading, replacement, same-query retry, failure, cancellation, reset, unavailability, empty query and disposal invalidate retained message authority; ignored-abort A-B-A and synchronous loading replacement remain covered by the unchanged source and test design.",
+            "The model retains Host message ordering and original navigation fields while preserving the other categories' local policies.",
+            "CommandPalette tracks messageStatus in both input and memo dependencies; ProductionRenderer remains the actual provider/status/account lifecycle caller.",
+            "The Rust producer remains an actual persisted/reopened Session/Gateway consumer; the Node transport controls settlement and does not manufacture positive search replies."
+          ],
+          "findings": [],
+          "pending_acceptance": [
+            "The new published candidate H requires its own Actions outcomes and retained artifacts for the shared six Rust case groups, real PMS export, all twelve Node controls and production typecheck. Older source/run identities are not this candidate's execution evidence.",
+            "Rendered browser interaction, accessibility/visual behavior, actual remote/indexed-backend behavior, platform/package verification and full OCRM G01-G12/AC01-AC24 remain pending.",
+            "The incoming Session claim implementation's independent review and broader acceptance are not re-approved wholesale by this narrow workflow-integration review."
+          ],
+          "completion_claim": "Focused source-only approval of the r2 integration with full PMS scope context retained. No executable verification, historical-run reclassification or global acceptance promotion."
+        }
+      },
+      {
+        "report_sha256": "f026be672cefe97cb3b41637fdcb563b49a5eec1a453429d8e2ea082921a869f",
+        "report": {
+          "contract": "PMS-v1",
+          "review_kind": "fresh-focused-reuse-structure-performance-integration",
+          "verdict": "APPROVE",
+          "approval_scope": "Source-only approval of the frozen PMS change and its integration with the incoming thirteen-path channel-custody batch. This is not an executable verification, UI acceptance, packaged acceptance or full OCRM acceptance verdict.",
+          "reviewer_settings": {
+            "model": "gpt-6.1-sol",
+            "reasoning_effort": "xhigh",
+            "provenance": "Explicit model/effort of the focused spawned reviewer, as supplied in the parent task.",
+            "scope_reason": "The small PMS runtime delta crosses live request provenance, Rust-owned message matching/order, renderer memoization and same-H cross-language CI evidence while retaining concurrent channel-custody controls."
+          },
+          "subject": {
+            "repository": "bhrumom/fabushi-desktop",
+            "repo_root": "/workspace/scratch/403d4d169ac6/fabushi-desktop",
+            "base_commit": "d7e8ab4b7a39c97ef591d6d5fd1b7c5a14826445",
+            "base_tree": "548fd350b2ec4bdb21296d4de65abb8c38ed9a7e",
+            "candidate_tree": "863132b6acac316b8b2ed6bd0c9e841903c8a9cb",
+            "prior_tree": "a3c3b58743c486e5b70edb63b063e53e11422832",
+            "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+            "identity_evidence": "Read manifest.json and both supplied patches; read immutable candidate blobs with git show; git rev-parse resolved the supplied base and candidate to the declared trees; git diff --name-status against the base returned exactly the eight declared PMS paths."
+          },
+          "findings": [],
+          "scope": {
+            "pms_paths_reviewed": [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "frontend/src/production/CommandPalette.tsx",
+              "frontend/src/production/command-palette-message-provider.ts",
+              "frontend/src/production/command-palette-model.ts",
+              "frontend/src/production/command-palette-message-search.contract.test.ts",
+              "source/host/tests/palette_message_gateway_contract.rs",
+              "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
+              "projects/openclaw-rust/requirements-traceability-matrix.json"
+            ],
+            "governing_sources": [
+              "AGENTS.md, including independent frozen-scope review, worker model/effort and OCRM Actions-only execution rules",
+              "projects/openclaw-rust/SOURCE_OF_TRUTH.md, current 2026-11-02 authority and constraints; historical discovery remains historical",
+              "docs/specs/openclaw-rust-equivalence-migration.md, latest OCRM-EXEC-02 section 17",
+              "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md, PMS-01 through PMS-06"
+            ],
+            "adjacent_sources_reviewed": [
+              "frontend/src/production/ProductionRenderer.tsx: provider construction, useSyncExternalStore, account/capability reset, cancellation/disposal, search callback, palette JSX and message navigation",
+              "frontend/src/production/command-palette-link-provider.ts: existing runtime link-display helper and type-only dependency edge",
+              "desktop/package.json and desktop/tsconfig.json: existing Node/dependency/typecheck path, .ts imports and actual production TSX graph inclusion",
+              "desktop/e2e/tdrp-canonical-search-contract.spec.ts: retained non-message identity, normalization and fuzzy-span controls",
+              "source/host/Cargo.toml: existing Rust dependencies and normal integration-test discovery",
+              "source/host/src/extensions/session/gateway.rs: searchAgents dispatch through the existing Session/Roster search owner",
+              "source/host/src/extensions/session/production.rs: existing ProductionSessionWorkers construction/dependency entry points",
+              "source/host/src/extensions/transcript/roster_search.rs: actual search normalization, hidden-peer exclusion, result shape, ordering and existing default result limits",
+              "Supplied integration-delta.patch: incoming ownership contracts, shared workflow/RTM union, changed-path identities and adjacent shipping channel integration context"
+            ],
+            "focused_integration_boundary": "Incoming channel implementation and test changes are existing-owned context, not additional PMS-authored product changes. Their preservation is established against the exact PMS base; this report does not replace their independent semantic/runtime acceptance. Other review reports and runner decisions were not read."
+          },
+          "source_observations": [
+            {
+              "id": "PMS-STRUCTURE-01",
+              "status": "source-consistent",
+              "claim": "The provenance mechanism stays inside the existing message provider and reuses its request generation/lifecycle rather than creating a second scheduler, matching rule or persistent owner.",
+              "evidence": [
+                "frontend/src/production/command-palette-message-provider.ts:38-53: module-private WeakMap keyed by the exact ready-array identity; the public query returns a boolean and accepts no transport provenance",
+                "frontend/src/production/command-palette-message-provider.ts:102-243: existing requestId, cancelRequest, availability and disposal remain the lifecycle owner; accepted results are parsed, frozen and authorized only after current-request checks",
+                "The readiness closure also requires the live snapshot to be ready and to hold the same array. Loading/retry, cancel/reset, availability loss, empty query and disposal revoke retained arrays through existing generation/state transitions.",
+                "The loading publication captures its request generation first and checks it after synchronous listeners return, preventing an outer request from replacing a reentrant successor."
+              ]
+            },
+            {
+              "id": "PMS-STRUCTURE-02",
+              "status": "source-consistent",
+              "claim": "The model preserves the existing Rust message authority and Host order, and keeps existing non-message matching, ordering and navigation behavior.",
+              "evidence": [
+                "frontend/src/production/command-palette-model.ts:171-228: messages require ready status plus exact current provenance; the Messages tab returns the accepted block directly; the All tab inserts it after scored visible/non-message entries and before hidden participants",
+                "Non-message scoreEntry inputs exclude messages. Existing normalization, fuzzy-span budget, agent deduplication, tab filters, geometry and activation helpers remain in place.",
+                "A nonempty query whose local token list is empty retains accepted messages; an empty trimmed query cannot have current message provenance.",
+                "frontend/src/production/CommandPalette.tsx:141: both messages and messageStatus are passed to the existing model and included in useMemo dependencies.",
+                "ProductionRenderer supplies the actual provider snapshot, its current status, account/capability lifecycle and original agentId/entryId navigation callbacks."
+              ]
+            },
+            {
+              "id": "PMS-STRUCTURE-03",
+              "status": "source-consistent",
+              "claim": "The producer/consumer evidence plan uses actual persisted Rust Session replies and the actual desktop provider/model without a competing search implementation or hand-authored positive-result fallback.",
+              "evidence": [
+                "source/host/tests/palette_message_gateway_contract.rs:38-142: actual ProductionSessionWorkers materialization/append, read-only SQLite byte checks, shutdown/reopen, real searchAgents Gateway dispatch and independently asserted IDs/snippets/order precede optional JSON export",
+                "Absence of OCRM_PALETTE_FIXTURE_PATH changes export only; it does not skip Rust behavior assertions.",
+                "frontend/src/production/command-palette-message-search.contract.test.ts:45-147: the same-H export is required; controlled transport changes settlement only and does not implement search; actual provider/model imports consume original exported replies",
+                "The twelve named cases cover Unicode/original snippets, empty-token queries, Host order/navigation, other categories, forged/retained provenance, retries/failures, lifecycle revocation, ignored abort A-B-A and synchronous reentry, malformed rows, plus executable component/caller AST wiring.",
+                "desktop/tsconfig.json permits .ts imports and includes the production TSX graph that imports the changed model/provider; desktop/package.json retains the existing tsc --noEmit typecheck and existing TypeScript dependency. The link-display helper has no new runtime dependency."
+              ]
+            },
+            {
+              "id": "PMS-STRUCTURE-04",
+              "status": "source-consistent-execution-pending",
+              "claim": "The Actions chain is bound to one checkout H and fresh exported bytes, and cannot issue a passing PMS consumer receipt for a skipped/missing consumer case or failed production typecheck.",
+              "evidence": [
+                ".github/workflows/rust-desktop-runtime.yml:1617-1655: existing Linux Host cache/dependency conventions and exact tested-HEAD/optional frozen-dispatch checks are retained",
+                ".github/workflows/rust-desktop-runtime.yml:1896-2141: export destination is scoped by run ID/attempt; an existing destination is refused before Rust execution; the existing integration command selects palette_message_gateway_contract and requires palette_message_gateway_exports_persisted_rust_search_results exactly once; the producer receipt hashes the export and records U/tree/commands/exits/log/input hashes",
+                ".github/workflows/rust-desktop-runtime.yml:2142-2255: consumer checks H/tree, successful producer receipt, fixture path/hash and positive producer name; Node 24 and existing desktop dependencies are selected; the actual Node test and production typecheck commands both must succeed",
+                "All twelve consumer names must occur exactly once; TAP tests and pass counts must both equal twelve; fail, cancelled, skipped and todo must all equal zero. Both command/capture outcomes and before/after source and fixture hashes gate acceptance.",
+                ".github/workflows/rust-desktop-runtime.yml:2266-2274 and 2730-2738: the existing evidence uploads retain the palette fixture, receipts and logs under .evidence/sqlite-native-path, including failure evidence via always() artifact collection.",
+                "The Mac producer is also selected and required by name, while its receipt explicitly says the Node consumer runs separately on Linux. Neither the spec nor these receipt scopes claims rendered-browser or complete acceptance."
+              ]
+            },
+            {
+              "id": "PMS-STRUCTURE-05",
+              "status": "source-consistent",
+              "claim": "The final PMS union retains the incoming channel-custody implementation and existing integration gates instead of overwriting or assigning a competing owner.",
+              "evidence": [
+                "git diff --name-status d7e8ab4b7a39c97ef591d6d5fd1b7c5a14826445 863132b6acac316b8b2ed6bd0c9e841903c8a9cb contains exactly the eight PMS paths; the eleven incoming non-shared channel/spec/ledger/test paths have no diff against the PMS base.",
+                "git diff --raw a3c3b58743c486e5b70edb63b063e53e11422832 863132b6acac316b8b2ed6bd0c9e841903c8a9cb for the provider/model/component, Rust producer test, Node consumer test and PMS spec is empty: all six reviewed PMS blobs are preserved.",
+                "Supplied integration-delta.patch and the final workflow retain the channel readiness/handoff/Host-lane required tests, BackgroundWakes integration target and positive names, exact input hashes, and actual Automation/Settings/channel App execution selection.",
+                "The PMS candidate patch adds the producer/consumer chain without removing existing MGS/MGA/MWR/RSU/SCP, channel failure/custody, Automation/config or LPG command/positive gates. The incoming relocation of bound_synthesis_gate_rejects_a_noncanonical_store_path retains that required name.",
+                "Both shared RTM changes are additive evidence references to existing rows. No completion flag, acceptance state, source-read claim, inventory identity or new production owner is introduced."
+              ]
+            },
+            {
+              "id": "PMS-PERFORMANCE-01",
+              "status": "source-consistent-no-measured-performance-claim",
+              "claim": "No material performance regression is apparent from the PMS structure.",
+              "evidence": [
+                "Currentness lookup is a WeakMap lookup plus existing lifecycle checks; accepted arrays and parsed flat message objects are frozen once per successful reply rather than copied into a new persistent store.",
+                "The model performs one linear projection of already-bounded Host message results and removes JavaScript message normalization/fuzzy scoring/sorting; existing debounce and virtualization remain unchanged.",
+                "The real Session/Roster path retains its existing default result bound of 50 and per-agent bound of 5. No production dependency, transport, Rust matching algorithm or persistent format is changed.",
+                "CI reuses the existing Linux Host build/cache and existing desktop dependency/typecheck conventions. No new framework or custom TypeScript loader is introduced."
+              ]
+            }
+          ],
+          "validation": {
+            "local_executable_validation": "NOT_RUN_PROHIBITED",
+            "actions_results_reviewed": false,
+            "operations_performed": "Read-only source/document inspection, rg/sed, Git object/tree/diff reads, and this single requested report write. No tests, builds, lint, schema checks, generators, validators, runtime or UI execution.",
+            "runtime_status": "pending exact-H GitHub Actions",
+            "ui_status": "pending rendered interaction, accessibility and visual acceptance",
+            "full_acceptance_status": "pending all applicable OCRM final gates, real provider/channel/indexed-backend/platform/package evidence and independent acceptance"
+          },
+          "publication_handoff": {
+            "reported_published_commit": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+            "reported_published_tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+            "reported_parent_commit": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+            "applicability": "Parent reports API full-file reread of all eight identical PMS blobs, with only inherited nonproduction preview-spec/Coordinator grammar additions outside this r4 source scope. This report remains bound to the r4 frozen tree; the reported publication does not establish runtime or acceptance evidence."
+          }
+        }
+      }
+    ],
+    "final_review_applicability": {
+      "review_tree": "863132b6acac316b8b2ed6bd0c9e841903c8a9cb",
+      "published_H": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+      "published_tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+      "identical_eight_blobs": [
+        {
+          "path": ".github/workflows/rust-desktop-runtime.yml",
+          "reviewed_and_published_blob": "04478011065d7043b27a0b1fc9070b0ff9e1500a"
+        },
+        {
+          "path": "frontend/src/production/CommandPalette.tsx",
+          "reviewed_and_published_blob": "f944c83abbae07c8092800c5876fe57af58d9cb5"
+        },
+        {
+          "path": "frontend/src/production/command-palette-message-provider.ts",
+          "reviewed_and_published_blob": "5f2531682beb8b2a952fb55c5357acfcea14998d"
+        },
+        {
+          "path": "frontend/src/production/command-palette-model.ts",
+          "reviewed_and_published_blob": "c61a1b9531f02a74b0ddc3e22c50448a06ee2588"
+        },
+        {
+          "path": "frontend/src/production/command-palette-message-search.contract.test.ts",
+          "reviewed_and_published_blob": "c99db39cdc0b96dd463673c20e7c15dc7f772808"
+        },
+        {
+          "path": "source/host/tests/palette_message_gateway_contract.rs",
+          "reviewed_and_published_blob": "8a1544eb617d59e9868d82df7100ef82712f5985"
+        },
+        {
+          "path": "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md",
+          "reviewed_and_published_blob": "41005d82b4bc1d002218c031838a64a80bbbc6d8"
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "reviewed_and_published_blob": "1c58580e035ac6b11367ad8bdf5a4608c3d8d727"
+        }
+      ],
+      "inherited_delta": "Two preview spec/Coordinator grammar-test paths from572818159 only; not PMS-authored production changes. Securityr2 seven nonworkflow PMSblobs unchanged across later integration; finalr4 review covers shared workflow/RTM union."
+    },
+    "runtime_status": "Exact H a50e4222776ce1e3a422d405d40fba26c0ae0594 / tree87757b57d2162040c4f7557e007f24e06d44fe1d, run41540837575/Linux125604260942 completed failure in the separate App Settings fixture (TEST_FLAW). PMS scoped checks passed: real persisted/reopened Rust gateway producer palette_message_gateway_exports_persisted_rust_search_results once; fresh per-run fixture SHA2569e8c77aa9606004c6ad6706aec3fda05336158b776fd2953baadebc3c3028d30 matches producer and consumer before/after; twelve required Node names once each,12pass/0fail/0cancelled/0skipped/0todo; production npm --prefix desktop run typecheck -> tsc --noEmit, command/capture exits0.18 consumer input hashes are unchanged and match exact H. macOS125604261360 was queued at2026-11-02T23:08:08.224Z. Rendered UI, real transport/indexed backends and final acceptance remain open.",
+    "source_authority": {
+      "run_id": 41540837570,
+      "job_id": 125604259387,
+      "result": "success",
+      "scope": "33 source-review and21 structural tests plus scopedG01/G02 structural PASS; full closure and acceptance remain open."
+    },
+    "full_acceptance": "Rendered UI interactions/accessibility/visual, real transport/indexed backends, device/platform/package acceptance and all final OCRM gates remain open.",
+    "historical_api_only_runtime_status": "Exact-H run41540837575/Linux125604260942: Rust producer and combined Node consumer/production typecheck step success by API at22:59:25UTC; full named results, fixture/input/log hashes and explicit exits still pending direct terminal-log collection. macOS125604261360 queued.",
+    "terminal_runtime_evidence": {
+      "subject": {
+        "H": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+        "tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+        "runtime_run": 41540837575,
+        "linux_job": 125604260942,
+        "linux_conclusion": "failure",
+        "macos_job": 125604261360
+      },
+      "whole_linux_job_conclusion": "failure",
+      "literal_required_results": {
+        "subject": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+        "tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+        "source_job": 125604260942,
+        "consumer_outcomes": [
+          {
+            "name": "pms_requires_real_rust_gateway_fixture",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10680,
+                "raw": "2026-11-02T22:56:40.7477676Z ok 1 - pms_requires_real_rust_gateway_fixture",
+                "body": "ok 1 - pms_requires_real_rust_gateway_fixture",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_rust_sigma_expansion_contraction_and_partial_originals_reach_entries",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10686,
+                "raw": "2026-11-02T22:56:40.7481682Z ok 2 - pms_rust_sigma_expansion_contraction_and_partial_originals_reach_entries",
+                "body": "ok 2 - pms_rust_sigma_expansion_contraction_and_partial_originals_reach_entries",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_nonempty_empty_token_queries_keep_rust_messages_in_all",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10692,
+                "raw": "2026-11-02T22:56:40.7485341Z ok 3 - pms_nonempty_empty_token_queries_keep_rust_messages_in_all",
+                "body": "ok 3 - pms_nonempty_empty_token_queries_keep_rust_messages_in_all",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_host_order_and_navigation_identity_survive_all_tab_placement",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10698,
+                "raw": "2026-11-02T22:56:40.7489925Z ok 4 - pms_host_order_and_navigation_identity_survive_all_tab_placement",
+                "body": "ok 4 - pms_host_order_and_navigation_identity_survive_all_tab_placement",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_other_categories_keep_matching_deduplication_tabs_and_order",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10704,
+                "raw": "2026-11-02T22:56:40.7493843Z ok 5 - pms_other_categories_keep_matching_deduplication_tabs_and_order",
+                "body": "ok 5 - pms_other_categories_keep_matching_deduplication_tabs_and_order",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_ready_array_provenance_rejects_forgery_clones_parser_output_and_query_aliases",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10710,
+                "raw": "2026-11-02T22:56:40.7498407Z ok 6 - pms_ready_array_provenance_rejects_forgery_clones_parser_output_and_query_aliases",
+                "body": "ok 6 - pms_ready_array_provenance_rejects_forgery_clones_parser_output_and_query_aliases",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_same_query_retry_failure_and_capability_failure_revoke_retained_arrays",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10716,
+                "raw": "2026-11-02T22:56:40.7502475Z ok 7 - pms_same_query_retry_failure_and_capability_failure_revoke_retained_arrays",
+                "body": "ok 7 - pms_same_query_retry_failure_and_capability_failure_revoke_retained_arrays",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_cancel_reset_unavailable_empty_and_dispose_revoke_ready_and_inflight_results",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10722,
+                "raw": "2026-11-02T22:56:40.7507547Z ok 8 - pms_cancel_reset_unavailable_empty_and_dispose_revoke_ready_and_inflight_results",
+                "body": "ok 8 - pms_cancel_reset_unavailable_empty_and_dispose_revoke_ready_and_inflight_results",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_ignored_abort_A_B_A_replies_cannot_replace_the_current_ready_array",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10728,
+                "raw": "2026-11-02T22:56:40.7511445Z ok 9 - pms_ignored_abort_A_B_A_replies_cannot_replace_the_current_ready_array",
+                "body": "ok 9 - pms_ignored_abort_A_B_A_replies_cannot_replace_the_current_ready_array",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_synchronous_loading_reentry_keeps_only_the_latest_request",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10734,
+                "raw": "2026-11-02T22:56:40.7515101Z ok 10 - pms_synchronous_loading_reentry_keeps_only_the_latest_request",
+                "body": "ok 10 - pms_synchronous_loading_reentry_keeps_only_the_latest_request",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_malformed_rows_and_duplicate_transport_provenance_do_not_grant_authority",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10740,
+                "raw": "2026-11-02T22:56:40.7519457Z ok 11 - pms_malformed_rows_and_duplicate_transport_provenance_do_not_grant_authority",
+                "body": "ok 11 - pms_malformed_rows_and_duplicate_transport_provenance_do_not_grant_authority",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "pms_component_and_production_caller_wire_current_message_status",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 10746,
+                "raw": "2026-11-02T22:56:40.7523414Z ok 12 - pms_component_and_production_caller_wire_current_message_status",
+                "body": "ok 12 - pms_component_and_production_caller_wire_current_message_status",
+                "echo": false
+              }
+            ]
+          }
+        ],
+        "rust_outcomes": [
+          {
+            "name": "memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5756,
+                "raw": "2026-11-02T22:55:33.9375759Z test memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner ... ok",
+                "body": "test memory_gateway_rejects_paired_nodes_and_unknown_roles_before_owner ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_read_scope_and_headers_cannot_grant_mutation",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5755,
+                "raw": "2026-11-02T22:55:33.9375264Z test memory_gateway_read_scope_and_headers_cannot_grant_mutation ... ok",
+                "body": "test memory_gateway_read_scope_and_headers_cannot_grant_mutation ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_empty_unrelated_and_session_only_grants_fail_closed",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5752,
+                "raw": "2026-11-02T22:55:33.9373645Z test memory_gateway_empty_unrelated_and_session_only_grants_fail_closed ... ok",
+                "body": "test memory_gateway_empty_unrelated_and_session_only_grants_fail_closed ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_write_only_and_admin_only_mutations_survive_reopen",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5758,
+                "raw": "2026-11-02T22:55:33.9377032Z test memory_gateway_write_only_and_admin_only_mutations_survive_reopen ... ok",
+                "body": "test memory_gateway_write_only_and_admin_only_mutations_survive_reopen ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5753,
+                "raw": "2026-11-02T22:55:33.9374204Z test memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility ... ok",
+                "body": "test memory_gateway_native_access_and_explicit_ceilings_preserve_compatibility ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5757,
+                "raw": "2026-11-02T22:55:33.9376471Z test memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access ... ok",
+                "body": "test memory_gateway_unrecognized_and_revoked_credentials_never_regain_native_access ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "memory_gateway_preserves_projection_selectors_and_unrelated_routes",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5754,
+                "raw": "2026-11-02T22:55:33.9374762Z test memory_gateway_preserves_projection_selectors_and_unrelated_routes ... ok",
+                "body": "test memory_gateway_preserves_projection_selectors_and_unrelated_routes ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5765,
+                "raw": "2026-11-02T22:55:33.9379249Z test bound_synthesis_gate_rejects_a_noncanonical_store_path ... ok",
+                "body": "test bound_synthesis_gate_rejects_a_noncanonical_store_path ... ok",
+                "echo": false
+              }
+            ]
+          },
+          {
+            "name": "palette_message_gateway_exports_persisted_rust_search_results",
+            "positive_count": 1,
+            "lines": [
+              {
+                "line": 5815,
+                "raw": "2026-11-02T22:55:33.9401041Z test palette_message_gateway_exports_persisted_rust_search_results ... ok",
+                "body": "test palette_message_gateway_exports_persisted_rust_search_results ... ok",
+                "echo": false
+              }
+            ]
+          }
+        ]
+      },
+      "consumer_receipt": {
+        "source_run": 41540837575,
+        "source_job": 125604260942,
+        "raw_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125604260942/logs",
+        "log_line_start": 10766,
+        "log_line_end": 10933,
+        "receipt": {
+          "contract": "PMS-v1",
+          "subject_commit": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+          "subject_tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+          "upstream": {
+            "repository": "openclaw/openclaw",
+            "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+          },
+          "run_id": "41540837575",
+          "run_attempt": "1",
+          "runner_os": "Linux",
+          "node": "v24.22.1",
+          "inputs_sha256": {
+            ".github/workflows/rust-desktop-runtime.yml": "3c9698cd98767866d6f0d36fbf39fed5456f122f9e9b62d426d08d10a27646fc",
+            "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md": "8097218c238a8a1b2a739adbac170acb98b960a273e5b891147a34da9bcbdf1b",
+            "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+            "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "source/host/src/extensions/session/production.rs": "87c5f41a478551c13da63de11bee47392384f21ac99bd21adf381c601bbd6e77",
+            "source/host/src/extensions/session/gateway.rs": "b18abd2ef360e0b67c2d94a6421d08ea05f12e9546684ec7c9a88200ce24a22b",
+            "source/host/src/extensions/transcript/roster_search.rs": "c2a91b65b69404d7c07d83bd0666acfe8d9a5f3e116fc09c80eb44bc6525c17b",
+            "source/host/src/extensions/content_search/agent_content_search.rs": "8d3321c4f0918922d05b9bbc8e94ea28d99810bca4cdf2b0a5946262680a6e3d",
+            "source/host/tests/palette_message_gateway_contract.rs": "e729dc5e400d0147c53beab865d85d2631751c0165bbd5d525e51564790a702a",
+            "frontend/src/production/command-palette-message-provider.ts": "3bccd55877d41d59e7f4157bef22bde5db5c0a0467db50fc3ee185b3b1324268",
+            "frontend/src/production/command-palette-model.ts": "9ed53129cd1df211f434554eff8549c153d9a3199483e920d815e676bc32bc7c",
+            "frontend/src/production/command-palette-link-provider.ts": "8152125b95eaa0baec9fde97e4653056ec6786930622e0f1b224482582abc2f0",
+            "frontend/src/production/command-palette-message-search.contract.test.ts": "2dfd82cb83564ec0ec0f949301e7b80878a37a5f1371090641110ef507c49abe",
+            "frontend/src/production/CommandPalette.tsx": "b2083fdf75c5ab8552faf7d0f766ade2225f382582bf2d675804102c1ab0cc91",
+            "frontend/src/production/ProductionRenderer.tsx": "828a9b7135e209c0ffd40b13807db048fdba68067992a20224c5ea3a0ef74408",
+            "desktop/package.json": "fc3126883dce2cc2c398b5936b86e3d134d17fc2a1b63d972bc65ef79230a4d3",
+            "desktop/package-lock.json": "b0acd325c8551edc95e6c637405671ce61e49358b7d72ae3360b8f84df1f083b",
+            "desktop/tsconfig.json": "d7aa02837ecf5ae8293c324250f8d386a94d83042db84761643e4db1af2db3a2"
+          },
+          "fixture_path": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/sqlite-native-path/palette-message/41540837575-1/palette-rust-results.json",
+          "fixture_sha256": "9e8c77aa9606004c6ad6706aec3fda05336158b776fd2953baadebc3c3028d30",
+          "producer_receipt": ".evidence/sqlite-native-path/channel-pending-recovery/receipt.json",
+          "producer_receipt_sha256": "3ca5c71efe02a22eded9ca16863791d6281aa63417eddee03e4e020e093fa036",
+          "producer_command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--no-fail-fast",
+            "--test",
+            "durable_recovery_stores_contract",
+            "--test",
+            "pending_wake_rearm_contract",
+            "--test",
+            "transcript_manager_contract",
+            "--test",
+            "memory_gateway_authorization_contract",
+            "--test",
+            "cloud_agent_pending_wake_rearm_production_contract",
+            "--test",
+            "agent_content_search_contract",
+            "--test",
+            "roster_search_contract",
+            "--test",
+            "palette_message_gateway_contract",
+            "--test",
+            "memory_service_contract",
+            "--test",
+            "memory_synthesis_store_contract",
+            "--test",
+            "memory_synthesis_service_contract",
+            "--test",
+            "background_wakes_production_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "producer_log_sha256": "b3743a3bbb8dfbfc2da175412a807cc0c30bb8c2a7fa358288d0a00d72dcd9e2",
+          "producer_required_test": "palette_message_gateway_exports_persisted_rust_search_results",
+          "required_consumer_tests": [
+            "pms_requires_real_rust_gateway_fixture",
+            "pms_rust_sigma_expansion_contraction_and_partial_originals_reach_entries",
+            "pms_nonempty_empty_token_queries_keep_rust_messages_in_all",
+            "pms_host_order_and_navigation_identity_survive_all_tab_placement",
+            "pms_other_categories_keep_matching_deduplication_tabs_and_order",
+            "pms_ready_array_provenance_rejects_forgery_clones_parser_output_and_query_aliases",
+            "pms_same_query_retry_failure_and_capability_failure_revoke_retained_arrays",
+            "pms_cancel_reset_unavailable_empty_and_dispose_revoke_ready_and_inflight_results",
+            "pms_ignored_abort_A_B_A_replies_cannot_replace_the_current_ready_array",
+            "pms_synchronous_loading_reentry_keeps_only_the_latest_request",
+            "pms_malformed_rows_and_duplicate_transport_provenance_do_not_grant_authority",
+            "pms_component_and_production_caller_wire_current_message_status"
+          ],
+          "executions": [
+            {
+              "case": "consumer",
+              "command": [
+                "node",
+                "--experimental-strip-types",
+                "--test",
+                "--test-reporter=tap",
+                "frontend/src/production/command-palette-message-search.contract.test.ts"
+              ],
+              "command_exit": 0,
+              "capture_exit": 0,
+              "execution_error": null,
+              "log": "consumer.log",
+              "log_sha256": "200b9389f1a067edf2eba7fee78acf7f9f3f24d90f533d1d77ad115f15360e6e",
+              "observed_passed_names": [
+                "pms_requires_real_rust_gateway_fixture",
+                "pms_rust_sigma_expansion_contraction_and_partial_originals_reach_entries",
+                "pms_nonempty_empty_token_queries_keep_rust_messages_in_all",
+                "pms_host_order_and_navigation_identity_survive_all_tab_placement",
+                "pms_other_categories_keep_matching_deduplication_tabs_and_order",
+                "pms_ready_array_provenance_rejects_forgery_clones_parser_output_and_query_aliases",
+                "pms_same_query_retry_failure_and_capability_failure_revoke_retained_arrays",
+                "pms_cancel_reset_unavailable_empty_and_dispose_revoke_ready_and_inflight_results",
+                "pms_ignored_abort_A_B_A_replies_cannot_replace_the_current_ready_array",
+                "pms_synchronous_loading_reentry_keeps_only_the_latest_request",
+                "pms_malformed_rows_and_duplicate_transport_provenance_do_not_grant_authority",
+                "pms_component_and_production_caller_wire_current_message_status"
+              ],
+              "missing_or_nonunique_positive_results": [],
+              "tap_counts": {
+                "tests": 12,
+                "pass": 12,
+                "fail": 0,
+                "cancelled": 0,
+                "skipped": 0,
+                "todo": 0
+              },
+              "oracle_accepted": true
+            },
+            {
+              "case": "production-typecheck",
+              "command": [
+                "npm",
+                "--prefix",
+                "desktop",
+                "run",
+                "typecheck"
+              ],
+              "command_exit": 0,
+              "capture_exit": 0,
+              "execution_error": null,
+              "log": "production-typecheck.log",
+              "log_sha256": "147d1bd81d59046c355f2c6d0d7528fbf96fd42dc6fbc12d671d29d4133f332a",
+              "oracle_accepted": true
+            }
+          ],
+          "result": "passed",
+          "scope": "Same-H persisted Rust Session search replies consumed by the actual desktop provider/model with unchanged snippets, identities and Host order; live-request revocation and ignored-abort controls, executable component/caller AST wiring and production TypeScript graph. Controlled transport does not establish real remote/indexed backend or rendered-browser, accessibility, platform/package acceptance.",
+          "inputs_sha256_after": {
+            ".github/workflows/rust-desktop-runtime.yml": "3c9698cd98767866d6f0d36fbf39fed5456f122f9e9b62d426d08d10a27646fc",
+            "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md": "8097218c238a8a1b2a739adbac170acb98b960a273e5b891147a34da9bcbdf1b",
+            "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+            "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "source/host/src/extensions/session/production.rs": "87c5f41a478551c13da63de11bee47392384f21ac99bd21adf381c601bbd6e77",
+            "source/host/src/extensions/session/gateway.rs": "b18abd2ef360e0b67c2d94a6421d08ea05f12e9546684ec7c9a88200ce24a22b",
+            "source/host/src/extensions/transcript/roster_search.rs": "c2a91b65b69404d7c07d83bd0666acfe8d9a5f3e116fc09c80eb44bc6525c17b",
+            "source/host/src/extensions/content_search/agent_content_search.rs": "8d3321c4f0918922d05b9bbc8e94ea28d99810bca4cdf2b0a5946262680a6e3d",
+            "source/host/tests/palette_message_gateway_contract.rs": "e729dc5e400d0147c53beab865d85d2631751c0165bbd5d525e51564790a702a",
+            "frontend/src/production/command-palette-message-provider.ts": "3bccd55877d41d59e7f4157bef22bde5db5c0a0467db50fc3ee185b3b1324268",
+            "frontend/src/production/command-palette-model.ts": "9ed53129cd1df211f434554eff8549c153d9a3199483e920d815e676bc32bc7c",
+            "frontend/src/production/command-palette-link-provider.ts": "8152125b95eaa0baec9fde97e4653056ec6786930622e0f1b224482582abc2f0",
+            "frontend/src/production/command-palette-message-search.contract.test.ts": "2dfd82cb83564ec0ec0f949301e7b80878a37a5f1371090641110ef507c49abe",
+            "frontend/src/production/CommandPalette.tsx": "b2083fdf75c5ab8552faf7d0f766ade2225f382582bf2d675804102c1ab0cc91",
+            "frontend/src/production/ProductionRenderer.tsx": "828a9b7135e209c0ffd40b13807db048fdba68067992a20224c5ea3a0ef74408",
+            "desktop/package.json": "fc3126883dce2cc2c398b5936b86e3d134d17fc2a1b63d972bc65ef79230a4d3",
+            "desktop/package-lock.json": "b0acd325c8551edc95e6c637405671ce61e49358b7d72ae3360b8f84df1f083b",
+            "desktop/tsconfig.json": "d7aa02837ecf5ae8293c324250f8d386a94d83042db84761643e4db1af2db3a2"
+          },
+          "fixture_sha256_after": "9e8c77aa9606004c6ad6706aec3fda05336158b776fd2953baadebc3c3028d30"
+        }
+      },
+      "producer_receipt_projection": {
+        "source_run": 41540837575,
+        "source_job": 125604260942,
+        "raw_log_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125604260942/logs",
+        "log_line_start": 9579,
+        "log_line_end": 10503,
+        "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer",
+        "subject_commit": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+        "subject_tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run_id": "41540837575",
+        "run_attempt": "1",
+        "runner_os": "Linux",
+        "result": "passed",
+        "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+        "inputs_sha256": {
+          ".github/workflows/rust-desktop-runtime.yml": "3c9698cd98767866d6f0d36fbf39fed5456f122f9e9b62d426d08d10a27646fc",
+          "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md": "c26d82021cb7b4fe9a6d37b4f6b38d7cb199dcd21a01d27915038b1b2b74ba0f",
+          "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md": "d217ed7383ac0fbf7d491675683189ba156ebafe028b1236c8eef31c61fadade",
+          "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md": "8f802f6282ee4da43470bce23a96f6919f4767b39d1ce929ea53b3db61845ece",
+          "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md": "047c00ea7551f14f9ba5d4c5675c2b0b8c57010087b1cc58349b69156d9d1324",
+          "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+          "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+          "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md": "9a14803cd7f3ecd46c43453e28c5a7395b1c760b2fe8a02d67755b23ca6a69fd",
+          "source/host/src/extensions/content_search/agent_content_search.rs": "8d3321c4f0918922d05b9bbc8e94ea28d99810bca4cdf2b0a5946262680a6e3d",
+          "source/host/src/extensions/transcript/roster_search.rs": "c2a91b65b69404d7c07d83bd0666acfe8d9a5f3e116fc09c80eb44bc6525c17b",
+          "source/host/src/extensions/session/gateway.rs": "b18abd2ef360e0b67c2d94a6421d08ea05f12e9546684ec7c9a88200ce24a22b",
+          "source/host/tests/agent_content_search_contract.rs": "4d1759e94a2312c8758181fa8a6da5386a5736780eb08d633c59ccbb0424dc0a",
+          "source/host/tests/roster_search_contract.rs": "c8a7311884d10022c8d4a254099904c42424931ed41f188356801b37634d05bc",
+          "frontend/src/production/command-palette-message-provider.ts": "3bccd55877d41d59e7f4157bef22bde5db5c0a0467db50fc3ee185b3b1324268",
+          "frontend/src/production/command-palette-model.ts": "9ed53129cd1df211f434554eff8549c153d9a3199483e920d815e676bc32bc7c",
+          "projects/openclaw-rust/docs/specs/palette-rust-message-presentation.md": "8097218c238a8a1b2a739adbac170acb98b960a273e5b891147a34da9bcbdf1b",
+          "source/host/tests/palette_message_gateway_contract.rs": "e729dc5e400d0147c53beab865d85d2631751c0165bbd5d525e51564790a702a",
+          "frontend/src/production/command-palette-link-provider.ts": "8152125b95eaa0baec9fde97e4653056ec6786930622e0f1b224482582abc2f0",
+          "frontend/src/production/command-palette-message-search.contract.test.ts": "2dfd82cb83564ec0ec0f949301e7b80878a37a5f1371090641110ef507c49abe",
+          "frontend/src/production/CommandPalette.tsx": "b2083fdf75c5ab8552faf7d0f766ade2225f382582bf2d675804102c1ab0cc91",
+          "frontend/src/production/ProductionRenderer.tsx": "828a9b7135e209c0ffd40b13807db048fdba68067992a20224c5ea3a0ef74408",
+          "desktop/package.json": "fc3126883dce2cc2c398b5936b86e3d134d17fc2a1b63d972bc65ef79230a4d3",
+          "desktop/package-lock.json": "b0acd325c8551edc95e6c637405671ce61e49358b7d72ae3360b8f84df1f083b",
+          "desktop/tsconfig.json": "d7aa02837ecf5ae8293c324250f8d386a94d83042db84761643e4db1af2db3a2",
+          "source/host/src/extensions/transcript/sand_pending_wake_store.rs": "daa4e5b0792db15e295c4303a9f9ad2b85428b180baa30f63952350735af0638",
+          "source/host/src/extensions/transcript/pending_wake_rearm.rs": "9bdc6f64dd1bddf5b9f0a98f8633cb6a6e32b172ec73c5e98de65d621dde604c",
+          "source/host/src/extensions/transcript/production_runtime.rs": "6b2b213a78e25368fd07cceeef6c617c30de3bd5416f108c22b70c0300e7d6d3",
+          "source/host/src/extensions/transcript/transcript_manager.rs": "7c21b22f2b605566906dc9ca2fd622d3da1d9b9832b06fa65fed05fd846f1f12",
+          "source/host/src/extensions/session/production.rs": "87c5f41a478551c13da63de11bee47392384f21ac99bd21adf381c601bbd6e77",
+          "source/host/src/extensions/memory/memory_service.rs": "25c6c59eed297e3a8e64d39a862c9a7da20789d5c11c73f1bcd56f705271c3b0",
+          "source/host/src/extensions/memory/memory_synthesis_service.rs": "1c6ccdc12d01f107c8989fa9570dd2fe1c8d1f9d877b09c1f9059965d15ba1c3",
+          "source/host/src/extensions/memory/production.rs": "8375687c4a53b2f4abbbdf96160139b457fbac750ef4de3021c2d88714d58902",
+          "source/host/src/extensions/memory/production_append_read_tests.rs": "2c593c6441afec0c83998b04124b6fae5a1004d1846f0019bac4976a0e55a39e",
+          "source/host/src/watched_directory.rs": "32f4bba78fe5f240ec3945ca3d1c2cf324ad7ad905c9d2f05ad84a7053baa0fd",
+          "source/host/src/storage/agent_paths.rs": "5054ac0abd74991b97012146f21c4f7132198a6dcfe5cd3b50a9e9b9d7c95df4",
+          "source/host/src/storage/folder_id.rs": "903c6fb755ff11d4cf3723bcd4fe57dcaff88dfe8c3db9164add6f9182a6b9ef",
+          "source/host/src/device_pairing_owner.rs": "b2b09c0e6a63621fcc989b4e0901ef3d384eb114fb6b36c43ae77eb43fd6c611",
+          "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json": "9a4c12fb9eb71ce12da5ccebfbc9fe2577986b738960963626ec6be01319e9de",
+          "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+          "source/host/src/extensions/transcript/background_wakes.rs": "e5687a9f2513458edb1a2ba60acedfd0738595bac412e69070d38d5051707ce6",
+          "source/host/src/gateway_server.rs": "319041658ff956776c42c1135051bb0d6ef97effc26cb2fd765c6203234246ac",
+          "source/host/app/src/main.rs": "70bd7e01802f4b1047f72fcb5521b3f3109cd8e83b2a39d060536491fc16a740",
+          "source/host/tests/durable_recovery_stores_contract.rs": "12eb56444d61333c610e504d8c0c624539379344cd9955e52fe07a081dece12c",
+          "source/host/tests/pending_wake_rearm_contract.rs": "ee047795f5abecc197164ef0d9cdeff4790c64c747334cbd61c62ffc88a17e97",
+          "source/host/tests/transcript_manager_contract.rs": "be2d93044219ebdb9ed2dd6ee829965aca8746cbf71277a184ec65ec7ee6e261",
+          "source/host/tests/memory_gateway_authorization_contract.rs": "3f6d268d1d613aeda0a1b8de6ac2ff0658b5c7833cde9e9eff5f163c3ab07f94",
+          "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs": "fa243b2087bbed478438d8f9341c87b3f4daa1c024499f18e0c335b4dc70696d",
+          "source/host/tests/memory_service_contract.rs": "d8dd449bcae9b4096d9da841f036ff1033f7f5fdff8fe49b08f4ecb213b2bf61",
+          "source/host/tests/memory_synthesis_store_contract.rs": "6be6a1d6a96f888e141961120f4f1674b7b216996c9c0c1c1044f019e1b49a96",
+          "source/host/tests/memory_synthesis_service_contract.rs": "5ff66d7d689bce2376b3ed6bad544ef8720e4dd22661b3b2ffb83fa6f901e952",
+          "projects/openclaw-rust/docs/specs/session-communication-production-boundary.md": "c94e1191df6c58e20bdb1e2c3294d7d0dff0856d8e2caad8d9bf131645c3dd7b",
+          "source/host/src/extensions/session/session_conversation_state.rs": "6fa183735c63c87c0ba09bdfc310e9ddf244e9025764de260cdabb9f09acbe67",
+          "source/host/src/extensions/session/agent_db.rs": "3257b66faf35ddcce6b4cba650390053002457a047b58023063e6eeab918eb82",
+          "source/host/src/extensions/transcript/agent_to_agent_messaging.rs": "849574aa94c76016d35f1581cb4a8f150d9a8cdc2bcb3e022e6485034f7d8b23",
+          "source/host/src/transcript_mutation_events.rs": "8ea2750c1bcf712cf6eaf935d78d7a1de6d5230effcc0f0783b3c281f6c7ea9d",
+          "source/host/tests/openclaw_sessions_and_config_contract.rs": "2286a1858e965035ae142766ac412a20f4ffaafe5de10c250e4049b2d7123ab1",
+          "source/host/tests/agent_to_agent_messaging_contract.rs": "dbf0417f51e3a0004b8c67e249b9339e7e825af8b9c41e11e09c07a3c71cbea6",
+          "source/host/tests/background_wakes_production_contract.rs": "c52ac4c4eab2c60067b072bc282601f7509f97428f166088db322171b7dd39b7"
+        },
+        "executions": [
+          {
+            "case": "integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "durable_recovery_stores_contract",
+              "--test",
+              "pending_wake_rearm_contract",
+              "--test",
+              "transcript_manager_contract",
+              "--test",
+              "memory_gateway_authorization_contract",
+              "--test",
+              "cloud_agent_pending_wake_rearm_production_contract",
+              "--test",
+              "agent_content_search_contract",
+              "--test",
+              "roster_search_contract",
+              "--test",
+              "palette_message_gateway_contract",
+              "--test",
+              "memory_service_contract",
+              "--test",
+              "memory_synthesis_store_contract",
+              "--test",
+              "memory_synthesis_service_contract",
+              "--test",
+              "background_wakes_production_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "b3743a3bbb8dfbfc2da175412a807cc0c30bb8c2a7fa358288d0a00d72dcd9e2"
+          },
+          {
+            "case": "checked-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "a75245e760f80d1237e594a606f1a94b95c963585edcc05588e5d0e99ec54dde"
+          },
+          {
+            "case": "paired-device-sse",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "c9467cad8eb3326bd025c896ef16229068683fe499aa78427c7e724b0730e07f"
+          },
+          {
+            "case": "production-memory-synthesis",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::append_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "75637d75c97007c17a95e4e116303ba2447c34701c5ac3aa6c7eb9f8a4977678"
+          },
+          {
+            "case": "session-claim-integration",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--no-fail-fast",
+              "--test",
+              "openclaw_sessions_and_config_contract",
+              "--test",
+              "agent_to_agent_messaging_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "2decbcea2e115cb5032ea0c5bd067010f1951071309108f532e3ebd9a8fbe62d"
+          },
+          {
+            "case": "session-claim-commit-custody",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::session::agent_db::fresh_append_tests",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "execution_error": null,
+            "missing_or_nonunique_positive_results": [],
+            "oracle_accepted": true,
+            "log_sha256": "2adc55ebcaafe40f90c8a12298fe9c6f23224625033cf3e0d53c12194ce7ae5b"
+          }
+        ]
+      },
+      "producer_fixture": {
+        "path": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/sqlite-native-path/palette-message/41540837575-1/palette-rust-results.json",
+        "sha256": "9e8c77aa9606004c6ad6706aec3fda05336158b776fd2953baadebc3c3028d30",
+        "produced_by": "palette_message_gateway_exports_persisted_rust_search_results"
+      },
+      "producer_consumer_reconciliation": {
+        "subject_commit": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+        "subject_tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+        "run_id": "41540837575",
+        "run_attempt": "1",
+        "producer_receipt_console_sha256": "3ca5c71efe02a22eded9ca16863791d6281aa63417eddee03e4e020e093fa036",
+        "consumer_recorded_producer_receipt_sha256": "3ca5c71efe02a22eded9ca16863791d6281aa63417eddee03e4e020e093fa036",
+        "producer_receipt_hash_matches": true,
+        "producer_fixture_sha256": "9e8c77aa9606004c6ad6706aec3fda05336158b776fd2953baadebc3c3028d30",
+        "consumer_fixture_sha256": "9e8c77aa9606004c6ad6706aec3fda05336158b776fd2953baadebc3c3028d30",
+        "consumer_fixture_sha256_after": "9e8c77aa9606004c6ad6706aec3fda05336158b776fd2953baadebc3c3028d30",
+        "fixture_hashes_match": true,
+        "producer_log_sha256": "b3743a3bbb8dfbfc2da175412a807cc0c30bb8c2a7fa358288d0a00d72dcd9e2",
+        "consumer_recorded_producer_log_sha256": "b3743a3bbb8dfbfc2da175412a807cc0c30bb8c2a7fa358288d0a00d72dcd9e2",
+        "producer_log_hash_matches": true,
+        "producer_command_matches": true,
+        "unchanged_consumer_inputs": true,
+        "consumer_input_count": 18,
+        "consumer_tap_counts": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "consumer_log_sha256": "200b9389f1a067edf2eba7fee78acf7f9f3f24d90f533d1d77ad115f15360e6e",
+        "typecheck_log_sha256": "147d1bd81d59046c355f2c6d0d7528fbf96fd42dc6fbc12d671d29d4133f332a"
+      },
+      "shared_app_failure": {
+        "classification": "TEST_FLAW",
+        "confidence": "direct log and exact-H prerequisite source",
+        "failing_test": "tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+        "app_case_index": 18,
+        "app_required_cases": 52,
+        "app_preceding_passed_cases": 18,
+        "failed_cases": 1,
+        "unexecuted_following_cases": 33,
+        "subjects": [
+          {
+            "head": "aae00b9a039ce476896a5f2cbc5eecf3df725518",
+            "tree": "13cc7fd2404e724977e4a6f19a52245edd6dc480",
+            "run_id": 41540633894,
+            "job_id": 125603576514,
+            "step": 14,
+            "case_stdout_sha256": "90743012737a3a508e85ed723502c5c53dbd6a19f38d70f293ae8c2bd7dfffd7",
+            "case_stderr_sha256": "e520d23a9d6828273bddbfb54149bb113da0c8df201b566227854b64a293e20b"
+          },
+          {
+            "head": "a50e4222776ce1e3a422d405d40fba26c0ae0594",
+            "tree": "87757b57d2162040c4f7557e007f24e06d44fe1d",
+            "run_id": 41540837575,
+            "job_id": 125604260942,
+            "step": 17,
+            "case_stdout_sha256": "90743012737a3a508e85ed723502c5c53dbd6a19f38d70f293ae8c2bd7dfffd7",
+            "case_stderr_sha256": "69182bc935b1800dd6c85d5ade92b5a67f66e1bcdc9bae2eb7d1c5c8f9f0cb14"
+          }
+        ],
+        "signature": "called `Result::unwrap()` on an `Err` value: \"Unsupported settings version; expected version 1\"",
+        "panic_source": "source/host/app/src/tests/channel_failure_readiness_tests.rs:275:55",
+        "fixture_source": "source/host/app/src/tests/channel_failure_readiness_tests.rs:64",
+        "fixture_statement": "fs::write(root.join(\"settings.json\"), b\"{}\").unwrap();",
+        "owner": "SettingsService::commit_host_settings -> load_checked",
+        "owner_source": "source/host/src/extensions/settings/settings_service.rs:517-538; SettingsService::commit_host_settings",
+        "contract_source": "projects/openclaw-rust/docs/specs/config-settings-atomic-commit.md:84 (CAS-09)",
+        "causal_chain": "The healthy readiness fixture creates an existing settings document without version. The first inferenceProvider update skips the later compatibility-key branch that writes version=1. commit_host_settings invokes load_checked; existing missing-version input is correctly rejected before mutation/notification/readiness. The positive test unwraps that refusal.",
+        "command_exit": 101,
+        "step_exit": 1,
+        "oracle_limitation": "No readiness behavioral verdict is possible from this failed positive because its Settings input prerequisite is invalid.",
+        "retained_positive_evidence": [
+          "shipping cfg(not(test)) cargo check",
+          "actual linked App test-harness build",
+          "18 App Automation/Settings cases",
+          "MGA seven controls once per subject",
+          "canonical synthesis fixture control once per subject",
+          "portable channel/Memory/Session controls",
+          "PMS Rust fixture to twelve Node tests and production tsc",
+          "typed Automation including composed Runner Memory consumer",
+          "independent native preview Host/Coordinator/App and reused MCP controls"
+        ],
+        "repair_hint": "Repair only the fixture's healthy Settings input through an absent source or explicit valid version-1 document. Preserve CAS-09 strict-source refusal, explicit invalid-source negatives and every readiness/marker/order assertion. Recheck the affected fixture plus remaining unmet App controls at a new authorized exact H. No rerun or repair is performed in this review.",
+        "non_causes": "The missing fixture renewal-credential warning does not explain the actual Settings-version panic. No production Memory/Palette defect, missing secret, build failure or preview failure is established by this signature."
+      },
+      "failure_excerpt": "14610: 2026-11-02T23:02:56.8288504Z {\"command\": [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d\", \"--exact\", \"tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls\", \"--nocapture\", \"--test-threads=1\"], \"exit\": 0}\n14611: 2026-11-02T23:02:56.8289816Z \n14612: 2026-11-02T23:02:56.8289959Z running 1 test\n14613: 2026-11-02T23:02:56.8290653Z test tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls ... ok\n14614: 2026-11-02T23:02:56.8291157Z \n14615: 2026-11-02T23:02:56.8291595Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 127 filtered out; finished in 0.05s\n14616: 2026-11-02T23:02:56.8292090Z \n14617: 2026-11-02T23:02:56.8292098Z \n14618: 2026-11-02T23:02:56.8292103Z \n14619: 2026-11-02T23:02:56.8369833Z {\"command\": [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d\", \"--exact\", \"tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker\", \"--list\"], \"exit\": 0}\n14620: 2026-11-02T23:02:56.8371395Z tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker: test\n14621: 2026-11-02T23:02:56.8371892Z \n14622: 2026-11-02T23:02:56.8372010Z 1 test, 0 benchmarks\n14623: 2026-11-02T23:02:56.8372160Z \n14624: 2026-11-02T23:02:56.8372166Z \n14625: 2026-11-02T23:02:56.8696089Z {\"command\": [\"/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d\", \"--exact\", \"tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker\", \"--nocapture\", \"--test-threads=1\"], \"exit\": 101}\n14626: 2026-11-02T23:02:56.8697621Z \n14627: 2026-11-02T23:02:56.8697734Z running 1 test\n14628: 2026-11-02T23:02:56.8698407Z test tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker ... FAILED\n14629: 2026-11-02T23:02:56.8698889Z \n14630: 2026-11-02T23:02:56.8698991Z failures:\n14631: 2026-11-02T23:02:56.8699108Z \n14632: 2026-11-02T23:02:56.8699198Z failures:\n14633: 2026-11-02T23:02:56.8699726Z     tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker\n14634: 2026-11-02T23:02:56.8700485Z \n14635: 2026-11-02T23:02:56.8700894Z test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 127 filtered out; finished in 0.02s\n14636: 2026-11-02T23:02:56.8701280Z \n14637: 2026-11-02T23:02:56.8701291Z \n14638: 2026-11-02T23:02:56.8702087Z channel-lane-fixture-auth inference-credential renewer started, but no renewal credential was delivered into the box; inference is unavailable until the box is re-provisioned with one\n14639: 2026-11-02T23:02:56.8702789Z \n14640: 2026-11-02T23:02:56.8703763Z thread 'tests::channel_failure_readiness_tests::channel_failure_settings_commit_rearms_paused_head_with_exact_marker' (19005) panicked at src/tests/channel_failure_readiness_tests.rs:275:55:\n14641: 2026-11-02T23:02:56.8704833Z called `Result::unwrap()` on an `Err` value: \"Unsupported settings version; expected version 1\"\n14642: 2026-11-02T23:02:56.8705633Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n14643: 2026-11-02T23:02:56.8705958Z \n\n",
+      "uploaded_artifact": {
+        "id": 13186888977,
+        "archive_sha256": "bd7f414417a5f5b62526e9361fc7e84ffcad04b81f5f8a5ab944920daf8a5314"
+      },
+      "source_proof_hashes": {
+        "terminal_status": {
+          "saved_file": "terminal-exact-subject-status.json",
+          "sha256": "7668095993281b7d67f64ca2ac4209dbb526e0717f5524c72d6e131ad51365ff"
+        },
+        "pms_names": {
+          "saved_file": "pms-linux-required-names.json",
+          "sha256": "0c6c8fbeef3ec77fb28baea027859ad2a07c887e7b28f30ddeae23c92e568c19"
+        },
+        "pms_producer": {
+          "saved_file": "pms-linux-3-receipt.json",
+          "sha256": "7ba43295c75c0cfebbbb2e9ca6815510b7d4a851558471fb661245258cf75bc0"
+        },
+        "pms_consumer": {
+          "saved_file": "pms-linux-4-receipt.json",
+          "sha256": "11256980f5ce98f0c2abef9b49e392c031a0caa5a53ea79adee093bdb7f59e59"
+        },
+        "receipt_reconciliation": {
+          "saved_file": "terminal-evidence-reconciliation.json",
+          "sha256": "c4faeae801321f722f739ffd9fd29b52341bbfd016ed8c476ad6c493d8ab7096"
+        },
+        "app_failure": {
+          "saved_file": "shared-app-failure-classification.json",
+          "sha256": "be9b5bcdf286b15fbb60250dde74e2676267d2490f24ea20aef0f376ad69acd8"
+        },
+        "terminal_review": {
+          "saved_file": "terminal-actions-review.md",
+          "sha256": "b1d5beff8ae775e79ce47a889f5fe8c09f9b20265312649f19b0824c8730ee38"
+        }
+      }
+    }
+  },
+  "descendant_f5e_shared_regression_observation": {
+    "subject": {
+      "H": "f5e58a5dd052dd9c74454ae9a77a5b1ed531b981",
+      "tree": "23e13a6efabe861e351ec532eb7c3b284774d32b",
+      "parent": "7eb81e20b7dc2eac5a71516a9a0c78795d252e95",
+      "upstream": {
+        "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      }
+    },
+    "runtime": {
+      "run_id": 41545866179,
+      "attempt": 1,
+      "outer_status": "queued",
+      "outer_conclusion": null,
+      "linux_job_id": 125621214466,
+      "linux_status": "completed",
+      "linux_conclusion": "success",
+      "linux_completed_at": "2026-11-02T23:45:29Z",
+      "macos_job_id": 125621214739,
+      "macos_status": "queued",
+      "macos_conclusion": null,
+      "observed_at": "2026-11-02T23:49:38.796Z",
+      "proof_refs": [
+        "final-status-observation.json",
+        "job-125621214466.log"
+      ]
+    },
+    "scoped_claims": {
+      "PMS-v1": {
+        "status": "scoped-linux-pass",
+        "producer_target": "palette_message_gateway_contract",
+        "producer_required_name": "palette_message_gateway_exports_persisted_rust_search_results",
+        "producer_literal_occurrences": 1,
+        "fixture_path": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/sqlite-native-path/palette-message/41545866179-1/palette-rust-results.json",
+        "fixture_sha256": "3f0874ae24daab8dcf53981eb698dd6e9c828451c9a579b128f7a8a093482ea2",
+        "producer_receipt_sha256": "3a31c49630adb3d604ba5c65ca4115de1a48772ac45128f60419142b8ab1e9cc",
+        "producer_log_sha256": "8d867e0c532e18167c114e0fe8dfcb48dfaf46bbc25f9a9e6d59c86e290e1bf5",
+        "consumer_tap": {
+          "tests": 12,
+          "pass": 12,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "consumer_and_typecheck_command_capture_exits": [
+          0,
+          0
+        ],
+        "production_typecheck_command": [
+          "npm",
+          "--prefix",
+          "desktop",
+          "run",
+          "typecheck"
+        ],
+        "consumer_inputs_unchanged": true,
+        "scope": "Same-H persisted Rust Session search replies consumed by the actual desktop provider/model with unchanged snippets, identities and Host order; live-request revocation and ignored-abort controls, executable component/caller AST wiring and production TypeScript graph. Controlled transport does not establish real remote/indexed backend or rendered-browser, accessibility, platform/package acceptance.",
+        "proof_refs": [
+          "linux-2-receipt.json",
+          "linux-3-receipt.json",
+          "pms-producer-receipt-console.json",
+          "required-literal-results.json",
+          "terminal-evidence-reconciliation.json"
+        ]
+      }
+    },
+    "shared_app_fixture_recovery": {
+      "status": "scoped-linux-pass",
+      "required_app_cases": 62,
+      "passed_app_cases": 62,
+      "all_case_summaries": [
+        1,
+        0,
+        0
+      ],
+      "actual_commands": 127,
+      "all_command_exits": 0,
+      "startup_required": 7,
+      "startup_summary": [
+        7,
+        0,
+        0
+      ],
+      "app_executable_sha256": "392bd7a3c7c0534261065a59c75dcd1c697641de142bfb0a7f00f3ff1d9197d3",
+      "scope": "Exact shipping cfg(not(test)) check, linked App harness, current 62 actual App cases and seven normal-startup controls. Full packaged/shipping-platform acceptance remains open.",
+      "proof_refs": [
+        "linux-5-receipt.json",
+        "terminal-evidence-reconciliation.json",
+        "required-literal-results.json"
+      ]
+    },
+    "source": {
+      "run_id": 41545866193,
+      "conclusion": "success",
+      "source_job": 125621213696,
+      "source_job_conclusion": "success",
+      "persistence_job": 125621858549,
+      "persistence_conclusion": "success",
+      "source_review_tests": 33,
+      "structural_tests": 21,
+      "tracked_paths": 62130,
+      "canonical_inventory_sha256": "c6d1735e74d172442a6d465ca5e031d616fc177981828b3f26e23e2ed716a448",
+      "persistence_literal": "No new source-derived shard content",
+      "new_carrier": false,
+      "scope": "Scoped G01 tracked-tree/G02 structural only. No source/dependency/semantic closure or full gate promotion.",
+      "proof_refs": [
+        "source-authority-terminal.json",
+        "source-and-renderer-proof.json"
+      ]
+    },
+    "canonical_detail": "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+    "raw_log_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125621214466/logs",
+    "raw_log_sha256": "f01dda28aa7fcd880e5af6a3c1281a53b8668fac1d65196df516b7927557c164",
+    "source_proposal_sha256": "7b50d7c996be61eb30a348ffd0d4850e1d8b31d5af16b7dd1c0118aa7ac293f7",
+    "preservation": [
+      "MGA Haae00b9a039ce476896a5f2cbc5eecf3df725518 and PMS Ha50e4222776ce1e3a422d405d40fba26c0ae0594 App/whole-Linux failures remain failed. This descendant result does not edit those runs.",
+      "Every historical pending snapshot and signed source-only review remains literal history; no report hash rewriting.",
+      "Only f5e58a5dd052dd9c74454ae9a77a5b1ed531b981 is the runtime subject. Later branch heads, later Memory edits and evidence/source carriers gain no execution claim from this observation.",
+      "macOS queued and profiler/platform-worker skipped remain non-passing.",
+      "All applicable full G01-G12/AC01-AC24, source/dependency/legal closure, real providers/transports/indexed backends, devices/platform/UI/soak/package/upgrade/rollback and independent ACCEPT remain open. No upstream-read credit, inventory completion or global flag is promoted."
+    ],
+    "carrier_scope": "This is a separately identified descendant observation. It does not change this file original subject, prior failed job or historical source review."
+  }
+}

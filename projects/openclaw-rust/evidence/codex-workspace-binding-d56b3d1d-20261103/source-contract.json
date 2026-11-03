@@ -1,0 +1,593 @@
+{
+  "kind": "bounded-source-contract-preparation",
+  "subject": {
+    "repository": "fabushi-recovery",
+    "target_tree": "d15a2c21f25c6e470b97797ca30ad80e30875189",
+    "prior_assessment_tree": "9e40308b710fcc66602623880857512a20a5331a",
+    "upstream_repository": "openclaw/openclaw",
+    "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstream_identity_method": "GitHub connector exact-ref file content and returned Git blob SHA; no floating source",
+    "reasoning_effort": "xhigh, inherited as selected by parent for credential identity and refresh/custody boundaries",
+    "scope": "One Codex logical-turn credential-source and workspace continuity behavior. Preparation only; no implementation, execution, independent acceptance, or whole-provider closure."
+  },
+  "decision": {
+    "finding": "The production Codex path still recreates a credential-reading transport for each attempt and auxiliary call without retaining a logical-turn account/source identity. The existing Native binding does not apply to Codex.",
+    "proposed_behavior": "An admitted Codex turn binds one resolved credential source and one workspace. Every newly loaded or refreshed credential must establish that same workspace before it can supply an inference Authorization/ChatGPT-Account-Id pair. Same-workspace token rotations remain usable; a changed or indeterminate workspace causes permanent Authentication refusal before inference dispatch.",
+    "identity_choice": "Require a nonempty workspace claim from the actual access-token JWT and exact agreement with the existing tokens.account_id field. Pin that workspace, not a raw token, email, profile name, human principal, or login session.",
+    "compatibility_change": "The current Rust loader accepts opaque/non-JWT access tokens and independently supplied account_id. The proposed contract deliberately rejects missing, malformed, or conflicting access-token workspace metadata. Fixed-U's actual Responses caller already requires an access-token account claim, and its OAuth refresh facade refuses a refreshed token without one.",
+    "refresh_writeback": "Separate obligation. Validate refreshed-token workspace in this batch before write/send, but do not claim that stale refresh writeback cannot replace a concurrent external login. Neither target persistence nor the inspected vendored writer supplies a shared compare-and-publish protocol.",
+    "source_sufficiency": "The selected workspace/source behavior has a concrete source basis and known production owners. Remaining implementation-specific fixture/dependency reads below precede coding those mechanics; principal isolation and external refresh settlement are expressly outside this contract."
+  },
+  "falsifiable_current_gap": {
+    "no_effect_retry": "Start a real Codex Runner with valid synthetic private source A. After its first request is built, replace the same source with valid workspace B and return HTTP 503 without output or effects. The existing retry owner permits a second attempt; that attempt calls the credential loader again and can construct a B bearer/account header with the original turn body.",
+    "checkpoint_continuation": "After an accepted tool checkpoint, the same replacement before a retryable continuation failure lets a new transport load B for checkpoint history. This is an identity/history disclosure counterexample, not proof of duplicate tool execution; existing custody and accepted-checkpoint revision fences still govern replay.",
+    "existing_controls": "One existing CodexHttpTransport retains its credential snapshot across tool steps. Its 401 branch refreshes the captured refresh token and preserves current.account_id; it does not reread and adopt B during that same transport. CMI already retains the model. The new behavior belongs at credential admission and propagation, not in a replacement retry loop."
+  },
+  "minimal_contract": [
+    {
+      "id": "C1",
+      "rule": "Represent binding as a cloneable process-local, single-assignment identity shared across the logical turn, following the existing Arc<OnceLock<...>> Native pattern. Store only resolved source path and exact workspace string. No bearer, refresh token, ID token, whole auth document, serialized binding, reset/rebind operation, or new global cache.",
+      "owner": "provider_session.rs:1076-1146 precedent; extend the existing Codex credential/transport owner"
+    },
+    {
+      "id": "C2",
+      "rule": "Resolve CODEX_HOME/auth.json with the current CODEX_HOME then HOME/USERPROFILE fallback once for binding. Freeze an absolute pathname: resolve a relative configured home against the then-current working directory. Future transports use this stored path rather than rereading environment/home. Source identity means this resolved pathname, not inode identity; ordinary atomic file replacement for rotation remains allowed. Existing final-file regular/private/no-symlink checks remain required. Parent-directory symlink retargeting and hostile filesystem races are not solved by pathname binding.",
+      "owner": "provider_session.rs:429-440,625-693,1179-1186"
+    },
+    {
+      "id": "C3",
+      "rule": "From the same parsed credential image already read by read_codex_credentials, require exactly three JWT components, decode the access payload as a JSON object, and require https://api.openai.com/auth.chatgpt_account_id to be a nonempty string. Require exact equality with tokens.account_id and the bound workspace. Do not case-fold, substitute email/subject, or accept metadata fallback when the access claim is missing. Decode metadata locally without claiming JWT signature verification; the provider remains the cryptographic authority.",
+      "owner": "Existing read_codex_credentials and base64/serde_json facilities",
+      "basis": "U-responses, U-jwt, U-headers, U-flow"
+    },
+    {
+      "id": "C4",
+      "rule": "For shipping App admission, capture and validate the binding after the accepted-lease/route/session/model checks and before admit_preparation/permission effects. Discard loaded secrets after capture. Propagate the same binding through composition, generated stream, RoutedProviderRun, the one attempt executor, every retry/checkpoint resume, reply/closing nudges, and the actual memory closure. An admitted auxiliary continuation must not silently allocate a fresh binding.",
+      "owner": "App admission and existing composition/options plumbing, not Session persistence",
+      "basis": "T-app, T-bridge, T-composition, T-generated, T-runtime, T-memory"
+    },
+    {
+      "id": "C5",
+      "rule": "For a direct top-level Runner invocation lacking App admission, allocate an empty binding without I/O and retain it in the existing executor for all attempts. Initialize it from the first valid Codex transport only after current cancellation, provider-checkpoint, and model checks. A racing first valid reader must compare against the winner and refuse a different workspace/source. Failed validation cannot establish or replace identity.",
+      "owner": "routed_provider_runtime.rs:614-727 and provider_session.rs:1831-1844,1547-1553"
+    },
+    {
+      "id": "C6",
+      "rule": "Every recreated Codex transport reads one current image from the bound path, validates its access-claim/file-field agreement, and compares the workspace before constructing/sending an inference request. Permit changed access/refresh/ID-token bytes for the same workspace. Missing, invalid, nonprivate, changed-mode, or different-workspace credentials return Authentication without fallback to another path/provider/account.",
+      "owner": "CodexHttpTransport/new_codex_direct_transport/read_codex_credentials"
+    },
+    {
+      "id": "C7",
+      "rule": "Keep the existing single 401 refresh owner. Validate the actual returned access token against the pinned workspace before persist_refreshed_credentials and before the one resend; also retain agreement with the captured account header. Missing/mismatching refreshed workspace yields Authentication, no refreshed-document write and no resend. Ordinary same-workspace refresh uses existing token fallback rules and transport custody. This gate does not make the existing file publication atomic against another process.",
+      "owner": "provider_session.rs:782-855,1224-1254,1256-1293"
+    },
+    {
+      "id": "C8",
+      "rule": "A live transport may continue using its already captured A credential image after the file changes; this contract prevents adopting B, not instant revocation or polling the login file before every tool step. Reentry that actually reads B must fail before dispatch. A new independent turn may bind B.",
+      "owner": "Existing CodexHttpTransport snapshot lifetime"
+    },
+    {
+      "id": "C9",
+      "rule": "Preserve existing cancellation and permanent-error precedence, watchdog handling, effect-custody fences and checkpoint acceptance. Account refusal is Authentication, not Transport, and must not enter a retry/account-fallback loop. New diagnostics identify the required re-login/new-turn action without printing bearer, refresh/ID token, raw JWT payload, or auth document.",
+      "owner": "provider_session error conversion and production_turn_run_shell_adapter retry classification"
+    },
+    {
+      "id": "C10",
+      "rule": "Memory belonging to an admitted Codex turn requires both its existing frozen model and this binding. A separate top-level standalone summary may capture its own independent binding. A checkpoint alone is not account authorization: an API receiving continuation history without a retained binding must not advertise logical-turn continuity or silently authorize it with a fresh account. Prefer an explicit Configuration refusal for a Codex resumed low-level call missing its required binding; account for that API compatibility change in the spec and callers.",
+      "owner": "production.rs:550-685 and RoutedProviderOptions/lifecycle entry points"
+    },
+    {
+      "id": "C11",
+      "rule": "Do not put secrets or this ephemeral binding in CodexDirectCheckpoint or persisted Session state. The inspected disk checkpoint owner only persists; it does not establish an authenticated restart loader. Process restart ends this binding lifetime. Any future cross-process continuation requires an independently specified account reauthorization boundary.",
+      "owner": "Existing checkpoint serializer/store, unchanged schema"
+    },
+    {
+      "id": "C12",
+      "rule": "Workspace continuity does not distinguish two human principals in the same ChatGPT organization/workspace. Do not add email/profile-name/raw-token equality or claim issuer+subject continuity in this batch. A stronger principal contract would require exact claim authority/fallback rules for both load and refresh and separate privacy/lifecycle review.",
+      "basis": "T-token-schema and U-identity distinguish workspace account_id from chatgpt_user_id/chatgpt_account_user_id/issuer+subject"
+    }
+  ],
+  "existing_unique_owners": [
+    {
+      "role": "Admission and logical-turn lifetime",
+      "source": "T-app",
+      "boundary": "prepare_routed_turn_model_admission_with_guard:1499-1570; shipping capture/consumption:9125-9200,9263-9282; same-turn nudges:12510-12583; memory closure:12709-12722",
+      "change": "Add the Codex binding beside existing frozen models/Native binding. Keep lease guard and route authorization as their sole owners."
+    },
+    {
+      "role": "Actual caller propagation",
+      "source": "T-bridge,T-composition,T-generated,T-runtime",
+      "boundary": "runner bridge81-140 -> composition449-465,944-1025,1066-1120 -> generated stream304-352,509-586 -> run executor480-588,590-727 -> RoutedProviderOptions544-557",
+      "change": "Clone one existing binding lifetime through these values; no second Runner, orchestrator, credential store, or retry policy."
+    },
+    {
+      "role": "Credentials, workspace validation and final HTTP headers",
+      "source": "T-provider",
+      "boundary": "read625-693 -> transport1159-1186 -> Codex caller1547-1553 -> send1189-1222; refresh782-855,1224-1293",
+      "change": "Keep all credential image reads and workspace checks in this owner. Final fixed URL and bearer/account headers remain constructed here."
+    },
+    {
+      "role": "Retry, cancellation and effect custody",
+      "source": "T-shell,T-attempt",
+      "boundary": "One executor reused at shell447; cancellation462-464; permanent error preservation471-480; custody552-573; classifier778-837; accepted-checkpoint policy in stream_attempt489-568",
+      "change": "Reuse typed Authentication/Configuration behavior and original custody decisions. Identity binding is not a replay permission."
+    },
+    {
+      "role": "Provider checkpoint and persisted artifact",
+      "source": "T-codex-loop,T-runtime",
+      "boundary": "Checkpoint model/input/tool history68-95; restore/loop441-534 and tool/checkpoint603-683; persist-only store307-410",
+      "change": "Retain model/checkpoint validation and tool-count/history behavior. No account secret/state serialized."
+    },
+    {
+      "role": "Actual memory provider call",
+      "source": "T-memory",
+      "boundary": "Actual admitted summary550-612; independent summary614-685",
+      "change": "Forward required bound identity to the existing no-tools adapter. Do not reinterpret an actual turn summary as independent."
+    }
+  ],
+  "refresh_writeback_disposition": {
+    "decision": "Must remain separate from a claim that this batch safely closes external-login writeback races.",
+    "target_evidence": "T-provider712-780 clones captured document A, rewrites tokens, then renames over current.path without a current-owner/generation comparison. A valid same-workspace A refresh can still overwrite a B login published while refresh was in flight.",
+    "fixed_U_evidence": "U-manager710-741 validates the actual rotated credential and settles under the profile lock. U-store202-280 claims an exact generation and replaces only the matching fence; a reconnect/newer owner wins. Caller cancellation may stop observing while durable settlement continues (U-manager807-914). These are owned-profile-store contracts, not a protocol established for external Codex auth.json writers.",
+    "vendored_evidence": "T-vendored-manager2362-2453 guards refresh with a tokio in-process Semaphore and performs an account-aware reload before network. Its persist_tokens1307-1329 reloads storage then calls save; T-vendored-storage202-218 truncates/writes without expected-generation/CAS. The inspected protocol does not establish a common cross-process publication lock with the Host.",
+    "allowed_same_batch_work": "Check refreshed access workspace before persistence/send because that is the same credential identity owner and no new store protocol. A best-effort current-image reread could detect some stale writes, but must not be described or accepted as atomic compare-and-publish.",
+    "required_separate_closure": [
+      "Identify and bind every supported installed external writer/backend/version, or define an explicit new supported custody boundary. Vendored source is not proof of the user's installed Codex CLI version.",
+      "Specify writer-coordinated generation/claim/publication semantics, replacement/logout handling, and same-account concurrent rotation precedence. A Host-only mutex/advisory lock cannot constrain an external writer that ignores it.",
+      "Specify refresh consumption and durable settlement when cancellation/timeout loses the response or persistence outcome is unknown. Current cancellation drops observation; upstream's fences are not present in this owner.",
+      "Observe a deterministic writer interleaving below actual storage publication in Actions before asserting no overwrite. Do not port a whole OAuth/SQLite manager merely to manufacture source closure."
+    ]
+  },
+  "private_oracle_design": {
+    "placement": "The existing CMI factory returns a mock transport at provider_session1179-1183 before real new_codex/read_codex_credentials; it cannot prove this behavior. Add a private cfg(test) hook after the real request builder has produced the fixed URL, Authorization, ChatGPT-Account-Id, JSON body and headers, immediately before actual request execution. Keep real CodexHttpTransport, real filesystem loader, typed errors, real Runner, checkpoint store, custody and retry classifier.",
+    "concrete_mechanism": "Build a reqwest::Request in the existing send owner. A private armed test sender first records/asserts the original production request, then redirects only its destination to a fixture-owned loopback endpoint and executes it through the client. A second explicitly distinguished hook for the already-built fixed OAuth token request permits controlled 401 refresh responses. No public endpoint override, environment-based production transport switch, mock credential constructor, or alternate adapter. Unarmed production code keeps the fixed destinations. Confirm exact reqwest Request/execute behavior before implementing this test seam.",
+    "fixture_custody": "Use only synthetic JWTs and private temporary auth files inside an owned child process with its own CODEX_HOME/HOME/environment. Avoid mutating the parent test process's global environment. Hook registration is scoped, restores on Drop, asserts its owner thread, and cannot outlive the child. Loopback server, child retirement, waits, logs and response scripts have bounded ownership; unknown requests fail closed rather than escaping to a real service.",
+    "observations": "Record final original URL, exact bearer/account pair and request JSON before redirect; count requests by inference vs refresh; observe typed terminal result, attempt/retry report, accepted checkpoint revision and completed tool effects. Redaction assertions use synthetic markers only. These observations test actual credential/header construction rather than handwritten projection.",
+    "cases": [
+      "A -> replace source with B -> effect-free 503: original A request observed once; retry enters actual loader but refuses Authentication before a second inference request. Fresh independent B invocation succeeds.",
+      "A -> same-workspace token rotation -> 503: second attempt uses rotated bearer and original workspace; frozen model and request continuation are retained.",
+      "Pinned source P -> change CODEX_HOME to Q: existing turn still reads P; changed/missing P never falls back to Q. A new turn may bind Q. Include relative-home capture without claiming inode pinning.",
+      "Accepted tool checkpoint -> continuation503 -> B replacement: no resumed B request and no duplicate tool; accepted checkpoint/effect revisions remain unchanged. Pending/unknown custody still prevents retry before any new credential admission.",
+      "File metadata says A but access JWT says B, missing claim, malformed JWT, missing required file fields, changed auth_mode, nonprivate file and final symlink: refuse before any inference request. Preserve provider/checkpoint-model/cancellation refusal precedence.",
+      "401 -> same-workspace refresh: one refresh and one resend with new bearer/A header. 401 -> B/missing-workspace refresh: no persistence and no resend. This does not count as a concurrent-writeback-race oracle.",
+      "Actual App main reply -> B before actual nudge/memory closure: same binding causes refusal and zero B dispatch. Standalone/new logical-turn controls may bind B.",
+      "Cancellation before credential work and while I/O is pending, coincident watchdog/account refusal, and independent binding disposal: preserve existing typed/custody behavior and no late continuation or claim of durable refresh settlement."
+    ],
+    "execution_gate": "Author only after spec/owner review. Run the affected actual-owner contracts and required platform gates only through the existing GitHub Actions workflow at the published implementation H. No tests, lint, validation, HTTP fixture, refresh, or credential access were executed for this report."
+  },
+  "read_ledger": {
+    "convention": "All ranges are inclusive source lines. 'reused' identifies deep reads from this agent's first assessment, not fresh full-file closure. Exact target blobs were checked against d15a for the cited production owners. API full-content acquisition/search alone is not a raw deep read of every line.",
+    "target": [
+      {
+        "id": "T-policy",
+        "paths_and_blobs": {
+          "AGENTS.md": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+          "projects/openclaw-rust/SOURCE_OF_TRUTH.md": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+          "docs/specs/openclaw-rust-equivalence-migration.md": "69c9667af2328e20a1fba09ebf80c5aab4d5c336"
+        },
+        "raw_read_extent_reused": [
+          "AGENTS1-395",
+          "SOT1-83",
+          "Spec§17:671-720"
+        ]
+      },
+      {
+        "id": "T-spec",
+        "paths_and_blobs": {
+          "projects/openclaw-rust/docs/specs/codex-model-identity.md": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+          "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md": "770d1ad624b9e23f1747831a80490e7b957ee001"
+        },
+        "raw_read_extent_reused": [
+          "CMI1-212 (account pinning explicitly open208-212)",
+          "provider-bound1-133,336-407,715-803,874-921"
+        ],
+        "note": "Relevant provider-bound ranges unchanged from prior blob18a2dad6418a1b934520ca64deed973ffb031a8c; immutable-tree diff read shows changes after1065."
+      },
+      {
+        "id": "T-provider",
+        "path": "source/host/src/extensions/inference/provider_session.rs",
+        "blob": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+        "raw_read_extent_reused": [
+          "300-440",
+          "531-550",
+          "614-855",
+          "943-1356",
+          "1527-1595",
+          "1704-1721",
+          "1831-1869",
+          "1937-1963"
+        ],
+        "raw_read_extent_this_followup": [
+          "370-408",
+          "625-855",
+          "1025-1289",
+          "1520-1580",
+          "1620-1745",
+          "1800-1869",
+          "1930-1967"
+        ]
+      },
+      {
+        "id": "T-app",
+        "path": "source/host/app/src/main.rs",
+        "blob": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+        "raw_read_extent_reused": [
+          "1399-1413",
+          "1499-1570",
+          "9125-9200",
+          "9263-9282",
+          "12208-12220",
+          "12510-12583",
+          "12709-12722"
+        ]
+      },
+      {
+        "id": "T-runtime",
+        "path": "source/host/src/runner/routed_provider_runtime.rs",
+        "blob": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+        "raw_read_extent_reused": [
+          "307-410",
+          "480-727"
+        ],
+        "raw_read_extent_this_followup": [
+          "480-612",
+          "655-687"
+        ]
+      },
+      {
+        "id": "T-shell",
+        "path": "source/host/src/runner/production_turn_run_shell_adapter.rs",
+        "blob": "d0fe2714923338dd717284f08f05eef438db69d9",
+        "raw_read_extent_reused": [
+          "343-644",
+          "737-837"
+        ],
+        "raw_read_extent_this_followup": [
+          "460-490",
+          "515-573",
+          "778-806"
+        ]
+      },
+      {
+        "id": "T-attempt",
+        "path": "source/host/src/runner/stream_attempt.rs",
+        "blob": "6eb8a3eae5556eb6d6a6c03d00059d7c1180190f",
+        "raw_read_extent_reused": [
+          "19-51",
+          "445-485",
+          "489-568"
+        ]
+      },
+      {
+        "id": "T-codex-loop",
+        "path": "source/host/src/extensions/inference/codex_direct_responses.rs",
+        "blob": "cbb1a62fd0a4f658bbedce1dcf35e16b71b93085",
+        "raw_read_extent_reused": [
+          "68-95",
+          "441-534",
+          "603-683"
+        ]
+      },
+      {
+        "id": "T-memory",
+        "path": "source/host/src/extensions/inference/production.rs",
+        "blob": "b03a7d35b583bed564d966873db55ff165be9626",
+        "raw_read_extent_reused": [
+          "550-685"
+        ]
+      },
+      {
+        "id": "T-bridge",
+        "path": "source/host/src/runner_production_bridge.rs",
+        "blob": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+        "raw_read_extent_reused": [
+          "81-140"
+        ]
+      },
+      {
+        "id": "T-composition",
+        "path": "source/host/src/runner/turn_agent_composition.rs",
+        "blob": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+        "raw_read_extent_reused": [
+          "449-465",
+          "944-1025",
+          "1066-1120"
+        ]
+      },
+      {
+        "id": "T-generated",
+        "path": "source/host/src/runner/generated_agent_turn_stream.rs",
+        "blob": "fed0305bd8c0b24eca83ec36671611416f664db5",
+        "raw_read_extent_reused": [
+          "304-352",
+          "509-586"
+        ]
+      },
+      {
+        "id": "T-owner",
+        "path": "source/host/src/runner/production_turn_agent_owner.rs",
+        "blob": "917718da79090ce1d2e50bcddb1793f4af6e44ea",
+        "raw_read_extent_reused": [
+          "448-570"
+        ]
+      },
+      {
+        "id": "T-cmi-seam",
+        "path": "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+        "blob": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+        "raw_read_extent_reused": [
+          "77-117"
+        ]
+      },
+      {
+        "id": "T-token-schema",
+        "path": "source/mahayana/codex-rs/login/src/token_data.rs",
+        "blob": "2952ecb2a7cb50fb7c1b1d462eb6f2f16231baf3",
+        "raw_read_extent_reused": [
+          "1-175"
+        ],
+        "authority_limit": "Vendored source/schema precedent; not an identified installed producer or Host-linked auth manager."
+      },
+      {
+        "id": "T-vendored-storage",
+        "path": "source/mahayana/codex-rs/login/src/auth/storage.rs",
+        "blob": "ae195f3bff62b617bc56ea12e02a5b567417fcad",
+        "raw_read_extent_this_followup": [
+          "1-247"
+        ]
+      },
+      {
+        "id": "T-vendored-manager",
+        "path": "source/mahayana/codex-rs/login/src/auth/manager.rs",
+        "blob": "9509efc348c384ebca7cc54758b2daadb8df66a3",
+        "raw_read_extent_this_followup": [
+          "1-55",
+          "1295-1345",
+          "1744-1790",
+          "2090-2169",
+          "2320-2475",
+          "2570-2617"
+        ],
+        "search_only": [
+          "Semaphore initialization hits1879,1905,1930,1963,1986"
+        ],
+        "authority_limit": "No whole-manager/installed-writer closure."
+      },
+      {
+        "id": "T-dependencies",
+        "paths_and_blobs": {
+          "source/host/Cargo.toml": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+          "source/host/Cargo.lock": "9895ce7752768b1c8d3fe107ef95e513457ca518"
+        },
+        "raw_read_extent_reused": [
+          "Cargo.toml1-59",
+          "lock base64.22.1:211-214",
+          "lock reqwest.12.28:2848-2854",
+          "lock serde1.0.229:3054-3060",
+          "lock serde_json1.0.154:3084-3090",
+          "lock url2.5.8:3717-3723",
+          "lock uuid1.28.0:3735-3741"
+        ],
+        "authority_limit": "Dependency declarations and resolved entries, not raw crate implementation closure."
+      }
+    ],
+    "upstream": [
+      {
+        "id": "U-manager",
+        "path": "src/agents/auth-profiles/oauth-manager.ts",
+        "blob": "35e1d561d15047b136ccd56a773713a082d1bd11",
+        "raw_read_extent_this_followup": [
+          "1-100",
+          "450-1011"
+        ],
+        "not_deep_read": "101-449; no claim of full-manager closure"
+      },
+      {
+        "id": "U-settlement-oracle",
+        "path": "src/agents/auth-profiles/oauth-manager.settlement-validation.test.ts",
+        "blob": "2d55a783022949536a37a1795151d309b810cad9",
+        "raw_read_extent_this_followup": [
+          "41-233"
+        ],
+        "critical_ranges": [
+          "workspaceValidator82-89",
+          "same-email/different-workspace109-150",
+          "newer-owner153-199",
+          "conflicting-owner202-231"
+        ],
+        "authority_limit": "Authored source oracle, not executed evidence."
+      },
+      {
+        "id": "U-store",
+        "path": "src/agents/auth-profiles/oauth-store.ts",
+        "blob": "e0e9f3e0f262b756d719fa7ea65f1320bda247d4",
+        "raw_read_extent_this_followup": [
+          "1-45",
+          "190-288",
+          "340-370",
+          "398-427"
+        ],
+        "not_deep_read": "Remaining lines; concrete underlying SQLite/personal-store transaction implementations not closed."
+      },
+      {
+        "id": "U-token-runtime",
+        "path": "extensions/openai/openai-chatgpt-oauth-token.runtime.ts",
+        "blob": "670d994e87cca81f4443c6fb184d85c82ab2420a",
+        "raw_read_extent_reused": [
+          "1-35"
+        ],
+        "raw_read_extent_this_followup": [
+          "33-319"
+        ],
+        "critical_ranges": [
+          "actual fixed token request/assertCurrent/cancel173-239",
+          "response validation241-290",
+          "refresh caller305-319"
+        ]
+      },
+      {
+        "id": "U-flow",
+        "path": "extensions/openai/openai-chatgpt-oauth-flow.runtime.ts",
+        "blob": "959d2185f78d8d2135556a42506a2f3a73a1d7ec",
+        "raw_read_extent_this_followup": [
+          "1-45",
+          "49-91",
+          "171-180"
+        ],
+        "critical_ranges": [
+          "actual refreshed access workspace extraction76-88",
+          "refresh caller178-179"
+        ]
+      },
+      {
+        "id": "U-refresh-facade",
+        "path": "src/llm/utils/oauth/openai-chatgpt.ts",
+        "blob": "e40cb6dbbacaaa3e34e99cbe5a90f164798facde",
+        "raw_read_extent_reused": [
+          "1-100"
+        ],
+        "raw_read_extent_this_followup": [
+          "117-131"
+        ],
+        "critical_ranges": [
+          "plugin/bundled refresh dispatch55-83",
+          "provider refreshToken/getApiKey117-131"
+        ]
+      },
+      {
+        "id": "U-provider-refresh-owner",
+        "path": "src/agents/auth-profiles/oauth-provider-operations.ts",
+        "blob": "b0a5060675a0a73b03cc51a47d093fcb3c03f58f",
+        "raw_read_extent_reused": [
+          "1-66"
+        ]
+      },
+      {
+        "id": "U-loader",
+        "path": "src/agents/cli-credentials.ts",
+        "blob": "114f90e29e93dae1cb94d0056cc94f1c662c4136",
+        "raw_read_extent_reused": [
+          "1-100",
+          "221-251",
+          "385-446"
+        ],
+        "authority_limit": "Relevant external CLI credential parsing/source reads, not complete auth-profile graph."
+      },
+      {
+        "id": "U-identity",
+        "path": "src/plugin-sdk/provider-openai-chatgpt-auth.ts",
+        "blob": "5025d6ec59f3ff36ea128fbfe3cfeda85d555ace",
+        "raw_read_extent_reused": [
+          "1-138"
+        ],
+        "critical_fact": "Unverified token metadata; distinct account/workspace and user/issuer-sub profile identity choices."
+      },
+      {
+        "id": "U-oauth-identity",
+        "path": "src/agents/auth-profiles/oauth-identity.ts",
+        "blob": "3244910ab37925b219540df0e792b2c33e1228cb",
+        "raw_read_extent_reused": [
+          "1-144"
+        ]
+      },
+      {
+        "id": "U-shared",
+        "path": "src/agents/auth-profiles/oauth-shared.ts",
+        "blob": "6705c8ea864f921e29fb7c65b411933c54336321",
+        "raw_read_extent_reused": [
+          "1-79"
+        ]
+      },
+      {
+        "id": "U-responses",
+        "path": "packages/ai/src/providers/openai-chatgpt-responses.ts",
+        "blob": "c6e51477f738eabebe67360c0633dd426e9be673",
+        "raw_read_extent_reused": [
+          "1-100",
+          "227-265",
+          "353-378",
+          "1369-1383"
+        ],
+        "raw_read_extent_this_followup": [
+          "227-265",
+          "353-378",
+          "380-565",
+          "1360-1385",
+          "1389-1416"
+        ],
+        "critical_ranges": [
+          "actual selected bearer -> account249",
+          "SSE same account/key495-501",
+          "actual dispatch533-538",
+          "missing account refusal1374-1380",
+          "final SSE headers1395-1412"
+        ]
+      },
+      {
+        "id": "U-jwt",
+        "path": "packages/ai/src/utils/oauth/openai-chatgpt-jwt.ts",
+        "blob": "01155083b3d310ca6491889a110d30d339e2c076",
+        "raw_read_extent_reused": [
+          "1-32"
+        ],
+        "raw_read_extent_this_followup": [
+          "1-32"
+        ]
+      },
+      {
+        "id": "U-headers",
+        "path": "packages/ai/src/providers/openai-chatgpt-request-headers.ts",
+        "blob": "a7dbeb0864316a06c8eb14a5086a74b6f5a51537",
+        "raw_read_extent_reused": [
+          "1-32"
+        ],
+        "raw_read_extent_this_followup": [
+          "1-32"
+        ],
+        "critical_ranges": [
+          "final authorization/account overwrite24-25"
+        ]
+      },
+      {
+        "id": "U-run-identity-precedent",
+        "paths_and_blobs": {
+          "src/agents/execution-auth-binding.ts": "5861377169b54c96e42164997a8cf078d7ed0e8c",
+          "src/agents/cli-auth-epoch.ts": "5f3adea4a9fc84bf896e190c633f487acd683f95"
+        },
+        "raw_read_extent_reused": [
+          "execution-auth-binding1-295",
+          "cli-auth-epoch1-364"
+        ],
+        "authority_limit": "Precedent only; no requirement to port run proofs/HMAC/session epoch storage for the selected pathname/workspace contract."
+      }
+    ]
+  },
+  "before_implementation": {
+    "exact_U_reads_still_required_for_selected_behavior": [],
+    "why_no_further_U_graph_claim": "The cited actual load/response-header/refresh validation path supplies the selected observable contract. No assertion is made that every auth-profile, plugin, SQLite, HTTP helper, WebSocket, keychain, or dependency is read or accepted.",
+    "necessary_target_mechanics_reads": [
+      "At the implementation tree, inspect the existing App owned-child oracle/retirement helper and current test-module wiring before extending it; do not reproduce historical CMI factory assumptions or introduce unbounded Drop/waits.",
+      "Before coding a built-Request test hook, inspect the resolved reqwest0.12.28 RequestBuilder::build, Client::execute and Request URL/body/header accessors using the exact locked dependency identity; the lock entry alone is not source evidence of those mechanics.",
+      "Before choosing JWT decoder options, inspect the already-resolved base640.22.1 URL-safe engine's padding/error contract and keep parsing compatible with ordinary JWT base64url rather than broadening token acceptance accidentally.",
+      "Read any additional struct initializer/caller exposed by adding the binding field at the implementation tree. The current production RoutedProviderOptions initializer inventory is runtime544, actual memory592 and independent summary655; low-level resumed API compatibility must be explicit."
+    ],
+    "deferred_unknowns": [
+      "Installed external Codex CLI version/backend/writer coordination is unknown; no real credential or installation was accessed.",
+      "No cryptographic JWT signature/issuer verification or human-principal continuity is established by local metadata parsing.",
+      "External source filesystem races, directory authority, concurrent refresh publication and refresh-response-loss settlement remain unclosed.",
+      "No cross-process checkpoint authentication/restoration contract is established.",
+      "No new oracle has been implemented or run; no platform acceptance, CI result, publication state, or independent review outcome is inferred."
+    ]
+  },
+  "activity": {
+    "wrote_only": "fusion-review/codex-account-source-contract.json",
+    "product_edits": false,
+    "credentials_accessed": false,
+    "local_or_htch_product_validation": false,
+    "tests_or_validators_run": false,
+    "push_or_publication": false,
+    "peer_reviews_consumed": false,
+    "acceptance_claim": false
+  }
+}
+

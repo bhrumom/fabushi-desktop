@@ -1245,7 +1245,9 @@ fn generate_agent_tool_json_schema(manifest_dir: &std::path::Path) {
     let root = defs.get("agent.v1.ToolCall")
         .expect("canonical generated agent.v1.ToolCall is missing");
     let mut tool_calls = Vec::<(u64, String, String, Option<String>, Option<String>)>::new();
-    let mut roots = Vec::<String>::new();
+    // The same frozen descriptors also validate complete canonical ToolCall
+    // envelopes, including wrapper metadata absent from partial prost bindings.
+    let mut roots = vec!["agent.v1.ToolCall".to_string()];
     for field in root.fields.iter().filter(|field| field.oneof.as_deref() == Some("tool")) {
         let CloudTraceGeneratedFieldKind::Message { child_type: Some(tool_type), .. } = &field.kind else {
             panic!("agent.v1.ToolCall field {} must resolve to a message", field.number);

@@ -374,12 +374,13 @@ jobs:
           APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         run: npx electron-builder --mac --arm64 --publish never
 
-      - name: Reject application-owned Mini App engines
+      - name: Verify packaged notices and reject application-owned Mini App engines
         shell: bash
         run: |
           set -euo pipefail
           app="$(find desktop/release -maxdepth 3 -type d -name '*.app' -print -quit)"
           test -n "$app"
+          node desktop/scripts/check-electron-runtime-bundle.mjs --packaged-resources "$app/Contents/Resources"
           test ! -e "$app/Contents/Resources/bin/dandelion"
           test ! -e "$app/Contents/Resources/bin/dandelion-default.toml"
           test ! -e "$app/Contents/Resources/bin/dandelion-build.json"

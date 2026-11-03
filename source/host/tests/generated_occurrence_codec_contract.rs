@@ -14,6 +14,8 @@ use mahayana_host_runtime::runner::agent_v1_wire::{
     SendMessageArgs, SendMessageResult, SendMessageSuccess, SendMessageText,
     SendMessageToolCall, send_message_args, send_message_result,
 };
+use prost_types::{ListValue, Struct, Value as ProtobufValue, value::Kind};
+use std::collections::BTreeMap;
 
 fn encode_varint(mut value: u64, output: &mut Vec<u8>) {
     while value >= 0x80 {
@@ -220,4 +222,327 @@ fn canonical_generated_tool_encoder_round_trips_send_message_json() {
             })),
         }
     );
+}
+
+// Independent wire oracle for the frozen agent_pb.ts / mcp_tool_pb.ts /
+// mcp_exec_pb.ts fields. WKT decoding comes from prost-types, not this codec's
+// generated descriptors or its JSON decoder.
+#[derive(Clone, PartialEq, Message)]
+struct McpWireStep {
+    #[prost(message, optional, tag = "2")]
+    tool_call: Option<McpWireToolCall>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct McpWireToolCall {
+    #[prost(message, optional, tag = "15")]
+    mcp: Option<McpWireCall>,
+    #[prost(string, optional, tag = "57")]
+    tool_call_id: Option<String>,
+    #[prost(uint64, optional, tag = "59")]
+    started_at_ms: Option<u64>,
+    #[prost(uint64, optional, tag = "60")]
+    completed_at_ms: Option<u64>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct McpWireCall {
+    #[prost(message, optional, tag = "1")]
+    args: Option<McpWireArgs>,
+    #[prost(message, optional, tag = "2")]
+    result: Option<McpWireResult>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct McpWireArgs {
+    #[prost(string, tag = "1")]
+    name: String,
+    #[prost(btree_map = "string, message", tag = "2")]
+    args: BTreeMap<String, ProtobufValue>,
+    #[prost(string, tag = "3")]
+    tool_call_id: String,
+    #[prost(string, tag = "4")]
+    provider_identifier: String,
+    #[prost(string, tag = "5")]
+    tool_name: String,
+    #[prost(string, tag = "9")]
+    server_identifier: String,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct McpWireResult {
+    #[prost(message, optional, tag = "1")]
+    success: Option<McpWireSuccess>,
+}
+
+#[derive(Clone, PartialEq, Message)]
+struct McpWireSuccess {
+    #[prost(bool, tag = "2")]
+    is_error: bool,
+    #[prost(message, optional, tag = "3")]
+    structured_content: Option<Struct>,
+}
+
+fn protobuf_value(kind: Kind) -> ProtobufValue {
+    ProtobufValue { kind: Some(kind) }
+}
+
+#[test]
+fn canonical_generated_mcp_receipt_matches_independent_protobuf_wire() {
+    // The production restart bridge returns this nonempty result after its
+    // one actual effect; encoding it must terminate before checkpoint storage.
+    let step = encode_generated_agent_tool_step(
+        "mcp",
+        &json!({
+            "name":"b",
+            "args":{},
+            "toolCallId":"original-terminal-effect",
+            "providerIdentifier":"original-turn-contract",
+            "toolName":"b",
+            "serverIdentifier":"original-turn-contract"
+        }),
+        Some(&json!({"success":{"isError":false,"structuredContent":{"receipt":"committed"}}})),
+        "original-terminal-effect",
+        Some(100),
+        Some(200),
+    ).expect("encode the nonempty production MCP receipt");
+    let tool_call = McpWireStep::decode(step.as_slice()).expect("independent AgentStep decode")
+        .tool_call.expect("ToolCall at field 2");
+    assert_eq!(tool_call.tool_call_id.as_deref(), Some("original-terminal-effect"));
+    assert_eq!(tool_call.started_at_ms, Some(100));
+    assert_eq!(tool_call.completed_at_ms, Some(200));
+    let mcp = tool_call.mcp.expect("McpToolCall at field 15");
+    let args = mcp.args.expect("McpArgs at field 1");
+    assert_eq!(args.name, "b");
+    assert!(args.args.is_empty());
+    assert_eq!(args.tool_call_id, "original-terminal-effect");
+    assert_eq!(args.provider_identifier, "original-turn-contract");
+    assert_eq!(args.tool_name, "b");
+    assert_eq!(args.server_identifier, "original-turn-contract");
+    let success = mcp.result.expect("McpToolResult at field 2")
+        .success.expect("McpSuccess at field 1");
+    assert!(!success.is_error);
+    assert_eq!(
+        success.structured_content.expect("structuredContent at field 3"),
+        Struct {
+            fields: BTreeMap::from([(
+                "receipt".into(),
+                protobuf_value(Kind::StringValue("committed".into())),
+            )]),
+        }
+    );
+}
+
+#[test]
+fn canonical_generated_mcp_json_values_match_independent_protobuf_wire() {
+    let cases = [
+        ("null", json!(null), Kind::NullValue(0)),
+        ("false", json!(false), Kind::BoolValue(false)),
+        ("true", json!(true), Kind::BoolValue(true)),
+        ("number", json!(-3.5), Kind::NumberValue(-3.5)),
+        ("zero", json!(0), Kind::NumberValue(0.0)),
+        ("string", json!("text"), Kind::StringValue("text".into())),
+        ("empty_string", json!(""), Kind::StringValue(String::new())),
+        ("empty_object", json!({}), Kind::StructValue(Struct { fields: BTreeMap::new() })),
+        ("empty_list", json!([]), Kind::ListValue(ListValue { values: vec![] })),
+        (
+            "nested_list",
+            json!([null, false, 1.25, "text", {}, [], {"values":[0]}]),
+            Kind::ListValue(ListValue {
+                values: vec![
+                    protobuf_value(Kind::NullValue(0)),
+                    protobuf_value(Kind::BoolValue(false)),
+                    protobuf_value(Kind::NumberValue(1.25)),
+                    protobuf_value(Kind::StringValue("text".into())),
+                    protobuf_value(Kind::StructValue(Struct { fields: BTreeMap::new() })),
+                    protobuf_value(Kind::ListValue(ListValue { values: vec![] })),
+                    protobuf_value(Kind::StructValue(Struct {
+                        fields: BTreeMap::from([(
+                            "values".into(),
+                            protobuf_value(Kind::ListValue(ListValue {
+                                values: vec![protobuf_value(Kind::NumberValue(0.0))],
+                            })),
+                        )]),
+                    })),
+                ],
+            }),
+        ),
+        (
+            "wrapper_like_keys_are_user_data",
+            json!({
+                "stringValue":"literal",
+                "structValue":{"fields":"literal"},
+                "fields":{"values":{}},
+                "values":[{"listValue":[]}]
+            }),
+            Kind::StructValue(Struct {
+                fields: BTreeMap::from([
+                    ("stringValue".into(), protobuf_value(Kind::StringValue("literal".into()))),
+                    ("structValue".into(), protobuf_value(Kind::StructValue(Struct {
+                        fields: BTreeMap::from([(
+                            "fields".into(), protobuf_value(Kind::StringValue("literal".into())),
+                        )]),
+                    }))),
+                    ("fields".into(), protobuf_value(Kind::StructValue(Struct {
+                        fields: BTreeMap::from([(
+                            "values".into(), protobuf_value(Kind::StructValue(Struct { fields: BTreeMap::new() })),
+                        )]),
+                    }))),
+                    ("values".into(), protobuf_value(Kind::ListValue(ListValue {
+                        values: vec![protobuf_value(Kind::StructValue(Struct {
+                            fields: BTreeMap::from([(
+                                "listValue".into(), protobuf_value(Kind::ListValue(ListValue { values: vec![] })),
+                            )]),
+                        }))],
+                    }))),
+                ]),
+            }),
+        ),
+    ];
+    for (case, value, expected_kind) in cases {
+        let step = encode_generated_agent_tool_step(
+            "mcp",
+            &json!({"args":{"value":value.clone()}}),
+            Some(&json!({"success":{"structuredContent":{"value":value}}})),
+            "json-values",
+            None,
+            None,
+        ).unwrap_or_else(|error| panic!("encode {case}: {error}"));
+        let mcp = McpWireStep::decode(step.as_slice()).expect("independent AgentStep decode")
+            .tool_call.expect("ToolCall").mcp.expect("McpToolCall");
+        let expected = BTreeMap::from([("value".into(), protobuf_value(expected_kind))]);
+        assert_eq!(mcp.args.expect("McpArgs").args, expected, "MCP args: {case}");
+        assert_eq!(
+            mcp.result.expect("McpToolResult").success.expect("McpSuccess")
+                .structured_content.expect("structuredContent").fields,
+            expected,
+            "MCP structuredContent: {case}"
+        );
+    }
+}
+
+// These fixtures use the frozen protobuf fields directly, independently of
+// the production JSON descriptor walker: Struct.fields=1, map key/value=1/2,
+// Value null/number/string/bool/struct/list=1/2/3/4/5/6, ListValue.values=1.
+fn value_map_entry(key: &str, value_wire: &[u8]) -> Vec<u8> {
+    concat(&[field(1, key.as_bytes()), field(2, value_wire)])
+}
+
+fn mcp_step_wire(args: &[u8], result: &[u8], call_id: &str) -> Vec<u8> {
+    let mcp_call = concat(&[field(1, args), field(2, result)]);
+    field(2, &concat(&[field(15, &mcp_call), field(57, call_id.as_bytes())]))
+}
+
+#[test]
+fn canonical_generated_tool_encoder_preserves_original_turn_structured_receipt() {
+    let call_id = "original-terminal-effect";
+    let input = json!({
+        "name":"b", "args":{}, "toolCallId":call_id,
+        "providerIdentifier":"original-turn-contract", "toolName":"b",
+        "serverIdentifier":"original-turn-contract",
+    });
+    let result = json!({"success":{"isError":false,"structuredContent":{"receipt":"committed"}}});
+    let args_wire = concat(&[
+        field(1, b"b"), field(3, call_id.as_bytes()),
+        field(4, b"original-turn-contract"), field(5, b"b"),
+        field(9, b"original-turn-contract"),
+    ]);
+    let receipt_struct = field(1, &value_map_entry("receipt", &field(3, b"committed")));
+    // McpResult.success=1; McpSuccess.is_error=2 and structured_content=3.
+    let result_wire = field(1, &concat(&[vec![0x10, 0x00], field(3, &receipt_struct)]));
+    let expected = mcp_step_wire(&args_wire, &result_wire, call_id);
+    let actual = encode_generated_agent_tool_step(
+        "mcp", &input, Some(&result), call_id, None, None,
+    ).expect("encode the actual nonempty original-turn tool receipt");
+    assert_eq!(actual, expected, "natural Struct values must match the frozen wire");
+    let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+    // An empty protobuf map has no field on the wire, so args is absent in
+    // this decoder's sparse projection; the nonempty receipt must remain exact.
+    let mut projected_input = input;
+    projected_input.as_object_mut().unwrap().remove("args");
+    assert_eq!(codec.decode_step(&actual).expect("decode the real receipt"),
+        DecodedTranscriptStep::Tool { name: "b".into(), input: projected_input, result: Some(result) });
+}
+
+fn assert_mcp_value_matches_wire(label: &str, value: serde_json::Value, value_wire: Vec<u8>) {
+    let input = json!({"name":"b","args":{"payload":value.clone()}});
+    let result = json!({"success":{"isError":false,"structuredContent":{"payload":value}}});
+    let entry = value_map_entry("payload", &value_wire);
+    // Exercise both McpArgs.args (map<string,Value>) and a Struct result.
+    let args_wire = concat(&[field(1, b"b"), field(2, &entry)]);
+    let struct_wire = field(1, &entry);
+    let result_wire = field(1, &concat(&[vec![0x10, 0x00], field(3, &struct_wire)]));
+    let expected = mcp_step_wire(&args_wire, &result_wire, "value-shape");
+    let actual = encode_generated_agent_tool_step(
+        "mcp", &input, Some(&result), "value-shape", None, None,
+    ).expect("encode natural protobuf JSON values without rewrapping");
+    assert_eq!(actual, expected, "{label}: independent protobuf wire");
+    let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+    assert_eq!(codec.decode_step(&actual).expect("decode generated Value wire"),
+        DecodedTranscriptStep::Tool { name: "b".into(), input, result: Some(result) },
+        "{label}: preserve the natural JSON value");
+}
+
+#[test]
+fn canonical_generated_tool_encoder_preserves_scalar_and_empty_value_wire() {
+    for (label, value, wire) in [
+        ("null", json!(null), vec![0x08, 0x00]),
+        ("false", json!(false), vec![0x20, 0x00]),
+        ("true", json!(true), vec![0x20, 0x01]),
+        ("zero", json!(0.0), concat(&[vec![0x11], 0_f64.to_le_bytes().to_vec()])),
+        ("number", json!(-12.5), concat(&[vec![0x11], (-12.5_f64).to_le_bytes().to_vec()])),
+        ("string", json!("committed"), field(3, b"committed")),
+        ("empty string", json!(""), field(3, b"")),
+        ("empty object", json!({}), field(5, &[])),
+        ("empty list", json!([]), field(6, &[])),
+    ] {
+        assert_mcp_value_matches_wire(label, value, wire);
+    }
+}
+
+#[test]
+fn canonical_generated_tool_encoder_preserves_nested_lists_and_envelope_named_keys() {
+    let scalar_list = concat(&[
+        field(1, &[0x08, 0x00]),
+        field(1, &[0x20, 0x00]),
+        field(1, &concat(&[vec![0x11], 0_f64.to_le_bytes().to_vec()])),
+        field(1, &field(3, b"")),
+        field(1, &field(5, &[])),
+        field(1, &field(6, &[])),
+    ]);
+    assert_mcp_value_matches_wire(
+        "mixed list", json!([null, false, 0.0, "", {}, []]), field(6, &scalar_list),
+    );
+
+    let literal_values = field(1, &value_map_entry("values", &field(6, &[])));
+    let literal_fields = field(1, &value_map_entry("fields", &field(5, &literal_values)));
+    let nested_struct = concat(&[
+        field(1, &value_map_entry("listValue", &field(6, &concat(&[
+            field(1, &[0x08, 0x00]), field(1, &[0x20, 0x00]),
+        ])))),
+        field(1, &value_map_entry("stringValue", &field(3, b"literal"))),
+        field(1, &value_map_entry("structValue", &field(5, &literal_fields))),
+    ]);
+    let nested_json = json!({
+        "listValue":[null, false],
+        "stringValue":"literal",
+        "structValue":{"fields":{"values":[]}},
+    });
+    assert_mcp_value_matches_wire("literal envelope keys", nested_json.clone(), field(5, &nested_struct));
+    assert_mcp_value_matches_wire(
+        "object inside nested lists", json!([[nested_json]]),
+        field(6, &field(1, &field(6, &field(1, &field(5, &nested_struct))))),
+    );
+}
+
+#[test]
+fn canonical_generated_tool_encoder_refuses_nonobject_structured_content() {
+    for invalid in [json!([]), json!(false), json!("not an object")] {
+        let error = encode_generated_agent_tool_step(
+            "mcp", &json!({"name":"b"}),
+            Some(&json!({"success":{"structuredContent":invalid}})),
+            "invalid-struct", None, None,
+        ).expect_err("Struct's natural JSON must still be an object");
+        assert!(error.contains("google.protobuf.Struct JSON must be an object"), "{error}");
+    }
 }

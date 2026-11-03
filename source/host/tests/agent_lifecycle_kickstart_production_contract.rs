@@ -364,11 +364,16 @@ fn user_message_cancels_pending_introduction_without_starting_runner() {
 #[test]
 fn shipping_host_wires_real_kickstart_adapter_and_upgrade_quiesce_override() {
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let main_source = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
+    let main = main_source.split_once("\n#[cfg(test)]\nmod tests {")
+        .expect("shipping test boundary").0;
     let manager = fs::read_to_string(
         manifest_dir.join("src/extensions/transcript/transcript_manager.rs"),
     )
     .expect("transcript manager");
+    let runtime = fs::read_to_string(
+        manifest_dir.join("src/extensions/transcript/production_runtime.rs"),
+    ).expect("transcript runtime");
     assert!(main.contains("ProductionCreatedAgentKickstartRuntime"));
     assert!(main.contains("run_local_kickstart_turn"));
     assert!(main.contains(".dispatch_agent_lifecycle_gateway_call("));
@@ -376,7 +381,20 @@ fn shipping_host_wires_real_kickstart_adapter_and_upgrade_quiesce_override() {
     assert!(manager.contains("dispatch_production_agent_lifecycle_gateway_call_with_all_runtimes"));
     assert!(manager.contains("kickstart_created_agent"));
     assert!(main.contains("active_turn_source(agent_id).as_deref()"));
-    assert!(main.contains("source: Some(\"turn\".into())"));
+    let handoff = main.split_once("fn prepare_upgrade_transcript_handoff(").unwrap().1
+        .split_once("fn visit_upgrade_resume_markers_checked(").unwrap().0;
+    let durable = handoff.find("transcript.quiesce_for_upgrade()?").expect("checked durable batch");
+    let consume_introduction = handoff.find("sessions.set_agent_introduction_pending(&agent_id, false)?")
+        .expect("introduction intent is consumed only after durable handoff");
+    assert!(durable < consume_introduction);
+    assert!(main.contains("prepare_upgrade_transcript_handoff(&host_upgrade_transcript, &host_upgrade_sessions)"));
+    let quiesce = runtime.split_once("pub fn quiesce_for_upgrade(").unwrap().1
+        .split_once("pub fn upgrade_resume_agent_ids(").unwrap().0;
+    assert!(quiesce.contains("source == \"kickstart\""));
+    assert!(quiesce.contains("\"turn\".into()"));
+    let batch = quiesce.find("store.mark_pending_batch_checked(markers)").expect("single marker batch");
+    let quiescing = quiesce.find(".quiesce_for_upgrade(running.len())").expect("quiesce state publication");
+    assert!(batch < quiescing);
     assert!(main.contains("method == \"kickstartAgent\" || method == \"requestDiskSaverAudit\""));
     assert!(main.contains("request_disk_saver_audit("));
     assert!(main.contains("source: \"disk_saver_reaudit\".into()"));

@@ -1,0 +1,816 @@
+{
+  "schema_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "observer": "config_revision_review_0375",
+  "status": "ACK_RENDERER_SOURCE_RESTORE_PASSED_NATIVE_PENDING",
+  "observed_at": "2026-11-02T22:17:24.973Z",
+  "subject": {
+    "commit": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+    "tree": "4761a2b263fc776782f64285e668dbe7ec5a9ba8",
+    "parent": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+    "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "source_run": 41535579867,
+    "runtime_run": 41535580001,
+    "run_attempt": 1
+  },
+  "publication_identity": {
+    "independently_read_remote_commit": true,
+    "remote_tree_and_parent_match": true,
+    "previous_candidate_tree": "332ac0c5cb26d71e7a20c022c0f5b12b6a363746",
+    "evidence_only_incoming": {
+      "commit": "7814d6fa8b39ee2bae619545daa736431a7577ff",
+      "parent": "8e5545b61ad916bb9781539dfe0f28543ffc68dd",
+      "path": "projects/openclaw-rust/evidence/roster-unicode-647e0932-20261102.json",
+      "status": "A",
+      "mode": "100644",
+      "blob": "7871bd75816f3267215d931ea0d9403dc2526f9c"
+    },
+    "delivery_blobs": {
+      ".github/workflows/rust-desktop-runtime.yml": "3efb70859e52b80c92a93bab7606573348cd566e",
+      "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+      "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md": "d3928dfa8f75e007b2fd6e0855dea192720f445d",
+      "source/electron-main/main-edge.ts": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+      "source/electron-main/main-edge-model.contract.test.ts": "f42091c0f3f7e4bcead071f1a5f722f426efb582"
+    },
+    "proof": "The complete raw diff8e-to-7814 and complete candidate332-to-published4761 diff are identical: one added evidence path/blob. Complete parent7814-to-Hca679 diff has exactly the five delivered ACK paths, with after blobs equal to both supplied snapshots. Only snapshot manifests and immutable Git/API identities were read; other reviewers' opinions and embedded evidence-review contents were not read or used to reassess semantics."
+  },
+  "source_run_result": {
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "updated_at": "2026-11-02T22:17:15Z"
+  },
+  "source_jobs": [
+    {
+      "id": 125586445720,
+      "name": "source-authority",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41535579867,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout exact subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Verify checked-out subject and lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Exercise risk review contract and fail-closed counterexamples",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Acquire exact upstream and verify identity",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Generate recursive tracked-source inventory",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Scan LFS pointer candidates without claiming closure",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Record dependency authority inputs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Expand canonical source records and verify P0 G01/G02 structural",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Upload immutable authority evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Post Checkout exact subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        }
+      ]
+    },
+    {
+      "id": 125586448717,
+      "name": "recover-original-host-log",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41535579867,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 125587562865,
+      "name": "persist-verified-inventory",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41535579867,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout guarded original subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Download this exact-subject verified canonical manifest",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Materialize deterministic shards and dependency declarations in Actions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "CAS commit derived source shards to the existing branch (non-force)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Dispatch scoped checks for the resulting exact branch head",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6
+        },
+        {
+          "name": "Post Checkout guarded original subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        }
+      ]
+    }
+  ],
+  "runtime_jobs": [
+    {
+      "id": 125586448342,
+      "name": "OCRM installation key restore boundary / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41535580001,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact restore test subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Install canonical Linux native Computer build prerequisites",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Compile locked restore contracts as the ordinary runner user",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Exercise ordinary restore and real mounted descendants",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Upload exact-subject Linux restore evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Post Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        }
+      ]
+    },
+    {
+      "id": 125586448594,
+      "name": "rust-host",
+      "status": "queued",
+      "conclusion": null,
+      "run_id": 41535580001,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 125586448721,
+      "name": "sqlite-native-path",
+      "status": "in_progress",
+      "conclusion": null,
+      "run_id": 41535580001,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact tested HEAD",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Install existing Linux Host native dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Record Linux build profile and available storage",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Test native SQLite paths and affected recovery owners",
+          "status": "in_progress",
+          "conclusion": null,
+          "number": 8
+        },
+        {
+          "name": "Test media input, preview and URL policy, and HTTP failure diagnostics on the existing Linux Host cache",
+          "status": "pending",
+          "conclusion": null,
+          "number": 9
+        },
+        {
+          "name": "Test portable recovery, Memory selectors and roster search on the existing Linux Host cache",
+          "status": "pending",
+          "conclusion": null,
+          "number": 10
+        },
+        {
+          "name": "Record storage after completed native, media and channel checks",
+          "status": "pending",
+          "conclusion": null,
+          "number": 11
+        },
+        {
+          "name": "Save completed Linux owner evidence before Automation and App checks",
+          "status": "pending",
+          "conclusion": null,
+          "number": 12
+        },
+        {
+          "name": "Test typed Automation admission and actual owners on the existing Linux Host cache",
+          "status": "pending",
+          "conclusion": null,
+          "number": 13
+        },
+        {
+          "name": "Check and execute the actual Automation and Settings App owners on Linux",
+          "status": "pending",
+          "conclusion": null,
+          "number": 14
+        },
+        {
+          "name": "Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache",
+          "status": "pending",
+          "conclusion": null,
+          "number": 15
+        },
+        {
+          "name": "Preserve failed owned native-path and Automation fixtures",
+          "status": "pending",
+          "conclusion": null,
+          "number": 16
+        },
+        {
+          "name": "Upload native SQLite path evidence",
+          "status": "pending",
+          "conclusion": null,
+          "number": 17
+        },
+        {
+          "name": "Post Run Swatinem/rust-cache@v2",
+          "status": "pending",
+          "conclusion": null,
+          "number": 33
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "pending",
+          "conclusion": null,
+          "number": 34
+        }
+      ]
+    },
+    {
+      "id": 125586448748,
+      "name": "renderer",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41535580001,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact tested HEAD",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Install desktop dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Build Grok-shaped Electron runtime",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Test Plugin Skills, model settings bridge and routed MCP carrier",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Record exact-subject Plugin Skills edge evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Upload Plugin Skills edge evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Check production architecture boundary",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10
+        },
+        {
+          "name": "Compile Grok Electron boundary contracts",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11
+        },
+        {
+          "name": "Compile Fabushi product policy contract",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 12
+        },
+        {
+          "name": "Test Grok Electron boundary contracts",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 13
+        },
+        {
+          "name": "Test Fabushi product policy contract",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 14
+        },
+        {
+          "name": "Test recovered window chrome contracts",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 15
+        },
+        {
+          "name": "Check Agent workspace architecture boundary",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 16
+        },
+        {
+          "name": "Check Grok architecture inventory",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17
+        },
+        {
+          "name": "Typecheck and build renderer",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18
+        },
+        {
+          "name": "Verify co-staged desktop runtime",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19
+        },
+        {
+          "name": "Enforce built desktop bundle boundary",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 20
+        },
+        {
+          "name": "Check Grok final architecture gate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 21
+        },
+        {
+          "name": "Post Run actions/setup-node@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 41
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 42
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 43
+        }
+      ]
+    },
+    {
+      "id": 125586450357,
+      "name": "Pressure profiler / ${{ matrix.os }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41535580001,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 125586450634,
+      "name": "platform-worker",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41535580001,
+      "logs_url": null,
+      "steps": null
+    }
+  ],
+  "renderer_actual_result": {
+    "job_id": 125586448748,
+    "job_result": "success",
+    "complete_log_fetched": true,
+    "log_characters": 88145,
+    "log_lines": 1182,
+    "subject_commit_seen_in_checkout_and_environment": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+    "validation_scope_seen_in_log": "ocrm-config",
+    "tap_counts": {
+      "tests": 115,
+      "pass": 115,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "suites": 0
+    },
+    "top_level_tap_plan": 111,
+    "nested_subtests": 4,
+    "router_named_positives_observed": [
+      {
+        "tap_number": 38,
+        "name": "router set waits for Host acknowledgement and mirrors its canonical provider",
+        "result": "ok"
+      },
+      {
+        "tap_number": 39,
+        "name": "router preserves all five configured providers and reconciles reads with diagnostic fallbacks",
+        "result": "ok"
+      },
+      {
+        "tap_number": 40,
+        "name": "router invalid requests and untrusted frames cause no Host or mirror effects",
+        "result": "ok"
+      },
+      {
+        "tap_number": 41,
+        "name": "router refuses malformed Host replies without local fallback and permits later reconciliation",
+        "result": "ok"
+      },
+      {
+        "tap_number": 42,
+        "name": "router Host refusal releases a queued read and read rejection does not poison later calls",
+        "result": "ok"
+      },
+      {
+        "tap_number": 43,
+        "name": "router unknown transport outcome can follow a Host commit and requires an explicit read",
+        "result": "ok"
+      },
+      {
+        "tap_number": 44,
+        "name": "router local persistence failure leaves the Host commit intact and a later get repairs the mirror",
+        "result": "ok"
+      },
+      {
+        "tap_number": 45,
+        "name": "router orders a held get before set through mirror persistence",
+        "result": "ok"
+      },
+      {
+        "tap_number": 46,
+        "name": "router orders a held set before get through mirror persistence",
+        "result": "ok"
+      },
+      {
+        "tap_number": 47,
+        "name": "router serializes two sets so a late acknowledgement cannot overwrite the later mirror",
+        "result": "ok"
+      },
+      {
+        "tap_number": 48,
+        "name": "a pending router IPC does not order unrelated methods or another MainEdge instance",
+        "result": "ok"
+      }
+    ],
+    "router_named_positive_count": 11,
+    "named_positive_occurrences": "Each of the eleven router controls appears once as a successful top-level TAP line, numbers38 through48.",
+    "receipt_generation_step": 8,
+    "receipt_generation_step_result": "success",
+    "receipt_gate_from_exact_workflow": "Requires current HEAD equal PLUGIN_EXPECTED_SHA, all eleven successful router names, positive TAP test count, pass equal tests and zero fail/cancelled/skipped/todo before writing the exact-subject receipt.",
+    "compiler_scope": "Existing shipping esbuild common options and dependency resolution; no whole-graph strict TypeScript typecheck is claimed.",
+    "acceptance_scope": "Actual served router get/set, per-edge IPC ordering and file-backed display mirror under controlled Host replies. Returned provider is committed Host configuration. No Rust execution, real provider, full picker UI or account acceptance is asserted by the renderer receipt.",
+    "artifact": {
+      "id": 13183946760,
+      "name": "ocrm-plugin-edge-ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "bytes": 8338,
+      "digest": "sha256:7ee044bee5d4a9a85bd216725b7dc8e084ad91e2aa37a1c0f0bb416aa57031fd",
+      "head_sha": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "uploaded_files": [
+        "ocrm-plugin-edge.json",
+        "ocrm-plugin-edge.tap"
+      ],
+      "archive_body_independently_read": false
+    },
+    "receipt_node_tap_sha256": null,
+    "receipt_body_limit": "Completed TAP log, receipt-generation guard success, current workflow fields and artifact metadata are independently read. The ZIP's JSON body was not materialized: the GitHub download reference and Library prepare calls succeeded, but the prescribed transfer helper returned download failed. No unread body/hash is invented."
+  },
+  "actual_step_results": [
+    {
+      "job_id": 125586445720,
+      "step_number": 4,
+      "command": "python3 projects/openclaw-rust/scripts/test_source_review.py",
+      "test_count": 33,
+      "result": "OK"
+    },
+    {
+      "job_id": 125586445720,
+      "step_number": 9,
+      "command": "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py",
+      "test_count": 21,
+      "result": "OK"
+    },
+    {
+      "job_id": 125586445720,
+      "step_number": 9,
+      "scope": "Pre-expansion history integrity, canonical reconstruction, G01/G02 structural and committed-source integrity",
+      "result": "PASS",
+      "test_count": null,
+      "inventory_counters": {
+        "tracked_paths": 62130,
+        "mapped": 850,
+        "unread_or_partial": 62099,
+        "pending_forward_links": 0
+      },
+      "note": "Inventory counts are not test counts; global closure and semantic acceptance remain open."
+    },
+    {
+      "job_id": 125587562865,
+      "scope": "Source persistence",
+      "result": "success",
+      "test_count": null,
+      "note": "Completed log confirms committed-shard reconstruction PASS and No new source-derived shard content; no derived commit was written."
+    },
+    {
+      "job_id": 125586448342,
+      "step_number": 8,
+      "target": "box_store_download_frozen_parity_contract",
+      "scope": "ordinary",
+      "passed": 29,
+      "failed": 0,
+      "ignored": 2,
+      "result": "success"
+    },
+    {
+      "job_id": 125586448342,
+      "step_number": 8,
+      "test": "linux_bind_mounted_descendant_file_restore_boundary",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 30,
+      "result": "success"
+    },
+    {
+      "job_id": 125586448342,
+      "step_number": 8,
+      "test": "linux_bind_mounted_descendant_symlink_restore_boundary",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 30,
+      "result": "success"
+    }
+  ],
+  "completed_logs": [
+    {
+      "job_id": 125586448748,
+      "characters": 88145,
+      "lines": 1182
+    },
+    {
+      "job_id": 125586445720,
+      "characters": 31525,
+      "lines": 381
+    },
+    {
+      "job_id": 125587562865,
+      "characters": 18139,
+      "lines": 217
+    },
+    {
+      "job_id": 125586448342,
+      "characters": 88590,
+      "lines": 1002
+    }
+  ],
+  "other_artifact_observations": [
+    {
+      "artifact_id": 13183532323,
+      "subject_commit": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "kind": "source-authority",
+      "digest": "sha256:55f8d3d1edc4f6f8be0eb7f547f68dd954960cf0dcecb022c62e719307eef191",
+      "body_read": false
+    },
+    {
+      "artifact_id": 13183154277,
+      "subject_commit": "ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+      "kind": "installation-key-restore",
+      "digest": "sha256:e571860af218baddebf37a6400656e43929440e8423f3fc52f02765287e1bd5a",
+      "body_read": false,
+      "source": "completed upload log"
+    }
+  ],
+  "failure_classifications": [],
+  "historical_evidence_separate": [
+    {
+      "subject": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "record": "ci-config-40dad.json",
+      "use": "separate exact-H observation only",
+      "relabelled_as_ca679": false
+    },
+    {
+      "record": "ci-f5-6034.json",
+      "use": "older observations only",
+      "relabelled_as_ca679": false
+    }
+  ],
+  "limits": [
+    "ACK renderer/source/restore positives above are from ca679 itself. They do not substitute for pending ca679 native or macOS gates.",
+    "At the recorded jobs observation, ca679 sqlite-native-path is still running and rust-host/macOS is queued; no full running-job log was fetched.",
+    "The complete source and renderer logs have no observed failure markers, but workflow-wide/runtime acceptance is not claimed while other required jobs remain open.",
+    "No dispatch, retry, cancellation, repository/source edit or local product test/build/lint/formatter/generator/validator was performed.",
+    "Only exact identities and current-H CI were assessed here. No unchanged ACK source implementation was re-reviewed and no other reviewer opinion was read."
+  ],
+  "full_runtime_acceptance": false,
+  "sources": [
+    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/ca67987e8a1e41262e59f6ffd10fcf45e04957d7",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41535579867",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41535580001",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41535580001/job/125586448748",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41535580001/artifacts/13183946760"
+  ]
+}

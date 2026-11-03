@@ -7,14 +7,22 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use serde_json::{Value, json};
 
 use crate::extensions::session::agent_session::SandAgentSessionStore;
+use crate::extensions::session::agent_db::{
+    OriginalTurnReference, OriginalTurnScope, SessionWorkAdmissionRecord,
+};
+use crate::extensions::session::session_paths::resolve_internal_send_route;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::sand_activity::{ActivityUpdate, AgentActivity};
+use crate::runner::routed_provider_runtime::RoutedProviderCancellation;
 
 use super::async_task_union::{AsyncTask, merge_async_tasks};
+use super::ack_obligations::{AckObligations, AckRedrivePreparation, AckRedriveTrigger};
+use super::sand_ack_obligation_store::SandAckObligationStore;
 use super::box_request_entries::{ActiveBoxRequest, BoxRequestTrackDecision};
 use super::prompt_acceptance_ledger::{
     AcceptanceLookup, AcceptanceRecord, AcceptanceStatus, PromptAcceptanceError,
     PromptAcceptanceLedger, SendInput,
+    send_input_digest,
 };
 use super::run_lifecycle::RunLifecycleState;
 use super::send_group_fanout::GroupMemberTurnExecutor;
@@ -98,6 +106,8 @@ pub fn classify_send_dispatch(
             "human-handoff"
         } else if is_group_member {
             "group-member"
+        } else if request_source == Some("connector") {
+            "connector"
         } else if is_kickstart {
             "kickstart"
         } else {
@@ -106,13 +116,90 @@ pub fn classify_send_dispatch(
     ))
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone)]
 struct RoutedTurnLease {
     agent_id: String,
     ticket: UserTurnTicket,
     generation: u64,
     is_group_member_turn: bool,
     human_handoff_conversation_id: Option<String>,
+    original_input: Option<RoutedOriginalInput>,
+    original_work: Option<OriginalTurnReference>,
+    cancellation: RoutedProviderCancellation,
+    start_claimed: bool,
+    preparation_admitted: bool,
+}
+
+/// An existing live lease's unique start claimant. Private identity fields
+/// prevent a request payload or a different runtime from creating authority.
+pub struct RoutedTurnStartControl {
+    agent_id: String,
+    stream_id: String,
+    ticket: UserTurnTicket,
+    generation: u64,
+    cancellation: RoutedProviderCancellation,
+}
+
+impl RoutedTurnStartControl {
+    pub fn cancellation(&self) -> RoutedProviderCancellation {
+        self.cancellation.clone()
+    }
+
+    pub fn agent_id(&self) -> &str { &self.agent_id }
+    pub fn stream_id(&self) -> &str { &self.stream_id }
+
+    fn matches(&self, lease: &RoutedTurnLease) -> bool {
+        self.agent_id == lease.agent_id && self.ticket == lease.ticket
+            && self.generation == lease.generation
+            && self.cancellation.shares_cancellation_with(&lease.cancellation)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoutedTurnStartState {
+    Ready,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RoutedOriginalInput {
+    input_digest: String,
+    client_nonce: Option<String>,
+    user_message_id: String,
+    echo_entry_id: String,
+    request_source: Option<String>,
+}
+
+fn original_routed_input(
+    args: &Value,
+    input: &SendInput,
+    client_nonce: Option<&str>,
+    context: &PersistedSendContext,
+) -> Option<RoutedOriginalInput> {
+    let source = match args.get("requestSource") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(source)) if source.trim().is_empty() => None,
+        Some(Value::String(source)) if source.trim() == "turn" => Some("turn".to_string()),
+        _ => return None,
+    };
+    if !context.accepted_durably || input.prompt.trim().is_empty() || input.is_fork
+        || ["hidden", "groupMemberTurn", "upgradeResume", "ackRedrive", "skipAckObligation"]
+            .into_iter().any(|key| args.get(key).is_some_and(|value| !value.is_null() && value.as_bool() != Some(false)))
+        || args.get("appendUserMessage").is_some_and(|value| !value.is_null() && value.as_bool() != Some(true))
+        || ["parentAgentId", "parentAgentToolCallId", "spawnedBy", "automationWake", "groupContext", "groupRoomId", "humanHandoffConversationId"]
+            .into_iter().any(|key| args.get(key).is_some_and(|value| !value.is_null()))
+    {
+        return None;
+    }
+    let user_message_id = context.user_message_id.as_ref().filter(|value| !value.trim().is_empty())?;
+    let echo_entry_id = context.echo_entry_id.as_ref().filter(|value| *value == user_message_id)?;
+    Some(RoutedOriginalInput {
+        input_digest: send_input_digest(input),
+        client_nonce: client_nonce.map(ToOwned::to_owned),
+        user_message_id: user_message_id.clone(),
+        echo_entry_id: echo_entry_id.clone(),
+        request_source: source,
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -341,7 +428,9 @@ impl ProductionTranscriptRuntime {
     pub fn has_carryable_pending_wake(&self) -> bool {
         self.pending_wake_store
             .as_ref()
-            .is_some_and(|store| !store.list_pending().is_empty())
+            // Unknown durable custody must not authorize idle Host teardown.
+            .is_some_and(|store| store.list_pending_checked()
+                .map(|markers| !markers.is_empty()).unwrap_or(true))
     }
 
     pub fn recreate_carry_pending_wakes(&self) -> Vec<DurablePendingWakeMarker> {
@@ -369,10 +458,23 @@ impl ProductionTranscriptRuntime {
         self.session_runtime.active_agent_id(sessions)
     }
 
-    pub fn quiesce_for_upgrade(&self) -> UpgradeQuiesceSummary {
-        let running = {
-            let state = self.lock_state();
-            state
+    pub fn quiesce_for_upgrade(&self) -> Result<UpgradeQuiesceSummary, String> {
+        self.quiesce_for_upgrade_with_marker_writer(|store, markers| {
+            store.mark_pending_batch_checked(markers).map_err(|error| error.to_string())
+        })
+    }
+
+    fn quiesce_for_upgrade_with_marker_writer(
+        &self,
+        write_markers: impl FnOnce(&SandUpgradeResumeStore, &[UpgradeResumeMarker]) -> Result<(), String>,
+    ) -> Result<UpgradeQuiesceSummary, String> {
+        // Hold the existing admission owner across snapshot, marker commit
+        // and flag publication. This prevents a new accepted agent from
+        // appearing after the snapshot but before Manager's cancel_all.
+        // Production writer is only store I/O, never an observer/provider.
+        let state = self.state.lock()
+            .map_err(|_| "Transcript runtime owner lock is poisoned during upgrade handoff".to_string())?;
+        let running = state
                 .lifecycle
                 .running_agent_ids()
                 .into_iter()
@@ -384,46 +486,137 @@ impl ProductionTranscriptRuntime {
                         .to_string();
                     (agent_id, source)
                 })
-                .collect::<Vec<_>>()
-        };
-        if let Some(store) = self.upgrade_resume_store.as_ref() {
-            let marked_at_ms = system_now_ms() as f64;
-            for (agent_id, source) in &running {
-                store.mark_pending(UpgradeResumeMarker {
+                .collect::<Vec<_>>();
+        let store = self.upgrade_resume_store.as_ref()
+            .ok_or_else(|| "upgrade resume marker store is unavailable".to_string())?;
+        let marked_at_ms = system_now_ms() as f64;
+        let markers = running.iter()
+            .map(|(agent_id, source)| UpgradeResumeMarker {
                     agent_id: agent_id.clone(),
                     marked_at_ms,
-                    source: Some(source.clone()),
+                    // Keep the existing kickstart marker identity, but only an
+                    // actual bound ordinary routed lease carries original work.
+                    source: Some(if source == "kickstart" { "turn".into() } else { source.clone() }),
                     automation_id: None,
                     automation_run_id: None,
-                });
-            }
-        }
-        self.upgrade_recreate_resume
-            .quiesce_for_upgrade(running.len())
+                    original_work: state.routed_turn_leases.values()
+                        .find(|lease| lease.agent_id == *agent_id
+                            && state.turn_dispatch.active_generation_for(&lease.ticket) == Some(lease.generation))
+                        .and_then(|lease| lease.original_work.clone()),
+                })
+            .collect::<Vec<_>>();
+        write_markers(store, &markers)?;
+        let summary = self.upgrade_recreate_resume.quiesce_for_upgrade(running.len());
+        drop(state);
+        Ok(summary)
     }
 
+    fn ensure_upgrade_send_admission(
+        &self,
+        state: &mut RuntimeState,
+        input: &SendInput,
+        client_nonce: Option<&str>,
+        args: &Value,
+    ) -> Result<(), ProductionSendError> {
+        if input.prompt.trim().is_empty() && input.attachment_paths.is_empty() {
+            return Ok(());
+        }
+        // Existing in-flight and durable identities retain their coalesced
+        // result/replay ownership. begin_send still checks the normal digest
+        // and rejection policy; only a fresh admission is refused here.
+        if client_nonce.is_some_and(|nonce| {
+            state.pipeline.is_in_flight(nonce)
+                || matches!(state.ledger.lookup(HOST_ACCOUNT_SLOT, nonce), AcceptanceLookup::Found(_))
+        }) {
+            return Ok(());
+        }
+        if self.is_quiescing_for_upgrade() {
+            return Err(ProductionSendError::Rejected("Transcript is quiescing for host upgrade".into()));
+        }
+        let automatic_continuation = matches!(optional_non_empty(args, "requestSource"), Some("upgrade-resume" | "ack-redrive"))
+            || args.get("upgradeResume").and_then(Value::as_bool) == Some(true)
+            || args.get("ackRedrive").and_then(Value::as_bool) == Some(true);
+        if automatic_continuation {
+            let store = self.upgrade_resume_store.as_ref().ok_or_else(|| {
+                ProductionSendError::Rejected("automatic continuation requires the upgrade marker owner".into())
+            })?;
+            let pending = store.migrate_legacy_checked().map_err(|error| {
+                ProductionSendError::Rejected(format!("automatic continuation retained: {error}"))
+            })?;
+            if input.agent_id.as_deref().is_none_or(|agent_id| pending.iter().any(|marker| marker.agent_id == agent_id)) {
+                return Err(ProductionSendError::Rejected("automatic continuation retained by original upgrade work".into()));
+            }
+        }
+        Ok(())
+    }
+
+    /// Compatibility inspection; production upgrade decisions use the checked projection.
     pub fn upgrade_resume_agent_ids(&self) -> Vec<String> {
-        let mut agent_ids = self
-            .upgrade_resume_store
-            .as_ref()
-            .map(|store| {
-                store
-                    .list_pending()
-                    .into_iter()
-                    .map(|marker| marker.agent_id)
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
+        self.upgrade_resume_agent_ids_checked().unwrap_or_default()
+    }
+
+    pub fn upgrade_resume_agent_ids_checked(&self) -> Result<Vec<String>, String> {
+        let store = self.upgrade_resume_store.as_ref()
+            .ok_or_else(|| "upgrade resume marker store is unavailable".to_string())?;
+        let mut agent_ids = store.list_pending_checked().map_err(|error| error.to_string())?
+            .into_iter().map(|marker| marker.agent_id).collect::<Vec<_>>();
         agent_ids.sort();
-        agent_ids
+        Ok(agent_ids)
     }
 
     pub fn is_quiescing_for_upgrade(&self) -> bool {
         self.upgrade_recreate_resume.is_quiescing_for_upgrade()
     }
 
+    /// Serialize automatic ACK consumption with both upgrade publication
+    /// paths. Admission -> marker -> ACK schedule -> ACK file/cache is the
+    /// owner order. Provider, telemetry and send callbacks run after release.
+    pub fn prepare_automatic_ack_redrive(
+        &self,
+        obligations: &AckObligations,
+        agent_id: &str,
+        agent_exists: bool,
+        now_ms: u64,
+    ) -> Result<Option<(AckRedriveTrigger, AckRedrivePreparation)>, String> {
+        let state = self.state.lock()
+            .map_err(|_| "Transcript admission owner is poisoned".to_string())?;
+        if self.is_quiescing_for_upgrade() || state.lifecycle.is_running(agent_id) {
+            return Ok(None);
+        }
+        let store = self.upgrade_resume_store.as_ref()
+            .ok_or_else(|| "automatic ACK requires the upgrade marker owner".to_string())?;
+        let preparation = store.while_agent_unmarked_checked(agent_id, || {
+            obligations.prepare_due_redrive_checked(agent_id, agent_exists, now_ms)
+        }).map_err(|error| error.to_string())?
+            .transpose().map_err(|error| error.to_string())?.flatten();
+        drop(state);
+        if let Some((trigger, preparation)) = &preparation {
+            obligations.report_redrive_preparation(agent_id, preparation, *trigger, now_ms as f64);
+        }
+        Ok(preparation)
+    }
+
     pub fn resume_after_recreate(&self) {
         self.upgrade_recreate_resume.resume_after_recreate();
+    }
+
+    /// The shipping consumer first proves the original completed turn. This
+    /// existing admission owner only serializes the final idle/ACK/marker CAS;
+    /// a reference or marker alone is never a Runner completion proof.
+    pub fn clear_completed_upgrade_marker_if_idle(
+        &self,
+        marker: &UpgradeResumeMarker,
+        acknowledgments: &SandAckObligationStore,
+    ) -> Result<bool, String> {
+        let state = self.state.lock()
+            .map_err(|_| "Transcript admission owner is poisoned".to_string())?;
+        if state.lifecycle.is_running(&marker.agent_id) {
+            return Ok(false);
+        }
+        let store = self.upgrade_resume_store.as_ref()
+            .ok_or_else(|| "upgrade marker owner unavailable".to_string())?;
+        store.clear_if_matches_with_ack_absent_checked(marker, acknowledgments)
+            .map_err(|error| error.to_string())
     }
 
     pub fn clear_agent_durable_recovery(&self, agent_id: &str) {
@@ -557,6 +750,31 @@ impl ProductionTranscriptRuntime {
         QueueDequeuedObserver: Fn(&QueueDequeued),
     {
         let input = parse_send_input(args)?;
+        let request_source = optional_non_empty(args, "requestSource");
+        let session_key = args
+            .get("sessionKey")
+            .or_else(|| args.get("sessionId"))
+            .and_then(Value::as_str);
+        let requires_selector = matches!(
+            request_source,
+            Some("automation" | "group-member" | "upgrade-resume" | "ack-redrive" | "subagent")
+        );
+        if (requires_selector || session_key.is_some()) && input.agent_id.is_some() {
+            resolve_internal_send_route(
+                input.agent_id.as_deref().unwrap_or_default(),
+                session_key,
+                args.get("chatType").and_then(Value::as_str),
+                args.get("spawnedBy").and_then(Value::as_str),
+                args.get("directMainFallback")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+            )
+            .map_err(|error| {
+                ProductionSendError::BadRequest(format!(
+                    "invalid trusted session route: {error:?}"
+                ))
+            })?;
+        }
         if input.prompt.trim().is_empty() && input.attachment_paths.is_empty() {
             return Err(ProductionSendError::BadRequest(
                 "routed send requires prompt or attachments".into(),
@@ -597,6 +815,7 @@ impl ProductionTranscriptRuntime {
 
         let mut state = self.lock_state();
         loop {
+            self.ensure_upgrade_send_admission(&mut state, &input, nonce.as_deref(), args)?;
             let begin = {
                 let RuntimeState {
                     pipeline, ledger, ..
@@ -791,6 +1010,11 @@ impl ProductionTranscriptRuntime {
                                 generation,
                                 is_group_member_turn,
                                 human_handoff_conversation_id: human_handoff_conversation_id.clone(),
+                                original_input: original_routed_input(args, &input, nonce.as_deref(), &context),
+                                original_work: None,
+                                cancellation: RoutedProviderCancellation::default(),
+                                start_claimed: false,
+                                preparation_admitted: false,
                             },
                         );
                     }
@@ -831,24 +1055,198 @@ impl ProductionTranscriptRuntime {
         }
     }
 
+    /// Take retirement responsibility before checking cancellation/currentness.
+    /// Even a cancelled or scheduler-stale lease must reach its own guard.
+    pub fn capture_routed_turn_start(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+    ) -> Result<RoutedTurnStartControl, ProductionSendError> {
+        let mut state = self.lock_state();
+        let lease = state.routed_turn_leases.get_mut(stream_id).ok_or_else(|| {
+            ProductionSendError::Rejected("routed provider stream has no admitted Host turn lease".into())
+        })?;
+        if lease.agent_id != agent_id || lease.start_claimed {
+            return Err(ProductionSendError::Conflict("routed turn start is foreign or already claimed".into()));
+        }
+        lease.start_claimed = true;
+        Ok(RoutedTurnStartControl {
+            agent_id: agent_id.to_string(), stream_id: stream_id.to_string(),
+            ticket: lease.ticket.clone(), generation: lease.generation,
+            cancellation: lease.cancellation.clone(),
+        })
+    }
+
+    fn routed_start_state(
+        state: &RuntimeState,
+        control: &RoutedTurnStartControl,
+    ) -> Result<RoutedTurnStartState, ProductionSendError> {
+        let lease = state.routed_turn_leases.get(&control.stream_id).ok_or_else(|| {
+            ProductionSendError::Rejected("routed turn start lease is no longer present".into())
+        })?;
+        if !control.matches(lease) || !lease.start_claimed
+            || state.turn_dispatch.active_generation_for(&lease.ticket) != Some(lease.generation)
+        {
+            return Err(ProductionSendError::Conflict("routed turn start control is stale or foreign".into()));
+        }
+        Ok(if lease.cancellation.is_cancelled() {
+            RoutedTurnStartState::Cancelled
+        } else {
+            RoutedTurnStartState::Ready
+        })
+    }
+
+    pub fn check_routed_turn_start(
+        &self,
+        control: &RoutedTurnStartControl,
+    ) -> Result<RoutedTurnStartState, ProductionSendError> {
+        Self::routed_start_state(&self.lock_state(), control)
+    }
+
+    /// Orders preparation admission against explicit cancellation. It grants
+    /// entry, not rollback of preparation already admitted before a later stop.
+    pub fn admit_routed_turn_preparation(
+        &self,
+        control: &RoutedTurnStartControl,
+    ) -> Result<RoutedTurnStartState, ProductionSendError> {
+        let mut state = self.lock_state();
+        let disposition = Self::routed_start_state(&state, control)?;
+        if disposition == RoutedTurnStartState::Ready {
+            let lease = state.routed_turn_leases.get_mut(&control.stream_id)
+                .expect("checked under the same owner lock");
+            if lease.preparation_admitted {
+                return Err(ProductionSendError::Conflict("routed turn preparation is already admitted".into()));
+            }
+            lease.preparation_admitted = true;
+        }
+        Ok(disposition)
+    }
+
+    pub fn cancel_routed_turn_lease(
+        &self,
+        stream_id: &str,
+        expected_agent_id: Option<&str>,
+        reason: &str,
+    ) -> bool {
+        self.request_routed_turn_cancellation(stream_id, expected_agent_id, reason).unwrap_or(false)
+    }
+
+    /// Presence and first-change are distinct: a present lease remains the
+    /// authority even when already cancelled or outside the requested agent.
+    /// A caller must not reselect a later registry incarnation after this.
+    pub fn request_routed_turn_cancellation(
+        &self,
+        stream_id: &str,
+        expected_agent_id: Option<&str>,
+        reason: &str,
+    ) -> Option<bool> {
+        let state = self.lock_state();
+        state.routed_turn_leases.get(stream_id)
+            .map(|lease| expected_agent_id.is_none_or(|agent| lease.agent_id == agent)
+                && lease.cancellation.cancel(reason))
+    }
+
+    pub fn routed_stream_ids_for_agent(&self, agent_id: &str) -> Vec<String> {
+        let mut streams = self.lock_state().routed_turn_leases.iter()
+            .filter_map(|(stream, lease)| (lease.agent_id == agent_id).then(|| stream.clone()))
+            .collect::<Vec<_>>();
+        streams.sort();
+        streams
+    }
+
+    pub fn routed_agent_id_for_stream(&self, stream_id: &str) -> Option<String> {
+        self.lock_state().routed_turn_leases.get(stream_id).map(|lease| lease.agent_id.clone())
+    }
+
+    /// Attach the already checked Session and actual resolved Native model to
+    /// the original accepted input, without reading Session under this mutex.
+    pub fn bind_original_turn_model(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        admission: &SessionWorkAdmissionRecord,
+        model_id: &str,
+    ) -> Result<Option<OriginalTurnReference>, ProductionSendError> {
+        let mut state = self.state.lock().map_err(|_| {
+            ProductionSendError::Internal("original turn admission owner is poisoned".into())
+        })?;
+        let lease = state.routed_turn_leases.get(stream_id).ok_or_else(|| {
+            ProductionSendError::Rejected("original turn has no admitted routed lease".into())
+        })?;
+        if lease.agent_id != agent_id
+            || state.turn_dispatch.active_generation_for(&lease.ticket) != Some(lease.generation)
+        {
+            return Err(ProductionSendError::Conflict("original turn lease is stale or foreign".into()));
+        }
+        if self.is_quiescing_for_upgrade() || lease.cancellation.is_cancelled() {
+            return Ok(None);
+        }
+        let Some(input) = lease.original_input.as_ref() else { return Ok(None); };
+        let original = OriginalTurnReference {
+            version: 1,
+            scope: OriginalTurnScope::NativeOrdinaryUserV1,
+            agent_id: agent_id.to_string(),
+            session_key: admission.session_key.clone(),
+            session_id: admission.session_id.clone(),
+            original_lifecycle_revision: admission.lifecycle_revision.clone(),
+            stream_id: stream_id.to_string(),
+            input_digest: input.input_digest.clone(),
+            client_nonce: input.client_nonce.clone(),
+            user_message_id: input.user_message_id.clone(),
+            echo_entry_id: input.echo_entry_id.clone(),
+            request_source: input.request_source.clone(),
+            provider: "fabushi".into(),
+            model_id: model_id.to_string(),
+        };
+        if admission.deletion_pending || admission.archived_at_ms.is_some() || original.validate().is_err() {
+            return Ok(None);
+        }
+        if lease.original_work.as_ref().is_some_and(|bound| bound != &original) {
+            return Err(ProductionSendError::Conflict("original turn is already bound to another identity".into()));
+        }
+        state.routed_turn_leases.get_mut(stream_id).expect("checked under same owner lock")
+            .original_work = Some(original.clone());
+        Ok(Some(original))
+    }
+
     pub fn settle_routed_turn(
         &self,
         agent_id: &str,
         stream_id: &str,
         now_ms: u64,
     ) -> Result<Option<RoutedTurnSettlement>, ProductionSendError> {
+        self.settle_routed_turn_inner(agent_id, stream_id, None, now_ms)
+    }
+
+    pub fn settle_routed_turn_control(
+        &self,
+        control: &RoutedTurnStartControl,
+        now_ms: u64,
+    ) -> Result<Option<RoutedTurnSettlement>, ProductionSendError> {
+        self.settle_routed_turn_inner(&control.agent_id, &control.stream_id, Some(control), now_ms)
+    }
+
+    fn settle_routed_turn_inner(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        control: Option<&RoutedTurnStartControl>,
+        now_ms: u64,
+    ) -> Result<Option<RoutedTurnSettlement>, ProductionSendError> {
         let mut state = self.lock_state();
-        let Some(lease) = state.routed_turn_leases.remove(stream_id) else {
+        let Some(lease) = state.routed_turn_leases.get(stream_id) else {
             return Ok(None);
         };
+        if control.is_some_and(|control| !control.matches(lease)) {
+            return Ok(None);
+        }
         if lease.agent_id != agent_id {
-            state
-                .routed_turn_leases
-                .insert(stream_id.to_string(), lease);
             return Err(ProductionSendError::Conflict(format!(
                 "routed stream lease agent mismatch: {stream_id}"
             )));
         }
+        let lease = state.routed_turn_leases.remove(stream_id)
+            .expect("identity checked under the same owner lock");
         let (settlement, next) = state
             .turn_dispatch
             .settle_and_start_next(&lease.ticket, lease.generation, now_ms);
@@ -1000,6 +1398,7 @@ impl ProductionTranscriptRuntime {
 
         let mut state = self.lock_state();
         loop {
+            self.ensure_upgrade_send_admission(&mut state, &input, nonce.as_deref(), args)?;
             let begin = {
                 let RuntimeState {
                     pipeline, ledger, ..
@@ -1327,6 +1726,44 @@ impl ProductionTranscriptRuntime {
         &self,
         sessions: &ProductionSessionWorkers,
         agent_id: &str,
+        session_key: &str,
+        message: &Value,
+        timestamp_ms: u64,
+        reply_thread_target: Option<&str>,
+        is_fork: bool,
+    ) -> Result<Value, String> {
+        let entries = sessions.read_agent_transcript_entries(agent_id)?;
+        let mut entry = self
+            .lock_state()
+            .pipeline
+            .prepare_generated_send_message_entry(
+                agent_id,
+                &entries,
+                message,
+                reply_thread_target,
+                is_fork,
+                timestamp_ms,
+            );
+        entry
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
+        entry["sessionKey"] = Value::String(session_key.trim().to_string());
+        sessions.append_agent_transcript_entries_if_session_admitted(
+            agent_id,
+            session_key,
+            std::slice::from_ref(&entry),
+        )?;
+        Ok(entry)
+    }
+
+    /// Append a generated send for an explicitly unbound compatibility
+    /// producer. The generic session owner still applies its deletion and
+    /// archive fence; no session identity is invented for the entry.
+    pub fn append_generated_send_message_entry_compatibility(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
         message: &Value,
         timestamp_ms: u64,
         reply_thread_target: Option<&str>,
@@ -1348,7 +1785,51 @@ impl ProductionTranscriptRuntime {
             .get("id")
             .and_then(Value::as_str)
             .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
-        sessions.append_agent_transcript_entries(agent_id, std::slice::from_ref(&entry))?;
+        sessions.append_agent_transcript_entries(
+            agent_id,
+            std::slice::from_ref(&entry),
+        )?;
+        Ok(entry)
+    }
+
+    /// Append a generated send and release its durable media fence in the same
+    /// session-owner transaction.
+    pub fn append_generated_send_message_entry_with_media_custody(
+        &self,
+        sessions: &ProductionSessionWorkers,
+        agent_id: &str,
+        session_key: &str,
+        message: &Value,
+        timestamp_ms: u64,
+        reply_thread_target: Option<&str>,
+        is_fork: bool,
+        expected_lifecycle_revision: &str,
+        media_work_id: &str,
+    ) -> Result<Value, String> {
+        let entries = sessions.read_agent_transcript_entries(agent_id)?;
+        let mut entry = self
+            .lock_state()
+            .pipeline
+            .prepare_generated_send_message_entry(
+                agent_id,
+                &entries,
+                message,
+                reply_thread_target,
+                is_fork,
+                timestamp_ms,
+            );
+        entry
+            .get("id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "generated send pipeline did not produce an entry id".to_string())?;
+        entry["sessionKey"] = Value::String(session_key.trim().to_string());
+        sessions.append_agent_transcript_entries_and_release_media(
+            agent_id,
+            session_key,
+            std::slice::from_ref(&entry),
+            expected_lifecycle_revision,
+            media_work_id,
+        )?;
         Ok(entry)
     }
 
@@ -1356,6 +1837,7 @@ impl ProductionTranscriptRuntime {
         &self,
         sessions: &ProductionSessionWorkers,
         agent_id: &str,
+        session_key: &str,
         message: &Value,
         timestamp_ms: u64,
         reply_thread_target: Option<&str>,
@@ -1364,6 +1846,7 @@ impl ProductionTranscriptRuntime {
         self.append_generated_send_message_entry(
             sessions,
             agent_id,
+            session_key,
             message,
             timestamp_ms,
             reply_thread_target,
@@ -1667,4 +2150,176 @@ fn system_now_ms() -> u64 {
         .unwrap_or_default()
         .as_millis()
         .min(u64::MAX as u128) as u64
+}
+
+#[cfg(test)]
+mod checked_upgrade_handoff_tests {
+    use super::*;
+    use std::fs;
+    use std::sync::atomic::AtomicUsize;
+    use std::sync::{mpsc, TryLockError};
+    use std::thread;
+
+    fn args(agent: &str, nonce: &str) -> Value {
+        json!({"agentId":agent,"prompt":"retained intent","streamId":nonce,"clientNonce":nonce})
+    }
+
+    #[test]
+    fn marker_write_barrier_fences_new_admission_and_refusal_reopens_it() {
+        for refuse in [false, true] {
+            let root = std::env::temp_dir().join(format!("fabushi-upgrade-admission-barrier-{}", uuid::Uuid::new_v4()));
+            let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+            runtime.accept_routed_send(&args("before", "before"), |_| Ok(PersistedSendContext::default())).unwrap();
+            let store = runtime.upgrade_resume_store().unwrap().clone();
+            if refuse { fs::write(store.file_path(), b"preserved corrupt marker").unwrap(); }
+            let (writer_entered_tx, writer_entered_rx) = mpsc::channel();
+            let (writer_release_tx, writer_release_rx) = mpsc::channel();
+            let quiesce_runtime = Arc::clone(&runtime);
+            let quiesce = thread::spawn(move || {
+                quiesce_runtime.quiesce_for_upgrade_with_marker_writer(|store, markers| {
+                    writer_entered_tx.send(()).unwrap();
+                    writer_release_rx.recv_timeout(Duration::from_secs(10)).map_err(|error| error.to_string())?;
+                    store.mark_pending_batch_checked(markers).map_err(|error| error.to_string())
+                })
+            });
+            writer_entered_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+            assert!(matches!(runtime.state.try_lock(), Err(TryLockError::WouldBlock)),
+                "the real admission owner must remain held while marker I/O is pending");
+            let persists = Arc::new(AtomicUsize::new(0));
+            let dispatches = Arc::new(AtomicUsize::new(0));
+            let (attempt_tx, attempt_rx) = mpsc::channel();
+            let (routed_tx, routed_rx) = mpsc::channel();
+            let routed_runtime = Arc::clone(&runtime);
+            let routed_persists = Arc::clone(&persists);
+            let routed_attempt = attempt_tx.clone();
+            let routed = thread::spawn(move || {
+                routed_attempt.send(()).unwrap();
+                let result = routed_runtime.accept_routed_send(&args("new-routed", "new-routed"), |_| {
+                    routed_persists.fetch_add(1, Ordering::SeqCst);
+                    Ok(PersistedSendContext::default())
+                });
+                routed_tx.send(result).unwrap();
+            });
+            let (execute_tx, execute_rx) = mpsc::channel();
+            let execute_runtime = Arc::clone(&runtime);
+            let execute_persists = Arc::clone(&persists);
+            let execute_dispatches = Arc::clone(&dispatches);
+            let execute = thread::spawn(move || {
+                attempt_tx.send(()).unwrap();
+                let result = execute_runtime.execute_send(&args("new-execute", "new-execute"), || {
+                    execute_dispatches.fetch_add(1, Ordering::SeqCst);
+                    Ok(json!({"accepted":true,"operationId":"new-execute"}))
+                }, |_| {
+                    execute_persists.fetch_add(1, Ordering::SeqCst);
+                    Ok(PersistedSendContext::default())
+                });
+                execute_tx.send(result).unwrap();
+            });
+            attempt_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+            attempt_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+            assert_eq!(persists.load(Ordering::SeqCst), 0);
+            assert_eq!(dispatches.load(Ordering::SeqCst), 0);
+            writer_release_tx.send(()).unwrap();
+            let prepared = quiesce.join().unwrap();
+            let admitted = routed_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+            let executed = execute_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+            routed.join().unwrap();
+            execute.join().unwrap();
+            assert!(runtime.has_routed_turn_lease("before", "before"));
+            if refuse {
+                assert!(prepared.unwrap_err().contains("malformed"));
+                assert!(!runtime.is_quiescing_for_upgrade());
+                assert!(admitted.is_ok());
+                assert!(executed.is_ok());
+                assert!(runtime.has_routed_turn_lease("new-routed", "new-routed"));
+                assert_eq!(persists.load(Ordering::SeqCst), 2);
+                assert_eq!(dispatches.load(Ordering::SeqCst), 1);
+                assert_eq!(fs::read(store.file_path()).unwrap(), b"preserved corrupt marker");
+            } else {
+                assert!(prepared.unwrap().quiescing);
+                assert!(matches!(admitted, Err(ProductionSendError::Rejected(_))));
+                assert!(matches!(executed, Err(ProductionSendError::Rejected(_))));
+                assert_eq!(persists.load(Ordering::SeqCst), 0);
+                assert_eq!(dispatches.load(Ordering::SeqCst), 0);
+                assert_eq!(runtime.upgrade_resume_agent_ids_checked().unwrap(), vec!["before"]);
+                assert!(!runtime.has_routed_turn_lease("new-routed", "new-routed"));
+                assert!(!runtime.is_agent_running("new-execute"));
+            }
+            let _ = fs::remove_dir_all(root);
+        }
+    }
+
+    #[test]
+    fn quiesce_preserves_accepted_queue_coalesced_results_and_durable_replay() {
+        let root = std::env::temp_dir().join(format!("fabushi-upgrade-retained-admission-{}", uuid::Uuid::new_v4()));
+        let runtime = Arc::new(ProductionTranscriptRuntime::new(Some(&root)));
+        let first_args = args("agent", "first");
+        let queued_args = args("agent", "queued");
+        let (dispatch_entered_tx, dispatch_entered_rx) = mpsc::channel();
+        let (dispatch_release_tx, dispatch_release_rx) = mpsc::channel();
+        let (first_tx, first_rx) = mpsc::channel();
+        let first_runtime = Arc::clone(&runtime);
+        let owned_first_args = first_args.clone();
+        let first = thread::spawn(move || {
+            let result = first_runtime.execute_send(&owned_first_args, || {
+                dispatch_entered_tx.send(()).unwrap();
+                dispatch_release_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+                Ok(json!({"accepted":true,"operationId":"original-result"}))
+            }, |_| Ok(PersistedSendContext::default()));
+            first_tx.send(result).unwrap();
+        });
+        dispatch_entered_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+        let (queued_accepted_tx, queued_accepted_rx) = mpsc::channel();
+        let (queued_tx, queued_rx) = mpsc::channel();
+        let queued_runtime = Arc::clone(&runtime);
+        let owned_queued_args = queued_args.clone();
+        let queued = thread::spawn(move || {
+            let result = queued_runtime.accept_routed_send_with_queue_observers(
+                &owned_queued_args, |_| Ok(PersistedSendContext::default()), |_| false,
+                |_| { queued_accepted_tx.send(()).unwrap(); }, |_| {},
+            );
+            queued_tx.send(result).unwrap();
+        });
+        queued_accepted_rx.recv_timeout(Duration::from_secs(10)).unwrap();
+        assert!(runtime.quiesce_for_upgrade().unwrap().quiescing);
+        let (duplicate_tx, duplicate_rx) = mpsc::channel();
+        let duplicate_runtime = Arc::clone(&runtime);
+        let duplicate_args = first_args.clone();
+        let duplicate = thread::spawn(move || {
+            let result = duplicate_runtime.execute_send(&duplicate_args,
+                || panic!("coalesced result must not dispatch a second turn"),
+                |_| -> Result<PersistedSendContext, ProductionSendError> { panic!("coalesced result must not persist a second echo") },
+            );
+            duplicate_tx.send(result).unwrap();
+        });
+        dispatch_release_tx.send(()).unwrap();
+        let original = first_rx.recv_timeout(Duration::from_secs(10)).unwrap().unwrap();
+        let duplicate_result = duplicate_rx.recv_timeout(Duration::from_secs(10)).unwrap().unwrap();
+        let queued_result = queued_rx.recv_timeout(Duration::from_secs(10)).unwrap().unwrap();
+        first.join().unwrap();
+        duplicate.join().unwrap();
+        queued.join().unwrap();
+        assert_eq!(duplicate_result, original);
+        assert!(!queued_result.duplicate);
+        assert!(runtime.has_routed_turn_lease("agent", "queued"));
+        assert_eq!(runtime.upgrade_resume_agent_ids_checked().unwrap(), vec!["agent"]);
+        let replay = runtime.execute_send(&first_args,
+            || panic!("durable replay must not dispatch"),
+            |_| -> Result<PersistedSendContext, ProductionSendError> { panic!("durable replay must not persist") },
+        ).unwrap();
+        assert_eq!(replay, original);
+        let mut mismatched = first_args.clone();
+        mismatched["prompt"] = json!("different intent");
+        let mismatch = runtime.execute_send(&mismatched,
+            || panic!("mismatched replay must not dispatch"),
+            |_| -> Result<PersistedSendContext, ProductionSendError> { panic!("mismatched replay must not persist") },
+        );
+        assert!(matches!(mismatch, Err(ProductionSendError::Conflict(_))));
+        assert!(runtime.accept_routed_send(&queued_args, |_| Ok(PersistedSendContext::default())).unwrap().duplicate);
+        assert!(runtime.has_routed_turn_lease("agent", "queued"));
+        runtime.settle_routed_turn("agent", "queued", system_now_ms()).unwrap();
+        runtime.resume_after_recreate();
+        assert!(runtime.accept_routed_send(&args("after", "after"), |_| Ok(PersistedSendContext::default())).is_ok());
+        let _ = fs::remove_dir_all(root);
+    }
 }

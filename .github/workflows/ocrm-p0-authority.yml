@@ -1,0 +1,741 @@
+name: OCRM P0 source authority
+
+on:
+  push:
+    branches:
+      - 'codex/openclaw-rust-fusion-chat-20261101-writer'
+    paths:
+      - '.github/workflows/ocrm-p0-authority.yml'
+      - '.github/workflows/rust-desktop-runtime.yml'
+      - 'projects/openclaw-rust/**'
+      - 'source/host/**'
+  pull_request:
+    paths:
+      - '.github/workflows/ocrm-p0-authority.yml'
+      - 'projects/openclaw-rust/**'
+  workflow_dispatch:
+    inputs:
+      expected_subject:
+        description: 'Optional frozen full SHA; reject a moved dispatch ref'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  source-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UPSTREAM_REPO: openclaw/openclaw
+      SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EXPECTED_DISPATCH_SHA: ${{ inputs.expected_subject || '' }}
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - name: Verify checked-out subject and lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          subject="$(git rev-parse HEAD)"
+          expected="${{ github.event.pull_request.head.sha || github.sha }}"
+          test "$subject" = "$expected"
+          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
+            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test "$subject" = "$EXPECTED_DISPATCH_SHA" || { echo "Dispatch ref moved away from frozen subject"; exit 1; }
+          fi
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          lock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          assert lock["upstream"]["repository"] == "openclaw/openclaw"
+          # Fixed U is independent of later discovery candidates. Structural
+          # authority may run with acceptance pending; final acceptance remains
+          # gated by validate_p0.py --final-ac02. Never rebind declarations here.
+          identity={k: lock["upstream"][k] for k in ("repository", "commit", "tree")}
+          for name in ("inventory/index.json", "parity-ledger.json", "requirements-traceability-matrix.json"):
+              document=json.loads((Path("projects/openclaw-rust") / name).read_text())
+              assert {k: document["upstream"][k] for k in identity} == identity, "fixed source declaration drift: " + name
+          assert lock["closure"]["source_closure_ready"] is False
+          idx=json.loads(Path("projects/openclaw-rust/inventory/index.json").read_text())
+          assert idx["authority"]["source_closure_ready"] is False
+          assert idx["inventory"]["omitted_known"] == 0
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write(f"UPSTREAM_COMMIT={lock['upstream']['commit']}\n")
+              env.write(f"UPSTREAM_TREE={lock['upstream']['tree']}\n")
+          PY
+
+      - name: Exercise risk review contract and fail-closed counterexamples
+        run: python3 projects/openclaw-rust/scripts/test_source_review.py
+
+      - name: Acquire exact upstream and verify identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init upstream
+          git -C upstream remote add origin "https://github.com/$UPSTREAM_REPO.git"
+          git -C upstream fetch --depth=1 origin "$UPSTREAM_COMMIT"
+          git -C upstream checkout --detach FETCH_HEAD
+          test "$(git -C upstream rev-parse HEAD)" = "$UPSTREAM_COMMIT"
+          test "$(git -C upstream rev-parse HEAD^{tree})" = "$UPSTREAM_TREE"
+
+      - name: Generate recursive tracked-source inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ocrm-evidence
+          git -C upstream ls-tree -r -z --full-tree "$UPSTREAM_COMMIT" > ocrm-evidence/ls-tree.z
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          raw=Path("ocrm-evidence/ls-tree.z").read_bytes()
+          entries=[]
+          counts={"tracked_entries_total":0,"blob_entries_total":0,"symlink_entries_total":0,"gitlink_entries_total":0}
+          for rec in raw.split(b"\0"):
+            if not rec:
+              continue
+            meta,path=rec.split(b"\t",1)
+            mode,kind,sha=meta.decode().split(" ")
+            p=path.decode("utf-8","surrogateescape")
+            if mode == "160000":
+              cls="gitlink"; counts["gitlink_entries_total"]+=1
+            elif mode == "120000":
+              cls="symlink"; counts["symlink_entries_total"]+=1
+            else:
+              cls="blob"; counts["blob_entries_total"]+=1
+            counts["tracked_entries_total"]+=1
+            entries.append({"path":p,"mode":mode,"git_type":kind,"sha":sha,"entry_kind":cls,"read_status":"unread","responsibility_status":"unclassified"})
+          payload={
+            "format_version":1,
+            "project_id":"OCRM-001",
+            "upstream":{"repository":os.environ["UPSTREAM_REPO"],"commit":os.environ["UPSTREAM_COMMIT"],"tree":os.environ["UPSTREAM_TREE"]},
+            "counts":counts,
+            "entries":entries
+          }
+          out=Path("ocrm-evidence/upstream-recursive-inventory.json")
+          out.write_text(json.dumps(payload,ensure_ascii=False,sort_keys=True,separators=(",",":"))+"\n")
+          Path("ocrm-evidence/upstream-recursive-inventory.sha256").write_text(hashlib.sha256(out.read_bytes()).hexdigest()+"\n")
+          Path("ocrm-evidence/authority-summary.json").write_text(json.dumps({
+            "subject_commit":os.environ["SUBJECT_SHA"],
+            "upstream_commit":payload["upstream"]["commit"],
+            "upstream_tree":payload["upstream"]["tree"],
+            **counts,
+            "source_closure_ready":False,
+            "reason":"Tracked source enumeration is established; dependency/LFS/semantic responsibility closure remains open."
+          },sort_keys=True,indent=2)+"\n")
+          PY
+
+      - name: Scan LFS pointer candidates without claiming closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -RIl --exclude-dir=.git '^version https://git-lfs.github.com/spec/v1$' upstream > ocrm-evidence/lfs-pointer-candidates.txt || true
+          wc -l < ocrm-evidence/lfs-pointer-candidates.txt | tr -d ' ' > ocrm-evidence/lfs-pointer-candidates.count
+
+      - name: Record dependency authority inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            for f in package.json pnpm-lock.yaml pnpm-workspace.yaml package-lock.json yarn.lock bun.lock bun.lockb Cargo.toml Cargo.lock requirements.txt pyproject.toml go.mod go.sum Gemfile Gemfile.lock; do
+              if [ -e "upstream/$f" ]; then
+                printf '%s\t' "$f"
+                git -C upstream hash-object "$f"
+              fi
+            done
+          } > ocrm-evidence/dependency-root-inputs.tsv
+
+      - name: Expand canonical source records and verify P0 G01/G02 structural
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --disable-pip-version-check --no-input 'jsonschema==4.25.1'
+          python3 projects/openclaw-rust/scripts/test_inventory_materialization.py
+          # Refuse malformed committed history before any generated write.
+          python3 projects/openclaw-rust/scripts/verify_audit_integrity.py --before-expansion
+          python3 projects/openclaw-rust/scripts/expand_inventory.py ocrm-evidence/upstream-recursive-inventory.json
+          # Rebuild the source-derived shard manifest against this exact inventory
+          # after canonical ledger reconciliation, then let validate_p0.py verify it.
+          python3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json
+          python3 projects/openclaw-rust/scripts/validate_p0.py ocrm-evidence --negative-probes
+          python3 projects/openclaw-rust/scripts/verify_audit_integrity.py
+
+      - name: Upload immutable authority evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-p0-authority-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ocrm-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+  persist-verified-inventory:
+    # P0 source-derived files only; never overwrite a moved PR head.
+    needs: source-authority
+    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence-v2]')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout guarded original subject
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+
+      - name: Download this exact-subject verified canonical manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: ocrm-p0-authority-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ocrm-evidence
+
+      - name: Materialize deterministic shards and dependency declarations in Actions
+        shell: bash
+        env:
+          EXPECTED_SUBJECT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SUBJECT"
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path("ocrm-evidence")
+          summary=json.loads((root/"authority-summary.json").read_text())
+          receipt=json.loads((root/"p0-structural-receipt.json").read_text())
+          assert summary["subject_commit"] == receipt["subject_commit"] == os.environ["EXPECTED_SUBJECT"]
+          assert receipt["gate_verdicts"]["OCRM-G01-tracked-tree"] == "success"
+          assert receipt["gate_verdicts"]["OCRM-G02-structural"] == "success"
+          raw=(root/"upstream-recursive-inventory.json").read_bytes()
+          expected=(root/"upstream-recursive-inventory.sha256").read_text().strip()
+          assert hashlib.sha256(raw).hexdigest() == expected == summary["canonical_inventory_sha256"]
+          assert summary["canonical_file_records"] == summary["tracked_entries_total"]
+          assert summary["canonical_file_records"] > 0
+          PY
+          python3 projects/openclaw-rust/scripts/shard_inventory.py --write ocrm-evidence/upstream-recursive-inventory.json
+
+      - name: CAS commit derived source shards to the existing branch (non-force)
+        id: persist
+        shell: bash
+        env:
+          EXPECTED_SUBJECT: ${{ github.event.pull_request.head.sha || github.sha }}
+          EXPECTED_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        run: |
+          set -euo pipefail
+          test -n "$EXPECTED_HEAD_REF"
+          git check-ref-format "refs/heads/$EXPECTED_HEAD_REF"
+          git add projects/openclaw-rust/inventory/index.json \
+                  projects/openclaw-rust/inventory/shards \
+                  projects/openclaw-rust/dependencies/source-manifest-inputs.json \
+                  projects/openclaw-rust/parity-ledger.json \
+                  projects/openclaw-rust/requirements-traceability-matrix.json
+          if git diff --cached --quiet; then
+            echo "No new source-derived shard content"
+            echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            echo "materialized=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          branch="$EXPECTED_HEAD_REF"
+          current="$(git ls-remote origin "refs/heads/$branch" | cut -f1)"
+          test "$current" = "$EXPECTED_SUBJECT" || { echo "PR lease moved: refusing derived snapshot write"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(ocrm): persist locked canonical inventory shards and manifest inputs"
+          git push origin "HEAD:refs/heads/$branch"
+          echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "materialized=true" >> "$GITHUB_OUTPUT"
+          echo "Committed source-derived shard snapshot; new commit requires its own exact-head Actions receipt"
+
+      - name: Dispatch scoped checks for the resulting exact branch head
+        # The ordinary push already starts Rust checks for an unchanged H.
+        # GITHUB_TOKEN-derived commits need their own explicit dispatch.
+        if: ${{ steps.persist.outputs.materialized == 'true' && (github.event.pull_request.head.ref || github.ref_name) == 'codex/openclaw-rust-fusion-chat-20261101-writer' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_HEAD_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          RESULT_HEAD: ${{ steps.persist.outputs.head }}
+          MATERIALIZED: ${{ steps.persist.outputs.materialized }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin "refs/heads/$EXPECTED_HEAD_REF" | cut -f1)" = "$RESULT_HEAD"
+          python3 - <<'PY'
+          import json, os, urllib.request
+          repository=os.environ["GITHUB_REPOSITORY"]
+          branch=os.environ["EXPECTED_HEAD_REF"]
+          workflows=[("rust-desktop-runtime.yml", {"validation_scope": "ocrm-config", "expected_subject": os.environ["RESULT_HEAD"]})]
+          if os.environ["MATERIALIZED"] == "true":
+              # A generated commit is a new subject, not evidence for its parent.
+              workflows.insert(0, ("ocrm-p0-authority.yml", {"expected_subject": os.environ["RESULT_HEAD"]}))
+          for workflow, inputs in workflows:
+              request=urllib.request.Request(
+                  f"https://api.github.com/repos/{repository}/actions/workflows/{workflow}/dispatches",
+                  data=json.dumps({"ref": branch, "inputs": inputs}).encode(),
+                  headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                           "Accept": "application/vnd.github+json",
+                           "X-GitHub-Api-Version": "2022-11-28"}, method="POST")
+              with urllib.request.urlopen(request) as response:
+                  assert response.status == 204
+              print(f"Requested {workflow}; its first guard must match subject {os.environ['RESULT_HEAD']}")
+          PY
+
+  recover-original-host-log:
+    # Finish original 563 evidence; do not repeat the completed 812 collection.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence-v2]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Recover identity-bound original Host commands and outcomes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, io, json, os, re, stat, sys, urllib.error, urllib.parse, urllib.request, warnings, zipfile
+          from pathlib import Path, PurePosixPath
+          
+          repository = "bhrumom/fabushi-desktop"
+          subject = "56386a66a1f2944545cee35b58d10cb085e3c292"
+          subject_tree = "86f8fded50a54fc60b8f3a5d69af3af735e6c12a"
+          source_run, source_attempt, source_job = 41498228438, 1, 125459002378
+          upstream = {"repository": "openclaw/openclaw", "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+                      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"}
+          base = f"https://api.github.com/repos/{repository}"
+          evidence = Path(os.environ["RUNNER_TEMP"]) / "ocrm-original-host-log"
+          evidence.mkdir(parents=True, exist_ok=False)
+          stage = "instrument_controls"
+          workflow_path = ".github/workflows/rust-desktop-runtime.yml"
+          lock_path = "projects/openclaw-rust/upstream.lock.json"
+          runtime_root = "source/mahayana/mahayana-rs"
+          input_paths = {
+              "recovery": {workflow_path, lock_path, "source/host/Cargo.toml", "source/host/Cargo.lock"},
+              "native": {workflow_path, lock_path, f"{runtime_root}/Cargo.toml", f"{runtime_root}/Cargo.lock",
+                         f"{runtime_root}/mahayana-runtime/Cargo.toml",
+                         *[f"{runtime_root}/mahayana-runtime/src/{name}.rs" for name in
+                           ("lib", "conversation_actor", "runtime_store", "dispatch_admission_tests", "acceptance_admission_tests")]},
+          }
+          artifacts = [
+              {"label": "recovery", "id": 13167684148, "size": 877191,
+               "sha256": "ee0c70b19203bd452d25510da83f4b7dd686968afd3b468cc13061e155d8c583",
+               "name": f"ocrm-recovery-commands-{subject}-{source_run}-{source_attempt}",
+               "kind": "ocrm-recovery-command-diagnostics",
+               "upload_step": "Preserve exact-subject Recovery command diagnostics"},
+              {"label": "native", "id": 13169190332, "size": 3605,
+               "sha256": "6fe5f43e03285d5516089e214bbc76510c914f7cad9b84f570e1913db7ae19f9",
+               "name": f"ocrm-native-runtime-{subject}-{source_run}-{source_attempt}",
+               "kind": "ocrm-native-runtime-command-diagnostics",
+               "upload_step": "Preserve exact-subject native Runtime diagnostics"},
+          ]
+          
+          class CollectionRefusal(Exception):
+              pass
+          
+          def require(condition, code):
+              if not condition:
+                  raise CollectionRefusal(code)
+          
+          def unique_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  require(key not in result, "duplicate_json_member")
+                  result[key] = value
+              return result
+          
+          def decode_json(body):
+              return json.loads(body, object_pairs_hook=unique_object)
+          
+          def save_json(name, value):
+              (evidence / name).write_text(json.dumps(value, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+          
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, request, fp, code, msg, headers, newurl):
+                  return None
+          
+          opener = urllib.request.build_opener(NoRedirect())
+          redirects = {301, 302, 303, 307, 308}
+          
+          def read_response(url, authenticated=False, limit=100 * 1024 * 1024):
+              parsed = urllib.parse.urlsplit(url)
+              require(parsed.scheme == "https" and parsed.username is None and parsed.password is None
+                      and parsed.port in (None, 443), "invalid_transport")
+              require(not authenticated or parsed.hostname == "api.github.com", "invalid_credential_destination")
+              headers = {"Accept-Encoding": "identity", "User-Agent": "ocrm-exact-job-log-recovery"}
+              if authenticated:
+                  headers.update({"Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                                  "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"})
+              request = urllib.request.Request(url, headers=headers)
+              try:
+                  response = opener.open(request, timeout=60)
+              except urllib.error.HTTPError as error:
+                  if error.code not in redirects:
+                      raise
+                  location = error.headers.get("Location")
+                  error.close()
+                  return error.code, location, b""
+              with response:
+                  require(response.status == 200 and not response.headers.get("Content-Range"), "incomplete_response")
+                  require(response.headers.get("Content-Encoding", "identity") == "identity", "unexpected_encoding")
+                  declared = response.headers.get("Content-Length")
+                  require(declared is None or 0 <= int(declared) <= limit, "body_size_limit")
+                  body = response.read(limit + 1)
+                  require(len(body) <= limit and (declared is None or len(body) == int(declared)), "body_size_mismatch")
+                  return response.status, None, body
+          
+          def api_json(path):
+              status, location, body = read_response(base + path, authenticated=True, limit=2 * 1024 * 1024)
+              require(status == 200 and location is None, "metadata_redirect")
+              return decode_json(body)
+          
+          def download(path, limit):
+              url = base + path
+              for hop in range(6):
+                  # Only the fixed first API request has credentials; redirects never inherit them.
+                  status, location, body = read_response(url, authenticated=(hop == 0), limit=limit)
+                  if status == 200:
+                      require(bool(body), "empty_download")
+                      return body
+                  require(bool(location) and hop < 5, "redirect_limit")
+                  url = urllib.parse.urljoin(url, location)
+                  host = urllib.parse.urlsplit(url).hostname or ""
+                  require(host.endswith(".blob.core.windows.net") or host.endswith(".actions.githubusercontent.com"),
+                          "unapproved_download_host")
+              raise CollectionRefusal("redirect_limit")
+          
+          def read_archive(raw):
+              with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                  entries = archive.infolist()
+                  require(0 < len(entries) <= 512, "archive_member_count")
+                  names, total = set(), 0
+                  for entry in entries:
+                      name = entry.filename
+                      path = PurePosixPath(name)
+                      require(bool(name) and "\\" not in name and ":" not in name and "\0" not in name and not path.is_absolute()
+                              and all(part not in ("", ".", "..") for part in name.rstrip("/").split("/"))
+                              and path.as_posix() == name.rstrip("/"), "archive_member_path")
+                      require(path.as_posix() not in names, "duplicate_archive_member")
+                      names.add(path.as_posix())
+                      mode = entry.external_attr >> 16
+                      require(stat.S_IFMT(mode) in (0, stat.S_IFREG, stat.S_IFDIR) and not stat.S_ISLNK(mode),
+                              "archive_member_type")
+                      require(not entry.flag_bits & 1 and entry.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED),
+                              "archive_member_encoding")
+                      require(0 <= entry.file_size <= 16 * 1024 * 1024, "archive_member_size")
+                      total += entry.file_size
+                  require(total <= 64 * 1024 * 1024, "archive_expanded_size")
+                  result = {}
+                  for entry in entries:
+                      if entry.is_dir():
+                          continue
+                      with archive.open(entry) as member:
+                          body = member.read(16 * 1024 * 1024 + 1)
+                      require(len(body) == entry.file_size and len(body) <= 16 * 1024 * 1024, "archive_actual_size")
+                      result[entry.filename] = body
+                  return result
+          
+          def validate_subject(receipt, kind, paths):
+              require(receipt.get("kind") == kind and "verification_verdict" in receipt
+                      and receipt["verification_verdict"] is None
+                      and receipt.get("subject_commit") == subject and receipt.get("subject_tree") == subject_tree
+                      and receipt.get("upstream") == upstream and receipt.get("run_id") == str(source_run)
+                      and receipt.get("run_attempt") == str(source_attempt) and receipt.get("runner_os") == "macOS",
+                      "subject_identity_mismatch")
+              inputs = receipt.get("inputs_sha256")
+              require(isinstance(inputs, dict) and set(inputs) == paths
+                      and all(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) for value in inputs.values()),
+                      "subject_inputs_mismatch")
+          
+          def member_text(members, name):
+              require(name in members and bool(members[name]), "missing_requested_member")
+              return members[name].decode("utf-8")
+          
+          def exit_value(text):
+              require(re.fullmatch(r"(0|[1-9][0-9]{0,2})\n?", text) is not None, "invalid_exit_record")
+              value = int(text)
+              require(value <= 255, "invalid_exit_record")
+              return value
+          
+          def upload_identity_present(lines, artifact):
+              artifact_id = re.compile(r"\bArtifact ID(?::| is)?[ \t]+" + str(artifact["id"]) + r"\b")
+              digest = re.compile(r"(?<![0-9a-fA-F])" + re.escape(artifact["sha256"]) + r"(?![0-9a-fA-F])")
+              return (any(artifact_id.search(line) for line in lines)
+                      and any(digest.search(line) for line in lines))
+
+          def encode_record(record):
+              # Actions also recognizes legacy commands inside a JSON string.
+              # Unicode escapes preserve the value while denying command syntax.
+              return json.dumps(record, ensure_ascii=True, sort_keys=True).replace(
+                  "##[", r"\u0023\u0023[").replace("::", r"\u003a\u003a")
+
+          def terminal_text(line):
+              return re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", line)
+
+          def is_harness_line(line):
+              return re.match(r"^\s*(?:Running |running \d+ tests?\b|test .+ \.\.\. |test result:)",
+                              terminal_text(line)) is not None
+
+          records, output_bytes = [], 0
+          def emit(record):
+              global output_bytes
+              record = {"collection_state": "partial", "source_subject": subject,
+                        "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
+                        "carrier_commit": os.environ["GITHUB_SHA"], "product_validation_executed_by_carrier": False,
+                        **record}
+              encoded = encode_record(record)
+              output_bytes += len(("OCRM_EVIDENCE " + encoded + "\n").encode("utf-8"))
+              require(len(records) < 12000 and output_bytes <= 2 * 1024 * 1024, "outcome_output_limit")
+              records.append(encoded)
+              # Keep validated partial evidence readable even if a later source refuses.
+              with (evidence / "outcomes.jsonl").open("a", encoding="utf-8") as output:
+                  output.write(encoded + "\n")
+              print("OCRM_EVIDENCE " + encoded, flush=True)
+          
+          input_cache = {}
+          def source_input(path):
+              require(path in input_paths["recovery"] | input_paths["native"], "unapproved_source_input")
+              if path not in input_cache:
+                  metadata = api_json(f"/contents/{urllib.parse.quote(path, safe='/')}?ref={subject}")
+                  require(metadata.get("type") == "file" and metadata.get("path") == path
+                          and metadata.get("encoding") == "base64", "source_file_identity")
+                  body = base64.b64decode("".join(metadata["content"].split()), validate=True)
+                  blob = hashlib.sha1(f"blob {len(body)}\0".encode() + body).hexdigest()
+                  require(metadata.get("size") == len(body) and metadata.get("sha") == blob, "source_blob_mismatch")
+                  input_cache[path] = (body, blob, hashlib.sha256(body).hexdigest())
+              return input_cache[path]
+          
+          def expected_loop_names(workflow, variable, prefix):
+              marker = f"for {variable} in \\\n"
+              require(workflow.count(marker) == 1, "frozen_command_loop")
+              body = workflow.split(marker, 1)[1].split("; do\n", 1)[0]
+              names = [line.strip().removesuffix("\\").strip() for line in body.splitlines()]
+              require(bool(names) and all(re.fullmatch(r"[A-Za-z_][A-Za-z_0-9]*(?:::[A-Za-z_][A-Za-z_0-9]*)*", name)
+                                         for name in names), "frozen_command_loop")
+              return {prefix + name.replace("::", "_") for name in names}
+          
+          def command_outcomes(label, members, command_name, log_name, exit_file, exit_line, status):
+              command = member_text(members, command_name)
+              log = member_text(members, log_name)
+              emit({"kind": "command", "artifact": label, "file": command_name, "line": 1, "command": command.rstrip("\n"),
+                    "exit_file": exit_file, "exit_line": exit_line, "exit_code": status})
+              summaries = 0
+              for number, line in enumerate(log.splitlines(), 1):
+                  if is_harness_line(line):
+                      emit({"kind": "raw-harness", "artifact": label, "file": log_name, "line": number, "text": line})
+                  if terminal_text(line).lstrip().startswith("test result:"):
+                      summaries += 1
+              if status == 0 and command.startswith("cargo test ") and "--no-run" not in command:
+                  require(summaries > 0, "missing_successful_test_summary")
+          
+          try:
+              # These controls exercise the collector only, never a product command.
+              valid = {"kind": artifacts[0]["kind"], "verification_verdict": None, "subject_commit": subject,
+                       "subject_tree": subject_tree, "upstream": upstream, "run_id": str(source_run),
+                       "run_attempt": str(source_attempt), "runner_os": "macOS",
+                       "inputs_sha256": {path: "0" * 64 for path in input_paths["recovery"]}}
+              validate_subject(valid, artifacts[0]["kind"], input_paths["recovery"])
+              controls = []
+              for field, wrong in (("subject_commit", "0" * 40), ("run_attempt", "2")):
+                  try:
+                      validate_subject({**valid, field: wrong}, artifacts[0]["kind"], input_paths["recovery"])
+                  except CollectionRefusal as error:
+                      require(error.args == ("subject_identity_mismatch",), "wrong_control_refusal")
+                      controls.append({"control": field, "result": "rejected"})
+                  else:
+                      raise CollectionRefusal("accepted_identity_control")
+              for names, reason in ((["../subject.json"], "archive_member_path"),
+                                    (["subject.json", "subject.json"], "duplicate_archive_member")):
+                  fixture = io.BytesIO()
+                  with warnings.catch_warnings():
+                      warnings.simplefilter("ignore", UserWarning)
+                      with zipfile.ZipFile(fixture, "w") as archive:
+                          for name in names:
+                              archive.writestr(name, b"{}")
+                  try:
+                      read_archive(fixture.getvalue())
+                  except CollectionRefusal as error:
+                      require(error.args == (reason,), "wrong_control_refusal")
+                      controls.append({"control": reason, "result": "rejected"})
+                  else:
+                      raise CollectionRefusal("accepted_archive_control")
+              fixture_artifact = {"id": 123, "sha256": "a" * 64}
+              for separator in (": ", " ", " is "):
+                  require(upload_identity_present(
+                      [f"Artifact ID{separator}123", "digest " + fixture_artifact["sha256"]],
+                      fixture_artifact), "valid_upload_format_refused")
+                  controls.append({"control": "upload_id_format_" + repr(separator), "result": "accepted"})
+              for label, lines in (
+                      ("wrong_id", ["Artifact ID 124", "digest " + "a" * 64]),
+                      ("id_prefix", ["Artifact ID 1234", "digest " + "a" * 64]),
+                      ("wrong_digest", ["Artifact ID 123", "digest " + "b" * 64]),
+                      ("digest_prefix", ["Artifact ID 123", "digest " + "a" * 65]),
+                      ("missing_id", ["digest " + "a" * 64]),
+                      ("missing_digest", ["Artifact ID 123"])):
+                  require(not upload_identity_present(lines, fixture_artifact), "invalid_upload_identity_accepted")
+                  controls.append({"control": "upload_" + label, "result": "rejected"})
+              # This literal canary must survive the actual Actions stdout path.
+              canary = {"legacy": "##[error]fixture", "modern": "::error::fixture"}
+              encoded_canary = encode_record(canary)
+              require(decode_json(encoded_canary) == canary and "##[" not in encoded_canary
+                      and "::" not in encoded_canary, "workflow_command_encoding_control")
+              controls.append({"control": "workflow_command_round_trip", "result": "accepted", "canary": canary})
+              colored_target = "\x1b[1m\x1b[32m     Running\x1b[0m tests/gateway_server_contract.rs (target/debug/deps/gateway_server_contract-fixture)"
+              require(is_harness_line(colored_target), "colored_harness_target_control")
+              controls.append({"control": "colored_harness_target", "result": "accepted"})
+              require(not is_harness_line("   Compiling mahayana_host_runtime v0.1.0"),
+                      "non_harness_line_control")
+              controls.append({"control": "non_harness_line", "result": "rejected"})
+              save_json("instrument-controls.json", controls)
+              emit({"kind": "instrument-controls", "controls": controls, "product_tests": False})
+          
+              stage = "source_metadata"
+              run = api_json(f"/actions/runs/{source_run}/attempts/{source_attempt}")
+              job = api_json(f"/actions/jobs/{source_job}")
+              commit = api_json(f"/git/commits/{subject}")
+              for name, value in (("source-run.json", run), ("source-job.json", job), ("source-commit.json", commit)):
+                  save_json(name, value)
+              require(run["repository"]["full_name"] == repository and run["id"] == source_run
+                      and run["run_attempt"] == source_attempt and run["head_sha"] == subject
+                      and run["path"] == workflow_path and run["status"] == "completed" and run["conclusion"] == "failure"
+                      and job["id"] == source_job and job["run_id"] == source_run
+                      and job["run_attempt"] == source_attempt and job["head_sha"] == subject
+                      and job["name"] == "rust-host" and job["status"] == "completed" and job["conclusion"] == "failure"
+                      and job["run_url"] == f"{base}/actions/runs/{source_run}"
+                      and commit["sha"] == subject and commit["tree"]["sha"] == subject_tree
+                      and os.environ["GITHUB_REPOSITORY"] == repository, "source_identity_mismatch")
+          
+              stage = "original_log_download"
+              raw_log = download(f"/actions/jobs/{source_job}/logs", 100 * 1024 * 1024)
+              (evidence / f"host-{source_job}.log").write_bytes(raw_log)
+              host_lines = raw_log.decode("utf-8").splitlines()
+              transport = {
+                  "kind": "original-host-log-transport", "repository": repository,
+                  "source_subject": subject, "source_tree": subject_tree,
+                  "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
+                  "source_conclusion": "failure", "source_job_name": "rust-host",
+                  "carrier_commit": os.environ["GITHUB_SHA"], "carrier_run": int(os.environ["GITHUB_RUN_ID"]),
+                  "carrier_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+                  "product_validation_executed_by_carrier": False,
+                  "log_sha256": hashlib.sha256(raw_log).hexdigest(),
+                  "log_bytes": len(raw_log), "log_lines": len(host_lines),
+                  "log_collection_complete": True, "archive_collection_complete": False,
+              }
+              save_json("original-log-transport-receipt.json", transport)
+              emit(transport)
+
+              stage = "original_failure_context"
+              selected = set()
+              for number, line in enumerate(host_lines):
+                  if re.search(r"(?:panicked at|has overflowed its stack|fatal runtime error|assertion .*failed|error: test failed|Process completed with exit code|checkpoint child token=|original Responses producer_pid=|original Responses cleanup outcome=|late original Responses outcome=)", line):
+                      selected.update(range(max(0, number - 2), min(len(host_lines), number + 9)))
+              require(bool(selected), "missing_original_failure_context")
+              for number in sorted(selected):
+                  emit({"kind": "original-failure-context", "file": f"host-{source_job}.log",
+                        "line": number + 1, "text": host_lines[number]})
+          
+              # Archive reconciliation cannot suppress the bound original failure above.
+              archive_receipts = []
+              for artifact in artifacts:
+                  label = artifact["label"]
+                  stage = f"{label}_artifact_identity"
+                  metadata = api_json(f"/actions/artifacts/{artifact['id']}")
+                  save_json(f"{label}-artifact.json", metadata)
+                  require(metadata["id"] == artifact["id"] and metadata["name"] == artifact["name"]
+                          and metadata["expired"] is False and metadata["size_in_bytes"] == artifact["size"]
+                          and metadata["digest"] == "sha256:" + artifact["sha256"]
+                          and metadata["workflow_run"]["id"] == source_run
+                          and metadata["workflow_run"]["head_sha"] == subject, "artifact_identity_mismatch")
+                  upload_steps = [step for step in job["steps"] if step["name"] == artifact["upload_step"]]
+                  require(len(upload_steps) == 1 and upload_steps[0]["status"] == "completed"
+                          and upload_steps[0]["conclusion"] == "success", "source_upload_incomplete")
+                  require(upload_identity_present(host_lines, artifact), "source_upload_identity_missing")
+                  stage = f"{label}_archive"
+                  raw = download(f"/actions/artifacts/{artifact['id']}/zip", artifact["size"])
+                  require(len(raw) == artifact["size"] and hashlib.sha256(raw).hexdigest() == artifact["sha256"],
+                          "archive_digest_mismatch")
+                  (evidence / f"{label}-{artifact['id']}.zip").write_bytes(raw)
+                  members = read_archive(raw)
+                  receipt = decode_json(member_text(members, "subject.json"))
+                  validate_subject(receipt, artifact["kind"], input_paths[label])
+                  identities = {}
+                  stage = f"{label}_source_inputs"
+                  for path, expected in receipt["inputs_sha256"].items():
+                      body, blob, digest = source_input(path)
+                      require(digest == expected, "source_input_digest_mismatch")
+                      identities[path] = {"git_blob": blob, "sha256": digest, "bytes": len(body)}
+                  fixed_lock = decode_json(source_input(lock_path)[0])
+                  require({key: fixed_lock["upstream"][key] for key in upstream} == upstream, "source_upstream_mismatch")
+                  save_json(f"{label}-validated-inputs.json", identities)
+                  emit({"kind": "source-artifact", "artifact": label, "source_subject": subject, "source_tree": subject_tree,
+                        "run": source_run, "attempt": source_attempt, "job": source_job, "artifact_id": artifact["id"],
+                        "sha256": artifact["sha256"], "bytes": len(raw), "subject": receipt, "validated_inputs": identities})
+                  stage = f"{label}_command_records"
+                  if label == "recovery":
+                      table = member_text(members, "command-exit-codes.tsv")
+                      commands = {}
+                      for number, line in enumerate(table.splitlines(), 1):
+                          cells = line.split("\t")
+                          require(len(cells) == 2 and re.fullmatch(r"[A-Za-z0-9_-]+", cells[0]) is not None
+                                  and cells[0] not in commands, "invalid_command_table")
+                          commands[cells[0]] = (number, exit_value(cells[1]))
+                      workflow = source_input(workflow_path)[0].decode("utf-8")
+                      expected = {"settings-inference", "app-startup-admission", "feature-graph", "integration-contracts", "library-build"}
+                      expected |= expected_loop_names(workflow, "admission_test", "app-")
+                      expected |= expected_loop_names(workflow, "recovery_filter", "lib-")
+                      require(set(commands) == expected, "incomplete_command_table")
+                      for name, (number, status) in commands.items():
+                          command_outcomes(label, members, f"{name}.command.txt", f"{name}.log",
+                                           "command-exit-codes.tsv", number, status)
+                      step_status = exit_value(member_text(members, "step-exit-code.txt"))
+                      require(step_status == 1, "original_recovery_step_mismatch")
+                  else:
+                      status = exit_value(member_text(members, "command-exit-code.txt"))
+                      step_status = exit_value(member_text(members, "step-exit-code.txt"))
+                      require(status == 0 and step_status == status, "original_native_step_mismatch")
+                      command_outcomes(label, members, "command.txt", "native-runtime.log", "command-exit-code.txt", 1, status)
+                  emit({"kind": "step-exit", "artifact": label, "file": "step-exit-code.txt", "line": 1, "exit_code": step_status})
+                  archive_receipts.append({"artifact_id": artifact["id"], "name": artifact["name"], "sha256": artifact["sha256"],
+                                           "bytes": len(raw), "validated_inputs": identities})
+          
+              stage = "evidence_receipt"
+              result = {"repository": repository, "source_subject": subject, "source_tree": subject_tree,
+                        "source_run": source_run, "source_attempt": source_attempt, "source_job": source_job,
+                        "source_conclusion": "failure", "source_job_name": "rust-host",
+                        "carrier_commit": os.environ["GITHUB_SHA"], "carrier_run": int(os.environ["GITHUB_RUN_ID"]),
+                        "carrier_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]), "product_validation_executed_by_carrier": False,
+                        "log_sha256": hashlib.sha256(raw_log).hexdigest(), "log_bytes": len(raw_log), "log_lines": len(host_lines),
+                        "artifacts": archive_receipts, "outcome_records": len(records), "outcome_bytes": output_bytes,
+                        "outcome_complete": True, "retention_days": 7}
+              result_line = json.dumps(result, sort_keys=True)
+              require(len(records) + 1 <= 12000 and output_bytes + len(("OCRM_COLLECTION " + result_line + "\n").encode("utf-8")) <= 2 * 1024 * 1024,
+                      "outcome_output_limit")
+              save_json("recovered-log-receipt.json", result)
+              print("OCRM_COLLECTION " + result_line)
+          except Exception as error:
+              # Never stringify an exception that could contain a token, signed URL or payload.
+              failure = {"source_subject": subject, "source_run": source_run, "source_attempt": source_attempt,
+                         "source_job": source_job, "carrier_commit": os.environ["GITHUB_SHA"],
+                         "carrier_run": int(os.environ["GITHUB_RUN_ID"]), "stage": stage,
+                         "error_type": type(error).__name__, "http_status": getattr(error, "code", None),
+                         "refusal_code": error.args[0] if isinstance(error, CollectionRefusal) else None,
+                         "product_validation_executed_by_carrier": False}
+              save_json("collection-failure.json", failure)
+              print("OCRM_COLLECTION_FAILURE " + json.dumps(failure, sort_keys=True), file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: Upload original-job evidence without changing its failed verdict
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-original-host-log-56386a66a1f2944545cee35b58d10cb085e3c292-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ocrm-original-host-log/
+          if-no-files-found: error
+          retention-days: 7

@@ -48,6 +48,7 @@ pub const SAND_NO_LOCAL_MACHINE_MESSAGE: &str =
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SandLocalToolScope {
     pub agent_id: String,
+    pub session_key: Option<String>,
     pub tool_call_id: Option<String>,
     pub action: Option<String>,
     pub direction_epoch: Option<u64>,
@@ -97,6 +98,7 @@ pub enum SandLocalToolRequestStatus {
 pub struct SandLocalToolAskRequest {
     pub id: String,
     pub agent_id: String,
+    pub session_key: Option<String>,
     pub action: String,
     pub target: String,
     pub status: SandLocalToolRequestStatus,
@@ -516,6 +518,7 @@ impl SandLocalToolPermissionController {
                     request: Mutex::new(SandLocalToolAskRequest {
                         id: id.clone(),
                         agent_id: scope.agent_id.clone(),
+                        session_key: scope.session_key.clone(),
                         action: request.action.clone(),
                         target: request.target.clone(),
                         status: SandLocalToolRequestStatus::Pending,
@@ -563,6 +566,7 @@ impl SandLocalToolPermissionController {
     ) -> SandLocalToolDecision {
         let scope = SandLocalToolScope {
             agent_id: agent_id.to_string(),
+            session_key: None,
             tool_call_id: Some(tool_call_id.to_string()),
             action: Some("run-command".into()),
             direction_epoch: Some(self.direction_epoch(agent_id)),

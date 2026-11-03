@@ -32,6 +32,13 @@ mod unix {
         stdin.flush().expect("flush carrier envelope");
     }
 
+    #[derive(Debug, Clone)]
+    struct GatewayApiRequest {
+        http_method: String,
+        path: String,
+        body: Option<Vec<u8>>,
+    }
+
     struct FakeGateway {
         address: std::net::SocketAddr,
         token: String,
@@ -39,6 +46,7 @@ mod unix {
         oauth_completion: Arc<Mutex<Option<Value>>>,
         oauth_completion_attempts: Arc<AtomicUsize>,
         webauthn_batches: Arc<Mutex<Vec<Value>>>,
+        api_requests: Arc<Mutex<Vec<GatewayApiRequest>>>,
         stop: Arc<AtomicBool>,
         worker: Option<thread::JoinHandle<()>>,
     }
@@ -61,6 +69,7 @@ mod unix {
             let oauth_completion = Arc::new(Mutex::new(None));
             let oauth_completion_attempts = Arc::new(AtomicUsize::new(0));
             let webauthn_batches = Arc::new(Mutex::new(Vec::new()));
+            let api_requests = Arc::new(Mutex::new(Vec::new()));
             let crash_path = data_dir.join("fake-host-crash");
             let stop = Arc::new(AtomicBool::new(false));
             let worker_stop = Arc::clone(&stop);
@@ -68,8 +77,10 @@ mod unix {
             let worker_oauth_completion = Arc::clone(&oauth_completion);
             let worker_oauth_completion_attempts = Arc::clone(&oauth_completion_attempts);
             let worker_webauthn_batches = Arc::clone(&webauthn_batches);
+            let worker_api_requests = Arc::clone(&api_requests);
             let worker = thread::spawn(move || {
-                while !worker_stop.load(Ordering::Acquire) {
+                let mut handlers = Vec::new();
+                loop {
                     match listener.accept() {
                         Ok((stream, _)) => {
                             let token = worker_token.clone();
@@ -79,7 +90,8 @@ mod unix {
                             let oauth_completion_attempts =
                                 Arc::clone(&worker_oauth_completion_attempts);
                             let webauthn_batches = Arc::clone(&worker_webauthn_batches);
-                            thread::spawn(move || {
+                            let api_requests = Arc::clone(&worker_api_requests);
+                            handlers.push(thread::spawn(move || {
                                 let _ = serve_fake_gateway(
                                     stream,
                                     &token,
@@ -89,10 +101,14 @@ mod unix {
                                     oauth_completion.as_ref(),
                                     oauth_completion_attempts.as_ref(),
                                     webauthn_batches.as_ref(),
+                                    api_requests.as_ref(),
                                 );
-                            });
+                            }));
                         }
                         Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                            if worker_stop.load(Ordering::Acquire) {
+                                break;
+                            }
                             thread::sleep(Duration::from_millis(5));
                         }
                         Err(_) => {
@@ -103,6 +119,12 @@ mod unix {
                         }
                     }
                 }
+                // The test stops its Coordinator before stopping this listener.
+                // Drain the accepted backlog and join every owned exchange so
+                // the final request log cannot miss a delayed or duplicate call.
+                for handler in handlers {
+                    handler.join().expect("fake Host gateway handler panicked");
+                }
             });
             Self {
                 address,
@@ -111,6 +133,7 @@ mod unix {
                 oauth_completion,
                 oauth_completion_attempts,
                 webauthn_batches,
+                api_requests,
                 stop,
                 worker: Some(worker),
             }
@@ -130,6 +153,19 @@ mod unix {
 
         fn oauth_completion_attempts(&self) -> usize {
             self.oauth_completion_attempts.load(Ordering::Acquire)
+        }
+
+        fn api_requests(&self) -> Vec<GatewayApiRequest> {
+            self.api_requests.lock().expect("gateway API requests lock").clone()
+        }
+
+        fn stop_and_join(&mut self) -> thread::Result<()> {
+            let Some(worker) = self.worker.take() else {
+                return Ok(());
+            };
+            self.stop.store(true, Ordering::Release);
+            let _ = TcpStream::connect(self.address);
+            worker.join()
         }
 
         fn wait_for_oauth_completion(&self) -> Value {
@@ -178,11 +214,7 @@ mod unix {
 
     impl Drop for FakeGateway {
         fn drop(&mut self) {
-            self.stop.store(true, Ordering::Release);
-            let _ = TcpStream::connect(self.address);
-            if let Some(worker) = self.worker.take() {
-                let _ = worker.join();
-            }
+            let _ = self.stop_and_join();
         }
     }
 
@@ -195,6 +227,7 @@ mod unix {
         oauth_completion: &Mutex<Option<Value>>,
         oauth_completion_attempts: &AtomicUsize,
         webauthn_batches: &Mutex<Vec<Value>>,
+        api_requests: &Mutex<Vec<GatewayApiRequest>>,
     ) -> io::Result<()> {
         // The fake gateway listener is non-blocking so its accept loop can poll for
         // shutdown. Accepted sockets may inherit that mode on macOS, making the
@@ -227,6 +260,20 @@ mod unix {
         let mut parts = request_line.split_whitespace();
         let method = parts.next().unwrap_or_default().to_string();
         let path = parts.next().unwrap_or_default().to_string();
+        let api_request_index = if path.starts_with("/api/") {
+            let mut requests = api_requests
+                .lock()
+                .map_err(|_| io::Error::other("gateway API requests lock poisoned"))?;
+            let index = requests.len();
+            requests.push(GatewayApiRequest {
+                http_method: method.clone(),
+                path: path.clone(),
+                body: None,
+            });
+            Some(index)
+        } else {
+            None
+        };
         let content_length = headers
             .lines()
             .find_map(|line| {
@@ -253,6 +300,12 @@ mod unix {
         }
         if request.len() < total {
             return write_fake_response(&mut stream, 400, "");
+        }
+        if let Some(index) = api_request_index {
+            api_requests
+                .lock()
+                .map_err(|_| io::Error::other("gateway API requests lock poisoned"))?[index]
+                .body = Some(request[header_end..total].to_vec());
         }
 
         match (method.as_str(), path.as_str()) {
@@ -360,6 +413,87 @@ mod unix {
                 &mut stream,
                 200,
                 r#"{"accepted":true}"#,
+            ),
+            ("POST", "/api/fetchLinkMetadata") => {
+                let args: Value = serde_json::from_slice(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if args["url"] == "https://example.com/refused" {
+                    return write_fake_response(
+                        &mut stream, 400, r#"{"error":"original preview refusal"}"#,
+                    );
+                }
+                write_fake_response(
+                    &mut stream, 200,
+                    r#"{"url":"https://example.com/a?b=1","title":"native preview","future":{"opaque":[null,7]}}"#,
+                )
+            }
+            ("POST", "/api/uninstallMcpPlugin") => {
+                let args: Value = serde_json::from_slice(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if args["pluginId"] == "policy-refused" {
+                    return write_fake_response(
+                        &mut stream, 400, r#"{"error":"original MCP uninstall refusal"}"#,
+                    );
+                }
+                write_fake_response(
+                    &mut stream, 200,
+                    r#"{"removed":true,"reason":"original reason","state":{"servers":[],"warnings":["keep"],"future":{"value":7}},"futureOutcome":true}"#,
+                )
+            }
+            ("POST", "/api/syncPluginSkills") => write_fake_response(
+                &mut stream, 200, r#"[{"pluginId":"7","skills":[]}]"#,
+            ),
+            ("POST", "/api/getPluginSyncStatus") => write_fake_response(
+                &mut stream, 200, r#"{"syncing":false,"authBlocked":[]}"#,
+            ),
+            ("POST", "/api/mcp.resolveLifecycleRequest")
+            | ("POST", "/api/runner.resolveRoutedToolRequest") => write_fake_response(
+                &mut stream, 200, r#"{"settled":true}"#,
+            ),
+            ("POST", "/api/loadBoxMcpServers") => {
+                let args: Value = serde_json::from_slice(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if args["configJson"] == " {\"mcpServers\":{\"native-error\":{}}}\n" {
+                    return write_fake_response(
+                        &mut stream,
+                        400,
+                        r#"{"error":"Box MCP original configuration refusal"}"#,
+                    );
+                }
+                write_fake_response(
+                    &mut stream,
+                    200,
+                    r#"{"serverIdentifiers":["native-box"],"opaque":{"preserved":true}}"#,
+                )
+            }
+            ("POST", "/api/listBoxMcpToolsRaw") => {
+                let args: Value = serde_json::from_slice(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if args["payloadHex"] == "deadbeef01" {
+                    return write_fake_response(
+                        &mut stream,
+                        400,
+                        r#"{"error":"Box MCP original discovery refusal"}"#,
+                    );
+                }
+                write_fake_response(&mut stream, 200, r#"{"payloadHex":"00Aa11Ff"}"#)
+            }
+            ("POST", "/api/executeBoxMcpToolRaw") => {
+                let args: Value = serde_json::from_slice(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if args["payloadHex"] == "deadbeef02" {
+                    return write_fake_response(
+                        &mut stream,
+                        503,
+                        r#"{"error":"Box MCP original execution outcome unknown"}"#,
+                    );
+                }
+                write_fake_response(&mut stream, 200, r#"{"payloadHex":"00Bb22Ee"}"#)
+            }
+            ("POST", "/api/listBoxMcpServers") => write_fake_response(
+                &mut stream,
+                200,
+                r#"[{"serverIdentifier":"existing-box","tools":[]}]"#,
             ),
             ("POST", "/api/completeMcpOAuth") => {
                 let attempt = oauth_completion_attempts.fetch_add(1, Ordering::AcqRel);
@@ -494,6 +628,409 @@ mod unix {
         }
     }
 
+    fn recv_request_reply(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+        expected_channel: CarrierChannel,
+        expected_request_id: &str,
+    ) -> ReplyOutcome {
+        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        loop {
+            let remaining = deadline
+                .checked_duration_since(std::time::Instant::now())
+                .expect("shipping Coordinator did not settle the requested command");
+            let (channel, frame) =
+                recv_application_frame(rx, stdin, seen_control_methods, remaining);
+            match frame {
+                CoordinatorFrame::Reply { request_id, outcome } => {
+                    assert_eq!(channel, expected_channel);
+                    assert_eq!(request_id, expected_request_id);
+                    return outcome;
+                }
+                CoordinatorFrame::Event { .. } => {}
+                other => panic!("unexpected frame while awaiting {expected_request_id}: {other:?}"),
+            }
+        }
+    }
+
+    fn assert_box_mcp_http_requests(
+        requests: &[GatewayApiRequest],
+        expected: &[(&str, Value)],
+    ) {
+        let box_requests: Vec<_> = requests
+            .iter()
+            .filter(|request| request.path.contains("BoxMcp"))
+            .collect();
+        assert_eq!(
+            box_requests.len(),
+            expected.len(),
+            "unexpected, missing, or repeated Box MCP HTTP request: {box_requests:?}"
+        );
+        for (request, (method, args)) in box_requests.iter().zip(expected) {
+            assert_eq!(request.http_method, "POST");
+            assert_eq!(request.path, format!("/api/{method}"));
+            let body: Value = serde_json::from_slice(
+                request.body.as_deref().expect("complete Box MCP HTTP body"),
+            )
+            .expect("Box MCP HTTP request JSON");
+            assert_eq!(&body, args, "{method} must preserve the original payload");
+        }
+    }
+
+    fn exercise_box_mcp_native_routing(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+        gateway: &FakeGateway,
+    ) -> Vec<(&'static str, Value)> {
+        let initial_http_count = gateway.api_requests().len();
+        let mut expected_http = Vec::new();
+        assert_box_mcp_http_requests(&gateway.api_requests(), &expected_http);
+
+        for (method, success_args, success_value, error_args, error) in [
+            (
+                "loadBoxMcpServers",
+                json!({"configJson": " \n{\"mcpServers\":{\"native-box\":{\"command\":\"fixture\",\"args\":[\"--opaque=é\"]}}}\t"}),
+                json!({"serverIdentifiers": ["native-box"], "opaque": {"preserved": true}}),
+                json!({"configJson": " {\"mcpServers\":{\"native-error\":{}}}\n"}),
+                Failure::new("gateway-command-failed", "Box MCP original configuration refusal"),
+            ),
+            (
+                "listBoxMcpToolsRaw",
+                json!({"payloadHex": "00Aa1100"}),
+                json!({"payloadHex": "00Aa11Ff"}),
+                json!({"payloadHex": "deadbeef01"}),
+                Failure::new("gateway-command-failed", "Box MCP original discovery refusal"),
+            ),
+            (
+                "executeBoxMcpToolRaw",
+                json!({"payloadHex": "00Bb2200"}),
+                json!({"payloadHex": "00Bb22Ee"}),
+                json!({"payloadHex": "deadbeef02"}),
+                Failure::with_transport_kind(
+                    "gateway-unreachable",
+                    "Box MCP original execution outcome unknown",
+                    "http_5xx",
+                ),
+            ),
+        ] {
+            let request_id = format!("r-box-data-{method}");
+            send(
+                stdin,
+                CarrierChannel::Data,
+                &CoordinatorFrame::Request {
+                    request_id: request_id.clone(),
+                    method: method.into(),
+                    args: success_args.clone(),
+                },
+            );
+            match recv_request_reply(
+                rx,
+                stdin,
+                seen_control_methods,
+                CarrierChannel::Data,
+                &request_id,
+            ) {
+                ReplyOutcome::Failed { failure } => {
+                    assert_eq!(failure.code, "MCP_BOX_NATIVE_ONLY", "{method}");
+                }
+                other => panic!("renderer Box MCP request was not refused: {method}: {other:?}"),
+            }
+            assert_eq!(
+                gateway.api_requests().len(),
+                initial_http_count + expected_http.len(),
+                "refused renderer command {method} reached the HTTP gateway"
+            );
+
+            for (case, args, expected_reply) in [
+                ("success", success_args, ReplyOutcome::Ok { value: success_value }),
+                ("error", error_args, ReplyOutcome::Failed { failure: error }),
+            ] {
+                let request_id = format!("r-box-main-{method}-{case}");
+                send(
+                    stdin,
+                    CarrierChannel::MainData,
+                    &CoordinatorFrame::Request {
+                        request_id: request_id.clone(),
+                        method: method.into(),
+                        args: args.clone(),
+                    },
+                );
+                assert_eq!(
+                    recv_request_reply(
+                        rx,
+                        stdin,
+                        seen_control_methods,
+                        CarrierChannel::MainData,
+                        &request_id,
+                    ),
+                    expected_reply,
+                    "native {method} must return the original gateway {case}"
+                );
+                expected_http.push((method, args));
+                let observed = gateway.api_requests();
+                assert_eq!(observed.len(), initial_http_count + expected_http.len());
+                assert_box_mcp_http_requests(&observed, &expected_http);
+            }
+        }
+
+        // An existing sibling remains usable from Data, and similarly named
+        // unknown methods reach the gateway's ordinary 404 rather than being
+        // misclassified by a prefix gate. Neither control uses the gate helper.
+        for (method, args, expected_reply) in [
+            (
+                "listBoxMcpServers",
+                json!({"serverIdentifiers": ["existing-box"]}),
+                ReplyOutcome::Ok {
+                    value: json!([{"serverIdentifier": "existing-box", "tools": []}]),
+                },
+            ),
+            (
+                "loadBoxMcpServers.extra",
+                json!({"configJson": "{}"}),
+                ReplyOutcome::Failed {
+                    failure: Failure::new(
+                        "gateway-command-failed",
+                        "gateway loadBoxMcpServers.extra failed with HTTP 404",
+                    ),
+                },
+            ),
+            (
+                "listBoxMcpToolsRawExtra",
+                json!({"payloadHex": "00Cc33"}),
+                ReplyOutcome::Failed {
+                    failure: Failure::new(
+                        "gateway-command-failed",
+                        "gateway listBoxMcpToolsRawExtra failed with HTTP 404",
+                    ),
+                },
+            ),
+            (
+                "executeBoxMcpToolRawExtra",
+                json!({"payloadHex": "00Dd44"}),
+                ReplyOutcome::Failed {
+                    failure: Failure::new(
+                        "gateway-command-failed",
+                        "gateway executeBoxMcpToolRawExtra failed with HTTP 404",
+                    ),
+                },
+            ),
+        ] {
+            let request_id = format!("r-box-sibling-{method}");
+            send(
+                stdin,
+                CarrierChannel::Data,
+                &CoordinatorFrame::Request {
+                    request_id: request_id.clone(),
+                    method: method.into(),
+                    args: args.clone(),
+                },
+            );
+            assert_eq!(
+                recv_request_reply(
+                    rx,
+                    stdin,
+                    seen_control_methods,
+                    CarrierChannel::Data,
+                    &request_id,
+                ),
+                expected_reply
+            );
+            expected_http.push((method, args));
+            let observed = gateway.api_requests();
+            assert_eq!(observed.len(), initial_http_count + expected_http.len());
+            assert_box_mcp_http_requests(&observed, &expected_http);
+        }
+        expected_http
+    }
+
+    fn assert_desktop_mcp_http_requests(requests: &[GatewayApiRequest], expected: &[(&str, Value)]) {
+        let observed: Vec<_> = requests.iter().filter(|request| matches!(
+            request.path.as_str(),
+            "/api/uninstallMcpPlugin" | "/api/uninstallMcpPlugin.extra"
+                | "/api/syncPluginSkills" | "/api/getPluginSyncStatus"
+                | "/api/mcp.resolveLifecycleRequest" | "/api/runner.resolveRoutedToolRequest"
+        )).collect();
+        assert_eq!(observed.len(), expected.len(), "unexpected or repeated MCP HTTP request: {observed:?}");
+        for (request, (method, args)) in observed.iter().zip(expected) {
+            assert_eq!(request.http_method, "POST");
+            assert_eq!(request.path, format!("/api/{method}"));
+            let body: Value = serde_json::from_slice(
+                request.body.as_deref().expect("complete desktop MCP HTTP body"),
+            ).expect("desktop MCP HTTP JSON");
+            assert_eq!(&body, args, "{method} must preserve the original arguments");
+        }
+    }
+
+    fn exercise_desktop_mcp_native_routing(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+    ) -> Vec<(&'static str, Value)> {
+        // The real Coordinator must reject Data before using its native Host
+        // credential. The final joined HTTP observation proves zero forwarding.
+        for (method, code) in [
+            ("uninstallMcpPlugin", "MCP_DESKTOP_NATIVE_ONLY"),
+            ("mcp.resolveLifecycleRequest", "MCP_BOX_NATIVE_ONLY"),
+            ("runner.resolveRoutedToolRequest", "MCP_BOX_NATIVE_ONLY"),
+        ] {
+            let request_id = format!("r-mcp-denied-{method}");
+            send(stdin, CarrierChannel::Data, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(),
+                args: json!({"pluginId":"7","requestId":"native-pending","ok":true,"result":{}}),
+            });
+            match recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, &request_id) {
+                ReplyOutcome::Failed { failure } => assert_eq!(failure.code, code),
+                other => panic!("Data must not become native authority for {method}: {other:?}"),
+            }
+        }
+        let mut expected = Vec::new();
+        for (channel, method, args, reply) in [
+            (CarrierChannel::MainData, "uninstallMcpPlugin", json!({"pluginId":"7"}),
+                ReplyOutcome::Ok { value: json!({
+                    "removed":true,"reason":"original reason",
+                    "state":{"servers":[],"warnings":["keep"],"future":{"value":7}},
+                    "futureOutcome":true,
+                }) }),
+            (CarrierChannel::MainData, "uninstallMcpPlugin", json!({"pluginId":"policy-refused"}),
+                ReplyOutcome::Failed { failure: Failure::new("gateway-command-failed", "original MCP uninstall refusal") }),
+            (CarrierChannel::Data, "syncPluginSkills", json!({}),
+                ReplyOutcome::Ok { value: json!([{"pluginId":"7","skills":[]}]) }),
+            (CarrierChannel::Data, "getPluginSyncStatus", json!({}),
+                ReplyOutcome::Ok { value: json!({"syncing":false,"authBlocked":[]}) }),
+            (CarrierChannel::Data, "uninstallMcpPlugin.extra", json!({"pluginId":"7"}),
+                ReplyOutcome::Failed { failure: Failure::new(
+                    "gateway-command-failed", "gateway uninstallMcpPlugin.extra failed with HTTP 404",
+                ) }),
+            (CarrierChannel::MainData, "mcp.resolveLifecycleRequest",
+                json!({"requestId":"native-lifecycle","ok":true,"result":{"keep":7}}),
+                ReplyOutcome::Ok { value: json!({"settled":true}) }),
+            (CarrierChannel::MainData, "runner.resolveRoutedToolRequest",
+                json!({"requestId":"native-routed","ok":true,"result":{"keep":8}}),
+                ReplyOutcome::Ok { value: json!({"settled":true}) }),
+        ] {
+            let request_id = format!("r-mcp-allowed-{}", expected.len());
+            send(stdin, channel, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(), args: args.clone(),
+            });
+            assert_eq!(
+                recv_request_reply(rx, stdin, seen_control_methods, channel, &request_id), reply,
+                "{method} must preserve the original HTTP result",
+            );
+            expected.push((method, args));
+        }
+        expected
+    }
+
+    fn assert_link_preview_http_requests(requests: &[GatewayApiRequest], expected: &[(&str, Value)]) {
+        let observed: Vec<_> = requests.iter().filter(|request|
+            request.path.starts_with("/api/fetchLinkMetadata")
+        ).collect();
+        assert_eq!(observed.len(), expected.len(), "denied or repeated preview forwarding: {observed:?}");
+        for (request, (method, args)) in observed.iter().zip(expected) {
+            assert_eq!(request.http_method, "POST");
+            assert_eq!(request.path, format!("/api/{method}"));
+            let body: Value = serde_json::from_slice(
+                request.body.as_deref().expect("complete preview HTTP body"),
+            ).expect("preview HTTP JSON");
+            assert_eq!(&body, args, "preview arguments must preserve native path and URL");
+        }
+    }
+
+    fn exercise_link_preview_native_routing(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+        gateway: &FakeGateway,
+    ) -> Vec<(&'static str, Value)> {
+        let mut expected_http_count = gateway.api_requests().len();
+        send(stdin, CarrierChannel::Data, &CoordinatorFrame::Request {
+            request_id: "r-preview-denied".into(), method: "fetchLinkMetadata".into(),
+            args: json!({"url":"https://example.com/renderer","cacheDir":"/renderer-chosen-path"}),
+        });
+        assert_eq!(
+            recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, "r-preview-denied"),
+            ReplyOutcome::Failed { failure: Failure::new(
+                "ATTACHMENTS_NATIVE_ONLY", "link preview requires native main-data carrier",
+            ) },
+            "renderer preview RPC acquired native authority",
+        );
+        assert_eq!(gateway.api_requests().len(), expected_http_count,
+            "refused renderer preview reached the HTTP gateway");
+
+        // These aliases pass the exact carrier-name check but must fail the
+        // existing HTTP method grammar before connecting. Ordinary Data calls
+        // before and after prove the refusal preserves a usable transport.
+        for (index, method) in [
+            "echo",
+            "fetchLinkMetadata?x",
+            "fetchLinkMetadata/extra",
+            "fetchLinkMetadata%3F",
+            "fetchLinkMetadata ",
+            "fetchLinkMetadata\t",
+            "echo",
+        ].into_iter().enumerate() {
+            let request_id = format!("r-preview-method-{index}");
+            let args = json!({"url":"https://example.com/renderer","cacheDir":"/renderer-chosen-path"});
+            send(stdin, CarrierChannel::Data, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(), args: args.clone(),
+            });
+            let expected_reply = if method == "echo" {
+                expected_http_count += 1;
+                ReplyOutcome::Ok { value: json!({"echoed":true}) }
+            } else {
+                ReplyOutcome::Failed { failure: Failure::new(
+                    "gateway-transport-failed", "invalid Host gateway method",
+                ) }
+            };
+            assert_eq!(
+                recv_request_reply(rx, stdin, seen_control_methods, CarrierChannel::Data, &request_id),
+                expected_reply,
+                "preview method {method:?} must preserve its complete result classification",
+            );
+            let observed = gateway.api_requests();
+            assert_eq!(observed.len(), expected_http_count,
+                "preview method {method:?} changed the expected HTTP request count: {observed:?}");
+            if method == "echo" {
+                let request = observed.last().expect("ordinary Data echo HTTP request");
+                assert_eq!(request.http_method, "POST");
+                assert_eq!(request.path, "/api/echo");
+                let body: Value = serde_json::from_slice(
+                    request.body.as_deref().expect("complete Data echo HTTP body"),
+                ).expect("Data echo HTTP JSON");
+                assert_eq!(body, args, "ordinary Data echo must reach the live HTTP peer");
+            }
+        }
+        let mut expected = Vec::new();
+        for (channel, method, args, reply) in [
+            (CarrierChannel::MainData, "fetchLinkMetadata",
+                json!({"url":"https://example.com/a?b=1","cacheDir":"/native/cache with spaces","futureInput":[null,9]}),
+                ReplyOutcome::Ok { value: json!({
+                    "url":"https://example.com/a?b=1","title":"native preview","future":{"opaque":[null,7]},
+                }) }),
+            (CarrierChannel::MainData, "fetchLinkMetadata",
+                json!({"url":"https://example.com/refused","cacheDir":"/native/cache"}),
+                ReplyOutcome::Failed { failure: Failure::new("gateway-command-failed", "original preview refusal") }),
+            (CarrierChannel::Data, "fetchLinkMetadata.extra",
+                json!({"url":"https://example.com/unknown","cacheDir":"/unknown-neighbor"}),
+                ReplyOutcome::Failed { failure: Failure::new(
+                    "gateway-command-failed", "gateway fetchLinkMetadata.extra failed with HTTP 404",
+                ) }),
+        ] {
+            let request_id = format!("r-preview-allowed-{}", expected.len());
+            send(stdin, channel, &CoordinatorFrame::Request {
+                request_id: request_id.clone(), method: method.into(), args: args.clone(),
+            });
+            assert_eq!(
+                recv_request_reply(rx, stdin, seen_control_methods, channel, &request_id), reply,
+                "{method} must preserve the original HTTP result",
+            );
+            expected.push((method, args));
+        }
+        expected
+    }
+
     fn pump_control_until_webauthn_result(
         rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
         stdin: &mut impl Write,
@@ -621,7 +1158,7 @@ exit 17
     fn shipping_coordinator_binary_enforces_protocol_and_settles_host_crash() {
         let host = fake_host();
         let data_dir = host.parent().expect("fake host parent").to_path_buf();
-        let gateway = FakeGateway::start(&data_dir);
+        let mut gateway = FakeGateway::start(&data_dir);
         let (webauthn_signer, webauthn_request_path, webauthn_pin_path) =
             fake_webauthn_signer(&data_dir);
         let coordinator = env!("CARGO_BIN_EXE_mahayana-node-agent-coordinator");
@@ -877,6 +1414,19 @@ exit 17
             "shipping Coordinator did not retry one transient OAuth completion failure"
         );
 
+        let expected_box_mcp_requests = exercise_box_mcp_native_routing(
+            &rx,
+            &mut stdin,
+            &mut seen_control_methods,
+            &gateway,
+        );
+        let expected_desktop_mcp_requests = exercise_desktop_mcp_native_routing(
+            &rx, &mut stdin, &mut seen_control_methods,
+        );
+        let expected_link_preview_requests = exercise_link_preview_native_routing(
+            &rx, &mut stdin, &mut seen_control_methods, &gateway,
+        );
+
         send(
             &mut stdin,
             CarrierChannel::Data,
@@ -1004,6 +1554,14 @@ exit 17
         drop(stdin);
         let status = child.wait().expect("wait for Coordinator");
         assert!(status.success(), "Coordinator did not shut down cleanly: {status}");
+        gateway.stop_and_join().expect("join fake Host gateway and all owned HTTP exchanges");
+        // Coordinator exit plus the drained listener/handler join closes the
+        // observation interval. No sleep or early empty snapshot proves zero:
+        // all denied Data requests are absent, and even the uncertain execution
+        // failure reached HTTP exactly once without a transport retry.
+        assert_box_mcp_http_requests(&gateway.api_requests(), &expected_box_mcp_requests);
+        assert_desktop_mcp_http_requests(&gateway.api_requests(), &expected_desktop_mcp_requests);
+        assert_link_preview_http_requests(&gateway.api_requests(), &expected_link_preview_requests);
         drop(gateway);
         let _ = fs::remove_dir_all(data_dir);
     }

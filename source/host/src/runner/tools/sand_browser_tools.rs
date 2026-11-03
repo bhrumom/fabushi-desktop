@@ -20,6 +20,7 @@ use crate::runner::sand_action_audit::{
 };
 use crate::runner::sand_browser_auto_review::SandBrowserReviewState;
 use crate::runner::sand_computer_auto_review::SAND_COMPUTER_PAGE_STATE_CHROME_UNREACHABLE;
+use crate::media_mime::detect_supported_image_mime_type;
 
 use super::sand_browser_driver_source::{
     SAND_BROWSER_DRIVER_BOX_DIR, SAND_BROWSER_DRIVER_BOX_PATH,
@@ -28,6 +29,30 @@ use super::sand_browser_driver_source::{
 
 pub const BOX_CDP_PORT_BASE: u32 = 9_222;
 pub const PENDING_SCREENSHOT_CAP: usize = 32;
+
+pub fn browser_image_mime_type(bytes: &[u8], path: &str) -> Option<&'static str> {
+    if bytes.len() >= 12
+        && &bytes[4..8] == b"ftyp"
+        && bytes[8..12].windows(4).any(|brand| brand == b"avif")
+    {
+        return Some("image/avif");
+    }
+    if let Some(mime) = detect_supported_image_mime_type(bytes) {
+        return matches!(
+            mime,
+            "image/avif" | "image/gif" | "image/jpeg" | "image/png" | "image/webp"
+        )
+        .then_some(mime);
+    }
+    (bytes.len() < 8).then(|| match path.rsplit('.').next()?.to_ascii_lowercase().as_str() {
+        "avif" => Some("image/avif"),
+        "gif" => Some("image/gif"),
+        "jpeg" | "jpg" => Some("image/jpeg"),
+        "png" => Some("image/png"),
+        "webp" => Some("image/webp"),
+        _ => None,
+    })?
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -828,11 +853,12 @@ impl BrowserToolExecutor for ProductionBrowserToolExecutor {
                         path,
                         &format!("{tool_call_id}:browser-driver-screenshot"),
                     )?;
-                    bytes.map(|bytes| {
+                    bytes.and_then(|bytes| {
+                        let mime = browser_image_mime_type(&bytes, path)?;
                         if let Some(persist_image) = self.persist_image.as_ref() {
-                            persist_image(&bytes, "image/png");
+                            persist_image(&bytes, mime);
                         }
-                        base64::engine::general_purpose::STANDARD.encode(bytes)
+                        Some(base64::engine::general_purpose::STANDARD.encode(bytes))
                     })
                 }
                 None => None,

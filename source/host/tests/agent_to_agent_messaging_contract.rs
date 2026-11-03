@@ -1,10 +1,13 @@
 use std::fs;
 use std::sync::{Arc,Mutex};
 use std::sync::atomic::{AtomicUsize,Ordering};
-use std::time::{SystemTime,UNIX_EPOCH};
+use std::time::{Duration,SystemTime,UNIX_EPOCH};
 use mahayana_host_runtime::agents::agent_messaging::AgentMessageImage;
 use mahayana_host_runtime::agents::agent_profile::SandAgentProfile;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::agent_session::{
+    SessionCommunicationMode, SessionCommunicationPolicyOverride,
+};
 use mahayana_host_runtime::extensions::telemetry::agent_error_telemetry::agent_error_telemetry;
 use mahayana_host_runtime::extensions::transcript::agent_to_agent_messaging::{
     AgentWakeRequest, ProductionAgentToAgentMessaging, agent_inbound_failure_report,
@@ -30,11 +33,17 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
         let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
     },Some({let interrupts=Arc::clone(&interrupts);Arc::new(move|_,_|{interrupts.fetch_add(1,Ordering::SeqCst);1})}));
-    let ack=service.send_to_agent(&alpha.id,&beta.id,"  please review  ",&[AgentMessageImage{url:"https://example.com/chart.png".into(),alt:Some("chart".into())}],true).expect("send");
+    let alpha_session_key = sessions
+        .read_session_work_admission(&alpha.id)
+        .expect("alpha admission")
+        .expect("alpha admission record")
+        .session_key;
+    let ack=service.send_to_agent_with_session(&alpha.id,Some(&alpha_session_key),&beta.id,"  please review  ",&[AgentMessageImage{url:"https://example.com/chart.png".into(),alt:Some("chart".into())}],true).expect("send");
     assert!(ack.contains("priority"));
     let a=sessions.read_agent_transcript_entries(&alpha.id).expect("alpha transcript");
     let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript before admission");
     assert_eq!(a.len(),1);assert_eq!(a[0]["toAgent"]["id"],beta.id);assert_eq!(a[0]["content"],"please review");
+    assert_eq!(a[0].get("sessionKey").and_then(serde_json::Value::as_str),Some(alpha_session_key.as_str()));
     assert!(b.is_empty(), "recipient entry is deferred until execution admission");
     assert_eq!(sessions.get_agent_conversation_partner_ids(&alpha.id).expect("a partners"),vec![beta.id.clone()]);
     assert!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners before admission").is_empty());
@@ -42,10 +51,495 @@ fn direct_delivery_defers_recipient_transcript_until_execution_admission(){
     let wake=wakes.lock().expect("wakes").last().cloned().expect("wake");
     assert_eq!(wake.agent_id,beta.id);assert!(wake.priority);assert!(wake.prompt.starts_with("[agent]"));
     let inbound = wake.inbound.as_ref().expect("direct inbound envelope");
+    assert_eq!(inbound["replyContext"]["targetId"], a[0]["id"]);
+    assert_eq!(inbound["messageId"], a[0]["id"]);
+    assert!(inbound.get("replyToId").is_none());
     assert!(persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("persist inbound"));
     let b=sessions.read_agent_transcript_entries(&beta.id).expect("beta transcript after admission");
     assert_eq!(b.len(),1);assert_eq!(b[0]["fromAgent"]["id"],alpha.id);assert_eq!(b[0]["images"][0]["url"],"https://example.com/chart.png");
+    let beta_session_key = sessions
+        .read_session_work_admission(&beta.id)
+        .expect("beta admission")
+        .expect("beta admission record")
+        .session_key;
+    assert_eq!(
+        b[0].get("sessionKey").and_then(serde_json::Value::as_str),
+        Some(beta_session_key.as_str())
+    );
     assert_eq!(sessions.get_agent_conversation_partner_ids(&beta.id).expect("b partners after admission"),vec![alpha.id.clone()]);
+    assert!(!persist_agent_inbound_message(&sessions, &beta.id, inbound).expect("duplicate inbound is already admitted"));
+    assert_eq!(sessions.read_agent_transcript_entries(&beta.id).expect("deduped beta transcript").len(), 1);
+    let mut conflicting_inbound = inbound.clone();
+    conflicting_inbound["text"] = serde_json::Value::String("tampered".into());
+    assert!(persist_agent_inbound_message(&sessions, &beta.id, &conflicting_inbound).is_err());
+    let beta_reply = service
+        .send_to_agent_with_session_and_reply(
+            &beta.id,
+            Some(&beta_session_key),
+            &alpha.id,
+            "done",
+            &[],
+            false,
+            a[0]["id"].as_str(),
+        )
+        .expect("reply");
+    assert!(beta_reply.contains("Sent to"));
+    let reply_wake = wakes.lock().expect("wakes").last().cloned().expect("reply wake");
+    let reply_inbound = reply_wake.inbound.as_ref().expect("reply inbound envelope");
+    assert_eq!(reply_inbound["replyToId"], a[0]["id"]);
+    assert!(persist_agent_inbound_message(&sessions, &alpha.id, reply_inbound).expect("persist reply"));
+    let a_after_reply = sessions.read_agent_transcript_entries(&alpha.id).expect("alpha reply transcript");
+    assert_eq!(a_after_reply.len(), 2);
+    assert!(!persist_agent_inbound_message(&sessions, &alpha.id, reply_inbound)
+        .expect("settled empty-images reply is an existing delivery"));
+    let mut conflicting_reply = reply_inbound.clone();
+    conflicting_reply["text"] = serde_json::json!("changed after settlement");
+    assert!(persist_agent_inbound_message(&sessions, &alpha.id, &conflicting_reply)
+        .expect_err("settled reply identity is still checked").contains("identity conflict"));
+    assert_eq!(sessions.read_agent_transcript_entries(&alpha.id).unwrap(), a_after_reply);
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn direct_delivery_preflights_admitted_target_before_side_effects() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    assert!(source.contains("self.sessions.assert_session_work_admission(\n                to_agent_id"));
+    assert!(source.contains("Some(&target_admission.session_key)"));
+    let sender_identity = source
+        .split("pub fn send_to_agent_with_session_and_reply(")
+        .nth(1)
+        .expect("direct send owner exists")
+        .split("pub fn persist_agent_inbound_message(")
+        .next()
+        .expect("direct send owner boundary exists");
+    let sender_key = sender_identity
+        .find("let sender_session_key =")
+        .expect("sender admission key is resolved");
+    let source_endpoint = sender_identity
+        .find("let source_endpoint =")
+        .expect("source communication endpoint exists");
+    let planner = sender_identity
+        .find("plan_session_communication(")
+        .expect("communication planner exists");
+    assert!(sender_key < source_endpoint);
+    assert!(source_endpoint < planner);
+}
+
+#[test]
+fn inbound_turn_claim_is_released_on_refusal_or_duplicate_and_completed_only_after_commit() {
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let source = sessions.materialize_new_session(Some(&profile("Source")), "user", None).unwrap();
+    let target = sessions.materialize_new_session(Some(&profile("Target")), "user", None).unwrap();
+    let admission = sessions.read_session_work_admission(&target.id).unwrap().unwrap();
+    let turns = sessions.pending_conversation_turns();
+    let register = |id: &str| {
+        let id = turns.register(
+            &target.id, Some(id), &source.id, &admission.session_id,
+            None, Duration::from_secs(60),
+        ).unwrap();
+        assert!(turns.set_outbound_message_id(&target.id, &id, "request-1"));
+        assert!(turns.mark_ready(&target.id, &id));
+        id
+    };
+    let turn_id = register("turn-1");
+    let db_path = sessions.session_db_path(&target.id).unwrap();
+    let db = rusqlite::Connection::open(&db_path).unwrap();
+    db.execute_batch(
+        "CREATE TRIGGER ignore_agent_inbound BEFORE INSERT ON transcript_entries
+         BEGIN SELECT RAISE(IGNORE); END;",
+    ).unwrap();
+    let events = Arc::new(AtomicUsize::new(0));
+    let subscription = subscribe_transcript_mutations({
+        let events = Arc::clone(&events);
+        let expected_agent = target.id.clone();
+        move |event| {
+            if event.get("agentId").and_then(serde_json::Value::as_str) == Some(expected_agent.as_str()) {
+                events.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+    });
+    let inbound = serde_json::json!({
+        "from":{"id":source.id},"messageId":"reply-1","replyToId":"request-1",
+        "text":"reply payload","images":[],"timestampMs":100,
+    });
+    assert!(persist_agent_inbound_message(&sessions, &target.id, &inbound)
+        .expect_err("ignored fresh insert is refusal").contains("ignored"));
+    assert!(!turns.snapshot(&target.id, &turn_id).expect("refusal retains pending turn").claimed);
+    assert!(sessions.read_agent_transcript_entries(&target.id).unwrap().is_empty());
+    assert!(sessions.get_agent_conversation_partner_ids(&target.id).unwrap().is_empty());
+    assert_eq!(events.load(Ordering::SeqCst), 0);
+
+    db.execute_batch("DROP TRIGGER ignore_agent_inbound").unwrap();
+    assert!(persist_agent_inbound_message(&sessions, &target.id, &inbound).expect("fresh committed reply"));
+    assert!(turns.snapshot(&target.id, &turn_id).is_none(), "commit completes the claim");
+    let committed = sessions.read_agent_transcript_entries(&target.id).unwrap();
+    assert_eq!(committed.len(), 1);
+    assert_eq!(committed[0]["id"], format!("agent-inbound:{}:reply-1", source.id));
+    assert_eq!(events.load(Ordering::SeqCst), 1);
+
+    // A newly held local claim cannot convert an already committed stable ID
+    // into another delivery or consume the pending turn as fresh work.
+    let duplicate_turn = register("turn-duplicate");
+    assert!(!persist_agent_inbound_message(&sessions, &target.id, &inbound).expect("explicit duplicate"));
+    assert!(!turns.snapshot(&target.id, &duplicate_turn).expect("duplicate releases, not completes").claimed);
+    assert_eq!(events.load(Ordering::SeqCst), 1);
+    let mut conflict = inbound.clone();
+    conflict["text"] = serde_json::json!("different reply payload");
+    assert!(persist_agent_inbound_message(&sessions, &target.id, &conflict)
+        .expect_err("stable identity conflict").contains("identity conflict"));
+    assert!(!turns.snapshot(&target.id, &duplicate_turn).expect("conflict retains turn").claimed);
+    for changed_images in [serde_json::json!([{"url":"changed.png"}]), serde_json::json!({"invalid":"images"})] {
+        let mut image_conflict = inbound.clone();
+        image_conflict["images"] = changed_images;
+        assert!(persist_agent_inbound_message(&sessions, &target.id, &image_conflict)
+            .expect_err("changed images are still a payload conflict").contains("identity conflict"));
+        assert!(!turns.snapshot(&target.id, &duplicate_turn).unwrap().claimed);
+    }
+    assert_eq!(sessions.read_agent_transcript_entries(&target.id).unwrap(), committed);
+    assert_eq!(events.load(Ordering::SeqCst), 1);
+    subscription.unsubscribe();
+    drop(db);
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_reply_commit_preserves_reentrant_replacement_claim() {
+    use std::sync::mpsc;
+    use mahayana_host_runtime::extensions::session::session_conversation_state::PendingConversationTurnClaimResult;
+    use mahayana_host_runtime::transcript_mutation_events::subscribe_transcript_mutations;
+
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let source = sessions.materialize_new_session(Some(&profile("Source")), "user", None).unwrap();
+    let target = sessions.materialize_new_session(Some(&profile("Target")), "user", None).unwrap();
+    let admission = sessions.read_session_work_admission(&target.id).unwrap().unwrap();
+    let unread_before = sessions.get_agent_unread_state(&target.id).unwrap();
+    let timestamp_ms = (unread_before.last_activity_at as u64).checked_add(100).unwrap();
+    let turns = sessions.pending_conversation_turns();
+    let turn_id = turns.register(
+        &target.id, Some("reused-turn"), &source.id, &admission.session_id,
+        None, Duration::from_secs(60),
+    ).unwrap();
+    assert!(turns.set_outbound_message_id(&target.id, &turn_id, "reused-request"));
+    assert!(turns.mark_ready(&target.id, &turn_id));
+    let entry_id = format!("agent-inbound:{}:reply-1", source.id);
+    let inbound = serde_json::json!({
+        "from":{"id":source.id},"messageId":"reply-1","replyToId":"reused-request",
+        "text":"committed before claim replacement","images":[],"timestampMs":timestamp_ms,
+    });
+    let callbacks = Arc::new(AtomicUsize::new(0));
+    let (callback_sender, callback_receiver) = mpsc::channel();
+    let subscription = subscribe_transcript_mutations({
+        let sessions = Arc::downgrade(&sessions);
+        let callbacks = Arc::clone(&callbacks);
+        let target_id = target.id.clone();
+        let source_id = source.id.clone();
+        let turn_id = turn_id.clone();
+        let entry_id = entry_id.clone();
+        move |event| {
+            if event.get("kind").and_then(serde_json::Value::as_str) != Some("entries-upserted")
+                || event.get("agentId").and_then(serde_json::Value::as_str) != Some(target_id.as_str())
+                || !event.get("entries").and_then(serde_json::Value::as_array).is_some_and(|entries| {
+                    entries.iter().any(|entry| entry.get("id").and_then(serde_json::Value::as_str)
+                        == Some(entry_id.as_str()))
+                })
+            {
+                return;
+            }
+            callbacks.fetch_add(1, Ordering::SeqCst);
+            // Publication catches listener panics. Return every observation or
+            // error to the parent instead of making callback-only assertions.
+            let observed = (|| -> Result<_, String> {
+                let sessions = sessions.upgrade().ok_or("committing Session owner disappeared")?;
+                let observed_admission = sessions.read_session_work_admission(&target_id)?
+                    .ok_or("committed Session admission disappeared")?;
+                let committed = sessions.read_agent_transcript_entries(&target_id)?;
+                let turns = sessions.pending_conversation_turns();
+                let original = turns.snapshot(&target_id, &turn_id)
+                    .ok_or("original claim was settled before committed publication")?;
+                if !turns.cancel(&target_id, &turn_id) {
+                    return Err("callback could not cancel the original turn".into());
+                }
+                let replacement_id = turns.register(
+                    &target_id, Some(&turn_id), &source_id, &observed_admission.session_id,
+                    None, Duration::from_secs(60),
+                )?;
+                if replacement_id != turn_id
+                    || !turns.set_outbound_message_id(&target_id, &replacement_id, "reused-request")
+                    || !turns.mark_ready(&target_id, &replacement_id)
+                {
+                    return Err("callback could not ready the same-key replacement".into());
+                }
+                let replacement = match turns.claim_reply(
+                    &target_id, &source_id, None, &observed_admission.session_id,
+                    "replacement-reply", Some("reused-request"), None,
+                    "replacement retains custody", timestamp_ms + 1,
+                ) {
+                    PendingConversationTurnClaimResult::Claimed(reply) => reply,
+                    other => return Err(format!("replacement claim was not admitted: {other:?}")),
+                };
+                Ok((observed_admission, committed, original, replacement))
+            })();
+            let _ = callback_sender.send(observed);
+        }
+    });
+    let (commit_sender, commit_receiver) = mpsc::channel();
+    let worker = std::thread::spawn({
+        let sessions = Arc::clone(&sessions);
+        let target_id = target.id.clone();
+        let inbound = inbound.clone();
+        move || {
+            let outcome = persist_agent_inbound_message(&sessions, &target_id, &inbound);
+            let _ = commit_sender.send(outcome);
+        }
+    });
+    let completed = commit_receiver.recv_timeout(Duration::from_secs(5));
+    subscription.unsubscribe();
+    let outcome = match completed {
+        Ok(outcome) => outcome,
+        Err(error) => {
+            // Never join or close a possibly wedged owner. Its exact worker
+            // retains the fixture until this failing test process exits.
+            drop(worker);
+            panic!("inbound commit/callback did not finish: {error}; retained fixture {}", root.display());
+        }
+    };
+    worker.join().expect("owned inbound worker returned");
+    assert!(outcome.expect("original reply remains a successful commit"));
+    let (observed_admission, observed_entries, original, replacement) = callback_receiver
+        .recv_timeout(Duration::from_secs(5))
+        .expect("committed listener must publish its observations")
+        .expect("listener must reenter the actual Session and replace the claim");
+    assert_eq!(callbacks.load(Ordering::SeqCst), 1);
+    assert_eq!(observed_admission, admission);
+    assert!(original.claimed, "the original producer still owned its claim during publication");
+    assert_eq!(original.id, turn_id);
+    assert_eq!(original.agent_id, target.id);
+    assert_eq!(observed_entries.len(), 1);
+    assert_eq!(observed_entries[0]["id"], entry_id);
+    assert_eq!(observed_entries[0]["content"], inbound["text"]);
+    assert_eq!(observed_entries[0]["sessionKey"], admission.session_key);
+    let retained = turns.snapshot(&target.id, &turn_id)
+        .expect("old completion must not remove the replacement claim");
+    assert_eq!(retained, original, "same public identities retain the replacement's claimed state");
+    assert!(matches!(turns.claim_reply(
+        &target.id, &source.id, None, &admission.session_id,
+        "competing-reply", Some("reused-request"), None, "must not reclaim", timestamp_ms + 2,
+    ), PendingConversationTurnClaimResult::NotFound));
+    assert_eq!(sessions.read_agent_transcript_entries(&target.id).unwrap(), observed_entries);
+    let db = rusqlite::Connection::open(sessions.session_db_path(&target.id).unwrap()).unwrap();
+    let physical_rows: i64 = db.query_row("SELECT COUNT(*) FROM transcript_entries", [], |row| row.get(0)).unwrap();
+    assert_eq!(physical_rows, 1, "the original reply commits exactly one physical row");
+    drop(db);
+    assert_eq!(sessions.get_agent_conversation_partner_ids(&target.id).unwrap(), vec![source.id.clone()]);
+    let mut expected_unread = unread_before;
+    expected_unread.last_activity_at = timestamp_ms as f64;
+    expected_unread.unread_count += 1.0;
+    assert_eq!(sessions.get_agent_unread_state(&target.id).unwrap(), expected_unread);
+
+    assert!(!persist_agent_inbound_message(&sessions, &target.id, &inbound).expect("committed reply is a duplicate"));
+    assert_eq!(turns.snapshot(&target.id, &turn_id), Some(retained));
+    assert_eq!(sessions.read_agent_transcript_entries(&target.id).unwrap(), observed_entries);
+    assert_eq!(sessions.get_agent_unread_state(&target.id).unwrap(), expected_unread);
+    assert!(turns.complete(&target.id, &replacement), "the current replacement can settle itself");
+    assert!(turns.snapshot(&target.id, &turn_id).is_none());
+    assert!(!turns.complete(&target.id, &replacement), "settlement is single-use");
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn legacy_inbound_uses_occupied_physical_ids_and_preserves_no_admission_compatibility() {
+    let root = temp_root();
+    let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(&root, 500));
+    let source = sessions.materialize_new_session(Some(&profile("Source")), "user", None).unwrap();
+    let target = sessions.materialize_new_session(Some(&profile("Target")), "user", None).unwrap();
+    let owner = sessions.open_agent_db_owner(&target.id).unwrap();
+    assert!(owner.delete_kv("sessionWorkAdmission").unwrap());
+    let db = rusqlite::Connection::open(sessions.session_db_path(&target.id).unwrap()).unwrap();
+    db.execute(
+        "INSERT INTO transcript_entries (id, entry) VALUES (?1, ?2)",
+        rusqlite::params!["t0u", serde_json::json!({"id":"t0u","kind":"future-entry"}).to_string()],
+    ).unwrap();
+    assert!(sessions.read_agent_transcript_entries(&target.id).unwrap().is_empty());
+    for text in ["first legacy inbound", "second legacy inbound"] {
+        assert!(persist_agent_inbound_message(&sessions, &target.id, &serde_json::json!({
+            "from":{"id":source.id},"text":text,"timestampMs":100,
+        })).expect("legacy fresh commit"));
+    }
+    let entries = sessions.read_agent_transcript_entries(&target.id).unwrap();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0]["id"], "t1u");
+    assert_eq!(entries[1]["id"], "t2u");
+    assert!(entries.iter().all(|entry| entry.get("sessionKey").is_none()));
+    let count: i64 = db.query_row("SELECT COUNT(*) FROM transcript_entries", [], |row| row.get(0)).unwrap();
+    assert_eq!(count, 3, "opaque occupied row survives both fresh deliveries");
+    drop(db);
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_turn_completion_precedes_partner_bookkeeping() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let inbound = source
+        .split("pub fn persist_agent_inbound_message(")
+        .nth(1)
+        .expect("inbound owner exists")
+        .split("fn now_ms(")
+        .next()
+        .expect("inbound owner boundary exists");
+    let completion = inbound
+        .find("pending_conversation_turns().complete")
+        .expect("successful append completes the pending turn");
+    let partner = inbound
+        .find("add_agent_conversation_partner")
+        .expect("partner bookkeeping exists");
+    assert!(completion < partner);
+}
+
+#[test]
+fn sender_partner_bookkeeping_cannot_block_wake_delivery() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    let sender = source
+        .split("pub fn send_to_agent_with_session_and_reply(")
+        .nth(1)
+        .expect("direct sender owner exists")
+        .split("pub fn persist_agent_inbound_message(")
+        .next()
+        .expect("direct sender owner boundary exists");
+    let partner = sender
+        .find("add_agent_conversation_partner")
+        .expect("sender partner bookkeeping exists");
+    let wake = sender
+        .find("(self.wake_sink)(")
+        .expect("sender wake dispatch exists");
+    assert!(partner < wake);
+    assert!(sender.contains(
+        "let _ = self\n            .sessions\n            .add_agent_conversation_partner(from_agent_id, to_agent_id);"
+    ));
+}
+
+#[test]
+fn persisted_never_policy_rejects_before_transcript_or_wake(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let admission=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("alpha admission");
+    sessions.write_session_communication_policy(
+        &alpha.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:Some(SessionCommunicationMode::Never),receive:None},
+    ).expect("policy write");
+    let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
+        let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
+    },None);
+    let error=service.send_to_agent_with_session(&alpha.id,None,&beta.id,"blocked",&[],false)
+        .expect_err("never policy must reject");
+    assert!(error.contains("send is disabled"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("sender").is_empty());
+    assert!(wakes.lock().expect("wakes").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn persisted_ask_policy_rejects_without_approval_consumer(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let admission=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("alpha admission");
+    sessions.write_session_communication_policy(
+        &alpha.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:Some(SessionCommunicationMode::Ask),receive:None},
+    ).expect("policy write");
+    let wakes=Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),{
+        let wakes=Arc::clone(&wakes);Arc::new(move|wake|wakes.lock().expect("wakes").push(wake.clone()))
+    },None);
+    let error=service.send_to_agent_with_session(&alpha.id,None,&beta.id,"approval",&[],false)
+        .expect_err("ask policy must fail closed without approval consumer");
+    assert!(error.contains("requires approval"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("sender").is_empty());
+    assert!(wakes.lock().expect("wakes").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_consumer_binds_source_identity_and_rejects_self_or_unknown(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let target=sessions.materialize_new_session(Some(&profile("Target")),"user",None).expect("target");
+    let source=sessions.materialize_new_session(Some(&profile("Canonical Source")),"user",None).expect("source");
+    let inbound=|source:&str| serde_json::json!({
+        "from":{"id":source,"name":"spoofed source name"},
+        "text":"must not be accepted",
+        "timestampMs":100,
+    });
+    assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound(&target.id)).expect("self inbound"));
+    assert!(!persist_agent_inbound_message(&sessions,&target.id,&inbound("missing-source")).expect("unknown inbound"));
+    let accepted = persist_agent_inbound_message(&sessions,&target.id,&inbound(&source.id)).expect("known inbound");
+    assert!(accepted);
+    let entries=sessions.read_agent_transcript_entries(&target.id).expect("target transcript");
+    assert_eq!(entries[0]["fromAgent"]["name"],"Canonical Source");
+    assert_eq!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners"),vec![source.id]);
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_consumer_rechecks_target_receive_policy_before_persistence(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let source=sessions.materialize_new_session(Some(&profile("Source")),"user",None).expect("source");
+    let target=sessions.materialize_new_session(Some(&profile("Target")),"user",None).expect("target");
+    let admission=sessions.read_session_work_admission(&target.id).expect("admission").expect("target admission");
+    sessions.write_session_communication_policy(
+        &target.id,&admission.session_id,&admission.lifecycle_revision,
+        &SessionCommunicationPolicyOverride{send:None,receive:Some(SessionCommunicationMode::Never)},
+    ).expect("policy write");
+    let inbound=serde_json::json!({
+        "from":{"id":source.id,"name":"spoofed"},
+        "text":"blocked by target receive policy",
+        "timestampMs":100,
+    });
+    let error=persist_agent_inbound_message(&sessions,&target.id,&inbound).expect_err("receive policy must reject");
+    assert!(error.contains("receive is disabled"));
+    assert!(sessions.read_agent_transcript_entries(&target.id).expect("target transcript").is_empty());
+    assert!(sessions.get_agent_conversation_partner_ids(&target.id).expect("target partners").is_empty());
+    sessions.shutdown();let _=fs::remove_dir_all(root);
+}
+
+#[test]
+fn inbound_policy_recheck_is_target_admission_scoped() {
+    let source = include_str!("../src/extensions/transcript/agent_to_agent_messaging.rs");
+    assert!(source.contains("if let Some(source_admission) = source_admission.as_ref()"));
+    assert!(source.contains("from_id,\n            Some(&source_admission.session_key)"));
+    assert!(source.contains("if source_admission.is_some() || target_admission.is_some()"));
+    assert!(source.contains(".map(|admission| admission.session_key.clone())"));
+    assert!(source.contains(".unwrap_or_default()"));
+    let normalized: String = source.chars().filter(|ch| !ch.is_whitespace()).collect();
+    assert!(normalized.contains(
+        "ifletSome(target_admission)=target_admission.as_ref(){sessions.assert_session_work_admission(agent_id,Some(&target_admission.session_key),)?;}"
+    ));
+}
+
+#[test]
+fn session_bound_sender_append_rejects_an_archived_source_without_writing(){
+    let root=temp_root();let sessions=Arc::new(ProductionSessionWorkers::with_agents_root(&root,500));
+    let alpha=sessions.materialize_new_session(Some(&profile("Alpha")),"user",None).expect("alpha");
+    let beta=sessions.materialize_new_session(Some(&profile("Beta")),"user",None).expect("beta");
+    let session_key=format!("agent:{}:main",alpha.id);
+    let current=sessions.read_session_work_admission(&alpha.id).expect("admission").expect("main admission");
+    sessions.transition_session_work_archive(
+        &alpha.id,&session_key,&current.session_id,Some(&current.lifecycle_revision),true,
+        Some("human-1"),Some("review"),100.0,
+    ).expect("archive source session");
+    let service=ProductionAgentToAgentMessaging::new(Arc::clone(&sessions),Arc::new(|_|{}),None);
+    let error=service.send_to_agent_with_session(&alpha.id,Some(&session_key),&beta.id,"hello",&[],false)
+        .expect_err("archived source must reject the session-bound append");
+    assert!(error.contains("is archived"));
+    assert!(sessions.read_agent_transcript_entries(&alpha.id).expect("source transcript").is_empty());
     sessions.shutdown();let _=fs::remove_dir_all(root);
 }
 
@@ -336,7 +830,9 @@ fn deletion_fenced_target_uses_frozen_agent_gone_response() {
     let beta = sessions
         .materialize_new_session(Some(&profile("Beta")), "user", None)
         .expect("beta");
-    sessions.begin_agent_delete(&beta.id);
+    sessions
+        .begin_agent_delete(&beta.id)
+        .expect("publish deletion fence");
 
     let service = ProductionAgentToAgentMessaging::new(
         Arc::clone(&sessions),
@@ -348,7 +844,9 @@ fn deletion_fenced_target_uses_frozen_agent_gone_response() {
         .expect("send result");
     assert_eq!(ack, "That agent no longer exists.");
 
-    sessions.end_agent_delete(&beta.id);
+    sessions
+        .end_agent_delete(&beta.id)
+        .expect("clear deletion fence");
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }

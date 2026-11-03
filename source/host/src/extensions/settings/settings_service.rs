@@ -1,31 +1,265 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::any::Any;
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fs;
 use std::io;
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use chrono::{SecondsFormat, Utc};
 use chrono_tz::Tz;
 use serde_json::{Map, Value, json};
+use subtle::ConstantTimeEq;
 
+use crate::agents::agent_roster::{
+    apply_implicit_agent_roster_defaults, collect_agent_entries,
+    can_write_doctor_include,
+    pin_survivor_workspace_for_roster_collapse, try_resolve_default_agent_id,
+};
+use crate::extensions::secrets::audit_manager::SecretsAuditManager;
+use crate::host_diagnostics::report_diagnostic_event;
 use crate::host_paths::get_sand_root_dir;
+use crate::durable_file_policy::HOST_CONFIG_REVISION_KEY_FILE_NAME;
+use crate::host_secret_store::{
+    HostConfigRevisionKey, load_or_create_host_config_revision_key,
+};
+use super::public_projection::{
+    is_marker as is_public_redaction_marker, redact_public_settings,
+    restore_public_settings_update,
+};
 
 pub const MCP_CUSTOM_INSTRUCTIONS_MAX_LENGTH: usize = 500;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_ENTRIES: usize = 20;
 pub const SAND_AUTO_REVIEW_INSTRUCTION_MAX_CHARS: usize = 1_000;
 const INFERENCE_PROVIDERS: [&str; 5] = ["fabushi", "cursor", "claude-code", "codex", "openrouter"];
+const REDACTED_SECRET_SENTINEL: &str = "[REDACTED]";
+
+fn collect_secret_audit_findings(settings: &Map<String, Value>) -> Vec<Value> {
+    let manager = SecretsAuditManager::new();
+    manager
+        .audit_json_value(&Value::Object(settings.clone()), "settings")
+        .into_iter()
+        .map(|finding| json!({
+            "keyPath": finding.key_path,
+            "findingKind": finding.finding_kind,
+            "message": finding.message,
+            "suggestedSecretRef": finding.suggested_secret_ref,
+        }))
+        .collect()
+}
+
+fn apply_skill_config_update(
+    settings: &mut Map<String, Value>,
+    update: &Value,
+    submitted_public_update: Option<&Value>,
+) {
+    let Some(skill_update) = update.as_object() else {
+        return;
+    };
+    let Some(skill_entries) = skill_update.get("entries").and_then(Value::as_object) else {
+        return;
+    };
+    let skills = settings
+        .entry("skills")
+        .or_insert_with(|| json!({}));
+    if !skills.is_object() {
+        *skills = json!({});
+    }
+    let skills_object = skills.as_object_mut().expect("skills object");
+    let entries = skills_object
+        .entry("entries")
+        .or_insert_with(|| json!({}));
+    if !entries.is_object() {
+        *entries = json!({});
+    }
+    let entries_object = entries.as_object_mut().expect("skills entries object");
+
+    for (skill_key, requested) in skill_entries {
+        let Some(requested) = requested.as_object() else {
+            continue;
+        };
+        let current = entries_object
+            .entry(skill_key.clone())
+            .or_insert_with(|| json!({}));
+        if !current.is_object() {
+            *current = json!({});
+        }
+        let current_object = current.as_object_mut().expect("skill entry object");
+        // The public owner has already validated/restored this submission under
+        // its writer lock. A marker means preserve the stored bytes, not a new
+        // explicit value to trim (or an empty value to remove).
+        let submitted = submitted_public_update
+            .and_then(|value| value.get("entries"))
+            .and_then(|entries| entries.get(skill_key));
+
+        if let Some(enabled) = requested.get("enabled").and_then(Value::as_bool) {
+            current_object.insert("enabled".into(), Value::Bool(enabled));
+        }
+        if let Some(api_key) = requested.get("apiKey").and_then(Value::as_str)
+            .filter(|_| !submitted.and_then(|value| value.get("apiKey"))
+                .is_some_and(is_public_redaction_marker))
+        {
+            let api_key = api_key.trim();
+            if api_key != REDACTED_SECRET_SENTINEL {
+                if api_key.is_empty() {
+                    current_object.remove("apiKey");
+                } else {
+                    current_object.insert("apiKey".into(), Value::String(api_key.into()));
+                }
+            }
+        }
+        if let Some(requested_env) = requested.get("env").and_then(Value::as_object) {
+            let env = current_object
+                .entry("env")
+                .or_insert_with(|| json!({}));
+            if !env.is_object() {
+                *env = json!({});
+            }
+            let env_object = env.as_object_mut().expect("skill env object");
+            for (key, value) in requested_env {
+                if submitted.and_then(|value| value.get("env"))
+                    .and_then(|env| env.get(key))
+                    .is_some_and(is_public_redaction_marker)
+                {
+                    continue;
+                }
+                let Some(value) = value.as_str() else {
+                    continue;
+                };
+                let key = key.trim();
+                if key.is_empty() {
+                    continue;
+                }
+                let value = value.trim();
+                if value == REDACTED_SECRET_SENTINEL {
+                    continue;
+                }
+                if value.is_empty() {
+                    env_object.remove(key);
+                } else {
+                    env_object.insert(key.into(), Value::String(value.into()));
+                }
+            }
+        }
+    }
+}
 
 pub type UserTimeZoneListener = Arc<dyn Fn(Option<String>) + Send + Sync + 'static>;
 pub type SettingsChangeListener = Arc<dyn Fn(Vec<String>) + Send + Sync + 'static>;
 pub type FeatureFlagOverrideListener =
     Arc<dyn Fn(BTreeMap<String, bool>) + Send + Sync + 'static>;
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct HostSettingsSnapshot {
+    pub settings: Value,
+    pub hash: String,
+    pub config_source: Value,
+}
+
+/// The only complete Settings snapshot intended for an RPC/UI response.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PublicHostSettingsSnapshot {
+    pub settings: Value,
+    pub hash: String,
+    pub config_source: Value,
+}
+
+/// Keep trusted commit consumers separate from the public response projection.
+/// This type deliberately has no serialization implementation.
+pub struct PublicHostSettingsCommit {
+    pub snapshot: PublicHostSettingsSnapshot,
+    pub trusted_settings: Value,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum PublicHostSettingsError {
+    #[error("config baseHash mismatch")]
+    Conflict,
+    #[error("configuration update rejected")]
+    Rejected,
+    #[error("configuration revision key is unavailable")]
+    KeyUnavailable,
+}
+
+impl From<HostSettingsUpdateError> for PublicHostSettingsError {
+    fn from(error: HostSettingsUpdateError) -> Self {
+        match error {
+            HostSettingsUpdateError::Conflict { .. } => Self::Conflict,
+            HostSettingsUpdateError::Rejected(_) => Self::Rejected,
+        }
+    }
+}
+
+fn public_host_settings_snapshot(
+    snapshot: &HostSettingsSnapshot,
+    key: &HostConfigRevisionKey,
+) -> PublicHostSettingsSnapshot {
+    let mut config_source = snapshot.config_source.clone();
+    if let Some(raw_hash) = config_source.get("rawHash").and_then(Value::as_str) {
+        let projected = key.project_raw_hash(raw_hash);
+        config_source["rawHash"] = Value::String(projected);
+    }
+    PublicHostSettingsSnapshot {
+        settings: redact_public_settings(&snapshot.settings),
+        hash: key.project_normalized_hash(&snapshot.hash),
+        config_source,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum HostSettingsUpdateError {
+    #[error("config baseHash mismatch: expected {expected}, got {actual}")]
+    Conflict { expected: String, actual: String },
+    #[error("{0}")]
+    Rejected(String),
+}
+
 pub fn is_valid_iana_time_zone(value: &str) -> bool {
     value.parse::<Tz>().is_ok()
 }
+
+/// Traverses a nested JSON Value along a dot-separated path (e.g. "foo.bar"),
+/// blocking prototype-bearing keys like "__proto__", "prototype", and "constructor".
+pub fn get_json_value_at_path<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
+    let mut cursor = root;
+    for part in path.split('.') {
+        let trimmed = part.trim();
+        if trimmed.is_empty() || trimmed == "__proto__" || trimmed == "prototype" || trimmed == "constructor" {
+            return None;
+        }
+        cursor = cursor.as_object()?.get(trimmed)?;
+    }
+    Some(cursor)
+}
+
+/// Mutates a nested JSON Object along a dot-separated path, creating intermediate objects
+/// and rejecting unsafe prototype keys.
+pub fn set_json_value_at_path(root: &mut Value, path: &str, val: Value) -> Result<(), &'static str> {
+    let parts: Vec<&str> = path.split('.').map(str::trim).collect();
+    if parts.is_empty() || parts.iter().any(|p| p.is_empty()) {
+        return Err("Invalid path. Use non-empty dot notation (e.g. foo.bar)");
+    }
+    if parts.iter().any(|p| *p == "__proto__" || *p == "prototype" || *p == "constructor") {
+        return Err("Unsafe path segment: prototype pollution prevented");
+    }
+    if !root.is_object() {
+        *root = Value::Object(Map::new());
+    }
+    let mut cursor = root.as_object_mut().unwrap();
+    let (leaf, ancestors) = parts.split_last().unwrap();
+    for ancestor in ancestors {
+        if !cursor.contains_key(*ancestor) || !cursor[*ancestor].is_object() {
+            cursor.insert((*ancestor).to_string(), Value::Object(Map::new()));
+        }
+        cursor = cursor.get_mut(*ancestor).unwrap().as_object_mut().unwrap();
+    }
+    cursor.insert((*leaf).to_string(), val);
+    Ok(())
+}
+
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SandAutoReviewInstructions {
@@ -161,6 +395,58 @@ impl<T: ?Sized> Drop for SettingsSubscription<T> {
     }
 }
 
+type NotificationPanic = Box<dyn Any + Send + 'static>;
+
+fn capture_notification_panic(
+    first_panic: &mut Option<NotificationPanic>,
+    notify: impl FnOnce(),
+) {
+    if let Err(payload) = catch_unwind(AssertUnwindSafe(notify)) {
+        if first_panic.is_none() {
+            *first_panic = Some(payload);
+        }
+    }
+}
+
+#[derive(Default)]
+struct SettingsCommitNotification {
+    secret_audit_findings: Vec<Value>,
+    user_time_zone: Option<Option<String>>,
+    feature_flag_overrides: Option<BTreeMap<String, bool>>,
+    fields: Vec<String>,
+}
+
+impl SettingsCommitNotification {
+    fn changes(fields: Vec<String>) -> Self {
+        Self {
+            fields,
+            ..Self::default()
+        }
+    }
+}
+
+#[derive(Default)]
+struct SettingsNotificationQueue {
+    pending: VecDeque<SettingsCommitNotification>,
+    draining: bool,
+}
+
+struct SettingsNotificationDrainGuard<'a> {
+    queue: &'a Mutex<SettingsNotificationQueue>,
+    active: bool,
+}
+
+impl Drop for SettingsNotificationDrainGuard<'_> {
+    fn drop(&mut self) {
+        if self.active {
+            self.queue
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .draining = false;
+        }
+    }
+}
+
 pub struct SettingsService {
     settings_path: PathBuf,
     user_time_zone_listeners: Arc<Mutex<BTreeMap<u64, UserTimeZoneListener>>>,
@@ -168,6 +454,8 @@ pub struct SettingsService {
     feature_flag_override_listeners:
         Arc<Mutex<BTreeMap<u64, FeatureFlagOverrideListener>>>,
     next_listener_id: AtomicU64,
+    write_lock: Mutex<()>,
+    notification_queue: Mutex<SettingsNotificationQueue>,
 }
 impl SettingsService {
     pub fn production() -> Self {
@@ -180,10 +468,36 @@ impl SettingsService {
             change_listeners: Arc::new(Mutex::new(BTreeMap::new())),
             feature_flag_override_listeners: Arc::new(Mutex::new(BTreeMap::new())),
             next_listener_id: AtomicU64::new(1),
+            write_lock: Mutex::new(()),
+            notification_queue: Mutex::new(SettingsNotificationQueue::default()),
         }
     }
     pub fn get_settings_path(&self) -> &Path {
         &self.settings_path
+    }
+
+    /// Returns secret-free provenance for the persisted settings source.
+    pub fn get_config_source_metadata(&self) -> Value {
+        let path = self.settings_path.to_string_lossy().into_owned();
+        let Ok(raw) = fs::read(&self.settings_path) else {
+            return json!({
+                "path": path,
+                "exists": self.settings_path.exists(),
+                "valid": false,
+                "rawHash": Value::Null,
+            });
+        };
+        let valid = serde_json::from_slice::<Value>(&raw)
+            .ok()
+            .and_then(|value| value.as_object().cloned())
+            .and_then(|object| object.get("version").and_then(Value::as_i64))
+            == Some(1);
+        json!({
+            "path": path,
+            "exists": true,
+            "valid": valid,
+            "rawHash": crate::sha256::sha256_hex(raw),
+        })
     }
     fn empty_settings() -> Map<String, Value> {
         Map::from_iter([
@@ -196,21 +510,54 @@ impl SettingsService {
         ])
     }
     fn load(&self) -> Map<String, Value> {
-        let Ok(raw) = fs::read_to_string(&self.settings_path) else {
-            return Self::empty_settings();
+        // Legacy readers project defaults on invalid input. Writers and read
+        // normalization must use load_checked so those defaults never replace it.
+        self.load_checked().unwrap_or_else(|_| Self::empty_settings())
+    }
+    fn load_checked(&self) -> io::Result<Map<String, Value>> {
+        let raw = match fs::read_to_string(&self.settings_path) {
+            Ok(raw) => raw,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                return Ok(Self::empty_settings());
+            }
+            Err(error) => return Err(error),
         };
-        let Ok(Value::Object(mut value)) = serde_json::from_str::<Value>(&raw) else {
-            return Self::empty_settings();
+        let parsed = serde_json::from_str::<Value>(&raw)
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let Value::Object(mut value) = parsed else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Settings source must be a JSON object",
+            ));
         };
         if value.get("version").and_then(Value::as_i64) != Some(1) {
-            return Self::empty_settings();
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Unsupported settings version; expected version 1",
+            ));
         }
         for (key, default) in Self::empty_settings() {
             value.entry(key).or_insert(default);
         }
-        value
+        Ok(value)
     }
-    fn persist(&self, value: &Map<String, Value>) -> io::Result<()> {
+    pub fn is_read_only(&self) -> bool {
+        settings_are_read_only(&self.load())
+    }
+
+    // Every complete-document writer must hold this owner's mutex from load
+    // through publication. Requiring the guard also covers read normalization.
+    fn persist(
+        &self,
+        value: &Map<String, Value>,
+        _guard: &MutexGuard<'_, ()>,
+    ) -> io::Result<()> {
+        if settings_are_read_only(value) {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "Config is externally managed or marked readOnly; mutations are not allowed",
+            ));
+        }
         if let Some(parent) = self.settings_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -234,17 +581,98 @@ impl SettingsService {
         }
         Ok(())
     }
-    fn notify_changes(&self, fields: Vec<String>) {
-        if fields.is_empty() {
-            return;
-        }
-        let listeners = self
-            .change_listeners
+    fn enqueue_notification(
+        &self,
+        notification: SettingsCommitNotification,
+        _writer: &MutexGuard<'_, ()>,
+    ) {
+        self.notification_queue
             .lock()
-            .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
-            .unwrap_or_default();
-        for listener in listeners {
-            listener(fields.clone());
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .pending
+            .push_back(notification);
+    }
+
+    fn drain_notifications(&self) {
+        {
+            let mut queue = self.notification_queue
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if queue.draining {
+                // A reentrant or concurrent writer has already committed. Its
+                // receipt does not wait for the active callback to return.
+                return;
+            }
+            queue.draining = true;
+        }
+        let mut drain_guard = SettingsNotificationDrainGuard {
+            queue: &self.notification_queue,
+            active: true,
+        };
+        let mut first_panic = None;
+        loop {
+            let notification = {
+                let mut queue = self.notification_queue
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                match queue.pending.pop_front() {
+                    Some(notification) => notification,
+                    None => {
+                        // Clear ownership atomically with the empty check so a
+                        // concurrent enqueue cannot strand its notification.
+                        queue.draining = false;
+                        drain_guard.active = false;
+                        break;
+                    }
+                }
+            };
+            self.dispatch_notification(notification, &mut first_panic);
+        }
+        drop(drain_guard);
+        if let Some(payload) = first_panic {
+            resume_unwind(payload);
+        }
+    }
+
+    fn dispatch_notification(
+        &self,
+        notification: SettingsCommitNotification,
+        first_panic: &mut Option<NotificationPanic>,
+    ) {
+        for finding in notification.secret_audit_findings {
+            capture_notification_panic(first_panic, || {
+                report_diagnostic_event("security.secrets.finding", finding);
+            });
+        }
+        if let Some(zone) = notification.user_time_zone {
+            let listeners = self
+                .user_time_zone_listeners
+                .lock()
+                .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
+                .unwrap_or_default();
+            for listener in listeners {
+                capture_notification_panic(first_panic, || listener(zone.clone()));
+            }
+        }
+        if let Some(overrides) = notification.feature_flag_overrides {
+            let listeners = self
+                .feature_flag_override_listeners
+                .lock()
+                .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
+                .unwrap_or_default();
+            for listener in listeners {
+                capture_notification_panic(first_panic, || listener(overrides.clone()));
+            }
+        }
+        if !notification.fields.is_empty() {
+            let listeners = self
+                .change_listeners
+                .lock()
+                .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
+                .unwrap_or_default();
+            for listener in listeners {
+                capture_notification_panic(first_panic, || listener(notification.fields.clone()));
+            }
         }
     }
     fn set_json_field(
@@ -252,7 +680,11 @@ impl SettingsService {
         field: &str,
         value: Option<Value>,
     ) -> Result<bool, String> {
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
+        if settings_are_read_only(&settings) {
+            return Err("Config is externally managed or marked readOnly; mutations are not allowed".into());
+        }
         let changed = match value {
             Some(value) => {
                 if settings.get(field) == Some(&value) {
@@ -267,28 +699,24 @@ impl SettingsService {
         if !changed {
             return Ok(false);
         }
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        self.notify_changes(vec![field.to_string()]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec![field.to_string()]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
 
     pub fn get_detected_user_time_zone(&self) -> Option<String> {
-        self.load()
-            .get("userTimeZone")
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-            .map(ToOwned::to_owned)
+        settings_string(&self.load(), "userTimeZone").map(str::to_string)
     }
     pub fn get_user_time_zone_override(&self) -> Option<String> {
-        self.load()
-            .get("userTimeZoneOverride")
-            .and_then(Value::as_str)
-            .filter(|value| !value.is_empty())
-            .map(ToOwned::to_owned)
+        settings_string(&self.load(), "userTimeZoneOverride").map(str::to_string)
     }
     pub fn get_user_time_zone(&self) -> Option<String> {
-        self.get_user_time_zone_override()
-            .or_else(|| self.get_detected_user_time_zone())
+        user_time_zone_from_settings(&self.load())
     }
     pub fn set_user_time_zone(&self, value: Option<&str>) -> Result<bool, String> {
         self.set_zone_field("userTimeZone", value)
@@ -310,8 +738,9 @@ impl SettingsService {
                 return Ok(false);
             }
         }
-        let before = self.get_user_time_zone();
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
+        let before = user_time_zone_from_settings(&settings);
         let changed = match trimmed {
             Some(zone) => {
                 if settings.get(field).and_then(Value::as_str) == Some(zone) {
@@ -326,19 +755,17 @@ impl SettingsService {
         if !changed {
             return Ok(false);
         }
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        let after = self.get_user_time_zone();
-        if after != before {
-            let listeners = self
-                .user_time_zone_listeners
-                .lock()
-                .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
-                .unwrap_or_default();
-            for listener in listeners {
-                listener(after.clone());
-            }
-        }
-        self.notify_changes(vec![field.to_string()]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        let after = user_time_zone_from_settings(&settings);
+        self.enqueue_notification(
+            SettingsCommitNotification {
+                user_time_zone: (after != before).then_some(after),
+                ..SettingsCommitNotification::changes(vec![field.to_string()])
+            },
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
 
@@ -395,10 +822,7 @@ impl SettingsService {
             .and_then(SandLocalToolPermission::parse)
     }
     pub fn get_local_tool_permission(&self) -> SandLocalToolPermission {
-        resolve_sand_local_tool_permission(
-            self.get_local_tool_permission_choice(),
-            self.get_local_tool_permission_ceiling(),
-        )
+        local_tool_permission_from_settings(&self.load())
     }
     pub fn set_local_tool_permission(
         &self,
@@ -430,16 +854,31 @@ impl SettingsService {
     }
 
     pub fn get_agent_default_model(&self) -> Option<Value> {
-        self.load()
-            .get("agentDefaultModel")
-            .filter(|value| is_model_selection(value))
-            .cloned()
-            .map(force_model_max_mode)
+        agent_default_model_from_settings(&self.load())
     }
+
+    /// Read one document without persisting compatibility normalization. Invalid
+    /// sources and malformed present selections must not become absent defaults.
+    pub fn get_agent_default_model_checked(&self) -> Result<Option<Value>, String> {
+        let _guard = self.write_lock.lock().unwrap();
+        let settings = self.load_checked().map_err(|error| error.to_string())?;
+        let Some(value) = settings
+            .get("agentDefaultModel")
+            .filter(|value| !value.is_null())
+        else {
+            return Ok(None);
+        };
+        validate_agent_default_model(value)?;
+        Ok(Some(force_model_max_mode(value.clone())))
+    }
+
     pub fn set_agent_default_model(
         &self,
         value: Option<&Value>,
     ) -> Result<bool, String> {
+        if let Some(value) = value.filter(|value| value.get("provider").is_some()) {
+            validate_agent_default_model(value)?;
+        }
         if value.is_some_and(|value| !is_model_selection(value)) {
             return Ok(false);
         }
@@ -449,10 +888,7 @@ impl SettingsService {
         )
     }
     pub fn get_computer_use_model(&self) -> Option<Value> {
-        self.load()
-            .get("computerUseModel")
-            .filter(|value| is_model_selection(value))
-            .cloned()
+        computer_use_model_from_settings(&self.load())
     }
     pub fn set_computer_use_model(
         &self,
@@ -561,7 +997,8 @@ impl SettingsService {
         if account_scope.is_empty() {
             return self.clear_account_scope();
         }
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
         if settings
             .get("mcpCustomInstructionsAccountScope")
             .and_then(Value::as_str)
@@ -570,21 +1007,32 @@ impl SettingsService {
             return Ok(false);
         }
         apply_account_scope(&mut settings, account_scope);
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        self.notify_changes(vec!["mcpCustomInstructionsAccountScope".into()]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec!["mcpCustomInstructionsAccountScope".into()]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
 
     pub fn clear_account_scope(&self) -> Result<bool, String> {
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
         let before = settings.clone();
         settings.remove("mcpCustomInstructionsAccountScope");
         clear_account_sensitive_settings(&mut settings);
         if before == settings {
             return Ok(false);
         }
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        self.notify_changes(vec!["mcpCustomInstructionsAccountScope".into()]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec!["mcpCustomInstructionsAccountScope".into()]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
     pub fn get_raw_mcp_custom_instruction(&self, name: &str) -> Option<String> {
@@ -606,7 +1054,8 @@ impl SettingsService {
         if !is_server_id(server_id) {
             return Ok(false);
         }
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
         let mut by_id =
             normalize_server_instructions(settings.get("mcpCustomInstructionsByServerId"));
         if by_id.contains_key(server_id) {
@@ -621,8 +1070,13 @@ impl SettingsService {
             "mcpCustomInstructionsByServerId".into(),
             string_map_value(by_id),
         );
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        self.notify_changes(vec!["mcpCustomInstructionsByServerId".into()]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec!["mcpCustomInstructionsByServerId".into()]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
     pub fn set_mcp_custom_instruction_by_server_id(
@@ -636,7 +1090,8 @@ impl SettingsService {
             return Ok(false);
         }
         let value = clamp_mcp_custom_instruction(value);
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
         let mut by_id =
             normalize_server_instructions(settings.get("mcpCustomInstructionsByServerId"));
         let mut legacy =
@@ -658,11 +1113,16 @@ impl SettingsService {
             string_map_value(by_id),
         );
         settings.insert("mcpCustomInstructions".into(), string_map_value(legacy));
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        self.notify_changes(vec![
-            "mcpCustomInstructionsByServerId".into(),
-            "mcpCustomInstructions".into(),
-        ]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec![
+                "mcpCustomInstructionsByServerId".into(),
+                "mcpCustomInstructions".into(),
+            ]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
     pub fn delete_mcp_custom_instruction_by_server_id(
@@ -671,7 +1131,8 @@ impl SettingsService {
         display_name: &str,
         delete_legacy_name: bool,
     ) -> Result<bool, String> {
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
         let mut by_id =
             normalize_server_instructions(settings.get("mcpCustomInstructionsByServerId"));
         let mut legacy =
@@ -688,11 +1149,16 @@ impl SettingsService {
             string_map_value(by_id),
         );
         settings.insert("mcpCustomInstructions".into(), string_map_value(legacy));
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        self.notify_changes(vec![
-            "mcpCustomInstructionsByServerId".into(),
-            "mcpCustomInstructions".into(),
-        ]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec![
+                "mcpCustomInstructionsByServerId".into(),
+                "mcpCustomInstructions".into(),
+            ]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
 
@@ -720,20 +1186,38 @@ impl SettingsService {
         Some(normalize_sidebar_sections(raw, None))
     }
     pub fn set_sidebar_sections(&self, sections: &[Value]) -> Result<bool, String> {
-        let stored = self.get_sidebar_sections();
-        self.set_json_field(
-            "sidebarSections",
-            Some(Value::Array(normalize_sidebar_sections(
-                sections,
-                stored.as_deref(),
-            ))),
-        )
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
+        if settings_are_read_only(&settings) {
+            return Err("Config is externally managed or marked readOnly; mutations are not allowed".into());
+        }
+        let stored = settings
+            .get("sidebarSections")
+            .and_then(Value::as_array)
+            .map(|sections| normalize_sidebar_sections(sections, None));
+        let next = Value::Array(normalize_sidebar_sections(
+            sections,
+            stored.as_deref(),
+        ));
+        if settings.get("sidebarSections") == Some(&next) {
+            return Ok(false);
+        }
+        settings.insert("sidebarSections".into(), next);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec!["sidebarSections".into()]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
+        Ok(true)
     }
     pub fn get_has_seen_onboarding(&self) -> Option<bool> {
         self.load().get("hasSeenOnboarding").and_then(Value::as_bool)
     }
     pub fn set_has_seen_onboarding(&self, value: bool) -> Result<bool, String> {
-        let mut settings = self.load();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
         let scope = settings
             .get("mcpCustomInstructionsAccountScope")
             .and_then(Value::as_str)
@@ -752,18 +1236,18 @@ impl SettingsService {
         if !changed {
             return Ok(false);
         }
-        self.persist(&settings).map_err(|error| error.to_string())?;
-        self.notify_changes(vec!["hasSeenOnboarding".into()]);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec!["hasSeenOnboarding".into()]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
         Ok(true)
     }
 
     pub fn get_inference_provider(&self) -> String {
-        self.load()
-            .get("inferenceProvider")
-            .and_then(Value::as_str)
-            .filter(|provider| INFERENCE_PROVIDERS.contains(provider))
-            .unwrap_or("cursor")
-            .to_string()
+        inference_provider_from_settings(&self.load()).to_string()
     }
     pub fn set_inference_provider(&self, value: &str) -> Result<bool, String> {
         if !INFERENCE_PROVIDERS.contains(&value) {
@@ -788,7 +1272,12 @@ impl SettingsService {
         if !INFERENCE_PROVIDERS.contains(&provider) {
             return Ok(false);
         }
-        let mut usage = self.get_inference_router_usage();
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self.load_checked().map_err(|error| error.to_string())?;
+        if settings_are_read_only(&settings) {
+            return Err("Config is externally managed or marked readOnly; mutations are not allowed".into());
+        }
+        let mut usage = normalize_inference_usage(settings.get("inferenceRouterUsage"));
         let entry = usage
             .get_mut("providers")
             .and_then(Value::as_object_mut)
@@ -806,18 +1295,40 @@ impl SettingsService {
                 Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true),
             ),
         );
-        self.set_json_field("inferenceRouterUsage", Some(usage))
+        if settings.get("inferenceRouterUsage") == Some(&usage) {
+            return Ok(false);
+        }
+        settings.insert("inferenceRouterUsage".into(), usage);
+        self.persist(&settings, &guard).map_err(|error| error.to_string())?;
+        self.enqueue_notification(
+            SettingsCommitNotification::changes(vec!["inferenceRouterUsage".into()]),
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
+        Ok(true)
     }
 
     pub fn get_notification_config(&self) -> Value {
-        let mut settings = self.load();
-        let stored = json!({ "isEnabled": false });
-        if settings.get("notifications") != Some(&stored) {
-            settings.insert("notifications".into(), stored);
-            let _ = self.persist(&settings);
+        let guard = self.write_lock.lock().unwrap();
+        if let Ok(mut settings) = self.load_checked() {
+            self.normalize_notifications_locked(&mut settings, &guard);
         }
         disabled_notification_config()
     }
+
+    fn normalize_notifications_locked(
+        &self,
+        settings: &mut Map<String, Value>,
+        guard: &MutexGuard<'_, ()>,
+    ) {
+        let stored = json!({ "isEnabled": false });
+        if settings.get("notifications") != Some(&stored) {
+            settings.insert("notifications".into(), stored);
+            let _ = self.persist(settings, guard);
+        }
+    }
+
     pub fn set_notification_config(&self, _input: &Value) -> Result<bool, String> {
         self.set_json_field(
             "notifications",
@@ -826,95 +1337,152 @@ impl SettingsService {
     }
 
     pub fn get_host_settings(&self) -> Value {
-        let mut object = Map::new();
-        object.insert("notifications".into(), self.get_notification_config());
-        object.insert(
-            "mcpCustomInstructions".into(),
-            string_map_value(self.get_mcp_custom_instructions()),
-        );
-        object.insert(
-            "mcpCustomInstructionsByServerId".into(),
-            string_map_value(self.get_mcp_custom_instructions_by_server_id()),
-        );
-        object.insert(
-            "mcpDisabledToolsByServerId".into(),
-            string_list_map_value(self.get_mcp_disabled_tools_by_server_id()),
-        );
-        if let Some(scope) = self.get_mcp_custom_instructions_account_scope() {
-            object.insert(
-                "mcpCustomInstructionsAccountScope".into(),
-                Value::String(scope),
-            );
-        }
-        object.insert(
-            "mcpBoxServers".into(),
-            Value::Array(
-                self.get_mcp_box_servers()
-                    .into_iter()
-                    .map(Value::String)
-                    .collect(),
-            ),
-        );
-        let auto_review = self.get_auto_review_instructions();
-        object.insert(
-            "autoReviewInstructions".into(),
-            json!({
-                "isEnabled": auto_review.is_enabled,
-                "allowInstructions": auto_review.allow_instructions,
-                "blockInstructions": auto_review.block_instructions
-            }),
-        );
-        object.insert(
-            "localToolPermission".into(),
-            Value::String(self.get_local_tool_permission().as_str().into()),
-        );
-        object.insert(
-            "webauthnProxyEnabled".into(),
-            Value::Bool(self.get_webauthn_proxy_enabled()),
-        );
-        object.insert(
-            "inferenceProvider".into(),
-            Value::String(self.get_inference_provider()),
-        );
-        object.insert(
-            "inferenceRouterUsage".into(),
-            self.get_inference_router_usage(),
-        );
-        if let Some(value) = self.get_detected_user_time_zone() {
-            object.insert("userTimeZone".into(), Value::String(value));
-        }
-        if let Some(value) = self.get_user_time_zone_override() {
-            object.insert("userTimeZoneOverride".into(), Value::String(value));
-        }
-        if let Some(value) = self.get_agent_default_model() {
-            object.insert("agentDefaultModel".into(), value);
-        }
-        if let Some(value) = self.get_computer_use_model() {
-            object.insert("computerUseModel".into(), value);
-        }
-        if let Some(value) = self.get_pinned_agent_ids() {
-            object.insert(
-                "pinnedAgentIds".into(),
-                Value::Array(value.into_iter().map(Value::String).collect()),
-            );
-        }
-        object.insert(
-            "sidebarSections".into(),
-            Value::Array(self.get_sidebar_sections().unwrap_or_default()),
-        );
-        if let Some(value) = self.get_has_seen_onboarding() {
-            object.insert("hasSeenOnboarding".into(), Value::Bool(value));
-        }
-        Value::Object(object)
+        self.get_host_settings_snapshot().settings
+    }
+
+    fn load_public_revision_key(&self) -> Result<HostConfigRevisionKey, PublicHostSettingsError> {
+        // The installation root follows the actual Settings owner, including
+        // private test installations. No process-global key or identity cache.
+        let path = self.settings_path.with_file_name(HOST_CONFIG_REVISION_KEY_FILE_NAME);
+        load_or_create_host_config_revision_key(Some(&path))
+            .map_err(|_| PublicHostSettingsError::KeyUnavailable)
+    }
+
+    pub fn get_public_host_settings_snapshot(
+        &self,
+    ) -> Result<PublicHostSettingsSnapshot, PublicHostSettingsError> {
+        // This must precede the trusted getter's possible normalization write.
+        let key = self.load_public_revision_key()?;
+        let snapshot = self.get_host_settings_snapshot();
+        Ok(public_host_settings_snapshot(&snapshot, &key))
+    }
+
+    pub fn set_public_host_settings_if_current(
+        &self,
+        base_hash: Option<&str>,
+        update: Value,
+    ) -> Result<PublicHostSettingsCommit, PublicHostSettingsError> {
+        let key = self.load_public_revision_key()?;
+        let committed = self.commit_host_settings(base_hash, update, Some(&key))
+            .map_err(PublicHostSettingsError::from)?;
+        // Pure projection of this captured commit, even if a listener committed
+        // a newer document while the existing notification queue was draining.
+        let snapshot = public_host_settings_snapshot(&committed, &key);
+        Ok(PublicHostSettingsCommit {
+            snapshot,
+            trusted_settings: committed.settings,
+        })
+    }
+
+    /// Capture the normalized configuration and source provenance under this
+    /// owner's writer lock. Invalid sources retain legacy default projections
+    /// with invalid source metadata and are never normalized back to disk.
+    pub fn get_host_settings_snapshot(&self) -> HostSettingsSnapshot {
+        let guard = self.write_lock.lock().unwrap();
+        let settings = match self.load_checked() {
+            Ok(mut settings) => {
+                self.normalize_notifications_locked(&mut settings, &guard);
+                settings
+            }
+            Err(_) => Self::empty_settings(),
+        };
+        host_settings_snapshot(&settings, self.get_config_source_metadata())
     }
 
     pub fn set_host_settings(&self, update: &Value) -> Result<Value, String> {
-        let Some(update) = update.as_object() else {
-            return Ok(self.get_host_settings());
+        self.set_host_settings_if_current(None, update.clone())
+            .map(|snapshot| snapshot.settings)
+            .map_err(|error| error.to_string())
+    }
+
+    /// Compare and commit through the same owner as all specialized writers.
+    /// The reply is captured before releasing the lock or invoking listeners.
+    /// Reentrant/concurrent writes enqueue behind an active drainer and may
+    /// return their committed receipt before their listeners have run.
+    pub fn set_host_settings_if_current(
+        &self,
+        base_hash: Option<&str>,
+        update: Value,
+    ) -> Result<HostSettingsSnapshot, HostSettingsUpdateError> {
+        self.commit_host_settings(base_hash, update, None)
+    }
+
+    fn commit_host_settings(
+        &self,
+        base_hash: Option<&str>,
+        update: Value,
+        public_key: Option<&HostConfigRevisionKey>,
+    ) -> Result<HostSettingsSnapshot, HostSettingsUpdateError> {
+        let guard = self.write_lock.lock().unwrap();
+        let mut settings = self
+            .load_checked()
+            .map_err(|error| HostSettingsUpdateError::Rejected(error.to_string()))?;
+        let current = host_settings_snapshot(&settings, self.get_config_source_metadata());
+        if let Some(base_hash) = base_hash {
+            let expected = public_key
+                .map(|key| key.project_normalized_hash(&current.hash))
+                .unwrap_or_else(|| current.hash.clone());
+            if !bool::from(base_hash.as_bytes().ct_eq(expected.as_bytes())) {
+                return Err(HostSettingsUpdateError::Conflict {
+                    expected,
+                    actual: base_hash.to_string(),
+                });
+            }
+        }
+        if settings_are_read_only(&settings) {
+            return Err(HostSettingsUpdateError::Rejected(
+                "Config is externally managed or marked readOnly; mutations are not allowed".into(),
+            ));
+        }
+        let submitted_public_skills = public_key
+            .and_then(|_| update.get("skills"))
+            .cloned();
+        let update = if public_key.is_some() {
+            restore_public_settings_update(&update, &current.settings)
+                .map_err(|message| HostSettingsUpdateError::Rejected(message.into()))?
+        } else {
+            update
         };
-        let previous_zone = self.get_user_time_zone();
-        let mut settings = self.load();
+        let Some(update) = update.as_object() else {
+            self.normalize_notifications_locked(&mut settings, &guard);
+            return Ok(host_settings_snapshot(
+                &settings,
+                self.get_config_source_metadata(),
+            ));
+        };
+        if let Some(value) = update
+            .get("agentDefaultModel")
+            .filter(|value| value.get("provider").is_some())
+        {
+            validate_agent_default_model(value).map_err(HostSettingsUpdateError::Rejected)?;
+        }
+        let previous_zone = user_time_zone_from_settings(&settings);
         let changed_fields = update.keys().cloned().collect::<Vec<_>>();
+
+        if let Some(agent_update) = update.get("agents") {
+            let parsed = Value::Object(settings.clone());
+            let mut resolved = parsed.clone();
+            if let Some(object) = resolved.as_object_mut() {
+                if agent_update.is_null() {
+                    object.remove("agents");
+                } else {
+                    object.insert("agents".into(), agent_update.clone());
+                }
+            }
+            let current_roster_is_writable =
+                can_write_doctor_include(&parsed, &resolved, false);
+            let target_roster_is_writable =
+                can_write_doctor_include(&resolved, &resolved, false);
+            if !current_roster_is_writable || !target_roster_is_writable {
+                return Err(HostSettingsUpdateError::Rejected(
+                    "agent roster is include-owned and cannot be overwritten by this config owner"
+                        .into(),
+                ));
+            }
+        }
+        if let Some(value) = update.get("skills") {
+            apply_skill_config_update(&mut settings, value, submitted_public_skills.as_ref());
+        }
 
         settings.insert("notifications".into(), json!({ "isEnabled": false }));
 
@@ -964,6 +1532,48 @@ impl SettingsService {
                         .collect(),
                 ),
             );
+        }
+        if let Some(value) = update.get("agents") {
+            if value.is_null() {
+                settings.remove("agents");
+            } else if value.is_object() {
+                let previous = Value::Object(settings.clone());
+                let candidate = json!({ "agents": value.clone() });
+                let normalized = apply_implicit_agent_roster_defaults(&candidate);
+                let mut target = previous.clone();
+                if let Some(normalized_agents) = normalized.get("agents") {
+                    target
+                        .as_object_mut()
+                        .expect("settings object")
+                        .insert("agents".into(), normalized_agents.clone());
+                }
+
+                let source_workspace = try_resolve_default_agent_id(&previous)
+                    .and_then(|active_id| {
+                        collect_agent_entries(&previous, None)
+                            .into_iter()
+                            .find(|entry| entry.id == active_id)
+                            .and_then(|entry| {
+                                entry
+                                    .entry
+                                    .get("workspace")
+                                    .and_then(Value::as_str)
+                                    .map(str::to_string)
+                            })
+                    });
+                let (pinned, _) = pin_survivor_workspace_for_roster_collapse(
+                    &previous,
+                    &target,
+                    source_workspace.as_deref(),
+                );
+                settings.insert(
+                    "agents".into(),
+                    pinned
+                        .get("agents")
+                        .cloned()
+                        .unwrap_or_else(|| value.clone()),
+                );
+            }
         }
         for field in ["userTimeZone", "userTimeZoneOverride"] {
             if let Some(Value::String(zone)) = update.get(field) {
@@ -1047,35 +1657,31 @@ impl SettingsService {
             }
         }
 
-        self.persist(&settings).map_err(|error| error.to_string())?;
-
-        let next_zone = self.get_user_time_zone();
-        if next_zone != previous_zone {
-            let listeners = self
-                .user_time_zone_listeners
-                .lock()
-                .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
-                .unwrap_or_default();
-            for listener in listeners {
-                listener(next_zone.clone());
-            }
-        }
-        if let Some(Value::Object(raw)) = update.get("featureFlagOverrides") {
-            let overrides = raw
-                .iter()
-                .filter_map(|(key, value)| value.as_bool().map(|value| (key.clone(), value)))
-                .collect::<BTreeMap<_, _>>();
-            let listeners = self
-                .feature_flag_override_listeners
-                .lock()
-                .map(|listeners| listeners.values().cloned().collect::<Vec<_>>())
-                .unwrap_or_default();
-            for listener in listeners {
-                listener(overrides.clone());
-            }
-        }
-        self.notify_changes(changed_fields);
-        Ok(self.get_host_settings())
+        let secret_audit_findings = collect_secret_audit_findings(&settings);
+        self.persist(&settings, &guard)
+            .map_err(|error| HostSettingsUpdateError::Rejected(error.to_string()))?;
+        let committed = host_settings_snapshot(&settings, self.get_config_source_metadata());
+        let next_zone = user_time_zone_from_settings(&settings);
+        let feature_flag_overrides = update
+            .get("featureFlagOverrides")
+            .and_then(Value::as_object)
+            .map(|raw| {
+                raw.iter()
+                    .filter_map(|(key, value)| value.as_bool().map(|value| (key.clone(), value)))
+                    .collect()
+            });
+        self.enqueue_notification(
+            SettingsCommitNotification {
+                secret_audit_findings,
+                user_time_zone: (next_zone != previous_zone).then_some(next_zone),
+                feature_flag_overrides,
+                fields: changed_fields,
+            },
+            &guard,
+        );
+        drop(guard);
+        self.drain_notifications();
+        Ok(committed)
     }
 
     pub fn subscribe_to_user_time_zone(
@@ -1122,6 +1728,186 @@ impl SettingsService {
             listeners: Arc::clone(&self.feature_flag_override_listeners),
             active: true,
         }
+    }
+}
+
+fn settings_are_read_only(settings: &Map<String, Value>) -> bool {
+    std::env::var("OPENCLAW_CONFIG_READONLY")
+        .map(|value| value == "1")
+        .unwrap_or(false)
+        || std::env::var("OPENCLAW_NIX_MODE")
+            .map(|value| value == "1")
+            .unwrap_or(false)
+        || settings
+            .get("readOnly")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+}
+
+fn settings_string<'a>(settings: &'a Map<String, Value>, field: &str) -> Option<&'a str> {
+    settings
+        .get(field)
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+}
+
+fn user_time_zone_from_settings(settings: &Map<String, Value>) -> Option<String> {
+    settings_string(settings, "userTimeZoneOverride")
+        .or_else(|| settings_string(settings, "userTimeZone"))
+        .map(str::to_string)
+}
+
+fn local_tool_permission_from_settings(settings: &Map<String, Value>) -> SandLocalToolPermission {
+    resolve_sand_local_tool_permission(
+        normalize_sand_local_tool_permission(
+            settings.get("localToolPermission").and_then(Value::as_str),
+        ),
+        settings
+            .get("localToolPermissionCeiling")
+            .and_then(Value::as_str)
+            .and_then(SandLocalToolPermission::parse),
+    )
+}
+
+fn inference_provider_from_settings(settings: &Map<String, Value>) -> &str {
+    settings
+        .get("inferenceProvider")
+        .and_then(Value::as_str)
+        .filter(|provider| INFERENCE_PROVIDERS.contains(provider))
+        .unwrap_or("cursor")
+}
+
+fn agent_default_model_from_settings(settings: &Map<String, Value>) -> Option<Value> {
+    settings
+        .get("agentDefaultModel")
+        .filter(|value| is_model_selection(value))
+        .cloned()
+        .map(force_model_max_mode)
+}
+
+fn computer_use_model_from_settings(settings: &Map<String, Value>) -> Option<Value> {
+    settings
+        .get("computerUseModel")
+        .filter(|value| is_model_selection(value))
+        .cloned()
+}
+
+// Project one already-loaded document. In particular, never call public
+// getters here: some normalize on disk, and separate loads mix generations.
+fn host_settings_snapshot(
+    stored: &Map<String, Value>,
+    config_source: Value,
+) -> HostSettingsSnapshot {
+    let mut object = Map::new();
+    object.insert("version".into(), Value::from(1));
+    if settings_are_read_only(stored) {
+        object.insert("readOnly".into(), Value::Bool(true));
+    }
+    object.insert("notifications".into(), disabled_notification_config());
+    for field in ["agents", "skills"] {
+        if let Some(value) = stored.get(field) {
+            object.insert(field.into(), value.clone());
+        }
+    }
+    object.insert(
+        "mcpCustomInstructions".into(),
+        string_map_value(normalize_legacy_instructions(
+            stored.get("mcpCustomInstructions"),
+        )),
+    );
+    object.insert(
+        "mcpCustomInstructionsByServerId".into(),
+        string_map_value(normalize_server_instructions(
+            stored.get("mcpCustomInstructionsByServerId"),
+        )),
+    );
+    object.insert(
+        "mcpDisabledToolsByServerId".into(),
+        string_list_map_value(normalize_disabled_tools(
+            stored.get("mcpDisabledToolsByServerId"),
+        )),
+    );
+    if let Some(scope) = settings_string(stored, "mcpCustomInstructionsAccountScope") {
+        object.insert(
+            "mcpCustomInstructionsAccountScope".into(),
+            Value::String(scope.into()),
+        );
+    }
+    object.insert(
+        "mcpBoxServers".into(),
+        Value::Array(
+            unique_strings(stored.get("mcpBoxServers"))
+                .into_iter()
+                .map(Value::String)
+                .collect(),
+        ),
+    );
+    let auto_review = normalize_sand_auto_review_instructions(stored.get("autoReviewInstructions"));
+    object.insert(
+        "autoReviewInstructions".into(),
+        json!({
+            "isEnabled": auto_review.is_enabled,
+            "allowInstructions": auto_review.allow_instructions,
+            "blockInstructions": auto_review.block_instructions
+        }),
+    );
+    object.insert(
+        "localToolPermission".into(),
+        Value::String(local_tool_permission_from_settings(stored).as_str().into()),
+    );
+    object.insert(
+        "webauthnProxyEnabled".into(),
+        Value::Bool(stored.get("webauthnProxyEnabled").and_then(Value::as_bool) != Some(false)),
+    );
+    object.insert(
+        "inferenceProvider".into(),
+        Value::String(inference_provider_from_settings(stored).into()),
+    );
+    object.insert(
+        "inferenceRouterUsage".into(),
+        normalize_inference_usage(stored.get("inferenceRouterUsage")),
+    );
+    for field in ["userTimeZone", "userTimeZoneOverride"] {
+        if let Some(value) = settings_string(stored, field) {
+            object.insert(field.into(), Value::String(value.into()));
+        }
+    }
+    if let Some(value) = agent_default_model_from_settings(stored) {
+        object.insert("agentDefaultModel".into(), value);
+    }
+    if let Some(value) = computer_use_model_from_settings(stored) {
+        object.insert("computerUseModel".into(), value);
+    }
+    if stored.get("pinnedAgentIds").and_then(Value::as_array).is_some() {
+        object.insert(
+            "pinnedAgentIds".into(),
+            Value::Array(
+                unique_strings(stored.get("pinnedAgentIds"))
+                    .into_iter()
+                    .map(Value::String)
+                    .collect(),
+            ),
+        );
+    }
+    object.insert(
+        "sidebarSections".into(),
+        Value::Array(
+            stored
+                .get("sidebarSections")
+                .and_then(Value::as_array)
+                .map(|sections| normalize_sidebar_sections(sections, None))
+                .unwrap_or_default(),
+        ),
+    );
+    if let Some(value) = stored.get("hasSeenOnboarding").and_then(Value::as_bool) {
+        object.insert("hasSeenOnboarding".into(), Value::Bool(value));
+    }
+    let settings = Value::Object(object);
+    let encoded = serde_json::to_vec(&settings).expect("host settings JSON value serializes");
+    HostSettingsSnapshot {
+        settings,
+        hash: crate::sha256::sha256_hex(encoded),
+        config_source,
     }
 }
 
@@ -1282,6 +2068,31 @@ fn clear_account_sensitive_settings(settings: &mut Map<String, Value>) {
     settings.insert("mcpCustomInstructionsByServerId".into(), json!({}));
     settings.insert("mcpDisabledToolsByServerId".into(), json!({}));
 }
+
+fn validate_agent_default_model(value: &Value) -> Result<(), String> {
+    if !is_model_selection(value) {
+        return Err("agentDefaultModel must be a valid model selection".into());
+    }
+    if !value
+        .get("modelId")
+        .and_then(Value::as_str)
+        .is_some_and(|model| !model.trim().is_empty() && !model.chars().any(char::is_control))
+    {
+        return Err(
+            "agentDefaultModel.modelId must be nonblank and contain no control characters".into(),
+        );
+    }
+    if let Some(provider) = value.get("provider") {
+        if !provider
+            .as_str()
+            .is_some_and(|provider| INFERENCE_PROVIDERS.contains(&provider))
+        {
+            return Err("agentDefaultModel.provider must be a canonical inference provider".into());
+        }
+    }
+    Ok(())
+}
+
 fn is_model_selection(value: &Value) -> bool {
     let Some(object) = value.as_object() else {
         return false;

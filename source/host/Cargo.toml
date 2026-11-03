@@ -10,6 +10,7 @@ fabushi-messaging-core = { path = "../../native/mahayana-messaging" }
 mahayana-computer = { path = "../mahayana/mahayana-rs/mahayana-computer" }
 mahayana-host-protocol = { path = "../mahayana/mahayana-rs/mahayana-host-protocol" }
 getrandom = "0.3"
+hmac = "=0.12.1"
 base64 = "0.22"
 ed25519-dalek = "=2.2.0"
 zip = { version = "=9.0.3", default-features = false, features = ["deflate"] }
@@ -29,17 +30,23 @@ fs2 = "0.4"
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-pemfile = "2"
 rusqlite = { version = "0.39", features = ["bundled"] }
+same-file = "=1.0.6"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["float_roundtrip"] }
 sha1 = "0.10"
 sha2 = "0.10"
 subtle = "2"
 tar = "0.4"
 thiserror = "2"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "time", "net", "sync", "macros"] }
+tungstenite = { version = "0.30", default-features = false, features = ["handshake", "rustls-tls-webpki-roots"] }
 uuid = { version = "1", features = ["v4"] }
 url = "2"
+percent-encoding = "2.3"
 unicode-normalization = "0.1"
+encoding_rs = "0.8"
+qrcode = { version = "0.14.1", default-features = false }
+zstd = "0.13"
 
 [build-dependencies]
 prost-build = "0.13"
@@ -49,3 +56,4 @@ protoc-bin-vendored = "3.2"
 [dev-dependencies]
 rcgen = "0.13"
 pretty_assertions = "1"
+syn = { version = "=2.0.119", default-features = false, features = ["full", "parsing"] }

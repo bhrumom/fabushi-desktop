@@ -1,5 +1,8 @@
 use std::collections::HashMap;
+use std::io;
+use std::sync::Mutex;
 use std::sync::mpsc::{self, Receiver, Sender};
+use std::time::Duration;
 
 use serde_json::Value;
 
@@ -40,6 +43,60 @@ pub struct ControlPortClient {
     waiters: HashMap<String, Sender<ControlCallResult>>,
 }
 
+struct ControlCallRetirement<'a> {
+    client: &'a Mutex<ControlPortClient>,
+    request_id: String,
+}
+
+impl Drop for ControlCallRetirement<'_> {
+    fn drop(&mut self) {
+        let mut client = self.client.lock().unwrap_or_else(|error| error.into_inner());
+        client.retire_request(&self.request_id);
+    }
+}
+
+/// Retires this call's local wait state on every exit, without cancelling remote work.
+pub fn call_control_command<WriteFrame>(
+    client: &Mutex<ControlPortClient>,
+    method: &str,
+    args: Value,
+    timeout: Duration,
+    write_frame: WriteFrame,
+) -> ControlCallResult
+where
+    WriteFrame: FnOnce(&CoordinatorFrame) -> io::Result<()>,
+{
+    let waiter = client
+        .lock()
+        .map_err(|_| Failure::new(COORDINATOR_DISCONNECTED, "control port lock poisoned"))?
+        .call_waiting(method.to_string(), args)?;
+    let _retirement = ControlCallRetirement {
+        client,
+        request_id: waiter.request_id,
+    };
+    let frame = match waiter.action {
+        ClientAction::Post(frame) => frame,
+        _ => {
+            return Err(Failure::new(
+                "COORDINATOR_CONTROL_PROTOCOL_ERROR",
+                "control command did not produce a request frame",
+            ));
+        }
+    };
+    write_frame(&frame).map_err(|error| {
+        Failure::new(
+            COORDINATOR_DISCONNECTED,
+            format!("control request write failed: {error}"),
+        )
+    })?;
+    waiter.reply.recv_timeout(timeout).map_err(|error| {
+        Failure::new(
+            COORDINATOR_DISCONNECTED,
+            format!("control request {method} did not settle: {error}"),
+        )
+    })?
+}
+
 impl Default for ControlPortClient {
     fn default() -> Self {
         Self {
@@ -56,6 +113,7 @@ impl ControlPortClient {
     pub fn start(&self) -> ClientAction { ClientAction::Post(CoordinatorFrame::hello()) }
     pub fn phase(&self) -> ControlPortPhase { self.phase }
     pub fn pending_count(&self) -> usize { self.pending.len() }
+    pub fn waiter_count(&self) -> usize { self.waiters.len() }
 
     pub fn handle_value(&mut self, value: Value) -> Vec<ClientAction> {
         match serde_json::from_value::<CoordinatorFrame>(value) {
@@ -165,6 +223,11 @@ impl ControlPortClient {
         ))];
         actions.extend(self.settle(Failure::new(COORDINATOR_DISCONNECTED, "shutdown requested")));
         actions
+    }
+
+    fn retire_request(&mut self, request_id: &str) {
+        self.pending.remove(request_id);
+        self.waiters.remove(request_id);
     }
 
     fn protocol_breach(&mut self, detail: &str) -> Vec<ClientAction> {

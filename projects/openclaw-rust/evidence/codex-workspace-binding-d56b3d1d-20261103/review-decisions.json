@@ -1,0 +1,77 @@
+{
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "contract": "CWB-v1",
+  "authoring_base": "eea788e757484924116f002f4a88b24a2b5c6cbf",
+  "review_base": "6ec3a6609a47fac44933ebbbd00f5f4b0a539e3b",
+  "first_review_tree": "7324f1f7052c435c72af06e38a2103d20c73e7b8",
+  "selected_effort": "xhigh",
+  "runner_setting": "Configured parent model and effort retained; source review and integration, not executable validation.",
+  "findings": [
+    {
+      "id": "CWB-R1-G001",
+      "origin": "Independent general reviewer source finding; root separately reread the actual provider and shell call chain before this decision.",
+      "severity": "medium",
+      "decision": "FIX",
+      "decision_before_code_change": true,
+      "subject_tree": "7324f1f7052c435c72af06e38a2103d20c73e7b8",
+      "source_evidence": [
+        "source/host/src/extensions/inference/provider_session.rs: run_codex_provider_text_with_lifecycle_reporting_usage_with_max_steps_and_replay, post-transport-preparation cancellation check",
+        "source/host/src/extensions/inference/provider_session.rs: run_routed_provider_text_with_lifecycle_impl, existing preserve_attempt_failure contract",
+        "source/host/src/runner/production_turn_run_shell_adapter.rs: run_with_attempt_runtime_reporting, should_cancel combines watchdog and custody; actual cancellation is checked before permanent-result preservation and retry classification"
+      ],
+      "trigger": "A retained Codex binding rejects a changed or invalid credential image while the actual Runner first-output watchdog expires during the synchronous preparation. The new inner should_cancel check converts Authentication to Cancelled, so the shell sees a retryable watchdog timeout instead of its permanent identity refusal.",
+      "rationale": "The combined attempt stop predicate is not identical to explicit user cancellation. Preserve the existing unique attempt owner's permanent-failure and user-cancellation ordering; a credential refusal must not become retryable merely because a watchdog also expired.",
+      "required_fix": "Thread the existing private preserve_attempt_failure policy into Codex transport preparation. Retain Authentication for the Runner shell to adjudicate after actual user cancellation; ordinary low-level and Memory calls keep cancellation-before-error behavior. Add a causal regression covering real credential refusal, actual watchdog, explicit cancellation, zero transport/tool/checkpoint effects and one terminal attempt.",
+      "resolution": "Applied private policy forwarding and a cfg(test)-only borrowed post-preparation observer; new actual-shell watchdog/Auth/user-cancel and ordinary cancellation regression is wired into both existing Actions lanes. Fresh focused source review and exact-H execution remain pending.",
+      "source_report_id": "CWB-GEN-01",
+      "additional_source_report_ids": [
+        "CWB-SL-002"
+      ]
+    },
+    {
+      "id": "CWB-R2-G001",
+      "origin": "Fresh focused general source review; root independently reread cancelled_error before accepting the finding.",
+      "severity": "medium",
+      "decision": "FIX",
+      "decision_before_code_change": true,
+      "subject_tree": "c59d8a38cf2f7b088033abbd67d326a875b9cdd8",
+      "source_evidence": [
+        "source/host/src/extensions/inference/codex_request_workspace_tests.rs: codex_workspace_actual_watchdog_preserves_credential_refusal_and_user_cancellation, user-cancel branch",
+        "source/host/src/runner/production_turn_run_shell_adapter.rs: actual cancellation check and cancelled_error"
+      ],
+      "trigger": "The new regression reaches actual shell cancellation after the credential load, but its assertion expects Transport while the existing shell returns Cancelled with the exact stored reason.",
+      "rationale": "Correct the oracle to the actual existing owner contract; do not alter production cancellation classification, weaken the exact reason, or remove terminal/no-effect/no-retry assertions.",
+      "required_fix": "Expect ProviderSessionError::Cancelled with cwb-user-cancel-after-real-credential-load in this new actual-shell test.",
+      "resolution": "The one new actual-shell assertion now expects Cancelled with the exact stored reason; all prior direct-runner assertions and no-retry/no-effect controls are retained. Fresh focused review and Actions execution remain pending."
+    },
+    {
+      "id": "CWB-R1-SL001",
+      "source_report_id": "CWB-SL-001",
+      "origin": "Independent blind security/lifetime review; root separately read the actual shipping callback, both compaction phases and Inference summary implementation.",
+      "severity": "high",
+      "decision": "FIX",
+      "decision_before_code_change": true,
+      "subject_tree": "7324f1f7052c435c72af06e38a2103d20c73e7b8",
+      "source_evidence": [
+        "source/host/app/src/main.rs: ProductionTurnSummarizationPrompt composition and run_post_turn_compaction/resolve_split_compaction_summary",
+        "source/host/src/extensions/inference/production.rs: run_summarization_prompt",
+        "source/host/src/runner/production_turn_agent_owner.rs: run_summarization_prompt"
+      ],
+      "trigger": "An admitted Codex turn retains A while current auth.json changes to B. Its automatic primary or split-prefix compaction calls the independent summary method and freshly captures B for A history.",
+      "rationale": "Automatic compaction belongs to the admitted worker and is not an independent summary admission. Close this actual consumer in the existing Inference/composition/Session owners before claiming continuity.",
+      "required_fix": "Provide bound admitted-turn summarization through existing Inference; capture admitted provider, models and bindings in the actual App callback and retain them for both phases. Preserve independent fresh summaries, no-tool/usage/session options and ordinary transport fallback. Authentication or missing-identity Configuration must refuse either compaction phase without committing degraded Session history. Add actual callback/compaction negative controls and real HTTP identity/rotation controls.",
+      "resolution": "Applied admitted-turn Inference summary entry and the production-used App closure with cloned provider/model/bindings; preserved independent fresh entry, shared usage/Cursor/no-tool implementation and ordinary transport fallback. Both identity-refused phases now stop before Session mutation. Authored actual App compaction and real Codex/Native HTTP oracles; fresh review and exact-H Actions remain pending."
+    }
+  ],
+  "acceptance": "No compilation, test, unit verification or migration acceptance is asserted by this source decision record. Fixed U and all existing final gates remain unchanged.",
+  "source_addendum_adjudication": {
+    "report": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+    "sha256": "e96d1a0b0d2588b063f79443ec5bdebc23932f19f9f23fb458915ea1f44f1119",
+    "source_facts": "Accepted bounded exact-U identities/ranges and actual existing-owner consumer graph; preserve report unmodified. Agent reading facts are not root full-file reads or execution acceptance.",
+    "proposal": "CWB-COMPACT-07 and the corresponding suggested oracle describe and propose retaining the old ordinary-error fallback for identity refusal.",
+    "decision": "REJECT proposal only; retain source facts and ordinary Transport fallback.",
+    "basis": "The earlier durable CWB-R1-SL001 decision explicitly selected no degraded Session rewrite on Authentication or missing-identity Configuration before production edits. No-B-request is the required privacy boundary; preserving original history on that refusal is an additional explicit target recovery policy, not an upstream fact or a pre-existing universal no-write contract. The matching compaction spec amendment and App causal controls distinguish these rules.",
+    "limits": "Source report remains bound to old tree7324 and does not review the new implementation; dynamic context-engine/auth descendants, MemorySynthesis lifetime and external-writer/restart acceptance remain open."
+  }
+}

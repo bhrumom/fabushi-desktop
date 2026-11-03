@@ -67,6 +67,8 @@ pub struct CodexDirectResult {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct CodexDirectCheckpoint {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
     pub input: Vec<Value>,
     pub text: String,
     pub response_id: String,
@@ -77,14 +79,53 @@ pub struct CodexDirectCheckpoint {
 
 #[derive(Debug, Error)]
 pub enum CodexDirectError {
+    #[error("Codex direct authentication failed: {0}")]
+    Authentication(String),
+    #[error("Codex direct configuration failed: {0}")]
+    Configuration(String),
     #[error("Codex direct transport failed: {0}")]
     Transport(String),
     #[error("Codex direct protocol failed: {0}")]
     Protocol(String),
     #[error("Codex direct tool failed: {0}")]
     Tool(String),
+    #[error("Codex provider refusal: {0:?}")]
+    ProviderRefusal(CodexProviderRefusal),
     #[error("Codex direct request cancelled: {0}")]
     Cancelled(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct CodexProviderRefusal {
+    pub category: String,
+    pub explanation: Option<String>,
+    pub continuation_message: Option<String>,
+    pub error_type: Option<String>,
+}
+
+fn read_bounded_text(value: Option<&Value>, max_bytes: usize) -> Option<String> {
+    let text = value?.as_str()?.trim();
+    (!text.is_empty() && text.len() <= max_bytes).then(|| text.to_string())
+}
+
+pub fn parse_codex_provider_refusal(value: &Value) -> Option<CodexProviderRefusal> {
+    let error = value
+        .get("error")
+        .filter(|value| value.is_object())
+        .unwrap_or(value);
+    if error.get("code").and_then(Value::as_str) != Some("misalignment_policy_violation") {
+        return None;
+    }
+    let misalignment = error.get("misalignment")?.as_object()?;
+    Some(CodexProviderRefusal {
+        category: "misalignment".into(),
+        explanation: read_bounded_text(misalignment.get("detailed_explanation"), 64 * 1024),
+        continuation_message: misalignment
+            .get("steer")
+            .and_then(Value::as_object)
+            .and_then(|steer| read_bounded_text(steer.get("message"), 1024)),
+        error_type: read_bounded_text(misalignment.get("error_type"), 256),
+    })
 }
 
 pub trait CodexDirectTransport {
@@ -413,6 +454,13 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
     should_cancel: &dyn Fn() -> bool,
     tool_step_reminder: Option<&(dyn Fn(&[(String, Value)]) -> Option<String> + Send + Sync)>,
 ) -> Result<CodexDirectResult, CodexDirectError> {
+    if let Some(model) = resume_from.and_then(|checkpoint| checkpoint.model.as_deref()) {
+        if model != options.model.as_str() {
+            return Err(CodexDirectError::Protocol(
+                "provider checkpoint model identity does not match this turn".into(),
+            ));
+        }
+    }
     let max_steps = options.max_steps.max(1);
     let tools_by_name = options
         .tools
@@ -506,6 +554,9 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
                         .or_else(|| event.get("error"))
                         .cloned()
                         .unwrap_or(event);
+                    if let Some(refusal) = parse_codex_provider_refusal(&failure) {
+                        return Err(CodexDirectError::ProviderRefusal(refusal));
+                    }
                     return Err(CodexDirectError::Protocol(format!(
                         "provider returned failure: {}",
                         safe_json(&failure).chars().take(4096).collect::<String>()
@@ -622,6 +673,7 @@ pub fn run_codex_direct_responses_with_lifecycle_and_tool_step_reminder(
         tool_calls_completed =
             tool_calls_completed.saturating_add(calls_in_step);
         on_checkpoint(&CodexDirectCheckpoint {
+            model: Some(options.model.clone()),
             input: input.clone(),
             text: text.clone(),
             response_id: response_id.clone(),
@@ -730,5 +782,41 @@ mod tests {
             }),
             "no orphan function_call may be replayed without a matching result"
         );
+    }
+
+    #[test]
+    fn provider_refusal_parser_preserves_review_fields_without_inventing_native_ids() {
+        let refusal = parse_codex_provider_refusal(&json!({
+            "error": {
+                "code": "misalignment_policy_violation",
+                "misalignment": {
+                    "detailed_explanation": "The request needs review.",
+                    "steer": { "message": "Continue only the requested task." },
+                    "error_type": "future_category"
+                }
+            }
+        }))
+        .expect("fixed refusal envelope");
+
+        assert_eq!(refusal.category, "misalignment");
+        assert_eq!(refusal.explanation.as_deref(), Some("The request needs review."));
+        assert_eq!(
+            refusal.continuation_message.as_deref(),
+            Some("Continue only the requested task.")
+        );
+        assert_eq!(refusal.error_type.as_deref(), Some("future_category"));
+    }
+
+    #[test]
+    fn provider_refusal_parser_rejects_other_error_codes() {
+        assert!(parse_codex_provider_refusal(&json!({
+            "error": {
+                "code": "invalid_prompt",
+                "misalignment": {
+                    "detailed_explanation": "not a review"
+                }
+            }
+        }))
+        .is_none());
     }
 }

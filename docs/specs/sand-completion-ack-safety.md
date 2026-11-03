@@ -1,6 +1,7 @@
 # Sand completion acknowledgement safety
 
-Status: active; implementation and service acceptance pending
+Status: active; implementation present on the current Rust branch; executable
+verification, deployed service contract, and production acceptance pending
 Owner: existing Host Automations runtime
 Date: 2026-10-24
 Related: PR #169 / OCRM service-contract inquiry; this is a corrective existing-owner change, not OpenClaw migration acceptance.
@@ -36,8 +37,24 @@ Release only through normal repository integration after review/CI; no schema mi
 - Backend main 069f69d903e2e358714796fe465a39e7e0468ca3 has no tracked automation-runs/events route matches.
 - Required external evidence: deployed endpoint/revision/owner, versioned completion and ACK definitions, account-switch and restart/idempotency receipts. These remain blocked; client mocks cannot supply them.
 
+## Current implementation evidence
+
+`AutomationFireBackendRuntime` keeps a completion in `Completed` when the
+completion request returns 401/404/409 or a transport error, and retries the
+same completion without adding its run UUID to `ackRunUuids`. Only a successful
+completion response transitions the state to `Reported`; a later poll may then
+acknowledge it. The focused contract
+`fire_runtime_never_acks_unconfirmed_completion_or_redispatches_redelivery`
+exercises all four failure classes and asserts one dispatch with repeated
+completion attempts. This is source and test evidence on the current branch;
+it is not an executed verification receipt.
+
 ## Compliance
-R1/R2: implementation pending; Actions pending.
-R3: Actions pending.
-R4: documented; production service acceptance remains blocked.
-AC1/AC2: pending. AC3: pending publication and reply.
+R1/R2: implemented in the existing Host runtime; exact-head Actions evidence
+is pending.
+R3: unchanged success/delay behavior remains subject to Actions verification.
+R4: documented; production service ownership and response semantics remain
+unresolved.
+AC1: source-level focused contract is present; execution receipt is pending.
+AC2: pending exact-head Actions result.
+AC3: pending publication and reply.

@@ -366,6 +366,83 @@ fn only_current_user_plugin_skill_can_be_edited_and_frontmatter_is_preserved() {
 }
 
 #[test]
+fn committed_plugin_admission_is_shared_by_list_get_and_update() {
+    use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
+        ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        get_plugin_skills_cache_path, get_plugin_skills_dir,
+    };
+
+    let root = root("plugin-admission");
+    let cache_dir = get_plugin_skills_dir(&root);
+    fs::create_dir_all(&cache_dir).unwrap();
+    let cache_path = get_plugin_skills_cache_path(&cache_dir);
+    let files = [root.join("plugins/one/SKILL.md"), root.join("plugins/two/SKILL.md")];
+    for file in &files {
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, "---\nname: Review\n---\nOriginal body\n").unwrap();
+    }
+    write_managed_skills_cache(
+        get_managed_skills_dir(&root),
+        &[ManagedSkill { id: "managed-admission-control".into(), name: "Managed".into(),
+            description: String::new(), body: "Managed body".into() }],
+        1.0,
+    ).unwrap();
+    let store = FileWorkflowStore::new(root.join("agents/a"), root.join("workflows"));
+    let user = store.create(&WorkflowSpec { name: "User control".into(), description: String::new(),
+        body: "User body".into(), trigger: None, source_ref: None }).unwrap().unwrap();
+    let base = serde_json::json!({
+        "fetchedAt": 1, "currentUserId": 9,
+        "skills": [
+            {"id":"plugin-11-review","pluginId":"11","pluginName":"22","name":"Review",
+             "description":"","filePath":files[0].to_string_lossy(),"publisherUserId":9},
+            {"id":"plugin-22-review","pluginId":"22","pluginName":"Other","name":"Review",
+             "description":"","filePath":files[1].to_string_lossy(),"publisherUserId":9}
+        ]
+    });
+    let denied = serde_json::json!([{"pluginId":"22","pluginName":"display name is not authority"}]);
+    let cases = [
+        (None, None, vec!["plugin-11-review", "plugin-22-review"]),
+        (None, Some(serde_json::json!([])), vec!["plugin-11-review", "plugin-22-review"]),
+        (Some(serde_json::json!(1)), Some(denied.clone()), vec!["plugin-11-review"]),
+        (None, Some(denied), vec![]),
+        (Some(serde_json::json!(1)), Some(serde_json::json!(null)), vec![]),
+        (Some(serde_json::json!(1)), None, vec![]),
+        (Some(serde_json::json!(7)), Some(serde_json::json!([])), vec![]),
+        (Some(serde_json::json!(1)), Some(serde_json::json!([])), vec!["plugin-11-review", "plugin-22-review"]),
+    ];
+    for (format, blocks, admitted) in cases {
+        let mut value = base.clone();
+        if let Some(format) = format { value["cacheFormatVersion"] = format; }
+        if let Some(blocks) = blocks { value["authBlocked"] = blocks; }
+        let bytes = serde_json::to_vec(&value).unwrap();
+        fs::write(&cache_path, &bytes).unwrap();
+        let all = store.list_all();
+        assert!(all.iter().any(|record| record.id == user.id));
+        assert!(all.iter().any(|record| record.id == "managed-admission-control"));
+        let mut actual = all.iter().filter(|record| record.source == "plugin")
+            .map(|record| record.id.as_str()).collect::<Vec<_>>();
+        actual.sort();
+        assert_eq!(actual, admitted, "{value}");
+        for (id, file) in ["plugin-11-review", "plugin-22-review"].into_iter().zip(&files) {
+            let allowed = admitted.contains(&id);
+            assert_eq!(store.get(id).is_some(), allowed, "get {id}: {value}");
+            assert_eq!(store.list().iter().any(|record| record.id == id), allowed, "list {id}: {value}");
+            let before = fs::read(file).unwrap();
+            let updated = store.update(id, &WorkflowSpec { name: "Updated".into(),
+                description: "new description".into(), body: "Updated body".into(),
+                trigger: None, source_ref: None }).unwrap();
+            assert_eq!(updated.is_some(), allowed, "update {id}: {value}");
+            if !allowed { assert_eq!(fs::read(file).unwrap(), before); }
+        }
+        assert_eq!(fs::read(&cache_path).unwrap(), bytes);
+    }
+    drop(store);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn workflow_store_watches_managed_and_plugin_skill_caches() {
     use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
         ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
@@ -413,4 +490,241 @@ fn workflow_store_watches_managed_and_plugin_skill_caches() {
 
     store.set_on_change(None);
     let _ = fs::remove_dir_all(root);
+}
+
+mod live_admission {
+    use super::*;
+    use std::path::{Path, PathBuf};
+    use std::sync::Mutex;
+    use mahayana_host_runtime::extensions::managed_setup::managed_skills_cache::{
+        ManagedSkill, get_managed_skills_dir, write_managed_skills_cache,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills::{
+        LoadedPlugins, PluginSkillsLoader, SandPluginSkillsService,
+    };
+    use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
+        PluginAuthBlock, get_plugin_skills_cache_path, get_plugin_skills_dir,
+    };
+
+    struct Loader(Mutex<LoadedPlugins>);
+    impl PluginSkillsLoader for Loader {
+        fn load(&self) -> Result<LoadedPlugins, String> {
+            Ok(self.0.lock().unwrap().clone())
+        }
+    }
+
+    struct Fixture {
+        root: PathBuf,
+        loader: Arc<Loader>,
+        service: SandPluginSkillsService,
+        published: LoadedPlugins,
+        private_path: PathBuf,
+        control_path: PathBuf,
+        break_rename: Arc<std::sync::atomic::AtomicBool>,
+        removed_staged_files: Arc<AtomicUsize>,
+    }
+
+    impl Fixture {
+        fn new(label: &str) -> Self {
+            let root = root(label);
+            let mut plugins = Vec::new();
+            let mut paths = Vec::new();
+            for (id, name, description, body) in [
+                ("9", "Private", "PRIVATE_DESCRIPTION_A", "WARM_BODY_OLD"),
+                ("10", "Control", "ALLOWED_DESCRIPTION", "ALLOWED_BODY"),
+            ] {
+                let install = root.join(format!("plugins/cache/market/p{id}/v1"));
+                let path = install.join(format!("skills/{}/SKILL.md", name.to_lowercase()));
+                fs::create_dir_all(path.parent().unwrap()).unwrap();
+                fs::write(&path, format!("---\nname: {name}\n---\n{body}\n")).unwrap();
+                plugins.push(serde_json::json!({
+                    "identifier":{"source":"cursor-third-party","name":format!("p{id}"),
+                        "pluginDbId":id,"version":"v1"},
+                    "installPath":install,
+                    "skills":[{"name":name,"description":description,
+                        "path":format!("skills/{}/SKILL.md", name.to_lowercase())}]
+                }));
+                paths.push(path);
+            }
+            let published: LoadedPlugins = serde_json::from_value(serde_json::json!({
+                "plugins":plugins,"authBlocked":[],"listedPluginIds":["9","10"],
+                "listedCacheKeys":[{"marketplaceSlug":"market","pluginId":"p9"},
+                    {"marketplaceSlug":"market","pluginId":"p10"}],
+                "publisherFacts":{"9":{"publisherUserId":12},"10":{"publisherUserId":12}},
+                "currentUserId":12
+            })).unwrap();
+            let loader = Arc::new(Loader(Mutex::new(published.clone())));
+            let break_rename = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let removed_staged_files = Arc::new(AtomicUsize::new(0));
+            let clock_break = Arc::clone(&break_rename);
+            let clock_removed = Arc::clone(&removed_staged_files);
+            let cache_dir = get_plugin_skills_dir(&root);
+            let service = SandPluginSkillsService::new(&root, loader.clone()).with_now(Arc::new(move || {
+                if clock_break.load(Ordering::SeqCst) {
+                    let staged = fs::read_dir(&cache_dir).unwrap().map(Result::unwrap)
+                        .filter(|entry| entry.file_name().to_string_lossy().ends_with(".tmp"))
+                        .map(|entry| entry.path()).collect::<Vec<_>>();
+                    if !staged.is_empty() {
+                        assert_eq!(staged.len(), 1, "only this fixture's real staged file exists");
+                        fs::remove_file(&staged[0]).unwrap();
+                        clock_removed.fetch_add(1, Ordering::SeqCst);
+                        clock_break.store(false, Ordering::SeqCst);
+                    }
+                }
+                1_000
+            }));
+            assert_eq!(service.sync("seed").unwrap().len(), 2);
+            write_managed_skills_cache(get_managed_skills_dir(&root), &[ManagedSkill {
+                id: "managed-live-control".into(), name: "Managed".into(),
+                description: "MANAGED_DESCRIPTION".into(), body: "MANAGED_BODY".into(),
+            }], 1_000.0).unwrap();
+            Self { root, loader, service, published, private_path: paths.remove(0),
+                control_path: paths.remove(0), break_rename, removed_staged_files }
+        }
+
+        fn store(&self) -> FileWorkflowStore {
+            FileWorkflowStore::new(self.root.join("agents/a"), self.root.join("workflows"))
+                .with_plugin_skills_admission(self.service.admission_reader())
+        }
+
+        fn cache_path(&self) -> PathBuf {
+            get_plugin_skills_cache_path(get_plugin_skills_dir(&self.root))
+        }
+
+        fn refuse_with_failure(&self, rename: bool) {
+            let mut loaded = self.published.clone();
+            loaded.plugins.retain(|plugin| plugin.identifier.plugin_db_id.as_deref() != Some("9"));
+            loaded.auth_blocked = vec![PluginAuthBlock { plugin_id: "9".into(),
+                plugin_name: "not an identity".into(), marketplace_name: None }];
+            if rename {
+                self.break_rename.store(true, Ordering::SeqCst);
+            } else {
+                // The aggregate and refusal are valid. The actual strict
+                // staging parser rejects this generated relative file path.
+                loaded.plugins[0].install_path = PathBuf::from("relative/plugin");
+            }
+            *self.loader.0.lock().unwrap() = loaded;
+            let error = self.service.sync("refused-publication").unwrap_err();
+            if !rename {
+                assert_eq!(error, "invalid plugin skills cache snapshot");
+            }
+            assert_eq!(self.removed_staged_files.load(Ordering::SeqCst), if rename { 1 } else { 0 });
+        }
+
+        fn assert_refused(&self, store: &FileWorkflowStore, user_id: &str) {
+            assert!(self.service.admission_reader().is_denied("9"));
+            assert!(!self.service.admission_reader().is_denied("10"));
+            assert!(self.service.current().iter().all(|record| record.plugin_id != "9"));
+            assert!(store.get("plugin-9-private").is_none());
+            for rows in [store.list(), store.list_all()] {
+                assert!(!rows.iter().any(|row| row.id == "plugin-9-private"));
+                for id in ["plugin-10-control", "managed-live-control", user_id] {
+                    assert!(rows.iter().any(|row| row.id == id), "missing {id}");
+                }
+            }
+            let bytes = fs::read(&self.private_path).unwrap();
+            assert!(store.update("plugin-9-private", &WorkflowSpec {
+                name: "Forbidden edit".into(), description: String::new(),
+                body: "MUST_NOT_WRITE".into(), trigger: None, source_ref: None,
+            }).unwrap().is_none());
+            assert_eq!(fs::read(&self.private_path).unwrap(), bytes);
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) { let _ = fs::remove_dir_all(&self.root); }
+    }
+
+    fn run_failure_case(rename: bool) {
+        let fixture = Fixture::new(if rename { "live-rename" } else { "live-stage" });
+        let old = fixture.store();
+        let user = old.create(&WorkflowSpec { name: "User live control".into(),
+            description: String::new(), body: "USER_BODY".into(), trigger: None,
+            source_ref: None }).unwrap().unwrap();
+        assert_eq!(old.get("plugin-9-private").unwrap().body, "WARM_BODY_OLD");
+        let cache_before = fs::read(fixture.cache_path()).unwrap();
+        let private_before = fs::read(&fixture.private_path).unwrap();
+        let control_before = fs::read(&fixture.control_path).unwrap();
+        fixture.refuse_with_failure(rename);
+        assert_eq!(fs::read(fixture.cache_path()).unwrap(), cache_before);
+        assert_eq!(fs::read(&fixture.private_path).unwrap(), private_before);
+        assert_eq!(fs::read(&fixture.control_path).unwrap(), control_before);
+        fixture.assert_refused(&old, &user.id);
+        fixture.assert_refused(&fixture.store(), &user.id);
+
+        *fixture.loader.0.lock().unwrap() = fixture.published.clone();
+        assert_eq!(fixture.service.sync("fresh-committed-success").unwrap().len(), 2);
+        assert!(!fixture.service.admission_reader().is_denied("9"));
+        assert!(old.get("plugin-9-private").is_some());
+        assert!(old.update("plugin-9-private", &WorkflowSpec {
+            name: "Permitted publisher edit".into(), description: "restored".into(),
+            body: "AUTHORIZED_BODY".into(), trigger: None, source_ref: None,
+        }).unwrap().is_some());
+        assert!(fs::read_to_string(&fixture.private_path).unwrap().contains("AUTHORIZED_BODY"));
+        assert!(old.get(&user.id).is_some());
+        assert!(old.get("managed-live-control").is_some());
+    }
+
+    #[test]
+    fn real_stage_failure_keeps_live_refusal_in_old_and_new_workflow_stores() {
+        run_failure_case(false);
+    }
+
+    #[test]
+    fn real_rename_failure_keeps_live_refusal_in_old_and_new_workflow_stores() {
+        run_failure_case(true);
+    }
+
+    #[cfg(unix)]
+    fn set_old_modified(path: &Path, modified: SystemTime) {
+        fs::File::open(path).unwrap().set_modified(modified).unwrap();
+        assert_eq!(fs::metadata(path).unwrap().modified().unwrap(), modified);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn real_old_mtime_index_and_body_cache_hits_still_consult_live_admission() {
+        let fixture = Fixture::new("live-warm-cache");
+        let old_time = UNIX_EPOCH + Duration::from_secs(1_000);
+        for path in [fixture.cache_path(), fixture.private_path.clone(),
+            fixture.private_path.parent().unwrap().to_path_buf()] {
+            set_old_modified(&path, old_time);
+        }
+        let warm = fixture.store();
+        let user = warm.create(&WorkflowSpec { name: "User warm control".into(),
+            description: String::new(), body: "USER_BODY".into(), trigger: None,
+            source_ref: None }).unwrap().unwrap();
+        let first = warm.get("plugin-9-private").unwrap();
+        assert_eq!(first.body, "WARM_BODY_OLD");
+        assert_eq!(first.description, "PRIVATE_DESCRIPTION_A");
+
+        // Same inode, byte length and old mtime force the actual production
+        // caches to reuse their parsed values. A cold store must see new bytes.
+        let cache_path = fixture.cache_path();
+        let old_index = fs::read_to_string(&cache_path).unwrap();
+        let new_index = old_index.replace("PRIVATE_DESCRIPTION_A", "PRIVATE_DESCRIPTION_B");
+        assert_ne!(old_index, new_index);
+        assert_eq!(old_index.len(), new_index.len());
+        fs::write(&cache_path, &new_index).unwrap();
+        set_old_modified(&cache_path, old_time);
+        let old_body = fs::read_to_string(&fixture.private_path).unwrap();
+        let new_body = old_body.replace("WARM_BODY_OLD", "WARM_BODY_NEW");
+        assert_ne!(old_body, new_body);
+        assert_eq!(old_body.len(), new_body.len());
+        fs::write(&fixture.private_path, &new_body).unwrap();
+        set_old_modified(&fixture.private_path, old_time);
+        let hit = warm.get("plugin-9-private").unwrap();
+        assert_eq!(hit.description, "PRIVATE_DESCRIPTION_A", "actual index cache hit");
+        assert_eq!(hit.body, "WARM_BODY_OLD", "actual body cache hit");
+        let cold = fixture.store().get("plugin-9-private").unwrap();
+        assert_eq!(cold.description, "PRIVATE_DESCRIPTION_B");
+        assert_eq!(cold.body, "WARM_BODY_NEW");
+
+        let bytes = fs::read(&cache_path).unwrap();
+        fixture.refuse_with_failure(false);
+        assert_eq!(fs::read(&cache_path).unwrap(), bytes);
+        fixture.assert_refused(&warm, &user.id);
+        fixture.assert_refused(&fixture.store(), &user.id);
+        assert_eq!(fs::read_to_string(&fixture.private_path).unwrap(), new_body);
+    }
 }

@@ -1,0 +1,3057 @@
+{
+  "schema": "OCRM-INDEPENDENT-HISTORICAL-EVIDENCE-CARRIER-REVIEW-v1",
+  "reviewer": "/root/cfr_independent_ci",
+  "written_utc": "2026-11-03T00:13:36.820217+00:00",
+  "effort": {
+    "selected": "xhigh",
+    "reason": "Independent historical evidence fidelity, counts and authority-boundary adjudication",
+    "actual": "Inherited parent model and effort; no override claimed"
+  },
+  "read_only_product": true,
+  "local_product_tests_builds_validators_executed": false,
+  "network_or_artifact_downloads_performed": false,
+  "source_or_carrier_edits": false,
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "path": "projects/openclaw-rust/evidence/runtime-owner-closures-d56b3d1d-20261103.json",
+    "git_blob": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+    "sha256": "b15915422f2f0007345a2ccff33478f154be70a53690fb2f03354f0d655b1d03",
+    "bytes": 406377,
+    "identity_stable_through_review": true,
+    "carrier_commit_not_assigned_or_accepted_by_this_review": true
+  },
+  "acquisition": "Frozen blob absent from local object database; read existing file only after full Git-blob SHA1/SHA256/length matched supplied identity, repeated before each read and at completion. No implicit fetch or mutation.",
+  "verdict": "STATIC_CONVERGED_FOR_EVIDENCE_CARRIER_FIDELITY",
+  "findings": [],
+  "read_extent": {
+    "complete_carrier_bytes_read_and_parsed": 406377,
+    "all_leaf_or_empty_container_paths": 6062,
+    "mapped_or_explicitly_reviewed_paths": 6062,
+    "uncovered_paths": [],
+    "metadata_and_scope_claims": "All new top-level and section metadata, source/subject, limits, failure, publication and open-scope statements read directly.",
+    "embedded_static_reports": "All6 complete embedded JSON objects compared to full original reports and byte SHA256; historical fields/read extents preserved. No new reread of their underlying product sources claimed.",
+    "behavior_reports": "Complete original7eb/cdef/961portable/961final reports read and hashed; every carried field mapped without inferred execution.",
+    "existing_archives": "4 existing ZIPs rehashed and 331 raw log/receipt references read and checked; no download repeated."
+  },
+  "source_reports": [
+    {
+      "path": "fusion-review/cgwa-7eb-linux-final-inspection.json",
+      "bytes": 423509,
+      "sha256": "2036f9add8ddf97dbd4ffe754dd003c35401c922284b0bc12fe25ab5756f05a2"
+    },
+    {
+      "path": "fusion-review/cgwa-cdef-portable-inspection.json",
+      "bytes": 140054,
+      "sha256": "df1f8fd4a7cc918108b7961d65d62c7c0b8d566344e904896f0f713b0e4177c5"
+    },
+    {
+      "path": "fusion-review/ccwa-961-portable-inspection.json",
+      "bytes": 372966,
+      "sha256": "864ae12e307d15bd4de961f86ec9763dde1e4a71f1409a2567dbadad57ff7f7b"
+    },
+    {
+      "path": "fusion-review/ccwa-961-linux-final-inspection.json",
+      "bytes": 392759,
+      "sha256": "db50d54cdccccfb55ca547d93ed13d72f6ee3e379b6881364aae954b4c6e6e03"
+    },
+    {
+      "path": "fusion-review/cfl-f71-linux-final-inspection.json",
+      "bytes": 39221,
+      "sha256": "ba68e7ad97f3b5655c7632c544b555f64a456209afdffca591b6f46f4de7cb1d"
+    },
+    {
+      "path": "fusion-review/c4106e-todo-fixture/verdict.json",
+      "bytes": 6363,
+      "sha256": "7370d8da85815a36cf7fbd900976cdbb0a73a4062963eddb9b143040252a1429"
+    },
+    {
+      "path": "fusion-review/cgwa-f71-snapshot/independent-review.json",
+      "bytes": 16730,
+      "sha256": "c92cfd036b1c99241860b6896e33524730e36cdae47fdac05e53812f45261e04"
+    },
+    {
+      "path": "fusion-review/cgwa-integrated-7eb/focused-review.json",
+      "bytes": 15585,
+      "sha256": "3105da65a1393f4c2b15a3e9088c4cd5226ef7aa99a520bde8312adc955f3515"
+    },
+    {
+      "path": "fusion-review/cgwa-integrated-f5/integration-review.json",
+      "bytes": 6946,
+      "sha256": "5d2ce2abaa0e26d20d120707e3eb993fc810f3758458450e493c3851015d534d"
+    },
+    {
+      "path": "fusion-review/ccwa-cdef-snapshot/independent-review.json",
+      "bytes": 19047,
+      "sha256": "21c7c328a946bac11b793a7397e2b3f2b6bd97acce605e47a6741ac4fe15c26a"
+    },
+    {
+      "path": "fusion-review/ccwa-integrated-d536/integration-review.json",
+      "bytes": 10975,
+      "sha256": "6feb89171d5a58bc74c20924f307d5e13c02cf4318a855a3a203be87c1918132"
+    },
+    {
+      "path": "fusion-review/ccwa-integrated-96b/integration-review.json",
+      "bytes": 6593,
+      "sha256": "e335a0e463ee2215bb6392c988b15742ef52653627b127cd56ee1ecf35f2c35a"
+    },
+    {
+      "path": "fusion-review/ccwa-961-source-restore-inspection.json",
+      "bytes": 16557,
+      "sha256": "229189af510179cf52a53c9461a17db52e0fa9c94d7de9d4cdf54d2e0c61df04"
+    }
+  ],
+  "field_comparisons": [
+    {
+      "scope": "Carrier identity schema_version",
+      "pointer": "/schema_version",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Carrier identity task_id",
+      "pointer": "/task_id",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Carrier identity round",
+      "pointer": "/round",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Carrier identity kind",
+      "pointer": "/kind",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Carrier identity repository",
+      "pointer": "/repository",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Carrier identity branch",
+      "pointer": "/branch",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Carrier identity fixed_upstream",
+      "pointer": "/fixed_upstream",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Carrier identity live_main_observed",
+      "pointer": "/live_main_observed",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL implementation_commit",
+      "pointer": "/CFL_CHECKED_v1/implementation_commit",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL subject",
+      "pointer": "/CFL_CHECKED_v1/subject",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL artifact",
+      "pointer": "/CFL_CHECKED_v1/artifact",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL independent_inspection_sha256",
+      "pointer": "/CFL_CHECKED_v1/independent_inspection_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL shipping_and_selected_commands",
+      "pointer": "/CFL_CHECKED_v1/shipping_and_selected_commands",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL selected_checked_cases",
+      "pointer": "/CFL_CHECKED_v1/selected_checked_cases",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL executable",
+      "pointer": "/CFL_CHECKED_v1/executable",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL actual_app_scope",
+      "pointer": "/CFL_CHECKED_v1/actual_app_scope",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL prior failure subject",
+      "pointer": "/CFL_CHECKED_v1/prior_failure/subject",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL prior failure runtime_run",
+      "pointer": "/CFL_CHECKED_v1/prior_failure/runtime_run",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CFL prior failure classification",
+      "pointer": "/CFL_CHECKED_v1/prior_failure/classification",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 implementation",
+      "pointer": "/CGWA_v1/implementation_commit",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 subject",
+      "pointer": "/CGWA_v1/subject",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 artifact",
+      "pointer": "/CGWA_v1/artifact",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 independent_inspection_sha256",
+      "pointer": "/CGWA_v1/independent_inspection_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 actual_required_positives",
+      "pointer": "/CGWA_v1/actual_required_positives",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 preserved_memory_positives",
+      "pointer": "/CGWA_v1/preserved_memory_positives",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 all executions including exact receipt log-name projection",
+      "pointer": "/CGWA_v1/executions",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "Full historical static report",
+      "pointer": "/CGWA_v1/complete_static_review_history/0/report",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Static original byte hash",
+      "pointer": "/CGWA_v1/complete_static_review_history/0/report_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Full historical static report",
+      "pointer": "/CGWA_v1/complete_static_review_history/1/report",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Static original byte hash",
+      "pointer": "/CGWA_v1/complete_static_review_history/1/report_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Full historical static report",
+      "pointer": "/CGWA_v1/complete_static_review_history/2/report",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Static original byte hash",
+      "pointer": "/CGWA_v1/complete_static_review_history/2/report_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CGWA_v1 final review tree equals executed subject tree",
+      "pointer": "/CGWA_v1/complete_static_review_history/2/report/subject/tree",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CCWA_v1 implementation",
+      "pointer": "/CCWA_v1/implementation_commit",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CCWA_v1 subject",
+      "pointer": "/CCWA_v1/subject",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CCWA_v1 artifact",
+      "pointer": "/CCWA_v1/artifact",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA_v1 receipt_binding",
+      "pointer": "/CCWA_v1/receipt_binding",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA_v1 actual_required_groups",
+      "pointer": "/CCWA_v1/actual_required_groups",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA_v1 unix_permission_premise",
+      "pointer": "/CCWA_v1/unix_permission_premise",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA_v1 limits",
+      "pointer": "/CCWA_v1/limits",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA_v1 original report SHA",
+      "pointer": "/CCWA_v1/independent_inspection_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CCWA_v1 all executions including exact receipt log-name projection",
+      "pointer": "/CCWA_v1/executions",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "Full historical static report",
+      "pointer": "/CCWA_v1/complete_static_review_history/0/report",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Static original byte hash",
+      "pointer": "/CCWA_v1/complete_static_review_history/0/report_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Full historical static report",
+      "pointer": "/CCWA_v1/complete_static_review_history/1/report",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Static original byte hash",
+      "pointer": "/CCWA_v1/complete_static_review_history/1/report_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Full historical static report",
+      "pointer": "/CCWA_v1/complete_static_review_history/2/report",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "Static original byte hash",
+      "pointer": "/CCWA_v1/complete_static_review_history/2/report_sha256",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CCWA_v1 final review tree equals executed subject tree",
+      "pointer": "/CCWA_v1/complete_static_review_history/2/report/subject/tree",
+      "matches": true,
+      "mode": "complete equality"
+    },
+    {
+      "scope": "CCWA final observed_utc",
+      "pointer": "/CCWA_v1/final_linux/observed_utc",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final subject",
+      "pointer": "/CCWA_v1/final_linux/subject",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final artifact",
+      "pointer": "/CCWA_v1/final_linux/artifact",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final independent_inspection_sha256",
+      "pointer": "/CCWA_v1/final_linux/independent_inspection_sha256",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final receipt_identity_checks",
+      "pointer": "/CCWA_v1/final_linux/receipt_identity_checks",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final receipt_sha256",
+      "pointer": "/CCWA_v1/final_linux/receipt_sha256",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final complete_job_log",
+      "pointer": "/CCWA_v1/final_linux/complete_job_log",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final shipping",
+      "pointer": "/CCWA_v1/final_linux/shipping",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final App",
+      "pointer": "/CCWA_v1/final_linux/App",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final Automation",
+      "pointer": "/CCWA_v1/final_linux/Automation",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final LPG",
+      "pointer": "/CCWA_v1/final_linux/LPG",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final prior_portable_preservation",
+      "pointer": "/CCWA_v1/final_linux/prior_portable_preservation",
+      "matches": true,
+      "mode": "field-preserving projection"
+    },
+    {
+      "scope": "CCWA final remaining",
+      "pointer": "/CCWA_v1/final_linux/remaining",
+      "matches": true,
+      "mode": "field-preserving projection"
+    }
+  ],
+  "explicit_metadata_reviews": [
+    {
+      "pointer": "/evidence_rules",
+      "assessment": "All five rules read in full: exact subject/carrier separation, incorporation is not full-log reread by root, no local execution, no flags/source-read/scoped-authority promotion, controlled fixtures not live compatibility."
+    },
+    {
+      "pointer": "/still_open",
+      "assessment": "All four statements read in full: no CMI execution result or later-H transfer, macOS/capture13 unobserved, full fixed-U closure and all final gates retained."
+    },
+    {
+      "pointer": "/CFL_CHECKED_v1/implementation_remote_readback",
+      "assessment": "Prior publication/readback attestation retained; implementation f71 and behavior7eb remain distinct. Remote publication reads were not repeated."
+    },
+    {
+      "pointer": "/CFL_CHECKED_v1/executable_digest_scope",
+      "assessment": "Correctly states CI-recorded executable SHA; binary absent from archive and no independent local binary rehash."
+    },
+    {
+      "pointer": "/CFL_CHECKED_v1/limits",
+      "assessment": "All four restrictions read: evidence belongs only to7eb, parent/child counts distinct, controlled I/O is not live/crash compatibility, macOS/platform unobserved."
+    },
+    {
+      "pointer": "/CFL_CHECKED_v1/prior_failure/fact",
+      "assessment": "Matches saved f71 primary TEST_FLAW and c4106 real adapter repair review. Failed f71 is not erased or relabelled; static repair is not declared a runtime pass."
+    },
+    {
+      "pointer": "/CGWA_v1/implementation_remote_readback",
+      "assessment": "Prior parent publication/readback attestation retained; exact H/tree independently corroborated by original CI receipts. Full remote file readback was not repeated in this review."
+    },
+    {
+      "pointer": "/CGWA_v1/limits",
+      "assessment": "All three limits read: actual scoped TCP/pairing/Session controls only; provider, two-file crash and platform acceptance open; pre-Automation archive has no App/mac/capture13 result."
+    },
+    {
+      "pointer": "/CGWA_v1/complete_static_review_history/0/snapshot_report",
+      "assessment": "Exact existing original read and hashed; embedded report fully equal, including base/tree, findings, source-read extents and no-execution boundaries."
+    },
+    {
+      "pointer": "/CGWA_v1/complete_static_review_history/1/snapshot_report",
+      "assessment": "Exact existing original read and hashed; embedded report fully equal, including base/tree, findings, source-read extents and no-execution boundaries."
+    },
+    {
+      "pointer": "/CGWA_v1/complete_static_review_history/2/snapshot_report",
+      "assessment": "Exact existing original read and hashed; embedded report fully equal, including base/tree, findings, source-read extents and no-execution boundaries."
+    },
+    {
+      "pointer": "/CCWA_v1/implementation_remote_readback",
+      "assessment": "Prior parent publication/readback attestation retained; exact H/tree independently corroborated by original CI receipts. Full remote file readback was not repeated in this review."
+    },
+    {
+      "pointer": "/CCWA_v1/complete_static_review_history/0/snapshot_report",
+      "assessment": "Exact existing original read and hashed; embedded report fully equal, including base/tree, findings, source-read extents and no-execution boundaries."
+    },
+    {
+      "pointer": "/CCWA_v1/complete_static_review_history/1/snapshot_report",
+      "assessment": "Exact existing original read and hashed; embedded report fully equal, including base/tree, findings, source-read extents and no-execution boundaries."
+    },
+    {
+      "pointer": "/CCWA_v1/complete_static_review_history/2/snapshot_report",
+      "assessment": "Exact existing original read and hashed; embedded report fully equal, including base/tree, findings, source-read extents and no-execution boundaries."
+    }
+  ],
+  "archive_checks": [
+    {
+      "subject": "7eb",
+      "path": "fusion-review/cgwa-7eb-linux-final.zip",
+      "bytes": 363640,
+      "sha256": "8160ac98f9b064403fec2d1df8eca946a5eec8c1c5adf24ed11f9127ba0e64ac",
+      "matches_original_and_carrier": true
+    },
+    {
+      "subject": "cdef",
+      "path": "fusion-review/cgwa-cdef-before-automation.zip",
+      "bytes": 161744,
+      "sha256": "1992ed72e6ef2dc34a758175673a9187174e720c484c5744fb1797cc1c668ea3",
+      "matches_original_and_carrier": true
+    },
+    {
+      "subject": "961portable",
+      "path": "fusion-review/ccwa-961-before-automation.zip",
+      "bytes": 171432,
+      "sha256": "267e5a3983b196a90501b7be0ac6a92e5b4d7d7923c20b19a9973c68ea294203",
+      "matches_original_and_carrier": true
+    },
+    {
+      "subject": "961final",
+      "path": "fusion-review/ccwa-961-linux-final.zip",
+      "bytes": 374544,
+      "sha256": "3d7a0cc7ed77fd70c5ffa6a6da93a0571bf4ba667aaf77870f1a19c5e63a3825",
+      "matches_original_and_carrier": true
+    }
+  ],
+  "raw_archive_log_checks": {
+    "count": 331,
+    "all_match": true,
+    "checks": [
+      {
+        "subject": "7eb",
+        "member": "automation-app/shipping-check.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/shipping-check.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/test-build.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/test-build.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-33-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-33-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-33-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-33-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-34-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-34-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-34-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-34-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-35-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-35-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-35-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-35-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-36-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-36-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-36-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-36-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-37-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-37-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-37-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-37-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-38-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-38-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-38-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-38-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-39-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-39-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-39-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/case-39-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/startup-admission.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "7eb",
+        "member": "automation-app/startup-admission.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/integration.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/checked-store.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/paired-device-sse.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/production-memory-synthesis.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/session-claim-integration.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/session-claim-commit-custody.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/device-pairing.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/received-catalog-preparation.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/received-catalog-projection.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/received-catalog-toolset.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/received-catalog-runtime.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/received-catalog-retry.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/received-catalog-builder-regressions.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/received-catalog-credential-match.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "cdef",
+        "member": "channel-pending-recovery/channel-transport-chunks.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/integration.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/checked-store.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/paired-device-sse.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/device-pairing-join.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/production-memory-synthesis.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/session-claim-integration.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/session-claim-commit-custody.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/device-pairing.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/received-catalog-preparation.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/received-catalog-projection.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/received-catalog-toolset.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/received-catalog-runtime.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/received-catalog-retry.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/received-catalog-builder-regressions.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/received-catalog-credential-match.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961portable",
+        "member": "channel-pending-recovery/channel-transport-chunks.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/shipping-check.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/shipping-check.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/test-build.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/test-build.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-0-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-0-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-0-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-0-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-1-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-1-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-1-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-1-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-2-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-2-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-2-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-2-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-3-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-3-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-3-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-3-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-4-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-4-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-4-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-4-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-5-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-5-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-5-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-5-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-6-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-6-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-6-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-6-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-7-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-7-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-7-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-7-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-8-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-8-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-8-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-8-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-9-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-9-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-9-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-9-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-10-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-10-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-10-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-10-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-11-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-11-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-11-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-11-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-12-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-12-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-12-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-12-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-13-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-13-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-13-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-13-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-14-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-14-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-14-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-14-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-15-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-15-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-15-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-15-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-16-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-16-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-16-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-16-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-17-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-17-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-17-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-17-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-18-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-18-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-18-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-18-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-19-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-19-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-19-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-19-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-20-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-20-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-20-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-20-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-21-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-21-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-21-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-21-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-22-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-22-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-22-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-22-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-23-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-23-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-23-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-23-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-24-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-24-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-24-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-24-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-25-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-25-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-25-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-25-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-26-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-26-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-26-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-26-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-27-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-27-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-27-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-27-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-28-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-28-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-28-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-28-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-29-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-29-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-29-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-29-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-30-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-30-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-30-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-30-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-31-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-31-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-31-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-31-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-32-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-32-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-32-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-32-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-33-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-33-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-33-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-33-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-34-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-34-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-34-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-34-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-35-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-35-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-35-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-35-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-36-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-36-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-36-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-36-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-37-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-37-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-37-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-37-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-38-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-38-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-38-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-38-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-39-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-39-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-39-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-39-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-40-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-40-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-40-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-40-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-41-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-41-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-41-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-41-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-42-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-42-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-42-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-42-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-43-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-43-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-43-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-43-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-44-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-44-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-44-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-44-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-45-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-45-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-45-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-45-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-46-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-46-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-46-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-46-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-47-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-47-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-47-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-47-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-48-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-48-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-48-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-48-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-49-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-49-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-49-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-49-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-50-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-50-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-50-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-50-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-51-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-51-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-51-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-51-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-52-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-52-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-52-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-52-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-53-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-53-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-53-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-53-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-54-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-54-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-54-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-54-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-55-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-55-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-55-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-55-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-56-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-56-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-56-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-56-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-57-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-57-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-57-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-57-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-58-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-58-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-58-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-58-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-59-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-59-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-59-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-59-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-60-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-60-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-60-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-60-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-61-list.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-61-list.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-61-run.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/case-61-run.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/startup-admission.stdout.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/startup-admission.stderr.log",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-admission/tests.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "link-preview-native-gateway/host.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "link-preview-native-gateway/coordinator.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "link-preview-native-gateway/app.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-admission/tests.log",
+        "checks": {
+          "sha256": true,
+          "bytes": true,
+          "line_count": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-admission/receipt.json",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "automation-app/receipt.json",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "channel-pending-recovery/receipt.json",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "link-preview-native-gateway/receipt.json",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "media-input-policy/receipt.json",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "receipt.json",
+        "checks": {
+          "sha256": true
+        }
+      },
+      {
+        "subject": "961final",
+        "member": "palette-message/41547942802-1/receipt.json",
+        "checks": {
+          "sha256": true
+        }
+      }
+    ]
+  },
+  "raw_receipt_subject_checks": [
+    {
+      "archive": "7eb",
+      "member": "automation-app/receipt.json",
+      "all_subject_fields_match": true
+    },
+    {
+      "archive": "cdef",
+      "member": "channel-pending-recovery/receipt.json",
+      "all_subject_fields_match": true
+    },
+    {
+      "archive": "961portable",
+      "member": "channel-pending-recovery/receipt.json",
+      "all_subject_fields_match": true
+    },
+    {
+      "archive": "961final",
+      "member": "automation-app/receipt.json",
+      "all_subject_fields_match": true
+    },
+    {
+      "archive": "961final",
+      "member": "automation-admission/receipt.json",
+      "all_subject_fields_match": true
+    },
+    {
+      "archive": "961final",
+      "member": "link-preview-native-gateway/receipt.json",
+      "all_subject_fields_match": true
+    }
+  ],
+  "full_job_log": {
+    "path": "fusion-review/ccwa-961-linux-job-125628007678.log",
+    "sha256": "73c2b55edbe687c0a82cd271a2ea18c62713b46cde1e2b8c90d46cf74f88c88d",
+    "bytes": 2317919,
+    "line_count": 30658,
+    "matches_carrier": {
+      "sha256": true,
+      "bytes": true,
+      "line_count": true
+    }
+  },
+  "authority": {
+    "source_report_sha256": "229189af510179cf52a53c9461a17db52e0fa9c94d7de9d4cdf54d2e0c61df04",
+    "source_subject": "961d3ca65fc72cacd38eb0e81da768a44d6a1bc2",
+    "completion_flags": {
+      "baseline_identity_accepted": false,
+      "ecosystem_compatibility_accepted": false,
+      "production_wiring_complete": false,
+      "release_accepted": false,
+      "responsibility_mapping_complete": false,
+      "rust_implementation_complete": false,
+      "source_closure_ready": false,
+      "ui_accepted": false
+    },
+    "eight_false": true,
+    "carrier_flag_promotions": [],
+    "source_gate_verdicts": {
+      "OCRM-G01-dependency-LFS-closure": "open",
+      "OCRM-G01-tracked-tree": "success",
+      "OCRM-G02-final": "not-run",
+      "OCRM-G02-structural": "success"
+    },
+    "unit_verified_or_final_acceptance_granted": false
+  },
+  "assessments": [
+    {
+      "area": "Subject versus carrier",
+      "assessment": "7eb CFL, cdef CGWA,961 portable/final each retain exact tree/run/attempt/U. Carrier and later CMI excluded from inherited passing results."
+    },
+    {
+      "area": "Commands/capture/counts",
+      "assessment": "7eb17 selected commands and7 cases are exact projections of62cases/127commands. cdef15 and961portable16 preserve command/capture outcomes.961final127 App commands retain direct stdout/stderr hash capture semantics with no fabricated capture_exit. Automation parent/child counts stay distinct; LPG3fresh+1explicit same-H reuse is preserved."
+    },
+    {
+      "area": "Unix real PermissionDenied",
+      "assessment": "Premise and positive row exactly equal original report: integration line874, source blob751281b..., SHA5e97879... bind regular file,mode000,actual fs::read PermissionDenied,writable-parent probe,Store/Session refusal,byte preservation,repair. No chmod-only or independent syscall-trace claim."
+    },
+    {
+      "area": "Static versus runtime",
+      "assessment": "All6 static reports fully equal originals with matching byte hashes. InitialCGWA blocking TEST_FLAW retained; later convergence remains static. CCWA execution_verified remains false. Latest static trees equal cdef/961 trees; no static finding-free result is substituted for Actions."
+    },
+    {
+      "area": "Historical pending statements",
+      "assessment": "Top-level CCWA limits explicitly concern before-Automation archive. Historical pending text is preserved; separate final_linux and still_open close only961 Linux artifact inspection. No contradiction or later-H promotion."
+    },
+    {
+      "area": "Authority and flags",
+      "assessment": "Exact961 source receipt has all8flagsfalse; dependency/LFS closure open and finalG02not-run. Carrier sets no completion flag true and explicitly disclaims scoped semantic/global acceptance."
+    },
+    {
+      "area": "Remote-readback narratives",
+      "assessment": "Prior parent publication attestations align with exact CI subject identities. No new remote publication/readback proof is asserted by this carrier review."
+    }
+  ],
+  "limits": [
+    "Verdict concerns fidelity and bounded interpretation of this exact carrier blob only; no runtime result is granted to carrier or laterCMI/DPA/other head.",
+    "No new product semantic review, executable validation, remote publication, real provider/device compatibility, macOS result or final acceptance.",
+    "Binary digests absent from archived executable bytes remain CI-recorded, not independently rehashed.",
+    "Queued/pending observations remain historical at their own timestamp; no Actions polling in this review."
+  ],
+  "projection_comparison_adjudication": {
+    "prior_comparison_draft_sha256": "bab4198ff3f817ebe8249f09708b599a70e51db1e5de6101ea14c3a4cfa6b66f",
+    "candidates_rejected_as_projection_mismatches": 17,
+    "decisions": [
+      {
+        "paths": "/CGWA_v1/executions/0..14/log_path",
+        "decision": "REJECT",
+        "reason": "The carrier explicitly projects the raw CI receipt execution.log under log_path. Every value now compared to its exact original cdef receipt row and its raw archived bytes/hash; no value mismatch. A renamed evidence key is not a behavioral defect."
+      },
+      {
+        "paths": [
+          "/CCWA_v1/final_linux/App/command_count",
+          "/CCWA_v1/final_linux/App/case_count"
+        ],
+        "decision": "REJECT",
+        "reason": "Both are explicit cardinality projections,127 and62, of the original complete command/case arrays. Compared to actual array lengths; no mismatch."
+      }
+    ],
+    "source_or_carrier_bytes_changed": false,
+    "comparison_boundary": "Only these three explicit projections were added to the expected evidence mapping; unknown fields or value changes still fail."
+  }
+}

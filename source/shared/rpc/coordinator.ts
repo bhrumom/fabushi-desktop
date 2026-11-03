@@ -25,6 +25,57 @@ export interface CoordinatorAgentThreadResponse {
   readonly entries: readonly CoordinatorTranscriptEntry[];
 }
 
+export type CloudWorkerCoordinatorStatus = "disabled" | "enabled" | "unavailable";
+export type CloudWorkerDoctorProjectionStatus = "inspection-only" | "pending" | "completed" | "failed" | "outcome-unknown";
+
+export interface CloudWorkerStatusProjection {
+  readonly owner: "cloud-workers";
+  readonly status: CloudWorkerCoordinatorStatus;
+  readonly providerReady: boolean;
+  readonly productionMutation: boolean;
+  readonly statePersisted: boolean;
+  readonly leaseCount: number;
+  readonly warmImageCount: number;
+  readonly bootstrapCount: number;
+  readonly artifactCount: number;
+  readonly migrationReceiptCount: number;
+}
+
+export interface CloudWorkerCapabilityProvider {
+  readonly providerId: string;
+  readonly pluginId: string;
+  readonly label?: string;
+}
+
+export interface CloudWorkerCapabilitiesProjection {
+  readonly owner: "cloud-workers";
+  readonly metadataOnly: true;
+  readonly providers: readonly CloudWorkerCapabilityProvider[];
+}
+
+export interface CloudWorkerDoctorProjection {
+  readonly status: CloudWorkerDoctorProjectionStatus;
+  readonly mutationStarted: boolean;
+  readonly diagnosticCode?: string;
+  readonly statePersisted: boolean;
+  readonly leaseCount: number;
+  readonly bootstrapCount: number;
+  readonly artifactCount: number;
+  readonly warmImageCount: number;
+}
+
+export type CloudWorkerDoctorAction = "Inspect" | "RepairManagedArtifact" | "MigrateSecretRefs" | "ReconcileLease" | "ReconcileWarmImage";
+
+export interface CloudWorkerDoctorRequest {
+  readonly scope: {
+    readonly account_scope: string;
+    readonly device_scope: string;
+  };
+  readonly action: CloudWorkerDoctorAction;
+  readonly acknowledged_mutation: boolean;
+  readonly replay_key: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -35,6 +86,56 @@ function isTranscriptEntry(value: unknown): value is CoordinatorTranscriptEntry 
 
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isBoundedProjectionText(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && [...value].length <= 256 && ![...value].some((character) => /\p{C}/u.test(character));
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return isFiniteNumber(value) && Number.isInteger(value) && value >= 0;
+}
+
+function isBoundedWireText(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && [...value].length <= 256 && ![...value].some((character) => /\p{C}/u.test(character));
+}
+
+const MAX_CLOUD_WORKER_CAPABILITY_PROVIDERS = 64;
+
+export function parseCloudWorkerDoctorRequest(value: unknown): CloudWorkerDoctorRequest | null {
+  if (!isRecord(value) || !isRecord(value.scope)) return null;
+  if (!isBoundedWireText(value.scope.account_scope) || !isBoundedWireText(value.scope.device_scope)) return null;
+  if (!["Inspect", "RepairManagedArtifact", "MigrateSecretRefs", "ReconcileLease", "ReconcileWarmImage"].includes(String(value.action))) return null;
+  if (typeof value.acknowledged_mutation !== "boolean" || !isBoundedWireText(value.replay_key)) return null;
+  return value as unknown as CloudWorkerDoctorRequest;
+}
+
+export function parseCloudWorkerStatusProjection(value: unknown): CloudWorkerStatusProjection | null {
+  if (!isRecord(value) || value.owner !== "cloud-workers" || !["disabled", "enabled", "unavailable"].includes(String(value.status))) return null;
+  if (typeof value.providerReady !== "boolean" || typeof value.productionMutation !== "boolean" || typeof value.statePersisted !== "boolean") return null;
+  if (!["leaseCount", "warmImageCount", "bootstrapCount", "artifactCount", "migrationReceiptCount"].every((key) => isNonNegativeInteger(value[key]))) return null;
+  return value as unknown as CloudWorkerStatusProjection;
+}
+
+export function parseCloudWorkerCapabilitiesProjection(value: unknown): CloudWorkerCapabilitiesProjection | null {
+  if (!isRecord(value) || value.owner !== "cloud-workers" || value.metadataOnly !== true || !Array.isArray(value.providers) || value.providers.length > MAX_CLOUD_WORKER_CAPABILITY_PROVIDERS) return null;
+  if (!value.providers.every((provider) => isRecord(provider) && isBoundedWireText(provider.providerId) && isBoundedWireText(provider.pluginId) && (provider.label === undefined || isBoundedWireText(provider.label)))) return null;
+  const identities = new Set(value.providers.map((provider) => `${(provider as Record<string, unknown>).providerId}\u0000${(provider as Record<string, unknown>).pluginId}`));
+  if (identities.size !== value.providers.length) return null;
+  return value as unknown as CloudWorkerCapabilitiesProjection;
+}
+
+export function parseCloudWorkerStatusEvent(value: unknown): CloudWorkerStatusProjection | null {
+  return isRecord(value) && value.kind === "status-changed"
+    ? parseCloudWorkerStatusProjection(value.projection)
+    : null;
+}
+
+export function parseCloudWorkerDoctorProjection(value: unknown): CloudWorkerDoctorProjection | null {
+  if (!isRecord(value) || !["inspection-only", "pending", "completed", "failed", "outcome-unknown"].includes(String(value.status))) return null;
+  if (typeof value.mutationStarted !== "boolean" || (value.diagnosticCode !== undefined && !isBoundedProjectionText(value.diagnosticCode)) || typeof value.statePersisted !== "boolean") return null;
+  if (!["leaseCount", "bootstrapCount", "artifactCount", "warmImageCount"].every((key) => isNonNegativeInteger(value[key]))) return null;
+  return value as unknown as CloudWorkerDoctorProjection;
 }
 
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
@@ -85,6 +186,15 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   }
   if (method === "getAgentThread" && parseCoordinatorAgentThreadResponse(value) == null) {
     throw new Error("getAgentThread returned a malformed agent thread");
+  }
+  if (method === "cloudWorkers.status" && parseCloudWorkerStatusProjection(value) == null) {
+    throw new Error("cloudWorkers.status returned a malformed cloud worker status projection");
+  }
+  if (method === "cloudWorkers.capabilities" && parseCloudWorkerCapabilitiesProjection(value) == null) {
+    throw new Error("cloudWorkers.capabilities returned a malformed cloud worker capabilities projection");
+  }
+  if (method === "cloudWorkers.doctor" && parseCloudWorkerDoctorProjection(value) == null) {
+    throw new Error("cloudWorkers.doctor returned a malformed cloud worker doctor projection");
   }
   return value;
 }
@@ -179,7 +289,10 @@ export const COORDINATOR_METHOD_TABLE = {
   createAgentAutomation: { args: "object", reply: "array" },
   updateAgentAutomation: { args: "object", reply: "array" },
   deleteAgentAutomation: { args: "object", reply: "array" },
-  runAgentAutomationNow: { args: "object", reply: "void" }
+  runAgentAutomationNow: { args: "object", reply: "void" },
+  "cloudWorkers.status": { args: "none", reply: "cloud-worker-status" },
+  "cloudWorkers.capabilities": { args: "none", reply: "cloud-worker-capabilities" },
+  "cloudWorkers.doctor": { args: "object", reply: "cloud-worker-doctor" }
 } as const;
 
 export type CoordinatorMethod = keyof typeof COORDINATOR_METHOD_TABLE;

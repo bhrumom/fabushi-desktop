@@ -74,8 +74,18 @@ fn shipping_group_member_turn_preemption_and_deletion_use_the_independent_owner(
     let manifest_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let main = fs::read_to_string(manifest_dir.join("app/src/main.rs")).expect("shipping main");
 
-    assert!(main.contains(
-        "runner_registry.register_group_member(&agent_id, &stream_id)"
+    let group_registration = main
+        .split_once("let cancellation = (if is_group_member_turn {")
+        .expect("shipping group-member registration branch")
+        .1
+        .split_once("} else {")
+        .expect("separate ordinary registration branch")
+        .0;
+    assert!(group_registration.contains(
+        "runner_registry.register_group_member_with_cancellation("
+    ));
+    assert!(group_registration.contains(
+        "&agent_id, &stream_id, lease_cancellation.clone()"
     ));
     assert!(main.contains(
         "self.runner_registry.preempt_group_member_agent("

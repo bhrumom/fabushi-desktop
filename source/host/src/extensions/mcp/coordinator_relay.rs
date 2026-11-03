@@ -1,7 +1,7 @@
 use crate::gateway_server::GatewayEventHub;
 use super::mcp_service::{
     BoxServerStatus, CatalogField, CatalogPlugin, CatalogSkill, EffectivePlugin,
-    McpManagerBackend, McpServerSummary,
+    McpManagerBackend, McpPluginUninstallOutcome, McpServerSummary,
 };
 use super::plugin_skills::{LoadedPlugins, PluginSkillsLoader};
 use serde_json::{Value, json};
@@ -96,9 +96,12 @@ impl PluginSkillsLoader for CoordinatorPluginSkillsLoader {
 pub struct CoordinatorMcpLifecycleRelay {
     events: GatewayEventHub,
     pending: Mutex<HashMap<String, PendingReply>>,
+    incarnation: uuid::Uuid,
     next_request_id: AtomicU64,
     timeout: Duration,
     closed: AtomicBool,
+    #[cfg(test)]
+    before_pending_registration: Option<Arc<dyn Fn() + Send + Sync>>,
 }
 
 impl CoordinatorMcpLifecycleRelay {
@@ -110,9 +113,12 @@ impl CoordinatorMcpLifecycleRelay {
         Self {
             events,
             pending: Mutex::new(HashMap::new()),
+            incarnation: uuid::Uuid::new_v4(),
             next_request_id: AtomicU64::new(0),
             timeout,
             closed: AtomicBool::new(false),
+            #[cfg(test)]
+            before_pending_registration: None,
         }
     }
 
@@ -124,14 +130,39 @@ impl CoordinatorMcpLifecycleRelay {
             return Err(CoordinatorMcpLifecycleRelayError::Closed("Mahayana Host is shutting down".into()));
         }
 
-        let sequence = self.next_request_id.fetch_add(1, Ordering::AcqRel) + 1;
-        let request_id = format!("host-mcp-{sequence}");
+        // A late Coordinator reply may reach a replacement Host. Namespace
+        // each relay's requests independently, and never recycle its sequence.
+        let sequence = self
+            .next_request_id
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |sequence| {
+                sequence.checked_add(1)
+            })
+            .map_err(|_| {
+                CoordinatorMcpLifecycleRelayError::Protocol(
+                    "Host MCP lifecycle request sequence exhausted".into(),
+                )
+            })?
+            + 1;
+        let request_id = format!("host-mcp-{}-{sequence}", self.incarnation);
         let (reply_tx, reply_rx) = mpsc::sync_channel(1);
-        self.pending
-            .lock()
-            .map_err(|_| CoordinatorMcpLifecycleRelayError::Protocol("pending relay lock poisoned".into()))?
-            .insert(request_id.clone(), reply_tx);
+        #[cfg(test)]
+        if let Some(before_registration) = &self.before_pending_registration {
+            before_registration();
+        }
+        {
+            let mut pending = self.pending
+                .lock()
+                .map_err(|_| CoordinatorMcpLifecycleRelayError::Protocol("pending relay lock poisoned".into()))?;
+            // Closure drains this same lock. A request must either register
+            // before that drain or observe closure without leaving a waiter.
+            if self.closed.load(Ordering::Acquire) {
+                return Err(CoordinatorMcpLifecycleRelayError::Closed("Mahayana Host is shutting down".into()));
+            }
+            pending.insert(request_id.clone(), reply_tx);
+        }
 
+        // Publication invokes listeners synchronously; they may resolve or
+        // close the relay. An admitted request can still publish after close.
         self.events.publish(json!({
             "channel": HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL,
             "payload": {
@@ -373,11 +404,24 @@ impl McpManagerBackend for CoordinatorMcpManagerBackend {
     }
 
     fn uninstall_plugin(&self, plugin_id: &str) -> Result<(bool, Option<String>), String> {
+        self.uninstall_plugin_outcome(plugin_id)
+            .map(|outcome| (outcome.removed, outcome.reason))
+    }
+
+    fn uninstall_plugin_outcome(&self, plugin_id: &str) -> Result<McpPluginUninstallOutcome, String> {
         let result = self.relay
             .request(MCP_UNINSTALL_PLUGIN_METHOD, json!({"pluginId": plugin_id}))
             .map_err(|error| error.to_string())?;
-        let removed = result.get("removed").and_then(Value::as_bool).unwrap_or(false);
-        Ok((removed, optional_string(&result, "reason")))
+        let removed = result.get("removed").and_then(Value::as_bool)
+            .ok_or_else(|| "desktop MCP owner uninstallPlugin response requires boolean removed".to_string())?;
+        let reason = optional_string(&result, "reason");
+        let desktop_response = result.get("state").cloned()
+            .ok_or_else(|| "desktop MCP owner uninstallPlugin response requires state".to_string())
+            .and_then(decode_mcp_server_state)
+            // Validate with the existing decoder, but return the original reply
+            // without dropping warnings, row policy or future display fields.
+            .map(|_| result);
+        Ok(McpPluginUninstallOutcome { removed, reason, desktop_response })
     }
 
     fn install_plugin(
@@ -488,5 +532,496 @@ impl McpManagerBackend for CoordinatorMcpManagerBackend {
 
     fn dispose(&self) -> Result<(), String> {
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+    use super::*;
+    use crate::extensions::mcp::extension::{
+        AuthRenewalEvent, AuthRenewalPort, McpExtensionRuntime,
+        PluginSkillsAuthenticatedStartup, PollingHandle, PollingPort,
+    };
+    use crate::extensions::mcp::mcp_service::McpHostService;
+    use crate::extensions::mcp::plugin_skills::SandPluginSkillsService;
+    use crate::extensions::mcp::plugin_skills_cache::{
+        PluginSkillsCacheWriteIndex, get_plugin_skills_cache_path,
+        get_plugin_skills_dir, write_plugin_skills_cache,
+    };
+    use crate::extensions::mcp::production::RealPluginSkillsPolling;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::sync::atomic::AtomicUsize;
+    use std::thread;
+
+    const ORACLE_TIMEOUT: Duration = Duration::from_secs(5);
+    const REQUEST_TIMEOUT: Duration = Duration::from_secs(60);
+
+    fn completes_without_deadlock(check: impl FnOnce() + Send + 'static) {
+        let (done_tx, done_rx) = mpsc::channel();
+        let worker = thread::spawn(move || {
+            check();
+            let _ = done_tx.send(());
+        });
+        done_rx
+            .recv_timeout(Duration::from_secs(20))
+            .expect("MCP lifecycle contract did not complete before the request timeout");
+        worker.join().expect("MCP lifecycle contract worker");
+    }
+
+    struct RegistrationPause {
+        entered: mpsc::Receiver<()>,
+        release: mpsc::Sender<()>,
+        attempts: Arc<AtomicUsize>,
+    }
+
+    impl Drop for RegistrationPause {
+        fn drop(&mut self) {
+            let _ = self.release.send(());
+        }
+    }
+
+    fn paused_relay(
+        events: GatewayEventHub,
+    ) -> (Arc<CoordinatorMcpLifecycleRelay>, RegistrationPause) {
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let release_rx = Mutex::new(release_rx);
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let hook_attempts = Arc::clone(&attempts);
+        let mut relay = CoordinatorMcpLifecycleRelay::with_timeout(events, REQUEST_TIMEOUT);
+        relay.before_pending_registration = Some(Arc::new(move || {
+            hook_attempts.fetch_add(1, Ordering::SeqCst);
+            entered_tx.send(()).expect("registration pause entered");
+            release_rx
+                .lock()
+                .unwrap()
+                .recv_timeout(Duration::from_secs(30))
+                .expect("release actual request registration");
+        }));
+        (
+            Arc::new(relay),
+            RegistrationPause {
+                entered: entered_rx,
+                release: release_tx,
+                attempts,
+            },
+        )
+    }
+
+    #[test]
+    fn close_before_pending_registration_refuses_the_actual_request() {
+        completes_without_deadlock(|| {
+            let events = GatewayEventHub::default();
+            let receiver = events.subscribe();
+            let (relay, pause) = paused_relay(events);
+            let (result_tx, result_rx) = mpsc::channel();
+            let worker_relay = Arc::clone(&relay);
+            let worker = thread::spawn(move || {
+                result_tx
+                    .send(worker_relay.request(MCP_LOAD_PLUGIN_SKILLS_METHOD, json!({})))
+                    .unwrap();
+            });
+            pause.entered.recv_timeout(ORACLE_TIMEOUT).unwrap();
+            assert_eq!(relay.pending_count(), 0);
+
+            relay.cancel_all("Host teardown before registration");
+            pause.release.send(()).unwrap();
+            assert_eq!(
+                result_rx
+                    .recv_timeout(ORACLE_TIMEOUT)
+                    .expect("losing admission must return Closed without waiting for a reply"),
+                Err(CoordinatorMcpLifecycleRelayError::Closed(
+                    "Mahayana Host is shutting down".into()
+                ))
+            );
+            worker.join().unwrap();
+            assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert!(matches!(
+                relay.request(MCP_LOAD_PLUGIN_SKILLS_METHOD, json!({})),
+                Err(CoordinatorMcpLifecycleRelayError::Closed(_))
+            ));
+            assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
+        });
+    }
+
+    #[test]
+    fn exhausted_request_sequence_never_registers_or_publishes() {
+        completes_without_deadlock(|| {
+            let events = GatewayEventHub::default();
+            let receiver = events.subscribe();
+            let relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+                events,
+                REQUEST_TIMEOUT,
+            ));
+            // Exercise the real allocation/admission path at its final ID.
+            relay.next_request_id.store(u64::MAX - 1, Ordering::Release);
+            let (result_tx, result_rx) = mpsc::channel();
+            let worker_relay = Arc::clone(&relay);
+            let worker = thread::spawn(move || {
+                let _ = result_tx.send(worker_relay.request(MCP_LIST_CATALOG_METHOD, json!({})));
+            });
+            let event = receiver
+                .recv_timeout(ORACLE_TIMEOUT)
+                .expect("last sequence must still admit a real request");
+            let request_id = event["payload"]["requestId"].as_str().unwrap();
+            assert_eq!(relay.pending_count(), 1);
+
+            for _ in 0..2 {
+                assert_eq!(
+                    relay.request(MCP_LIST_CATALOG_METHOD, json!({})),
+                    Err(CoordinatorMcpLifecycleRelayError::Protocol(
+                        "Host MCP lifecycle request sequence exhausted".into()
+                    ))
+                );
+                assert_eq!(relay.pending_count(), 1);
+                assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+                assert!(matches!(result_rx.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            }
+            assert_eq!(relay.next_request_id.load(Ordering::Acquire), u64::MAX);
+            assert_eq!(
+                request_id,
+                format!("host-mcp-{}-{}", relay.incarnation, u64::MAX)
+            );
+            assert!(request_id.len() < 256);
+
+            let response = json!({
+                "requestId": request_id,
+                "ok": true,
+                "result": [{"id": "last-plugin"}],
+            });
+            relay
+                .resolve(&response)
+                .expect("last waiter keeps its own reply");
+            assert_eq!(
+                result_rx.recv_timeout(ORACLE_TIMEOUT).unwrap(),
+                Ok(json!([{"id": "last-plugin"}]))
+            );
+            worker.join().unwrap();
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(
+                relay.resolve(&response),
+                Err(CoordinatorMcpLifecycleRelayError::Protocol(_))
+            ));
+            assert_eq!(
+                relay.request(MCP_LIST_CATALOG_METHOD, json!({})),
+                Err(CoordinatorMcpLifecycleRelayError::Protocol(
+                    "Host MCP lifecycle request sequence exhausted".into()
+                ))
+            );
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        });
+    }
+
+    struct TestRoot(PathBuf);
+
+    impl Drop for TestRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    struct Authenticated {
+        unsubscriptions: Arc<AtomicUsize>,
+    }
+
+    impl AuthRenewalPort for Authenticated {
+        fn peek_access_token(&self) -> Option<String> {
+            Some("fixture-access-token".into())
+        }
+
+        fn subscribe_to_renewal(
+            &self,
+            _listener: Arc<dyn Fn(AuthRenewalEvent) + Send + Sync>,
+        ) -> Box<dyn FnOnce() + Send> {
+            let unsubscriptions = Arc::clone(&self.unsubscriptions);
+            Box::new(move || {
+                unsubscriptions.fetch_add(1, Ordering::SeqCst);
+            })
+        }
+    }
+
+    struct JoinObservedPolling {
+        joining: mpsc::Sender<()>,
+        callbacks: Arc<AtomicUsize>,
+        disposals: Arc<AtomicUsize>,
+    }
+
+    struct JoinObservedHandle {
+        inner: Box<dyn PollingHandle>,
+        joining: mpsc::Sender<()>,
+        disposals: Arc<AtomicUsize>,
+    }
+
+    impl PollingHandle for JoinObservedHandle {
+        fn dispose(&mut self) {
+            self.disposals.fetch_add(1, Ordering::SeqCst);
+            let _ = self.joining.send(());
+            self.inner.dispose();
+        }
+    }
+
+    impl PollingPort for JoinObservedPolling {
+        fn start(&self, callback: Arc<dyn Fn() + Send + Sync>) -> Box<dyn PollingHandle> {
+            let callbacks = Arc::clone(&self.callbacks);
+            Box::new(JoinObservedHandle {
+                inner: RealPluginSkillsPolling::daily().start(Arc::new(move || {
+                    callbacks.fetch_add(1, Ordering::SeqCst);
+                    callback();
+                })),
+                joining: self.joining.clone(),
+                disposals: Arc::clone(&self.disposals),
+            })
+        }
+    }
+
+    #[test]
+    fn closed_relay_does_not_strand_real_plugin_skills_poll_shutdown() {
+        completes_without_deadlock(|| {
+            let root = TestRoot(std::env::temp_dir().join(format!(
+                "mcp-relay-close-{}",
+                uuid::Uuid::new_v4()
+            )));
+            let cache_dir = get_plugin_skills_dir(&root.0);
+            write_plugin_skills_cache(
+                &cache_dir,
+                &PluginSkillsCacheWriteIndex {
+                    current_user_id: Some(Some(11)),
+                    skills: vec![json!({
+                        "id": "retained-skill",
+                        "pluginId": "41",
+                        "pluginName": "Retained plugin",
+                        "name": "Retained skill",
+                        "description": "Available before shutdown",
+                        "filePath": root.0.join("retained/SKILL.md"),
+                    })],
+                    auth_blocked: None,
+                },
+                || 1000.0,
+            )
+            .unwrap();
+            let cache_path = get_plugin_skills_cache_path(&cache_dir);
+            let cache_before = fs::read(&cache_path).unwrap();
+            let events = GatewayEventHub::default();
+            let receiver = events.subscribe();
+            let (relay, pause) = paused_relay(events);
+            let skills = Arc::new(SandPluginSkillsService::new(
+                root.0.clone(),
+                Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&relay))),
+            ));
+            let retained_skills = skills.current();
+            assert_eq!(retained_skills.len(), 1);
+            let service = Arc::new(McpHostService::new(
+                Arc::new(CoordinatorMcpManagerBackend::new(
+                    Arc::clone(&relay),
+                    Arc::new(|_, _| Ok(Vec::new())),
+                )),
+                Some(skills.clone()),
+            ));
+            let callbacks = Arc::new(AtomicUsize::new(0));
+            let disposals = Arc::new(AtomicUsize::new(0));
+            let unsubscriptions = Arc::new(AtomicUsize::new(0));
+            let sweeps = Arc::new(AtomicUsize::new(0));
+            let (joining_tx, joining_rx) = mpsc::channel();
+            let startup = PluginSkillsAuthenticatedStartup::start(
+                Arc::new(Authenticated {
+                    unsubscriptions: Arc::clone(&unsubscriptions),
+                }),
+                skills.clone(),
+                Arc::new(JoinObservedPolling {
+                    joining: joining_tx,
+                    callbacks: Arc::clone(&callbacks),
+                    disposals: Arc::clone(&disposals),
+                }),
+                Some({
+                    let sweeps = Arc::clone(&sweeps);
+                    Arc::new(move || {
+                        sweeps.fetch_add(1, Ordering::SeqCst);
+                    })
+                }),
+            );
+            let runtime = Arc::new(McpExtensionRuntime::new(startup, service, Arc::new(())));
+            pause.entered.recv_timeout(ORACLE_TIMEOUT).unwrap();
+
+            // Match shipping teardown: close the relay before stopping MCP.
+            relay.cancel_all("Host shutdown");
+            let (stopped_tx, stopped_rx) = mpsc::channel();
+            let stopping_runtime = Arc::clone(&runtime);
+            let stopping = thread::spawn(move || {
+                stopped_tx.send(stopping_runtime.stop()).unwrap();
+            });
+            joining_rx.recv_timeout(ORACLE_TIMEOUT).unwrap();
+            assert!(matches!(stopped_rx.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            pause.release.send(()).unwrap();
+            stopped_rx
+                .recv_timeout(ORACLE_TIMEOUT)
+                .expect("real poll join must finish before the relay request timeout")
+                .unwrap();
+            stopping.join().unwrap();
+            runtime.stop().unwrap();
+
+            assert_eq!(callbacks.load(Ordering::SeqCst), 1);
+            assert_eq!(disposals.load(Ordering::SeqCst), 1);
+            assert_eq!(unsubscriptions.load(Ordering::SeqCst), 1);
+            assert_eq!(sweeps.load(Ordering::SeqCst), 0);
+            assert_eq!(skills.sync("after-stop").unwrap(), retained_skills);
+            assert_eq!(fs::read(&cache_path).unwrap(), cache_before);
+            assert_eq!(pause.attempts.load(Ordering::SeqCst), 1);
+            assert_eq!(relay.pending_count(), 0);
+            assert!(matches!(receiver.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        });
+    }
+
+    #[test]
+    fn desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff() {
+        use crate::extensions::session::agent_session::SandAgentSessionStore;
+        use crate::extensions::session::production::ProductionSessionWorkers;
+
+        completes_without_deadlock(|| {
+            let root = TestRoot(std::env::temp_dir().join(format!(
+                "desktop-mcp-handoff-{}", uuid::Uuid::new_v4(),
+            )));
+            let mut records = Vec::new();
+            let mut files = Vec::new();
+            for id in ["41", "42", "43"] {
+                let file = root.0.join(format!("plugins/cache/cursor/p{id}/v1/skills/retained/SKILL.md"));
+                fs::create_dir_all(file.parent().unwrap()).unwrap();
+                fs::write(&file, format!(
+                    "---\nname: Retained\ndescription: DESCRIPTION_{id}\n---\nBODY_{id}\n",
+                )).unwrap();
+                records.push(json!({
+                    "id":format!("plugin-{id}-retained"), "pluginId":id,
+                    "pluginName":format!("Plugin {id}"), "name":"Retained",
+                    "description":format!("DESCRIPTION_{id}"), "filePath":file,
+                }));
+                files.push(file);
+            }
+            let cache_dir = get_plugin_skills_dir(&root.0);
+            write_plugin_skills_cache(&cache_dir, &PluginSkillsCacheWriteIndex {
+                current_user_id: Some(Some(11)), skills: records, auth_blocked: Some(Vec::new()),
+            }, || 1_000.0).unwrap();
+            let cache_path = get_plugin_skills_cache_path(&cache_dir);
+            let before = fs::read(&cache_path).unwrap();
+            let file_before = files.iter().map(|file| fs::read(file).unwrap()).collect::<Vec<_>>();
+            let events = GatewayEventHub::default();
+            let requests = events.subscribe();
+            let old_relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+                events.clone(), REQUEST_TIMEOUT,
+            ));
+            let old_skills = Arc::new(SandPluginSkillsService::new(
+                &root.0, Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&old_relay))),
+            ));
+            let old_service = Arc::new(McpHostService::new(
+                Arc::new(CoordinatorMcpManagerBackend::new(
+                    Arc::clone(&old_relay), Arc::new(|_, _| Ok(Vec::new())),
+                )), Some(old_skills.clone()),
+            ));
+            let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.0.join("agents"), 500));
+            let session = SandAgentSessionStore::new(Arc::clone(&workers));
+            let agent = session.create_session(None, "user", None).unwrap();
+            let retained = workers.open_workflow_store(&agent.id).unwrap();
+            workers.bind_plugin_skills_admission(old_skills.admission_reader()).unwrap();
+            assert_eq!(retained.get("plugin-41-retained").unwrap().body, "BODY_41");
+
+            let settle = |relay: &Arc<CoordinatorMcpLifecycleRelay>, method: &str, value: Value| {
+                let event = requests.recv_timeout(ORACLE_TIMEOUT).unwrap();
+                assert_eq!(event["payload"]["method"], method);
+                relay.resolve(&json!({
+                    "requestId":event["payload"]["requestId"], "ok":true, "result":value,
+                })).unwrap();
+            };
+            let dispatch = |service: Arc<McpHostService>, id: &'static str| {
+                let (tx, rx) = mpsc::channel();
+                let worker = thread::spawn(move || {
+                    let _ = tx.send(service.dispatch_desktop_command(
+                        "uninstallMcpPlugin", &json!({"pluginId":id}),
+                    ).unwrap());
+                });
+                (worker, rx)
+            };
+            let (worker, result) = dispatch(Arc::clone(&old_service), "41");
+            settle(&old_relay, MCP_LIST_CATALOG_METHOD, json!([]));
+            settle(&old_relay, MCP_UNINSTALL_PLUGIN_METHOD, json!({"removed":true,"state":null}));
+            assert!(result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err().contains("requires servers"));
+            worker.join().unwrap();
+            assert!(retained.get("plugin-41-retained").is_none());
+
+            // This distinct operation genuinely enters the old backend before
+            // handoff. Its durable pending fact must survive a late receipt.
+            let (pending_worker, pending_result) = dispatch(Arc::clone(&old_service), "43");
+            settle(&old_relay, MCP_LIST_CATALOG_METHOD, json!([]));
+            let pending_request = requests.recv_timeout(ORACLE_TIMEOUT).unwrap();
+            assert_eq!(pending_request["payload"]["method"], MCP_UNINSTALL_PLUGIN_METHOD);
+            assert_eq!(pending_request["payload"]["args"], json!({"pluginId":"43"}));
+            let pending_status = old_skills.uninstall_recovery_status().unwrap();
+            assert_eq!(pending_status["confirmedPluginIds"], json!(["41"]));
+            let pending = pending_status["pending"].as_array().unwrap();
+            assert_eq!(pending.len(), 1);
+            assert_eq!(pending[0]["pluginId"], "43");
+            let operation_id = pending[0]["operationId"].as_str().unwrap();
+            assert_eq!(uuid::Uuid::parse_str(operation_id).unwrap().to_string(), operation_id);
+            let journal_path = cache_dir.join("uninstall-state.json");
+            let journal = fs::read(&journal_path).unwrap();
+            assert_eq!(serde_json::from_slice::<Value>(&journal).unwrap(), json!({
+                "formatVersion":1, "confirmedPluginIds":["41"], "pending":pending,
+            }));
+            assert_eq!(fs::read(cache_dir.join("uninstall-state.version")).unwrap(), b"1\n");
+            assert!(retained.get("plugin-43-retained").is_none());
+            assert!(matches!(pending_result.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+            let successor_relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
+                events, REQUEST_TIMEOUT,
+            ));
+            let successor = Arc::new(old_skills.successor_with_loader(
+                Arc::new(CoordinatorPluginSkillsLoader::new(Arc::clone(&successor_relay))),
+            ).unwrap());
+            assert!(Arc::ptr_eq(&old_skills.admission_reader(), &successor.admission_reader()));
+            workers.bind_plugin_skills_admission(successor.admission_reader()).unwrap();
+            assert!(successor.admission_reader().is_denied("41"));
+            assert!(retained.get("plugin-41-retained").is_none());
+            assert!(workers.open_workflow_store(&agent.id).unwrap().get("plugin-41-retained").is_none());
+            assert_eq!(retained.get("plugin-42-retained").unwrap().body, "BODY_42");
+            assert!(successor.admission_reader().is_denied("43"));
+            assert!(workers.open_workflow_store(&agent.id).unwrap().get("plugin-43-retained").is_none());
+            assert_eq!(successor.uninstall_recovery_status().unwrap(), pending_status);
+
+            old_relay.resolve(&json!({
+                "requestId":pending_request["payload"]["requestId"], "ok":true,
+                "result":{"removed":true,"state":null},
+            })).unwrap();
+            let late_error = pending_result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err();
+            pending_worker.join().unwrap();
+            assert!(late_error.contains("durable intent settlement failed") && late_error.contains("disposed"));
+            assert_eq!(old_skills.uninstall_recovery_status().unwrap(), pending_status);
+            assert_eq!(successor.uninstall_recovery_status().unwrap(), pending_status);
+            assert_eq!(fs::read(&journal_path).unwrap(), journal);
+            assert_eq!(old_relay.pending_count(), 0);
+            assert!(matches!(requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+            // A new call through that already-retired owner must stop before
+            // mutation. Keep 42 as the separate unaffected admission control.
+            let (worker, result) = dispatch(Arc::clone(&old_service), "42");
+            settle(&old_relay, MCP_LIST_CATALOG_METHOD, json!([]));
+            let error = result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err();
+            worker.join().unwrap();
+            assert_eq!(error, "plugin skills owner is disposed; uninstall state was not changed");
+            assert!(!successor.admission_reader().is_denied("42"));
+            assert_eq!(retained.get("plugin-42-retained").unwrap().body, "BODY_42");
+            assert_eq!(successor.uninstall_recovery_status().unwrap(), pending_status);
+            assert_eq!(fs::read(&journal_path).unwrap(), journal);
+            assert_eq!(fs::read(&cache_path).unwrap(), before);
+            for (file, expected) in files.iter().zip(&file_before) {
+                assert_eq!(fs::read(file).unwrap(), *expected);
+            }
+            assert!(matches!(requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            old_relay.cancel_all("fixture complete");
+            successor_relay.cancel_all("fixture complete");
+            old_service.dispose().unwrap();
+            successor.dispose();
+            workers.shutdown();
+        });
     }
 }

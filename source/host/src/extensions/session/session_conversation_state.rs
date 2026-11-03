@@ -1,13 +1,22 @@
 use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
+use prost::Message;
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 use serde_json::Value;
+use uuid::Uuid;
 
 use crate::agent_isolation::{AgentWorkerPool, ProductionAgentStoreWorkerBackend};
+use crate::runner::agent_v1_wire::{
+    SendMessageToolCall, send_message_args, send_message_result,
+};
 use crate::storage::store_db::live_db_handle_count;
+use crate::transcript_mirror::generated_occurrence_codec::{
+    GeneratedWireValue as WireValue, read_generated_wire_field, validate_generated_agent_tool_call,
+};
 
 use super::agent_db::{
     read_persisted_latest_root_blob_id,
@@ -39,6 +48,303 @@ pub enum SessionConversationStateError {
 #[derive(Debug, Clone, PartialEq)]
 pub struct TranscriptThread {
     pub entries: Vec<Value>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PendingConversationTurnReply {
+    pub id: String,
+    pub conversation_ref: String,
+    pub message_id: String,
+    pub reply_to_id: String,
+    pub thread_id: Option<String>,
+    pub text: String,
+    pub timestamp_ms: u64,
+    // Payload fields can change after persistence; only this owner-issued
+    // identity authorizes settlement, and clones share the same claim.
+    claim_id: Uuid,
+    claim_agent_id: String,
+    claim_turn_key: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PendingConversationTurnSnapshot {
+    pub id: String,
+    pub agent_id: String,
+    pub conversation_ref: String,
+    pub session_id: String,
+    pub thread_id: Option<String>,
+    pub outbound_message_id: Option<String>,
+    pub claimed: bool,
+    pub correlation_ready: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PendingConversationTurnClaimResult {
+    NotFound,
+    NotReady,
+    Claimed(PendingConversationTurnReply),
+}
+
+#[derive(Clone, Default)]
+pub struct PendingConversationTurnRegistry {
+    inner: Arc<Mutex<PendingConversationTurnRegistryInner>>,
+}
+
+struct PendingConversationTurn {
+    snapshot: PendingConversationTurnSnapshot,
+    claim_id: Option<Uuid>,
+    created_at: Instant,
+    expires_at: Instant,
+}
+
+#[derive(Default)]
+struct PendingConversationTurnRegistryInner {
+    turns: HashMap<String, PendingConversationTurn>,
+    by_outbound_id: HashMap<String, Vec<String>>,
+}
+
+impl PendingConversationTurnRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn register(
+        &self,
+        agent_id: &str,
+        id: Option<&str>,
+        conversation_ref: &str,
+        session_id: &str,
+        thread_id: Option<&str>,
+        timeout: Duration,
+    ) -> Result<String, String> {
+        let agent_id = agent_id.trim();
+        if agent_id.is_empty() {
+            return Err("conversation turn requires an agent id".to_string());
+        }
+        let conversation_ref = conversation_ref.trim();
+        let session_id = session_id.trim();
+        if conversation_ref.is_empty() || session_id.is_empty() {
+            return Err("conversation turn requires conversation and session identity".to_string());
+        }
+        let id = id
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned)
+            .unwrap_or_else(|| Uuid::new_v4().to_string());
+        let key = turn_key(agent_id, &id);
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.prune_expired_locked(&mut inner);
+        if inner.turns.contains_key(&key) {
+            return Err(format!("conversation turn already pending for {agent_id}: {id}"));
+        }
+        let now = Instant::now();
+        inner.turns.insert(
+            key,
+            PendingConversationTurn {
+                snapshot: PendingConversationTurnSnapshot {
+                    id: id.clone(),
+                    agent_id: agent_id.to_string(),
+                    conversation_ref: conversation_ref.to_string(),
+                    session_id: session_id.to_string(),
+                    thread_id: thread_id.map(str::trim).filter(|value| !value.is_empty()).map(ToOwned::to_owned),
+                    outbound_message_id: None,
+                    claimed: false,
+                    correlation_ready: false,
+                },
+                claim_id: None,
+                created_at: now,
+                expires_at: now + timeout,
+            },
+        );
+        Ok(id)
+    }
+
+    pub fn set_outbound_message_id(&self, agent_id: &str, id: &str, message_id: &str) -> bool {
+        let key = turn_key(agent_id.trim(), id.trim());
+        let message_id = message_id.trim();
+        if message_id.is_empty() {
+            self.cancel(agent_id, id);
+            return false;
+        }
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.prune_expired_locked(&mut inner);
+        let Some(old_message_id) = inner
+            .turns
+            .get(&key)
+            .map(|turn| turn.snapshot.outbound_message_id.clone())
+        else {
+            return false;
+        };
+        remove_outbound_index(
+            &mut inner.by_outbound_id,
+            &key,
+            old_message_id
+                .as_deref()
+                .map(|value| outbound_key(agent_id.trim(), value)),
+        );
+        let turn = inner.turns.get_mut(&key).expect("pending turn after lookup");
+        turn.snapshot.outbound_message_id = Some(message_id.to_string());
+        inner
+            .by_outbound_id
+            .entry(outbound_key(agent_id.trim(), message_id))
+            .or_default()
+            .push(key);
+        true
+    }
+
+    pub fn mark_ready(&self, agent_id: &str, id: &str) -> bool {
+        let key = turn_key(agent_id.trim(), id.trim());
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.prune_expired_locked(&mut inner);
+        let Some(has_outbound_message_id) = inner
+            .turns
+            .get(&key)
+            .map(|turn| turn.snapshot.outbound_message_id.is_some())
+        else {
+            return false;
+        };
+        if !has_outbound_message_id {
+            remove_turn_locked(&mut inner, &key);
+            return false;
+        }
+        let turn = inner.turns.get_mut(&key).expect("pending turn after lookup");
+        turn.snapshot.correlation_ready = true;
+        true
+    }
+
+    pub fn snapshot(&self, agent_id: &str, id: &str) -> Option<PendingConversationTurnSnapshot> {
+        let key = turn_key(agent_id.trim(), id.trim());
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.prune_expired_locked(&mut inner);
+        inner.turns.get(&key).map(|turn| turn.snapshot.clone())
+    }
+
+    pub fn claim_reply(
+        &self,
+        agent_id: &str,
+        conversation_ref: &str,
+        parent_conversation_ref: Option<&str>,
+        session_id: &str,
+        message_id: &str,
+        reply_to_id: Option<&str>,
+        thread_id: Option<&str>,
+        text: &str,
+        timestamp_ms: u64,
+    ) -> PendingConversationTurnClaimResult {
+        let Some(reply_to_id) = reply_to_id.map(str::trim).filter(|value| !value.is_empty()) else {
+            return PendingConversationTurnClaimResult::NotFound;
+        };
+        let agent_id = agent_id.trim();
+        let conversation_ref = conversation_ref.trim();
+        let session_id = session_id.trim();
+        let thread_id = thread_id.map(str::trim).filter(|value| !value.is_empty());
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.prune_expired_locked(&mut inner);
+        let candidates = inner.by_outbound_id.get(&outbound_key(agent_id, reply_to_id)).cloned().unwrap_or_default();
+        let mut selected: Option<(String, Instant)> = None;
+        for key in candidates {
+            let Some(turn) = inner.turns.get(&key) else { continue };
+            let same_conversation = match turn.snapshot.thread_id.as_deref() {
+                Some(expected_thread_id) => {
+                    thread_id == Some(expected_thread_id)
+                        && parent_conversation_ref
+                            == Some(turn.snapshot.conversation_ref.as_str())
+                }
+                None => {
+                    thread_id.is_none()
+                        && parent_conversation_ref.is_none()
+                        && turn.snapshot.conversation_ref == conversation_ref
+                }
+            };
+            if turn.snapshot.claimed
+                || !same_conversation
+                || turn.snapshot.session_id != session_id
+            {
+                continue;
+            }
+            if selected.as_ref().is_none_or(|(_, created_at)| turn.created_at < *created_at) {
+                selected = Some((key, turn.created_at));
+            }
+        }
+        let Some((key, _)) = selected else {
+            return PendingConversationTurnClaimResult::NotFound;
+        };
+        let turn = inner.turns.get_mut(&key).expect("selected pending turn");
+        if !turn.snapshot.correlation_ready {
+            return PendingConversationTurnClaimResult::NotReady;
+        }
+        let claim_id = Uuid::new_v4();
+        turn.snapshot.claimed = true;
+        turn.claim_id = Some(claim_id);
+        PendingConversationTurnClaimResult::Claimed(PendingConversationTurnReply {
+            id: turn.snapshot.id.clone(),
+            conversation_ref: conversation_ref.to_string(),
+            message_id: message_id.to_string(),
+            reply_to_id: reply_to_id.to_string(),
+            thread_id: thread_id.map(ToOwned::to_owned),
+            text: text.to_string(),
+            timestamp_ms,
+            claim_id,
+            claim_agent_id: turn.snapshot.agent_id.clone(),
+            claim_turn_key: key,
+        })
+    }
+
+    pub fn complete(&self, agent_id: &str, claim: &PendingConversationTurnReply) -> bool {
+        if agent_id.trim() != claim.claim_agent_id.as_str() { return false; }
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let current = inner.turns.get(&claim.claim_turn_key).is_some_and(|turn| {
+            turn.snapshot.claimed && turn.claim_id == Some(claim.claim_id)
+        });
+        current && remove_turn_locked(&mut inner, &claim.claim_turn_key)
+    }
+
+    pub fn release(&self, agent_id: &str, claim: &PendingConversationTurnReply) -> bool {
+        if agent_id.trim() != claim.claim_agent_id.as_str() { return false; }
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let Some(turn) = inner.turns.get_mut(&claim.claim_turn_key) else { return false };
+        if !turn.snapshot.claimed || turn.claim_id != Some(claim.claim_id) { return false; }
+        turn.snapshot.claimed = false;
+        turn.claim_id = None;
+        true
+    }
+
+    pub fn cancel(&self, agent_id: &str, id: &str) -> bool {
+        let key = turn_key(agent_id.trim(), id.trim());
+        let mut inner = self.inner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        remove_turn_locked(&mut inner, &key)
+    }
+
+    fn prune_expired_locked(&self, inner: &mut PendingConversationTurnRegistryInner) {
+        let expired = inner.turns.iter().filter_map(|(key, turn)| (turn.expires_at <= Instant::now()).then_some(key.clone())).collect::<Vec<_>>();
+        for key in expired { remove_turn_locked(inner, &key); }
+    }
+}
+
+fn turn_key(agent_id: &str, id: &str) -> String { format!("{agent_id}\u{0}{id}") }
+
+fn outbound_key(agent_id: &str, message_id: &str) -> String { turn_key(agent_id, message_id) }
+
+fn remove_outbound_index(index: &mut HashMap<String, Vec<String>>, turn_key: &str, old_key: Option<String>) {
+    if let Some(key) = old_key {
+        if let Some(keys) = index.get_mut(&key) {
+            keys.retain(|candidate| candidate != turn_key);
+            if keys.is_empty() { index.remove(&key); }
+        }
+    }
+}
+
+fn remove_turn_locked(inner: &mut PendingConversationTurnRegistryInner, key: &str) -> bool {
+    let Some(turn) = inner.turns.remove(key) else { return false };
+    remove_outbound_index(
+        &mut inner.by_outbound_id,
+        key,
+        turn.snapshot
+            .outbound_message_id
+            .as_deref()
+            .map(|value| outbound_key(&turn.snapshot.agent_id, value)),
+    );
+    true
 }
 
 pub use crate::runner::conversation_outline::{
@@ -723,7 +1029,7 @@ fn decode_outline_tool_call_input(data: &[u8]) -> Option<OutlineToolCall> {
     };
 
     if field == 55 {
-        tool_call.send_message = decode_send_message(payload);
+        tool_call.send_message = decode_send_message(data);
         return Some(tool_call);
     }
 
@@ -767,22 +1073,47 @@ fn decode_outline_tool_call_input(data: &[u8]) -> Option<OutlineToolCall> {
 }
 
 fn decode_send_message(data: &[u8]) -> Option<Value> {
-    let args = first_bytes_field(data, 1)?;
-    let (case, payload) = last_oneof_bytes(args, &[1, 2])?;
-    match case {
-        1 => {
-            let content = first_string_field(payload, 1)?;
-            Some(serde_json::json!({"type":"text","content":content}))
+    // Validate the complete envelope, including known strings and nested
+    // messages, before deriving a sent-message projection from any prefix.
+    validate_generated_agent_tool_call(data).ok()?;
+
+    // The frozen Rust envelope binds only some tool variants. Keep the full
+    // selector authoritative: another recognized tool resets the oneof, while
+    // repeated SendMessage payloads merge through the frozen prost binding.
+    let mut selected: Option<SendMessageToolCall> = None;
+    let mut position = 0usize;
+    while position < data.len() {
+        let (field, wire, value) = read_wire_field(data, &mut position)?;
+        if wire != 2 || tool_case_name(field).is_none() {
+            continue;
         }
-        2 => {
-            let url = first_string_field(payload, 1)?;
-            let alt = first_string_field(payload, 2);
-            Some(match alt.filter(|value| !value.is_empty()) {
-                Some(alt) => serde_json::json!({"type":"attachment","url":url,"alt":alt}),
-                None => serde_json::json!({"type":"attachment","url":url}),
+        if field != 55 {
+            selected = None;
+            continue;
+        }
+        let WireValue::Bytes(payload) = value else { return None };
+        selected
+            .get_or_insert_with(SendMessageToolCall::default)
+            .merge(payload)
+            .ok()?;
+    }
+
+    let selected = selected?;
+    if !matches!(selected.result?.result?, send_message_result::Result::Success(_)) {
+        return None;
+    }
+    // A generated success may legitimately have an empty message ID when the
+    // generic sink returned Ok(None). It still proves a completed send.
+    match selected.args?.message? {
+        send_message_args::Message::Text(text) => {
+            Some(serde_json::json!({"type":"text","content":text.content}))
+        }
+        send_message_args::Message::Attachment(attachment) => {
+            Some(match attachment.alt.filter(|value| !value.is_empty()) {
+                Some(alt) => serde_json::json!({"type":"attachment","url":attachment.url,"alt":alt}),
+                None => serde_json::json!({"type":"attachment","url":attachment.url}),
             })
         }
-        _ => None,
     }
 }
 
@@ -872,57 +1203,11 @@ fn tool_case_name(field: u64) -> Option<&'static str> {
     })
 }
 
-enum WireValue<'a> {
-    Varint(u64),
-    Bytes(&'a [u8]),
-    Fixed,
-}
-
 fn read_wire_field<'a>(
     data: &'a [u8],
     position: &mut usize,
 ) -> Option<(u64, u8, WireValue<'a>)> {
-    let tag = read_varint(data, position)?;
-    let field = tag >> 3;
-    let wire = (tag & 0x07) as u8;
-    if field == 0 {
-        return None;
-    }
-    let value = match wire {
-        0 => WireValue::Varint(read_varint(data, position)?),
-        1 => {
-            *position = position.checked_add(8)?;
-            if *position > data.len() { return None; }
-            WireValue::Fixed
-        }
-        2 => {
-            let len: usize = read_varint(data, position)?.try_into().ok()?;
-            let end = position.checked_add(len)?;
-            let bytes = data.get(*position..end)?;
-            *position = end;
-            WireValue::Bytes(bytes)
-        }
-        5 => {
-            *position = position.checked_add(4)?;
-            if *position > data.len() { return None; }
-            WireValue::Fixed
-        }
-        _ => return None,
-    };
-    Some((field, wire, value))
-}
-
-fn read_varint(data: &[u8], position: &mut usize) -> Option<u64> {
-    let mut value = 0u64;
-    for shift in (0..70).step_by(7) {
-        let byte = *data.get(*position)?;
-        *position += 1;
-        value |= u64::from(byte & 0x7f) << shift;
-        if byte & 0x80 == 0 {
-            return Some(value);
-        }
-    }
-    None
+    read_generated_wire_field(data, position).ok()
 }
 
 fn first_bytes_field(data: &[u8], wanted: u64) -> Option<&[u8]> {

@@ -1,0 +1,2944 @@
+{
+  "schema_version": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "observer": "config_revision_review_0375",
+  "status": "SOURCE_RENDERER_LINUX_PASSED_MAC_PENDING",
+  "observed_at": "2026-11-02T22:22:57.768Z",
+  "subject": {
+    "commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+    "parent": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+    "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "source_run": 41533207885,
+    "runtime_run": 41533207848,
+    "run_attempt": 1
+  },
+  "publication_identity": {
+    "independently_read_remote_git_commit": true,
+    "remote_commit_tree_parent_match": true,
+    "reviewed_candidate": "a97f4a56ef910f55ae1a9e9e1b1ccc85087915c1",
+    "evidence_only_incoming": {
+      "commit": "7009265ad60af08a420a7d9f2a156eb1cff2c044",
+      "parent": "e01f51f33134cbd9dd0b6abd0d471dfb5d71d8de",
+      "path": "projects/openclaw-rust/evidence/memory-selector-647e0932-20261103.json",
+      "before_blob": "f3a5503a01ddb323183f931703bd8baa20646371",
+      "after_blob": "ed62de39e518674e8366228d5c8b8894cb892dec"
+    },
+    "proof": "The complete immutable raw diff e01-to-700 and complete reviewed-candidate-a97-to-published-tree-802 diff are identical: the single evidence path and same full before/after blobs. Complete parent700-to-H40dad diff contains exactly the original six root changes plus deletion of the three staging paths; all six delivered blobs match the reviewed a97 freeze. No staging path exists in the published tree. Embedded incoming evidence opinions were not read or used to judge code.",
+    "workflow_blob": "db8353fedf61f6c93c48f677d6c35017bd31e954",
+    "main_blob": "3cbfb8304ff7a956408ed0631bb9aca72734bdf8"
+  },
+  "source_jobs": [
+    {
+      "id": 125578428034,
+      "name": "source-authority",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41533207885,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout exact subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Verify checked-out subject and lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Exercise risk review contract and fail-closed counterexamples",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Acquire exact upstream and verify identity",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Generate recursive tracked-source inventory",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Scan LFS pointer candidates without claiming closure",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Record dependency authority inputs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Expand canonical source records and verify P0 G01/G02 structural",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Upload immutable authority evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Post Checkout exact subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21
+        }
+      ]
+    },
+    {
+      "id": 125578430875,
+      "name": "recover-original-host-log",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41533207885,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 125582637196,
+      "name": "persist-verified-inventory",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41533207885,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Checkout guarded original subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Download this exact-subject verified canonical manifest",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Materialize deterministic shards and dependency declarations in Actions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "CAS commit derived source shards to the existing branch (non-force)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Dispatch scoped checks for the resulting exact branch head",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6
+        },
+        {
+          "name": "Post Checkout guarded original subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        }
+      ]
+    }
+  ],
+  "runtime_jobs": [
+    {
+      "id": 125578429715,
+      "name": "sqlite-native-path",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41533207848,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact tested HEAD",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Install existing Linux Host native dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Record Linux build profile and available storage",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Test native SQLite paths and affected recovery owners",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Test media input, preview and URL policy, and HTTP failure diagnostics on the existing Linux Host cache",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Test portable pending-failure recovery and Memory selectors on the existing Linux Host cache",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10
+        },
+        {
+          "name": "Record storage after completed native, media and channel checks",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11
+        },
+        {
+          "name": "Save completed Linux owner evidence before Automation and App checks",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        {
+          "name": "Test typed Automation admission and actual owners on the existing Linux Host cache",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13
+        },
+        {
+          "name": "Check and execute the actual Automation and Settings App owners on Linux",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14
+        },
+        {
+          "name": "Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15
+        },
+        {
+          "name": "Preserve failed owned native-path and Automation fixtures",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 16
+        },
+        {
+          "name": "Upload native SQLite path evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Post Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 33
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 34
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 35
+        }
+      ]
+    },
+    {
+      "id": 125578430085,
+      "name": "rust-host",
+      "status": "queued",
+      "conclusion": null,
+      "run_id": 41533207848,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 125578430179,
+      "name": "renderer",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41533207848,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact tested HEAD",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run actions/setup-node@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Install desktop dependencies",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Build Grok-shaped Electron runtime",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Test Plugin Skills, model settings bridge and routed MCP carrier",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Record exact-subject Plugin Skills edge evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Upload Plugin Skills edge evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Check production architecture boundary",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10
+        },
+        {
+          "name": "Compile Grok Electron boundary contracts",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 11
+        },
+        {
+          "name": "Compile Fabushi product policy contract",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 12
+        },
+        {
+          "name": "Test Grok Electron boundary contracts",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 13
+        },
+        {
+          "name": "Test Fabushi product policy contract",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 14
+        },
+        {
+          "name": "Test recovered window chrome contracts",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 15
+        },
+        {
+          "name": "Check Agent workspace architecture boundary",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 16
+        },
+        {
+          "name": "Check Grok architecture inventory",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17
+        },
+        {
+          "name": "Typecheck and build renderer",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18
+        },
+        {
+          "name": "Verify co-staged desktop runtime",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19
+        },
+        {
+          "name": "Enforce built desktop bundle boundary",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 20
+        },
+        {
+          "name": "Check Grok final architecture gate",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 21
+        },
+        {
+          "name": "Post Run actions/setup-node@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 41
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 42
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 43
+        }
+      ]
+    },
+    {
+      "id": 125578430467,
+      "name": "OCRM installation key restore boundary / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41533207848,
+      "logs_url": null,
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1
+        },
+        {
+          "name": "Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2
+        },
+        {
+          "name": "Bind exact restore test subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3
+        },
+        {
+          "name": "Run dtolnay/rust-toolchain@stable",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4
+        },
+        {
+          "name": "Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5
+        },
+        {
+          "name": "Install canonical Linux native Computer build prerequisites",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6
+        },
+        {
+          "name": "Compile locked restore contracts as the ordinary runner user",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7
+        },
+        {
+          "name": "Exercise ordinary restore and real mounted descendants",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8
+        },
+        {
+          "name": "Upload exact-subject Linux restore evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9
+        },
+        {
+          "name": "Post Run Swatinem/rust-cache@v2",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17
+        },
+        {
+          "name": "Post Run actions/checkout@v6",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19
+        }
+      ]
+    },
+    {
+      "id": 125578431875,
+      "name": "platform-worker",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41533207848,
+      "logs_url": null,
+      "steps": null
+    },
+    {
+      "id": 125578432783,
+      "name": "Pressure profiler / ${{ matrix.os }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41533207848,
+      "logs_url": null,
+      "steps": null
+    }
+  ],
+  "completed_logs": [
+    {
+      "job_id": 125578428034,
+      "name": "source-authority",
+      "complete_log_fetched": true,
+      "characters": 31509,
+      "lines": 381,
+      "error_markers_observed": []
+    },
+    {
+      "job_id": 125582637196,
+      "name": "persist-verified-inventory",
+      "complete_log_fetched": true,
+      "characters": 18120,
+      "lines": 217,
+      "error_markers_observed": []
+    },
+    {
+      "job_id": 125578430179,
+      "name": "renderer",
+      "complete_log_fetched": true,
+      "characters": 51437,
+      "lines": 560,
+      "error_markers_observed": []
+    },
+    {
+      "job_id": 125578430467,
+      "name": "installation-key-restore-linux",
+      "complete_log_fetched": true,
+      "characters": 88744,
+      "lines": 1004,
+      "error_markers_observed": []
+    },
+    {
+      "job_id": 125578429715,
+      "name": "sqlite-native-path",
+      "complete_log_fetched": true,
+      "characters": 1200735,
+      "lines": 15745,
+      "error_markers_observed": []
+    }
+  ],
+  "actual_step_results": [
+    {
+      "job_id": 125578428034,
+      "step_number": 4,
+      "scope": "Risk review contract and fail-closed counterexamples",
+      "command": "python3 projects/openclaw-rust/scripts/test_source_review.py",
+      "test_count": 33,
+      "result": "OK",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046"
+    },
+    {
+      "job_id": 125578428034,
+      "step_number": 9,
+      "scope": "Inventory materialization unit controls",
+      "command": "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py",
+      "test_count": 21,
+      "result": "OK",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046"
+    },
+    {
+      "job_id": 125578428034,
+      "step_number": 9,
+      "scope": "Pre-expansion history integrity, canonical reconstruction, G01/G02 structural and committed-source integrity",
+      "result": "PASS",
+      "test_count": null,
+      "counters": {
+        "tracked_paths": 62130,
+        "mapped": 850,
+        "unread_or_partial": 62099,
+        "pending_forward_links": 0
+      },
+      "negative_probes": [
+        "duplicate source path",
+        "unread denominator tamper",
+        "unbacked accepted verdict",
+        "orphan responsibility"
+      ],
+      "note": "Inventory path counters are not test counts; global source closure and semantic acceptance remain open."
+    },
+    {
+      "job_id": 125582637196,
+      "scope": "Source persistence",
+      "result": "success",
+      "test_count": null,
+      "note": "62130 candidate rows across61 shards; dependencies unresolved; actual log says No new source-derived shard content, so no derived commit was written."
+    },
+    {
+      "job_id": 125578430179,
+      "step_number": 7,
+      "scope": "Selected Plugin Skills/model settings bridge/routed MCP carrier tests",
+      "tests": 104,
+      "passed": 104,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "result": "success",
+      "note": "Other skipped renderer architecture/product/final gates are not counted as passes."
+    },
+    {
+      "job_id": 125578430467,
+      "step_number": 8,
+      "scope": "Ordinary installation-key restore target",
+      "passed": 29,
+      "failed": 0,
+      "ignored": 2,
+      "result": "success"
+    },
+    {
+      "job_id": 125578430467,
+      "step_number": 8,
+      "scope": "linux_bind_mounted_descendant_file_restore_boundary",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 30,
+      "result": "success"
+    },
+    {
+      "job_id": 125578430467,
+      "step_number": 8,
+      "scope": "linux_bind_mounted_descendant_symlink_restore_boundary",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 30,
+      "result": "success"
+    },
+    {
+      "job_id": 125578429715,
+      "step_number": 8,
+      "scope": "Test native SQLite paths and affected recovery owners",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "result": "success",
+      "outer_passed": 78,
+      "outer_failed": 0,
+      "outer_ignored": 1,
+      "owned_child_summary_count": 1,
+      "targets": [
+        {
+          "target": "Running tests/agent_db_recovery_contract.rs (source/host/target/debug/deps/agent_db_recovery_contract-de6b81157331a13e)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 18,
+            "failed": 0,
+            "ignored": 1,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": [
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 18
+            }
+          ]
+        },
+        {
+          "target": "Running tests/automation_store_contract.rs (source/host/target/debug/deps/automation_store_contract-d166be79e593c7a1)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 45,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/conversation_blob_db_recovery_contract.rs (source/host/target/debug/deps/conversation_blob_db_recovery_contract-70a78064fda3ad68)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/host_storage_contract.rs (source/host/target/debug/deps/host_storage_contract-b1928d0d34c0609d)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 11,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        }
+      ],
+      "note": "Final Rust target summaries are counted separately from nested owned-child summaries. Reused LPG composition evidence is not an additional execution."
+    },
+    {
+      "job_id": 125578429715,
+      "step_number": 9,
+      "scope": "Test media input, preview and URL policy, and HTTP failure diagnostics on the existing Linux Host cache",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "result": "success",
+      "outer_passed": 71,
+      "outer_failed": 0,
+      "outer_ignored": 0,
+      "owned_child_summary_count": 0,
+      "targets": [
+        {
+          "target": "Running tests/attachments_service_contract.rs (source/host/target/debug/deps/attachments_service_contract-5602233db458c180)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 5,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/channel_attachment_contract.rs (source/host/target/debug/deps/channel_attachment_contract-41448420daa9aa84)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/openclaw_input_files_contract.rs (source/host/target/debug/deps/openclaw_input_files_contract-8057e4eddd5d45ba)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 15,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/openclaw_media_fetch_contract.rs (source/host/target/debug/deps/openclaw_media_fetch_contract-77055aac5bfe4e5f)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 22,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/openclaw_media_reference_contract.rs (source/host/target/debug/deps/openclaw_media_reference_contract-c6ba08bdaeb542a3)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 11,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/safe_link_preview_fetch_contract.rs (source/host/target/debug/deps/safe_link_preview_fetch_contract-05c78732d30cff3f)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 11,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running unittests src/lib.rs (source/host/target/debug/deps/mahayana_host_runtime-cd25e04f5e457f39)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 540
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running unittests src/lib.rs (source/host/target/debug/deps/mahayana_host_runtime-cd25e04f5e457f39)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 2,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 539
+          },
+          "owned_child_summaries": []
+        }
+      ],
+      "note": "Final Rust target summaries are counted separately from nested owned-child summaries. Reused LPG composition evidence is not an additional execution."
+    },
+    {
+      "job_id": 125578429715,
+      "step_number": 10,
+      "scope": "Test portable pending-failure recovery and Memory selectors on the existing Linux Host cache",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "result": "success",
+      "outer_passed": 60,
+      "outer_failed": 0,
+      "outer_ignored": 0,
+      "owned_child_summary_count": 0,
+      "targets": [
+        {
+          "target": "Running tests/cloud_agent_pending_wake_rearm_production_contract.rs (source/host/target/debug/deps/cloud_agent_pending_wake_rearm_production_contract-c337d7816af1ede7)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/durable_recovery_stores_contract.rs (source/host/target/debug/deps/durable_recovery_stores_contract-167b82f9ab990ce5)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 21,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/pending_wake_rearm_contract.rs (source/host/target/debug/deps/pending_wake_rearm_contract-1583c417f80fd243)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 18,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/transcript_manager_contract.rs (source/host/target/debug/deps/transcript_manager_contract-84ddc537ff0f9b7c)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 13,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running unittests src/lib.rs (source/host/target/debug/deps/mahayana_host_runtime-cd25e04f5e457f39)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 538
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running unittests src/lib.rs (source/host/target/debug/deps/mahayana_host_runtime-cd25e04f5e457f39)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 540
+          },
+          "owned_child_summaries": []
+        }
+      ],
+      "note": "Final Rust target summaries are counted separately from nested owned-child summaries. Reused LPG composition evidence is not an additional execution."
+    },
+    {
+      "job_id": 125578429715,
+      "step_number": 13,
+      "scope": "Test typed Automation admission and actual owners on the existing Linux Host cache",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "result": "success",
+      "outer_passed": 119,
+      "outer_failed": 0,
+      "outer_ignored": 0,
+      "owned_child_summary_count": 25,
+      "targets": [
+        {
+          "target": "Running tests/automation_event_fires_contract.rs (source/host/target/debug/deps/automation_event_fires_contract-376b5e068413eb14)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 2,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/automation_lifecycle_production_wiring_contract.rs (source/host/target/debug/deps/automation_lifecycle_production_wiring_contract-aeb59c38fa5b3b31)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 7,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/automation_run_path_contract.rs (source/host/target/debug/deps/automation_run_path_contract-45b69425dcf169fb)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 13,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/automation_run_production_wiring_contract.rs (source/host/target/debug/deps/automation_run_production_wiring_contract-a1848cc779bace95)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 26,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": [
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 25
+            }
+          ]
+        },
+        {
+          "target": "Running tests/automation_runtime_contract.rs (source/host/target/debug/deps/automation_runtime_contract-a08d760eb9b90689)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 5,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/automation_spend_guard_runtime_contract.rs (source/host/target/debug/deps/automation_spend_guard_runtime_contract-a6d70068401a16b4)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": [
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 2
+            },
+            {
+              "result": "ok",
+              "passed": 1,
+              "failed": 0,
+              "ignored": 0,
+              "measured": 0,
+              "filtered_out": 2
+            }
+          ]
+        },
+        {
+          "target": "Running tests/automations_backend_contract.rs (source/host/target/debug/deps/automations_backend_contract-1c129f7dbbf017fc)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 18,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/automations_fire_delivery_contract.rs (source/host/target/debug/deps/automations_fire_delivery_contract-488d90c67758ef7f)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 17,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/host_runner_composition_production_wiring_contract.rs (source/host/target/debug/deps/host_runner_composition_production_wiring_contract-b89b2d0256dcb568)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 28,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        }
+      ],
+      "note": "Final Rust target summaries are counted separately from nested owned-child summaries. Reused LPG composition evidence is not an additional execution."
+    },
+    {
+      "job_id": 125578429715,
+      "step_number": 15,
+      "scope": "Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "result": "success",
+      "outer_passed": 114,
+      "outer_failed": 0,
+      "outer_ignored": 0,
+      "owned_child_summary_count": 0,
+      "targets": [
+        {
+          "target": "Running tests/gateway_protocol_contract.rs (source/host/target/debug/deps/gateway_protocol_contract-3e61dfadcd4b3633)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 9,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/gateway_server_contract.rs (source/host/target/debug/deps/gateway_server_contract-a9a20029c0a6d683)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 43,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/coordinator_contract.rs (source/host/target/debug/deps/coordinator_contract-0999b19845373988)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 58,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running tests/production_protocol.rs (source/host/target/debug/deps/production_protocol-d380f32a7d07900d)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0
+          },
+          "owned_child_summaries": []
+        },
+        {
+          "target": "Running unittests src/main.rs (source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d)",
+          "outer_summary": {
+            "result": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 109
+          },
+          "owned_child_summaries": []
+        }
+      ],
+      "note": "Final Rust target summaries are counted separately from nested owned-child summaries. Reused LPG composition evidence is not an additional execution."
+    },
+    {
+      "job_id": 125578429715,
+      "step_number": 14,
+      "scope": "Actual Automation and Settings App",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "result": "success",
+      "shipping_check": {
+        "command": [
+          "cargo",
+          "check",
+          "--locked",
+          "--manifest-path",
+          "source/host/app/Cargo.toml",
+          "--bin",
+          "mahayana-app-host"
+        ],
+        "exit": 0
+      },
+      "test_harness_build": {
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/app/Cargo.toml",
+          "--bin",
+          "mahayana-app-host",
+          "--no-run",
+          "--message-format=json"
+        ],
+        "exit": 0
+      },
+      "outer_exact_cases": 18,
+      "automation_mapper_cases": 10,
+      "config_cases": 8,
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0,
+      "owned_child_summary_count": 9,
+      "cases": [
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        }
+      ],
+      "executable": {
+        "path": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d",
+        "sha256": "6bae18d7b591aace7fcd30841c9d989ddc359b54e5541403701176abd262b6b3"
+      },
+      "note": "Each exact name was listed and then run with exit 0. Nine Automation cases also run one owned-child invocation; those are not additional unique cases."
+    }
+  ],
+  "receipt_observations": [
+    {
+      "job_id": 125578428034,
+      "source": "completed log and artifact metadata",
+      "body_read": false,
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+      "artifact_id": 13182892992,
+      "digest": "sha256:b6e00e63e3a40c1e439867ed7cb22d3a5942b986f36ae18a83dcbe543dcc2a38"
+    },
+    {
+      "job_id": 125578430179,
+      "source": "completed log and artifact metadata",
+      "body_read": false,
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "artifact_id": 13184450036,
+      "digest": "sha256:da308ecc3ed1168b6df4e4b8599c305916c8a7df40993cb3619dc5a8bd3de10a"
+    },
+    {
+      "job_id": 125578430467,
+      "source": "completed log and artifact metadata",
+      "body_read": false,
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "artifact_id": 13183481428,
+      "digest": "sha256:54954f38249e58aa1c4577c30c576e1f624534baa4dfc4f51606998377bdd5a4"
+    },
+    {
+      "job_id": 125578429715,
+      "source": "Completed full job log and artifact API metadata",
+      "body_read": true,
+      "body_read_source": "Six actual printed JSON receipts in completed job log; ZIP not opened",
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "artifact_id": 13184661957,
+      "artifact_name": "ocrm-sqlite-native-path-40dad3d79f3cfffb1301e27e7a8c79a873b66046-41533207848-1",
+      "bytes": 208061,
+      "digest": "sha256:96b4d3a8cd25443e3d0cf99c6567bcfa5ea7d116e1935626f778dcc4e1bd882f"
+    },
+    {
+      "job_id": 125578429715,
+      "source": "Completed full job log and artifact API metadata",
+      "body_read": false,
+      "body_read_source": null,
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "artifact_id": 13183028407,
+      "artifact_name": "ocrm-linux-before-automation-40dad3d79f3cfffb1301e27e7a8c79a873b66046-41533207848-1",
+      "bytes": 65518,
+      "digest": "sha256:fdfdd49b2439d3b904c309c2fd8f8390c49be3d0d956b42a23116241df7f2489"
+    }
+  ],
+  "failure_classifications": [],
+  "planned_checks_not_yet_runtime_evidence": {
+    "macos_host": {
+      "job_id": 125578430085,
+      "status": "queued",
+      "runtime_passed": null
+    },
+    "artifact_only_json_bodies": "Source, renderer and restore artifact-only receipt bodies remain unread due transfer access; their complete logs and successful receipt/upload steps are retained separately."
+  },
+  "historical_evidence_separate_from_this_h": [
+    {
+      "subject": "0375dfa54378b97fb4b9ca01ae77f04d7643b817",
+      "record": "config-input/verdict.json",
+      "scope": "Earlier independently observed source-authority and renderer positives only; not re-polled in this task.",
+      "current_h_validation": false
+    },
+    {
+      "subjects": [
+        "f5f6d88fd5e1f96e27558d2a17e490964c6d57a5",
+        "93130e0a4e1e4753043e714bb64802e5572d863e"
+      ],
+      "record": "ci-f5-6034.json",
+      "scope": "Timestamped earlier source/renderer/restore and owner-step observations; actual App/LPG/macOS outcomes remained unobserved at its last snapshot.",
+      "current_h_validation": false
+    },
+    {
+      "subject": "7d060aca30278db9ef921092f60a5f77278ce8d9",
+      "run": 41531351468,
+      "job": 125572057978,
+      "artifact": 13182283079,
+      "scope": "Successful content-addressed staging of the identical main blob only; receipt explicitly says no product validation.",
+      "current_h_validation": false
+    }
+  ],
+  "limits": [
+    "Every positive result here applies only to H40dad/tree802, source run 41533207885 attempt 1 and runtime run 41533207848 attempt 1. macOS rust-host remains queued; full runtime workflow acceptance is not claimed.",
+    "Complete job logs are fetched only after job completion. Running, pending, queued and skipped jobs are not passes; step metadata alone does not establish named-test counts.",
+    "No dispatch, retry, cancellation, repository edit, local test/build/lint/formatter/generator/validator was performed.",
+    "Test summaries will be attributed per command/target; owned-child and outer summaries will not be blindly added into a misleading unique-test total."
+  ],
+  "current_h_runtime_acceptance": false,
+  "sources": [
+    "https://api.github.com/repos/bhrumom/fabushi-desktop/git/commits/40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41533207885",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41533207848",
+    "https://github.com/bhrumom/fabushi-desktop/actions/runs/41533207848/job/125578429715"
+  ],
+  "source_run_result": {
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 1,
+    "updated_at": "2026-11-02T22:10:17Z"
+  },
+  "evidence_access_limitations": [
+    {
+      "scope": "Artifact ZIP body/JSON receipt extraction",
+      "status": "unavailable_in_current_file_transfer_path",
+      "details": "GitHub artifact API and download connector succeeded and returned exact-H archive references. Direct local transfer failed with unavailable browser-proxy:8889; the prescribed Library transfer helper also returned download failed. Library text-read reports these transient connector files are not visible in that files surface. No access controls, proxy configuration or credentials were changed. Completed job logs and artifact IDs/digests remain readable; unread archive bodies are explicitly not claimed as inspected.",
+      "ci_failure": false
+    }
+  ],
+  "app_entry_observation": {
+    "job_id": 125578429715,
+    "step_number": 14,
+    "status": "completed",
+    "conclusion": "success",
+    "shipping_compile_result": "exit 0",
+    "test_harness_build_result": "exit 0",
+    "automation_cases_passed": 10,
+    "config_cases_passed": 8,
+    "native_compilation_blocker_observed": false,
+    "receipt_body_read_from_completed_log": true,
+    "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Not a linked production package/startup, real external provider/backend/client, macOS or whole-platform acceptance. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open."
+  },
+  "linux_profile_observed": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "job_CARGO_BUILD_JOBS": "2",
+    "app_CARGO_BUILD_JOBS": "1",
+    "runtime_observed": true,
+    "source": "Actual completed job environment lines and printed App receipt",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "app_environment": {
+      "TMPDIR": "/home/runner/work/_temp/ocrm-sqlite-native-41533207848-1",
+      "FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT": "/home/runner/work/_temp/ocrm-sqlite-native-41533207848-1/automation-app",
+      "CARGO_TARGET_DIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target",
+      "CARGO_BUILD_JOBS": "1"
+    },
+    "storage_metadata_before_step": 7,
+    "storage_metadata_after_step": 11,
+    "storage_steps_result": "success",
+    "storage_numeric_payload_read": false,
+    "note": "Profile variables are observed actual environment values. Capacity diagnostics were recorded and uploaded; file-only df/du numeric payload is not claimed inspected."
+  },
+  "linux_printed_receipts": [
+    {
+      "body_read": true,
+      "body_source": "Actual printed JSON in completed full job log",
+      "contract": "AUTO-RECOVERY-AVAILABILITY-v1/ARA-PATH-01/AUTO-FRESH-CUSTODY-v1",
+      "head_sha": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41533207848",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux",
+      "result": "passed",
+      "scope": "Actual Linux native-byte/recovery fixtures and checked Automation FileStore delivery/fresh-history custody, including invalid UTF-8 folder identities, complete raw custody and proposed fresh identities. Existing legacy normalization remains a control. Not all-filesystem, metadata/open races, power-loss or whole-platform acceptance.",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "host_storage_contract",
+        "--test",
+        "agent_db_recovery_contract",
+        "--test",
+        "conversation_blob_db_recovery_contract",
+        "--test",
+        "automation_store_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_native_path_tests": [
+        "sqlite_raw_path_contract::explicit_quarantine_preserves_native_source_and_destination_bytes",
+        "sqlite_raw_path_contract::default_quarantine_appends_to_the_complete_native_path",
+        "sqlite_raw_path_contract::sidecar_and_database_removal_preserve_native_path_lookalikes",
+        "sqlite_raw_path_contract::salvage_sql_failure_cleans_only_native_sidecars",
+        "recovery_preserves_native_filename_and_unrelated_replacement_character_twins",
+        "healthy_automation_custody_guard_preserves_native_main_path_identity",
+        "automation_custody_guard_rejects_matching_attached_database"
+      ],
+      "required_automation_delivery_tests": [
+        "backend_delivery_discovery_refuses_non_utf8_folder_identity_for_match_and_absence",
+        "backend_delivery_discovery_uses_exact_folder_identity_and_ignores_unrelated_definitions",
+        "backend_delivery_discovery_refuses_invalid_matching_definitions_without_writes",
+        "backend_delivery_discovery_distinguishes_confirmed_absence_from_directory_failures",
+        "backend_delivery_discovery_retains_valid_legacy_definition_semantics",
+        "backend_delivery_discovery_checks_root_and_child_link_metadata_without_admitting_child_links",
+        "delivery_lookup_refuses_dangling_history_and_definition_links_without_creating_targets"
+      ],
+      "required_fresh_custody_tests": [
+        "fresh_admission_rejects_lossy_history_before_publication",
+        "fresh_admission_rejects_invalid_identity_inputs_without_rewriting_history",
+        "fresh_admission_preserves_literal_custody_and_legacy_normalization",
+        "fresh_admission_distinguishes_missing_history_from_nonregular_paths_and_links"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "log_sha256": "f9d29f99e661bf92561480662da2b955a7e116e6fcf9f30be61be7dfba0a1db4",
+      "fresh_custody_inputs_sha256": {
+        "source/host/src/automations/automation_store.rs": "07752b15d14c79744b97dff1baa885c7c859796446c5c86f2d93f21a94aa88e1",
+        "source/host/tests/automation_store_contract.rs": "05398f6ccc5f4f35c218abd7a80ad2cbbf042224c88ff7268baee011292b88a7",
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md": "4cd04a205d9d8965636bce83b1b9d2b86959ba3aa0cda7194acc2b04d9251219"
+      },
+      "host_lock_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+      "observed_passed_name_count": 78
+    },
+    {
+      "body_read": true,
+      "body_source": "Actual printed JSON in completed full job log",
+      "contract": "MIP-v1/LPIP-v1/MURL-v1/MHE-v1/MRU-v1",
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41533207848",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux",
+      "result": "passed",
+      "scope": "Named MIP input policy, LPIP mapped-IP preview, MURL restrictive reader URL/redirect admission and input projection, and MHE bounded Unicode/status/redaction/no-store diagnostics through existing attachment services and controlled HTTP fixtures. MRU covers UTF-8 prefix decisions and the actual sharing attachment callback/ordered publisher with a controlled relay. Fresh desktop attachment projection is not established. Input extraction receives no private trust. Not outer Host HTTP registration, shipping macOS, complete DNS/IP/proxy/cancellation/read-idle timing, real providers or full media/platform/OCRM acceptance.",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_input_files_contract",
+        "--test",
+        "safe_link_preview_fetch_contract",
+        "--test",
+        "attachments_service_contract",
+        "--test",
+        "openclaw_media_fetch_contract",
+        "--test",
+        "openclaw_media_reference_contract",
+        "--test",
+        "channel_attachment_contract"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "projection_command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
+        "--",
+        "--exact"
+      ],
+      "projection_exit": 0,
+      "projection_capture_exit": 0,
+      "projection_required_test": "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
+      "projection_observed_passed_test_names": [
+        "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust"
+      ],
+      "projection_log_sha256": "af6ffa2ad0b7f9ddca9a191b544754aba77e0ba60d32a0596c120611dda25858",
+      "unicode_command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::cross_user_sharing::production::unicode_tests::"
+      ],
+      "unicode_exit": 0,
+      "unicode_capture_exit": 0,
+      "unicode_required_tests": [
+        "extensions::cross_user_sharing::production::unicode_tests::mru_production_attachment_callback_preserves_unicode_and_refusal_controls",
+        "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals"
+      ],
+      "unicode_observed_passed_test_names": [
+        "extensions::cross_user_sharing::production::unicode_tests::mru_ordered_room_publication_survives_unicode_attachment_refusals",
+        "extensions::cross_user_sharing::production::unicode_tests::mru_production_attachment_callback_preserves_unicode_and_refusal_controls"
+      ],
+      "unicode_log_sha256": "5551b442ea160dee488e16689180b3c9a6f3119056c7e22c7e3c3f09a4ee73fe",
+      "required_tests": [
+        "gateway_file_extraction_rejects_every_malformed_explicit_policy",
+        "gateway_file_policy_errors_precede_base64_and_url_processing",
+        "gateway_file_extraction_preserves_omitted_and_null_default_policies",
+        "gateway_file_extraction_preserves_resolved_restrictive_policies",
+        "gateway_partial_file_policy_is_resolved_before_extraction",
+        "gateway_padding_only_sources_preserve_upstream_error_precedence",
+        "gateway_valid_padded_file_and_image_sources_preserve_byte_caps",
+        "mapped_ipv6_addresses_preserve_ipv4_admission_decisions",
+        "mapped_ip_url_literals_reject_private_dotted_and_hex_forms",
+        "mapped_ip_redirects_revalidate_private_and_public_destinations",
+        "dns_resolution_rejects_mapped_private_answers_in_every_order",
+        "public_mapped_dns_target_preserves_host_sni_and_https_port",
+        "mapped_ip_literal_targets_never_resolve_dns",
+        "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+        "media_http_error_buffer_gateway_stops_at_prefix_without_eof",
+        "media_http_error_save_gateway_stops_at_prefix_without_eof",
+        "media_http_error_supplied_response_normalizes_unicode_and_whitespace",
+        "media_http_error_supplied_response_prioritizes_status_and_redacts",
+        "media_http_error_gateway_prioritizes_status_and_redacts",
+        "media_http_error_gateway_read_failure_preserves_status",
+        "media_http_error_gateway_empty_and_whitespace_omit_body",
+        "media_http_error_gateway_success_and_default_guard_controls",
+        "media_fetch_hostname_allowlist_matches_normalized_patterns",
+        "media_fetch_hostname_allowlist_does_not_override_private_trust",
+        "media_fetch_url_admission_enforces_http_and_https_requirements",
+        "gateway_media_fetch_trusted_origin_preserves_body_and_byte_bounds",
+        "gateway_media_fetch_checks_relative_and_off_list_redirects",
+        "gateway_media_fetch_applies_explicit_and_default_redirect_caps",
+        "gateway_input_url_allowlist_refuses_other_hosts_without_side_effects",
+        "gateway_input_url_allowlist_never_grants_private_access",
+        "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+        "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+        "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals"
+      ],
+      "missing_or_nonunique_positive_results": [],
+      "log_sha256": "9f17af995a79ed92848ce0c658f99c62f90ee14dd054734db978c3b3d902907a",
+      "inputs_sha256": {
+        ".github/workflows/rust-desktop-runtime.yml": "cb20b4b978a53a631f645768b5da1a7e72db9ba6084b143802ac8ba7f14469e4",
+        "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+        "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "projects/openclaw-rust/docs/specs/media-input-policy-admission.md": "c64c45d911a6d6a411bb34310aeaf97ee219c2802ff5e757a850c92dcdb3898c",
+        "source/host/src/extensions/attachments/attachments_service.rs": "b6a4a53c796879ea8b8c5cf4f0aa99976825f2653f4f40945d87ba1efa82060e",
+        "source/host/src/extensions/attachments/input_files.rs": "59a95a5dc7385589f2a91012d09f31f29e751c7843a9c2655427f269468020dc",
+        "source/host/tests/openclaw_input_files_contract.rs": "7f699063e00f66c57cfba2b40f6e27a0d75cd3c1610a454f38d054923ac6b0f9",
+        "projects/openclaw-rust/docs/specs/link-preview-mapped-ip-admission.md": "2c58d494539a8ad6d90fa58aa4ed581858337ad1f7678d1230721e241a9530e1",
+        "source/host/src/extensions/attachments/safe_link_preview_fetch.rs": "c63b2c8c8b991339a81bb60ffd98c5e8c3f17e5192fb11228f70888334d0a1dd",
+        "source/host/tests/safe_link_preview_fetch_contract.rs": "4a2cde583ee3c8c1697c9920ee5c8f985f3bfea79a55ddc34360b60faaacf25a",
+        "source/host/tests/attachments_service_contract.rs": "4cd5aedd9011383f6d099dcc9c7a00c5c2041ad483eeabf8424d284b136a93f3",
+        "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md": "2f22c3c662911ff71890f5516ebe583d33d7d59368d404c7d256b23e79ccf700",
+        "projects/openclaw-rust/docs/specs/media-input-url-admission.md": "e8397a7842fb8afc00e066520c119a1fdf6600ba7bb75fcfa5a89bf5dd716760",
+        "source/host/src/extensions/attachments/media_fetch.rs": "86762ced845c8d6b65eb42c3f9f3528ffe354e8438458216042470671ca5ff50",
+        "source/host/src/extensions/attachments/media_store.rs": "e1697b4ed89efa20ea720b0511a89db3ce686e9335c23eb089eb415aeb99dfc9",
+        "source/host/tests/openclaw_media_fetch_contract.rs": "9597f17974285d43a3eb92462533d5d763a951fbe88b4a832d3ec68d9d22f137",
+        "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md": "417b48edfd6a88d4dc43212b63ac687711dda3a01203a18bda597b8e3a13e21d",
+        "source/host/src/extensions/attachments/media_reference.rs": "7a80344e377760ef662d6b2ab708cb00cf6dbceba52c0b2d1201d5b4f7479917",
+        "source/host/src/extensions/attachments/media_file_context.rs": "b9be6f9c287a2145b82ac2d1d5290ff144035e60d102c0ff581b3674f5ee408d",
+        "source/host/src/connectors/channel_attachment.rs": "f21d584b7afeca9568287547cfaad6c6cddbb827c4305cd3d3d3432965f009fe",
+        "source/host/src/extensions/cross_user_sharing/production.rs": "7179092e2f2639305d49c27d9ff877f079776eb4117315670c521382376b4d20",
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs": "63902c40eb9ec13cbf0e23d87954fcd203024682723cb64caee24285b7ce4dd7",
+        "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs": "2b6cf9fdbebc441e13dd25b41720a8c68923c315798cf56e96b7b523289d7559",
+        "source/host/src/extensions/cross_user_sharing/xuser_relay.rs": "b62241dcc47b502129b4526e0161ddb093ba30f20dc7cdbb79e6a3afcaa0aa8d",
+        "source/host/tests/openclaw_media_reference_contract.rs": "b6875281828c9020e2941a10dd4f421583e0d8dd46c293dd31e8f5f03641c423",
+        "source/host/tests/channel_attachment_contract.rs": "888ac968ba1fdd244563bbba4275b84dd3113b94ccce9d7bd17b05b8e3c9a14b"
+      },
+      "observed_passed_name_count": 68
+    },
+    {
+      "body_read": true,
+      "body_source": "Actual printed JSON in completed full job log",
+      "contract": "CWR-v1-portable/MGS-v1",
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41533207848",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux",
+      "result": "passed",
+      "scope": "Linux actual store, rearm, manager and checked-lock controls, plus an independent paired-device SSE permission control. MGS-v1 exercises the actual Memory dispatch with real outside/inside file stores, unchanged bytes/notifications, valid-after-refusal, projection/order/100-record bound and preserved mutation/snapshot behavior. The cloud-agent target is source-wiring only; controlled runtime-port outcomes are not shipping app/provider/quiescence execution. Symlink, cross-account, full HTTP/UI, macOS/Windows, real transport/provider, unknown-effect and platform acceptance remain open.",
+      "inputs_sha256": {
+        ".github/workflows/rust-desktop-runtime.yml": "cb20b4b978a53a631f645768b5da1a7e72db9ba6084b143802ac8ba7f14469e4",
+        "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md": "c26d82021cb7b4fe9a6d37b4f6b38d7cb199dcd21a01d27915038b1b2b74ba0f",
+        "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md": "8d8aa116ef5029bfbe5526b66f95bc009c4c80ca4d52359c5b7d150cf52b3c9f",
+        "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+        "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "source/host/src/extensions/transcript/sand_pending_wake_store.rs": "daa4e5b0792db15e295c4303a9f9ad2b85428b180baa30f63952350735af0638",
+        "source/host/src/extensions/transcript/pending_wake_rearm.rs": "9bdc6f64dd1bddf5b9f0a98f8633cb6a6e32b172ec73c5e98de65d621dde604c",
+        "source/host/src/extensions/transcript/production_runtime.rs": "6b2b213a78e25368fd07cceeef6c617c30de3bd5416f108c22b70c0300e7d6d3",
+        "source/host/src/extensions/transcript/transcript_manager.rs": "7c21b22f2b605566906dc9ca2fd622d3da1d9b9832b06fa65fed05fd846f1f12",
+        "source/host/src/extensions/memory/memory_service.rs": "3979c884087c40815ff9497ab24e11e2cb219b8e1c6721697cd39abdefe9ea84",
+        "source/host/src/storage/agent_paths.rs": "5054ac0abd74991b97012146f21c4f7132198a6dcfe5cd3b50a9e9b9d7c95df4",
+        "source/host/src/storage/folder_id.rs": "903c6fb755ff11d4cf3723bcd4fe57dcaff88dfe8c3db9164add6f9182a6b9ef",
+        "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+        "source/host/src/extensions/transcript/background_wakes.rs": "874fa9b1e3511df9bf05fe331817284d617c7a877ca25abc5920b83067bd4cb0",
+        "source/host/src/gateway_server.rs": "bbfd64c3bae6a46737414e27724ec5423f600a5ab6c84eb71d6e15266354ee8a",
+        "source/host/app/src/main.rs": "6ac3b6dbb01a26d189d05ea64e3a93d448c316e6072197746506c9a7aa5aae58",
+        "source/host/tests/durable_recovery_stores_contract.rs": "12eb56444d61333c610e504d8c0c624539379344cd9955e52fe07a081dece12c",
+        "source/host/tests/pending_wake_rearm_contract.rs": "ee047795f5abecc197164ef0d9cdeff4790c64c747334cbd61c62ffc88a17e97",
+        "source/host/tests/transcript_manager_contract.rs": "be2d93044219ebdb9ed2dd6ee829965aca8746cbf71277a184ec65ec7ee6e261",
+        "source/host/tests/cloud_agent_pending_wake_rearm_production_contract.rs": "fa243b2087bbed478438d8f9341c87b3f4daa1c024499f18e0c335b4dc70696d"
+      },
+      "executions": [
+        {
+          "case": "integration",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--no-fail-fast",
+            "--test",
+            "durable_recovery_stores_contract",
+            "--test",
+            "pending_wake_rearm_contract",
+            "--test",
+            "transcript_manager_contract",
+            "--test",
+            "cloud_agent_pending_wake_rearm_production_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_positive_names": [
+            "checked_pending_store_accepts_missing_versionless_and_v1_without_normalizing_markers",
+            "checked_pending_store_refuses_entire_invalid_images_and_all_compatibility_mutations",
+            "checked_pending_store_refuses_unreadable_images_and_preserves_the_target",
+            "checked_pending_store_validates_incoming_markers_without_mutating_known_state",
+            "matching_pending_wake_admission_is_read_only_and_refuses_stale_or_settled_snapshots",
+            "matching_pending_wake_admission_compares_every_marker_field",
+            "pending_wake_store_does_not_clear_or_overwrite_a_newer_marker",
+            "production_transcript_runtime_owns_both_durable_recovery_stores_and_cleans_deleted_agent",
+            "checked_rearm_refuses_invalid_whole_image_before_any_runtime_dispatch",
+            "checked_rearm_accepts_known_empty_state_without_creating_recovery_work",
+            "channel_rearm_success_retains_complete_marker_across_reopen",
+            "channel_rearm_error_retains_complete_marker_across_reopen",
+            "checked_rearm_prunes_old_shell_but_retains_deferred_channel_failure_exactly",
+            "recreate_carry_still_excludes_channel_delivery_markers",
+            "rearm_prunes_stale_preserves_gone_and_restores_each_runtime_kind",
+            "manager_owns_pending_wake_rearm_and_replays_durable_wakes",
+            "manager_refuses_partial_pending_wake_recovery_and_keeps_unknown_custody_busy",
+            "memory_gateway_rejects_path_selectors_before_external_memory_read",
+            "memory_gateway_keeps_required_trimmed_missing_and_unknown_read_contracts",
+            "memory_gateway_preserves_projection_order_and_hundred_record_limit",
+            "manager_owns_memory_gateway_and_invalidates_prompt_snapshot_after_mutation",
+            "shipping_host_rearms_durable_cloud_agent_and_lost_subagent_wakes_after_gateway_start",
+            "startup_rearm_routes_recreate_interrupted_shell_through_completion_revivals",
+            "shipping_cloud_recovery_admission_transfers_only_the_observed_durable_marker",
+            "shipping_generated_subagent_dispatch_persists_durable_pending_wake_before_provider_run"
+          ],
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "summaries_passed_failed_ignored": [
+            [
+              4,
+              0,
+              0
+            ],
+            [
+              21,
+              0,
+              0
+            ],
+            [
+              18,
+              0,
+              0
+            ],
+            [
+              13,
+              0,
+              0
+            ]
+          ],
+          "log": "integration.log",
+          "log_sha256": "eb20e444110249a9e78237e243b8247187b2d9383ec50978e57d474d113c3d60",
+          "observed_passed_name_count": 56
+        },
+        {
+          "case": "checked-store",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_positive_names": [
+            "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::failed_pending_publication_preserves_prior_bytes_and_refuses_mutation_result",
+            "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::poisoned_pending_owner_refuses_reads_admission_and_all_mutations",
+            "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests::matching_pending_admission_holds_clone_shared_lock_until_queue_admission_finishes"
+          ],
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "summaries_passed_failed_ignored": [
+            [
+              3,
+              0,
+              0
+            ]
+          ],
+          "log": "checked-store.log",
+          "log_sha256": "4ffb25760dc9f5e680fdbb0890dd241de4651ca4057725830ab2e0e7c4aeddef",
+          "observed_passed_name_count": 3
+        },
+        {
+          "case": "paired-device-sse",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_positive_names": [
+            "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection"
+          ],
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "summaries_passed_failed_ignored": [
+            [
+              1,
+              0,
+              0
+            ]
+          ],
+          "log": "paired-device-sse.log",
+          "log_sha256": "85e885c163b7b7c4b02ee375daa6fc6bc8b2425015d124bd80f20afacc2fb25b",
+          "observed_passed_name_count": 1
+        }
+      ]
+    },
+    {
+      "body_read": true,
+      "body_source": "Actual printed JSON in completed full job log",
+      "contract": "AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1",
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41533207848",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux",
+      "result": "passed",
+      "scope": "Actual Linux RunPath/Runtime/Session/FileStore typed refusal, full raw-history fresh admission, observed nonregular input return, legacy/error/retained controls and shipping-source callback wiring. Owned-child receipts remain required by each bounded case. Not actual App execution, macOS/platform or real backend acceptance; legacy covered-slot, metadata/open races and unknown write effects remain open.",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "automation_run_path_contract",
+        "--test",
+        "automation_run_production_wiring_contract",
+        "--test",
+        "automation_runtime_contract",
+        "--test",
+        "automation_event_fires_contract",
+        "--test",
+        "automation_spend_guard_runtime_contract",
+        "--test",
+        "automation_lifecycle_production_wiring_contract",
+        "--test",
+        "automations_fire_delivery_contract",
+        "--test",
+        "automations_backend_contract",
+        "--test",
+        "host_runner_composition_production_wiring_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_tests": [
+        "typed_run_path_refusals_preserve_exact_legacy_errors_and_release_occupancy",
+        "typed_run_path_missing_definition_refuses_without_identity_and_allows_repair",
+        "typed_run_path_preserves_admitted_cron_and_settlement_errors",
+        "typed_run_path_preserves_executed_terminal_and_retained_outcomes",
+        "real_typed_history_precheck_preserves_bookkeeping_and_legacy_errors",
+        "real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images",
+        "real_typed_spend_guard_refusal_preserves_order_and_recovers",
+        "real_typed_admitted_failures_keep_existing_outcomes_and_outer_errors",
+        "real_full_running_history_refuses_before_cron_or_executor_and_checked_read_obeys_deletion",
+        "real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair",
+        "real_fresh_admission_nonregular_inputs_return_without_losing_custody",
+        "real_fresh_admission_preserves_regular_history_counts_and_links",
+        "real_manual_history_admission_refuses_corrupt_input_before_execution",
+        "real_scheduled_history_admission_refuses_corrupt_input_before_execution",
+        "real_event_history_admission_refuses_corrupt_input_before_execution",
+        "shipping_backend_schedule_returns_typed_attempt_to_the_actual_completion_callback",
+        "typed_backend_attempt_wiring_oracle_rejects_wrong_owners_results_and_dead_calls"
+      ],
+      "required_invocation_occurrences": {
+        "typed_run_path_refusals_preserve_exact_legacy_errors_and_release_occupancy": 1,
+        "typed_run_path_missing_definition_refuses_without_identity_and_allows_repair": 1,
+        "typed_run_path_preserves_admitted_cron_and_settlement_errors": 1,
+        "typed_run_path_preserves_executed_terminal_and_retained_outcomes": 1,
+        "real_typed_history_precheck_preserves_bookkeeping_and_legacy_errors": 2,
+        "real_typed_fresh_history_refuses_lifecycle_claims_and_invalid_images": 2,
+        "real_typed_spend_guard_refusal_preserves_order_and_recovers": 2,
+        "real_typed_admitted_failures_keep_existing_outcomes_and_outer_errors": 2,
+        "real_full_running_history_refuses_before_cron_or_executor_and_checked_read_obeys_deletion": 2,
+        "real_fresh_admission_refuses_lossy_lifecycle_history_and_allows_repair": 2,
+        "real_fresh_admission_nonregular_inputs_return_without_losing_custody": 2,
+        "real_fresh_admission_preserves_regular_history_counts_and_links": 2,
+        "real_manual_history_admission_refuses_corrupt_input_before_execution": 2,
+        "real_scheduled_history_admission_refuses_corrupt_input_before_execution": 2,
+        "real_event_history_admission_refuses_corrupt_input_before_execution": 2,
+        "shipping_backend_schedule_returns_typed_attempt_to_the_actual_completion_callback": 1,
+        "typed_backend_attempt_wiring_oracle_rejects_wrong_owners_results_and_dead_calls": 1
+      },
+      "missing_named_invocations": [],
+      "summaries_pass": true,
+      "log_sha256": "e7c8c67956b0bdd6f6d356d9ac70dac143a47fc1554e595ac1cbb186468d2736",
+      "inputs_sha256": {
+        ".github/workflows/rust-desktop-runtime.yml": "cb20b4b978a53a631f645768b5da1a7e72db9ba6084b143802ac8ba7f14469e4",
+        "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+        "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md": "4cd04a205d9d8965636bce83b1b9d2b86959ba3aa0cda7194acc2b04d9251219",
+        "source/host/src/extensions/transcript/automation_run_path.rs": "4ce3706236e1f9f04d1d992fcda4e7a7717cabd534f607ef1f72945c8c322577",
+        "source/host/src/extensions/transcript/automation_runtime.rs": "3ec0fef824d1d786ab7d9b4e3423f208c34dad7c1001b9cfaf6cbf89a190aa79",
+        "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs": "4099c1d62972ab5f48a13014de0a3f7ad62268abb017f04859d4c8ef8562212c",
+        "source/host/src/extensions/transcript/automation_event_fires.rs": "ef28e23c2c2f95488f797a802d491540fb650a89d85616da289b11d698b3b273",
+        "source/host/src/automations/automation_store.rs": "07752b15d14c79744b97dff1baa885c7c859796446c5c86f2d93f21a94aa88e1",
+        "source/host/src/extensions/session/agent_session.rs": "022fc5a2c499dd90a2b035ea16f5233203684e44c6f3f219bbacb38553ef66a3",
+        "source/host/src/extensions/session/production.rs": "711485b7052802d1c2df768a4385fd5c2be218685eb00d267ae5d95db55ce861",
+        "source/host/src/extensions/automations/fire_delivery.rs": "2a1759246995a6ed4f4a62e8e10f9fa801b3ea8abf7e4940b4d9d3e069f1ea2e",
+        "source/host/src/extensions/automations/sand_automation_fire_consumer.rs": "c1253fb99a82d05e4f9e4e60762a936004be4a9f7f4644bcac71781affbd75be",
+        "source/host/app/src/main.rs": "6ac3b6dbb01a26d189d05ea64e3a93d448c316e6072197746506c9a7aa5aae58",
+        "source/host/tests/automation_run_path_contract.rs": "ddf9ebe076b9e9ce041c76ca09819a643cc05a0339355ac43e0470fb9458734d",
+        "source/host/tests/automation_run_production_wiring_contract.rs": "8120ccced7730824bad7e2a20a925f358071fe0c446d409de004f2bba1c73c3a",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs": "e19d9983f83f6c7b7483950839d709546ea4497a724ff43c98aed110b670a33e"
+      },
+      "observed_invoked_name_count": 141
+    },
+    {
+      "body_read": true,
+      "body_source": "Actual printed JSON in completed full job log",
+      "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1",
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41533207848",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux",
+      "result": "passed",
+      "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Not a linked production package/startup, real external provider/backend/client, macOS or whole-platform acceptance. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
+      "required_tests": [
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion",
+        "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+        "tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes",
+        "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests",
+        "tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization",
+        "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers",
+        "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry",
+        "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret",
+        "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization",
+        "tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects",
+        "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls"
+      ],
+      "inputs_sha256": {
+        ".github/workflows/rust-desktop-runtime.yml": "cb20b4b978a53a631f645768b5da1a7e72db9ba6084b143802ac8ba7f14469e4",
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md": "4cd04a205d9d8965636bce83b1b9d2b86959ba3aa0cda7194acc2b04d9251219",
+        "projects/openclaw-rust/docs/specs/config-settings-public-secret-boundary.md": "11ee521a1cd4ef470e15279be38f1ef4707fd9611720d9356dbd210e3f72f1b2",
+        "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+        "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "source/host/app/Cargo.toml": "5a7070c724de5eac06274b1cc1aa8201d5b72649ae0313eddd110ee7e75fe777",
+        "source/host/app/Cargo.lock": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+        "source/host/app/src/main.rs": "6ac3b6dbb01a26d189d05ea64e3a93d448c316e6072197746506c9a7aa5aae58",
+        "source/host/app/src/tests/automation_terminal_custody_tests.rs": "98292d31499730045ace5b8fe669cebcf26704374596fd7723b17bdd763ffab9",
+        "source/host/app/src/tests/config_secret_boundary_tests.rs": "b20a5579c2fe1c8d8c69b81b4f3410d91e1d66c87882d0c0bac63c18333506c7",
+        "source/host/src/extensions/settings/settings_service.rs": "6980f7942e6c2f7c837e8113fd2edb75ba00ff5c35cec77bffdc62918f3e178d",
+        "source/host/src/extensions/settings/public_projection.rs": "11120192a070438ccb3af2c1363eb4543cad0b76a6bf697e5f3108e5a2ae4589",
+        "source/host/src/gateway_command_error.rs": "879b40b479dd6ab66acb8150e06888b4c95ca66eee7cd1428e1286acee3fc43d",
+        "source/host/src/extensions/transcript/automation_run_path.rs": "4ce3706236e1f9f04d1d992fcda4e7a7717cabd534f607ef1f72945c8c322577",
+        "source/host/src/extensions/transcript/automation_runtime.rs": "3ec0fef824d1d786ab7d9b4e3423f208c34dad7c1001b9cfaf6cbf89a190aa79",
+        "source/host/src/extensions/transcript/automation_spend_guard_runtime.rs": "4099c1d62972ab5f48a13014de0a3f7ad62268abb017f04859d4c8ef8562212c",
+        "source/host/src/automations/automation_store.rs": "07752b15d14c79744b97dff1baa885c7c859796446c5c86f2d93f21a94aa88e1",
+        "source/host/src/extensions/session/agent_session.rs": "022fc5a2c499dd90a2b035ea16f5233203684e44c6f3f219bbacb38553ef66a3",
+        "source/host/src/extensions/session/production.rs": "711485b7052802d1c2df768a4385fd5c2be218685eb00d267ae5d95db55ce861",
+        "source/host/src/extensions/automations/fire_delivery.rs": "2a1759246995a6ed4f4a62e8e10f9fa801b3ea8abf7e4940b4d9d3e069f1ea2e",
+        "source/host/src/extensions/automations/production.rs": "692c69e3f4a16c31ca4dcfac2b0fe5bec434c7767e10d534e75c5f5ec84c2ca2",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs": "e19d9983f83f6c7b7483950839d709546ea4497a724ff43c98aed110b670a33e"
+      },
+      "executed_command_count": 38,
+      "all_command_exits_zero": true,
+      "build_commands": [
+        {
+          "argv": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/app/Cargo.toml",
+            "--bin",
+            "mahayana-app-host"
+          ],
+          "exit": 0,
+          "stdout": ".evidence/sqlite-native-path/automation-app/shipping-check.stdout.log",
+          "stderr": ".evidence/sqlite-native-path/automation-app/shipping-check.stderr.log",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "ae596408d876f49d370490689ded6aa511f6002dfa1f5571a4801ada860f115e"
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/app/Cargo.toml",
+            "--bin",
+            "mahayana-app-host",
+            "--no-run",
+            "--message-format=json"
+          ],
+          "exit": 0,
+          "stdout": ".evidence/sqlite-native-path/automation-app/test-build.stdout.log",
+          "stderr": ".evidence/sqlite-native-path/automation-app/test-build.stderr.log",
+          "stdout_sha256": "fbc2e07fccb9fd68cb200fc2da0d24541391535bc6d32ce1fcd51f0ac6acf8d2",
+          "stderr_sha256": "180b7f9930976cc3eeac2ecb516a6c694438bf49e86d89e980ee8af249f7b461"
+        }
+      ],
+      "executable": {
+        "path": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/mahayana_app_host-4778db5bc3e81b4d",
+        "sha256": "6bae18d7b591aace7fcd30841c9d989ddc359b54e5541403701176abd262b6b3"
+      },
+      "cases": [
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_refuses_invalid_definitions_across_reopen",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_agent_admission_refuses_unknown_state_across_reopen",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_history_refuses_malformed_custody_across_reopen",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_checked_discovery_repairs_running_terminal_and_new_fire",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_capacity_refusal_releases_for_redelivery_and_repair",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_precheck_refusal_defers_competing_claims_and_terminal_replay",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_fresh_refusal_retains_lifecycle_interleaved_claims",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_typed_executed_failure_and_settlement_error_keep_completion",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::automation_terminal_custody_tests::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ],
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::backend_fire_completion_preserves_retryable_none_and_terminal_outcomes",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::all_public_settings_routes_mask_values_and_internal_digests",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::masked_skill_round_trips_preserve_stored_bytes_and_explicit_updates_keep_normalization",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_settings_conflicts_and_invalid_requests_do_not_expose_values_or_call_consumers",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_settings_response_and_trusted_callback_keep_their_commit_after_reentry",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::legacy_public_masked_write_restores_the_current_committed_secret",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        },
+        {
+          "name": "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
+          "result": "passed",
+          "outer_and_owned_child_summaries": [
+            [
+              "ok",
+              "1",
+              "0",
+              "0"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "body_read": true,
+      "body_source": "Actual printed JSON in completed full job log",
+      "contract": "LPG-v1",
+      "subject_commit": "40dad3d79f3cfffb1301e27e7a8c79a873b66046",
+      "subject_tree": "802c3920faf79d9373d579daf1cd810f7369c7d9",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41533207848",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux",
+      "result": "passed",
+      "scope": "Actual native HTTP authentication/permissions and AttachmentsService fresh-cache success/refusal; shipping Coordinator binary carrier/forwarding against a controlled peer; actual Linux app helper with closed Host lane and preserved ordinary lane replies, plus source-only shared-Arc/API anchors. Not macOS, cold internet fetch/pinning, concurrency soak, desktop UI/timing, remote-host path portability, full media/platform or OCRM acceptance.",
+      "inputs_before_sha256": {
+        ".github/workflows/rust-desktop-runtime.yml": "cb20b4b978a53a631f645768b5da1a7e72db9ba6084b143802ac8ba7f14469e4",
+        "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md": "9aa943fa3cf23cd115f0c419225255ddc1201cc93b230e904f6ceadc919dadb0",
+        "projects/openclaw-rust/upstream.lock.json": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+        "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+        "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "source/host/app/Cargo.toml": "5a7070c724de5eac06274b1cc1aa8201d5b72649ae0313eddd110ee7e75fe777",
+        "source/host/app/Cargo.lock": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+        "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml": "87d3ad43240bf5bc2e7fdeeb0d660dcfc61b47a5c96e8479d5d5a947fab7b3fe",
+        "source/node-agent-coordinator/Cargo.toml": "a5f8b4542adea2cd03b0977e1e8bfbd8cdcc5ac58b5513e270eb3f6f51191eda",
+        "source/node-agent-coordinator/Cargo.lock": "3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358",
+        "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+        "source/host/src/gateway_server.rs": "bbfd64c3bae6a46737414e27724ec5423f600a5ab6c84eb71d6e15266354ee8a",
+        "source/host/src/gateway_protocol.rs": "25c05412af9366eec45a0fcf4ce22b810a3b7fd368b6c98e3faf836df4bff7db",
+        "source/host/app/src/main.rs": "6ac3b6dbb01a26d189d05ea64e3a93d448c316e6072197746506c9a7aa5aae58",
+        "source/host/app/src/tests/link_preview_gateway_tests.rs": "21e566af4a7c8b8550eaffbc8f0f24d85e82f27029755d03c9fa35d8e2e9a16a",
+        "source/host/src/extensions/attachments/attachments_service.rs": "b6a4a53c796879ea8b8c5cf4f0aa99976825f2653f4f40945d87ba1efa82060e",
+        "source/host/src/extensions/attachments/safe_link_preview_fetch.rs": "c63b2c8c8b991339a81bb60ffd98c5e8c3f17e5192fb11228f70888334d0a1dd",
+        "source/host/tests/gateway_protocol_contract.rs": "544c3efffc1f3e4e126a891a811f1909a5eb5b68d91f0a9364dbc74bd3ee9936",
+        "source/host/tests/gateway_server_contract.rs": "4c3442575dde4be92869f38ada2b2358f35a82c0612f55337b8e1194bb7c54c4",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs": "e19d9983f83f6c7b7483950839d709546ea4497a724ff43c98aed110b670a33e",
+        "source/node-agent-coordinator/src/carrier.rs": "32cea55b3fb7f416ca8eda6c4e4fbeb570a8ea696a3ed3ab0fcc29d87d3c0bb4",
+        "source/node-agent-coordinator/src/main.rs": "58823c533364d392ed25ab2ea245f662f35d2b56a618379da1de889063f82161",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs": "3b27282f6c5815a564d6094a9a3c0644f5f7c2a43f419026daed5b53ac3340f7",
+        "source/node-agent-coordinator/tests/production_protocol.rs": "1c68b25532de99a7472f084756c072e187904a64bddb13b21cfc0efcffe81c95",
+        "source/shared/rpc/coordinator-main.ts": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+        "source/electron-main/attachments/attachments.ts": "362b11c60b2d9a9e55eabb91a63599f39c9ad9d47cdb30f0ada50dc304307364",
+        "source/electron-main/adapters/attachment-gateway.ts": "5e90723e57814055ac4488bbaa57d874eebcef5826045fb48038d6eb7cd39dfb",
+        "source/electron-main/coordinator/coordinator-main-port-client.ts": "ce13299b364acd893a45550a7ccbfca7fb7f7d7e8b2e50be671ff8e59fedb706"
+      },
+      "inputs_after_sha256": {
+        ".github/workflows/rust-desktop-runtime.yml": "cb20b4b978a53a631f645768b5da1a7e72db9ba6084b143802ac8ba7f14469e4",
+        "projects/openclaw-rust/docs/specs/link-preview-native-gateway.md": "9aa943fa3cf23cd115f0c419225255ddc1201cc93b230e904f6ceadc919dadb0",
+        "projects/openclaw-rust/upstream.lock.json": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+        "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+        "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "source/host/app/Cargo.toml": "5a7070c724de5eac06274b1cc1aa8201d5b72649ae0313eddd110ee7e75fe777",
+        "source/host/app/Cargo.lock": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+        "source/mahayana/mahayana-rs/mahayana-unified-app-host/Cargo.toml": "87d3ad43240bf5bc2e7fdeeb0d660dcfc61b47a5c96e8479d5d5a947fab7b3fe",
+        "source/node-agent-coordinator/Cargo.toml": "a5f8b4542adea2cd03b0977e1e8bfbd8cdcc5ac58b5513e270eb3f6f51191eda",
+        "source/node-agent-coordinator/Cargo.lock": "3d12f16605bda76fd7e4852cc8a837ba6204aeb5ba80867d16d3a10a20429358",
+        "source/host/src/host_gateway_api.rs": "e74affc41c7d4f9ff985e7fbef03b10d79c12a0ad80ed39d2780433bbfc653b0",
+        "source/host/src/gateway_server.rs": "bbfd64c3bae6a46737414e27724ec5423f600a5ab6c84eb71d6e15266354ee8a",
+        "source/host/src/gateway_protocol.rs": "25c05412af9366eec45a0fcf4ce22b810a3b7fd368b6c98e3faf836df4bff7db",
+        "source/host/app/src/main.rs": "6ac3b6dbb01a26d189d05ea64e3a93d448c316e6072197746506c9a7aa5aae58",
+        "source/host/app/src/tests/link_preview_gateway_tests.rs": "21e566af4a7c8b8550eaffbc8f0f24d85e82f27029755d03c9fa35d8e2e9a16a",
+        "source/host/src/extensions/attachments/attachments_service.rs": "b6a4a53c796879ea8b8c5cf4f0aa99976825f2653f4f40945d87ba1efa82060e",
+        "source/host/src/extensions/attachments/safe_link_preview_fetch.rs": "c63b2c8c8b991339a81bb60ffd98c5e8c3f17e5192fb11228f70888334d0a1dd",
+        "source/host/tests/gateway_protocol_contract.rs": "544c3efffc1f3e4e126a891a811f1909a5eb5b68d91f0a9364dbc74bd3ee9936",
+        "source/host/tests/gateway_server_contract.rs": "4c3442575dde4be92869f38ada2b2358f35a82c0612f55337b8e1194bb7c54c4",
+        "source/host/tests/host_runner_composition_production_wiring_contract.rs": "e19d9983f83f6c7b7483950839d709546ea4497a724ff43c98aed110b670a33e",
+        "source/node-agent-coordinator/src/carrier.rs": "32cea55b3fb7f416ca8eda6c4e4fbeb570a8ea696a3ed3ab0fcc29d87d3c0bb4",
+        "source/node-agent-coordinator/src/main.rs": "58823c533364d392ed25ab2ea245f662f35d2b56a618379da1de889063f82161",
+        "source/node-agent-coordinator/tests/coordinator_contract.rs": "3b27282f6c5815a564d6094a9a3c0644f5f7c2a43f419026daed5b53ac3340f7",
+        "source/node-agent-coordinator/tests/production_protocol.rs": "1c68b25532de99a7472f084756c072e187904a64bddb13b21cfc0efcffe81c95",
+        "source/shared/rpc/coordinator-main.ts": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+        "source/electron-main/attachments/attachments.ts": "362b11c60b2d9a9e55eabb91a63599f39c9ad9d47cdb30f0ada50dc304307364",
+        "source/electron-main/adapters/attachment-gateway.ts": "5e90723e57814055ac4488bbaa57d874eebcef5826045fb48038d6eb7cd39dfb",
+        "source/electron-main/coordinator/coordinator-main-port-client.ts": "ce13299b364acd893a45550a7ccbfca7fb7f7d7e8b2e50be671ff8e59fedb706"
+      },
+      "executions": [
+        {
+          "case": "host",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--no-fail-fast",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "gateway_protocol_contract",
+            "--test",
+            "gateway_server_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_positive_names": [
+            "native_link_preview_registration_keeps_inventory_and_owner",
+            "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+            "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+            "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+            "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+            "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+            "native_link_preview_nonloopback_configuration_requires_authentication",
+            "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+            "native_link_preview_service_argument_errors_keep_status_and_single_dispatch"
+          ],
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "log": "host.log",
+          "log_sha256": "18f89b33f41b0bd04d631aa85f0e53f4fb6424d468f87db1141f720e21627bbd",
+          "observed_passed_name_count": 52
+        },
+        {
+          "case": "coordinator",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--no-fail-fast",
+            "--target-dir",
+            "source/host/target",
+            "--manifest-path",
+            "source/node-agent-coordinator/Cargo.toml",
+            "--test",
+            "coordinator_contract",
+            "--test",
+            "production_protocol"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_positive_names": [
+            "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+            "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash"
+          ],
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "log": "coordinator.log",
+          "log_sha256": "3e9eb68e79cf72b5dfb7fdab62c3ee6f15dce4c1fd3e34344e997b6392332c48",
+          "observed_passed_name_count": 58
+        },
+        {
+          "case": "app",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--target-dir",
+            "source/host/target",
+            "--manifest-path",
+            "source/host/app/Cargo.toml",
+            "--bin",
+            "mahayana-app-host",
+            "tests::link_preview_gateway_tests::"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_positive_names": [
+            "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+            "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+            "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+          ],
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "log": "app.log",
+          "log_sha256": "d15132dfaad909cf6325cbf732f11d2d877c174cfc7a4d3cdae591bb361daf22",
+          "observed_passed_name_count": 3
+        },
+        {
+          "case": "reused-mcp-composition",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--no-fail-fast",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "automation_run_path_contract",
+            "--test",
+            "automation_run_production_wiring_contract",
+            "--test",
+            "automation_runtime_contract",
+            "--test",
+            "automation_event_fires_contract",
+            "--test",
+            "automation_spend_guard_runtime_contract",
+            "--test",
+            "automation_lifecycle_production_wiring_contract",
+            "--test",
+            "automations_fire_delivery_contract",
+            "--test",
+            "automations_backend_contract",
+            "--test",
+            "host_runner_composition_production_wiring_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_positive_names": [
+            "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+            "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation"
+          ],
+          "missing_or_nonunique_positive_results": [],
+          "oracle_accepted": true,
+          "reused_receipt": ".evidence/sqlite-native-path/automation-admission/receipt.json",
+          "log": ".evidence/sqlite-native-path/automation-admission/tests.log",
+          "log_sha256": "e7c8c67956b0bdd6f6d356d9ac70dac143a47fc1554e595ac1cbb186468d2736",
+          "observed_passed_name_count": 93
+        }
+      ]
+    }
+  ],
+  "current_h_config_linux_acceptance": {
+    "result": "passed",
+    "scope": "CS05-INPUT-v1 and existing public Settings secret boundaries on the actual Linux App dispatcher/owner; exact 8-case required suite, shipping cfg(not(test)) cargo check, linked test harness, profile dev/test debug=0 and incremental=0",
+    "whole_platform": false,
+    "macos_observed": false
+  }
+}

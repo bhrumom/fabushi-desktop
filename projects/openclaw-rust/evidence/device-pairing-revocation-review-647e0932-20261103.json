@@ -1,0 +1,68 @@
+{
+  "format": "OCRM-TASK-EVIDENCE-CARRIER-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "purpose": "Recoverable DVR source identity, literal reading extent, spec-before-code, authored patches, immutable review rounds and incoming preservation. Source review is not executable evidence.",
+  "subjectCandidate": {
+    "base": "a2f7ac9f6ede2e4c4561f9b82f85de7e074c7323",
+    "tree": "9345d5c92601f62ee702c9000c0dba7e0f394518",
+    "reviewedDVRTree": "9345d5c92601f62ee702c9000c0dba7e0f394518",
+    "H": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949"
+  },
+  "preparationStatus": "Published product source and complete source-review history retained; executable results are separate exact-subject evidence and no scoped unit/global acceptance is claimed.",
+  "priorPublishedSourceReview": "projects/openclaw-rust/evidence/device-pairing-rotation-source-review-647e0932-20261103.json@37846c0949265cb0ae5f3bae075d91046f09b5ee",
+  "carrierIsRuntimeSubject": false,
+  "unitVerified": false,
+  "globalFlagsPromoted": false,
+  "independentAccept": false,
+  "localExecutableValidation": "none; source/Git/API and immutable evidence serialization only",
+  "remainingScope": "All recursive source/dependency/legal/scoped authority obligations and fullG01-G12/AC01-AC24/ecosystem/device/UI/platform/soak/package/upgrade/rollback independentACCEPT remainopen.",
+  "publishedProduct": {
+    "commit": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+    "tree": "9345d5c92601f62ee702c9000c0dba7e0f394518",
+    "reviewedDVRTree": "9345d5c92601f62ee702c9000c0dba7e0f394518",
+    "scopedCarryDeltaBytes": 0,
+    "verifiedFullAPIReadback": true,
+    "scopePaths": 13
+  },
+  "sourceReviewSummary": {
+    "rounds": 8,
+    "blockingFindingsRemaining": 0,
+    "DVR008": "role-aware currentness FIX with owner/HTTP controls; source-reviewed",
+    "DVR010": "macOS source-input omission FIX; source-reviewed",
+    "DVR009": "nonblocking duplicate-parse optimization deferred without measured regression",
+    "R4StructureIndependenceQualification": "Historical source-patch fragments accidentally visible; no prior verdict/finding/arbitration visible; exact disclosure and root adjudication preserved",
+    "R5R6R7R8": "Fresh focused incoming MAB/SNI/GTH workflow and DJL Gateway/notice integrations; complete frozen scope retained, literal read extents preserved"
+  },
+  "supersededAttachmentAlternative": {
+    "tree": "3a39698a101be75fec34d729d276e26552cd131d",
+    "combinedTree": "37627f31fefa69e15afe60fef9a0153145ded4dc",
+    "status": "Never branch-published or executed; existing-owner incoming052 repair adopted instead; separate original failure/supersession carrier preserves literal history."
+  },
+  "nextRoleTokenPreparation": "Draft and literal source read facts only; no new role-token implementation or approved contract is claimed.",
+  "assembledAt": "2026-11-03T01:22:03.886101+00:00",
+  "memberCount": 106,
+  "memberParts": [
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-review-647e0932-20261103-part-1.json",
+      "byteLength": 931807,
+      "sha256": "40db76927c002fe9e79fb177932ee87db8f192332065464bfcb5910d60f22718",
+      "gitBlob": "085f4b2d8b59502d46fcafc03db741d372f91a4f",
+      "memberCount": 52
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-review-647e0932-20261103-part-2.json",
+      "byteLength": 931744,
+      "sha256": "ef4af486384008a60c3e4e2eeed13f5dd66c190c19ec349496fcfc7a27e693aa",
+      "gitBlob": "c872962d2c68e68c4874724c1df2423c321f36a2",
+      "memberCount": 54
+    }
+  ],
+  "representation": "Two complete lossless gzip+base64 member parts; original per-member identities and historical reading facts are unchanged. Every part and this index require full API content readback."
+}

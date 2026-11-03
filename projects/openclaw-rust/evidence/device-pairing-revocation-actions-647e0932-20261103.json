@@ -1,0 +1,132 @@
+{
+  "schema": "ocrm-public-actions-metadata-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+  "subjectTree": "17ddcd3b19126ece3cadb722ea7b9bbdc5dcb561",
+  "fixedUpstreamCommit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixedUpstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "runAttempt": 1,
+  "runtimeRunUrl": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41560916684",
+  "sourceRunUrl": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41560916697",
+  "observedAt": "2026-11-03T01:55:46Z",
+  "linuxJob": {
+    "id": 125671033340,
+    "conclusion": "success"
+  },
+  "macOSJob": {
+    "id": 125671033268,
+    "status": "queued",
+    "accepted": false
+  },
+  "scopedResults": {
+    "portableCommandGroups": 39,
+    "dvrCompleteTargets": {
+      "authority": 26,
+      "http": 8,
+      "retainedStreams": 14
+    },
+    "actualAppNamedCases": 81,
+    "actualAppCommandRecords": 165,
+    "startupCompleteCases": 7,
+    "gatewayCompleteCases": 43,
+    "repairedPriorFailureNames": 4,
+    "originalFailureHistoryRetained": true,
+    "typedAutomationPassed": true
+  },
+  "artifacts": [
+    {
+      "id": 13196814478,
+      "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+      "runId": 41560916684,
+      "bytes": 360233,
+      "sha256": "b89b475a926cf438e450aad398d4502af965f4db5bcfc40e05515f5382f1ba8b",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13196814478/zip"
+    },
+    {
+      "id": 13197111861,
+      "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+      "runId": 41560916684,
+      "bytes": 586715,
+      "sha256": "ed00f6d453f393805b2d6d4cb128ef86580a164c74d92e4fa24a848c6f2f36c2",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13197111861/zip"
+    },
+    {
+      "id": 13197022670,
+      "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+      "runId": 41560916684,
+      "bytes": 10814,
+      "sha256": "5e7634ddca2dd9f6a60a62717e291420a07717e7f3035865b678b06e6c7bfcdb",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13197022670/zip"
+    },
+    {
+      "id": 13196633638,
+      "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+      "runId": 41560916684,
+      "bytes": 3843,
+      "sha256": "3d40e3bac0e6d5ec7f1b4e5f2217baec9788adc45215329386a903e9b20a90ec",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13196633638/zip"
+    },
+    {
+      "id": 13196833095,
+      "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+      "runId": 41560916684,
+      "bytes": 8320,
+      "sha256": "ada8abaa7f096c6db55b9914f51711ce4e804224c1ff33e591d416ff500af44d",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13196833095/zip"
+    },
+    {
+      "id": 13195619622,
+      "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+      "runId": 41560916684,
+      "bytes": 47480,
+      "sha256": "e8972f1f7a5a1a674f8f070e594d5db25987ffe3388e28f42f1424700acaa1f8",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13195619622/zip"
+    },
+    {
+      "id": 13196394137,
+      "subjectCommit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+      "runId": 41560916697,
+      "bytes": 4943013,
+      "sha256": "1e3000d3e3328b87bb30da7aa717b419aebc2081126d70e6bdaf42d258e16986",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13196394137/zip"
+    },
+    {
+      "id": 13196816131,
+      "subjectCommit": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "runId": 41559093519,
+      "bytes": 356288,
+      "sha256": "365c7162b207d4814730925507829544b5cb641ca78ffef61bd3e802808e545b",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13196816131/zip"
+    },
+    {
+      "id": 13196766905,
+      "subjectCommit": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "runId": 41559093519,
+      "bytes": 385176,
+      "sha256": "697697eaa5cec007e39b7c4430382505056d5b3bb1dd0aeadaacc2170f60d15e",
+      "downloadApi": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13196766905/zip"
+    }
+  ],
+  "offlineFidelity": {
+    "verdict": "PASS for serialized fidelity only",
+    "archiveBytes": 8465162,
+    "archiveSha256": "a9651ea063fb5c5bdcd362f12f38837d2df0b002c833f6b717ce07a158c5a3df",
+    "archiveEntries": 88,
+    "zipMembersCompared": 588,
+    "splitPartsCompared": 23,
+    "originalArchivePublishedInThisCommit": false
+  },
+  "publicationBoundary": "Automatic approval review rejected committing the complete evidence payload to this public destination. This narrower index contains public repository identifiers, results and hashes only; no raw logs, embedded source, credential data or receipt bodies. Original evidence remains in its existing Actions artifacts. The full archive is preserved locally; no archive commit or branch ref was created. Unreferenced archive objects are excluded from this index commit.",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "completionFlagsRemainFalse": 8,
+  "limits": [
+    "Linux observations belong exclusively to subjectCommit, not this index carrier or later production changes.",
+    "Queued, skipped, account/device/signing and platform acceptance are not passes.",
+    "Tracked-tree and structural source checks do not close dependency/LFS/legal or full product scope.",
+    "App executable hashes and API status snapshots remain recorded runner observations."
+  ],
+  "preparedAt": "2026-11-03T02:17:07.476611+00:00"
+}

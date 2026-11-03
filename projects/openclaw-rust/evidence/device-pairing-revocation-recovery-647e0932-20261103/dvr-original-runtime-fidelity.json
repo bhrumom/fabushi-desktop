@@ -1,0 +1,699 @@
+{
+  "added_unexpected_members": [],
+  "archive": {
+    "bytes": 6477004,
+    "git_blob_sha1": "03a33d3e92a2972188b67880402e3657ac240b0b",
+    "gzip_flags": 0,
+    "gzip_mtime": 0,
+    "member_bytes": 10082264,
+    "member_count": 47,
+    "sha256": "11b775587788dcd5be9673237b9abbd32cd967fa74cdde0db0a3cc231cfce975",
+    "uncompressed_tar_bytes": 10127360
+  },
+  "archive_index_sha256": "bd4843acce019d8715717452e4daca8161a18560a68fe112d4cc7a69c0e328c1",
+  "artifacts": [
+    {
+      "all_member_hashes_match": true,
+      "api_digest_matches": true,
+      "head_sha": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "id": 13195419882,
+      "run_id": 41559093519,
+      "zip_bytes": 8339,
+      "zip_members": 2,
+      "zip_sha256": "0ae22110a89b2bd40af371299694b478ed8e8f67f20c1b4d45699d3c45383983"
+    },
+    {
+      "all_member_hashes_match": true,
+      "api_digest_matches": true,
+      "head_sha": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "id": 13195791826,
+      "run_id": 41559093519,
+      "zip_bytes": 3847,
+      "zip_members": 3,
+      "zip_sha256": "3a9c9c0147a8519cf079e115e12f82b760820082b934db0ed4ded89f24dd3aa9"
+    },
+    {
+      "all_member_hashes_match": true,
+      "api_digest_matches": true,
+      "head_sha": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "id": 13196341373,
+      "run_id": 41559093710,
+      "zip_bytes": 4943012,
+      "zip_members": 8,
+      "zip_sha256": "27f74d738fc31acd203d8e142aa533d18f353ad87af81166a21f824180f50229"
+    },
+    {
+      "all_member_hashes_match": true,
+      "api_digest_matches": true,
+      "head_sha": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "id": 13196616184,
+      "run_id": 41559093519,
+      "zip_bytes": 47481,
+      "zip_members": 7,
+      "zip_sha256": "aef7545d10b1fbdcddb2abc1733f05c394bf0985e342207ca1c5dd3700898e1e"
+    },
+    {
+      "all_member_hashes_match": true,
+      "api_digest_matches": true,
+      "head_sha": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "id": 13196650816,
+      "run_id": 41559093519,
+      "zip_bytes": 10842,
+      "zip_members": 16,
+      "zip_sha256": "6e00162311954d34071a3fed46387c908965c8ed3dbd3cf68b91dbb90f8597c8"
+    },
+    {
+      "all_member_hashes_match": true,
+      "api_digest_matches": true,
+      "head_sha": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "id": 13196766905,
+      "run_id": 41559093519,
+      "zip_bytes": 385176,
+      "zip_members": 56,
+      "zip_sha256": "697697eaa5cec007e39b7c4430382505056d5b3bb1dd0aeadaacc2170f60d15e"
+    },
+    {
+      "all_member_hashes_match": true,
+      "api_digest_matches": true,
+      "head_sha": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+      "id": 13196816131,
+      "run_id": 41559093519,
+      "zip_bytes": 356288,
+      "zip_members": 51,
+      "zip_sha256": "365c7162b207d4814730925507829544b5cb641ca78ffef61bd3e802808e545b"
+    }
+  ],
+  "completion_flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "distinct_recovery_subject": {
+    "commit": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+    "execution_credit_from_binding": false,
+    "parent": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0",
+    "run_attempt": 1,
+    "runtime_run": 41560916684,
+    "source_run": 41560916697,
+    "tree": "17ddcd3b19126ece3cadb722ea7b9bbdc5dcb561",
+    "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "fidelity_method": "Independent Python standard-library in-memory gzip/tar/ZIP parsing, CRC checks, exact-byte comparisons and SHA-256/Git-blob SHA-1 hashing; preparation recipe read but not executed.",
+  "finding_count": 0,
+  "findings": [],
+  "github_mutations_performed": false,
+  "linux_observation": {
+    "conclusion": "failure",
+    "id": 125665070447,
+    "name": "sqlite-native-path",
+    "status": "completed"
+  },
+  "macos_observation": {
+    "conclusion": null,
+    "id": 125665070217,
+    "name": "rust-host",
+    "status": "queued"
+  },
+  "members": [
+    {
+      "bytes": 68775,
+      "git_blob_sha1": "d819ea7eec8c387f32e8391b75b08b932a1fcb66",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/8bdcf101-input-identities.json",
+      "sha256": "bc4f97f09c4c6572147014cd8a058cd73d2d9a7e13fdeee0b4133b67b0d0256d",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 139490,
+      "git_blob_sha1": "98ab3adb55da08ff8b9a4401a2cfbf978e4a71fa",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/8bdcf101-source-expectations.json",
+      "sha256": "5990e7c21587cdd37087f06e0ba6b95038ca6284dc5d5308a730896ed354c948",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 418,
+      "git_blob_sha1": "fdd80dd5a41406782cd01518afcabfef2c6011b7",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/8bdcf101-subject.json",
+      "sha256": "15e1501288679a0c6bf2495ee9d0c01a04852d856d7f397566a5335e78560f9e",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 588,
+      "git_blob_sha1": "f335d79004bdafba377df6c3edaed1f849705765",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13195419882-members.json",
+      "sha256": "ec5c3b59beb8404a8ace7233608f53ab9fdc6315a42ea6ac8b835a93a15e9e81",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 806,
+      "git_blob_sha1": "1d2cdc0ed66f5be7357d98cda81b35c0c42e294e",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13195419882.metadata.json",
+      "sha256": "0bda17d40694314effbf2a07239e597298fccb4b12a01223ccc1835785bec47e",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 8339,
+      "git_blob_sha1": "ed0a08a32be63cc90d68f2e63d03aa123c371bc7",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13195419882.zip",
+      "sha256": "0ae22110a89b2bd40af371299694b478ed8e8f67f20c1b4d45699d3c45383983",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 746,
+      "git_blob_sha1": "1ac73fc0a40b9255a23ff6a76b84a5d0c145c17b",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13195791826-members.json",
+      "sha256": "c2753f9fa7bfcaa4ff4585b05f86ecda02889a15f0954eca5165e95509a31fc8",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 5084,
+      "git_blob_sha1": "5074f4286eb378c6f4ef546ae3110109ad89a92c",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13195791826-primary-audit.json",
+      "sha256": "1d448c40e23d987802bab65961c8262aaedaa32e48677ab6959b2478dd4c0956",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 824,
+      "git_blob_sha1": "a258135cd16b9a5ca18033d1fafec6a8ca64d866",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13195791826.metadata.json",
+      "sha256": "d7866216e17dd7b368d4aed3fbc329f5fc606745de643d3c34ae55d1e743fd85",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 3847,
+      "git_blob_sha1": "a39c87caccae243efb0d682ba3d5a724d0295898",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13195791826.zip",
+      "sha256": "3a9c9c0147a8519cf079e115e12f82b760820082b934db0ed4ded89f24dd3aa9",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 1562,
+      "git_blob_sha1": "b2aceb2428b99a4ad53ed67318bf442b8ad89bc7",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196341373-members.json",
+      "sha256": "559fd6a0d6656e0241a54d451a885e4ca199fd158c202e05ffa88a48ca6fed26",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 810,
+      "git_blob_sha1": "4beb3fa41075c037bdae84ca5b626175f7edd44a",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196341373.metadata.json",
+      "sha256": "0b03c7027d6267fe0edb05ae01fe28679cd540b7d63d8ce60e19a269e4e2e335",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 4943012,
+      "git_blob_sha1": "0224869a117a1d3150d8f668371f56747c63ecb7",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196341373.zip",
+      "sha256": "27f74d738fc31acd203d8e142aa533d18f353ad87af81166a21f824180f50229",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 1432,
+      "git_blob_sha1": "f9dc97546025eede90bc841a6fa440f0b25c67bb",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196616184-members.json",
+      "sha256": "9c0a7bcd8ec446c83709e24816a53ebfdc2db6e633fafaece249b267fa51dfc7",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 830,
+      "git_blob_sha1": "e4aece4f98363d9a4363699d3cae9b2c2b434b86",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196616184.metadata.json",
+      "sha256": "7e4ff3ec3dd19af67e1f889ab4dc940c5a1e2ed76831fff7a048c3725705cc2d",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 47481,
+      "git_blob_sha1": "a4fcf22f44c9cff9cbfbd9605fd205eb7765d7c9",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196616184.zip",
+      "sha256": "aef7545d10b1fbdcddb2abc1733f05c394bf0985e342207ca1c5dd3700898e1e",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 2825,
+      "git_blob_sha1": "740dcaeaca0dfca90798398260c5042a4b014414",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196650816-members.json",
+      "sha256": "e7d36f2aa8490c164916359a338efe76834fe3d6a0b7f646853b7f7e85bef3f1",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 10871,
+      "git_blob_sha1": "8d6304999e059abd8134237ee97fa4085eec9d8f",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196650816-primary-audit.json",
+      "sha256": "95e15ac779262aa1606353ea3ef1a3980a02c1aa6c9e14aaf6b901fff654e83c",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 799,
+      "git_blob_sha1": "8715f0b90db782dd9d46279b520fe9a0cecbe528",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196650816.metadata.json",
+      "sha256": "064b24f547c9a3f8e761e0b8591230e390037759f567e84766c0cf8fb6bf3bc3",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 10842,
+      "git_blob_sha1": "c63e877fe4cbda0212cf439f471d3f65ac3f434e",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196650816.zip",
+      "sha256": "6e00162311954d34071a3fed46387c908965c8ed3dbd3cf68b91dbb90f8597c8",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 10519,
+      "git_blob_sha1": "8bfa818ec6f12e50ee00f02b077a1ef1c393f022",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196766905-members.json",
+      "sha256": "89b899f9a22b91f7e4288e6e8cd86654f898ce8d59e83dec2014da15e513769a",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 184138,
+      "git_blob_sha1": "59b1cb3269e63cce2e670c797db38564593b51a3",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196766905-primary-audit.json",
+      "sha256": "85d1e2c20321348b4d18aa946704c21d0b8b2491b9c907f40dcf0f9c5bb2cdff",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 829,
+      "git_blob_sha1": "41618b7670db0e2f9d0b7d38b929a85bdefc0d9c",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196766905.metadata.json",
+      "sha256": "d8ef71262c0731dac8e9eba5bcd3baf01f000150b8f8884fa34fa06af6d5888d",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 385176,
+      "git_blob_sha1": "eb47a6c3e1668eead623dfbcb820151fd51fe765",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196766905.zip",
+      "sha256": "697697eaa5cec007e39b7c4430382505056d5b3bb1dd0aeadaacc2170f60d15e",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 9672,
+      "git_blob_sha1": "4b6910fba30bea46681825cab25353438dc03428",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196816131-members.json",
+      "sha256": "9601c72f3a1708c3207a63029c475513c5e3ffebeb77ae3f16b04f067ba87476",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 184138,
+      "git_blob_sha1": "08eb9198912efd6c04684577cfa714c5cf5da51d",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196816131-primary-audit.json",
+      "sha256": "040a98b8e9adf62deab542d853454fe8f4fb171a8685fa336adcb9bb49e7cbae",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 834,
+      "git_blob_sha1": "b298195b19d57032eefb15ec335ae7000703cd44",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196816131.metadata.json",
+      "sha256": "84e1e66e031ef19aa90ab4cc6996b8cd4c23aa084d990a4f330f4522da3f86d4",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 356288,
+      "git_blob_sha1": "560d2bd96ddfa4a8ae2670213048ca1b10b25ea0",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/artifact-13196816131.zip",
+      "sha256": "365c7162b207d4814730925507829544b5cb641ca78ffef61bd3e802808e545b",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 3132590,
+      "git_blob_sha1": "3bb9344a299313397dddcca8462ad9673fe6afb8",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/linux-job-125665070447.log",
+      "sha256": "2c2aeaca9aada4772f3e1b8c122dfc6b162467bc3b47d884b6dc97b0c7e7bb31",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 10316,
+      "git_blob_sha1": "b3682afa50feb51f33133143f642b5f77244cd39",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/mab-carrier-fidelity.json",
+      "sha256": "9598a63deea02015f32ce42b99f1e11dab32bec3810917ae0d75ed342c80a62a",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 2905,
+      "git_blob_sha1": "cd6d3466749b0f6174765184a1682d51ee7f5adb",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/mab-carrier-fidelity.md",
+      "sha256": "bf88ef1961fc98d5680057574af3484c4457c78b2d8c69ea98279c2862ff75a9",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 2857,
+      "git_blob_sha1": "0477b589e83b2c249130e17f27af7546b8a9d38d",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/plugin-edge-published-audit.json",
+      "sha256": "6f868ef16c03de2723557338bea631b5a9d6ee7c6de87603eea18adcfef1374d",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 5320,
+      "git_blob_sha1": "58b559e0b2b46642bc5186dc81a6c63dc6c410ca",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/published-8bdcf101-audit.md",
+      "sha256": "31c26adb3e8e35f2552ed041e53ab1022838430ec6086d4cdee26a51820f303b",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 75024,
+      "git_blob_sha1": "38adcc7a20b369852d30e9dc734546fe94c7c58e",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/published-8bdcf101-evidence-index.json",
+      "sha256": "23cbad8efb3a128f2bebc117bf0fb4f16fac10f0ec31a63d892f50c58ed7709e",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 6639,
+      "git_blob_sha1": "cdcffb8379f551f9f9646886971988817cec9085",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/published-commit.json",
+      "sha256": "69946f9aa69bfc3d09b84c38888e0168370cc19889883e42c17c9199a8c48601",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 8730,
+      "git_blob_sha1": "a34b3df3d78c5ade7ff52a0cd70c10863bec6054",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/published-failure-diagnosis.json",
+      "sha256": "4b9c85b75dc5f06c8261175a486c275bbc1cb1477aa9d625bf7ddf3b49c3e3f4",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 5312,
+      "git_blob_sha1": "010ccf447140ae59e6428cc970b89704353ca5d7",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/published-failure-diagnosis.md",
+      "sha256": "e607a15ad0faf8de508421cc12aedc6d5b643a3c26a7c0e0aeebd81c95ede777",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 185349,
+      "git_blob_sha1": "8fbc1abe3e906ce40ba20a6179459ea1940fa23a",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/renderer-job-125665070394.log",
+      "sha256": "ebf15ac6a93d62060edf3f1068861fbc1986800bedfd16ddffbafea7990fb85f",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 88764,
+      "git_blob_sha1": "7b305967c3c41f6c6c697c5c9428f88de2f71668",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/restore-job-125665070309.log",
+      "sha256": "6df5d4df32d4d8d4095fb2168c2d3f79dc864798ed83040f303e3c0ac7fe140c",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 6095,
+      "git_blob_sha1": "d9076cad02cf5ebd913665104d5ee608e0037b70",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/restore-published-audit.json",
+      "sha256": "9157be3b0931eae6b0e22902296b2ac2e358321fa104da38fcfa71892a8158b4",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 13523,
+      "git_blob_sha1": "aaed14cc00bc3e49da55dbd9ec58aa2b115b21d0",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/runtime-jobs-final-snapshot.json",
+      "sha256": "0fa62a61e2b7bab3c896849566bd203fe5b8e372852c4cce3fec1c196e8e5ded",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 30360,
+      "git_blob_sha1": "ea66c8c930ad3584f9b669e334c5d4a97e7bbdbd",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/runtime-run-linux-terminal.json",
+      "sha256": "05ba6cb2ca023722529f970caf8e9f27d84b2f938f50bb156bd6071151d9c00c",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 31540,
+      "git_blob_sha1": "0bad6e31dc763f0d004fb565deeb2e944e0b89e5",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/source-job-125665069635.log",
+      "sha256": "c79af227c07805b115b751b1223c4dce73310c518d3cc78b1b62fe073cd17e5d",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 4549,
+      "git_blob_sha1": "ffb7ac77bf8e76231aac4ed894b6da048c86be0b",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/source-jobs-complete.json",
+      "sha256": "b1b6304511968d224a46fad394d2fd0cb5551396cf08902f6b161d842b88d760",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 8773,
+      "git_blob_sha1": "2f7d84917c646efaf75b735bdf86f6b3b1aa0b5d",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/source-published-audit.json",
+      "sha256": "df33d04744bfda4bf4758387cfa481086cdd98bcf80fc1a7c4b231a9915f0e8b",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 30380,
+      "git_blob_sha1": "69069145b6e11fec310aa720f05eb44fa5875559",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/source-run-terminal.json",
+      "sha256": "535dda4e2f41f7d999b846959d3a249cdb952e57cf51fdc8b39fab443aad5a6c",
+      "source_bytes_equal": true
+    },
+    {
+      "bytes": 52263,
+      "git_blob_sha1": "267e085fafcbd4cbd39d41f252971b9adccf4284",
+      "index_matches": true,
+      "path": "ci-recovery/dvr-exact/terminal-linux-primary-audit.json",
+      "sha256": "5a2da4501965d50519bc51c091870b7e6584ca24a106e0042099d416c598f958",
+      "source_bytes_equal": true
+    }
+  ],
+  "model_effort_metadata": "Inherited supplied gpt-6.1-sol/xhigh; no in-child introspection available",
+  "nested_original_archives": [
+    {
+      "members": [
+        {
+          "bytes": 0,
+          "path": ".",
+          "type": "directory"
+        },
+        {
+          "bytes": 0,
+          "path": "./fabushi-session-turn-owner-turn-uuid-12345",
+          "type": "directory"
+        },
+        {
+          "bytes": 32768,
+          "path": "./fabushi-session-turn-owner-turn-uuid-12345/.call-sessions.db",
+          "sha256": "678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974",
+          "type": "file"
+        },
+        {
+          "bytes": 0,
+          "path": "./fabushi-durable-recovery-channel-delivery-5793-1793669005269799549",
+          "type": "directory"
+        },
+        {
+          "bytes": 211,
+          "path": "./fabushi-durable-recovery-channel-delivery-5793-1793669005269799549/host-pending-wakes.json",
+          "sha256": "e664413126180106ad1233fcf6e39c9de10f79b5b74c774288eebf3445b1b995",
+          "type": "file"
+        }
+      ],
+      "zip": "ci-recovery/dvr-exact/artifact-13196766905.zip",
+      "zip_member": "owned-fixtures.tar"
+    }
+  ],
+  "no_source_verdict_change": true,
+  "no_unit_verification_or_global_promotion": true,
+  "observation_utc": "2026-11-03 01:31:25 UTC",
+  "omitted_required_metadata": [],
+  "part_count": 17,
+  "parts": [
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "78e183578c2e40bf3c62d03deec973a3a7520c9a",
+      "matches": true,
+      "number": 1,
+      "sha256": "6116e435a47f43bd3d709d844d7e389d12fc89cd5c637355e374005b1aef397a"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "bf50f5a8456213d2455488b4e2baf708944a14ac",
+      "matches": true,
+      "number": 2,
+      "sha256": "3146274d3d3bc9e440ea26d593292f5ccb5ad87251e8a13aa651e292ec3eeaa5"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "4e3915338846a82efba3cdb47c5a713222d94b03",
+      "matches": true,
+      "number": 3,
+      "sha256": "52227ede577416c5a258344a26edc47a0b304618f0b568b5371716ce61c5c802"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "806ca3bc7deadffa17294921c991c3c154f0e60f",
+      "matches": true,
+      "number": 4,
+      "sha256": "12f1c8ca5a945faec1219df2491677b83ada15e7793acb8a2201c4b88b0dfc62"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "9b9a8bb987edb41c2ea4e31df64654af67662b64",
+      "matches": true,
+      "number": 5,
+      "sha256": "697c530083b7965e6f84dded8cae478bc21128d0486c762fc5381e99bfdac679"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "69c71379ea14cb123415bae37cb47c91ec3288b6",
+      "matches": true,
+      "number": 6,
+      "sha256": "77a09ee4cc32ac63d4c16550e67456ecad01edaffd4083d3134c69f1404196aa"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "17ac7cb10ecd2bd3b85561b90fe34a6b267d7831",
+      "matches": true,
+      "number": 7,
+      "sha256": "1d3c14e3a89ea7ae4cb6f90f5112cf9a9562f14b9e9c6043131a8d9a7025f585"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "a78cbe804c8f32387fa9712a081c4102afc97359",
+      "matches": true,
+      "number": 8,
+      "sha256": "121bf8b77707e9fb565ae282d01b4cfb9609208720505cad958305cb428adcb8"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "19acc2a829165244899fad5e9d238d96ac8281c6",
+      "matches": true,
+      "number": 9,
+      "sha256": "caf6e3244f7a94dedd95f98c8419154552df96e652c09fb2193c2ca5e9dc7a40"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "c560c9717777c2d8711a2bf5cab3b3dd96a840d9",
+      "matches": true,
+      "number": 10,
+      "sha256": "9660cb655b721829b65cdf7a273d9acc0d715718ec2449d41970e03bb2c404fd"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "b3611c74272715f900027b589b6fd9cfb780c023",
+      "matches": true,
+      "number": 11,
+      "sha256": "32ee4842502c9201ff66bfca04c4b90291ecbbe627a0915f35a1ad4ef2e1292d"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "451c300bb983a644b5ff2b8dd6a0d8e847b69dbc",
+      "matches": true,
+      "number": 12,
+      "sha256": "49f83ac5bc8daffa3eaf9d652c7adb8d3166f9fdac184351ef3ee261d2d4ebc1"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "0de0d18ce94e6a01c91bb248ece5820f67623a14",
+      "matches": true,
+      "number": 13,
+      "sha256": "ebd7353983ea6e1d8f48b628e1396e96daeb5b28d6c922ceda8a5492a1d5d409"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "ef0be1fe3998ed6addf42e57a49b1adfb665459a",
+      "matches": true,
+      "number": 14,
+      "sha256": "43c26e510e18e5f7eae182431351c81ed20f136ea2b3aa6d7cb7147189e0c3a6"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "5600c1b58b6a6a4ef979b5f954d7abb784e0b27f",
+      "matches": true,
+      "number": 15,
+      "sha256": "2b28d547a3c4ebd7c497fe8a97a112568dddd5270df186cd624159d723dded9e"
+    },
+    {
+      "bytes": 384000,
+      "git_blob_sha1": "5e8a04c3ed51f9bf7c5879df396400b538d59762",
+      "matches": true,
+      "number": 16,
+      "sha256": "15d8661a93281517d47dc852ba262c867581b0c46d02c9949e516a4a491f22a1"
+    },
+    {
+      "bytes": 333004,
+      "git_blob_sha1": "72881e9f492f222e02835d63c0d1df5db481b5dc",
+      "matches": true,
+      "number": 17,
+      "sha256": "9792e0fedf1eac3d887591d39c9578076ce18bc30ae8cd3d14fc4ee3df536225"
+    }
+  ],
+  "preparation_claims_reexecuted_as_recipe": false,
+  "product_execution_performed": false,
+  "recovery_subject_hits": [],
+  "required_member_set_equal": true,
+  "review_scope": "Evidence serialization fidelity only; no source acceptance or product execution",
+  "schema": "dvr-original-runtime-independent-fidelity-v1",
+  "sealed_index_sha256": "23cbad8efb3a128f2bebc117bf0fb4f16fac10f0ec31a63d892f50c58ed7709e",
+  "sensitive_screen": {
+    "bytes_screened_including_nested": 76029793,
+    "matches": [],
+    "patterns": [
+      "authorization_bearer_secret",
+      "aws_access_key",
+      "azure_sas_url",
+      "github_credential",
+      "jwt",
+      "private_key",
+      "signed_url_parameter"
+    ],
+    "payloads_screened": 194,
+    "qualification": "Pattern screening is limited. Exact byte equality proves no additions to original payloads; no general semantic secret-free assertion."
+  },
+  "source_or_archive_mutations_performed": false,
+  "subject": {
+    "commit": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+    "execution_credit_from_binding": false,
+    "parent": "a2f7ac9f6ede2e4c4561f9b82f85de7e074c7323",
+    "run_attempt": 1,
+    "runtime_run": 41559093519,
+    "source_run": 41559093710,
+    "tree": "9345d5c92601f62ee702c9000c0dba7e0f394518",
+    "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "verdict": "PASS",
+  "zip_member_count": 143
+}

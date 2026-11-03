@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const REQUEST_SOURCES: &[&str] = &[
@@ -17,7 +17,7 @@ pub const REQUEST_ID_PROMPT_MAX: usize = 200;
 pub const EPISODE_TURN_TEXT_CAP: usize = 2_000;
 pub const EPISODE_PENDING_MAX: usize = 64;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SandProfile {
     pub description: String,
     pub avatar_path: Option<String>,
@@ -88,7 +88,7 @@ pub struct RequestRecord {
     pub source: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MemoryPromptSnapshot {
     pub render: String,
     pub compaction_epoch: f64,
@@ -164,6 +164,27 @@ pub fn parse_transcript_entry(raw: &str) -> Option<Value> {
         return None;
     }
     is_valid_transcript_entry(&entry).then_some(entry)
+}
+
+/// Decode rows owned by the session database, including its durable control
+/// records. Their owners validate receipt identity and compaction boundaries
+/// after decoding: dropping a malformed control record here would make it
+/// look absent and could incorrectly authorize recovery or full-history replay.
+/// Presentation readers continue to use `parse_transcript_entry`.
+pub fn parse_owner_transcript_entry(raw: &str) -> Option<Value> {
+    let entry = serde_json::from_str::<Value>(raw).ok()?;
+    is_valid_owner_transcript_entry(&entry).then_some(entry)
+}
+
+/// Share the existing owner projection with a transaction's already-decoded
+/// physical snapshot without serializing and parsing every row again.
+pub(crate) fn is_valid_owner_transcript_entry(entry: &Value) -> bool {
+    match entry.get("kind").and_then(Value::as_str) {
+        Some("compaction" | "background-result-receipt" | "outgoing-media-settlement") => {
+            true
+        }
+        _ => is_valid_transcript_entry(entry),
+    }
 }
 
 pub fn parse_profile(raw: Option<&str>) -> SandProfile {

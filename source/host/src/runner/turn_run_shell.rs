@@ -1,7 +1,16 @@
+use std::collections::VecDeque;
+use std::sync::{Arc, Mutex};
+
+use serde_json::Value;
 use uuid::Uuid;
 
 use super::conversation_state::RecentUserMessage;
 use super::{TerminalOutcome, TurnSettlement};
+
+pub const TOOL_LOOP_HISTORY_CAPACITY: usize = 64;
+pub const TOOL_LOOP_REPEAT_THRESHOLD: u8 = 3;
+const TOOL_LOOP_MAX_IDENTITY_BYTES: usize = 64 * 1024;
+const TOOL_LOOP_CANCEL_REASON: &str = "repeated identical tool call detected";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TurnOwnerToken {
@@ -50,6 +59,115 @@ pub enum CheckpointBoundary {
     Cancel(TurnCancellation),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ToolLoopDecision {
+    Continue { consecutive_repeats: u8 },
+    Cancel { reason: &'static str },
+}
+
+#[derive(Debug, Default)]
+struct ToolLoopGateState {
+    owner: Option<TurnOwnerToken>,
+    last_tool_call_identity: Option<String>,
+    consecutive_tool_calls: u8,
+    tool_call_history: VecDeque<String>,
+    cancellation: Option<TurnCancellation>,
+}
+
+/// Shared handle for the existing TurnRunShell-owned tool-loop state.
+///
+/// The provider bridge may retain this handle for the synchronous duration of
+/// a turn without borrowing the mutable shell across the provider lifetime.
+#[derive(Debug, Clone, Default)]
+pub struct ToolLoopGate {
+    state: Arc<Mutex<ToolLoopGateState>>,
+}
+
+impl ToolLoopGate {
+    fn bind(&self, owner: &TurnOwnerToken) {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        state.owner = Some(owner.clone());
+        state.last_tool_call_identity = None;
+        state.consecutive_tool_calls = 0;
+        state.tool_call_history.clear();
+        state.cancellation = None;
+    }
+
+    pub fn observe_tool_call(
+        &self,
+        owner: &TurnOwnerToken,
+        tool_name: &str,
+        arguments: &Value,
+    ) -> Result<ToolLoopDecision, TurnRunShellError> {
+        if tool_name.trim().is_empty() {
+            return Err(TurnRunShellError::EmptyToolName);
+        }
+        let identity = tool_call_identity(tool_name, arguments);
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() != Some(owner) {
+            return Err(TurnRunShellError::StaleOwner);
+        }
+        if state.last_tool_call_identity.as_deref() == Some(identity.as_str()) {
+            state.consecutive_tool_calls = state
+                .consecutive_tool_calls
+                .saturating_add(1)
+                .min(TOOL_LOOP_REPEAT_THRESHOLD);
+        } else {
+            state.last_tool_call_identity = Some(identity.clone());
+            state.consecutive_tool_calls = 1;
+        }
+        if state.tool_call_history.len() == TOOL_LOOP_HISTORY_CAPACITY {
+            state.tool_call_history.pop_front();
+        }
+        state.tool_call_history.push_back(identity);
+        if state.consecutive_tool_calls >= TOOL_LOOP_REPEAT_THRESHOLD {
+            let cancellation = TurnCancellation {
+                intentional: true,
+                reason: TOOL_LOOP_CANCEL_REASON.to_string(),
+            };
+            if state.cancellation.is_none() {
+                state.cancellation = Some(cancellation);
+            }
+            return Ok(ToolLoopDecision::Cancel {
+                reason: TOOL_LOOP_CANCEL_REASON,
+            });
+        }
+        Ok(ToolLoopDecision::Continue {
+            consecutive_repeats: state.consecutive_tool_calls,
+        })
+    }
+
+    fn cancellation(
+        &self,
+        owner: &TurnOwnerToken,
+    ) -> Result<Option<TurnCancellation>, TurnRunShellError> {
+        let state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() != Some(owner) {
+            return Err(TurnRunShellError::StaleOwner);
+        }
+        Ok(state.cancellation.clone())
+    }
+
+    fn history_len(&self, owner: &TurnOwnerToken) -> Result<usize, TurnRunShellError> {
+        let state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() != Some(owner) {
+            return Err(TurnRunShellError::StaleOwner);
+        }
+        Ok(state.tool_call_history.len())
+    }
+
+    fn clear(&self, owner: &TurnOwnerToken) {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        if state.owner.as_ref() == Some(owner) {
+            state.owner = None;
+            state.cancellation = None;
+            state.last_tool_call_identity = None;
+            state.consecutive_tool_calls = 0;
+            state.tool_call_history.clear();
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
 pub enum TurnRunShellError {
     #[error("prompt cannot be empty")]
@@ -58,6 +176,8 @@ pub enum TurnRunShellError {
     AlreadyRunning,
     #[error("stale turn owner")]
     StaleOwner,
+    #[error("tool name cannot be empty")]
+    EmptyToolName,
     #[error("turn settlement failed: {0}")]
     Settlement(&'static str),
 }
@@ -98,8 +218,48 @@ pub fn is_recovery_shaped_turn(prompt: &str, options: &TurnRunOptions) -> bool {
 #[derive(Debug, Default)]
 pub struct TurnRunShell {
     active: Option<ActiveRun>,
+    tool_loop_gate: ToolLoopGate,
     quiescing_for_upgrade: bool,
     next_generation: u64,
+}
+
+fn tool_call_identity(tool_name: &str, arguments: &Value) -> String {
+    let normalized = canonical_json(arguments);
+    let identity = format!("{}:{normalized}", tool_name.trim());
+    if identity.len() <= TOOL_LOOP_MAX_IDENTITY_BYTES {
+        identity
+    } else {
+        format!("{}:{}", tool_name.trim(), crate::sha256::sha256_hex(identity))
+    }
+}
+
+fn canonical_json(value: &Value) -> String {
+    match value {
+        Value::Object(object) => {
+            let mut entries = object.iter().collect::<Vec<_>>();
+            entries.sort_by(|(left, _), (right, _)| left.cmp(right));
+            let fields = entries
+                .into_iter()
+                .map(|(key, value)| {
+                    format!(
+                        "{}:{}",
+                        serde_json::to_string(key).expect("JSON object keys are serializable"),
+                        canonical_json(value)
+                    )
+                })
+                .collect::<Vec<_>>();
+            format!("{{{}}}", fields.join(","))
+        }
+        Value::Array(values) => format!(
+            "[{}]",
+            values
+                .iter()
+                .map(canonical_json)
+                .collect::<Vec<_>>()
+                .join(",")
+        ),
+        _ => serde_json::to_string(value).expect("JSON values are serializable"),
+    }
 }
 
 impl TurnRunShell {
@@ -129,6 +289,7 @@ impl TurnRunShell {
             request_id,
             generation: self.next_generation,
         };
+        self.tool_loop_gate.bind(&owner);
         self.active = Some(ActiveRun {
             owner: owner.clone(),
             dispatched: false,
@@ -161,6 +322,44 @@ impl TurnRunShell {
     pub fn mark_dispatched(&mut self, owner: &TurnOwnerToken) -> Result<(), TurnRunShellError> {
         self.require_owner_mut(owner)?.dispatched = true;
         Ok(())
+    }
+
+    /// Observe one tool call at the canonical turn owner boundary.
+    ///
+    /// The production bridge uses the shared gate returned by tool_loop_gate;
+    /// this method remains the owner-local seam for synchronous callers and
+    /// focused contract tests.
+    pub fn observe_tool_call(
+        &mut self,
+        owner: &TurnOwnerToken,
+        tool_name: &str,
+        arguments: &Value,
+    ) -> Result<ToolLoopDecision, TurnRunShellError> {
+        if tool_name.trim().is_empty() {
+            return Err(TurnRunShellError::EmptyToolName);
+        }
+        let decision = self.tool_loop_gate.observe_tool_call(owner, tool_name, arguments)?;
+        if let ToolLoopDecision::Cancel { reason } = decision {
+            let run = self.require_owner_mut(owner)?;
+            if run.cancellation.is_none() {
+                run.cancellation = Some(TurnCancellation {
+                    intentional: true,
+                    reason: reason.to_string(),
+                });
+            }
+        }
+        Ok(decision)
+    }
+
+    pub fn tool_call_history_len(
+        &self,
+        owner: &TurnOwnerToken,
+    ) -> Result<usize, TurnRunShellError> {
+        self.tool_loop_gate.history_len(owner)
+    }
+
+    pub fn tool_loop_gate(&self) -> ToolLoopGate {
+        self.tool_loop_gate.clone()
     }
 
     pub fn interrupt(
@@ -226,7 +425,13 @@ impl TurnRunShell {
         owner: &TurnOwnerToken,
     ) -> Result<CheckpointBoundary, TurnRunShellError> {
         let quiescing = self.quiescing_for_upgrade;
+        let loop_cancellation = self.tool_loop_gate.cancellation(owner)?;
         let run = self.require_owner_mut(owner)?;
+        if let Some(cancellation) = loop_cancellation {
+            if run.cancellation.is_none() {
+                run.cancellation = Some(cancellation);
+            }
+        }
         if run.awaiting_user_selection {
             let cancellation = run
                 .cancellation
@@ -302,12 +507,14 @@ impl TurnRunShell {
         owner: &TurnOwnerToken,
         outcome: TerminalOutcome,
     ) -> Result<TurnRunFinished, TurnRunShellError> {
-        let run = self.require_owner_mut(owner)?;
-        run.settlement
-            .settle(outcome.clone())
-            .map_err(TurnRunShellError::Settlement)?;
-        let quiesced_for_upgrade = run.quiesced_for_upgrade;
-        let finished_owner = run.owner.clone();
+        let (quiesced_for_upgrade, finished_owner) = {
+            let run = self.require_owner_mut(owner)?;
+            run.settlement
+                .settle(outcome.clone())
+                .map_err(TurnRunShellError::Settlement)?;
+            (run.quiesced_for_upgrade, run.owner.clone())
+        };
+        self.tool_loop_gate.clear(&finished_owner);
         self.active = None;
         Ok(TurnRunFinished {
             owner: finished_owner,
@@ -332,5 +539,106 @@ impl TurnRunShell {
             .as_mut()
             .filter(|run| &run.owner == owner)
             .ok_or(TurnRunShellError::StaleOwner)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        TOOL_LOOP_HISTORY_CAPACITY, ToolLoopDecision, TurnRunOptions, TurnRunShell,
+        TurnRunShellError,
+    };
+    use serde_json::json;
+
+    #[test]
+    fn tool_loop_identity_sorts_object_keys() {
+        let mut shell = TurnRunShell::default();
+        let owner = shell
+            .begin_run("loop", TurnRunOptions::default())
+            .expect("start")
+            .owner;
+        let first = shell
+            .observe_tool_call(&owner, "search", &json!({"b": 2, "a": 1}))
+            .expect("first");
+        let second = shell
+            .observe_tool_call(&owner, "search", &json!({"a": 1, "b": 2}))
+            .expect("second");
+        assert_eq!(first, ToolLoopDecision::Continue { consecutive_repeats: 1 });
+        assert_eq!(second, ToolLoopDecision::Continue { consecutive_repeats: 2 });
+    }
+
+    #[test]
+    fn third_consecutive_identical_call_requests_cancellation() {
+        let mut shell = TurnRunShell::default();
+        let owner = shell
+            .begin_run("loop", TurnRunOptions::default())
+            .expect("start")
+            .owner;
+        for _ in 0..2 {
+            assert!(matches!(
+                shell.observe_tool_call(&owner, "search", &json!({"q": "same"})),
+                Ok(ToolLoopDecision::Continue { .. })
+            ));
+        }
+        assert_eq!(
+            shell
+                .observe_tool_call(&owner, "search", &json!({"q": "same"}))
+                .expect("third"),
+            ToolLoopDecision::Cancel {
+                reason: "repeated identical tool call detected"
+            }
+        );
+        assert!(shell
+            .cancellation(&owner)
+            .expect("cancellation read")
+            .is_some());
+    }
+
+    #[test]
+    fn distinct_call_resets_consecutive_count_and_history_is_bounded() {
+        let mut shell = TurnRunShell::default();
+        let owner = shell
+            .begin_run("loop", TurnRunOptions::default())
+            .expect("start")
+            .owner;
+        for index in 0..(TOOL_LOOP_HISTORY_CAPACITY + 4) {
+            shell
+                .observe_tool_call(&owner, "search", &json!({"q": index}))
+                .expect("observe");
+        }
+        assert_eq!(
+            shell.tool_call_history_len(&owner).expect("history"),
+            TOOL_LOOP_HISTORY_CAPACITY
+        );
+        assert_eq!(
+            shell
+                .observe_tool_call(&owner, "search", &json!({"q": "new"}))
+                .expect("reset"),
+            ToolLoopDecision::Continue {
+                consecutive_repeats: 1
+            }
+        );
+    }
+
+    #[test]
+    fn empty_and_stale_tool_calls_do_not_change_the_owner() {
+        let mut shell = TurnRunShell::default();
+        let owner = shell
+            .begin_run("loop", TurnRunOptions::default())
+            .expect("start")
+            .owner;
+        assert_eq!(
+            shell.observe_tool_call(&owner, " ", &json!({})),
+            Err(TurnRunShellError::EmptyToolName)
+        );
+        let stale = super::super::TurnOwnerToken {
+            request_id: "stale".into(),
+            generation: owner.generation.saturating_sub(1),
+        };
+        assert_eq!(
+            shell.observe_tool_call(&stale, "search", &json!({})),
+            Err(TurnRunShellError::StaleOwner)
+        );
+        assert_eq!(shell.tool_call_history_len(&owner).expect("history"), 0);
     }
 }

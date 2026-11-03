@@ -85,7 +85,8 @@ fn turn_toolset_consumes_external_shell_and_read_executor() {
             external_machine_executor: Some(executor.clone()),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().any(|tool| tool.name == SAND_EXTERNAL_SHELL_TOOL_NAME));
     assert!(tools.iter().any(|tool| tool.name == SAND_EXTERNAL_READ_TOOL_NAME));
@@ -148,7 +149,8 @@ fn external_shell_review_blocks_before_executor_side_effect() {
             external_shell_review: Some(Arc::new(|_| Ok(Some("blocked by auto-review".into())))),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     let tools = bridge.list_tools().expect("tools");
     let shell = tools.iter().find(|tool| tool.name == SAND_EXTERNAL_SHELL_TOOL_NAME).unwrap();
     let result = bridge.call_tool(
@@ -175,7 +177,8 @@ fn box_scoped_subagent_does_not_receive_external_machine_tools() {
             external_machine_executor: Some(executor),
             ..TurnToolsetDependencies::default()
         },
-    );
+    )
+    .expect("turn toolset");
     let tools = bridge.list_tools().expect("tools");
     assert!(tools.iter().all(|tool| tool.name != SAND_EXTERNAL_SHELL_TOOL_NAME));
     assert!(tools.iter().all(|tool| tool.name != SAND_EXTERNAL_READ_TOOL_NAME));

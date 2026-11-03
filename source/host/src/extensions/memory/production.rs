@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::extensions::inference::production::ProductionInferenceExtension;
+use crate::extensions::inference::provider_session::ProviderSessionError;
 use crate::extensions::telemetry::host_telemetry_service::HostStructuredLogTelemetry;
 use crate::extensions::telemetry::memory_synthesis_telemetry::{
     MemorySynthesisReport,
@@ -10,10 +11,13 @@ use crate::extensions::telemetry::sand_error_tags::SandErrorValue;
 use crate::storage::agent_paths::get_sand_agents_root_dir;
 
 use super::extension::{HostMemoryExtension, start_memory_extension};
-use super::memory_service::MemoryService;
+use super::memory_service::{
+    FileMemoryStore, MemoryService, SynthesisApplyResult, SynthesisChange, SynthesisSnapshot,
+};
 use super::memory_synthesis_service::{
     MemorySynthesisOptions, MemorySynthesisService, SynthesisCancelSignal,
-    SynthesisProposalRequest, SynthesisReport, SynthesisReportOutcome, SynthesisTarget,
+    SynthesisInferenceError, SynthesisModelJob, SynthesisProposalRequest, SynthesisReport,
+    SynthesisReportOutcome, SynthesisTarget,
     SynthesisVerificationRequest, parse_json_object, synthesis_request_json,
     synthesis_system_prompt, verification_request_json, verification_system_prompt,
 };
@@ -57,12 +61,64 @@ pub fn memory_synthesis_telemetry_report(report: &SynthesisReport) -> MemorySynt
     }
 }
 
+struct ProductionSynthesisTarget {
+    agent_id: String,
+    store: FileMemoryStore,
+    service: Arc<MemoryService>,
+}
+
+impl SynthesisTarget for ProductionSynthesisTarget {
+    fn prepare_synthesis(&self) -> SynthesisSnapshot {
+        self.store.prepare_synthesis()
+    }
+
+    fn apply_synthesis(
+        &self,
+        snapshot: &SynthesisSnapshot,
+        changes: &[SynthesisChange],
+        now_ms: i64,
+    ) -> SynthesisApplyResult {
+        self.service.apply_synthesis_with_gate(
+            &self.agent_id,
+            &self.store,
+            snapshot,
+            changes,
+            now_ms,
+        )
+    }
+
+    fn has_memories(&self) -> bool {
+        self.store.has_memories()
+    }
+
+    fn is_temporal_review_due(&self, now_ms: i64) -> bool {
+        self.store.is_temporal_review_due(now_ms)
+    }
+
+    fn mark_temporal_review(&self, now_ms: i64) {
+        let _ = self.store.mark_temporal_review(now_ms);
+    }
+}
+
 pub fn create_production_memory_synthesis(
     service: Arc<MemoryService>,
     inference: Arc<ProductionInferenceExtension>,
     data_dir: PathBuf,
     logs: HostStructuredLogTelemetry,
 ) -> Arc<MemorySynthesisService> {
+    let mut options = production_memory_synthesis_options(service, inference, data_dir);
+    options.report = Some(Arc::new(move |report| {
+        let report = memory_synthesis_telemetry_report(&report);
+        let _ = logs.report_memory_synthesis(&report);
+    }));
+    Arc::new(MemorySynthesisService::new(options))
+}
+
+pub(crate) fn production_memory_synthesis_options(
+    service: Arc<MemoryService>,
+    inference: Arc<ProductionInferenceExtension>,
+    data_dir: PathBuf,
+) -> MemorySynthesisOptions {
     let list_service = Arc::clone(&service);
     let list_targets = Arc::new(move || {
         list_service
@@ -70,8 +126,12 @@ pub fn create_production_memory_synthesis(
             .into_iter()
             .map(|(agent_id, store)| {
                 (
-                    agent_id,
-                    Arc::new(store) as Arc<dyn SynthesisTarget>,
+                    agent_id.clone(),
+                    Arc::new(ProductionSynthesisTarget {
+                        agent_id,
+                        store,
+                        service: Arc::clone(&list_service),
+                    }) as Arc<dyn SynthesisTarget>,
                 )
             })
             .collect::<Vec<_>>()
@@ -81,49 +141,52 @@ pub fn create_production_memory_synthesis(
     let get_target = Arc::new(move |agent_id: &str| {
         target_service
             .synthesis_target_for_agent(agent_id)
-            .map(|store| Arc::new(store) as Arc<dyn SynthesisTarget>)
+            .map(|store| {
+                Arc::new(ProductionSynthesisTarget {
+                    agent_id: agent_id.to_string(),
+                    store,
+                    service: Arc::clone(&target_service),
+                }) as Arc<dyn SynthesisTarget>
+            })
     });
 
-    let propose_inference = Arc::clone(&inference);
-    let propose_data_dir = data_dir.clone();
-    let propose = Arc::new(move |request: SynthesisProposalRequest, cancel: SynthesisCancelSignal| {
-        let user = synthesis_request_json(&request);
-        let output = propose_inference
-            .run_summarization_prompt(
-                &propose_data_dir,
-                synthesis_system_prompt(),
-                &user,
-                &|| cancel.is_cancelled(),
-            )
-            .map_err(|error| format!("{error:?}"))?;
-        parse_json_object(&output)
-            .ok_or_else(|| "memory synthesis inference returned invalid JSON".to_string())
+    let job_factory = Arc::new(move || {
+        // Allocation only. The first phase admits identity inside the bounded worker.
+        let job = inference.create_summarization_job(data_dir.clone());
+        let propose_job = Arc::clone(&job);
+        let propose = Arc::new(move |request: SynthesisProposalRequest, cancel: SynthesisCancelSignal| {
+            let user = synthesis_request_json(&request);
+            let output = propose_job.run_prompt(
+                synthesis_system_prompt(), &user, &|| cancel.is_cancelled(),
+            ).map_err(synthesis_inference_error)?;
+            parse_json_object(&output).ok_or(SynthesisInferenceError::Retryable)
+        });
+        let verify = Arc::new(move |request: SynthesisVerificationRequest, cancel: SynthesisCancelSignal| {
+            let user = verification_request_json(&request);
+            let output = job.run_prompt(
+                verification_system_prompt(), &user, &|| cancel.is_cancelled(),
+            ).map_err(synthesis_inference_error)?;
+            let verdict = parse_json_object(&output).ok_or(SynthesisInferenceError::Retryable)?;
+            Ok(verdict.get("approved").and_then(serde_json::Value::as_bool) == Some(true))
+        });
+        SynthesisModelJob::new(propose, Some(verify))
     });
-
-    let verify_inference = Arc::clone(&inference);
-    let verify = Arc::new(move |request: SynthesisVerificationRequest, cancel: SynthesisCancelSignal| {
-        let user = verification_request_json(&request);
-        let output = verify_inference
-            .run_summarization_prompt(
-                &data_dir,
-                verification_system_prompt(),
-                &user,
-                &|| cancel.is_cancelled(),
-            )
-            .map_err(|error| format!("{error:?}"))?;
-        let verdict = parse_json_object(&output)
-            .ok_or_else(|| "memory synthesis verification returned invalid JSON".to_string())?;
-        Ok(verdict
-            .get("approved")
-            .and_then(serde_json::Value::as_bool)
-            == Some(true))
-    });
-
-    let mut options = MemorySynthesisOptions::new(list_targets, get_target, propose);
-    options.verify = Some(verify);
-    options.report = Some(Arc::new(move |report| {
-        let report = memory_synthesis_telemetry_report(&report);
-        let _ = logs.report_memory_synthesis(&report);
-    }));
-    Arc::new(MemorySynthesisService::new(options))
+    MemorySynthesisOptions::new_with_job_factory(list_targets, get_target, job_factory)
 }
+
+fn synthesis_inference_error(error: ProviderSessionError) -> SynthesisInferenceError {
+    match error {
+        ProviderSessionError::Authentication(_) => SynthesisInferenceError::Authentication,
+        ProviderSessionError::Configuration(_) => SynthesisInferenceError::Configuration,
+        ProviderSessionError::Cancelled(_) => SynthesisInferenceError::Cancelled,
+        _ => SynthesisInferenceError::Retryable,
+    }
+}
+
+#[cfg(test)]
+#[path = "production_append_read_tests.rs"]
+mod append_read_tests;
+
+#[cfg(test)]
+#[path = "production_identity_tests.rs"]
+mod identity_tests;

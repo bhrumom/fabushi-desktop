@@ -115,6 +115,8 @@ fn codex_direct_streams_text_executes_tools_and_continues_the_same_turn() {
         ]
     );
     assert_eq!(transport.requests.len(), 2);
+    assert_eq!(transport.requests[0]["model"], "gpt-test");
+    assert_eq!(transport.requests[1]["model"], "gpt-test");
     let second_input = transport.requests[1]["input"].as_array().expect("second input");
     assert!(second_input.iter().any(|item| item["type"] == "function_call_output"));
 }
@@ -244,8 +246,12 @@ fn codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
     assert!(error.to_string().contains("transient upstream failure"));
     assert_eq!(first_tool_calls, 1);
     assert_eq!(first_deltas[0].0, "Checking ");
+    assert_eq!(first_transport.requests.len(), 2);
+    assert_eq!(first_transport.requests[0]["model"], "gpt-test");
+    assert_eq!(first_transport.requests[1]["model"], "gpt-test");
 
     let checkpoint = checkpoint.expect("tool boundary checkpoint");
+    assert_eq!(checkpoint.model.as_deref(), Some("gpt-test"));
     assert_eq!(checkpoint.text, "Checking ");
     assert_eq!(checkpoint.completed_steps, 1);
     assert_eq!(checkpoint.tool_calls_completed, 1);
@@ -253,6 +259,11 @@ fn codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
         .input
         .iter()
         .any(|item| item["type"] == "function_call_output"));
+    let encoded = serde_json::to_value(&checkpoint).expect("encode accepted checkpoint");
+    assert_eq!(encoded["model"], "gpt-test");
+    let persisted_checkpoint: CodexDirectCheckpoint =
+        serde_json::from_value(encoded).expect("decode accepted checkpoint");
+    assert_eq!(persisted_checkpoint, checkpoint);
 
     let mut resumed_transport = FakeTransport {
         responses: VecDeque::from([vec![
@@ -270,7 +281,7 @@ fn codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
     let resumed = run_codex_direct_responses_with_lifecycle(
         &mut resumed_transport,
         &options,
-        Some(&checkpoint),
+        Some(&persisted_checkpoint),
         &mut |_tool, _args, _call_id| {
             resumed_tool_calls += 1;
             Ok(Value::Null)
@@ -291,6 +302,7 @@ fn codex_direct_resumes_only_from_an_accepted_tool_boundary_checkpoint() {
         vec![("done".to_string(), "Checking done".to_string())]
     );
     assert_eq!(resumed_transport.requests.len(), 1);
+    assert_eq!(resumed_transport.requests[0]["model"], "gpt-test");
     let resumed_input = resumed_transport.requests[0]["input"]
         .as_array()
         .expect("resumed input");
@@ -422,4 +434,100 @@ fn codex_direct_does_not_execute_mixed_or_undeclared_dsml_text() {
         assert_eq!(result.text, text);
         assert_eq!(transport.requests.len(), 1);
     }
+}
+
+#[test]
+fn checkpoint_model_identity_is_durable_and_cross_model_resume_fails_before_request() {
+    let checkpoint = CodexDirectCheckpoint {
+        model: Some("selected-model-a".into()),
+        input: vec![json!({"role":"user","content":"turn"})],
+        text: "partial".into(),
+        response_id: "response-1".into(),
+        usage: Default::default(),
+        completed_steps: 1,
+        tool_calls_completed: 1,
+    };
+    let persisted = serde_json::to_value(&checkpoint).expect("encode checkpoint");
+    assert_eq!(persisted["model"], "selected-model-a");
+    let decoded: CodexDirectCheckpoint = serde_json::from_value(persisted)
+        .expect("decode persisted model identity");
+    assert_eq!(decoded, checkpoint);
+    let legacy: CodexDirectCheckpoint = serde_json::from_value(json!({
+        "input": [], "text": "", "response_id": "",
+        "usage": {"input_tokens":0,"output_tokens":0,"cache_read_tokens":0,"cache_write_tokens":0},
+        "completed_steps": 1, "tool_calls_completed": 0
+    })).expect("legacy checkpoint remains decodable without claiming model identity");
+    assert_eq!(legacy.model, None);
+
+    let mut transport = FakeTransport { responses: VecDeque::new(), requests: Vec::new() };
+    let options = CodexDirectOptions::new("selected-model-b", "instructions", vec![]);
+    let error = run_codex_direct_responses_with_lifecycle(
+        &mut transport,
+        &options,
+        Some(&checkpoint),
+        &mut |_tool, _args, _call_id| Ok(Value::Null),
+        &mut |_delta, _accumulated| {},
+        &mut |_checkpoint| Ok(()),
+        &|| false,
+    ).expect_err("different model must not consume the checkpoint");
+    assert!(matches!(
+        error,
+        CodexDirectError::Protocol(message) if message.contains("model identity")
+    ));
+    assert!(transport.requests.is_empty());
+}
+
+#[test]
+fn codex_direct_resumes_a_legacy_checkpoint_without_model_identity() {
+    let checkpoint: CodexDirectCheckpoint = serde_json::from_value(json!({
+        "input": [
+            {"role":"user","content":"calendar"},
+            {"type":"reasoning","encrypted_content":"opaque-legacy-reasoning"},
+            {
+                "type":"function_call", "name":"calendar_list",
+                "call_id":"legacy-call", "arguments":"{}"
+            },
+            {
+                "type":"function_call_output", "call_id":"legacy-call",
+                "output":"{\"events\":[\"daily\"]}"
+            }
+        ],
+        "text":"Checking ",
+        "response_id":"legacy-response",
+        "usage":{"input_tokens":10,"output_tokens":2,"cache_read_tokens":0,"cache_write_tokens":0},
+        "completed_steps":1,
+        "tool_calls_completed":1
+    }))
+    .expect("decode legacy checkpoint without a model field");
+    assert_eq!(checkpoint.model, None);
+    assert!(serde_json::to_value(&checkpoint).expect("serialize legacy checkpoint")
+        .get("model").is_none());
+    let mut transport = FakeTransport {
+        responses: VecDeque::from([vec![
+            json!({"type":"response.output_text.delta","delta":"done"}),
+            json!({"type":"response.completed","response":{
+                "id":"legacy-resumed",
+                "usage":{"input_tokens":6,"output_tokens":1},
+                "output":[]
+            }}),
+        ]]),
+        requests: Vec::new(),
+    };
+    let options = CodexDirectOptions::new("current-codex-model", "instructions", vec![]);
+    let result = run_codex_direct_responses_with_lifecycle(
+        &mut transport,
+        &options,
+        Some(&checkpoint),
+        &mut |_tool, _args, _call_id| panic!("accepted legacy tools must not execute again"),
+        &mut |_delta, _accumulated| {},
+        &mut |_checkpoint| panic!("text-only continuation must not create a tool checkpoint"),
+        &|| false,
+    )
+    .expect("generic Codex retains legacy checkpoint compatibility");
+    assert_eq!(result.text, "Checking done");
+    assert_eq!(result.response_id, "legacy-resumed");
+    assert_eq!(result.usage.input_tokens, 16);
+    assert_eq!(transport.requests.len(), 1);
+    assert_eq!(transport.requests[0]["model"], "current-codex-model");
+    assert_eq!(transport.requests[0]["input"], json!(checkpoint.input));
 }

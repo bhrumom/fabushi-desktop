@@ -36,6 +36,16 @@ pub struct FabushiCoreCredential {
     pub user_id: String,
 }
 
+/// Non-secret account/session identity from the same validated credential image.
+/// Token rotation and expiry changes do not create a new context.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct FabushiCredentialContext {
+    issuer: String,
+    user_id: String,
+    device_id: String,
+    session_id: String,
+}
+
 impl std::fmt::Debug for FabushiCoreCredential {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -57,6 +67,15 @@ impl FabushiCoreCredential {
 
     pub fn issuer(&self) -> &str {
         &self.issuer
+    }
+
+    pub(crate) fn context(&self) -> FabushiCredentialContext {
+        FabushiCredentialContext {
+            issuer: self.issuer.clone(),
+            user_id: self.user_id.clone(),
+            device_id: self.device_id.clone(),
+            session_id: self.session_id.clone(),
+        }
     }
 
     pub fn authorize_origin(&self, target: &str) -> Result<(), FabushiCoreCredentialError> {
@@ -90,7 +109,7 @@ impl FabushiCoreCredentialError {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct FabushiCoreCredentialFile {
     version: u32,
@@ -101,6 +120,43 @@ struct FabushiCoreCredentialFile {
     session_id: String,
     device_id: String,
     user_id: serde_json::Value,
+}
+
+/// Decode one Native account-owner document. Callers retain their own file and
+/// clock policy; malformed document values never enter error diagnostics.
+pub(crate) fn parse_fabushi_core_credential(
+    raw: &str,
+    now_ms: impl FnOnce() -> u64,
+) -> Result<FabushiCoreCredential, FabushiCoreCredentialError> {
+    let parsed: FabushiCoreCredentialFile =
+        serde_json::from_str(raw).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+    if parsed.version != 1
+        || parsed.access_token.trim().is_empty()
+        || parsed.session_id.trim().is_empty()
+        || parsed.device_id.trim().is_empty()
+        || now_ms() >= parsed.expires_at_ms.saturating_sub(EXPIRY_LEEWAY_MS)
+    {
+        return Err(FabushiCoreCredentialError::unavailable());
+    }
+    let user_id = match parsed.user_id {
+        serde_json::Value::String(value) if !value.trim().is_empty() => value,
+        serde_json::Value::Number(value) => value.to_string(),
+        _ => return Err(FabushiCoreCredentialError::unavailable()),
+    };
+    let issuer = super::credential_renewer::configured_product_backend_url(
+        parsed.issuer.as_deref(), None,
+    ).map_err(|_| FabushiCoreCredentialError::unavailable())?;
+    let issuer = url::Url::parse(&issuer)
+        .map_err(|_| FabushiCoreCredentialError::unavailable())?
+        .origin().ascii_serialization();
+    Ok(FabushiCoreCredential {
+        access_token: parsed.access_token,
+        issuer,
+        expires_at_ms: parsed.expires_at_ms,
+        session_id: parsed.session_id,
+        device_id: parsed.device_id,
+        user_id,
+    })
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -436,35 +492,7 @@ impl HostAuthService {
             .as_deref()
             .ok_or_else(FabushiCoreCredentialError::unavailable)?;
         let raw = fs::read_to_string(path).map_err(|_| FabushiCoreCredentialError::unavailable())?;
-        let parsed: FabushiCoreCredentialFile =
-            serde_json::from_str(&raw).map_err(|_| FabushiCoreCredentialError::unavailable())?;
-        if parsed.version != 1
-            || parsed.access_token.trim().is_empty()
-            || parsed.session_id.trim().is_empty()
-            || parsed.device_id.trim().is_empty()
-            || (self.now_ms)() >= parsed.expires_at_ms.saturating_sub(EXPIRY_LEEWAY_MS)
-        {
-            return Err(FabushiCoreCredentialError::unavailable());
-        }
-        let user_id = match parsed.user_id {
-            serde_json::Value::String(value) if !value.trim().is_empty() => value,
-            serde_json::Value::Number(value) => value.to_string(),
-            _ => return Err(FabushiCoreCredentialError::unavailable()),
-        };
-        let issuer = super::credential_renewer::configured_product_backend_url(
-            parsed.issuer.as_deref(), None,
-        ).map_err(|_| FabushiCoreCredentialError::unavailable())?;
-        let issuer = url::Url::parse(&issuer)
-            .map_err(|_| FabushiCoreCredentialError::unavailable())?
-            .origin().ascii_serialization();
-        Ok(FabushiCoreCredential {
-            access_token: parsed.access_token,
-            issuer,
-            expires_at_ms: parsed.expires_at_ms,
-            session_id: parsed.session_id,
-            device_id: parsed.device_id,
-            user_id,
-        })
+        parse_fabushi_core_credential(&raw, || (self.now_ms)())
     }
 
     pub fn subscribe_to_renewal(&self, listener: RenewalListener) -> u64 {
@@ -515,5 +543,209 @@ impl Drop for HostAuthService {
                 renewer.close();
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod worker_exit_tests {
+    use super::super::credential_renewer::RenewerTestControl;
+    use super::*;
+    use std::sync::atomic::AtomicUsize;
+    use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+    use std::sync::TryLockError;
+    use std::thread;
+    use std::time::Duration;
+
+    const DEADLINE: Duration = Duration::from_secs(5);
+    const INITIAL_EXPIRY_MS: u64 = 600_000;
+    const STORED_TOKEN: &str = "credential-stored-before-listener-panic";
+
+    struct GatedBackend {
+        calls: AtomicUsize,
+        entered: Sender<usize>,
+        release: Mutex<Receiver<()>>,
+    }
+
+    impl CredentialRenewalBackend for GatedBackend {
+        fn renew(&self, credential: &str) -> Result<InferenceCredential, SandCredentialRenewalError> {
+            assert_eq!(credential, "worker-exit-renewal-fixture");
+            let call = self.calls.fetch_add(1, Ordering::SeqCst) + 1;
+            let _ = self.entered.send(call);
+            let released = self.release.lock().unwrap().recv_timeout(DEADLINE);
+            released.expect("release the owned auth backend attempt");
+            Ok(match call {
+                1 => InferenceCredential {
+                    access_token: "initial-credential".into(),
+                    expires_at_ms: INITIAL_EXPIRY_MS,
+                },
+                2 => InferenceCredential {
+                    access_token: STORED_TOKEN.into(),
+                    expires_at_ms: 1_200_000,
+                },
+                _ => panic!("a terminated auth worker must not renew again"),
+            })
+        }
+    }
+
+    struct AuthWorkerCleanup<'a> {
+        service: &'a HostAuthService,
+        control: &'a RenewerTestControl,
+        backend_release: &'a Sender<()>,
+        listener_release: &'a Sender<()>,
+    }
+
+    impl Drop for AuthWorkerCleanup<'_> {
+        fn drop(&mut self) {
+            // This runs before thread::scope joins its requesters, including
+            // when a deadline assertion fails with the exit guard removed.
+            // Cleanup never supplies a successful observation to the test.
+            self.control.close_waiters();
+            let _ = self.backend_release.send(());
+            let _ = self.listener_release.send(());
+            self.service.dispose();
+        }
+    }
+
+    #[test]
+    fn listener_panic_releases_auth_waiter_preserves_token_and_allows_disposal() {
+        let (backend_entered_tx, backend_entered) = mpsc::channel();
+        let (backend_release, backend_release_rx) = mpsc::channel();
+        let backend = Arc::new(GatedBackend {
+            calls: AtomicUsize::new(0),
+            entered: backend_entered_tx,
+            release: Mutex::new(backend_release_rx),
+        });
+        let now_ms = Arc::new(AtomicU64::new(10_000));
+        let clock = Arc::clone(&now_ms);
+        let service = Arc::new(
+            HostAuthService::new(HostAuthServiceOptions {
+                environment: HostAuthEnvironment::from_pairs([(
+                    SAND_INFERENCE_RENEWAL_CREDENTIAL_ENV.into(),
+                    "worker-exit-renewal-fixture".into(),
+                )]),
+                backend_url: Some("http://127.0.0.1:9".into()),
+                backend: Some(backend.clone()),
+                machine_id: Arc::new(|| Ok("worker-exit-machine".into())),
+                log: Arc::new(|_| {}),
+                now_ms: Arc::new(move || clock.load(Ordering::SeqCst)),
+            })
+            .expect("construct the real Host Auth owner"),
+        );
+        // The real get_access_token waiter retains service.renewer. Capture
+        // this observation/cleanup handle before that invocation owns it.
+        let control = service
+            .renewer
+            .lock()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .test_control();
+        let (events_tx, events) = mpsc::channel();
+        let (listener_release, listener_release_rx) = mpsc::channel();
+        let listener_release_rx = Mutex::new(listener_release_rx);
+        let callback_calls = Arc::new(AtomicUsize::new(0));
+        let intentional_panic = Arc::new(AtomicBool::new(false));
+
+        thread::scope(|scope| {
+            let _cleanup = AuthWorkerCleanup {
+                service: &service,
+                control: &control,
+                backend_release: &backend_release,
+                listener_release: &listener_release,
+            };
+            let calls = Arc::clone(&callback_calls);
+            let panic_released = Arc::clone(&intentional_panic);
+            service.subscribe_to_renewal(Arc::new(move |event| {
+                let call = calls.fetch_add(1, Ordering::SeqCst) + 1;
+                let _ = events_tx.send((call, event));
+                if call == 2 {
+                    let released = listener_release_rx
+                        .lock()
+                        .unwrap()
+                        .recv_timeout(DEADLINE);
+                    released.expect("release the owned renewal listener fault");
+                    panic_released.store(true, Ordering::SeqCst);
+                    panic!("intentional subscribed Host Auth listener panic");
+                }
+            }));
+
+            assert_eq!(backend_entered.recv_timeout(DEADLINE).unwrap(), 1);
+            backend_release.send(()).unwrap();
+            let (first_call, first_event) = events.recv_timeout(DEADLINE).unwrap();
+            assert_eq!(first_call, 1);
+            assert_eq!(first_event.result.outcome, RenewalOutcome::Renewed);
+            assert_eq!(first_event.result.consecutive_failures, 0);
+            assert!(first_event.is_first_credential);
+            // Publication precedes idle; only the real state predicate proves
+            // that the following immediate-renewal request can be accepted.
+            assert!(control.wait_until_waiting(DEADLINE));
+            assert_eq!(control.snapshot(), (false, true, 0, 0));
+            assert_eq!(service.peek_access_token(), Some("initial-credential".into()));
+
+            // The worker already selected its long ordinary refresh delay.
+            // Advancing the injected clock now expires the initial credential
+            // without waiting for a timer or clearing the real credential store.
+            now_ms.store(INITIAL_EXPIRY_MS - EXPIRY_LEEWAY_MS, Ordering::SeqCst);
+            assert!(service.peek_access_token().is_none());
+            let request_service = Arc::clone(&service);
+            let (request_tx, request_result) = mpsc::channel();
+            let requester = scope.spawn(move || {
+                let _ = request_tx.send(request_service.get_access_token());
+            });
+
+            assert_eq!(backend_entered.recv_timeout(DEADLINE).unwrap(), 2);
+            assert_eq!(control.snapshot(), (false, false, 1, 0));
+            assert!(matches!(
+                service.renewer.try_lock(),
+                Err(TryLockError::WouldBlock)
+            ));
+            assert!(matches!(request_result.try_recv(), Err(TryRecvError::Empty)));
+            backend_release.send(()).unwrap();
+            let (fault_call, fault_event) = events.recv_timeout(DEADLINE).unwrap();
+            assert_eq!(fault_call, 2);
+            assert_eq!(fault_event.result.outcome, RenewalOutcome::Renewed);
+            assert_eq!(fault_event.result.consecutive_failures, 0);
+            assert!(fault_event.result.error_summary.is_none());
+            assert!(fault_event.is_first_credential);
+            assert_eq!(service.peek_access_token(), Some(STORED_TOKEN.into()));
+            assert_eq!(service.get_last_renewal_event(), Some(fault_event.clone()));
+            assert_eq!(control.snapshot(), (false, false, 1, 0));
+            assert!(matches!(request_result.try_recv(), Err(TryRecvError::Empty)));
+
+            listener_release.send(()).unwrap();
+            let waiting_result = request_result
+                .recv_timeout(DEADLINE)
+                .expect("the real Auth waiter must settle after its renewal worker unwinds");
+            requester.join().expect("join the owned Auth requester");
+            assert!(intentional_panic.load(Ordering::SeqCst));
+            assert_eq!(waiting_result, Err(SandCredentialsWaitingError::new()));
+            assert_eq!(control.snapshot(), (true, false, 1, 0));
+            assert_eq!(service.peek_access_token(), Some(STORED_TOKEN.into()));
+
+            // A later ordinary call may use the already stored valid token.
+            // Its successful fast path does not retroactively complete epoch 1
+            // or turn the earlier waiting invocation into a success.
+            let later_service = Arc::clone(&service);
+            let (disposed_tx, disposed) = mpsc::channel();
+            let lifecycle = scope.spawn(move || {
+                let token = later_service.get_access_token();
+                later_service.dispose();
+                later_service.dispose();
+                let _ = disposed_tx.send(token);
+            });
+            let later_result = disposed
+                .recv_timeout(DEADLINE)
+                .expect("the later fast path and repeated Auth disposal must finish");
+            lifecycle.join().expect("join the owned Auth disposal caller");
+            assert_eq!(later_result, Ok(STORED_TOKEN.into()));
+            assert_eq!(service.peek_access_token(), Some(STORED_TOKEN.into()));
+            assert_eq!(service.get_last_renewal_event(), Some(fault_event));
+            assert!(service.renewer.lock().unwrap().is_none());
+            assert!(service.listeners.lock().unwrap().is_empty());
+            assert_eq!(control.snapshot(), (true, false, 1, 0));
+            assert_eq!(backend.calls.load(Ordering::SeqCst), 2);
+            assert_eq!(callback_calls.load(Ordering::SeqCst), 2);
+            assert!(events.try_recv().is_err(), "listeners must not be replayed");
+        });
     }
 }

@@ -1,0 +1,216 @@
+{
+  "taskId": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "subject": "916d79a2b191a12676d1e0df675393e05d59c6f2",
+  "tree": "d15a2c21f25c6e470b97797ca30ad80e30875189",
+  "parent": "0509c1d13595680248630ff476f5bd6dbe5ed185",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "commitUrl": "https://github.com/bhrumom/fabushi-desktop/commit/916d79a2b191a12676d1e0df675393e05d59c6f2",
+  "pushed": true,
+  "verified": true,
+  "commitIdentityVerified": true,
+  "removedCarrierPathsVerified": true,
+  "files": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected": "639c409557ad39869fd2cdc0a86522847d81abb2",
+      "observed": "639c409557ad39869fd2cdc0a86522847d81abb2",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 394422,
+      "error": false
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/codex-model-identity.md",
+      "expected": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+      "observed": "f4fff8c4cbcc6134a2189e2d326afb9edc388f44",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 13844,
+      "error": false
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+      "expected": "770d1ad624b9e23f1747831a80490e7b957ee001",
+      "observed": "770d1ad624b9e23f1747831a80490e7b957ee001",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 83759,
+      "error": false
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/runtime-owner-closures-d56b3d1d-20261103.json",
+      "expected": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+      "observed": "7ea3381b0420413c2168ef5cb66426d3d5870b9a",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 406375,
+      "error": false
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "expected": "4e6844496f267050e4236494de424de28630ccc8",
+      "observed": "4e6844496f267050e4236494de424de28630ccc8",
+      "matched": true,
+      "method": "H-bound-file-sha-and-full-exact-blob",
+      "characters": 0,
+      "error": false
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "expected": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+      "observed": "9ba062fbf0369f035f00cfd892ec0fa1d00bfa03",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 129323,
+      "error": false
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "expected": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+      "observed": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 985706,
+      "error": false
+    },
+    {
+      "path": "source/host/app/src/tests/codex_model_admission_tests.rs",
+      "expected": "225083ebafb2efd9700793503869304d43cfbf22",
+      "observed": "225083ebafb2efd9700793503869304d43cfbf22",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 17275,
+      "error": false
+    },
+    {
+      "path": "source/host/app/src/tests/routed_preentry_cancellation_tests.rs",
+      "expected": "9fef7f76df8dbf42ace99222b88e7629aaeb40a3",
+      "observed": "9fef7f76df8dbf42ace99222b88e7629aaeb40a3",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 26162,
+      "error": false
+    },
+    {
+      "path": "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+      "expected": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+      "observed": "009022caee1936e7e79058e521d7c4cfbc4b84b3",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 58757,
+      "error": false
+    },
+    {
+      "path": "source/host/src/extensions/inference/production.rs",
+      "expected": "b03a7d35b583bed564d966873db55ff165be9626",
+      "observed": "b03a7d35b583bed564d966873db55ff165be9626",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 35194,
+      "error": false
+    },
+    {
+      "path": "source/host/src/extensions/inference/provider_session.rs",
+      "expected": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+      "observed": "ba7142da79f87d8cc63f86269e95badfc4616f03",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 164494,
+      "error": false
+    },
+    {
+      "path": "source/host/src/runner/routed_provider_runtime.rs",
+      "expected": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+      "observed": "81cddbe5f70b3988e2f06009437d79c6738c89fc",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 57841,
+      "error": false
+    },
+    {
+      "path": "source/host/src/runner/turn_agent_composition.rs",
+      "expected": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+      "observed": "cb6a5ab4852703e38b12423cdf90cf407d8fc0b2",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 38888,
+      "error": false
+    },
+    {
+      "path": "source/host/src/runner_production_bridge.rs",
+      "expected": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+      "observed": "87cd7b803c3cb7bd861dbf6fc9984b2ec636b46c",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 13297,
+      "error": false
+    },
+    {
+      "path": "source/host/tests/fabushi_model_identity_production_contract.rs",
+      "expected": "3ebf14bf3e23de70c52140fa289c64e43bd22ece",
+      "observed": "3ebf14bf3e23de70c52140fa289c64e43bd22ece",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 77735,
+      "error": false
+    },
+    {
+      "path": "source/host/tests/fabushi_responses_credential_context_contract.rs",
+      "expected": "0f6e24f12ffda3212a9b5b5056a765a8d50769ff",
+      "observed": "0f6e24f12ffda3212a9b5b5056a765a8d50769ff",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 68050,
+      "error": false
+    },
+    {
+      "path": "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+      "expected": "37f712b96c7a93e5c62237fb0fd749cbf861bb32",
+      "observed": "37f712b96c7a93e5c62237fb0fd749cbf861bb32",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 39817,
+      "error": false
+    },
+    {
+      "path": "source/host/tests/inference_provider_session_contract.rs",
+      "expected": "60e7a75d83ada42a3ad3f9d342f7c3f6cfd8004a",
+      "observed": "60e7a75d83ada42a3ad3f9d342f7c3f6cfd8004a",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 23562,
+      "error": false
+    },
+    {
+      "path": "source/host/tests/runner_effect_custody_contract.rs",
+      "expected": "b7180b290fb4cfec3fd1dc814ee66b21316b00f8",
+      "observed": "b7180b290fb4cfec3fd1dc814ee66b21316b00f8",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 81365,
+      "error": false
+    },
+    {
+      "path": "source/host/tests/runner_production_bridge_contract.rs",
+      "expected": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+      "observed": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 31883,
+      "error": false
+    },
+    {
+      "path": "source/host/tests/runner_routed_provider_contract.rs",
+      "expected": "9f3d49e575ec3677ed0b2d0ae5a4d53ab35c95cf",
+      "observed": "9f3d49e575ec3677ed0b2d0ae5a4d53ab35c95cf",
+      "matched": true,
+      "method": "file-content-and-sha",
+      "characters": 62957,
+      "error": false
+    }
+  ],
+  "limits": "This API publication/readback evidence is not executable validation, scoped unit acceptance or final migration acceptance."
+}

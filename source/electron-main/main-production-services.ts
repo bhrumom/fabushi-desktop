@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ApplicationMenuElectronPort, ApplicationMenuItem } from "./application-menu.js";
-import { createCoordinatorMainLegs } from "./coordinator/coordinator-main-legs.js";
+import { createCoordinatorMainLegs, type CapturedCoordinatorMainSession } from "./coordinator/coordinator-main-legs.js";
 import { createEgressConnectionObserver } from "./box/remote-connector-egress.js";
 import { createDesktopGatewayDescriptorFastPath } from "./box/gateway-descriptor-store.js";
 import { createRemoteHostConnector, type SandRemoteHostConnector } from "./box/box-host-connector.js";
@@ -330,6 +330,7 @@ export interface ProductionMcpHostPort {
 }
 export interface ProductionCoordinatorService extends ProductionDisposable {
   start(status: ProductionAccountStatus): Promise<void>;
+  captureMainDataSession(): CapturedCoordinatorMainSession | null;
   setWindowFocused(state: { readonly isFocused: boolean }): Promise<unknown>;
   pushHostSettings(update: unknown): Promise<Record<string, any> | null>;
   readHostSettings(): Promise<unknown>;
@@ -437,6 +438,7 @@ export interface ProductionAccountLifecycle {
   readonly isSignedIn: () => boolean;
   readonly isAccountDeparting: () => boolean;
   readonly beginTransition: () => void;
+  readonly noteAccountDeparted: () => void;
   readonly deliverStatus: (status: ProductionAccountStatus) => void;
 }
 
@@ -647,7 +649,8 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
         getAccountScope: () => requireValue(settings, "settings").settingsStore.getMcpCustomInstructionsAccountScope(),
         isSignedIn: () => cursorAuthSignedIn,
         isAccountDeparting: () => accountTransitionDeparting,
-        beginTransition: () => { accountTransitionDeparting = true; connectorEgress.noteAccountDeparted(); },
+        beginTransition: () => { accountTransitionDeparting = true; },
+        noteAccountDeparted: () => connectorEgress.noteAccountDeparted(),
         deliverStatus: (status) => {
           cursorAuthSignedIn = (desktopStructuredLogAccountSlot(status) ?? "logged-out") !== "logged-out";
           accountTransitionDeparting = false;
@@ -746,6 +749,7 @@ export function createElectronMainProductionComposition(bindings: ElectronMainPr
           const sink = telemetry?.telemetry;
           sink?.reportClientFailure?.(clientFailureReportToTelemetry(report));
         },
+        reportHydrationFailure: (error) => bindings.reportFailure("host-settings", "onboarding-hydrate", error),
       });
       const mcpHost: ProductionMcpHostPort = {
         refreshMcp: (completion) => requireValue(mcp, "mcp").refreshHostMcp(completion),

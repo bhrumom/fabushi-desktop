@@ -1,0 +1,281 @@
+{
+  "schema": "ocrm-subject-separated-recovery-delivery-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "originalSubject": {
+    "commit": "8bdcf1012c15c08a0320c85c9d4d42e1cc100949",
+    "execution_credit_from_binding": false,
+    "parent": "a2f7ac9f6ede2e4c4561f9b82f85de7e074c7323",
+    "run_attempt": 1,
+    "runtime_run": 41559093519,
+    "source_run": 41559093710,
+    "tree": "9345d5c92601f62ee702c9000c0dba7e0f394518",
+    "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "originalObservation": "2026-11-03 01:31:25 UTC",
+  "originalNonpassingState": {
+    "blocked_gates": [
+      "shared portable overall failed",
+      "typed Automation skipped",
+      "actual main App81 (including DVR3) skipped",
+      "startup DPS7 skipped",
+      "same-subject palette consumer skipped",
+      "reused MCP composition unavailable after skipped Automation",
+      "macOS rust-host queued"
+    ],
+    "historical_observation_only": true,
+    "linux_conclusion": "failure",
+    "linux_job_id": 125665070447,
+    "linux_status": "completed",
+    "macos_conclusion": null,
+    "macos_job_id": 125665070217,
+    "macos_status": "queued"
+  },
+  "recoverySubject": {
+    "sha": "5593e6d96e849ce5bf93de299aedeffca70b9568",
+    "tree": "17ddcd3b19126ece3cadb722ea7b9bbdc5dcb561",
+    "parent": "2ff201200b01e3d4b1dc74c816c2e610fea2e2d0"
+  },
+  "recoverySourceState": "R9 focused source repair approved and all15 API contents compared; new runtime evidence is separate and not promoted by this carrier.",
+  "archives": [
+    {
+      "directory": "original-8bdcf101",
+      "index": "original-8bdcf101/index.json",
+      "archive": {
+        "absolute_member_names": false,
+        "bytes": 6477004,
+        "compression_level": 9,
+        "file_count": 47,
+        "file_mode_octal": "0644",
+        "format": "USTAR inside gzip",
+        "gid": 0,
+        "git_blob_sha1": "03a33d3e92a2972188b67880402e3657ac240b0b",
+        "gname": "",
+        "gzip_filename": "",
+        "gzip_mtime": 0,
+        "member_name_base": "scratch root",
+        "member_order": "ascending UTF-8 path bytes",
+        "path": "original-runtime-evidence-8bdcf101.tar.gz",
+        "sha256": "11b775587788dcd5be9673237b9abbd32cd967fa74cdde0db0a3cc231cfce975",
+        "source_payloads_modified": false,
+        "tar_mtime": 0,
+        "uid": 0,
+        "uname": "",
+        "uncompressed_member_bytes": 10082264
+      }
+    },
+    {
+      "directory": "source-recovery-5593e6d9",
+      "index": "source-recovery-5593e6d9/index.json",
+      "archive": {
+        "path": "source-recovery-5593e6d9.tar.gz",
+        "bytes": 621978,
+        "sha256": "5ce001a1454b4e12452e71ebeea1e021202f6c18a787923de219f4b3df918515",
+        "gitBlob": "4e80bdc47445a986e020979981af1ba96c1b8a84"
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/index.json",
+      "source": "reviews/dvr-original-runtime-archive/archive-index.json",
+      "bytes": 77833,
+      "sha256": "bd4843acce019d8715717452e4daca8161a18560a68fe112d4cc7a69c0e328c1",
+      "blob": "1196223f9957c7185ed94a046b580e33f53f666f"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/source-recovery-5593e6d9/index.json",
+      "source": "reviews/dvr-r9-carrier/index.json",
+      "bytes": 6990,
+      "sha256": "691a89828510ef11984b61b2919d5251c87ce4a8cd21a3ce860360a14e017c3d",
+      "blob": "d18e02b8d7bcb2d671e919b9795496a63b5e9b49"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0001.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0001.bin",
+      "bytes": 384000,
+      "sha256": "6116e435a47f43bd3d709d844d7e389d12fc89cd5c637355e374005b1aef397a",
+      "blob": "78e183578c2e40bf3c62d03deec973a3a7520c9a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0002.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0002.bin",
+      "bytes": 384000,
+      "sha256": "3146274d3d3bc9e440ea26d593292f5ccb5ad87251e8a13aa651e292ec3eeaa5",
+      "blob": "bf50f5a8456213d2455488b4e2baf708944a14ac"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0003.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0003.bin",
+      "bytes": 384000,
+      "sha256": "52227ede577416c5a258344a26edc47a0b304618f0b568b5371716ce61c5c802",
+      "blob": "4e3915338846a82efba3cdb47c5a713222d94b03"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0004.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0004.bin",
+      "bytes": 384000,
+      "sha256": "12f1c8ca5a945faec1219df2491677b83ada15e7793acb8a2201c4b88b0dfc62",
+      "blob": "806ca3bc7deadffa17294921c991c3c154f0e60f"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0005.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0005.bin",
+      "bytes": 384000,
+      "sha256": "697c530083b7965e6f84dded8cae478bc21128d0486c762fc5381e99bfdac679",
+      "blob": "9b9a8bb987edb41c2ea4e31df64654af67662b64"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0006.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0006.bin",
+      "bytes": 384000,
+      "sha256": "77a09ee4cc32ac63d4c16550e67456ecad01edaffd4083d3134c69f1404196aa",
+      "blob": "69c71379ea14cb123415bae37cb47c91ec3288b6"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0007.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0007.bin",
+      "bytes": 384000,
+      "sha256": "1d3c14e3a89ea7ae4cb6f90f5112cf9a9562f14b9e9c6043131a8d9a7025f585",
+      "blob": "17ac7cb10ecd2bd3b85561b90fe34a6b267d7831"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0008.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0008.bin",
+      "bytes": 384000,
+      "sha256": "121bf8b77707e9fb565ae282d01b4cfb9609208720505cad958305cb428adcb8",
+      "blob": "a78cbe804c8f32387fa9712a081c4102afc97359"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0009.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0009.bin",
+      "bytes": 384000,
+      "sha256": "caf6e3244f7a94dedd95f98c8419154552df96e652c09fb2193c2ca5e9dc7a40",
+      "blob": "19acc2a829165244899fad5e9d238d96ac8281c6"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0010.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0010.bin",
+      "bytes": 384000,
+      "sha256": "9660cb655b721829b65cdf7a273d9acc0d715718ec2449d41970e03bb2c404fd",
+      "blob": "c560c9717777c2d8711a2bf5cab3b3dd96a840d9"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0011.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0011.bin",
+      "bytes": 384000,
+      "sha256": "32ee4842502c9201ff66bfca04c4b90291ecbbe627a0915f35a1ad4ef2e1292d",
+      "blob": "b3611c74272715f900027b589b6fd9cfb780c023"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0012.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0012.bin",
+      "bytes": 384000,
+      "sha256": "49f83ac5bc8daffa3eaf9d652c7adb8d3166f9fdac184351ef3ee261d2d4ebc1",
+      "blob": "451c300bb983a644b5ff2b8dd6a0d8e847b69dbc"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0013.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0013.bin",
+      "bytes": 384000,
+      "sha256": "ebd7353983ea6e1d8f48b628e1396e96daeb5b28d6c922ceda8a5492a1d5d409",
+      "blob": "0de0d18ce94e6a01c91bb248ece5820f67623a14"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0014.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0014.bin",
+      "bytes": 384000,
+      "sha256": "43c26e510e18e5f7eae182431351c81ed20f136ea2b3aa6d7cb7147189e0c3a6",
+      "blob": "ef0be1fe3998ed6addf42e57a49b1adfb665459a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0015.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0015.bin",
+      "bytes": 384000,
+      "sha256": "2b28d547a3c4ebd7c497fe8a97a112568dddd5270df186cd624159d723dded9e",
+      "blob": "5600c1b58b6a6a4ef979b5f954d7abb784e0b27f"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0016.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0016.bin",
+      "bytes": 384000,
+      "sha256": "15d8661a93281517d47dc852ba262c867581b0c46d02c9949e516a4a491f22a1",
+      "blob": "5e8a04c3ed51f9bf7c5879df396400b538d59762"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/original-8bdcf101/parts/original-runtime-evidence-8bdcf101.tar.gz.part0017.bin",
+      "source": "reviews/dvr-original-runtime-archive/parts/original-runtime-evidence-8bdcf101.tar.gz.part0017.bin",
+      "bytes": 333004,
+      "sha256": "9792e0fedf1eac3d887591d39c9578076ce18bc30ae8cd3d14fc4ee3df536225",
+      "blob": "72881e9f492f222e02835d63c0d1df5db481b5dc"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/source-recovery-5593e6d9/source-recovery-5593e6d9.tar.gz.part0001.bin",
+      "source": "reviews/dvr-r9-carrier/source-recovery-5593e6d9.tar.gz.part0001.bin",
+      "bytes": 384000,
+      "sha256": "82514d0d39cac56f0bad33cbd529d5593d53533ef59fc9e90909544607db7165",
+      "blob": "a6bd736e9b2a9e96ea81a95700b2df5de4a9b7e3"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/source-recovery-5593e6d9/source-recovery-5593e6d9.tar.gz.part0002.bin",
+      "source": "reviews/dvr-r9-carrier/source-recovery-5593e6d9.tar.gz.part0002.bin",
+      "bytes": 237978,
+      "sha256": "5c67fc1e3d7b63c538670fe95375725b686500def2067d216d06f5a64b208cce",
+      "blob": "7b38e003e1f2c3bab844105e703440ce2400dacf"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/dvr-original-runtime-fidelity.md",
+      "source": "reviews/dvr-original-runtime-fidelity.md",
+      "bytes": 8088,
+      "sha256": "5b1642cbf626ea64662265a276f3b71552f5ab0c16375093b6ae365de4ae0030",
+      "blob": "8f86cd688d75336aa1552b0af52c45c4e07e21d6"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/dvr-original-runtime-fidelity.json",
+      "source": "reviews/dvr-original-runtime-fidelity.json",
+      "bytes": 25897,
+      "sha256": "16cdc48d2d2256d60a7e15307d1171d92c5ee0ef2889279b82b5bbb53aacbba7",
+      "blob": "0e9372d9deb90f0c829bb043c147a2e4e0599621"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/dvr-r9-carrier-fidelity.md",
+      "source": "reviews/dvr-r9-carrier-fidelity.md",
+      "bytes": 7473,
+      "sha256": "979fc1089206d62fd47b49677f9ddbcdf387873747a51734b9d6ddb12212e162",
+      "blob": "5e04b764ff4b348d22832c533f38ab5259a7d561"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-pairing-revocation-recovery-647e0932-20261103/dvr-r9-carrier-fidelity.json",
+      "source": "reviews/dvr-r9-carrier-fidelity.json",
+      "bytes": 30609,
+      "sha256": "4a6d8c6215716a3c21176903d47917ddd77225d0329c126f505c39cb35ea40e6",
+      "blob": "8d75552c84dd72e990b7d04b568a9da4d86366e3"
+    }
+  ],
+  "fidelity": {
+    "original": "PASS, zero findings",
+    "recoverySource": "PASS, zero findings",
+    "rootFullReportsRead": true
+  },
+  "limits": [
+    "This commit carries evidence; it is not an executable subject or shipping SHA.",
+    "Source, review, byte identities, structural authority and runtime acceptance are distinct.",
+    "Original Linux failure, skipped consumers and historical queued macOS remain preserved.",
+    "No scoped unit verification, real ecosystem/device/platform acceptance or global flag promotion.",
+    "Task-local historical snapshots do not replace the single OCRM inventory/ledger/RTM."
+  ],
+  "completionFlags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "preparedAt": "2026-11-03T01:43:42.564673+00:00"
+}

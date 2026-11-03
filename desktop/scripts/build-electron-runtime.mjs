@@ -85,3 +85,27 @@ await build({
   entryPoints: [path.join(repoRoot, "source", "electron-preload", "preload-miniapp-tools.ts")],
   outfile: path.join(outPreload, "preload-miniapp-tools.cjs"),
 });
+
+// Compile the selected desktop boundary contract entries with the same module
+// resolution and Node target as the shipping Electron runtime.
+if (process.argv.includes("--plugin-skills-contracts")) {
+  const outContracts = path.join(desktopRoot, ".tmp-grok-electron", "ocrm-plugin");
+  await fs.mkdir(outContracts, { recursive: true });
+  for (const [entry, filename] of [
+    ["source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts", "host-plugin-skills-loader.contract.test.cjs"],
+    ["source/packages/cursor-plugins/loader.contract.test.ts", "loader.contract.test.cjs"],
+    ["source/electron-main/coordinator/coordinator-control-server.contract.test.ts", "coordinator-control-server.contract.test.cjs"],
+    ["source/electron-main/mcp/mcp-runtime.contract.test.ts", "mcp-runtime.contract.test.cjs"],
+    ["source/electron-main/main-edge-model.contract.test.ts", "main-edge-model.contract.test.cjs"],
+    ["source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts", "coordinator-account-runtime.contract.test.cjs"],
+    ["source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts", "coordinator-main-port-client.contract.test.cjs"],
+    ["source/electron-main/coordinator/coordinator-runtime.test.ts", "coordinator-runtime.test.cjs"],
+    ["source/electron-main/adapters/attachment-gateway.contract.test.ts", "attachment-gateway.contract.test.cjs"],
+  ]) {
+    await build({
+      ...common,
+      entryPoints: [path.join(repoRoot, entry)],
+      outfile: path.join(outContracts, filename),
+    });
+  }
+}

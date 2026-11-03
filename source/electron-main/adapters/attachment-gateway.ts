@@ -2,7 +2,7 @@ import { attachmentByteLimitForName } from "../../shared/media/attachment-limits
 import { getFilePreviewKind, previewKindNeedsBytes, type FilePreviewKind } from "../../shared/media/file-preview-kind.js";
 import { readWebpOrHeicDimensions } from "../../shared/media/image-dimensions.js";
 import { audioMimeFromPath, imageMimeFromPath, servableImageMimeFromPath, videoMimeFromPath } from "../../shared/media/image-mime.js";
-import { createAttachmentEdgePort, type AttachmentEdgeDeps, type AttachmentLegs } from "../attachments/attachments.js";
+import { createAttachmentEdgePort, type AttachmentEdgeDeps, type AttachmentLegs, type AttachmentLinkMetadata } from "../attachments/attachments.js";
 import {
   ATTACHMENT_PREVIEW_BYTE_CAP,
   getDesktopAttachmentStagingDir,
@@ -32,10 +32,17 @@ export interface ElectronAttachmentGatewayCompositionPorts {
   };
 }
 
+/** Optional native I/O seams; omitted shipping ports use the existing fs ABI. */
+export interface AttachmentGatewayFileSystemPorts {
+  readonly readStagedFile?: AttachmentEdgeDeps["readStagedFile"];
+  readonly openDownloadFile?: AttachmentEdgeDeps["openDownloadFile"];
+  readonly readImageFile?: (path: string) => Promise<Buffer>;
+}
+
 const REQUIRED_FUNCTIONS = [
   "getMainWindow", "onEdgeFailure", "videoMimeFromPath", "audioMimeFromPath",
   "displayableImageMimeFromPath", "buildMediaUrl", "resolveImage",
-  "fetchLinkMetadata", "boundPreviewImage", "previewKindNeedsBytes",
+  "captureRemoteOperation", "boundPreviewImage", "previewKindNeedsBytes",
   "getFilePreviewKind", "byteLimitForName", "getStagingDir",
   "isWithinStagingDir", "resolveSuggestedDownloadName",
   "resolveDefaultDownloadPath", "showSaveDialog", "createHiddenWindow",
@@ -44,10 +51,6 @@ const REQUIRED_FUNCTIONS = [
 
 function validateAttachmentDeps(deps: AttachmentEdgeDeps): AttachmentEdgeDeps {
   requireObject(deps, "attachmentGateway.deps");
-  requireObject(deps.legs, "attachmentGateway.legs");
-  for (const method of ["readAttachmentImage", "readAttachmentText", "readAttachmentChunk", "uploadAttachment"] as const) {
-    requireFunction(deps.legs[method], `attachmentGateway.legs.${method}`);
-  }
   requireObject(deps.nativeImage, "attachmentGateway.nativeImage");
   requireFunction(deps.nativeImage.createFromDataURL, "attachmentGateway.nativeImage.createFromDataURL");
   for (const method of REQUIRED_FUNCTIONS) requireFunction(deps[method], `attachmentGateway.${method}`);
@@ -74,6 +77,7 @@ export function createProductionAttachmentGatewayAdapter(
  */
 export function createProductionAttachmentGatewayBinding(
   electron: ElectronAttachmentGatewayCompositionPorts,
+  fileSystem: AttachmentGatewayFileSystemPorts = {},
 ): ElectronProductionAdapterBindings["attachmentGateway"] {
   requireFunction(electron?.app?.getPath, "attachmentGateway.electron.app.getPath");
   if (typeof electron?.BrowserWindow !== "function") {
@@ -85,9 +89,35 @@ export function createProductionAttachmentGatewayBinding(
   requireFunction(electron?.nativeImage?.createFromDataURL, "attachmentGateway.electron.nativeImage.createFromDataURL");
   return createProductionAttachmentGatewayAdapter({
     resolveDeps(context) {
-      const legs = context.coordinatorLegs.legs as unknown as AttachmentLegs;
       return {
-        legs,
+        ...(fileSystem.readStagedFile == null ? {} : { readStagedFile: fileSystem.readStagedFile }),
+        ...(fileSystem.openDownloadFile == null ? {} : { openDownloadFile: fileSystem.openDownloadFile }),
+        captureRemoteOperation() {
+          const session = context.requireCoordinator().captureMainDataSession();
+          if (session == null) throw new Error("Coordinator attachment session is unavailable.");
+          const invoke = async <T>(method: keyof AttachmentLegs | "fetchLinkMetadata", request: unknown): Promise<T> => {
+            session.assertCurrent();
+            const call = session.legs[method];
+            if (typeof call !== "function") throw new Error("Coordinator attachment method is unavailable.");
+            const result = await call(request);
+            session.assertCurrent();
+            return result as T;
+          };
+          return {
+            assertCurrent: () => session.assertCurrent(),
+            legs: {
+              readAttachmentImage: (request) => invoke("readAttachmentImage", request),
+              readAttachmentText: (request) => invoke("readAttachmentText", request),
+              readAttachmentChunk: (request) => invoke("readAttachmentChunk", request),
+              uploadAttachment: (request) => invoke("uploadAttachment", request),
+            },
+            async fetchLinkMetadata(request) {
+              const result = await invoke<unknown>("fetchLinkMetadata", request);
+              return typeof result === "object" && result != null && !Array.isArray(result)
+                ? result as AttachmentLinkMetadata : null;
+            },
+          };
+        },
         getMainWindow: context.getMainWindow,
         onEdgeFailure: (failure) => {
           context.readTelemetry()?.telemetry.reportAttachmentEdgeFailure?.(failure);
@@ -100,17 +130,8 @@ export function createProductionAttachmentGatewayBinding(
           nativeImage: electron.nativeImage,
           readPortableDimensions: (buffer) => readWebpOrHeicDimensions(buffer),
           servableImageMimeFromPath: (value) => servableImageMimeFromPath(value) ?? null,
+          ...(fileSystem.readImageFile == null ? {} : { readFile: fileSystem.readImageFile }),
         }),
-        fetchLinkMetadata: async ({ cacheDir, url }) => {
-          const fetchLinkMetadata = context.coordinatorLegs.legs.fetchLinkMetadata;
-          if (typeof fetchLinkMetadata !== "function") {
-            throw new Error("Coordinator link-metadata port is unavailable.");
-          }
-          const result = await fetchLinkMetadata({ cacheDir, url });
-          return typeof result === "object" && result != null && !Array.isArray(result)
-            ? result as Record<string, unknown> & { imageDataUrl?: string | null; faviconDataUrl?: string | null }
-            : null;
-        },
         boundPreviewImage: (dataUrl, target, resize) => boundLinkPreviewImageDataUrl(
           dataUrl ?? null,
           target,

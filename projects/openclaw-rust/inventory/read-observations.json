@@ -1,0 +1,1463 @@
+{
+  "format_version": 1,
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "reviewer": "ChatGPT fixed-U source readers; per-read attribution/history in dossier",
+  "evidence_refs": [
+    "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+    "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+    "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+    "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
+    "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+    "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+    "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-range-correction.json",
+    "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json"
+  ],
+  "entries": [
+    {
+      "path": "src/agents/model-selection-persisted.ts",
+      "sha": "4cd75b75b5013ec450fda79be2ca454cdbd60d13",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 62
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": [
+        "packages/normalization-core/src/string-coerce.ts",
+        "src/agents/defaults.ts",
+        "src/agents/model-selection-normalize.ts",
+        "src/agents/model-fallback.types.ts",
+        "src/agents/model-ref-shared.ts"
+      ]
+    },
+    {
+      "path": "src/agents/model-selection-normalize.ts",
+      "sha": "f05e55fdb871be46b4ae2b13ded4e38c93c54bba",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 46
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": [
+        "src/agents/model-ref-shared.ts"
+      ]
+    },
+    {
+      "path": "src/agents/model-ref-shared.ts",
+      "sha": "6419f7728cf41a76c62364efb15337b823fb9d14",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 180
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/defaults.ts",
+      "sha": "a56878b446309d0b42effa8b29244408a9475fa7",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 49
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/model-fallback.types.ts",
+      "sha": "5c10c28786b22eb45a024d726f7524032b3902da",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 42
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/model-selection-config.ts",
+      "sha": "045ebdf5c49479871758fdfd4d15b6f95a5c38d5",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 148
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/configured-provider-fallback.ts",
+      "sha": "750fe40902176d40cb8afed3a5ef026683d5f405",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 54
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/normalization-core/src/string-coerce.ts",
+      "sha": "445a9cc4f8daff07f033c3958baf2b798e240e9d",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 132
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M32",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/model-catalog-core/src/provider-id.ts",
+      "sha": "07278f5052d2be88c2244bd25b6bd265e6fb4cfd",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 37
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/model-catalog-core/src/model-catalog-refs.ts",
+      "sha": "48b2d09a598f59d0e7c1fb2354af03c88f33f3bb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 78
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/model-catalog-core/src/provider-model-id-normalization.ts",
+      "sha": "95c7a1b613233a925eacb60d06c68d2804ddcb0e",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 221
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/model-catalog-core/src/provider-model-id-normalize.ts",
+      "sha": "f256d2d0cd0ba01279775690297066726cdf09f7",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 44
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/model-catalog-core/src/model-catalog-refs.test.ts",
+      "sha": "e8b02394338eb4a6cd6d3543dc006ded65fe9ada",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 38
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/transports/openai-responses-params-internal.ts",
+      "sha": "84cdbbbf4f3c915df2ffe2dfcd218bedcb70c280",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 245
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/providers/openai-prompt-cache.ts",
+      "sha": "f36f2050676df97653beda865fa527975a5915ae",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 66
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/transports/openai-responses-payload-policy.ts",
+      "sha": "f2d774a47bd84e86c7ade3500398321e666a74c8",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 421
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/transports/openai-responses-continuation.ts",
+      "sha": "7afa5d6664ab9151d4f9ae996dd3f0ebddc5d74a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 777
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": [
+        "packages/normalization-core/src/record-coerce.ts",
+        "packages/normalization-core/src/node-crypto.ts",
+        "packages/ai/src/transports/openai-responses-reasoning-update.ts"
+      ]
+    },
+    {
+      "path": "packages/ai/src/transports/openai-responses-reasoning-update.ts",
+      "sha": "81844147afc9110811ed54838ef0078bf1594ab5",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 114
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/transports/openai-responses-client.ts",
+      "sha": "0ea1b3c6063ea1a2a4dc1a9fa0ce988684811282",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 708
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": [
+        "packages/ai/src/transports/openai-responses-continuation.ts",
+        "packages/ai/src/transports/openai-responses-params-internal.ts"
+      ]
+    },
+    {
+      "path": "packages/normalization-core/src/record-coerce.ts",
+      "sha": "78eba9cd0e4c75f94e71dfb3fcb7f4cf4eeeef16",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 83
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M32",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/normalization-core/src/node-crypto.ts",
+      "sha": "bef8345b9e150f57589e70bd0bf25a3fd3e73f41",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 51
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M32",
+      "dependency_edges": [
+        "packages/normalization-core/src/stable-stringify.ts"
+      ]
+    },
+    {
+      "path": "packages/normalization-core/src/stable-stringify.ts",
+      "sha": "53334f3bf5ed60bd49e6abde386fabc046b47403",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 142
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M32",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/normalization-core/src/index.ts",
+      "sha": "93a00e422cc308571d22aa819a2498105329146e",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 18
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M32",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/transports/openai-responses-continuation.test.ts",
+      "sha": "a45413846d46aa94e3b8e370cee9b689c98857db",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 260
+        },
+        {
+          "start_line": 350,
+          "end_line": 425
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/model-resolution-consistency.test.ts",
+      "sha": "d9b9b82278faca157f64c9682596a22638eb6efa",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 292,
+          "end_line": 322
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/normalization-core/package.json",
+      "sha": "13606635cecef520cc2a8ebc4e10d7769559f59f",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 160
+        }
+      ],
+      "language_kind": "json",
+      "module_id": "OCRM-M31",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/model-catalog-core/package.json",
+      "sha": "613cef0166be6e14ed563edd4e27a2b5134ca57b",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 67
+        }
+      ],
+      "language_kind": "json",
+      "module_id": "OCRM-M31",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/package.json",
+      "sha": "2ee99c5de54591d5dcad3b7b29cde9fc07549718",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 177
+        }
+      ],
+      "language_kind": "json",
+      "module_id": "OCRM-M31",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/model-selection.ts",
+      "sha": "ff1d47f130b0695a5efec953100ccee5d70a70b5",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 257
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/model-selection-resolve.ts",
+      "sha": "1c46418286644f4febcfd0deb94d7b81ceb01c02",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 76
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/model-selection-shared.ts",
+      "sha": "a98c02f4678c68c469147d079b7693d646c99f4b",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 72
+        },
+        {
+          "start_line": 396,
+          "end_line": 435
+        },
+        {
+          "start_line": 560,
+          "end_line": 799
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/model-resolution.ts",
+      "sha": "e2b4cc262a782e9c968d87d2b0efe38772db1a5a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 79
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run-entry-model-selection.ts",
+      "sha": "e9d494da1192bcd08fe872bde1e179083c6e3cea",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 68
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/config/model-input.ts",
+      "sha": "ac8f21493649864348ab503fa7643b4600c5d821",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 160
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M02",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/server-methods/method-authorization.ts",
+      "sha": "ac99d03f94f35de81ff15cfb70bb84bb5fbc911a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 125
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/gateway-protocol/src/index.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/gateway/cron-creator-authority-grant.ts",
+        "src/gateway/in-process-session-run.ts",
+        "src/gateway/method-scopes.ts",
+        "src/gateway/methods/descriptor.ts",
+        "src/gateway/operator-approval-authorization.ts",
+        "src/gateway/operator-role-policy.ts",
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/role-policy.ts",
+        "src/gateway/server-methods/shared-types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/method-scopes.ts",
+      "sha": "a0bd7baa2384890202a25ed146aaa227d2fc11cb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 343
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "packages/normalization-core/src/record-coerce.ts",
+        "packages/normalization-core/src/string-coerce.ts",
+        "src/infra/node-commands.ts",
+        "src/plugins/runtime/gateway-request-scope.ts",
+        "src/shared/gateway-method-policy.ts",
+        "src/shared/operator-scope-compat.ts",
+        "src/shared/session-method-scopes-base.ts",
+        "src/shared/session-method-scopes.ts",
+        "src/gateway/agent-command-policy.ts",
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/node-browser-proxy-policy.ts",
+        "src/gateway/operator-scopes.ts"
+      ]
+    },
+    {
+      "path": "src/shared/operator-scope-compat.ts",
+      "sha": "a265fb895a8535378e9bb9626c19a030df463e1f",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 119
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/role-policy.ts",
+      "sha": "09247fd9cfeb26a2bf5642d325d41f3d397a709a",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 24
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/methods/core-method-policy.ts",
+        "src/gateway/role-policy.types.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/operator-scopes.ts",
+      "sha": "46213c1aeb779f618139cf2824d2b6274ee74bdb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 49
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/methods/core-method-policy.ts",
+      "sha": "2b64d1738783b5261d091ef40e7f34606fd1f0f3",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 124
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": [
+        "src/gateway/operator-scopes.ts",
+        "src/gateway/methods/core-descriptor-types.ts",
+        "src/gateway/methods/core-descriptors.ts",
+        "src/gateway/methods/core-profile-access.ts",
+        "src/gateway/methods/descriptor.ts"
+      ]
+    },
+    {
+      "path": "src/gateway/methods/core-descriptors.ts",
+      "sha": "852432d87eecbd5d68bb73b5435f23daa8862377",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 44,
+          "end_line": 51
+        },
+        {
+          "start_line": 229,
+          "end_line": 235
+        },
+        {
+          "start_line": 242,
+          "end_line": 248
+        },
+        {
+          "start_line": 257,
+          "end_line": 263
+        },
+        {
+          "start_line": 291,
+          "end_line": 301
+        },
+        {
+          "start_line": 367,
+          "end_line": 373
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-session-prepare.ts",
+      "sha": "b97bcf04649ea5787a341182123c62b20450bd6e",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 759
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": [
+        "src/agents/embedded-agent-runner/run/pre-persisted-user-turn.ts",
+        "src/agents/embedded-agent-runner/run/attempt-transcript-lifecycle.ts"
+      ]
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-session-runtime-prepare.ts",
+      "sha": "da120eecf356c6b0e27d0add0b1b7e843bf747ec",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 530
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": [
+        "src/agents/embedded-agent-runner/run/attempt-permission-prompt.ts"
+      ]
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-session-settle.ts",
+      "sha": "e5735df007a1a469257c8797e6b2a2ce12e3ff0f",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 224
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": [
+        "src/agents/embedded-agent-runner/run/attempt-transcript-lifecycle.ts",
+        "src/agents/embedded-agent-runner/run/attempt-subscription-cleanup.ts"
+      ]
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-session-recovery.test.ts",
+      "sha": "de442b4724c1fdeebca5e820b71a8ff5842953f7",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 280
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": [
+        "src/agents/embedded-agent-runner/run/attempt-session-prepare.ts"
+      ]
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/pre-persisted-user-turn.ts",
+      "sha": "346f5d38c39b9805a9f0f9c8768f0cb3c632cb82",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 623
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M07",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-permission-prompt.ts",
+      "sha": "4d02a1608048625e944a6aa202096d727725c1ea",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 218
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M10",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-transcript-lifecycle.ts",
+      "sha": "99daab9dec252a1826c09813e357704c66b3cea1",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 199
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M07",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-subscription-cleanup.ts",
+      "sha": "c90c99156ecf10812708c221b014df9900a8ffe0",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 89
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": [
+        "src/agents/embedded-agent-runner/wait-for-idle-before-flush.ts"
+      ]
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/wait-for-idle-before-flush.ts",
+      "sha": "9fa2d2954c1d3c9421a94ef5cdc22ad75b3cc3cb",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 40
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/server-methods/chat-abort-handler.ts",
+      "sha": "5c24cf496ed11cea105887d1176f23468e461ec8",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 721
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/server-methods/chat.ts",
+      "sha": "990a1bcba90efe1a66eed638dc3fac16fff4df83",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 80
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/execution-auth-binding.ts",
+      "sha": "5861377169b54c96e42164997a8cf078d7ed0e8c",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 295
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/providers/openai-chatgpt-responses.ts",
+      "sha": "c6e51477f738eabebe67360c0633dd426e9be673",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 100
+        },
+        {
+          "start_line": 227,
+          "end_line": 265
+        },
+        {
+          "start_line": 353,
+          "end_line": 378
+        },
+        {
+          "start_line": 380,
+          "end_line": 565
+        },
+        {
+          "start_line": 1369,
+          "end_line": 1383
+        },
+        {
+          "start_line": 1360,
+          "end_line": 1385
+        },
+        {
+          "start_line": 1389,
+          "end_line": 1415
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/utils/oauth/openai-chatgpt-jwt.ts",
+      "sha": "01155083b3d310ca6491889a110d30d339e2c076",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 32
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/ai/src/providers/openai-chatgpt-request-headers.ts",
+      "sha": "a7dbeb0864316a06c8eb14a5086a74b6f5a51537",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 32
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "extensions/openai/openai-chatgpt-oauth-flow.runtime.ts",
+      "sha": "959d2185f78d8d2135556a42506a2f3a73a1d7ec",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 45
+        },
+        {
+          "start_line": 49,
+          "end_line": 91
+        },
+        {
+          "start_line": 171,
+          "end_line": 180
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M06",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-finalize.ts",
+      "sha": "af91d5efc6ff90b29623d5a20416df978362bf16",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 205,
+          "end_line": 320
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/attempt-prompt-helpers.ts",
+      "sha": "674007e41e588021fb83fee8c5f8c8aafa8ef47b",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 350,
+          "end_line": 472
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/compaction-runtime-context.ts",
+      "sha": "aec5f3992a61d6f43b19c1e9e0b94411073b5c44",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 91,
+          "end_line": 147
+        },
+        {
+          "start_line": 279,
+          "end_line": 348
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/context-engine-maintenance.ts",
+      "sha": "67cc1a115ed76d246af17fc1a49b33a49c5efe3d",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 254,
+          "end_line": 310
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/context-engine-maintenance-execution.ts",
+      "sha": "f724518a8f5e9db9a8c65316d7c796a74ccac5a5",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 136
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/compact.types.ts",
+      "sha": "099b2d14d18b00f20a9adb4adbe0ffb14176b214",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 172
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/compaction-runtime-preparation.ts",
+      "sha": "a555f37cbc4caa8056a59cbc6e8f5ca06d6f7b82",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 254
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/direct-compaction-preparation.ts",
+      "sha": "78ce1616200e22c0926b3a537063f0be85e73e81",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 161,
+          "end_line": 289
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/prepared-compaction-runtime.ts",
+      "sha": "03267c63f18efa56dfba9eaa0b9f7f8f0a8c23b4",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 72,
+          "end_line": 107
+        },
+        {
+          "start_line": 168,
+          "end_line": 240
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/compaction-session-execution.ts",
+      "sha": "d11e6e202af75483219b87e2b0a9fed9c30fd3ef",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 75,
+          "end_line": 112
+        },
+        {
+          "start_line": 278,
+          "end_line": 311
+        },
+        {
+          "start_line": 482,
+          "end_line": 584
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/compact.ts",
+      "sha": "0783677fd762d642169eed15189222942b92a4c5",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 422,
+          "end_line": 490
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/compaction-runtime.ts",
+      "sha": "0f3967e921acb9119e29dd606d9e258362ec1885",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 51,
+          "end_line": 100
+        },
+        {
+          "start_line": 130,
+          "end_line": 214
+        },
+        {
+          "start_line": 235,
+          "end_line": 282
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/embedded-agent-runner/run/params.ts",
+      "sha": "125330c1c82bc66846cca341df3d1852888fa2a8",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 140,
+          "end_line": 182
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/compaction.ts",
+      "sha": "c5230ec9cb44d857edee5a7dac4134dfdf701f45",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 127
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/sessions/index.ts",
+      "sha": "b6aafed0640c1f0a765c14068040b7e209df501c",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 15
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/sessions/compaction/compaction.ts",
+      "sha": "8cc6dc9c87269c5d64de1bf4352365a79bfd57dd",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 50
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/sessions/compaction/runtime.ts",
+      "sha": "adfc2f1cca3d58d0ebfd0391dde16a8cd7d6fed1",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 11
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/runtime/index.ts",
+      "sha": "53d1b5e172aad55161086281df7297416bb03dbf",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 38
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/plugin-sdk/agent-core.ts",
+      "sha": "438f5c49265021b9f674944133d4d06aa8430409",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 31
+        },
+        {
+          "start_line": 44,
+          "end_line": 69
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/agent-core/src/index.ts",
+      "sha": "3a4395f8e0991e85c6f7fe3a7af5ec65d95391fb",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 29,
+          "end_line": 50
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/agent-core/src/harness/compaction/compaction.ts",
+      "sha": "9ee5706cfd94a75f36e43752e16d1f75d9975147",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 310,
+          "end_line": 366
+        },
+        {
+          "start_line": 555,
+          "end_line": 627
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "packages/agent-core/src/harness/compaction/summarization-completion.ts",
+      "sha": "7e4b86c73a22a0cd942f36dd73d857f4cb3c5669",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 63,
+          "end_line": 203
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M08",
+      "dependency_edges": []
+    },
+    {
+      "path": "extensions/memory-core/src/dreaming.ts",
+      "sha": "bcf1672d7538bbeba3f9d44e4097b78e8a995773",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 657
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M20",
+      "dependency_edges": []
+    },
+    {
+      "path": "extensions/memory-core/src/dreaming-phases.ts",
+      "sha": "c680bde47acabf6883d33ce823da664c3886ad10",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 1151,
+          "end_line": 1216
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M20",
+      "dependency_edges": []
+    },
+    {
+      "path": "extensions/memory-core/src/dreaming-narrative.ts",
+      "sha": "a416f9bba5de8fa323b1bf55a68d41bab070ee61",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 319
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M20",
+      "dependency_edges": []
+    },
+    {
+      "path": "extensions/memory-core/src/dreaming-consolidation.ts",
+      "sha": "a3529dfaa42674a74ca92d677223df77d9f236a1",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 383,
+          "end_line": 476
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M20",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/auto-reply/reply/agent-runner-memory.ts",
+      "sha": "2f479b8d69f045f488ce52a3a95b8a59ebceaa7e",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 717,
+          "end_line": 930
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M20",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/plugin-sdk/runtime-store.ts",
+      "sha": "aadabab915d3b93d132ae72e0206c2067fd44e68",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 89
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M16",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/plugins/runtime/index.ts",
+      "sha": "299c992f1c5888de041fd87ea6bb82246de20a68",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 109,
+          "end_line": 137
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M16",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/plugins/runtime/runtime-llm.runtime.ts",
+      "sha": "999607e46af3ce838c96e4dd67058cda4e82dd94",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 156,
+          "end_line": 452
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M16",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/plugins/runtime/runtime-llm-operator-authority.ts",
+      "sha": "89882d0d875c64bb2274a303fd51d15343b032f0",
+      "read_status": "read-complete",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 97
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M16",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/agents/simple-completion-runtime.ts",
+      "sha": "8b4b2fd441177d30946d5302116b87afd9a21ed3",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 120,
+          "end_line": 198
+        },
+        {
+          "start_line": 433,
+          "end_line": 560
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M05",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/server-plugins.ts",
+      "sha": "b54d1b3038fc5eaf5ad2e9ef57cfc75e8ce89859",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 295,
+          "end_line": 373
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    },
+    {
+      "path": "src/gateway/server-plugin-subagent-runtime.ts",
+      "sha": "2accb0ec18020ffb1d41660f3e5e9be45130a5a4",
+      "read_status": "partial",
+      "read_ranges": [
+        {
+          "start_line": 1,
+          "end_line": 82
+        },
+        {
+          "start_line": 349,
+          "end_line": 487
+        }
+      ],
+      "language_kind": "typescript",
+      "module_id": "OCRM-M04",
+      "dependency_edges": []
+    }
+  ]
+}

@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 use std::fs;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak, mpsc};
 use std::time::Duration;
 
 use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
 use mahayana_host_runtime::extensions::memory::memory_synthesis_service::{
     MEMORY_SYNTHESIS_DEADLINE_MS, MEMORY_SYNTHESIS_DEBOUNCE_MS,
     MEMORY_SYNTHESIS_POLL_INTERVAL_MS, MemoryEvidence, MemorySynthesisOptions,
-    MemorySynthesisService, SynthesisOutcome, SynthesisReportOutcome,
+    MemorySynthesisService, SynthesisInferenceError, SynthesisModelJob, SynthesisOutcome,
+    SynthesisReportOutcome, SynthesisTarget,
     bounded_evidence_text, parse_memory_synthesis_changes, synthesis_request_json,
     synthesis_system_prompt, uses_known_evidence, verification_request_json,
     verification_system_prompt,
@@ -108,7 +109,7 @@ fn proposal_and_verification_commit_through_synthesis_target() {
             }]}))
         }),
     );
-    options.verify = Some(Arc::new(|_request, _cancel| Ok(true)));
+    options.set_verifier(Arc::new(|_request, _cancel| Ok(true)));
     options.debounce = Duration::from_millis(1);
     options.deadline = Duration::from_secs(1);
     options.poll_interval = Duration::from_secs(60);
@@ -160,7 +161,7 @@ fn verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound() {
             }]}))
         }),
     );
-    options.verify = Some(Arc::new(|_request, _cancel| Ok(false)));
+    options.set_verifier(Arc::new(|_request, _cancel| Ok(false)));
     options.debounce = Duration::from_secs(60);
     options.deadline = Duration::from_secs(1);
     options.poll_interval = Duration::from_secs(60);
@@ -275,7 +276,7 @@ fn synthesis_deadline_cancels_verification_and_reports_terminal_failure() {
             }]}))
         }),
     );
-    options.verify = Some(Arc::new(move |_request, cancel| {
+    options.set_verifier(Arc::new(move |_request, cancel| {
         while !cancel.is_cancelled() {
             std::thread::sleep(Duration::from_millis(1));
         }
@@ -304,4 +305,177 @@ fn synthesis_deadline_cancels_verification_and_reports_terminal_failure() {
     assert_eq!(store.count_memories(), 0);
     service.dispose();
     let _ = fs::remove_dir_all(root);
+}
+
+fn options_for_job(
+    store: Arc<FileMemoryStore>,
+    factory: Arc<dyn Fn() -> SynthesisModelJob + Send + Sync>,
+) -> MemorySynthesisOptions {
+    let list_target: Arc<dyn SynthesisTarget> = store;
+    let get_target = Arc::clone(&list_target);
+    let mut options = MemorySynthesisOptions::new_with_job_factory(
+        Arc::new(move || vec![("agent".into(), Arc::clone(&list_target))]),
+        Arc::new(move |id| (id == "agent").then(|| Arc::clone(&get_target))),
+        factory,
+    );
+    options.retry_initial = Duration::from_millis(1);
+    options.retry_max = Duration::from_millis(1);
+    options
+}
+
+#[test]
+fn typed_identity_refusals_settle_without_retry_or_temporal_review() {
+    for refusal in [
+        SynthesisInferenceError::Authentication,
+        SynthesisInferenceError::Configuration,
+        SynthesisInferenceError::Cancelled,
+    ] {
+        let (root, store) = temp_store();
+        let now = 1_700_000_000_000;
+        store.add_memory("Existing memory remains", now, MemoryKind::Profile).unwrap();
+        store.mark_temporal_review(now
+            - mahayana_host_runtime::extensions::memory::memory_synthesis_service::MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS
+            - 1).unwrap();
+        let marker = store.get_location().join(".dreaming/next-refresh-at");
+        let before = fs::read(&marker).unwrap();
+        let snapshot = store.prepare_synthesis();
+        let factories = Arc::new(AtomicUsize::new(0));
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let factory_count = Arc::clone(&factories);
+        let proposed_count = Arc::clone(&attempts);
+        let mut options = options_for_job(Arc::clone(&store), Arc::new(move || {
+            factory_count.fetch_add(1, Ordering::SeqCst);
+            let attempts = Arc::clone(&proposed_count);
+            let refusal = refusal.clone();
+            SynthesisModelJob::new(Arc::new(move |_, _| {
+                attempts.fetch_add(1, Ordering::SeqCst);
+                Err(refusal.clone())
+            }), None)
+        }));
+        options.now = Arc::new(move || now);
+        options.retry_attempts = 3;
+        let reports = Arc::new(Mutex::new(Vec::new()));
+        let reported = Arc::clone(&reports);
+        options.report = Some(Arc::new(move |report| reported.lock().unwrap().push(report)));
+        let service = MemorySynthesisService::new(options);
+        service.start();
+        service.record_turn("agent", Some("refused-evidence".into()), "u", "a", now);
+        assert_eq!(service.run_now(), vec![SynthesisOutcome::Failed]);
+        assert_eq!(factories.load(Ordering::SeqCst), 1);
+        assert_eq!(attempts.load(Ordering::SeqCst), 1, "typed refusals are terminal");
+        assert_eq!(fs::read(&marker).unwrap(), before);
+        assert_eq!(store.prepare_synthesis(), snapshot);
+        assert!(store.is_temporal_review_due(now));
+        assert_eq!(reports.lock().unwrap().len(), 1);
+        assert_eq!(reports.lock().unwrap()[0].outcome, SynthesisReportOutcome::Failed);
+        assert!(service.run_now().is_empty());
+        service.dispose();
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[test]
+fn one_snapshot_factory_survives_worker_timeout_and_retry() {
+    let (root, store) = temp_store();
+    let factories = Arc::new(AtomicUsize::new(0));
+    let factory_count = Arc::clone(&factories);
+    let observed_jobs = Arc::new(Mutex::new(Vec::new()));
+    let jobs = Arc::clone(&observed_jobs);
+    let (cancelled_tx, cancelled_rx) = mpsc::sync_channel(1);
+    let mut options = options_for_job(Arc::clone(&store), Arc::new(move || {
+        let job_id = factory_count.fetch_add(1, Ordering::SeqCst) + 1;
+        let attempts = Arc::new(AtomicUsize::new(0));
+        let jobs = Arc::clone(&jobs);
+        let cancelled = cancelled_tx.clone();
+        SynthesisModelJob::new(Arc::new(move |request, cancel| {
+            jobs.lock().unwrap().push(job_id);
+            if attempts.fetch_add(1, Ordering::SeqCst) == 0 {
+                while !cancel.is_cancelled() {
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                let _ = cancelled.try_send(());
+                return Err(SynthesisInferenceError::Cancelled);
+            }
+            Ok(json!({"changes":[{
+                "action":"create","content":"Retained snapshot after timeout","kind":"profile",
+                "sourceEvidenceIds":[request.new_evidence[0].id],
+            }]}))
+        }), Some(Arc::new(|_, _| Ok(true))))
+    }));
+    options.deadline = Duration::from_millis(200);
+    options.retry_attempts = 2;
+    let service = MemorySynthesisService::new(options);
+    service.start();
+    service.record_turn("agent", Some("timeout-evidence".into()), "u", "a", 1);
+    assert_eq!(service.run_now(), vec![SynthesisOutcome::Committed]);
+    cancelled_rx.recv_timeout(Duration::from_secs(3)).expect("first worker observed its deadline");
+    assert_eq!(factories.load(Ordering::SeqCst), 1);
+    assert_eq!(*observed_jobs.lock().unwrap(), vec![1, 1],
+        "a timed-out worker and its retry must retain the same allocated job");
+    assert_eq!(store.prepare_synthesis().memories.iter()
+        .filter(|memory| memory.content == "Retained snapshot after timeout").count(), 1);
+    assert!(service.run_now().is_empty());
+    service.dispose();
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence() {
+    let (root, store) = temp_store();
+    let now = 1_700_000_000_000;
+    store.add_memory("Initial explicit memory", now, MemoryKind::Profile).unwrap();
+    let refresh = store.get_location().join(".dreaming/next-refresh-at");
+    let before_refresh = fs::read(&refresh).ok();
+    let factories = Arc::new(AtomicUsize::new(0));
+    let factory_count = Arc::clone(&factories);
+    let requests = Arc::new(Mutex::new(Vec::new()));
+    let captured = Arc::clone(&requests);
+    let current_service = Arc::new(Mutex::new(None::<Weak<MemorySynthesisService>>));
+    let queued_service = Arc::clone(&current_service);
+    let changed_store = Arc::clone(&store);
+    let mut options = options_for_job(Arc::clone(&store), Arc::new(move || {
+        let job_id = factory_count.fetch_add(1, Ordering::SeqCst) + 1;
+        let requests = Arc::clone(&captured);
+        let service = Arc::clone(&queued_service);
+        let store = Arc::clone(&changed_store);
+        SynthesisModelJob::new(Arc::new(move |request, _| {
+            requests.lock().unwrap().push(request.clone());
+            if job_id == 1 {
+                store.add_memory("Concurrent explicit memory", now, MemoryKind::Profile).unwrap();
+                service.lock().unwrap().as_ref().unwrap().upgrade().unwrap()
+                    .record_turn("agent", Some("evidence-2".into()), "new user", "new answer", now);
+            }
+            Ok(json!({"changes":[{
+                "action":"create","content":"Grounded resnapshot result","kind":"profile",
+                "sourceEvidenceIds":request.new_evidence.iter().map(|item| item.id.clone()).collect::<Vec<_>>(),
+            }]}))
+        }), Some(Arc::new(|_, _| Ok(true))))
+    }));
+    options.now = Arc::new(move || now);
+    options.retry_attempts = 1;
+    let service = Arc::new(MemorySynthesisService::new(options));
+    *current_service.lock().unwrap() = Some(Arc::downgrade(&service));
+    service.start();
+    service.record_turn("agent", Some("evidence-1".into()), "user", "answer", now);
+    assert_eq!(service.run_now(), vec![SynthesisOutcome::Stale]);
+    assert_eq!(factories.load(Ordering::SeqCst), 1);
+    assert_eq!(fs::read(&refresh).ok(), before_refresh);
+    assert!(!store.prepare_synthesis().memories.iter()
+        .any(|memory| memory.content == "Grounded resnapshot result"));
+    assert_eq!(service.run_now(), vec![SynthesisOutcome::Committed]);
+    assert_eq!(factories.load(Ordering::SeqCst), 2, "Stale starts a new snapshot admission");
+    let requests = requests.lock().unwrap();
+    assert_eq!(requests.len(), 2);
+    assert_eq!(requests[0].new_evidence.iter().map(|item| item.id.as_str()).collect::<Vec<_>>(),
+        vec!["evidence-1"]);
+    assert_eq!(requests[1].new_evidence.iter().map(|item| item.id.as_str()).collect::<Vec<_>>(),
+        vec!["evidence-1", "evidence-2"]);
+    assert!(requests[1].current_memories.iter()
+        .any(|memory| memory.content == "Concurrent explicit memory"));
+    drop(requests);
+    assert_eq!(store.prepare_synthesis().memories.iter()
+        .filter(|memory| memory.content == "Grounded resnapshot result").count(), 1);
+    assert!(service.run_now().is_empty());
+    service.dispose();
+    fs::remove_dir_all(root).unwrap();
 }

@@ -6,7 +6,7 @@ use chrono::{DateTime, Local, TimeZone, Utc};
 use chrono_tz::Tz;
 use serde_json::Value;
 
-use crate::automations::automation::AutomationRecord;
+use crate::automations::automation::{AutomationRecord, AutomationRun};
 use crate::automations::automation_store::FileAutomationStore;
 use crate::automations::automation_trigger::{build_trigger_event_context_block, describe_trigger_event};
 use crate::automations::routine_notices::{
@@ -18,6 +18,89 @@ use super::sand_automation_failure::{
 
 pub const AUTOMATION_WAKE_CUE: &str = "[routine]";
 pub const MAX_EVENTS_IN_AUTOMATION_WAKE: usize = 25;
+pub const CRON_SESSION_RETENTION_DEFAULT_MS: u64 = 24 * 60 * 60 * 1_000;
+pub const CRON_SESSION_SWEEP_THROTTLE_MS: u64 = 5 * 60 * 1_000;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CronSessionRetentionPolicy {
+    Disabled,
+    DurationMs(u64),
+}
+
+/// Owner-backed terminal facts for one automation run. A snapshot is only
+/// publishable when every field was read successfully at the same boundary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AutomationRunFenceSnapshot {
+    pub active_controller: bool,
+    pub pending_outgoing_media: bool,
+    pub unsettled_subagent: bool,
+}
+
+/// Resolve the upstream-compatible retention policy without consulting any
+/// filesystem, automation history, or session row. `false` and zero disable
+/// retention; malformed, negative, or non-finite values use the 24-hour
+/// default. Positive JSON numbers are interpreted as milliseconds and are
+/// clamped to the representable `u64` range.
+pub fn parse_cron_session_retention(
+    value: Option<&Value>,
+) -> CronSessionRetentionPolicy {
+    let Some(value) = value else {
+        return CronSessionRetentionPolicy::DurationMs(
+            CRON_SESSION_RETENTION_DEFAULT_MS,
+        );
+    };
+    if value == &Value::Bool(false) {
+        return CronSessionRetentionPolicy::Disabled;
+    }
+    let Some(raw) = value.as_f64() else {
+        return CronSessionRetentionPolicy::DurationMs(
+            CRON_SESSION_RETENTION_DEFAULT_MS,
+        );
+    };
+    if !raw.is_finite() || raw < 0.0 {
+        return CronSessionRetentionPolicy::DurationMs(
+            CRON_SESSION_RETENTION_DEFAULT_MS,
+        );
+    }
+    if raw == 0.0 {
+        return CronSessionRetentionPolicy::Disabled;
+    }
+    if raw >= u64::MAX as f64 {
+        return CronSessionRetentionPolicy::DurationMs(u64::MAX);
+    }
+    CronSessionRetentionPolicy::DurationMs(raw.floor() as u64)
+}
+
+/// Pure owner-scope throttle state for a future reaper trigger. It records a
+/// successful admission only; it does not perform cleanup or authorize row
+/// deletion.
+#[derive(Debug, Default)]
+pub struct CronSessionSweepThrottle {
+    last_run_ms_by_owner: HashMap<String, u64>,
+}
+
+impl CronSessionSweepThrottle {
+    pub fn admit(&mut self, owner_scope: &str, now_ms: u64) -> bool {
+        let owner_scope = owner_scope.trim();
+        if owner_scope.is_empty() {
+            return false;
+        }
+        if let Some(last_run_ms) = self.last_run_ms_by_owner.get(owner_scope) {
+            if now_ms < *last_run_ms
+                || now_ms.saturating_sub(*last_run_ms) < CRON_SESSION_SWEEP_THROTTLE_MS
+            {
+                return false;
+            }
+        }
+        self.last_run_ms_by_owner
+            .insert(owner_scope.to_string(), now_ms);
+        true
+    }
+
+    pub fn forget_owner(&mut self, owner_scope: &str) {
+        self.last_run_ms_by_owner.remove(owner_scope.trim());
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AutomationRunTrigger {
@@ -42,10 +125,31 @@ impl AutomationRunTrigger {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AutomationExecutionResult {
+    /// A genuine local terminal whose external-effect custody is unresolved.
+    /// Preserve the original outcome for diagnostics without settling history,
+    /// publishing cleanup fences, or acknowledging backend delivery.
+    RetainedUnsettled {
+        terminal: Box<AutomationExecutionResult>,
+    },
     Completed,
+    CompletedWithFences {
+        fences: AutomationRunFenceSnapshot,
+    },
     Interrupted {
         detail: String,
         quiesced_for_upgrade: bool,
+    },
+    InterruptedWithFences {
+        detail: String,
+        quiesced_for_upgrade: bool,
+        fences: AutomationRunFenceSnapshot,
+    },
+    Failed {
+        detail: String,
+    },
+    FailedWithFences {
+        detail: String,
+        fences: AutomationRunFenceSnapshot,
     },
 }
 
@@ -54,6 +158,37 @@ pub enum FireAutomationOutcome {
     Ok,
     Error,
     Interrupted,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AutomationAdmissionStage {
+    RuntimeAdmission,
+    HistoryPrecheck,
+    SpendGuard,
+    NoticeBookkeeping,
+    RunBookkeeping,
+    FreshHistory,
+}
+
+/// Admission refusal precedes an accepted history identity and executor entry.
+/// Earlier bookkeeping or a failed filesystem write may still have changed
+/// durable state; this result is not proof that the requested identity is absent.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AutomationRunAttempt {
+    Outcome(Option<FireAutomationOutcome>),
+    AdmissionRefused {
+        stage: AutomationAdmissionStage,
+        detail: String,
+    },
+}
+
+impl AutomationRunAttempt {
+    pub(crate) fn into_legacy_outcome(self) -> Result<Option<FireAutomationOutcome>, String> {
+        match self {
+            Self::Outcome(outcome) => Ok(outcome),
+            Self::AdmissionRefused { detail, .. } => Err(detail),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -90,6 +225,154 @@ pub struct AutomationRunObservation {
 pub type AutomationRunReporter =
     Arc<dyn Fn(&AutomationRunObservation) + Send + Sync + 'static>;
 
+/// The run path owns run semantics; the caller supplies the persistence
+/// boundary so each durable mutation can be admitted by the session owner.
+pub trait AutomationRunStore {
+    fn resolved_user_time_zone(&self) -> Option<String>;
+    fn mark_notice_raised(
+        &self,
+        automation_id: &str,
+        notice: &str,
+    ) -> Result<Option<AutomationRecord>, String>;
+    fn record_run(
+        &self,
+        automation_id: &str,
+        fired_at_ms: f64,
+    ) -> Result<Option<AutomationRecord>, String>;
+    fn begin_run(
+        &self,
+        automation_id: &str,
+        trigger: &str,
+        fired_at_ms: f64,
+        event: Option<&str>,
+        run_id: Option<&str>,
+        coalesced_run_ids: Option<&[String]>,
+    ) -> Result<Option<AutomationRun>, String>;
+    fn finish_run(
+        &self,
+        automation_id: &str,
+        run_id: &str,
+        status: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<Option<AutomationRecord>, String>;
+
+    /// Register a background run in the existing session owner. The file
+    /// automation store intentionally keeps the compatibility no-op; the
+    /// production adapter supplies the durable owner edge.
+    fn begin_cron_session_run(
+        &self,
+        _agent_id: &str,
+        _automation_id: &str,
+        _run_id: &str,
+        _started_at_ms: f64,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn finish_cron_session_run(
+        &self,
+        _agent_id: &str,
+        _automation_id: &str,
+        _run_id: &str,
+        _outcome: &str,
+        _finished_at_ms: f64,
+        _detail: Option<&str>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    fn publish_cron_session_fences(
+        &self,
+        _agent_id: &str,
+        _automation_id: &str,
+        _run_id: &str,
+        _fences: AutomationRunFenceSnapshot,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    /// Settle a terminal row with a complete fence snapshot. The production
+    /// adapter overrides this with one SandAgentDb transaction; compatibility
+    /// stores retain the no-op behavior.
+    fn finish_cron_session_run_with_fences(
+        &self,
+        agent_id: &str,
+        automation_id: &str,
+        run_id: &str,
+        outcome: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+        fences: AutomationRunFenceSnapshot,
+    ) -> Result<(), String> {
+        self.publish_cron_session_fences(agent_id, automation_id, run_id, fences)?;
+        self.finish_cron_session_run(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+        )
+    }
+}
+
+impl AutomationRunStore for FileAutomationStore {
+    fn resolved_user_time_zone(&self) -> Option<String> {
+        self.resolved_user_time_zone()
+    }
+
+    fn mark_notice_raised(
+        &self,
+        automation_id: &str,
+        notice: &str,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.mark_notice_raised(automation_id, notice)
+            .map_err(|error| error.to_string())
+    }
+
+    fn record_run(
+        &self,
+        automation_id: &str,
+        fired_at_ms: f64,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.record_run(automation_id, fired_at_ms)
+            .map_err(|error| error.to_string())
+    }
+
+    fn begin_run(
+        &self,
+        automation_id: &str,
+        trigger: &str,
+        fired_at_ms: f64,
+        event: Option<&str>,
+        run_id: Option<&str>,
+        coalesced_run_ids: Option<&[String]>,
+    ) -> Result<Option<AutomationRun>, String> {
+        self.begin_run(
+            automation_id,
+            trigger,
+            fired_at_ms,
+            event,
+            run_id,
+            coalesced_run_ids,
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    fn finish_run(
+        &self,
+        automation_id: &str,
+        run_id: &str,
+        status: &str,
+        finished_at_ms: f64,
+        detail: Option<&str>,
+    ) -> Result<Option<AutomationRecord>, String> {
+        self.finish_run(automation_id, run_id, status, finished_at_ms, detail)
+            .map_err(|error| error.to_string())
+    }
+}
+
 impl FireAutomationArgs {
     pub fn manual(agent_id: impl Into<String>, automation: AutomationRecord, fired_at_ms: f64) -> Self {
         Self {
@@ -125,23 +408,51 @@ impl AutomationRunPath {
 
     pub fn fire_automation_with<Execute>(
         &self,
-        store: &FileAutomationStore,
+        store: &dyn AutomationRunStore,
         args: FireAutomationArgs,
         execute: Execute,
     ) -> Result<Option<FireAutomationOutcome>, String>
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
-        self.fire_automation_with_on_duplicate(store, args, |_| {}, execute)
+        self.fire_automation_attempt_with(store, args, execute)?
+            .into_legacy_outcome()
     }
 
     pub fn fire_automation_with_on_duplicate<Execute, OnDuplicate>(
         &self,
-        store: &FileAutomationStore,
+        store: &dyn AutomationRunStore,
         args: FireAutomationArgs,
         on_duplicate: OnDuplicate,
         execute: Execute,
     ) -> Result<Option<FireAutomationOutcome>, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+        OnDuplicate: FnOnce(&FireAutomationArgs),
+    {
+        self.fire_automation_attempt_with_on_duplicate(store, args, on_duplicate, execute)?
+            .into_legacy_outcome()
+    }
+
+    pub fn fire_automation_attempt_with<Execute>(
+        &self,
+        store: &dyn AutomationRunStore,
+        args: FireAutomationArgs,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
+    where
+        Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
+    {
+        self.fire_automation_attempt_with_on_duplicate(store, args, |_| {}, execute)
+    }
+
+    pub fn fire_automation_attempt_with_on_duplicate<Execute, OnDuplicate>(
+        &self,
+        store: &dyn AutomationRunStore,
+        args: FireAutomationArgs,
+        on_duplicate: OnDuplicate,
+        execute: Execute,
+    ) -> Result<AutomationRunAttempt, String>
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
         OnDuplicate: FnOnce(&FireAutomationArgs),
@@ -156,7 +467,7 @@ impl AutomationRunPath {
             if !in_flight.insert(run_key.clone()) {
                 drop(in_flight);
                 on_duplicate(&args);
-                return Ok(None);
+                return Ok(AutomationRunAttempt::Outcome(None));
             }
         }
 
@@ -172,10 +483,10 @@ impl AutomationRunPath {
 
     fn fire_automation_inner<Execute>(
         &self,
-        store: &FileAutomationStore,
+        store: &dyn AutomationRunStore,
         args: &FireAutomationArgs,
         execute: Execute,
-    ) -> Result<Option<FireAutomationOutcome>, String>
+    ) -> Result<AutomationRunAttempt, String>
     where
         Execute: FnOnce(&str) -> Result<AutomationExecutionResult, String>,
     {
@@ -185,28 +496,79 @@ impl AutomationRunPath {
             &args.automation.raised_notices,
         );
         for notice in &notices {
-            store
-                .mark_notice_raised(&args.automation.id, notice)
-                .map_err(|error| error.to_string())?;
+            if let Err(detail) = store.mark_notice_raised(&args.automation.id, notice) {
+                return Ok(AutomationRunAttempt::AdmissionRefused {
+                    stage: AutomationAdmissionStage::NoticeBookkeeping,
+                    detail,
+                });
+            }
         }
 
-        let current = store
-            .record_run(&args.automation.id, args.fired_at_ms)
-            .map_err(|error| error.to_string())?
-            .unwrap_or_else(|| args.automation.clone());
+        let current = match store.record_run(&args.automation.id, args.fired_at_ms) {
+            Ok(current) => current.unwrap_or_else(|| args.automation.clone()),
+            Err(detail) => {
+                return Ok(AutomationRunAttempt::AdmissionRefused {
+                    stage: AutomationAdmissionStage::RunBookkeeping,
+                    detail,
+                });
+            }
+        };
         let event_summary = describe_trigger_event_batch(&args.events);
-        let run = store
-            .begin_run(
-                &args.automation.id,
-                args.trigger.as_str(),
-                args.fired_at_ms,
-                (!event_summary.is_empty()).then_some(event_summary.as_str()),
-                args.run_uuid.as_deref(),
-                (!args.coalesced_run_uuids.is_empty())
-                    .then_some(args.coalesced_run_uuids.as_slice()),
-            )
-            .map_err(|error| error.to_string())?;
+        let run = match store.begin_run(
+            &args.automation.id,
+            args.trigger.as_str(),
+            args.fired_at_ms,
+            (!event_summary.is_empty()).then_some(event_summary.as_str()),
+            args.run_uuid.as_deref(),
+            (!args.coalesced_run_uuids.is_empty())
+                .then_some(args.coalesced_run_uuids.as_slice()),
+        ) {
+            Ok(run) => run,
+            Err(detail) => {
+                return Ok(AutomationRunAttempt::AdmissionRefused {
+                    stage: AutomationAdmissionStage::FreshHistory,
+                    detail,
+                });
+            }
+        };
         let run_id = run.as_ref().map(|run| run.id.clone());
+        let Some(admitted_run_id) = run_id.as_deref().filter(|id| !id.is_empty()) else {
+            return Ok(AutomationRunAttempt::AdmissionRefused {
+                stage: AutomationAdmissionStage::FreshHistory,
+                detail: if args.trigger.is_background() {
+                    "background automation run did not produce a durable run identity"
+                } else {
+                    "manual automation run did not produce a durable run identity"
+                }.into(),
+            });
+        };
+
+        if args.trigger.is_background() {
+            if let Err(error) = store.begin_cron_session_run(
+                &args.agent_id,
+                &args.automation.id,
+                admitted_run_id,
+                args.fired_at_ms,
+            ) {
+                // The history row was opened before the owner admission
+                // was attempted. Preserve a terminal history outcome so
+                // a rejected owner cannot strand a permanently running
+                // compatibility record or execute without a row fence.
+                if let Err(settlement_error) = finish_run(
+                    store,
+                    &args.automation.id,
+                    Some(admitted_run_id),
+                    "error",
+                    args.fired_at_ms,
+                    Some(&error),
+                ) {
+                    return Err(format!(
+                        "{error}; failed to settle automation history after cron admission rejection: {settlement_error}"
+                    ));
+                }
+                return Err(error);
+            }
+        }
 
         let time_zone = store.resolved_user_time_zone();
         let mut prompt = build_automation_wake_prompt_with_time_zone(
@@ -229,23 +591,70 @@ impl AutomationRunPath {
 
         let execution_started = Instant::now();
         let execution = execute(&prompt);
+        // The cron-session retention anchor is the terminal boundary, not the
+        // scheduled/fired timestamp used by automation history. Keeping these
+        // clocks separate prevents a delayed run from becoming immediately
+        // eligible for a future retention sweep.
+        let cron_finished_at_ms = Utc::now().timestamp_millis() as f64;
         let quiesced_for_upgrade = matches!(
             execution.as_ref(),
             Ok(AutomationExecutionResult::Interrupted {
-                quiesced_for_upgrade: true,
-                ..
+                quiesced_for_upgrade: true, ..
+            }) | Ok(AutomationExecutionResult::InterruptedWithFences {
+                quiesced_for_upgrade: true, ..
             })
         );
         let result = match execution {
-            Ok(AutomationExecutionResult::Completed) => {
+            // Admission has already persisted Running. Leave those exact bytes
+            // and failure counters intact; the outer call releases only its
+            // volatile in-flight key, and backend None abandons without ACK.
+            Ok(AutomationExecutionResult::RetainedUnsettled { .. }) => Ok(None),
+            Ok(completed @ (AutomationExecutionResult::Completed
+            | AutomationExecutionResult::CompletedWithFences { .. })) => {
+                let fences = match completed {
+                    AutomationExecutionResult::Completed => None,
+                    AutomationExecutionResult::CompletedWithFences { fences } => Some(fences),
+                    _ => unreachable!("completed automation result pattern changed"),
+                };
+                // The durable projection is the reaper authority: settle it
+                // before compatibility history so a failed owner commit does
+                // not advertise a terminal run while the cleanup row remains
+                // running.
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
+                    run_id.as_deref(),
+                    "ok",
+                    cron_finished_at_ms,
+                    None,
+                    fences,
+                )?;
                 finish_run(store, &args.automation.id, run_id.as_deref(), "ok", args.fired_at_ms, None)?;
                 self.clear_automation_failure_state(&args.agent_id, &args.automation.id);
                 Ok(Some(FireAutomationOutcome::Ok))
             }
-            Ok(AutomationExecutionResult::Interrupted {
-                detail,
-                quiesced_for_upgrade: _,
-            }) => {
+            Ok(interrupted @ (AutomationExecutionResult::Interrupted { .. }
+            | AutomationExecutionResult::InterruptedWithFences { .. })) => {
+                let (detail, fences) = match interrupted {
+                    AutomationExecutionResult::Interrupted { detail, .. } => (detail, None),
+                    AutomationExecutionResult::InterruptedWithFences { detail, fences, .. } => {
+                        (detail, Some(fences))
+                    }
+                    _ => unreachable!("interrupted automation result pattern changed"),
+                };
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
+                    run_id.as_deref(),
+                    "interrupted",
+                    cron_finished_at_ms,
+                    Some(&detail),
+                    fences,
+                )?;
                 finish_run(
                     store,
                     &args.automation.id,
@@ -256,7 +665,54 @@ impl AutomationRunPath {
                 )?;
                 Ok(Some(FireAutomationOutcome::Interrupted))
             }
+            Ok(failed @ (AutomationExecutionResult::Failed { .. }
+            | AutomationExecutionResult::FailedWithFences { .. })) => {
+                let (detail, fences) = match failed {
+                    AutomationExecutionResult::Failed { detail } => (detail, None),
+                    AutomationExecutionResult::FailedWithFences { detail, fences } => {
+                        (detail, Some(fences))
+                    }
+                    _ => unreachable!("failed automation result pattern changed"),
+                };
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
+                    run_id.as_deref(),
+                    "error",
+                    cron_finished_at_ms,
+                    Some(&detail),
+                    fences,
+                )?;
+                finish_run(
+                    store,
+                    &args.automation.id,
+                    run_id.as_deref(),
+                    "error",
+                    args.fired_at_ms,
+                    Some(&detail),
+                )?;
+                self.record_automation_failure(
+                    &args.agent_id,
+                    &args.automation.id,
+                    &detail,
+                    args.trigger,
+                );
+                Ok(Some(FireAutomationOutcome::Error))
+            }
             Err(detail) => {
+                finish_cron_session_run(
+                    store,
+                    &args.agent_id,
+                    &args.automation.id,
+                    args.trigger,
+                    run_id.as_deref(),
+                    "error",
+                    cron_finished_at_ms,
+                    Some(&detail),
+                    None,
+                )?;
                 finish_run(
                     store,
                     &args.automation.id,
@@ -300,7 +756,7 @@ impl AutomationRunPath {
                 });
             }
         }
-        result
+        result.map(AutomationRunAttempt::Outcome)
     }
 
     pub fn record_automation_failure(
@@ -345,7 +801,7 @@ impl AutomationRunPath {
 }
 
 fn finish_run(
-    store: &FileAutomationStore,
+    store: &dyn AutomationRunStore,
     automation_id: &str,
     run_id: Option<&str>,
     status: &str,
@@ -355,10 +811,52 @@ fn finish_run(
     let Some(run_id) = run_id else {
         return Ok(());
     };
-    store
+    let settled = store
         .finish_run(automation_id, run_id, status, finished_at_ms, detail)
-        .map(|_| ())
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    if settled.is_some() {
+        Ok(())
+    } else {
+        Err("automation history run settlement was not committed".into())
+    }
+}
+
+fn finish_cron_session_run(
+    store: &dyn AutomationRunStore,
+    agent_id: &str,
+    automation_id: &str,
+    trigger: AutomationRunTrigger,
+    run_id: Option<&str>,
+    outcome: &str,
+    finished_at_ms: f64,
+    detail: Option<&str>,
+    fences: Option<AutomationRunFenceSnapshot>,
+) -> Result<(), String> {
+    if !trigger.is_background() {
+        return Ok(());
+    }
+    let Some(run_id) = run_id else {
+        return Err("background automation run settlement requires a durable run identity".into());
+    };
+    if let Some(fences) = fences {
+        return store.finish_cron_session_run_with_fences(
+            agent_id,
+            automation_id,
+            run_id,
+            outcome,
+            finished_at_ms,
+            detail,
+            fences,
+        );
+    }
+    store.finish_cron_session_run(
+        agent_id,
+        automation_id,
+        run_id,
+        outcome,
+        finished_at_ms,
+        detail,
+    )
 }
 
 pub fn clamp_wake_events(events: &[Value]) -> Vec<Value> {

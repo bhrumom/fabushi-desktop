@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::{Arc, Mutex};
 
@@ -10,6 +11,8 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
+use mahayana_host_runtime::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
+use mahayana_host_runtime::runner::production_agent_checkpoint::AgentStateCheckpointSink;
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
     ProductionTurnAgentOwner, ProductionTurnAgentStaticConfig,
@@ -27,7 +30,10 @@ use mahayana_host_runtime::runner::subagent_runtime::{
 };
 use mahayana_host_runtime::runner::turn_agent_composition::TurnAgentComposition;
 use mahayana_host_runtime::runner::tools::box_help_tool::WAITING_USER_CANCELLATION_PREFIX;
-use mahayana_host_runtime::runner::{TerminalOutcome, TurnRunOptions};
+use mahayana_host_runtime::runner::{
+    TerminalOutcome, ToolEffectCustodyObservation, ToolEffectCustodyUnavailableReason,
+    TurnRunOptions,
+};
 use serde_json::Value;
 
 struct EmptyBridge;
@@ -57,6 +63,24 @@ impl RoutedProviderCheckpointStore for MemoryCheckpointStore {
         _checkpoint: &RoutedProviderCheckpoint,
     ) -> Result<String, ProviderSessionError> {
         Ok("memory-checkpoint".into())
+    }
+}
+
+struct RefusingProjectionCheckpointSink {
+    reads: AtomicUsize,
+    invalidations: AtomicUsize,
+}
+
+impl AgentStateCheckpointSink for RefusingProjectionCheckpointSink {
+    fn checked_base_snapshot(
+        &self,
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, ProviderSessionError> {
+        self.reads.fetch_add(1, AtomicOrdering::SeqCst);
+        Err(ProviderSessionError::Protocol("projection state unavailable".into()))
+    }
+
+    fn invalidate_original_turn_completion(&self) {
+        self.invalidations.fetch_add(1, AtomicOrdering::SeqCst);
     }
 }
 
@@ -110,6 +134,202 @@ fn build_bindings(
         privacy_mode_resolver,
         summarization,
     )
+}
+
+#[test]
+fn production_owner_and_facade_have_no_custody_before_first_invocation() {
+    let owner = ProductionTurnAgentOwner::new(composition());
+    assert!(owner.last_tool_effect_custody().is_none());
+    let runner = SandAgentRunner::new(owner);
+    assert!(runner.last_tool_effect_custody().is_none());
+    assert!(runner.last_finished().is_none());
+}
+
+#[test]
+fn callback_custody_is_unavailable_for_success_failure_and_cancellation() {
+    let cases = [
+        Ok("done".to_string()),
+        Err(ProviderSessionError::Transport("upstream reset".into())),
+        Err(ProviderSessionError::Cancelled("user cancelled".into())),
+    ];
+    for callback_result in cases {
+        let expected_result = callback_result
+            .as_ref()
+            .map(|content| content.clone())
+            .map_err(|error| error.to_string());
+        let mut owner = ProductionTurnAgentOwner::new(composition());
+        let result = owner.run_with_options(
+            &user_messages(),
+            TurnRunOptions::default(),
+            || callback_result,
+        );
+        assert_eq!(result.map_err(|error| error.to_string()), expected_result);
+        let observation = ToolEffectCustodyObservation::Unavailable {
+            reason: ToolEffectCustodyUnavailableReason::UninstrumentedExecution,
+        };
+        assert_eq!(owner.last_tool_effect_custody(), Some(&observation));
+        let finished = owner.last_finished().expect("callback settled").clone();
+
+        let mut runner = SandAgentRunner::new(owner);
+        assert_eq!(runner.last_tool_effect_custody(), Some(&observation));
+        let mut executed = false;
+        let error = runner
+            .run_with_options(&[], TurnRunOptions::default(), || {
+                executed = true;
+                Ok("unexpected".into())
+            })
+            .expect_err("later callback invocation lacks a user prompt");
+        assert!(matches!(error, ProviderSessionError::Configuration(_)));
+        assert!(!executed);
+        assert_eq!(
+            runner.last_tool_effect_custody(),
+            Some(&ToolEffectCustodyObservation::NotStarted),
+        );
+        assert_eq!(runner.last_finished(), Some(&finished));
+    }
+}
+
+#[test]
+fn production_owner_resets_custody_before_build_validation_refuses() {
+    let mut owner = ProductionTurnAgentOwner::new(composition());
+    owner
+        .run_with(&user_messages(), || Ok("prior callback".into()))
+        .expect("prior callback settles without production build bindings");
+    assert_eq!(
+        owner.last_tool_effect_custody(),
+        Some(&ToolEffectCustodyObservation::Unavailable {
+            reason: ToolEffectCustodyUnavailableReason::UninstrumentedExecution,
+        }),
+    );
+    let finished = owner.last_finished().expect("prior settlement").clone();
+    let mut emitted = false;
+    let error = owner
+        .run_routed_provider(Path::new("."), &user_messages(), &mut |_, _| {
+            emitted = true;
+        })
+        .expect_err("unbound production build input must refuse");
+    assert!(matches!(
+        error,
+        ProviderSessionError::Configuration(message)
+            if message == "production turn build input is not bound"
+    ));
+    assert!(!emitted);
+    assert_eq!(
+        owner.last_tool_effect_custody(),
+        Some(&ToolEffectCustodyObservation::NotStarted),
+    );
+    assert_eq!(owner.last_finished(), Some(&finished));
+}
+
+#[test]
+fn production_runner_resets_custody_before_prompt_admission_refuses() {
+    let owner = ProductionTurnAgentOwner::new(composition()).with_build_bindings(
+        build_bindings("agent-custody-admission", Arc::new(|_, _, _| Ok("summary".into()))),
+    );
+    let mut runner = SandAgentRunner::new(owner);
+    runner
+        .run_with(&user_messages(), || Ok("prior callback".into()))
+        .expect("prior callback");
+    assert_eq!(
+        runner.last_tool_effect_custody(),
+        Some(&ToolEffectCustodyObservation::Unavailable {
+            reason: ToolEffectCustodyUnavailableReason::UninstrumentedExecution,
+        }),
+    );
+    let finished = runner.last_finished().expect("prior settlement").clone();
+    let messages = [ProviderMessage {
+        role: "system".into(),
+        content: "system only".into(),
+    }];
+    let mut emitted = false;
+    let error = runner
+        .run_routed_provider(Path::new("."), &messages, &mut |_, _| {
+            emitted = true;
+        })
+        .expect_err("production invocation lacks a user prompt");
+    assert!(matches!(error, ProviderSessionError::Configuration(_)));
+    assert!(!emitted);
+    assert_eq!(
+        runner.last_tool_effect_custody(),
+        Some(&ToolEffectCustodyObservation::NotStarted),
+    );
+    assert_eq!(runner.last_finished(), Some(&finished));
+}
+
+#[test]
+fn production_owner_retains_not_started_when_input_preparation_refuses() {
+    let mut owner = ProductionTurnAgentOwner::new(composition()).with_build_bindings(
+        build_bindings("agent-custody-prepare", Arc::new(|_, _, _| Ok("summary".into()))),
+    );
+    owner
+        .run_with(&user_messages(), || Ok("prior callback".into()))
+        .expect("prior callback");
+    let previous_generation = owner.last_finished().expect("prior settlement").owner.generation;
+    let checkpoint_sink = Arc::new(RefusingProjectionCheckpointSink {
+        reads: AtomicUsize::new(0),
+        invalidations: AtomicUsize::new(0),
+    });
+    owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink.clone());
+    let mut emitted = false;
+    let error = owner
+        .run_routed_provider(Path::new("."), &user_messages(), &mut |_, _| {
+            emitted = true;
+        })
+        .expect_err("projection refuses before the generated executor enters");
+    assert!(matches!(
+        error,
+        ProviderSessionError::Protocol(message) if message == "projection state unavailable"
+    ));
+    assert!(!emitted);
+    assert_eq!(checkpoint_sink.reads.load(AtomicOrdering::SeqCst), 1);
+    assert_eq!(checkpoint_sink.invalidations.load(AtomicOrdering::SeqCst), 1);
+    assert_eq!(
+        owner.last_tool_effect_custody(),
+        Some(&ToolEffectCustodyObservation::NotStarted),
+    );
+    let finished = owner.last_finished().expect("preparation failure settles the new run");
+    assert_eq!(finished.owner.generation, previous_generation + 1);
+    assert!(matches!(
+        &finished.outcome,
+        TerminalOutcome::Failed { retryable: false, message }
+            if message.contains("projection state unavailable")
+    ));
+}
+
+#[test]
+fn shipping_runner_preserves_the_bound_summarization_owner_and_errors() {
+    let unbound_error = runner()
+        .run_summarization_prompt("system", "user", &|| false)
+        .expect_err("unbound summary must not create another inference path");
+    assert!(matches!(unbound_error, ProviderSessionError::Configuration(_)));
+
+    let calls = Arc::new(AtomicUsize::new(0));
+    let observed_calls = Arc::clone(&calls);
+    let summarization: ProductionTurnSummarizationPrompt = Arc::new(
+        move |system, user, should_cancel| {
+            observed_calls.fetch_add(1, AtomicOrdering::SeqCst);
+            if should_cancel() {
+                return Err(ProviderSessionError::Cancelled("summary cancelled".into()));
+            }
+            Ok(format!("{system}::{user}"))
+        },
+    );
+    let runner = SandAgentRunner::new(
+        ProductionTurnAgentOwner::new(composition())
+            .with_build_bindings(build_bindings("agent-summary-facade", summarization)),
+    );
+
+    assert_eq!(
+        runner.run_summarization_prompt("system", "user", &|| false).unwrap(),
+        "system::user"
+    );
+    assert!(matches!(
+        runner.run_summarization_prompt("system", "user", &|| true),
+        Err(ProviderSessionError::Cancelled(message)) if message == "summary cancelled"
+    ));
+    assert_eq!(calls.load(AtomicOrdering::SeqCst), 2);
+    assert!(runner.last_finished().is_none(), "summary is not a second settled turn");
+    assert!(runner.last_tool_effect_custody().is_none());
 }
 
 #[test]
@@ -372,6 +592,10 @@ fn shipping_sand_agent_owner_fails_closed_without_user_prompt() {
     assert!(matches!(error, ProviderSessionError::Configuration(_)));
     assert!(!executed);
     assert!(runner.last_finished().is_none());
+    assert_eq!(
+        runner.last_tool_effect_custody(),
+        Some(&ToolEffectCustodyObservation::NotStarted),
+    );
 }
 
 
@@ -403,7 +627,7 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
     assert!(runner.generated_agent_runtime().is_some());
 
     let pending = runner
-        .begin_generated_subagent(
+        .begin_generated_subagent_with_lifecycle(
             "parent-agent",
             "box-a",
             "child-agent",
@@ -411,6 +635,7 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
             "tool-call-1",
             "research this",
             None,
+            "child-lifecycle-1",
             100,
         )
         .expect("generated subagent begin")
@@ -430,7 +655,8 @@ fn shipping_sand_agent_runner_owns_and_settles_generated_subagent_runtime() {
             200,
         )
         .expect("generated subagent settle");
-    assert!(settled.completion.is_some());
+    let completion = settled.completion.expect("generated subagent completion");
+    assert_eq!(completion.lifecycle_revision, "child-lifecycle-1");
     let runtime = shared.lock().expect("shared runtime after settle");
     assert!(runtime.list_running_subagents(250).is_empty());
     assert!(runtime
@@ -445,7 +671,7 @@ fn shipping_sand_agent_runner_exposes_generated_subagent_control_surface() {
     let runner = runner().with_generated_agent_runtime(Arc::clone(&shared));
 
     runner
-        .begin_generated_subagent(
+        .begin_generated_subagent_with_lifecycle(
             "parent-agent",
             "box-a",
             "child-agent",
@@ -453,6 +679,7 @@ fn shipping_sand_agent_runner_exposes_generated_subagent_control_surface() {
             "tool-call-2",
             "inspect lifecycle",
             None,
+            "child-lifecycle-2",
             100,
         )
         .expect("begin generated subagent")
@@ -484,6 +711,47 @@ fn shipping_sand_agent_runner_exposes_generated_subagent_control_surface() {
     assert!(!runner.has_subagent("child-agent").expect("subagent cleared"));
     assert!(!runner.has_running_subagents().expect("running cleared"));
     assert!(runner.get_subagent_outline("child-agent").expect("outline").is_empty());
+}
+
+#[test]
+fn generated_subagent_admission_requires_the_captured_lifecycle_revision() {
+    let shared = Arc::new(Mutex::new(SubagentRuntime::default()));
+    let runner = runner().with_generated_agent_runtime(Arc::clone(&shared));
+
+    let error = runner
+        .begin_generated_subagent(
+            "parent-agent",
+            "box-a",
+            "child-agent",
+            "general-purpose",
+            "tool-call-without-revision",
+            "inspect lifecycle",
+            None,
+            100,
+        )
+        .expect_err("legacy admission cannot invent a lifecycle revision");
+    assert_eq!(error, "generated subagent lifecycle revision is required");
+
+    for revision in ["", " \t\n"] {
+        let error = runner
+            .begin_generated_subagent_with_lifecycle(
+                "parent-agent",
+                "box-a",
+                "child-agent",
+                "general-purpose",
+                "tool-call-without-revision",
+                "inspect lifecycle",
+                None,
+                revision,
+                100,
+            )
+            .expect_err("blank lifecycle revision must not admit work");
+        assert_eq!(error, "generated subagent lifecycle revision is required");
+    }
+
+    let runtime = shared.lock().expect("shared runtime after refused admission");
+    assert!(runtime.list_subagents().is_empty());
+    assert!(runtime.list_running_subagents(150).is_empty());
 }
 
 #[test]

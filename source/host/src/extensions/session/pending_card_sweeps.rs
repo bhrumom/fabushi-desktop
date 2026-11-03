@@ -1,18 +1,12 @@
-use std::path::Path;
-
 use serde_json::Value;
 
-use super::agent_db::{
-    AgentDbProjectionError, read_persisted_transcript_entries,
-    update_persisted_transcript_entry,
-};
+use super::agent_db::{AgentDbProjectionError, SandAgentDb};
 
 pub fn expire_pending_auto_review_approval_entries(
-    db_path: &Path,
-    busy_timeout_ms: u64,
+    owner: &SandAgentDb,
     only_request_id: Option<&str>,
 ) -> Result<Vec<String>, AgentDbProjectionError> {
-    let entries = read_persisted_transcript_entries(db_path, busy_timeout_ms)?;
+    let entries = owner.get_transcript_entries()?;
     let mut expired = Vec::new();
     for entry in entries {
         let Some(request_id) = pending_request_id(
@@ -34,14 +28,8 @@ pub fn expire_pending_auto_review_approval_entries(
         ) else {
             continue;
         };
-        if update_persisted_transcript_entry(
-            db_path,
-            busy_timeout_ms,
-            entry_id(&entry).unwrap_or_default(),
-            &settled,
-        )?
-        .is_some()
-        {
+        let updated = update_swept_entry(owner, &entry, &settled)?;
+        if updated.is_some() {
             expired.push(request_id);
         }
     }
@@ -49,12 +37,11 @@ pub fn expire_pending_auto_review_approval_entries(
 }
 
 pub fn expire_pending_local_tool_permission_ask_entries(
-    db_path: &Path,
-    busy_timeout_ms: u64,
+    owner: &SandAgentDb,
     only_request_id: Option<&str>,
     if_pending_before_ms: Option<f64>,
 ) -> Result<Vec<String>, AgentDbProjectionError> {
-    let entries = read_persisted_transcript_entries(db_path, busy_timeout_ms)?;
+    let entries = owner.get_transcript_entries()?;
     let mut expired = Vec::new();
     for entry in entries {
         let Some(request_id) = pending_request_id(
@@ -84,14 +71,8 @@ pub fn expire_pending_local_tool_permission_ask_entries(
         ) else {
             continue;
         };
-        if update_persisted_transcript_entry(
-            db_path,
-            busy_timeout_ms,
-            entry_id(&entry).unwrap_or_default(),
-            &settled,
-        )?
-        .is_some()
-        {
+        let updated = update_swept_entry(owner, &entry, &settled)?;
+        if updated.is_some() {
             expired.push(request_id);
         }
     }
@@ -141,4 +122,22 @@ fn settle_pending_entry(
 
 fn entry_id(entry: &Value) -> Option<&str> {
     entry.get("id").and_then(Value::as_str)
+}
+
+fn update_swept_entry(
+    owner: &SandAgentDb,
+    current: &Value,
+    next: &Value,
+) -> Result<Option<Value>, AgentDbProjectionError> {
+    let entry_id = entry_id(current).unwrap_or_default();
+    if let Some(session_key) = current
+        .get("sessionKey")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        owner.update_transcript_entry_if_session_admitted(session_key, entry_id, next)
+    } else {
+        owner.update_transcript_entry(entry_id, next)
+    }
 }
