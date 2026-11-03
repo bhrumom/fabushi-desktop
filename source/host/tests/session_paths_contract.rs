@@ -5,9 +5,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use mahayana_host_runtime::extensions::session::session_paths::{
     ACTIVE_AGENT_FILENAME, CONNECTOR_SECRETS_DIRNAME, CONVERSATION_BLOBS_FILENAME,
-    HIDDEN_ENTRY_REPAIR_VERSION, LEGACY_GROUP_MEMBERS_DIRNAME,
+    HIDDEN_ENTRY_REPAIR_VERSION, LEGACY_GROUP_MEMBERS_DIRNAME, NATIVE_CONVERSATIONS_DIRNAME,
     SAND_CONVERSATION_ROOT_SLOT_ID, STALE_ROOT_CLEANUP_VERSION, STORE_FILENAME,
-    get_agent_db_path, get_connector_secrets_root, get_sand_transcripts_dir_with,
+    assert_valid_agent_session_id, get_agent_db_path, get_connector_secrets_root,
+    get_native_conversation_db_path, get_sand_transcripts_dir_with,
     is_stale_root_gc_enabled_from_env, pin_stale_root_gc, stat_if_exists,
     is_root_main_session_key, reject_public_agent_harness_session_key,
     resolve_public_session_route,
@@ -53,6 +54,49 @@ fn session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout
         get_connector_secrets_root(Some(agents_root)),
         Path::new("/tmp/fabushi-session-root").join(CONNECTOR_SECRETS_DIRNAME)
     );
+}
+
+#[test]
+fn sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths() {
+    let agents_root = Path::new("/tmp/fabushi-session-root/agents");
+    for id in [
+        ".conversations",
+        ".CONVERSATIONS",
+        ".Conversations.",
+        ".conversations...",
+        ".conversations .",
+        ".conversations ",
+        " .conversations",
+    ] {
+        let error = assert_valid_agent_session_id(id).expect_err("reserved Agent identity");
+        assert_eq!(error.0, id, "refusal preserves the supplied identity");
+        assert!(get_agent_db_path(agents_root, id).is_err(), "Agent path admitted {id}");
+    }
+}
+
+#[test]
+fn sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling() {
+    let agents_root = Path::new("/tmp/fabushi-session-root/agents");
+    for id in [
+        "35f0bb26-4ad4-44bb-b780-c935e371b4b0",
+        ".conversations-backup",
+        ".conversationsx",
+        "conversation:existing-human",
+        "Agent.Mixed-Case_01",
+    ] {
+        assert_eq!(
+            get_agent_db_path(agents_root, id).expect("ordinary Agent identity"),
+            agents_root.join(id).join(STORE_FILENAME),
+        );
+    }
+    for id in [".conversations", ".CONVERSATIONS", ".Conversations."] {
+        assert!(mahayana_host_runtime::storage::agent_paths::assert_valid_sand_agent_id(id).is_ok());
+        assert_eq!(
+            get_native_conversation_db_path(agents_root, id).expect("unchanged Human identity grammar"),
+            agents_root.join(NATIVE_CONVERSATIONS_DIRNAME).join(id).join(STORE_FILENAME),
+        );
+    }
+    assert!(get_native_conversation_db_path(agents_root, "../escape").is_err());
 }
 
 #[test]

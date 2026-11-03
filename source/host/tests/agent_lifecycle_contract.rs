@@ -2,17 +2,19 @@ use std::fs;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use mahayana_host_runtime::extensions::memory::memory_service::MemoryService;
 use mahayana_host_runtime::extensions::session::agent_session::SandAgentSessionStore;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_paths::get_native_conversation_db_path;
 use mahayana_host_runtime::extensions::transcript::agent_lifecycle::{
-    AgentDeletionRuntimeDeps, AgentLifecycleGatewayError, ProductionAgentLifecycle,
+    AgentDeletionHook, AgentDeletionRuntimeDeps, AgentLifecycleGatewayError, ProductionAgentLifecycle,
     dispatch_production_agent_lifecycle_gateway_call,
     dispatch_production_agent_lifecycle_gateway_call_with_runtime,
     dispatch_production_agent_lifecycle_gateway_call_with_runtimes,
 };
 use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionTranscriptRuntime;
 use mahayana_host_runtime::extensions::transcript::roster_emit::ProductionRosterEmit;
-use serde_json::json;
+use serde_json::{Value, json};
 
 fn temp_root(label: &str) -> std::path::PathBuf {
     let suffix = SystemTime::now()
@@ -23,6 +25,29 @@ fn temp_root(label: &str) -> std::path::PathBuf {
         "fabushi-agent-lifecycle-{label}-{}-{suffix}",
         std::process::id()
     ))
+}
+
+fn recording_deletion_runtime(calls: &Arc<Mutex<Vec<String>>>) -> AgentDeletionRuntimeDeps {
+    let hook = |label: &'static str, calls: Arc<Mutex<Vec<String>>>| {
+        Arc::new(move |agent_id: &str| {
+            calls.lock().expect("calls").push(format!("{label}:{agent_id}"));
+            Ok(())
+        }) as AgentDeletionHook
+    };
+    AgentDeletionRuntimeDeps {
+        mark_deleting: Some(hook("mark", Arc::clone(calls))),
+        clear_deleting: Some(hook("rollback", Arc::clone(calls))),
+        cancel_runner: Some(hook("runner", Arc::clone(calls))),
+        forget_ack: Some(hook("ack", Arc::clone(calls))),
+        sharing_departure: Some(hook("sharing", Arc::clone(calls))),
+        clear_trays: Some(hook("trays", Arc::clone(calls))),
+        dispose_background_work: Some(hook("background", Arc::clone(calls))),
+        drain_runner: Some(hook("drain", Arc::clone(calls))),
+        release_box: Some(hook("box", Arc::clone(calls))),
+        forget_agent_state: Some(hook("forgotten", Arc::clone(calls))),
+        forget_handoff: Some(hook("handoff", Arc::clone(calls))),
+        clear_pending_wakes: Some(hook("pending", Arc::clone(calls))),
+    }
 }
 
 #[test]
@@ -36,28 +61,9 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
     let record = store.create_session(None, "user", None).expect("agent");
 
     let calls = Arc::new(Mutex::new(Vec::<String>::new()));
-    let hook = |label: &'static str, calls: Arc<Mutex<Vec<String>>>| {
-        Arc::new(move |agent_id: &str| {
-            calls.lock().expect("calls").push(format!("{label}:{agent_id}"));
-            Ok(())
-        }) as mahayana_host_runtime::extensions::transcript::agent_lifecycle::AgentDeletionHook
-    };
     let lifecycle = ProductionAgentLifecycle::with_deletion_runtime(
         Arc::clone(&production),
-        AgentDeletionRuntimeDeps {
-            mark_deleting: Some(hook("mark", Arc::clone(&calls))),
-            clear_deleting: Some(hook("rollback", Arc::clone(&calls))),
-            cancel_runner: Some(hook("runner", Arc::clone(&calls))),
-            forget_ack: Some(hook("ack", Arc::clone(&calls))),
-            sharing_departure: Some(hook("sharing", Arc::clone(&calls))),
-            clear_trays: Some(hook("trays", Arc::clone(&calls))),
-            dispose_background_work: Some(hook("background", Arc::clone(&calls))),
-            drain_runner: Some(hook("drain", Arc::clone(&calls))),
-            release_box: Some(hook("box", Arc::clone(&calls))),
-            forget_agent_state: Some(hook("forgotten", Arc::clone(&calls))),
-            forget_handoff: Some(hook("handoff", Arc::clone(&calls))),
-            clear_pending_wakes: Some(hook("pending", Arc::clone(&calls))),
-        },
+        recording_deletion_runtime(&calls),
     );
 
     lifecycle.delete_agent(&record.id).expect("delete");
@@ -79,6 +85,281 @@ fn deletion_runtime_runs_owner_hooks_around_durable_session_delete() {
 
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
+}
+
+fn assert_reserved_deletion_preflight(
+    label: &str,
+    delete: impl Fn(
+        &Arc<ProductionSessionWorkers>,
+        &AgentDeletionRuntimeDeps,
+        &[String],
+    ) -> Result<Value, String>,
+) {
+    let root = temp_root(label);
+    let agents = root.join("agents");
+    let open_workers = || {
+        Arc::new(ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+            &agents,
+            500,
+            Some("human-local".into()),
+            Arc::new(|| None),
+            Arc::new(MemoryService::new(agents.clone())),
+        ))
+    };
+    let production = open_workers();
+    let store = SandAgentSessionStore::new(Arc::clone(&production));
+    let agent = store
+        .create_session(None, "user", None)
+        .expect("ordinary Agent");
+    store.write_active_agent_id(&agent.id).expect("active Agent");
+    let agent_entry = json!({
+        "id": "namespace-agent-entry",
+        "kind": "message",
+        "role": "user",
+        "content": "ordinary Agent content must survive refused deletion"
+    });
+    assert_eq!(
+        production
+            .append_agent_transcript_entries(&agent.id, &[agent_entry.clone()])
+            .expect("Agent transcript"),
+        1
+    );
+    let agent_owner = production
+        .open_agent_db_owner(&agent.id)
+        .expect("Agent owner");
+    let agent_metadata = agent_owner.read_metadata().expect("Agent metadata");
+    let admission = production
+        .read_session_work_admission(&agent.id)
+        .expect("Agent admission")
+        .expect("admission record");
+    assert!(!admission.deletion_pending);
+    let agent_file = store.get_agent_dir(&agent.id).join("preserved.txt");
+    fs::write(&agent_file, b"Agent-owned file").expect("Agent file");
+    let active_before = fs::read(store.active_agent_pointer_path()).expect("active pointer bytes");
+
+    let human = production
+        .create_human_conversation("human-peer", "Preserved Human")
+        .expect("Human conversation");
+    let human_id = human["id"].as_str().expect("Human id").to_string();
+    let human_owner = production
+        .open_human_conversation_db_owner(&human_id)
+        .expect("Human owner");
+    let human_entry = json!({
+        "id": "namespace-human-entry",
+        "kind": "message",
+        "role": "user",
+        "authorKind": "human",
+        "authorId": "human-peer",
+        "content": "Human content must survive Agent deletion"
+    });
+    assert!(human_owner
+        .append_transcript_entry(&human_entry)
+        .expect("Human transcript"));
+    let human_metadata = human_owner.read_metadata().expect("Human metadata");
+    let human_db_path = get_native_conversation_db_path(&agents, &human_id).expect("Human path");
+    assert_eq!(human_owner.db_path(), human_db_path.as_path());
+    let human_file = human_db_path
+        .parent()
+        .expect("Human directory")
+        .join("preserved.txt");
+    fs::write(&human_file, b"Human-owned file").expect("Human file");
+    assert!(agents.join(".conversations").is_dir());
+    assert!(
+        !agents.join(".conversations").join("store.db").exists(),
+        "the reserved parent has no Agent database to gate directory cleanup"
+    );
+
+    let assert_human_intact = |workers: &ProductionSessionWorkers| {
+        assert!(human_db_path.is_file());
+        let owner = workers
+            .open_human_conversation_db_owner(&human_id)
+            .expect("retained Human owner");
+        assert!(!owner.is_closed());
+        assert_eq!(
+            owner.read_metadata().expect("retained Human metadata"),
+            human_metadata
+        );
+        assert_eq!(
+            workers
+                .read_human_conversation_transcript(&human_id)
+                .expect("retained Human transcript"),
+            vec![human_entry.clone()]
+        );
+        assert_eq!(
+            fs::read(&human_file).expect("retained Human file").as_slice(),
+            b"Human-owned file"
+        );
+    };
+    let assert_agent_intact = |workers: &ProductionSessionWorkers, sessions: &SandAgentSessionStore| {
+        assert!(agent.db_path.is_file());
+        assert!(!workers.is_agent_being_deleted(&agent.id));
+        assert_eq!(
+            sessions.list_agent_record_ids().expect("unchanged Agent roster"),
+            vec![agent.id.clone()]
+        );
+        assert_eq!(
+            fs::read(sessions.active_agent_pointer_path()).expect("retained active pointer"),
+            active_before
+        );
+        let owner = workers
+            .open_agent_db_owner(&agent.id)
+            .expect("retained Agent owner");
+        assert_eq!(
+            owner.read_metadata().expect("retained Agent metadata"),
+            agent_metadata
+        );
+        assert_eq!(
+            workers.read_session_work_admission(&agent.id)
+                .expect("retained Agent admission"),
+            Some(admission.clone())
+        );
+        assert_eq!(
+            sessions.read_agent_transcript_entries(&agent.id)
+                .expect("retained Agent transcript"),
+            vec![agent_entry.clone()]
+        );
+        assert_eq!(
+            fs::read(&agent_file).expect("retained Agent file").as_slice(),
+            b"Agent-owned file"
+        );
+    };
+
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let runtime = recording_deletion_runtime(&calls);
+    let owner_count = production.active_agent_db_owner_count();
+    assert_eq!(
+        delete(&production, &runtime, &[]).expect("empty deletion"),
+        json!({"transcript": [agent_entry]})
+    );
+    assert!(calls.lock().expect("empty deletion hooks").is_empty());
+
+    for reserved in [
+        ".conversations",
+        ".CONVERSATIONS",
+        ".Conversations.",
+        ".conversations...",
+        ".conversations .",
+    ] {
+        for ids in [
+            vec![reserved.to_string()],
+            vec![format!(" \t{reserved}\n"), reserved.to_string()],
+            vec![format!(" {} ", agent.id), agent.id.clone(), reserved.to_string()],
+            vec![format!(" \t{reserved}\n"), agent.id.clone(), format!(" {} ", agent.id)],
+        ] {
+            assert_eq!(
+                delete(&production, &runtime, &ids).expect_err("reserved Agent id must be refused"),
+                format!("Invalid Sand agent id: {reserved}"),
+                "request: {ids:?}"
+            );
+            assert!(
+                calls.lock().expect("refused deletion hooks").is_empty(),
+                "request: {ids:?}"
+            );
+            assert!(
+                !production.is_agent_being_deleted(reserved),
+                "request: {ids:?}"
+            );
+            assert_eq!(production.active_agent_db_owner_count(), owner_count);
+            assert!(!agent_owner.is_closed());
+            assert!(!human_owner.is_closed());
+            assert!(Arc::ptr_eq(
+                &agent_owner,
+                &production.open_agent_db_owner(&agent.id).expect("same Agent owner")
+            ));
+            assert!(Arc::ptr_eq(
+                &human_owner,
+                &production.open_human_conversation_db_owner(&human_id).expect("same Human owner")
+            ));
+            assert_agent_intact(&production, &store);
+            assert_human_intact(&production);
+        }
+    }
+
+    production.shutdown();
+    drop(store);
+    drop(production);
+    let reopened = open_workers();
+    let reopened_store = SandAgentSessionStore::new(Arc::clone(&reopened));
+    assert_agent_intact(&reopened, &reopened_store);
+    assert_human_intact(&reopened);
+    let reopened_human_owner = reopened
+        .open_human_conversation_db_owner(&human_id)
+        .expect("reopened Human owner");
+
+    let result = delete(&reopened, &runtime, &[format!(" {} ", agent.id), agent.id.clone()])
+        .expect("valid normalized deletion still succeeds");
+    assert_eq!(result["transcript"], json!([]));
+    assert!(!reopened_store.agent_dir_exists(&agent.id));
+    let fallback_id = reopened_store
+        .read_active_agent_id()
+        .expect("normal deletion fallback");
+    assert_ne!(fallback_id, agent.id);
+    assert!(reopened_store.agent_exists(&fallback_id));
+    let observed = calls.lock().expect("valid deletion hooks").clone();
+    assert_eq!(
+        observed.len(), 11,
+        "a deduplicated valid target invokes each deletion hook once"
+    );
+    assert_eq!(observed[0], format!("mark:{}", agent.id));
+    assert_eq!(observed[10], format!("pending:{}", agent.id));
+    assert!(!reopened_human_owner.is_closed());
+    assert!(Arc::ptr_eq(
+        &reopened_human_owner,
+        &reopened.open_human_conversation_db_owner(&human_id)
+            .expect("Human owner after valid deletion")
+    ));
+    assert_human_intact(&reopened);
+
+    reopened.shutdown();
+    drop(reopened_store);
+    drop(reopened);
+    let after_delete = open_workers();
+    assert_human_intact(&after_delete);
+    assert_eq!(
+        after_delete.list_agent_record_ids().expect("normal replacement Agent"),
+        vec![fallback_id]
+    );
+    after_delete.shutdown();
+    drop(after_delete);
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn lifecycle_preflights_reserved_deletion_batches_without_touching_session_owners() {
+    assert_reserved_deletion_preflight("namespace-lifecycle", |production, runtime, ids| {
+        let lifecycle = ProductionAgentLifecycle::with_deletion_runtime(
+            Arc::clone(production),
+            runtime.clone(),
+        );
+        if ids.is_empty() {
+            let result = lifecycle.delete_agents(ids)?;
+            assert_eq!(lifecycle.delete_agents(&[String::new(), " \t\n ".into()])?, result);
+            Ok(result)
+        } else if let [id] = ids {
+            lifecycle.delete_agent(id)
+        } else {
+            lifecycle.delete_agents(ids)
+        }
+    });
+}
+
+#[test]
+fn gateway_preflights_reserved_deletion_batches_without_touching_session_owners() {
+    assert_reserved_deletion_preflight("namespace-gateway", |production, runtime, ids| {
+        let (method, args) = if let [id] = ids {
+            ("deleteAgent", json!({"id": id}))
+        } else {
+            ("deleteAgents", json!({"ids": ids}))
+        };
+        dispatch_production_agent_lifecycle_gateway_call_with_runtime(
+            production, runtime, method, &args,
+        )
+        .expect("production lifecycle dispatcher handles deletion")
+        .map_err(|error| match error {
+            AgentLifecycleGatewayError::Internal(message) => message,
+            error => panic!("unexpected deletion error shape: {error:?}"),
+        })
+    });
 }
 
 

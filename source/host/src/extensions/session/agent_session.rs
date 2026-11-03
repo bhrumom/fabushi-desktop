@@ -578,9 +578,9 @@ impl SandAgentSessionStore {
     }
 
     pub fn delete_session(&self, agent_id: &str) -> Result<(), String> {
+        let db_path = self.production.session_db_path(agent_id)?;
         self.production.begin_agent_delete(agent_id)?;
         let result = self.production.with_agent_filesystem_mutation(agent_id, || {
-            let db_path = self.production.session_db_path(agent_id)?;
             self.production.retire_agent_owners_locked(agent_id, false)?;
             delete_sand_agent_db_write_generation(&db_path);
             match fs::remove_dir_all(self.get_agent_dir(agent_id)) {

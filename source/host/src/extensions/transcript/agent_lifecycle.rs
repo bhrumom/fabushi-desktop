@@ -15,6 +15,7 @@ use crate::extensions::session::gateway::{
 };
 use crate::transcript_mutation_events::publish_transcript_mutation;
 use crate::extensions::session::production::ProductionSessionWorkers;
+use crate::extensions::session::session_paths::assert_valid_agent_session_id;
 use crate::extensions::transcript::roster_emit::ProductionRosterEmit;
 
 pub type AgentDeletionHook = Arc<dyn Fn(&str) -> Result<(), String> + Send + Sync + 'static>;
@@ -699,6 +700,11 @@ impl ProductionAgentLifecycle {
             .collect::<Vec<_>>();
         if ids.is_empty() {
             return self.current_transcript();
+        }
+
+        // Refuse the whole batch before callbacks or reads can affect either owner.
+        for agent_id in &ids {
+            assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
         }
 
         let deleting = ids.iter().cloned().collect::<HashSet<_>>();

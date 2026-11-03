@@ -73,8 +73,8 @@ use super::conversation_size_limits::{
     ConversationGcTarget, ConversationSizeMaintenance, ConversationSizePolicy,
 };
 use super::session_paths::{
-    get_agent_db_path, get_connector_secrets_root, get_native_conversation_db_path,
-    get_native_conversations_root,
+    assert_valid_agent_session_id, get_agent_db_path, get_connector_secrets_root,
+    get_native_conversation_db_path, get_native_conversations_root,
 };
 use super::connector_secret_store::SandConnectorSecretStore;
 use super::channel_store::{ChannelConfig, ChannelConnection, FileChannelStore};
@@ -194,6 +194,13 @@ impl ProductionMaterializedSession {
     }
 }
 
+/// Safe folder names can still collide across the Agent and Human domains.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum SessionDbOwnerKey {
+    Agent(String),
+    Human(String),
+}
+
 /// Shipping Host owner for the Grok session materialization worker boundary.
 ///
 /// The pool is retained for the Host lifetime so per-agent blob workers are
@@ -208,7 +215,7 @@ pub struct ProductionSessionWorkers {
     pending_conversation_turns: PendingConversationTurnRegistry,
     memory_service: Arc<MemoryService>,
     mint_queue: SessionMintQueue,
-    db_owners: Mutex<BTreeMap<String, Arc<SandAgentDb>>>,
+    db_owners: Mutex<BTreeMap<SessionDbOwnerKey, Arc<SandAgentDb>>>,
     agent_store_owners: Mutex<BTreeMap<String, Arc<ProductionAgentStore>>>,
     filesystem_mutation_locks: Mutex<BTreeMap<String, Arc<Mutex<()>>>>,
     deleting_agents: Mutex<BTreeSet<String>>,
@@ -1634,6 +1641,7 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<SandAgentDb>, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             if self.is_agent_being_deleted(agent_id) {
                 return Err(format!(
@@ -1675,7 +1683,8 @@ impl ProductionSessionWorkers {
             .db_owners
             .lock()
             .map_err(|_| "agent db owner map poisoned".to_string())?;
-        if let Some(owner) = owners.get(agent_id) {
+        let key = SessionDbOwnerKey::Agent(agent_id.to_string());
+        if let Some(owner) = owners.get(&key) {
             ProductionAgentStore::validate_persisted_checkpoint_checked(owner, &blob_store)?;
             self.validate_owner_session_identity(agent_id, owner)?;
             if recover_pending {
@@ -1707,7 +1716,7 @@ impl ProductionSessionWorkers {
             self.recover_pending_profile_mutation(agent_id, &owner)?;
             self.recover_pending_memory_mutation(agent_id, &owner)?;
         }
-        owners.insert(agent_id.to_string(), Arc::clone(&owner));
+        owners.insert(key, Arc::clone(&owner));
         Ok(owner)
     }
 
@@ -1986,6 +1995,9 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         checkpoint: bool,
     ) -> bool {
+        if assert_valid_agent_session_id(agent_id).is_err() {
+            return false;
+        }
         self.with_agent_filesystem_mutation(agent_id, || {
             Ok(self.close_agent_db_owner_locked(agent_id, checkpoint))
         })
@@ -2001,7 +2013,7 @@ impl ProductionSessionWorkers {
             .db_owners
             .lock()
             .ok()
-            .and_then(|mut owners| owners.remove(agent_id));
+            .and_then(|mut owners| owners.remove(&SessionDbOwnerKey::Agent(agent_id.to_string())));
         if let Some(owner) = owner {
             owner.close(checkpoint);
             true
@@ -2018,6 +2030,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         flush: bool,
     ) -> Result<bool, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             self.retire_agent_owners_locked(agent_id, flush)
         })
@@ -2042,6 +2055,7 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Arc<ProductionAgentStore>, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             if self.is_agent_being_deleted(agent_id) {
                 return Err(format!(
@@ -2066,6 +2080,7 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         recover_pending: bool,
     ) -> Result<Arc<ProductionAgentStore>, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
         let cached_owner = self.agent_store_owners.lock()
             .map_err(|_| "agent store owner map poisoned".to_string())?
             .get(agent_id).cloned();
@@ -2225,6 +2240,9 @@ impl ProductionSessionWorkers {
         agent_id: &str,
         flush: bool,
     ) -> bool {
+        if assert_valid_agent_session_id(agent_id).is_err() {
+            return false;
+        }
         self.with_agent_filesystem_mutation(agent_id, || {
             Ok(self.close_agent_store_owner_locked(agent_id, flush))
         })
@@ -2326,12 +2344,12 @@ impl ProductionSessionWorkers {
     }
 
     pub fn begin_agent_delete(&self, agent_id: &str) -> Result<(), String> {
+        let db_path = self.session_db_path(agent_id)?;
         self.roster_extras_cache.remove(agent_id);
         if let Ok(mut deleting) = self.deleting_agents.lock() {
             deleting.insert(agent_id.to_string());
         }
         let result = self.with_agent_filesystem_mutation(agent_id, || {
-            let db_path = self.session_db_path(agent_id)?;
             if !db_path.is_file() {
                 return Ok(());
             }
@@ -3975,7 +3993,7 @@ impl ProductionSessionWorkers {
             }
             let cached = self.db_owners.lock()
                 .map_err(|_| "agent db owner map poisoned".to_string())?
-                .get(agent_id).cloned();
+                .get(&SessionDbOwnerKey::Agent(agent_id.to_string())).cloned();
             if cached.as_ref().is_some_and(|owner| owner.is_closed()) {
                 return Ok((ChannelInboundAppendOutcome::NotWritten(ChannelInboundAppendFailure {
                     kind: ChannelInboundAppendFailureKind::Closed,
@@ -4486,10 +4504,6 @@ impl ProductionSessionWorkers {
             .get("participantIds")
             .and_then(serde_json::Value::as_array)
             .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(local_human_id))))
-    }
-
-    fn native_conversation_owner_key(conversation_id: &str) -> String {
-        format!("conversation:{conversation_id}")
     }
 
     fn shipping_native_messaging(&self) -> Result<Option<&FabushiNativeMessagingClient>, String> {
@@ -5049,7 +5063,7 @@ impl ProductionSessionWorkers {
         self.db_owners
             .lock()
             .map_err(|_| "conversation db owner map poisoned".to_string())?
-            .insert(Self::native_conversation_owner_key(&conversation_id), Arc::clone(&owner));
+            .insert(SessionDbOwnerKey::Human(conversation_id.clone()), Arc::clone(&owner));
         Ok(serde_json::json!({
             "id": conversation_id,
             "kind": "human",
@@ -5067,7 +5081,7 @@ impl ProductionSessionWorkers {
         if !db_path.is_file() {
             return Err(format!("Human conversation missing: {conversation_id}"));
         }
-        let key = Self::native_conversation_owner_key(conversation_id);
+        let key = SessionDbOwnerKey::Human(conversation_id.to_string());
         let mut owners = self
             .db_owners
             .lock()
@@ -6134,6 +6148,7 @@ impl ProductionSessionWorkers {
         &self,
         agent_id: &str,
     ) -> Result<Option<PreparedAgentBlobStore>, String> {
+        assert_valid_agent_session_id(agent_id).map_err(|error| error.to_string())?;
         self.with_agent_filesystem_mutation(agent_id, || {
             self.prepare_existing_agent_locked(agent_id)
         })

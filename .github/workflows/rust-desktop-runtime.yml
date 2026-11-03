@@ -3086,6 +3086,15 @@ jobs:
               "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
               "source/host/src/extensions/transcript/transcript_manager.rs",
               "source/host/src/extensions/session/production.rs",
+              "projects/openclaw-rust/docs/specs/session-owner-namespace-isolation.md",
+              "source/host/src/extensions/session/session_paths.rs",
+              "source/host/src/extensions/session/agent_session.rs",
+              "source/host/src/extensions/session/session_materialization.rs",
+              "source/host/src/extensions/session/session_roster.rs",
+              "source/host/src/extensions/transcript/agent_lifecycle.rs",
+              "source/host/tests/session_paths_contract.rs",
+              "source/host/tests/agent_session_contract.rs",
+              "source/host/tests/agent_lifecycle_contract.rs",
               "source/host/src/extensions/memory/memory_service.rs",
               "source/host/src/extensions/memory/memory_synthesis_service.rs",
               "source/host/src/extensions/memory/production.rs",
@@ -3352,6 +3361,23 @@ jobs:
           ]
           cases = [
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
+              ("session-owner-namespace", base + ["--no-fail-fast", "--test", "session_paths_contract", "--test", "agent_lifecycle_contract", "--test", "agent_session_contract", "--", "--test-threads=1"], [
+                  "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
+                  "sni_agent_reserved_namespace_preserves_human_grammar_and_valid_agent_spelling",
+                  "lifecycle_preflights_reserved_deletion_batches_without_touching_session_owners",
+                  "gateway_preflights_reserved_deletion_batches_without_touching_session_owners",
+                  "reserved_agent_session_operations_refuse_before_owner_access_and_preserve_human_state",
+                  "agent_and_human_db_owners_are_isolated_when_human_opens_first",
+                  "agent_and_human_db_owners_are_isolated_when_agent_opens_first",
+                  "session_paths_validate_agent_ids_and_preserve_connector_secret_sibling_layout",
+                  "deletion_runtime_runs_owner_hooks_around_durable_session_delete",
+                  "deletion_runtime_rolls_back_deleting_fence_when_predelete_drain_fails",
+                  "deleting_active_agent_selects_existing_successor_and_returns_its_transcript",
+                  "guarded_delete_rejects_stale_revision_before_destructive_hooks",
+                  "delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal",
+                  "deletion_fence_rejects_new_transcript_work_before_durable_write",
+                  "checked_backend_target_lookup_retains_durable_deletion_refusal_after_reopen",
+              ]),
               ("codex-model-identity", base + ["--lib", "extensions::inference::provider_session::codex_model_identity_tests::", "--", "--test-threads=1"], [
                   "extensions::inference::provider_session::codex_model_identity_tests::" + name for name in [
                       "cmi_saved_model_reaches_production_retry_and_later_admission",
@@ -3516,9 +3542,10 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1"],
               "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
               "checkpoint_publication_scope": "Actual provider checkpoint writer: private owned staging, exact payload preservation, no-clobber final publication, directory-entry barriers including retry after a failed creation barrier, and retained visible payload after a controlled final barrier failure. Actual shell adapter retains a completed file effect as uncheckpointed after real store refusal and explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance.",
+              "session_namespace_scope": "SNI-v1 runs the complete existing path, Agent lifecycle and Agent Session targets. Real Session/Human stores cover reserved Agent path refusal before locks, markers and caches; whole-batch lifecycle and Gateway preflight before all hooks; distinct typed Agent/Human cache owners in both opening orders; Agent close/retire/delete, unchanged Human bytes and reopen; and retained valid deletion/admission controls. Colon-bearing filesystem controls run on Unix. This is not every filesystem alias, external parent replacement, Windows or packaged acceptance, Human attachment admission, membership revocation or a new permission owner.",
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -3551,6 +3578,10 @@ jobs:
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
               if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "memory-account-binding", "codex-model-identity"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
+              if label == "session-owner-namespace":
+                  accepted = (accepted and len(counts) == 3
+                      and all(count[2] == 0 for count in counts)
+                      and sum(count[0] for count in counts) == len(passed))
               receipt["executions"].append({
                   "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
                   "execution_error": execution_error, "required_positive_names": required,

@@ -13,7 +13,7 @@ use mahayana_host_runtime::extensions::inference::model_picker_service::{
 };
 use mahayana_host_runtime::extensions::inference::typed_replay_serialization::serialize_responses_replay;
 use mahayana_host_runtime::extensions::session::session_profile_files::AgentProfileUpdate;
-use mahayana_host_runtime::extensions::memory::memory_service::MemoryKind;
+use mahayana_host_runtime::extensions::memory::memory_service::{MemoryKind, MemoryService};
 use mahayana_host_runtime::automations::automation::AutomationSpec;
 use mahayana_host_runtime::automations::automation_id::stable_automation_id;
 use mahayana_host_runtime::workflows::workflow_library::WorkflowSpec;
@@ -28,6 +28,9 @@ use mahayana_host_runtime::extensions::session::agent_db::{
     SessionWorkAdmissionRecord,
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::session_paths::{
+    get_native_conversation_db_path, get_native_conversations_root,
+};
 use mahayana_host_runtime::extensions::session::typed_replay::{
     ReplayContentPart, ReplayRole, TypedReplayEntry,
 };
@@ -47,6 +50,16 @@ fn temp_root(label: &str) -> std::path::PathBuf {
     std::env::temp_dir().join(format!(
         "fabushi-agent-session-{label}-{}-{suffix}",
         std::process::id()
+    ))
+}
+
+fn namespace_session_workers(agents: &std::path::Path) -> Arc<ProductionSessionWorkers> {
+    Arc::new(ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+        agents,
+        500,
+        Some("namespace-local-human".into()),
+        Arc::new(|| None),
+        Arc::new(MemoryService::new(agents.to_path_buf())),
     ))
 }
 
@@ -644,6 +657,268 @@ fn delete_session_closes_owned_blob_store_clears_directory_and_publishes_removal
     subscription.unsubscribe();
     store.close_worker_pool();
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn reserved_agent_session_operations_refuse_before_owner_access_and_preserve_human_state() {
+    let root = temp_root("reserved-owner-namespace");
+    let agents = root.join("agents");
+    let production = namespace_session_workers(&agents);
+    let sessions = SandAgentSessionStore::new(Arc::clone(&production));
+    let human = production.create_human_conversation("namespace-peer", "Human history").unwrap();
+    let human_id = human["id"].as_str().unwrap().to_string();
+    production.append_human_message(
+        &human_id, "Keep this Human message", "namespace-human-message", Some(1.0), None, &[],
+    ).unwrap();
+    let human_owner = production.open_human_conversation_db_owner(&human_id).unwrap();
+    let human_path = get_native_conversation_db_path(&agents, &human_id).unwrap();
+    assert_eq!(human_owner.db_path(), human_path.as_path());
+    let human_file = human_path.parent().unwrap().join("preserved.bin");
+    fs::write(&human_file, b"Human-owned resource").unwrap();
+    let human_metadata = human_owner.read_metadata().unwrap();
+    let human_entries = production.read_human_conversation_transcript(&human_id).unwrap();
+    assert_eq!(human_entries.len(), 1);
+    assert_eq!(human_entries[0]["content"], "Keep this Human message");
+    let human_snapshot = compaction_session_snapshot(&human_owner);
+    assert_eq!(human_snapshot.0.len(), 1);
+    let human_db_bytes = fs::read(&human_path).unwrap();
+    let ordinary = sessions.create_session(None, "user", None).unwrap();
+    let ordinary_owner = production.open_agent_db_owner(&ordinary.id).unwrap();
+    let ordinary_store = production.open_agent_store_owner(&ordinary.id).unwrap();
+    sessions.summarize_agent_by_id(&ordinary.id).unwrap().expect("ordinary roster entry");
+    let roster_count = production.roster_extras_cache_entry_count();
+    assert!(roster_count > 0);
+    let directory_entries = || fs::read_dir(&agents).unwrap()
+        .map(|entry| entry.unwrap().file_name()).collect::<std::collections::BTreeSet<_>>();
+    let paths_before = directory_entries();
+    let removals = Arc::new(AtomicUsize::new(0));
+    let subscription = subscribe_transcript_mutations({
+        let removals = Arc::clone(&removals);
+        let ordinary_id = ordinary.id.clone();
+        move |mutation| {
+            let agent_id = mutation.get("agentId").and_then(serde_json::Value::as_str);
+            if mutation.get("kind").and_then(serde_json::Value::as_str) == Some("agent-removed")
+                && agent_id.is_some_and(|id| id == ordinary_id || [
+                    ".conversations", ".CONVERSATIONS", ".Conversations.",
+                    ".conversations...", ".conversations .",
+                ].contains(&id))
+            {
+                removals.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+    });
+
+    for reserved in [
+        ".conversations", ".CONVERSATIONS", ".Conversations.",
+        ".conversations...", ".conversations .",
+    ] {
+        // A rejected identity must never reach the Agent lock or change its
+        // fast-path marker, even transiently while another operation holds it.
+        let (locked_tx, locked_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let lock_owner = Arc::clone(&production);
+        let held_lock = std::thread::spawn(move || {
+            lock_owner.with_agent_filesystem_mutation(reserved, || {
+                locked_tx.send(()).unwrap();
+                release_rx.recv().unwrap();
+                Ok(())
+            }).unwrap();
+        });
+        locked_rx.recv_timeout(Duration::from_secs(5)).expect("reserved Agent lock held");
+        let (refused_tx, refused_rx) = mpsc::channel();
+        let operation_owner = Arc::clone(&production);
+        let operation = std::thread::spawn(move || {
+            let sessions = SandAgentSessionStore::new(Arc::clone(&operation_owner));
+            let failures = [
+                ("begin", operation_owner.begin_agent_delete(reserved).err()),
+                ("delete", sessions.delete_session(reserved).err()),
+                ("open DB", operation_owner.open_agent_db_owner(reserved).err()),
+                ("open store", operation_owner.open_agent_store_owner(reserved).err()),
+                ("open session", sessions.open_session(reserved).err()),
+                ("retire", operation_owner.retire_agent_owners(reserved, true).err()),
+            ];
+            let closed = [
+                operation_owner.close_agent_db_owner(reserved, true),
+                operation_owner.close_agent_store_owner(reserved, true),
+            ];
+            refused_tx.send(()).unwrap();
+            (failures, closed)
+        });
+        let refused_while_locked = refused_rx.recv_timeout(Duration::from_secs(5));
+        let marked_while_locked = production.is_agent_being_deleted(reserved);
+        release_tx.send(()).unwrap();
+        held_lock.join().expect("release only the fixture's Agent lock");
+        let (failures, closed) = operation.join().expect("reserved operations returned");
+        assert!(refused_while_locked.is_ok(), "{reserved} entered the Agent owner boundary");
+        assert!(!marked_while_locked, "{reserved} acquired deletion custody before validation");
+        let expected = format!("Invalid Sand agent id: {reserved}");
+        for (operation, error) in failures {
+            assert_eq!(error.as_deref(), Some(expected.as_str()), "{operation}: {reserved}");
+        }
+        assert_eq!(closed, [false, false]);
+        assert!(!production.is_agent_being_deleted(reserved));
+        assert!(!production.is_agent_being_deleted(&ordinary.id));
+        assert!(!human_owner.is_closed());
+        assert!(Arc::ptr_eq(&human_owner, &production.open_human_conversation_db_owner(&human_id).unwrap()));
+        assert!(Arc::ptr_eq(&ordinary_owner, &production.open_agent_db_owner(&ordinary.id).unwrap()));
+        assert!(Arc::ptr_eq(&ordinary_store, &production.open_agent_store_owner(&ordinary.id).unwrap()));
+        assert_eq!(production.active_agent_db_owner_count(), 2);
+        assert_eq!(production.active_agent_store_owner_count(), 1);
+        assert_eq!(production.roster_extras_cache_entry_count(), roster_count);
+        assert_eq!(human_owner.read_metadata().unwrap(), human_metadata);
+        assert_eq!(production.read_human_conversation_transcript(&human_id).unwrap(), human_entries);
+        assert_eq!(compaction_session_snapshot(&human_owner), human_snapshot);
+        assert_eq!(fs::read(&human_path).unwrap(), human_db_bytes);
+        assert_eq!(fs::read(&human_file).unwrap(), b"Human-owned resource");
+        assert_eq!(directory_entries(), paths_before);
+        assert!(!get_native_conversations_root(&agents).join("store.db").exists());
+        assert_eq!(removals.load(Ordering::SeqCst), 0);
+    }
+
+    production.shutdown();
+    drop(sessions);
+    drop(production);
+    let reopened = namespace_session_workers(&agents);
+    let sessions = SandAgentSessionStore::new(Arc::clone(&reopened));
+    let reopened_human = reopened.open_human_conversation_db_owner(&human_id).unwrap();
+    assert!(!Arc::ptr_eq(&human_owner, &reopened_human));
+    assert_eq!(reopened_human.read_metadata().unwrap(), human_metadata);
+    assert_eq!(reopened.read_human_conversation_transcript(&human_id).unwrap(), human_entries);
+    sessions.delete_session(&ordinary.id).expect("ordinary deletion still succeeds");
+    assert!(!agents.join(&ordinary.id).exists());
+    assert_eq!(removals.load(Ordering::SeqCst), 1);
+    assert!(!reopened_human.is_closed());
+    assert_eq!(reopened.read_human_conversation_transcript(&human_id).unwrap(), human_entries);
+    assert_eq!(fs::read(&human_file).unwrap(), b"Human-owned resource");
+    subscription.unsubscribe();
+    reopened.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+// Colon-bearing Agent IDs need a filesystem that supports that existing
+// grammar. These contracts exercise real Unix paths; other platforms require
+// their own filesystem evidence rather than a rewritten fixture identity.
+#[cfg(unix)]
+fn assert_agent_human_db_owner_namespace_isolation(human_first: bool) {
+    let root = temp_root(if human_first { "human-owner-first" } else { "agent-owner-first" });
+    let agents = root.join("agents");
+    // Obtain the stable Human ID through its real creation owner without
+    // copying its identity algorithm or populating the tested owner's cache.
+    let seed = namespace_session_workers(&root.join("identity-seed"));
+    let human = seed.create_human_conversation("namespace-peer", "Human history").unwrap();
+    let human_id = human["id"].as_str().unwrap().to_string();
+    seed.shutdown();
+    drop(seed);
+
+    let production = namespace_session_workers(&agents);
+    let sessions = SandAgentSessionStore::new(Arc::clone(&production));
+    let agent_id = format!("conversation:{human_id}");
+    let agent_path = production.session_db_path(&agent_id).expect("colon remains a valid Agent ID");
+    fs::create_dir_all(agent_path.parent().unwrap()).unwrap();
+    mahayana_host_runtime::extensions::session::agent_db::initialize_persisted_agent_record(
+        &agent_path, 500, &agent_id, "user", None, 1, &"00".repeat(32),
+    ).unwrap();
+    let create_human_owner = || {
+        assert_eq!(production.create_human_conversation("namespace-peer", "Human history").unwrap(), human);
+        production.append_human_message(
+            &human_id, "Keep this Human message", "namespace-human-message", Some(1.0), None, &[],
+        ).unwrap();
+        production.open_human_conversation_db_owner(&human_id).unwrap()
+    };
+    let (agent_owner, human_owner) = if human_first {
+        let human_owner = create_human_owner();
+        let agent_owner = production.open_agent_db_owner(&agent_id).unwrap();
+        (agent_owner, human_owner)
+    } else {
+        let agent_owner = production.open_agent_db_owner(&agent_id).unwrap();
+        let human_owner = create_human_owner();
+        (agent_owner, human_owner)
+    };
+    let human_path = get_native_conversation_db_path(&agents, &human_id).unwrap();
+    let human_metadata = human_owner.read_metadata().unwrap();
+    let human_entries = production.read_human_conversation_transcript(&human_id).unwrap();
+    assert_eq!(human_entries.len(), 1);
+    assert_eq!(human_entries[0]["content"], "Keep this Human message");
+    assert!(!Arc::ptr_eq(&agent_owner, &human_owner));
+    assert_eq!(agent_owner.db_path(), agent_path.as_path());
+    assert_eq!(human_owner.db_path(), human_path.as_path());
+    assert_ne!(agent_owner.db_path(), human_owner.db_path());
+    assert_eq!(agent_owner.read_metadata().unwrap()["agentId"], agent_id);
+    assert!(agent_owner.read_metadata().unwrap().get("conversationKind").is_none());
+    assert_eq!(human_owner.read_metadata().unwrap()["conversationKind"], "human");
+    assert_eq!(human_owner.read_metadata().unwrap()["conversationId"], human_id);
+    assert!(human_owner.read_metadata().unwrap().get("agentId").is_none());
+    assert_eq!(production.create_human_conversation("namespace-peer", "Ignored existing title").unwrap(), human);
+    production.ensure_main_session_work_admission(&agent_id).unwrap();
+    let agent_entries = vec![create_user_message("agent-only", "Agent history", UserMessageOptions::default(), 2.0)];
+    assert_eq!(production.append_agent_transcript_entries(&agent_id, &agent_entries).unwrap(), 1);
+    let human_snapshot = compaction_session_snapshot(&human_owner);
+    assert_eq!(human_snapshot.0.len(), 1);
+    let assert_human_preserved = || {
+        assert!(!human_owner.is_closed());
+        assert!(human_owner.db_path().is_file());
+        assert!(Arc::ptr_eq(&human_owner, &production.open_human_conversation_db_owner(&human_id).unwrap()));
+        assert_eq!(human_owner.read_metadata().unwrap(), human_metadata);
+        assert_eq!(production.read_human_conversation_transcript(&human_id).unwrap(), human_entries);
+        assert_eq!(compaction_session_snapshot(&human_owner), human_snapshot);
+    };
+    assert_eq!(production.active_agent_db_owner_count(), 2);
+    assert_human_preserved();
+
+    assert!(production.close_agent_db_owner(&agent_id, true));
+    assert!(agent_owner.is_closed());
+    assert_eq!(production.active_agent_db_owner_count(), 1);
+    assert_human_preserved();
+    let reopened_agent = production.open_agent_db_owner(&agent_id).unwrap();
+    assert!(!Arc::ptr_eq(&agent_owner, &reopened_agent));
+    assert_eq!(production.read_agent_transcript_entries(&agent_id).unwrap(), agent_entries);
+    let agent_store = production.open_agent_store_owner(&agent_id).unwrap();
+    assert!(production.close_agent_store_owner(&agent_id, true));
+    assert!(!reopened_agent.is_closed());
+    assert_eq!(production.active_agent_store_owner_count(), 0);
+    assert_human_preserved();
+    drop(agent_store);
+
+    let _agent_store = production.open_agent_store_owner(&agent_id).unwrap();
+    assert!(production.retire_agent_owners(&agent_id, true).unwrap());
+    assert!(reopened_agent.is_closed());
+    assert_eq!(production.active_agent_db_owner_count(), 1);
+    assert_eq!(production.active_agent_store_owner_count(), 0);
+    assert_human_preserved();
+    let deleted_agent = production.open_agent_db_owner(&agent_id).unwrap();
+    assert_eq!(production.read_agent_transcript_entries(&agent_id).unwrap(), agent_entries);
+    sessions.delete_session(&agent_id).unwrap();
+    assert!(deleted_agent.is_closed());
+    assert!(!agents.join(&agent_id).exists());
+    assert!(!production.is_agent_being_deleted(&agent_id));
+    assert_eq!(production.active_agent_db_owner_count(), 1);
+    assert!(production.open_agent_db_owner(&agent_id).is_err());
+    assert_human_preserved();
+
+    production.shutdown();
+    drop(sessions);
+    drop(production);
+    let reopened = namespace_session_workers(&agents);
+    let reopened_human = reopened.open_human_conversation_db_owner(&human_id).unwrap();
+    assert!(!Arc::ptr_eq(&human_owner, &reopened_human));
+    assert_eq!(reopened_human.read_metadata().unwrap(), human_metadata);
+    assert_eq!(reopened.read_human_conversation_transcript(&human_id).unwrap(), human_entries);
+    assert!(reopened.open_agent_db_owner(&agent_id).is_err());
+    assert!(!agents.join(&agent_id).exists());
+    reopened.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[cfg(unix)]
+#[test]
+fn agent_and_human_db_owners_are_isolated_when_human_opens_first() {
+    assert_agent_human_db_owner_namespace_isolation(true);
+}
+
+#[cfg(unix)]
+#[test]
+fn agent_and_human_db_owners_are_isolated_when_agent_opens_first() {
+    assert_agent_human_db_owner_namespace_isolation(false);
 }
 
 #[test]

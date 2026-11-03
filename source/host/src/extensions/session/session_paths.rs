@@ -79,11 +79,23 @@ pub fn get_sand_transcripts_dir(home_dir: Option<&Path>) -> PathBuf {
     get_sand_transcripts_dir_with(home, &argv, &environment, &cwd)
 }
 
+/// Agent operations cannot name the parent directory owned by Human
+/// conversations. Preserve accepted IDs verbatim; this is an owner-domain
+/// boundary, not a change to the generic folder or Human ID grammar.
+pub fn assert_valid_agent_session_id(agent_id: &str) -> Result<(), SandInvalidAgentIdError> {
+    assert_valid_sand_agent_id(agent_id)?;
+    let portable_leaf = agent_id.trim_end_matches(|character| character == '.' || character == ' ');
+    if portable_leaf.eq_ignore_ascii_case(NATIVE_CONVERSATIONS_DIRNAME) {
+        return Err(SandInvalidAgentIdError(agent_id.to_owned()));
+    }
+    Ok(())
+}
+
 pub fn get_agent_db_path(
     root_dir: &Path,
     agent_id: &str,
 ) -> Result<PathBuf, SandInvalidAgentIdError> {
-    assert_valid_sand_agent_id(agent_id)?;
+    assert_valid_agent_session_id(agent_id)?;
     Ok(root_dir.join(agent_id).join(STORE_FILENAME))
 }
 
