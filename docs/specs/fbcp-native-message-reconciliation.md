@@ -2369,7 +2369,9 @@ client, second retry owner or automatic user-mutation replay.
   integer generation and sequence. Current MessagePort identity and Host
   generation precede sequence; an old generation with a larger sequence is
   obsolete. Unknown, malformed and informational events (including
-  protocol-error and discovery) cannot move connection watermarks or state.
+  protocol-error and discovered) cannot move connection watermarks or state.
+  Gateway discovery-timeout/rediscovery-failed are meaningful nonterminal
+  down observations, including when early Host events preceded the handshake.
   Ordinary runtime family subscribers continue to receive their original
   payloads.
 - **NMR-TRANSPORT-RECOVERY-01b:** Host running means a spawned process, not a
@@ -2392,6 +2394,8 @@ client, second retry owner or automatic user-mutation replay.
   finally cannot clear the new slot, finish its waiter or suppress the current
   listAgents -> Human sync -> Transcript refresh. Account changes/disposal
   retire queued and in-flight obligations without cross-account replay.
+  A delayed initial account read cannot overwrite a newer observed account;
+  same-account observations do not retire a valid retry.
 - **NMR-TRANSPORT-RECOVERY-01d:** Current transport state remains authoritative
   across new subscriptions and account-effect restarts. Initial ready
   resolution is only a fallback when no newer transport observation exists;
@@ -2444,3 +2448,90 @@ full source/legal accounting, signed supported platforms, complete Bot/visual/
 accessibility/security/performance/soak/upgrade/rollback or independent ACCEPT.
 Rollback restores only the former notification/retry projection and leaves
 durable messages, resources and draft data intact.
+
+
+## NMR-OFFLINE-ORIGIN-01 — Truthful Human offline origin through the existing intent
+
+Actual Mac H `98be438bad69f9982c503e5a3442f721307c85ce`,
+run41550895126/job125637914634, executed Plugins2 successfully and both Human
+cases unsuccessfully. The real durable feed exposed an online message's general
+composedAtMs as a Sent while offline badge. The whole-message text oracle also
+incorrectly included that auxiliary badge in its expected body. Failure receipt
+`1b9bd861f08915691b70abe851b31af83b468fef` retains the exact reached and
+unreached steps; design audit `3747cae275672260a2ecd96040707d0353824985`
+distinguishes timestamp, queue cause and canonical persistence. Neither a held
+receipt nor a general queued phase proves offline composition.
+
+- **NMR-OFFLINE-ORIGIN-01a:** Keep the existing Human Transcript submission
+  scope as origin owner. Initialize its observation false and latch true only
+  when the existing queue reports queued while the synchronous transport is
+  actually down, before any request may have been posted. A same-conversation
+  busy queue while online is not an offline observation. Retain the original
+  createdAtMs and nonce through pre-frame failures and retries. Do not change
+  the generic queue, Agent dispatch or the existing admission parameter whose
+  presence distinguishes explicit retry from the send journal.
+- **NMR-OFFLINE-ORIGIN-01b:** Add optional boolean queuedOffline to the existing
+  sendHumanMessage arguments. First Human dispatch supplies an explicit boolean
+  and the existing composedAtMs; absence is unproven/false for compatibility.
+  If present, the flag must be a boolean (null, strings, arrays and numbers are
+  invalid). True requires a finite numeric composedAtMs. Reject invalid input
+  before staging or HTTP. Keep retryHumanMessage strictly conversationId plus
+  original clientNonce; it never resubmits body, timestamp or origin.
+- **NMR-OFFLINE-ORIGIN-01c:** Preserve the public six-argument Session append
+  method for existing callers; add an existing-owner queue-origin wrapper.
+  New local pending rows insert queuedOffline only when true. Existing pending
+  or canonical nonce ownership fixes origin once: a later call cannot promote
+  a legacy missing flag or replace an existing value. The current authorized
+  same-author/same-nonce pending-to-canonical remap explicitly retains a valid
+  origin and original composedAtMs; server timestampMs remains canonical.
+  Known-row refresh, delayed acknowledgement, identity-only retry and actual
+  close/reopen retain this evidence. Remote DTOs and external service requests
+  gain no field. Invalid retained origin or true without finite composed time
+  cannot dispatch a send during recovery, and the original row/intent is retained.
+  Identity-only retry performs no HTTP in this case; ordinary sync may retain
+  its bounded history GET, but cannot POST the damaged intent or overwrite it
+  with a remote row lacking validated origin. Add no global history preflight.
+  Legacy timestamp-only rows remain readable and retryable without rewriting
+  user data or inferring offline origin.
+- **NMR-OFFLINE-ORIGIN-01d:** Keep composedAtMs as general metadata. Human
+  projection explicitly distinguishes true from false/missing/malformed
+  origin; page-side maps and previous local cache values cannot manufacture
+  evidence from timestamps. Human UI shows Sent while offline only for a
+  canonical sent row with explicit origin and a valid composed time. Queued
+  Human sends retain their existing queued notice; pending/failed rows never
+  claim they are sent. Preserve Agent timestamp and page-map behavior.
+- **NMR-OFFLINE-ORIGIN-01e:** The actual Electron body oracle uses exactly one
+  existing .sand-message-prose node and compares its complete text. Preserve
+  canonical ID, settled delivery, datetime and absent-placeholder assertions,
+  then separately require no offline badge for these online Sends. Keep both
+  original Human and Plugins cases, zero retries and complete process/draft
+  requirements. A body-selector repair alone cannot qualify this batch.
+
+**NMR-AC-OFFLINE-ORIGIN-01:** Add one actual Session/Gateway/HTTP/SQLite case
+`shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart` (Human76 ->77; reconciliation120 ->121), retaining all
+existing cases. Exercise explicit online/legacy timestamp negatives, true
+offline positive, same-nonce origin immutability, known refresh/late settlement,
+canonical reopen and malformed first/recovery inputs with no unsafe HTTP or
+intent loss. The public gateway and durable row must both be observed.
+
+Add one actual queue/helper/Coordinator case
+`Human Composer offline origin follows observed transport queuing and survives retries without marking online busy sends` (the existing submission file has8 top-level
+cases, now9; combined retry40 +runtime6 +origin1 =47). Cover online sends,
+observed transport queueing, online busy queue, pre-frame retry and a late
+disconnect after possible admission without changing the original origin.
+Use the production origin observer from the actual Root onPhase path.
+
+Add one projection case
+`NMR-OFFLINE-ORIGIN-01 Human offline labels require an explicit origin and canonical sent state` (42 ->43), including legacy/malformed/false
+Human rows, true origin, page-side-map and merge negatives, and retained Agent
+controls. Strengthen the existing actual browser case
+`NMR-26 a disconnected Human send queues and reconnect dispatches it exactly once`
+with visible queued/pending/sent origin behavior from the actual RPC payload
+and subsequent canonical refresh/reopen. Preserve browser13 and author23.
+The complete affected UI target is203, not yet executed at this freeze.
+
+Run only frozen containing-H Actions; preserve full failures and classify the
+separate production semantic error and body-oracle error. No local validation,
+backend deployment, source acceptance, signed-platform or independent release
+acceptance is implied. Rollback removes optional origin interpretation while
+leaving original rows, timestamps, draft identities and outbox intact.
