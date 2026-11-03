@@ -89,6 +89,33 @@ authorized Fabushi/Codex routes, with no arbitrary model/profile/runtime choice.
   settings; UI controls cover acknowledged state, error, duplicate admission,
   agent/account switch and disposal.
 
+### Native presentation wire (RMD-v1)
+
+For an existing canonical main session, sessions.get retains its existing
+sessionId and lifecycleRevision strings and adds modelSelection:
+```json
+{"version":1,"supported":true,"override":{"provider":"fabushi","modelId":"CasePreservedModel"},"default":{"provider":"fabushi","modelId":"ConfiguredDefault"},"locked":false,"canReset":true}
+```
+Both pairs are either complete objects with nonempty original identity strings
+or null. override is null only when both persisted fields are absent; malformed
+or incomplete persisted pairs fail visibly. default is null for unsupported
+routes, with supported=false and canReset=false. canReset requires the trusted
+native fact, supported checked default, unarchived admission, unlocked entry and
+a present override. No auth-profile value is returned. An applied reset returns
+ok=true, key, sessionId, lifecycleRevision and the same modelSelection shape
+with override=null. The frontend consumes this acknowledged state without
+inventing lifecycle revisions or optimistically clearing the stored override.
+It sends only key, expectedSessionId, expectedLifecycleRevision and
+modelSelection:{resetToDefault:true}; duplicate submissions remain disabled
+until that call settles. A status refresh is a read, never a retry of a failed
+or ambiguous mutation. Renderer source methods are getSessionModelSelection
+({key}) and resetSessionModelSelection({key, expectedSessionId,
+expectedLifecycleRevision, modelSelection:{resetToDefault:true}}), mapped by the
+existing ProductionRenderer to sessions.get and sessions.patch respectively.
+An unrecognized or malformed reply remains a visible error. Display current
+session override and configured default separately; do not promise a live
+turn switch.
+
 ## Validation and integration
 
 No schema or dependency changes. Reuse existing Rust Session/model/inference,
