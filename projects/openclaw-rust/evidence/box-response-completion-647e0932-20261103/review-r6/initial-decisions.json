@@ -1,0 +1,30 @@
+{
+  "schema": "ocrm-root-decision-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 6,
+  "contract": "BXR-LOCK-v1",
+  "decision": "FIX",
+  "classification": "execution-input-freeze",
+  "scope": "Add the exact already-built daemon Cargo.lock as the existing crate's build input; retain all current HTTP and BXR production code and all incoming MCP work.",
+  "reason": "The actual generated resolution is now available and bound to a successful exact-subject producer build. Existing capture already supports tracked-lock source binding and --locked; preserving that observed set removes future resolution drift without adding a resolver or build owner.",
+  "starting_branch_commit": "fa1daa79d11f7b3f64b108fed3815eb8633d3642",
+  "source_subject": "14e637798b7c76c8530f9a3710051461f793924f",
+  "source_run": 41597864483,
+  "source_attempt": 1,
+  "source_job": 125789361548,
+  "source_output_blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+  "bytes": 15520,
+  "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+  "manifest_unchanged_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+  "preimplementation_spec_blob": "6cc8b03c7badabbbc693f59dbd796ba2508599e0",
+  "read_depth": "Full generated lock identities and dependency edges; actual daemon manifest and existing build/capture consumer. No inferred full crate-source or complete legal review.",
+  "host_lock_comparison": {
+    "source_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+    "same_name_version_source_checksum": 56,
+    "other_registry_records": 11,
+    "host_lock_not_substituted": true
+  },
+  "verification": "Fresh focused source review and combined exact-H locked producer campaign required. Prior source and controlled behavior evidence remains attributed to original subjects.",
+  "all_global_flags_remain_false": true
+}

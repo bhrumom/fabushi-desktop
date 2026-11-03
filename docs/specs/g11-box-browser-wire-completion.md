@@ -337,3 +337,28 @@ Changes require fresh focused source review and exact-H Actions; no local runs.
 Primary protocol contracts: RFC 9112 sections 2.2, 4, 5 and 6.1
 (https://www.rfc-editor.org/rfc/rfc9112.html), and Connect Streaming-Response
 (https://connectrpc.com/docs/protocol/#streaming-response).
+
+### BXR-LOCK-v1 — freeze the observed producer dependency resolution
+
+The actual daemon build at subject 14e637798b7c76c8530f9a3710051461f793924f,
+Actions run 41597864483 attempt 1 job 125789361548, produced the complete lock
+already retained in execution-r1/box-response-daemon-resolved.Cargo.lock.
+Use those exact 15,520 bytes (SHA-256
+9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431) as
+source/box-exec-daemon/Cargo.lock. Do not resolve a new version set, substitute
+the Host lock, or modify the existing dependency declarations. Its 68 package
+records include the local daemon and 67 registry packages with exact checksums.
+
+The existing portable capture already detects this path in exact H, includes
+its bytes in source bindings, builds the daemon with --locked, and checks lock
+and binary identity again after the actual producer control. Preserve that
+single path and its build-failure refusal. Require the next exact-H campaign
+to observe tracked-lock admission, a successful locked build, actual daemon
+operation results and unchanged source/lock/binary through final capture.
+
+This source freeze is generated-output/consumer-contract work and preserves
+the original build-output record. It does not assert full registry-archive,
+license, security or platform closure, nor change any global completion flag.
+Keep the full BXR scope and source approvals; review this necessary lock-input
+extension with its exact provenance and existing capture consumer before
+publishing the combined production candidate.
