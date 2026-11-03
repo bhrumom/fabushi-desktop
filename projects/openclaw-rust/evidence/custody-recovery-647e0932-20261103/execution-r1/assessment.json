@@ -1,0 +1,1530 @@
+{
+  "schema": "ocrm-scoped-actions-assessment-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "CRF-v1",
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "H": "1e96b24d41fe79b572ced22fd0a7fb0945ea5b03",
+    "tree": "62902e4674d0eb9a5efd2a9599b3a02e027cb158",
+    "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "U_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "evidence_carrier": "This committed assessment is a carrier. Its commit is not the execution subject; only the H above was executed.",
+  "plan": {
+    "path": "projects/openclaw-rust/evidence/custody-recovery-647e0932-20261103/execution-r1/plan.json",
+    "blob": "b5b96755fcfbd84820be2ddbc85b936ef15f41eb"
+  },
+  "runtime": {
+    "run_id": 41628314865,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41628314865",
+    "platforms": [
+      {
+        "os": "Linux",
+        "job_id": 125891187322,
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41628314865/job/125891187322",
+        "result": "passed-scoped-only",
+        "complete_job_log": {
+          "bytes": 1457729,
+          "sha256": "d7043496810ca3ebe9e7efb9f89e5d1150908666368ec7706b963d3334f72d71",
+          "identity": "GitHub decoded complete job log UTF-8, including timestamps"
+        },
+        "shipping_host": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--profile",
+            "ci",
+            "--bin",
+            "mahayana-app-host",
+            "--manifest-path",
+            "source/host/app/Cargo.toml"
+          ],
+          "command_exit": 0,
+          "capture_exit": 0,
+          "result": "compiled",
+          "log_sha256": "c43a068231b78eb0ff61a72671698364b9db4cf87e5c1681d79f6c0ab0d8ce5f"
+        },
+        "host_tests_compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--tests"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "142330c35578f8d7d419dd41893a9707b97350be8e05fb432992eca62408af1d"
+        },
+        "executions": [
+          {
+            "case": "box-response-manager",
+            "required_names_count": 10,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                10,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                10,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-manager.log",
+            "log_sha256": "7b78fd104ce6ee501d58bd4e32b4b9bcd387564e9ad903f000ef875c1c60a14c"
+          },
+          {
+            "case": "box-response-codec",
+            "required_names_count": 44,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                44,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                44,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-codec.log",
+            "log_sha256": "925e979daf2ddb792a7c60778e9dc40583bb21d548dae290d40b7b03820f55e3"
+          },
+          {
+            "case": "box-response-runner-bridge",
+            "required_names_count": 9,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                9,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                9,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-runner-bridge.log",
+            "log_sha256": "72cf44c0dc255c344462697074c67c52860d99dd713f7954dc374adab541c1ea"
+          },
+          {
+            "case": "box-response-spill",
+            "required_names_count": 4,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                4,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                4,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-spill.log",
+            "log_sha256": "8b34096b0716a42183c627e4bd164e2edc7d2df65a7adcb4d0a4cae8c16292c8"
+          },
+          {
+            "case": "box-response-prompt-glue",
+            "required_names_count": 5,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                5,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                5,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-prompt-glue.log",
+            "log_sha256": "3a0ee7ec149754e8e6cf24894b06d185a103fb4efd65aeb70083e019f9dec64e"
+          },
+          {
+            "case": "box-response-manager-exhaustion",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                1,
+                0,
+                0,
+                0,
+                768
+              ]
+            ],
+            "log": "box-response-manager-exhaustion.log",
+            "log_sha256": "899039dce7c65e524b6a4b29c9b7f20d3a20c9c1480c849baf6f2cd7763d3685"
+          },
+          {
+            "case": "box-response-forever-box",
+            "required_names_count": 3,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                3,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                3,
+                0,
+                0,
+                0,
+                766
+              ]
+            ],
+            "log": "box-response-forever-box.log",
+            "log_sha256": "3b92479e92d18141c040cdead04ffb639123451295f798883b98c2b86f85d67d"
+          },
+          {
+            "case": "box-response-real-daemon",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                1,
+                0,
+                0,
+                0,
+                5
+              ]
+            ],
+            "log": "box-response-real-daemon.log",
+            "log_sha256": "d0a2a66395c0c802d9b2d967c5e6970af3161f5ba68889481306322f753fcd68"
+          },
+          {
+            "case": "box-response-shell-capture-unit",
+            "required_names_count": 19,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                19,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                19,
+                0,
+                0,
+                0,
+                14
+              ]
+            ],
+            "log": "box-response-shell-capture-unit.log",
+            "log_sha256": "65e5e08d1a62b648a1d10b5601c510ec70ab0b8e5cfdec99905c6dfb59ceaf17"
+          },
+          {
+            "case": "box-response-shell-capture-consumer",
+            "required_names_count": 2,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                2,
+                0,
+                0,
+                0,
+                4
+              ]
+            ],
+            "log": "box-response-shell-capture-consumer.log",
+            "log_sha256": "fb67ab85b2b5c86c078c5063407eef471e391ef8b58115d013450dd32327f7cb"
+          },
+          {
+            "case": "box-response-shell-capture-disconnect",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                1,
+                0,
+                0,
+                0,
+                32
+              ]
+            ],
+            "log": "box-response-shell-capture-disconnect.log",
+            "log_sha256": "063fafb07c412c5539082ef14239cd7c030afe176e5bd572c8b4df2c64162738"
+          },
+          {
+            "case": "plugin-custody-desktop-1",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-custody-desktop-1.log",
+            "log_sha256": "35b3e46d351746cdbdac40e144ee9b35cc6686534274f1fc98ea11a2ff634c20"
+          },
+          {
+            "case": "plugin-custody-desktop-2",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-custody-desktop-2.log",
+            "log_sha256": "de28dbc469d32d3417804ce076dacca3b64e054e1605cc16af79899fb2914d7c"
+          },
+          {
+            "case": "plugin-custody-desktop-3",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-custody-desktop-3.log",
+            "log_sha256": "cc66330fc93e4c015cd56dc8e9120bf5a232f0eafdc5d4efc88c469047e9eacf"
+          },
+          {
+            "case": "plugin-uninstall-relay-handoff",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-uninstall-relay-handoff.log",
+            "log_sha256": "623aeea706ee3780d2a79180565da9d3a965c6aa620e1b7296687a908c4c8410"
+          },
+          {
+            "case": "device-pairing-join-qualified",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "device-pairing-join-qualified.log",
+            "log_sha256": "342cab8edfa9a5a4016ba8677fde6b41ce59da582d0ae80e832ae6cbd61e784c"
+          }
+        ],
+        "required_name_count": 104,
+        "observed_name_count": 104,
+        "all_required_names_match_once": true,
+        "raw_successful_summaries": [
+          "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "test result: ok. 44 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s",
+          "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+          "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 768 filtered out; finished in 0.00s",
+          "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 766 filtered out; finished in 0.02s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.43s",
+          "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 20.65s",
+          "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.84s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.05s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.02s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.02s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 768 filtered out; finished in 0.04s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.21s"
+        ],
+        "source_binding_counts": {
+          "box_response": 51,
+          "custody_recovery": 10,
+          "plugin_admission_lock": 21,
+          "local_exec_outcome": 41
+        },
+        "sources_unchanged": {
+          "custody_recovery_sources_unchanged": true,
+          "plugin_admission_lock_sources_unchanged": true,
+          "local_exec_outcome_sources_unchanged": true,
+          "box_response_sources_unchanged": true
+        },
+        "shipping_daemon": {
+          "sha256": "19abe730c98c7eadecbf747e0ae62cfa4b24e1b2be46fbc47cf43e67c959eace",
+          "after": "19abe730c98c7eadecbf747e0ae62cfa4b24e1b2be46fbc47cf43e67c959eace",
+          "result": "compiled-and-bound",
+          "lock": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+          "unchanged": true
+        },
+        "test_producer": {
+          "sha256": "82ad33086dcdc689ffd02a3a2b7f1be7c478e95b8607937e804237a4d59a6af1",
+          "after": "82ad33086dcdc689ffd02a3a2b7f1be7c478e95b8607937e804237a4d59a6af1",
+          "result": "compiled-and-bound",
+          "lock": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+          "unchanged": true
+        },
+        "qualified_oracle_control_counts": {
+          "scope": 9,
+          "strict_selected_results": 11,
+          "box_results": 16,
+          "canonical_results": 14,
+          "test_artifact": 12
+        },
+        "artifact": {
+          "id": 13227571754,
+          "node_id": "MDg6QXJ0aWZhY3QxMzIyNzU3MTc1NA==",
+          "name": "ocrm-custody-recovery-Linux-1e96b24d41fe79b572ced22fd0a7fb0945ea5b03-41628314865-1",
+          "size_in_bytes": 184985,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13227571754",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13227571754/zip",
+          "expired": false,
+          "digest": "sha256:4121db209ffd1feea937b587d0cf143de56a2ebb58ab0706201c08cc2fd56d7e",
+          "created_at": "2026-11-03T11:42:07Z",
+          "updated_at": "2026-11-03T11:42:07Z",
+          "expires_at": "2027-02-01T11:32:15Z",
+          "workflow_run": {
+            "id": 41628314865,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+            "head_sha": "1e96b24d41fe79b572ced22fd0a7fb0945ea5b03"
+          }
+        }
+      },
+      {
+        "os": "macOS",
+        "job_id": 125891186785,
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41628314865/job/125891186785",
+        "result": "passed-scoped-only",
+        "complete_job_log": {
+          "bytes": 1386806,
+          "sha256": "39ea2c642a9cbb357e287b3c4c2b1c6a384609eebd0f84d4ae8f4b82b644eb8a",
+          "identity": "GitHub decoded complete job log UTF-8, including timestamps"
+        },
+        "shipping_host": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--profile",
+            "ci",
+            "--bin",
+            "mahayana-app-host",
+            "--manifest-path",
+            "source/host/app/Cargo.toml"
+          ],
+          "command_exit": 0,
+          "capture_exit": 0,
+          "result": "compiled",
+          "log_sha256": "f288087eccf3f828d0681653f63ac7850637596ec55f9da7bf8ecf254c731a48"
+        },
+        "host_tests_compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--tests"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "300adb62201c1e2f74eddbe41544eb1e66382cf79329daa16b837a9fc90885c8"
+        },
+        "executions": [
+          {
+            "case": "box-response-manager",
+            "required_names_count": 10,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                10,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                10,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-manager.log",
+            "log_sha256": "c1c4e94462a508c0924e6b1f40600e65c8c5619de046d038f650f34dc2896a77"
+          },
+          {
+            "case": "box-response-codec",
+            "required_names_count": 44,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                44,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                44,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-codec.log",
+            "log_sha256": "88454fb92a1ec783ea79396f27ea6915eb001c17da283a880130e7d6172bdc59"
+          },
+          {
+            "case": "box-response-runner-bridge",
+            "required_names_count": 9,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                9,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                9,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-runner-bridge.log",
+            "log_sha256": "6c1429d701b3b64c3c651d224db63abdc95dcf6304c4f6536298703fdd6e66d6"
+          },
+          {
+            "case": "box-response-spill",
+            "required_names_count": 4,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                4,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                4,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-spill.log",
+            "log_sha256": "c1a3cfa82526d73cdb05ce41acf8f7448777cb3475900d27d10bb6bfc88ce313"
+          },
+          {
+            "case": "box-response-prompt-glue",
+            "required_names_count": 5,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                5,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                5,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "log": "box-response-prompt-glue.log",
+            "log_sha256": "0e6ba82ede67f5b359d2fef9f37e2bfe8694530fe4942153360c13b5b93cf1b5"
+          },
+          {
+            "case": "box-response-manager-exhaustion",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                1,
+                0,
+                0,
+                0,
+                768
+              ]
+            ],
+            "log": "box-response-manager-exhaustion.log",
+            "log_sha256": "96774b447c017569552f6ec3e967669d7fa6118c938e5f07f9ca26d138d67bc5"
+          },
+          {
+            "case": "box-response-forever-box",
+            "required_names_count": 3,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                3,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                3,
+                0,
+                0,
+                0,
+                766
+              ]
+            ],
+            "log": "box-response-forever-box.log",
+            "log_sha256": "303ed592a4ddfc825dc03328e2cc0feed929291a545ace8c548eceab9e94ef69"
+          },
+          {
+            "case": "box-response-real-daemon",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                1,
+                0,
+                0,
+                0,
+                5
+              ]
+            ],
+            "log": "box-response-real-daemon.log",
+            "log_sha256": "0647b3d1ad504ffd68de59918c785665b44f1fedc9a0708a0526ee7f682265f5"
+          },
+          {
+            "case": "box-response-shell-capture-unit",
+            "required_names_count": 19,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                19,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                19,
+                0,
+                0,
+                0,
+                14
+              ]
+            ],
+            "log": "box-response-shell-capture-unit.log",
+            "log_sha256": "49d45a68a00aa21b98e0f1025a04d6913f2b4f9519fa34793b8fb0fa22e55550"
+          },
+          {
+            "case": "box-response-shell-capture-consumer",
+            "required_names_count": 2,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                2,
+                0,
+                0,
+                0,
+                4
+              ]
+            ],
+            "log": "box-response-shell-capture-consumer.log",
+            "log_sha256": "50d4f119f88dee812af6fb9e6211ceb6b148dcbbbd4f1b5423e511bccfeec748"
+          },
+          {
+            "case": "box-response-shell-capture-disconnect",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": [
+              [
+                1,
+                0,
+                0,
+                0,
+                32
+              ]
+            ],
+            "log": "box-response-shell-capture-disconnect.log",
+            "log_sha256": "b006cbef45c18df078bae44a75f3cfc2d63f55107feb83e8efb61a48c8b56c0b"
+          },
+          {
+            "case": "plugin-custody-desktop-1",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-custody-desktop-1.log",
+            "log_sha256": "a4bea5ff7e76cbd60e9e3d788aec60489966ebfcd86aa7b8b4e9b62339266335"
+          },
+          {
+            "case": "plugin-custody-desktop-2",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-custody-desktop-2.log",
+            "log_sha256": "02ecb18048ac729c600ea91aa5f694c9d5c7e61af3ff6884d82549eafa8ed567"
+          },
+          {
+            "case": "plugin-custody-desktop-3",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-custody-desktop-3.log",
+            "log_sha256": "a1e2a68c97d5046fbc0247fd2ac771a5e7972c35cd4d0a466254c772f897bb88"
+          },
+          {
+            "case": "plugin-uninstall-relay-handoff",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "plugin-uninstall-relay-handoff.log",
+            "log_sha256": "7a02b019d77486327edb28766f111d7735251b0c3ecb366ddca1f186b66c086e"
+          },
+          {
+            "case": "device-pairing-join-qualified",
+            "required_names_count": 1,
+            "command_matches_common_plan": true,
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "oracle_accepted": true,
+            "missing_or_nonunique": [],
+            "summary": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summary": null,
+            "log": "device-pairing-join-qualified.log",
+            "log_sha256": "3c1727e6161b18b6b515b9a3e8b0edf3661ee8013e77eb35cba1ae9023dbeee7"
+          }
+        ],
+        "required_name_count": 104,
+        "observed_name_count": 104,
+        "all_required_names_match_once": true,
+        "raw_successful_summaries": [
+          "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "test result: ok. 44 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.37s",
+          "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+          "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 768 filtered out; finished in 0.00s",
+          "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 766 filtered out; finished in 0.12s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.88s",
+          "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 25.97s",
+          "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 4.11s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 32 filtered out; finished in 0.19s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.07s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.06s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.03s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 768 filtered out; finished in 0.08s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.54s"
+        ],
+        "source_binding_counts": {
+          "box_response": 51,
+          "custody_recovery": 10,
+          "plugin_admission_lock": 21,
+          "local_exec_outcome": 41
+        },
+        "sources_unchanged": {
+          "custody_recovery_sources_unchanged": true,
+          "plugin_admission_lock_sources_unchanged": true,
+          "local_exec_outcome_sources_unchanged": true,
+          "box_response_sources_unchanged": true
+        },
+        "shipping_daemon": {
+          "sha256": "3e3740d995f72e5c18f586dfef4dcb0da83f1057d46c739bb346e4528d05bf29",
+          "after": "3e3740d995f72e5c18f586dfef4dcb0da83f1057d46c739bb346e4528d05bf29",
+          "result": "compiled-and-bound",
+          "lock": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+          "unchanged": true
+        },
+        "test_producer": {
+          "sha256": "8cbd80349759d7a3feef168878e5f0841a0bdfcaa7387526dc9c86ec70024130",
+          "after": "8cbd80349759d7a3feef168878e5f0841a0bdfcaa7387526dc9c86ec70024130",
+          "result": "compiled-and-bound",
+          "lock": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+          "unchanged": true
+        },
+        "qualified_oracle_control_counts": {
+          "scope": 9,
+          "strict_selected_results": 11,
+          "box_results": 16,
+          "canonical_results": 14,
+          "test_artifact": 12
+        },
+        "artifact": {
+          "id": 13228625249,
+          "node_id": "MDg6QXJ0aWZhY3QxMzIyODYyNTI0OQ==",
+          "name": "ocrm-custody-recovery-macOS-1e96b24d41fe79b572ced22fd0a7fb0945ea5b03-41628314865-1",
+          "size_in_bytes": 179407,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13228625249",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13228625249/zip",
+          "expired": false,
+          "digest": "sha256:75a61a807dad3adb90cb242a8b5a7249d4032a7a8a53db1b2937b6756851308a",
+          "created_at": "2026-11-03T11:47:34Z",
+          "updated_at": "2026-11-03T11:47:34Z",
+          "expires_at": "2027-02-01T11:32:15Z",
+          "workflow_run": {
+            "id": 41628314865,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+            "head_sha": "1e96b24d41fe79b572ced22fd0a7fb0945ea5b03"
+          }
+        }
+      }
+    ],
+    "common_exact_command_and_name_plan": [
+      {
+        "case": "box-response-manager",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "box_remote_accessor_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "box_remote_accessor_builds_authenticated_binary_http11_transport",
+          "box_remote_accessor_classifies_ping_failures_and_latency_like_grok",
+          "box_remote_exec_manager_allocates_ids_filters_control_and_surfaces_remote_throw",
+          "box_remote_resource_accessor_composes_transport_client_and_manager",
+          "box_remote_exec_manager_preserves_ordered_data_and_heartbeat_before_close",
+          "box_remote_exec_manager_requires_matching_data_and_control_identity",
+          "box_remote_exec_manager_requires_one_final_stream_close",
+          "box_remote_exec_manager_default_throw_id_is_only_request_zero",
+          "box_remote_exec_manager_foreign_throw_cannot_become_remote_error",
+          "box_remote_exec_manager_preserves_transport_loss_without_replay_or_id_reuse"
+        ]
+      },
+      {
+        "case": "box-response-codec",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "box_generated_production_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "production_exec_service_background_shell_spawn_uses_frozen_field_16_and_real_shell_id",
+          "production_exec_service_preserves_shell_stdout_for_internal_consumers",
+          "production_exec_service_streams_shell_and_write_through_shipping_accessor",
+          "production_loopback_factory_gates_exec_accessor_on_authenticated_readiness",
+          "production_exec_service_reads_through_protected_shipping_accessor",
+          "production_exec_service_computer_use_has_remote_and_no_monitor_paths",
+          "production_exec_service_shell_stream_uses_frozen_field_14_and_real_backgrounded_wire",
+          "forever_box_runner_resource_port_background_spawn_registers_real_shell_id_with_unique_watcher",
+          "forever_box_runner_resource_port_positive_block_backgrounds_real_shell_id_with_unique_watcher",
+          "forever_box_runner_resource_port_reuses_authenticated_shipping_exec_service_for_turn",
+          "production_exec_service_accepts_default_identity_and_nonzero_sequential_echo",
+          "production_exec_service_decodes_metadata_on_both_sides_of_exec_and_shell_payloads",
+          "production_exec_service_preserves_binary_read_bytes_with_complete_identity_and_framing",
+          "production_exec_service_accepts_valid_chunk_extensions_trailers_and_length_or_close_delimiting",
+          "production_exec_service_retains_matching_throw_and_connect_error_details",
+          "production_exec_service_rejects_malformed_identity_metadata_and_ambiguous_oneofs",
+          "production_exec_service_rejects_foreign_data_exec_id_heartbeat_close_and_throw",
+          "production_exec_service_does_not_accept_omitted_zero_identity_for_a_nonzero_request",
+          "production_exec_service_requires_exactly_one_close_after_data",
+          "production_exec_service_requires_one_legal_final_connect_end",
+          "production_exec_service_rejects_incomplete_or_ambiguous_http_framing",
+          "production_exec_service_all_one_shot_accessors_require_one_expected_result",
+          "production_exec_service_preserves_ordered_shell_stream_and_rejects_mixed_operations",
+          "production_exec_service_distinguishes_pre_write_refusal_and_local_guards_from_unknown",
+          "production_exec_service_rejects_out_of_range_direct_client_id_before_connect",
+          "production_exec_service_wraps_post_write_status_and_eof_once_with_original_cause",
+          "production_exec_service_never_replays_a_request_after_lost_completion",
+          "forever_box_runner_resource_port_preserves_unknown_shell_read_write_and_background_outcomes",
+          "forever_box_runner_resource_port_preserves_unknown_missing_terminal_and_invalid_background_id",
+          "forever_box_runner_resource_port_keeps_no_monitor_as_pre_dispatch_refusal",
+          "production_exec_service_rejects_invalid_control_identity_and_multiple_control_cases",
+          "production_exec_service_rejects_ambiguous_nested_read_write_background_and_stream_results",
+          "production_exec_service_rejects_shadowed_invalid_utf8_and_nested_metadata_once",
+          "production_exec_service_rejects_shadowed_uint32_overflow_once",
+          "production_exec_service_preserves_valid_repeated_typed_fields_and_last_values",
+          "forever_box_runner_timed_shell_rejects_repeated_or_conflicting_terminals_before_watch",
+          "forever_box_runner_timed_shell_preserves_post_exit_output_and_hook_metadata",
+          "production_exec_service_preserves_sandbox_refusal_string_defaults_and_last_values",
+          "production_exec_service_rejects_malformed_sandbox_policy_strings_without_replay",
+          "forever_box_runner_preserves_known_sandbox_refusals_without_watch_or_replay",
+          "forever_box_runner_preserves_unknown_malformed_sandbox_refusals_without_watch_or_replay",
+          "production_exec_service_preserves_http_status_reason_and_header_octets",
+          "production_exec_service_rejects_invalid_status_and_header_framing_before_result",
+          "production_exec_service_rejects_non_200_streaming_status_without_replay"
+        ]
+      },
+      {
+        "case": "box-response-runner-bridge",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "runner_box_tool_composition_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "runner_box_bridge_merges_frozen_shell_and_read_with_host_tools",
+          "runner_box_bridge_preserves_explicit_background_and_positive_block_until_semantics",
+          "runner_box_bridge_preserves_upstream_dispatch_and_fails_closed_on_name_collision",
+          "runner_box_bridge_validates_model_arguments_before_host_resource_execution",
+          "runner_box_shell_review_fences_side_effect_before_resource_execution",
+          "runner_box_bridge_preserves_unknown_box_execution_outcomes",
+          "runner_box_bridge_preserves_known_box_refusals",
+          "runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+          "runner_box_bridge_keeps_known_mcp_spill_refusal_inline_without_replay"
+        ]
+      },
+      {
+        "case": "box-response-spill",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "large_output_spill_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "large_mcp_text_is_materialized_into_agent_box_once",
+          "small_error_and_failed_write_results_stay_inline",
+          "spill_policy_matches_frozen_threshold_disable_and_cap_contracts",
+          "unknown_spill_write_is_not_published_as_inline_success_or_retried"
+        ]
+      },
+      {
+        "case": "box-response-prompt-glue",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "runner_prompt_glue_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "glue_reuses_file_transfer_owner_and_prompt_collector_projection",
+          "glue_applies_single_large_output_spill_policy",
+          "live_owner_reads_mutable_prompt_inputs_at_phase_time",
+          "shipping_host_routes_mutable_prompt_surfaces_through_runner_owner",
+          "glue_preserves_unknown_spill_and_disabled_policy_without_replay"
+        ]
+      },
+      {
+        "case": "box-response-manager-exhaustion",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--lib",
+          "box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+        ]
+      },
+      {
+        "case": "box-response-forever-box",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--lib",
+          "extensions::forever_box::runner_tools::tests::",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_stdout_for_navigation_probes",
+          "extensions::forever_box::runner_tools::tests::normal_shell_projection_preserves_failure_diagnostics",
+          "extensions::forever_box::runner_tools::tests::computer_use_preserves_unknown_outcomes_from_incomplete_wire_completion"
+        ]
+      },
+      {
+        "case": "box-response-real-daemon",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "box_exec_daemon_process_contract",
+          "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion",
+          "--",
+          "--exact",
+          "--ignored",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+        ]
+      },
+      {
+        "case": "box-response-shell-capture-unit",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/box-exec-daemon/Cargo.toml",
+          "--lib",
+          "--target-dir",
+          "source/box-exec-daemon/target",
+          "server::tests::foreground_capture_",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches",
+          "server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal",
+          "server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child",
+          "server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals",
+          "server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging",
+          "server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes",
+          "server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
+          "server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
+          "server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
+          "server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture",
+          "server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup",
+          "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+          "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+          "server::tests::foreground_capture_independent_runtimes_keep_distinct_spools_and_cleanup",
+          "server::tests::foreground_capture_occupied_spool_files_survive_failure_and_recovery",
+          "server::tests::foreground_capture_occupied_spool_symlinks_survive_failure_and_recovery",
+          "server::tests::foreground_capture_occupied_terminal_files_preserve_pending_reader_ownership",
+          "server::tests::foreground_capture_occupied_terminal_symlinks_preserve_pending_reader_ownership",
+          "server::tests::foreground_capture_retired_spool_claim_cannot_remove_reused_candidate"
+        ]
+      },
+      {
+        "case": "box-response-shell-capture-consumer",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "box_exec_daemon_process_contract",
+          "box_foreground_capture_",
+          "--",
+          "--ignored",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
+          "foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"
+        ]
+      },
+      {
+        "case": "box-response-shell-capture-disconnect",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/box-exec-daemon/Cargo.toml",
+          "--lib",
+          "--target-dir",
+          "source/box-exec-daemon/target",
+          "server::tests::disconnect_aborts_foreground_shell_process_group",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "server::tests::disconnect_aborts_foreground_shell_process_group"
+        ]
+      },
+      {
+        "case": "plugin-custody-desktop-1",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "mcp_coordinator_relay_contract",
+          "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader"
+        ]
+      },
+      {
+        "case": "plugin-custody-desktop-2",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "mcp_coordinator_relay_contract",
+          "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request"
+        ]
+      },
+      {
+        "case": "plugin-custody-desktop-3",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "mcp_coordinator_relay_contract",
+          "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work"
+        ]
+      },
+      {
+        "case": "plugin-uninstall-relay-handoff",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--lib",
+          "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff"
+        ]
+      },
+      {
+        "case": "device-pairing-join-qualified",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "device_pairing_join_admission_contract",
+          "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
+        ]
+      }
+    ]
+  },
+  "source_authority": {
+    "run_id": 41628314811,
+    "attempt": 1,
+    "job_id": 125891185926,
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41628314811",
+    "log": {
+      "bytes": 31524,
+      "sha256": "e3d6c4c7a297fd5586181abb96956325636111d58ccabd59871ab84e3518eaf2"
+    },
+    "risk_review_tests": 33,
+    "inventory_materialization_tests": 21,
+    "negative_classes": [
+      "duplicate source path",
+      "unread denominator tamper",
+      "unbacked accepted verdict",
+      "orphan responsibility"
+    ],
+    "tracked_paths": 62130,
+    "mapped_paths": 888,
+    "unread_or_partial_paths": 62067,
+    "shards": 61,
+    "canonical_inventory_sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
+    "artifact": {
+      "id": 13227525481,
+      "node_id": "MDg6QXJ0aWZhY3QxMzIyNzUyNTQ4MQ==",
+      "name": "ocrm-p0-authority-1e96b24d41fe79b572ced22fd0a7fb0945ea5b03",
+      "size_in_bytes": 4951968,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13227525481",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13227525481/zip",
+      "expired": false,
+      "digest": "sha256:92778015578a843bf5e2a487141142f6a244819494ce7e37f098404255ede601",
+      "created_at": "2026-11-03T11:34:18Z",
+      "updated_at": "2026-11-03T11:34:18Z",
+      "expires_at": "2026-12-03T11:34:16Z",
+      "workflow_run": {
+        "id": 41628314811,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "1e96b24d41fe79b572ced22fd0a7fb0945ea5b03"
+      }
+    },
+    "persistence": {
+      "job_id": 125892139375,
+      "result": "success; no new source-derived shard content; no commit or follow-up dispatch"
+    },
+    "limit": "Tracked identity and G01/G02 structural evidence only; necessary recursive dependencies, risk review and full source closure remain open."
+  },
+  "source_review": {
+    "SC_R3": {
+      "candidate": "cbc6a15f34038dfb66ed175436fac2673ad935c6",
+      "tree": "2a23c75d7b2160f9105f9291e87498da566f0217",
+      "packet": "2f7dccc9736ea98e5fede3505793ab4e2acc2a37",
+      "scope_blob": "4c696b0a2db678a834183f3d7083df5e1d56379c",
+      "general": "fresh xhigh general reviewer terminal, no MUST-FIX or actionable NON_BLOCKING findings",
+      "structure": "fresh gpt-6.1-sol xhigh structure reviewer terminal, no MUST-FIX or actionable NON_BLOCKING findings",
+      "report_location": "Complete reports returned in the review conversation; no uploaded report artifact or report blob is claimed."
+    },
+    "Plugin_R4": {
+      "source": "d29be0b93225943851c6054016686d571f8d9e2a",
+      "review_archive": "d9632aef264bbd50e54bd73edc84b951b01ec176"
+    }
+  },
+  "assessment": {
+    "verdict": "passed-scoped-only",
+    "scope_per_platform": "77 Box +22 foreground capture/consumer/disconnect +4 repaired Plugin consumer +1 DJC qualified COMMIT =104 names in16 groups; exact names and actual command/log identity above.",
+    "acquisition": "Root independently fetched both complete GitHub job logs, parsed actual final and shipping receipts and matched raw104 names/16success summaries. Independent read-only CI observer separately reconciled the same subject. No local/htch execution occurred.",
+    "not_transferred_to": [
+      "004b7562dbf8c58b8089e39e3439e545e4e9457d footer correction",
+      "8190dc963ae2e633cc6dbbd93de39e7e0da7619f LocalExec work",
+      "Uncommitted BGC implementation"
+    ],
+    "retained_unresolved": [
+      {
+        "case": "join_storage_commit_refusal_never_publishes_payload",
+        "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+        "run": "41618863245",
+        "attempt": 1,
+        "job": "125859112570",
+        "state": "historical-eight-second-observation-failed; unchanged assertion retained",
+        "selected_here": false,
+        "qualification": "DJC-07 success does not resolve this lock timing failure"
+      }
+    ],
+    "other_limits": [
+      "Unselected full-plan and downstream checks are not executed by this receipt.",
+      "Historical H6d8 DJC8second lock-observation failure is not resolved by the qualified COMMIT control.",
+      "No Windows/renderer, physical device/service, normal active streamed shutdown, full process-tree/background-controller, durable restart, package/signing, performance/soak or upgrade/rollback acceptance.",
+      "No global source/read/wiring/implementation/acceptance flag is promoted; full G01-G12/AC01-AC24 and independent ACCEPT remain open."
+    ]
+  },
+  "acceptance": {
+    "full_unit_verified": false,
+    "global_flags_promoted": false,
+    "full_migration_accepted": false
+  }
+}

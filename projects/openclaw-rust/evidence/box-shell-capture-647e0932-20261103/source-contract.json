@@ -195,7 +195,7 @@
       "checksummed_registry_records": 67,
       "read_depth": "Generated lock identity/graph and existing manifest/build/capture contract; no claimed full crate-source or legal closure.",
       "production_wiring": "Use the existing tracked-lock branch of capture_portable_contracts.py; it binds the source bytes, builds with --locked and refuses a stale executable after build failure.",
-      "acceptance": "Pending fresh focused source review and exact-H locked-build/real-daemon/unchanged-input proof."
+      "acceptance": "Existing fixed lock was consumed unchanged by actual ordinary shipping and cfg(test) producer builds and controls at H1e96b24d41fe79b572ced22fd0a7fb0945ea5b03 on Linux/macOS. This is scoped locked-build evidence, not complete crate-source/legal/platform closure."
     },
     "necessary_dependency_limits": [
       "No new manifest, dependency declaration, feature or lock resolution.",
@@ -266,8 +266,8 @@
       "scope": "Only cfg(test) artifact may expose the private owned fault probe; normal shipping binary is separately built and exercised."
     },
     "retained": "All existing BXR77 direct positives in eight cases and14 downstream custody names remain in the full plan; three SC cases require22 direct positives (19 daemon unit,2 actual consumer,1 disconnect). CRF-v1 selects the11 Box/SC cases plus4 repaired Plugin consumer cases and1 DJC-07 instrument; its scoped-only result does not claim unselected downstream or full-plan execution.",
-    "execution": "not-run",
-    "source_review": "R2 identified shared stream spool ownership and precreation cleanup defects. The R3 correction is pending immutable candidate review and exact-H execution; source/text authorship is not independent approval.",
+    "execution": "passed-scoped-only at exact H1e96b24d41fe79b572ced22fd0a7fb0945ea5b03 on Linux and macOS, runtime41628314865 attempt1; this source carrier and later commits are not that execution subject.",
+    "source_review": "Fresh SC R3 GENERAL and STRUCTURE reviewers converged on immutable cbc6a15f34038dfb66ed175436fac2673ad935c6/tree2a23c75d7b2160f9105f9291e87498da566f0217, packet2f7dccc9736ea98e5fede3505793ab4e2acc2a37. Complete returned conversation reports identify no MUST-FIX or actionable NON_BLOCKING; no separate report artifact is claimed.",
     "oracle_limits": "Owned real children and actual authenticated loopback producers/consumers with cfg(test) operation faults are controlled evidence, not live service/device/platform/package acceptance. The pre-aborted unit proves bounded observed abort, not trap readiness/escalation for that same abort. A controlled registration alias proves PID-independent custody without claiming actual OS PID wraparound. A private cfg(test) observation channel exposes the guard's actual completed owner after cleanup; it does not substitute an execution result. Three repeated real setup failures must leave no completed registrations or parent pipes without stop. Stop and both normal admission variants share a real controlled unwind/release fixture; no independent descendant countdown may preempt the unresolved assertion. Six SC02-R3 real controls require independent equal-ID runtimes, occupied regular/symlink spool and terminal preservation through actual refusal/recovery, and same-candidate reuse after successful removal. No general hostile-directory or whole background-controller claim.",
     "focused_execution_contract": {
       "spec": "projects/openclaw-rust/docs/specs/custody-recovery-verification.md",
@@ -275,7 +275,8 @@
       "workflow_scope": "ocrm-custody-recovery",
       "capture_scope": "custody-recovery",
       "boundary": "Selected Linux/macOS shipping Host compile and exact producer/consumer checks only; historical DJC reader-lock failure remains unresolved."
-    }
+    },
+    "execution_assessment": "projects/openclaw-rust/evidence/custody-recovery-647e0932-20261103/execution-r1/assessment.json"
   },
   "recovery": {
     "owner": "Existing ephemeral BoxExecRuntime foreground registry and durable existing Runner custody only.",
