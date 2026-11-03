@@ -691,6 +691,45 @@ test("human_entry_refresh_retires_removed_pdf_and_late_resource_reads", { timeou
   assert.ok(chromeHit.centerY >= chromeHit.chromeTop && chromeHit.centerY < chromeHit.chromeBottom);
   assert.equal(chromeHit.viewerTop, chromeHit.chromeBottom, "the actual preview begins below the existing titlebar band");
   assert.equal(chromeHit.hitsMinimize, true, "the open preview must preserve actual Minimize pointer hit testing: " + JSON.stringify(chromeHit));
+  const handoffSelect = f.page.getByRole("combobox", { name: "Agent for Human handoff", exact: true });
+  assert.equal(await handoffSelect.count(), 1);
+  const handoffHit = await handoffSelect.evaluate((select) => {
+    const header = select.closest(".sand-chat-header");
+    const controls = document.querySelector(".sand-window-controls");
+    if (!(header instanceof HTMLElement) || !(controls instanceof HTMLElement)) {
+      throw new Error("Actual Human header and WindowChrome controls must be mounted");
+    }
+    const selectRect = select.getBoundingClientRect();
+    const selectHit = document.elementFromPoint(selectRect.left + selectRect.width / 2, selectRect.top + selectRect.height / 2);
+    const buttons = [...controls.querySelectorAll("button")].map((button) => {
+      const rect = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return {
+        label: button.getAttribute("aria-label"), width: rect.width, height: rect.height,
+        hitsButton: hit != null && button.contains(hit),
+        overlapsSelect: selectRect.left < rect.right && selectRect.right > rect.left
+          && selectRect.top < rect.bottom && selectRect.bottom > rect.top,
+      };
+    });
+    return {
+      selectTag: select.tagName, selectWidth: selectRect.width, selectHeight: selectRect.height,
+      hitsSelect: selectHit != null && select.contains(selectHit),
+      headerRight: header.getBoundingClientRect().right, controlsLeft: controls.getBoundingClientRect().left,
+      buttons,
+    };
+  });
+  assert.equal(handoffHit.selectTag, "SELECT");
+  assert.ok(handoffHit.selectWidth > 0 && handoffHit.selectHeight > 0);
+  assert.equal(handoffHit.hitsSelect, true, "reserving window controls must preserve the real Human handoff target: " + JSON.stringify(handoffHit));
+  assert.ok(handoffHit.headerRight <= handoffHit.controlsLeft, "the entire header hitbox must leave the actual window-control band clear: " + JSON.stringify(handoffHit));
+  assert.deepEqual(handoffHit.buttons.map((button) => button.label), ["Minimize", "Maximize", "Close"]);
+  for (const button of handoffHit.buttons) {
+    assert.ok(button.width > 0 && button.height > 0);
+    assert.equal(button.overlapsSelect, false, button.label + " must not overlap the actual handoff select");
+    assert.equal(button.hitsButton, true, button.label + " must remain a real pointer target while preview is open");
+  }
+  // These are actual browser hit/geometry checks, without changing a window or
+  // selecting an Agent. They do not claim native Electron drag-region behavior.
   await pdf(pdfA.fileName).getByRole("button", { name: "Download file", exact: true }).click();
   const retiredDownload = await f.resourceRequest("downloadAttachment", pdfA.path);
   assert.deepEqual(retiredDownload.args, { source: pdfA.path, suggestedName: pdfA.fileName });

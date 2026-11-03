@@ -977,3 +977,24 @@ executed reconciliation84 (80 passed/4 failed) and UI209 (207 passed/2 failed).
 Source41566993101 passed161/37/schema0, then candidate125690859096 rejected
 the first missing exact review relation. These are retained terminal failures,
 not qualification of the repair.
+
+Exact39d0e7555676c8987f6686a55bc6ae0be31c8c8d/run41567924833 now has
+reconciliation125/125, including Human81 and creation14; UI209 executed208
+passed/1 failed. The remaining PDF case fails actual Minimize hit testing
+because the production Human handoff SELECT overlaps its center. Search,
+action-menu and sheet lifetime cases passed; the original PDF pointer click
+is retained after the failing hit assertion. Source41567924925 passed161
+Node/37 Python/schema0 and unaccepted-candidate-consistent; no ACCEPT follows.
+
+Concurrent85a5e9990f7d7cc040dd916d2adf577da95c873e/run41568637079
+executed reconciliation101:100 passed/1 failed; later24 cases did not run.
+Its added raw database-file read/close lets an external writer through a held
+POSIX lock, caught by the unchanged human_format_probe_preserves_posix_locks_against_an_external_writer
+case. The same corrupted-main/sidecar case still passed. Concurrente3945a01
+removed raw reads and changed the immutable SQLite probe; keep both exact
+oracles and verify retained-WAL compatibility on the containing head. The header
+repair reserves the existing WindowChrome inset outside its hitbox and requires
+both actual Handoff and all three window-control targets to remain hittable.
+New containing-H125/209, actualMac2+2, shipping and source results are required.
+Compact cause, changed blobs and independent review:
+projects/telegram-desktop-rust/evidence/round8-header-controls-repair-20261103.json.

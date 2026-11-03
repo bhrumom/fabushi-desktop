@@ -106,7 +106,9 @@ html[data-platform="darwin"] .sand-agents-sidebar__new-actions {
 }
 
 .sand-chat-stage { display: flex; flex: 1 1 0; flex-direction: column; width: 100%; min-width: 0; min-height: 0; overflow: hidden; background: var(--cursor-bg-editor); }
-.sand-chat-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height: 51px; padding: 0 16px; border-bottom: 1px solid var(--cursor-stroke-tertiary); }
+/* Reserve the published window-control lane outside the header hit box. */
+.sand-chat-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; min-height: 51px; margin-right: var(--sand-window-controls-inset, 0px); padding: 0 16px; border-bottom: 1px solid var(--cursor-stroke-tertiary); }
+.sand-chat-header select { -webkit-app-region: no-drag; app-region: no-drag; }
 .sand-chat-header > button { color: var(--cursor-text-secondary); background: transparent; border: 0; border-radius: var(--cursor-radius-lg); cursor: pointer; }
 .sand-chat-header__identity { display: flex; align-items: center; gap: 9px; padding: 5px 7px; }
 .sand-chat-header__avatar { width: 28px; height: 28px; }
