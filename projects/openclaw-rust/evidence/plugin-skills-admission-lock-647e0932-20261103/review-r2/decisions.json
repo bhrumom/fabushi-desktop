@@ -1,0 +1,71 @@
+{
+  "schema": "ocrm-review-fix-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "review_round": 2,
+  "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "subject": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "tree": "f609dcdc22418f313177c3d86e01103a226799de",
+  "state": "STRUCTURE review terminal REQUEST_CHANGES; GENERAL report pending. Root confirms R2S-01 and records all currently reported dispositions before correction.",
+  "decisions": [
+    {
+      "id": "PS-R2-CONSTRUCTOR-CONTENDED-OBSERVATION",
+      "priority": "P2",
+      "classification": "IMPLEMENTATION",
+      "subject": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+      "source_blob": "56c8c4fc5596e63121ec09624bc8eaff693f9595",
+      "functions": [
+        "SandPluginSkillsService::new",
+        "load_uninstall_image"
+      ],
+      "anchors": [
+        "source/host/src/extensions/mcp/plugin_skills.rs:643-668",
+        "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs:410-419"
+      ],
+      "failure": "When try_shared returns None under a foreign EX writer, construction still performs an unlocked two-file read. A nonserialized mixed view/error is promoted to permanent recovery_fault. A legal initializer can publish image+marker between the two reads; healthy final bytes then cannot heal this retained owner or same-reader successor.",
+      "decision": "FIX",
+      "contract": "PS-LOCK-RECONCILE-v2 / LR2-03",
+      "repair": "No unlocked constructor error may become an authoritative integrity fault. Under contention construct an unknown/recovery-required state without positive authority, then require a later serialized observation and explicit successful recovery. Authoritative SH corruption remains sticky. Preserve side-effect-free genuinely absent construction, negative facts and same-root handoff.",
+      "tests": "Actual EX contention constructor refusal, repaired/complete image under same retained owner recovering only on explicit fresh sync, genuine authoritative corruption retained after restoration, and absent-root construction unchanged.",
+      "execution": "not-run",
+      "review_finding_id": "R2S-01",
+      "rationale": "The constructor drops the SH/contended classification on read error; actual two-file initialization can create the reported mixed observation without any protocol violation. FIX under existing LR2-03, preserving authoritative faults."
+    }
+  ],
+  "scope": "Complete original fourteen paths remain the review scope; next round requires whole scope plus proper ca32-to-next delta. No assertion removed and no acceptance/global flag changed.",
+  "execution": "not-run",
+  "non_blocking": [
+    {
+      "id": "R2SN-01",
+      "priority": "P3",
+      "classification": "NON_BLOCKING",
+      "decision": "DEFER",
+      "finding": "Per-record admission performs repeated complete image I/O/strict decoding; source-level fanout has no measured latency result.",
+      "rationale": "Same nonblocking performance observation as the already preserved R1 disposition. It cannot start a fix round and does not waive performance/soak acceptance; no new cache or permission owner is introduced."
+    }
+  ],
+  "reviews": [
+    {
+      "reviewer": "/root/plugin_admission_r2_structure",
+      "lens": "STRUCTURE/REUSE/PERF",
+      "outcome": "REQUEST_CHANGES",
+      "required_fix_ids": [
+        "R2S-01"
+      ],
+      "non_blocking_ids": [
+        "R2SN-01"
+      ],
+      "scope": "Complete fourteen-path original diff and complete proper fix delta plus scoped production and test dependencies.",
+      "read_depth": "Complete canonical feature Spec and plugin_skills.rs; deep parser/lock/persistence/currentness/callback functions; complete changed test hunks and necessary harness; large adjacent files and ledgers by scoped contract, not full-file claim.",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "xhigh",
+      "spawn_parameters_applied": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "hidden_runtime_attestation": false,
+      "execution": "not-run",
+      "report": "Complete independent report returned in the task conversation; no report blob was created by that reviewer."
+    }
+  ]
+}

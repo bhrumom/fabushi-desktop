@@ -9,7 +9,7 @@
   },
   "original_scope_base": "9864d1c02e7e67881d644800963abc807b3abaab",
   "incoming_subject": "550909022eba44eb9326d760f8c33d613b40a7bb",
-  "implementation_base": "a8dc16661f272a122940efec1d7b7f6822a900e9",
+  "implementation_base": "c06900dfa561c8c20f7eef244c70877e3bb91566",
   "spec": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md#ar-lock-r2--causal-cross-process-observations-and-mutation-currentness",
   "responsibility_id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
   "unit_id": "OCRM-UNIT-SKILLS-001",
@@ -45,7 +45,7 @@
     "PSL07": "A retained initialized owner never treats total custody-file loss as legacy absence. It retains confirmed/pending/auth facts, latches recovery fault, refuses read/mutation/refresh before remote work or state reinitialization, and stays faulted after explicit restoration; a fresh owner may inspect the restored image.",
     "PSL08": "Every actual uninstall reservation, exact settlement and confirmed-fact release rotates required nullable canonical v3 uninstallObservation. Auth/refresh-only transitions preserve it. A foreign complete cycle cannot republish a pre-cycle result even if all semantic sets return identical; pruning binds the successful pass's post-commit identity.",
     "PSL09": "Workflow mutation selects a canonical plugin, acquires its actual SH lease, then re-reads the committed record and current publisher authority. Changed, removed or remapped records and unknown/different publishers refuse before touching either prior or current file; an unchanged current publisher can edit.",
-    "PSL10": "An image integrity error observed under authoritative SH latches owner-local recovery, preserves known facts and advances local observation. Restoration cannot heal that retained owner. Unlocked contended reads may deny only the current observation; a fresh owner may inspect explicit repair.",
+    "PSL10": "An image integrity error observed under authoritative SH latches owner-local recovery, preserves known facts and advances local observation. Restoration cannot heal that retained owner. Unlocked contended reads may deny only the current observation; a fresh owner may inspect explicit repair. A fresh constructor under writer contention has unknown recovery, not authoritative corruption; it must not promote an unlocked two-file read error to permanent fault. Explicit successful fresh recovery is required after a later serialized observation.",
     "PSL11": "The actual upload mutation lease covers backend and cleanup I/O, then ends before either cleanup log or edge diagnostic callback. Reentrant callbacks can acquire actual EX and sync the real owner; original backend success/error and diagnostic emission remain."
   },
   "source_authority": {
@@ -119,7 +119,7 @@
     ],
     "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance. R2 adds a complete foreign-process uninstall cycle while the paused owner performs no intermediate read, authoritative corruption/restoration controls, actual workflow publication interleavings and actual cleanup-I/O fault with reentrant owner callbacks. These are source-authored until exact-H Actions returns evidence.",
     "prior_failure": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-    "exact_candidate_execution": "pending R2 integrated source convergence and frozen H",
+    "exact_candidate_execution": "pending constructor correction, fresh full-scope source convergence and frozen H",
     "reuse_note": "The existing skill_publish_contract target is also selected in the Linux plugin-uninstall-service command; its four retained public publish/restore oracles run alongside the actual-owner lease regression. No second capture owner.",
     "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh."
   },
@@ -138,6 +138,13 @@
       "source_contract_blob": "19ea28aefe8f64b62a433e06e30c65a80917c3b0",
       "disposition": "R1 source reviewed; four root FIX decisions require R2. Prior behavior and read facts retained; no execution acceptance.",
       "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+    },
+    {
+      "contract": "PS-LOCK-RECONCILE-v2",
+      "source_subject": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+      "source_contract_blob": "155f4dff0f6fe7c7f9f1f3210296beac7bf81a6a",
+      "disposition": "R2 complete source review identifies an unlocked constructor observation promoted to permanent fault. Root confirms the actual source path and records FIX before correction; no executable verification.",
+      "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
     }
   ],
   "private_image_migration": {

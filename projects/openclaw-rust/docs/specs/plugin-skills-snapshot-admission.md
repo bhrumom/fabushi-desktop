@@ -1353,3 +1353,24 @@ Freeze a fresh complete-scope candidate against the same original base, include
 the actual R1->R2 fix delta, obtain new blind GENERAL and STRUCTURE reviews,
 then execute affected locked build/contracts/wiring/negative cases only in
 GitHub Actions. Unit source readiness is not full migration acceptance.
+
+## AR-LOCK-R3 — constructor observations under writer contention
+
+This corrects LR2-03 within PS-LOCK-RECONCILE-v2, before implementing the fix
+against frozen R2 subject ca32f83f13a8aed439e9e3341d175405b1d1a655.
+A fresh constructor's try_shared(None) is an unlocked observation, including its
+error. It cannot certify a two-file image as corrupt: a legitimate initializer
+may publish image and marker between the reader's two reads. Do not latch a
+permanent integrity fault from this unowned view. Construct with recovery-required
+unknown admission and no positive grant; deferring this read entirely is allowed.
+After the writer releases EX, an ordinary serialized read may observe facts but
+cannot clear unknown recovery. Only the existing explicit fresh successful sync
+may recover. An actual image error observed with SH remains a sticky fault and
+exact file restoration cannot heal that retained owner. Genuinely absent-root
+construction remains side-effect-free; same-root handoff retains its reader.
+
+Required controls use actual EX contention and the real constructor/reader/sync:
+adverse unlocked images remain refused yet explicitly recoverable after repair,
+healthy writer completion is observed without positive fallback, and a genuinely
+authoritative constructor error remains faulted after the same repair. Retain all
+prior fault, causal identity, Workflow, publisher and process assertions.
