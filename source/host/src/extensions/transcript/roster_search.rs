@@ -158,7 +158,7 @@ pub fn find_agent_content_matches(
         {
             continue;
         }
-        let Some(snippet) = build_content_snippet(entry_search_text(entry), normalized_query) else {
+        let Some(snippet) = agent_entry_search_snippet(entry, normalized_query) else {
             continue;
         };
         let Some(entry_id) = entry.get("id").and_then(Value::as_str) else {
@@ -184,6 +184,103 @@ pub fn find_agent_content_matches(
         });
     }
     matches
+}
+
+fn agent_entry_search_snippet(entry: &Value, normalized_query: &str) -> Option<String> {
+    let primary = entry_search_text(entry);
+    if let Some(snippet) = build_content_snippet(primary, normalized_query) {
+        return Some(snippet);
+    }
+    match entry.get("kind").and_then(Value::as_str) {
+        Some("message") => {
+            let mut parts = Vec::new();
+            for field in ["authorName", "author", "forwardedFromAuthorName"] {
+                if let Some(value) = entry
+                    .get(field)
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                {
+                    if !parts.contains(&value) {
+                        parts.push(value);
+                    }
+                }
+            }
+            if let Some(origin_author) =
+                ProductionSessionWorkers::human_entry_visible_forward_origin_author(entry)
+            {
+                if !parts.contains(&origin_author) {
+                    parts.push(origin_author);
+                }
+            }
+            if !primary.trim().is_empty() {
+                parts.push(primary.trim());
+            }
+            if let Some(attachments) = entry.get("attachments").and_then(Value::as_array) {
+                for attachment in attachments {
+                    if let Some(name) = attachment
+                        .get("name")
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())
+                    {
+                        parts.push(name);
+                    }
+                }
+            }
+            if parts.is_empty() {
+                None
+            } else {
+                build_content_snippet(&parts.join(" "), normalized_query)
+            }
+        }
+        Some("send-message") => {
+            let message = entry.get("message").and_then(Value::as_object)?;
+            match message.get("type").and_then(Value::as_str) {
+                Some("widget") => {
+                    let prompt = message
+                        .get("widget")
+                        .and_then(Value::as_object)
+                        .and_then(|widget| widget.get("prompt"))
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())?;
+                    build_content_snippet(prompt, normalized_query)
+                }
+                Some("email-draft") => {
+                    let draft = message.get("draft").and_then(Value::as_object)?;
+                    let subject = draft
+                        .get("subject")
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .unwrap_or_default();
+                    let body = draft
+                        .get("body")
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .unwrap_or_default();
+                    let combined = [subject, body]
+                        .into_iter()
+                        .filter(|part| !part.is_empty())
+                        .collect::<Vec<_>>()
+                        .join(" ");
+                    build_content_snippet(&combined, normalized_query)
+                }
+                Some("slack-draft") => {
+                    let body = message
+                        .get("draft")
+                        .and_then(Value::as_object)
+                        .and_then(|draft| draft.get("body"))
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .filter(|value| !value.is_empty())?;
+                    build_content_snippet(body, normalized_query)
+                }
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 pub fn search_human_conversation_messages(
@@ -563,6 +660,28 @@ fn collect_human_conversation_media_results(
                 if !matches_query {
                     continue;
                 }
+                let width = attachment
+                    .get("width")
+                    .and_then(|value| {
+                        value.as_i64().or_else(|| {
+                            value
+                                .as_f64()
+                                .filter(|number| number.is_finite())
+                                .map(|number| number.round() as i64)
+                        })
+                    })
+                    .filter(|value| *value > 0);
+                let height = attachment
+                    .get("height")
+                    .and_then(|value| {
+                        value.as_i64().or_else(|| {
+                            value
+                                .as_f64()
+                                .filter(|number| number.is_finite())
+                                .map(|number| number.round() as i64)
+                        })
+                    })
+                    .filter(|value| *value > 0);
                 results.push(RosterMediaSearchResult {
                     agent_id: conversation_id.to_string(),
                     entry_id: entry_id.to_string(),
@@ -571,10 +690,9 @@ fn collect_human_conversation_media_results(
                     mime,
                     kind,
                     timestamp_ms,
-                    width: None,
-                    height: None,
+                    width,
+                    height,
                 });
-                break;
             }
         }
     }

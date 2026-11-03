@@ -216,14 +216,20 @@ impl SearchIndex {
 
     pub fn search(&self, query: &SearchQuery) -> Vec<SearchResult> {
         let terms = tokenize(&query.text);
-        if terms.is_empty() {
+        let allow_empty_scoped_collection = matches!(
+            query.scope,
+            SearchScope::Media | SearchScope::Files | SearchScope::Links
+        );
+        if terms.is_empty() && !allow_empty_scoped_collection {
             return Vec::new();
         }
         let mut results = Vec::new();
-        if matches!(
-            query.scope,
-            SearchScope::Global | SearchScope::Contacts | SearchScope::Bots
-        ) {
+        if !terms.is_empty()
+            && matches!(
+                query.scope,
+                SearchScope::Global | SearchScope::Contacts | SearchScope::Bots
+            )
+        {
             for (id, indexed) in &self.actor_terms {
                 let Some(actor) = self.actors.get(id) else {
                     continue;
@@ -252,10 +258,12 @@ impl SearchIndex {
                 }
             }
         }
-        if matches!(
-            query.scope,
-            SearchScope::Global | SearchScope::Groups | SearchScope::Channels
-        ) {
+        if !terms.is_empty()
+            && matches!(
+                query.scope,
+                SearchScope::Global | SearchScope::Groups | SearchScope::Channels
+            )
+        {
             for (id, indexed) in &self.conversation_terms {
                 let Some(conversation) = self.conversations.get(id) else {
                     continue;
@@ -318,7 +326,19 @@ impl SearchIndex {
                 {
                     continue;
                 }
-                let score = score_terms(&terms, indexed);
+                let search_text = message_search_text(message);
+                let score = if terms.is_empty() {
+                    1
+                } else {
+                    let term_score = score_terms(&terms, indexed);
+                    if term_score > 0 {
+                        term_score
+                    } else if query_matches_fields(&query.text, &[&search_text]) {
+                        4
+                    } else {
+                        0
+                    }
+                };
                 if score > 0 {
                     results.push(SearchResult {
                         kind: SearchResultKind::Message,
@@ -329,7 +349,7 @@ impl SearchIndex {
                             .get(conversation_id)
                             .map(|value| value.title.clone())
                             .unwrap_or_else(|| conversation_id.0.clone()),
-                        snippet: message_search_text(message),
+                        snippet: search_text,
                         timestamp_ms: Some(message.created_at_ms),
                         score,
                     });
@@ -430,25 +450,79 @@ pub fn query_matches_fields(query: &str, fields: &[&str]) -> bool {
     })
 }
 
+fn join_non_empty_search_parts(parts: &[Option<&str>]) -> String {
+    parts
+        .iter()
+        .filter_map(|part| part.map(str::trim).filter(|value| !value.is_empty()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn formatted_text_has_link(text: &crate::message::FormattedText) -> bool {
+    text.entities.iter().any(|entity| {
+        matches!(
+            &entity.kind,
+            crate::message::TextEntityKind::Url | crate::message::TextEntityKind::TextUrl(_)
+        )
+    }) || {
+        let lower = text.text.to_ascii_lowercase();
+        lower.contains("http://") || lower.contains("https://")
+    }
+}
+
 fn message_search_text(message: &Message) -> String {
     match &message.content {
         MessageContent::Text { text } => text.text.clone(),
-        MessageContent::Photo { caption, .. }
-        | MessageContent::Video { caption, .. }
-        | MessageContent::Animation { caption, .. }
-        | MessageContent::Audio { caption, .. }
-        | MessageContent::Voice { caption, .. }
-        | MessageContent::Document { caption, .. } => caption.text.clone(),
+        MessageContent::Photo { media, caption, .. }
+        | MessageContent::Video { media, caption, .. }
+        | MessageContent::Animation { media, caption, .. }
+        | MessageContent::Voice { media, caption, .. }
+        | MessageContent::Document { media, caption, .. } => join_non_empty_search_parts(&[
+            Some(caption.text.as_str()),
+            media.file_name.as_deref(),
+            media.mime_type.as_deref(),
+        ]),
+        MessageContent::Audio {
+            media,
+            caption,
+            title,
+            performer,
+        } => join_non_empty_search_parts(&[
+            Some(caption.text.as_str()),
+            title.as_deref(),
+            performer.as_deref(),
+            media.file_name.as_deref(),
+            media.mime_type.as_deref(),
+        ]),
+        MessageContent::VideoNote { media } => join_non_empty_search_parts(&[
+            media.file_name.as_deref(),
+            media.mime_type.as_deref(),
+        ]),
+        MessageContent::Sticker { media, emoji, .. } => join_non_empty_search_parts(&[
+            emoji.as_deref(),
+            media.file_name.as_deref(),
+            media.mime_type.as_deref(),
+        ]),
         MessageContent::Contact {
             display_name,
             phone_number,
             ..
-        } => format!(
-            "{} {}",
-            display_name,
-            phone_number.as_deref().unwrap_or_default()
-        ),
-        MessageContent::Poll { question, .. } => question.text.clone(),
+        } => join_non_empty_search_parts(&[
+            Some(display_name.as_str()),
+            phone_number.as_deref(),
+        ]),
+        MessageContent::Poll {
+            question, options, ..
+        } => {
+            let mut parts = vec![question.text.trim()];
+            for option in options {
+                let trimmed = option.text.trim();
+                if !trimmed.is_empty() {
+                    parts.push(trimmed);
+                }
+            }
+            parts.into_iter().filter(|part| !part.is_empty()).collect::<Vec<_>>().join(" ")
+        }
         MessageContent::Venue { title, address, .. } => format!("{title} {address}"),
         MessageContent::Service { action, text } => {
             format!("{} {}", action, text.as_deref().unwrap_or_default())
@@ -475,13 +549,13 @@ fn content_matches_scope(content: &MessageContent, scope: SearchScope) -> bool {
         ),
         SearchScope::Files => matches!(content, MessageContent::Document { .. }),
         SearchScope::Links => match content {
-            MessageContent::Text { text } => text.entities.iter().any(|entity| {
-                matches!(
-                    &entity.kind,
-                    crate::message::TextEntityKind::Url
-                        | crate::message::TextEntityKind::TextUrl(_)
-                )
-            }),
+            MessageContent::Text { text } => formatted_text_has_link(text),
+            MessageContent::Photo { caption, .. }
+            | MessageContent::Video { caption, .. }
+            | MessageContent::Animation { caption, .. }
+            | MessageContent::Audio { caption, .. }
+            | MessageContent::Voice { caption, .. }
+            | MessageContent::Document { caption, .. } => formatted_text_has_link(caption),
             _ => false,
         },
         _ => true,
@@ -663,5 +737,122 @@ mod recipient_policy_tests {
             ),
             None
         );
+    }
+
+    #[test]
+    fn search_index_supports_scoped_media_files_links_collections_and_filename_matching() {
+        use crate::actor::ActorId;
+        use crate::message::{DeliveryState, FormattedText, MediaRef};
+
+        let conv_id = ConversationId::new("conv-search");
+        let sender = ActorId::new("human-alice");
+        let base_media = |id: &str, file_name: &str, mime_type: &str| MediaRef {
+            id: id.into(),
+            file_name: Some(file_name.into()),
+            mime_type: Some(mime_type.into()),
+            size_bytes: Some(1024),
+            width: Some(1280),
+            height: Some(720),
+            duration_ms: None,
+            thumbnail_id: None,
+            local_path: None,
+            remote_url: None,
+            content_hash: None,
+        };
+        let make_msg = |id: &str, ts: i64, content: MessageContent| Message {
+            id: MessageId::new(id),
+            conversation_id: conv_id.clone(),
+            sender_id: sender.clone(),
+            content,
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            forward_origin: None,
+            reply_markup: None,
+            reactions: Vec::new(),
+            delivery_state: DeliveryState::Sent,
+            created_at_ms: ts,
+            edited_at_ms: None,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+            pinned: false,
+            deleted: false,
+        };
+
+        let mut index = SearchIndex::default();
+        index.index_message(make_msg(
+            "msg-photo",
+            100,
+            MessageContent::Photo {
+                media: base_media("m1", "architecture-diagram.png", "image/png"),
+                caption: FormattedText::plain("See https://docs.example.com/spec"),
+                spoiler: false,
+            },
+        ));
+        index.index_message(make_msg(
+            "msg-doc",
+            200,
+            MessageContent::Document {
+                media: base_media("m2", "quarterly-budget.xlsx", "application/vnd.ms-excel"),
+                caption: FormattedText::plain("Finance summary"),
+            },
+        ));
+        index.index_message(make_msg(
+            "msg-link-text",
+            300,
+            MessageContent::Text {
+                text: FormattedText::plain("Reference https://fabushi.example/roadmap"),
+            },
+        ));
+
+        let empty_media = index.search(&SearchQuery {
+            text: String::new(),
+            scope: SearchScope::Media,
+            conversation_id: Some(conv_id.clone()),
+            sender_id: None,
+            from_ms: None,
+            to_ms: None,
+            limit: 10,
+        });
+        assert_eq!(empty_media.len(), 1);
+        assert_eq!(empty_media[0].id, "msg-photo");
+
+        let empty_files = index.search(&SearchQuery {
+            text: String::new(),
+            scope: SearchScope::Files,
+            conversation_id: Some(conv_id.clone()),
+            sender_id: None,
+            from_ms: None,
+            to_ms: None,
+            limit: 10,
+        });
+        assert_eq!(empty_files.len(), 1);
+        assert_eq!(empty_files[0].id, "msg-doc");
+
+        let empty_links = index.search(&SearchQuery {
+            text: String::new(),
+            scope: SearchScope::Links,
+            conversation_id: Some(conv_id.clone()),
+            sender_id: None,
+            from_ms: None,
+            to_ms: None,
+            limit: 10,
+        });
+        assert_eq!(
+            empty_links.iter().map(|item| item.id.as_str()).collect::<Vec<_>>(),
+            vec!["msg-link-text", "msg-photo"]
+        );
+
+        let filename_search = index.search(&SearchQuery {
+            text: "quarterly-budget.xlsx".into(),
+            scope: SearchScope::Files,
+            conversation_id: Some(conv_id),
+            sender_id: None,
+            from_ms: None,
+            to_ms: None,
+            limit: 10,
+        });
+        assert_eq!(filename_search.len(), 1);
+        assert_eq!(filename_search[0].id, "msg-doc");
     }
 }

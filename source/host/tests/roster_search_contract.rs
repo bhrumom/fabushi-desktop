@@ -61,6 +61,53 @@ fn frozen_content_match_rules_preserve_snippets_order_and_hidden_peer_filter() {
         build_content_snippet("alpha   needle\n beta", "needle").as_deref(),
         Some("alpha needle beta")
     );
+
+    let rich_entries = vec![
+        json!({
+            "id": "rich-msg",
+            "kind": "message",
+            "role": "user",
+            "authorName": "ReleaseLead",
+            "forwardedFromAuthorName": "SecurityReviewer",
+            "content": "Ship checklist",
+            "attachments": [{"name": "release-signoff.pdf"}],
+            "timestampMs": 50
+        }),
+        json!({
+            "id": "rich-widget",
+            "kind": "send-message",
+            "message": {"type": "widget", "widget": {"prompt": "Confirm production cutover"}},
+            "timestampMs": 60
+        }),
+        json!({
+            "id": "rich-email",
+            "kind": "send-message",
+            "message": {"type": "email-draft", "draft": {"subject": "Incident Postmortem", "body": "Root cause analysis"}},
+            "timestampMs": 70
+        }),
+        json!({
+            "id": "rich-slack",
+            "kind": "send-message",
+            "message": {"type": "slack-draft", "draft": {"body": "Deploy window open"}},
+            "timestampMs": 80
+        }),
+    ];
+    let attachment_matches = find_agent_content_matches(&rich_entries, "securityreviewer release-signoff.pdf", 5);
+    assert_eq!(attachment_matches.len(), 1);
+    assert_eq!(attachment_matches[0].entry_id, "rich-msg");
+    assert_eq!(attachment_matches[0].role, "user");
+
+    let widget_matches = find_agent_content_matches(&rich_entries, "production cutover", 5);
+    assert_eq!(widget_matches.len(), 1);
+    assert_eq!(widget_matches[0].entry_id, "rich-widget");
+
+    let email_matches = find_agent_content_matches(&rich_entries, "postmortem root cause", 5);
+    assert_eq!(email_matches.len(), 1);
+    assert_eq!(email_matches[0].entry_id, "rich-email");
+
+    let slack_matches = find_agent_content_matches(&rich_entries, "deploy window", 5);
+    assert_eq!(slack_matches.len(), 1);
+    assert_eq!(slack_matches[0].entry_id, "rich-slack");
 }
 
 #[test]
@@ -588,6 +635,49 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
         carol_peer_fallback_array[0].pointer("/forwardContext/origin/authorName"),
         Some(&json!("Bob")),
     );
+
+    let album_message = session
+        .append_human_message(
+            &conversation_id,
+            "architecture visual pack",
+            "nonce-album-media",
+            Some(1025.0),
+            None,
+            &[
+                json!({
+                    "path": "/tmp/arch-flow.png",
+                    "name": "arch-flow.png",
+                    "mimeType": "image/png",
+                    "width": 1920,
+                    "height": 1080
+                }),
+                json!({
+                    "path": "/tmp/arch-schema.png",
+                    "name": "arch-schema.png",
+                    "mimeType": "image/png",
+                    "width": 1280,
+                    "height": 720
+                }),
+            ],
+        )
+        .expect("append multi-attachment human album message");
+    let album_media_results = dispatch_production_session_gateway_call(
+        &session,
+        "searchMedia",
+        &json!({"query": "visual pack png", "limit": 10}),
+    )
+    .expect("album searchMedia method")
+    .expect("album searchMedia");
+    let album_media_array = album_media_results.as_array().expect("album media array");
+    assert_eq!(album_media_array.len(), 2);
+    assert_eq!(album_media_array[0]["entryId"], album_message["id"]);
+    assert_eq!(album_media_array[0]["fileName"], json!("arch-flow.png"));
+    assert_eq!(album_media_array[0]["width"], json!(1920));
+    assert_eq!(album_media_array[0]["height"], json!(1080));
+    assert_eq!(album_media_array[1]["entryId"], album_message["id"]);
+    assert_eq!(album_media_array[1]["fileName"], json!("arch-schema.png"));
+    assert_eq!(album_media_array[1]["width"], json!(1280));
+    assert_eq!(album_media_array[1]["height"], json!(720));
 
     session.shutdown();
 
