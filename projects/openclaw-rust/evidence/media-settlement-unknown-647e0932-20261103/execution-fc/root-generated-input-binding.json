@@ -1,0 +1,34 @@
+{
+  "subject_commit": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "carrier_commit": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "source_run": 41582614099,
+  "attempt": 1,
+  "items": [
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "expected_carrier_blob_from_API": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+      "observed_blob": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+      "expected_postgeneration_sha256": "b1605cfab7367390177f63c25d6264b575ace04813bc4a3999f876ec1e5f994a",
+      "observed_sha256": "b1605cfab7367390177f63c25d6264b575ace04813bc4a3999f876ec1e5f994a",
+      "matches_carrier_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "expected_carrier_blob_from_API": "673c8defe212bc07d0bc031d9a10126c2df7ef24",
+      "observed_blob": "673c8defe212bc07d0bc031d9a10126c2df7ef24",
+      "expected_postgeneration_sha256": "ff2a0d0dfbd343941a29933d7154dc0bd3e4b5934b2e1c9fdafa8f6b2a886a75",
+      "observed_sha256": "ff2a0d0dfbd343941a29933d7154dc0bd3e4b5934b2e1c9fdafa8f6b2a886a75",
+      "matches_carrier_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/shards/manifest.json",
+      "expected_carrier_blob_from_API": "911019b1c4c3b629a4425610bf941caf88a97e18",
+      "observed_blob": "911019b1c4c3b629a4425610bf941caf88a97e18",
+      "expected_postgeneration_sha256": "9b4dc21b09d80a94259d0688b552c920f41fb93363589235ba4d14a55470b6d3",
+      "observed_sha256": "9b4dc21b09d80a94259d0688b552c920f41fb93363589235ba4d14a55470b6d3",
+      "matches_carrier_and_receipt": true
+    }
+  ],
+  "interpretation": "These three source receipt hashes are generated outputs subsequently published by Actions. They are not unchanged pre-generation Hfc bytes. All other input bindings remain in the collector index; this proof changes no global status."
+}

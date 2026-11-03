@@ -1,0 +1,266 @@
+{
+  "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "unchanged_through": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "sources": [
+    {
+      "path": "projects/openclaw-rust/scripts/source_review.py",
+      "blob": "143e310f263d474a3a711a8b992013f5ded74b85",
+      "bytes": 20450
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+      "blob": "d6001d6c9bab9860e8ba7e0f1434d48581c9c42d",
+      "bytes": 7378
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/expand_inventory.py",
+      "blob": "49b7313151e9d5602a9edf9de4c82050b65cc98d",
+      "bytes": 9638
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/shard_inventory.py",
+      "blob": "3f2e86c61793b1f9d3cbeefac621f7b55de279f7",
+      "bytes": 11547
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/test_source_review.py",
+      "blob": "cda4a8319d82a599491c965bd55fdc412bad8110",
+      "bytes": 17084
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/test_inventory_materialization.py",
+      "blob": "9a7357193f2aa03f419bb0cadeb181b58b6fa901",
+      "bytes": 20045
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/shards/manifest.json",
+      "blob": "136989f86fa26513cb73e3c35795cf7b9c5de4e6",
+      "bytes": 27556
+    }
+  ],
+  "selected_shard_inputs": [
+    {
+      "manifest": {
+        "compressed_sha256": "836261857bf189bcb4584d552f0cb4f67fffb9b5f36ff9aabea067bc1240c480",
+        "count": 1024,
+        "first_path": "src/flows/doctor-model-reference-check.ts",
+        "last_path": "src/gateway/mcp-http.runtime.test.ts",
+        "path": "projects/openclaw-rust/inventory/shards/part-0036.jsonl.gz",
+        "uncompressed_sha256": "8dd58c1716949ef1a254bef832256a2e200dc6dec800934d63524758e4d175c1"
+      },
+      "git": {
+        "path": "projects/openclaw-rust/inventory/shards/part-0036.jsonl.gz",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "a41302e3cb662b4f0b17c84fca8a59205ebb4054",
+        "size": 50509,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/a41302e3cb662b4f0b17c84fca8a59205ebb4054"
+      }
+    },
+    {
+      "manifest": {
+        "compressed_sha256": "2b142113fa92ec877cd1f1f01c2e3879f24244adf39faa2a93d54bd401b7e85b",
+        "count": 1024,
+        "first_path": "src/infra/resolve-system-bin.ts",
+        "last_path": "src/infra/update-immutable-install-schema.ts",
+        "path": "projects/openclaw-rust/inventory/shards/part-0043.jsonl.gz",
+        "uncompressed_sha256": "40a0bcfebcae84bf67e1f8c5811714878f6aecffacfe114e35b369e83122efa6"
+      },
+      "git": {
+        "path": "projects/openclaw-rust/inventory/shards/part-0043.jsonl.gz",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "6642a2b5abd7e4fdd9f477192e655b9c6229fbea",
+        "size": 48967,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/6642a2b5abd7e4fdd9f477192e655b9c6229fbea"
+      }
+    },
+    {
+      "manifest": {
+        "compressed_sha256": "c679e7f417903b4f84268789014f396a26fb798946221955bfb97c30ee3b3edf",
+        "count": 1024,
+        "first_path": "src/infra/update-immutable-install.adoption.test.ts",
+        "last_path": "src/meeting-bot/transcripts-bridge.test.ts",
+        "path": "projects/openclaw-rust/inventory/shards/part-0044.jsonl.gz",
+        "uncompressed_sha256": "80f291a85dd3387589d8b323b9b9e373f2c16d5a1e6299c6cc67690fefebbe55"
+      },
+      "git": {
+        "path": "projects/openclaw-rust/inventory/shards/part-0044.jsonl.gz",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "a764a21974401c0b0353c4ba3904c51da0d9af32",
+        "size": 50499,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/a764a21974401c0b0353c4ba3904c51da0d9af32"
+      }
+    }
+  ],
+  "selected_rows": [
+    {
+      "applicability_status": "unknown",
+      "blob_sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551",
+      "category": "unknown",
+      "content_identity": null,
+      "dependency_edges": [],
+      "disposition": null,
+      "disposition_status": "pending",
+      "entry_kind": "blob",
+      "evidence_refs": [],
+      "git_type": "blob",
+      "language_kind": "unclassified",
+      "license_provenance": null,
+      "mode": "100644",
+      "module_id": null,
+      "path": "src/gateway/agent-turn/agent-run-final-media.ts",
+      "rationale": null,
+      "read_ranges": [],
+      "read_status": "unread",
+      "required_review_depth": "deep",
+      "responsibility_ids": [],
+      "responsibility_status": "unclassified",
+      "review_inputs": [],
+      "review_status": "pending",
+      "reviewed_dependency_edges": [],
+      "reviewer": null,
+      "risk": "unknown",
+      "sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551",
+      "size_bytes": 9259,
+      "source_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "source_repository": "openclaw/openclaw",
+      "source_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    {
+      "applicability_status": "unknown",
+      "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f",
+      "category": "unknown",
+      "content_identity": null,
+      "dependency_edges": [],
+      "disposition": null,
+      "disposition_status": "pending",
+      "entry_kind": "blob",
+      "evidence_refs": [],
+      "git_type": "blob",
+      "language_kind": "unclassified",
+      "license_provenance": null,
+      "mode": "100644",
+      "module_id": null,
+      "path": "src/gateway/agent-turn/agent-run-media.ts",
+      "rationale": null,
+      "read_ranges": [],
+      "read_status": "unread",
+      "required_review_depth": "deep",
+      "responsibility_ids": [
+        "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001"
+      ],
+      "responsibility_status": "mapped",
+      "review_inputs": [],
+      "review_status": "pending",
+      "reviewed_dependency_edges": [],
+      "reviewer": null,
+      "risk": "unknown",
+      "sha": "27a3a65974fad078872b257ee28cafccdad4691f",
+      "size_bytes": 5421,
+      "source_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "source_repository": "openclaw/openclaw",
+      "source_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    {
+      "applicability_status": "unknown",
+      "blob_sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf",
+      "category": "unknown",
+      "content_identity": null,
+      "dependency_edges": [],
+      "disposition": null,
+      "disposition_status": "pending",
+      "entry_kind": "blob",
+      "evidence_refs": [],
+      "git_type": "blob",
+      "language_kind": "unclassified",
+      "license_provenance": null,
+      "mode": "100644",
+      "module_id": null,
+      "path": "src/gateway/managed-image-attachments.custody.ts",
+      "rationale": null,
+      "read_ranges": [],
+      "read_status": "unread",
+      "required_review_depth": "deep",
+      "responsibility_ids": [],
+      "responsibility_status": "unclassified",
+      "review_inputs": [],
+      "review_status": "pending",
+      "reviewed_dependency_edges": [],
+      "reviewer": null,
+      "risk": "unknown",
+      "sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf",
+      "size_bytes": 5658,
+      "source_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "source_repository": "openclaw/openclaw",
+      "source_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    {
+      "applicability_status": "unknown",
+      "blob_sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6",
+      "category": "unknown",
+      "content_identity": null,
+      "dependency_edges": [],
+      "disposition": null,
+      "disposition_status": "pending",
+      "entry_kind": "blob",
+      "evidence_refs": [],
+      "git_type": "blob",
+      "language_kind": "unclassified",
+      "license_provenance": null,
+      "mode": "100644",
+      "module_id": null,
+      "path": "src/infra/sqlite-worker-error.ts",
+      "rationale": null,
+      "read_ranges": [],
+      "read_status": "unread",
+      "required_review_depth": "deep",
+      "responsibility_ids": [],
+      "responsibility_status": "unclassified",
+      "review_inputs": [],
+      "review_status": "pending",
+      "reviewed_dependency_edges": [],
+      "reviewer": null,
+      "risk": "unknown",
+      "sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6",
+      "size_bytes": 4739,
+      "source_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "source_repository": "openclaw/openclaw",
+      "source_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    {
+      "applicability_status": "unknown",
+      "blob_sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5",
+      "category": "unknown",
+      "content_identity": null,
+      "dependency_edges": [],
+      "disposition": null,
+      "disposition_status": "pending",
+      "entry_kind": "blob",
+      "evidence_refs": [],
+      "git_type": "blob",
+      "language_kind": "unclassified",
+      "license_provenance": null,
+      "mode": "100644",
+      "module_id": null,
+      "path": "src/media/store.read-scope.ts",
+      "rationale": null,
+      "read_ranges": [],
+      "read_status": "unread",
+      "required_review_depth": "deep",
+      "responsibility_ids": [],
+      "responsibility_status": "unclassified",
+      "review_inputs": [],
+      "review_status": "pending",
+      "reviewed_dependency_edges": [],
+      "reviewer": null,
+      "risk": "unknown",
+      "sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5",
+      "size_bytes": 8935,
+      "source_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "source_repository": "openclaw/openclaw",
+      "source_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  ]
+}

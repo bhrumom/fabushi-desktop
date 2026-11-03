@@ -1,0 +1,27 @@
+{
+  "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "runtime_run": 41576543683,
+  "attempt": 1,
+  "job": 125721250334,
+  "result": "failure retained; four exact loader cases",
+  "incoming_commit_read": "972779ecd290b90e407ffe651aa5c456c31e9f7f",
+  "incoming_source_blobs": {
+    "source/packages/cursor-plugins/loader.ts": "f0028c8fbecc602828fb6ed48dce9fd77855102c",
+    "source/packages/cursor-plugins/loader.contract.test.ts": "fa41d87a2e9f8b03ca7d8125309a96673d57482e"
+  },
+  "findings": [
+    {
+      "case": "failed cache publication removes only its staging directory",
+      "classification": "A2 oracle/fixture mismatch against the existing version-keyed cache directory",
+      "incoming_disposition": "Incoming test requires the actual version child, introduces the collision after owned staging allocation, and retains target bytes plus explicit staging removal/no-sentinel/no-prune assertions. Preserve this already published correction; do not duplicate it in MSU."
+    },
+    {
+      "cases": ["filesystem EACCES during cache installation", "filesystem EPERM during cache installation", "filesystem EROFS during cache installation"],
+      "classification": "A2 implementation classified message text without the structured filesystem code",
+      "incoming_disposition": "Incoming classifier explicitly reads error.code and keeps all three original install-category assertions. Preserve the existing owner's published implementation; do not weaken these tests or rerun A2 to seek green."
+    }
+  ],
+  "read_scope": "Root read the complete four failing assertion blocks, the old/new classifier and caller delta, and existing getCacheDir contract. Acquired full incoming files by exact Git blob and matched saved byte identities; this is a bounded causal assessment, not full independent review of the incoming plugin batch.",
+  "native_attachment_binding": "Skipped after the primary Plugin Skills failure; its failed-or-incomplete receipt is missing execution, not a native behavioral failure.",
+  "acceptance": "No new-H execution result is inferred. A2 renderer stays failed. The next frozen MSU candidate must retain these incoming changes and obtain its own Actions evidence."
+}

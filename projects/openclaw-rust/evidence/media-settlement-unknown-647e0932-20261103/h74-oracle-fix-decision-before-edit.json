@@ -1,0 +1,21 @@
+{
+  "id": "MSU-H74-RECOVERY-003-RESOLVED",
+  "supersedes": "MSU-H74-RECOVERY-003",
+  "decision": "FIX",
+  "classification": "TEST_FLAW",
+  "recorded_before_edits": true,
+  "scope": "source/host/tests/openclaw_sessions_and_config_contract.rs only",
+  "concrete_failure": "The bounded media proof counts both the inherent impl SandAgentDb and actual impl Drop for SandAgentDb (agent_db.rs:6237) as candidates, then rejects ambiguity. Its token traversal would also enter Drop and parse it as an inherent impl. Thus the positive actual-source proof returns None before six controls run their intended assertions.",
+  "required_correction": "Select exactly one genuine inherent impl, retaining qualified-name, duplicate, conditional-attribute and signature checks. Skip trait impls in the owner traversal without exempting their tokens from the remaining global source/call checks. Normalize CRLF only for literal source matching and mutation construction; retain syntax, ownership and all error/retirement checks.",
+  "regression_oracle": "Require actual-source proof with the real Drop impl present on LF and CRLF input. Exercise retained media counterfactuals on both line endings after a confirmed mutation site. Keep all27 selected cases, unchanged channel Some(1), exact returned handling, raw-COMMIT ban and the existing three admission guards.",
+  "unchanged_subject": "H74 remains failed. Source repair grants no execution approval. New exactH Actions required.",
+  "causal_source_evidence": {
+    "db_blob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+    "oracle_blob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+    "owner_filter": "media_commit_inherent_impl",
+    "owner_parser": "media_commit_owner_is_handled",
+    "linux_panic": 1889,
+    "windows_additional_panic": 1945
+  },
+  "worker_permission": "After this durable decision and spec amendment, diagnostic worker may edit only the exact oracle file in media-settlement-work and its own diagnosis/diff files. Root retains public spec, ledger/index, capture/workflow and integration ownership."
+}

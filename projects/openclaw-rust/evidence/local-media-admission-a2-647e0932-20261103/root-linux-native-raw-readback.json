@@ -1,0 +1,663 @@
+{
+  "method": "Root data/byte accounting of existing exact-H Actions receipt and raw log files, not local product execution.",
+  "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run": "41576543683",
+  "attempt": "1",
+  "job": 125721250552,
+  "artifact": 13203799823,
+  "native_result": "passed",
+  "executions": [
+    {
+      "case": "cleanup-owner",
+      "log": "cleanup-owner.log",
+      "log_sha256": "0e963c2be469f26f5f3f0434092e855a0d056b624e7a738cd69e3a3bb7070e52",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 7,
+      "raw_positive_count": 7,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "7",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "cleanup-consumers",
+      "log": "cleanup-consumers.log",
+      "log_sha256": "f8727bc2381cb9325846aa03cd0bcf954cb8ad557c2ef5cde43f6f8b40e9f39d",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 17,
+      "raw_positive_count": 17,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "17",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "html-policy",
+      "log": "html-policy.log",
+      "log_sha256": "32a717d1d79b4787b750c83b2e197e0ff4c7edf830cff8368073f7facc59a2c5",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 12,
+      "raw_positive_count": 12,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "12",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "host-read-format",
+      "log": "host-read-format.log",
+      "log_sha256": "a61a6612b29c90cc1c41e8db2a2b4da4e03256c2a884ab09f7c57dba1e638721",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 1,
+      "raw_positive_count": 1,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "file-url-admission",
+      "log": "file-url-admission.log",
+      "log_sha256": "7d588a4b36ebadf4a43d3ebdd6484aecfb7bdeeedbf1b333e9e89fd1b2c9dc92",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 5,
+      "raw_positive_count": 5,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "5",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "explicit-html-consumers",
+      "log": "explicit-html-consumers.log",
+      "log_sha256": "ed2a24e201536694e7e2f9616eac3cb7f8fd10136ee152bb1cf26264cc91aead",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 28,
+      "raw_positive_count": 28,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "28",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "image-probe-consumers",
+      "log": "image-probe-consumers.log",
+      "log_sha256": "0d7f045c15daaa3a60c99efc3991bf6c9e6105a1a806f049b0815b2a6cb3363d",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 16,
+      "raw_positive_count": 16,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "16",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "bounded-reader-owner",
+      "log": "bounded-reader-owner.log",
+      "log_sha256": "a0789792114efb444eb76c217c1a5f0809f33e43d6f04358b3fef2b3affabb33",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 11,
+      "raw_positive_count": 11,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "11",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "bounded-reader-public",
+      "log": "bounded-reader-public.log",
+      "log_sha256": "8cafe42d12f966675c7dbc2563b179becb9434d45e5e3f8e64a3834ec7adc001",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 17,
+      "raw_positive_count": 17,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "17",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "bounded-reader-box-consumer",
+      "log": "bounded-reader-box-consumer.log",
+      "log_sha256": "f3b0eb084eb79ebcff24006b5f21954c841d38701c73c6b4421c0c7d0ce6f364",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 1,
+      "raw_positive_count": 1,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "bounded-reader-image-consumer",
+      "log": "bounded-reader-image-consumer.log",
+      "log_sha256": "28da1e73a06aff75f9306dcd60ee86dd05f1add7411ce1b3c9b26746623ba292",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 1,
+      "raw_positive_count": 1,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "bounded-reader-channel-consumers",
+      "log": "bounded-reader-channel-consumers.log",
+      "log_sha256": "524fa0e57e5c770fd0eac286de09d510f8530f428b60eef4e55cff652c9ce99b",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 7,
+      "raw_positive_count": 7,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "7",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "local-file-url-owner",
+      "log": "local-file-url-owner.log",
+      "log_sha256": "aa21d4165bccc236027ed99e4c2334a35afff0fe9beb3b2fa5052517d7d07870",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 10,
+      "raw_positive_count": 10,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "10",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "file-context-consumers",
+      "log": "file-context-consumers.log",
+      "log_sha256": "5ff165b801b8287ac36bf1f0117b08280ba812954b212f8d632446cdd7f3b3e5",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 10,
+      "raw_positive_count": 10,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "10",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "send-message-consumers",
+      "log": "send-message-consumers.log",
+      "log_sha256": "0a2cb286f3db6223e6c44ba643bf352b2ccc0a8e38b6b2269c34c9c7c5c4d3b7",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 17,
+      "raw_positive_count": 17,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "17",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    },
+    {
+      "case": "agent-management-consumers",
+      "log": "agent-management-consumers.log",
+      "log_sha256": "346e1d5151f42113327114a60d982f47bdd098c236f46f84896fa4aeb2b8850e",
+      "log_hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 3,
+      "raw_positive_count": 3,
+      "all_names_once": true,
+      "summaries": [
+        [
+          "ok",
+          "3",
+          "0",
+          "0"
+        ]
+      ],
+      "summary_matches": true
+    }
+  ],
+  "inputs": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "git_blob": "5abace3386897aaca3c4a256a11f90b8e3b98119",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "git_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "git_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/Cargo.lock",
+      "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/build.rs",
+      "git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/lib.rs",
+      "git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_store.rs",
+      "git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/extension.rs",
+      "git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/host_production_extensions.rs",
+      "git_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "git_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_store_contract.rs",
+      "git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/media_mime.rs",
+      "git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/gateway_protocol.rs",
+      "git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/host_gateway_api.rs",
+      "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_reference_contract.rs",
+      "git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "git_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "git_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "git_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    },
+    {
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "matches_root_exact_H_tree": true,
+      "normalized_blob_matches": true,
+      "unchanged_before_after": true
+    }
+  ],
+  "raw_positive_total": 163,
+  "actual_App": "separate step failed later; original cause/raw receipt still pending; native result is not actual App evidence"
+}

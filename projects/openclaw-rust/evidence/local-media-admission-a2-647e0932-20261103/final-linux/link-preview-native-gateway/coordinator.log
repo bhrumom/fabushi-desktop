@@ -1,0 +1,193 @@
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded cc v1.11.0
+  Downloaded dunce v1.0.5
+  Downloaded fs_extra v1.3.0
+  Downloaded cmake v0.1.58
+  Downloaded find-msvc-tools v0.1.15
+  Downloaded log v0.4.35
+  Downloaded uuid v1.29.0
+  Downloaded rustls-webpki v0.103.16
+  Downloaded webpki-roots v1.0.11
+  Downloaded aws-lc-rs v1.19.0
+  Downloaded aws-lc-sys v0.47.0
+   Compiling fs_extra v1.3.0
+   Compiling cmake v0.1.58
+   Compiling dunce v1.0.5
+   Compiling aws-lc-rs v1.19.0
+   Compiling aws-lc-sys v0.47.0
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.16
+   Compiling mahayana-node-agent-coordinator v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/node-agent-coordinator)
+warning: unused import: `Read`
+ --> src/gateway/host_supervisor.rs:4:21
+  |
+4 | use std::io::{self, Read, Write};
+  |                     ^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `Read`
+ --> src/gateway/gateway_request_dispatcher.rs:2:15
+  |
+2 | use std::io::{Read, Write};
+  |               ^^^^
+
+warning: value assigned to `needs_respawn` is never read
+   --> src/local_exec/supervisor.rs:849:33
+    |
+849 |         let mut needs_respawn = false;
+    |                                 ^^^^^ this value is reassigned later and never used
+...
+858 |                 needs_respawn = true;
+    |                 -------------------- `needs_respawn` is overwritten here before the previous value is read
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-node-agent-coordinator` (lib) generated 3 warnings (run `cargo fix --lib -p mahayana-node-agent-coordinator` to apply 1 suggestion)
+warning: field `stdin` is never read
+  --> src/main.rs:93:5
+   |
+91 | struct ActiveHostStdin {
+   |        --------------- field in this struct
+92 |     generation: u64,
+93 |     stdin: ChildStdin,
+   |     ^^^^^
+   |
+   = note: `ActiveHostStdin` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `wait_for_webauthn_result` is never used
+   --> tests/production_protocol.rs:204:12
+    |
+ 54 |     impl FakeGateway {
+    |     ---------------- method in this implementation
+...
+204 |         fn wait_for_webauthn_result(&self) -> Value {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-node-agent-coordinator` (test "production_protocol") generated 1 warning
+warning: `mahayana-node-agent-coordinator` (bin "mahayana-node-agent-coordinator") generated 1 warning
+    Finished `test` profile [unoptimized] target(s) in 20.24s
+     Running tests/coordinator_contract.rs (source/host/target/debug/deps/coordinator_contract-0999b19845373988)
+
+running 58 tests
+test agent_inbound_failure_gateway_report_preserves_host_owned_error_context ... ok
+test box_vnc_proxy_maps_primary_and_fork_viewers_without_touching_foreign_urls ... ok
+test agent_inbound_direct_wake_forwards_selected_images_without_group_fanout ... ok
+test cancel_aborts_and_settles_the_request ... ok
+test carrier_bootstrap_and_channels_preserve_grok_process_boundaries ... ok
+test control_command_retirement::closed_registration_refuses_before_writer_callback ... ok
+test client_side_tool_v2_relay_fences_epochs_sequences_and_replays_wire_payloads ... ok
+test control_command_retirement::poisoned_cleanup_retires_only_owned_entries_and_preserves_write_failure ... ok
+test control_command_retirement::synchronous_callback_reentry_preserves_remote_success_and_failure ... ok
+test control_port_preserves_client_event_direction_and_rejects_server_events ... ok
+test control_command_retirement::write_failure_preserves_runner_resolution_while_published_effect_continues ... ok
+test control_command_retirement::port_closure_and_protocol_settlement_leave_remote_work_running ... ok
+test coordinator_inference_router_uses_product_fallback_until_settings_override_it ... ok
+test crash_is_recorded_in_resync_snapshot ... ok
+test coordinator_shipping_delete_success_wires_agent_queue_purge ... ok
+test disconnect_rejects_every_pending_control_call ... ok
+test gateway_client_pause_and_dev_offline_gate_dispatch_without_closing_client ... ok
+test coordinator_inference_router_refreshes_default_provider_without_losing_agent_overrides ... ok
+test gateway_client_tracks_endpoint_stream_stall_retry_and_permanent_refusal ... ok
+test gateway_dispatch_preserves_command_unreachable_and_transport_failures ... ok
+test gateway_dns_diagnostics_match_cursorvm_target_and_failure_matrix ... ok
+test gateway_dns_reporter_models_failure_episode_cooldown_and_recovery ... ok
+test gateway_down_up_is_resynchronizable ... ok
+test gateway_event_families_match_the_frozen_coordinator_contract ... ok
+test gateway_host_supervisor_rejects_stale_connection_resolution_after_invalidation ... ok
+CJW HTTP fixture JSON: {"entries":[{"channel":"fixture-channel","channelSender":{"id":"sender-wire","nested":[-1793000000000.0015,{"integral":1000.0,"large":1e+100,"negativeSmall":-1e-10,"negativeZero":-0.0,"small":1e-10},[null,true,false,42,-7,"ordinary JSON",[]]]},"content":"wire fixture\n雪","id":"t-wire-u","isStreaming":false,"kind":"message","role":"user","timestampMs":1793000000000.0015}],"nextBeforeSeq":null}
+test gateway_client_streams_real_sse_and_honors_bearer_auth ... ok
+CJW SSE fixture JSON: {"channel":"transcript","payload":{"agentId":"agent-wire","entry":{"channel":"fixture-channel","channelSender":{"id":"sender-wire","nested":[-1793000000000.0015,{"integral":1000.0,"large":1e+100,"negativeSmall":-1e-10,"negativeZero":-0.0,"small":1e-10},[null,true,false,42,-7,"ordinary JSON",[]]]},"content":"wire fixture\n雪","id":"t-wire-u","isStreaming":false,"kind":"message","role":"user","timestampMs":1793000000000.0015},"type":"appended"}}
+CJW HTTP raw synthetic response: HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 397
+Connection: close
+
+{"entries":[{"channel":"fixture-channel","channelSender":{"id":"sender-wire","nested":[-1793000000000.0015,{"integral":1000.0,"large":1e+100,"negativeSmall":-1e-10,"negativeZero":-0.0,"small":1e-10},[null,true,false,42,-7,"ordinary JSON",[]]]},"content":"wire fixture\n雪","id":"t-wire-u","isStreaming":false,"kind":"message","role":"user","timestampMs":1793000000000.0015}],"nextBeforeSeq":null}
+CJW HTTP /entries/0/channelSender/nested/0: expected=0xc27a17720ca00006 actual=0xc27a17720ca00006
+CJW HTTP /entries/0/channelSender/nested/1/integral: expected=0x408f400000000000 actual=0x408f400000000000
+CJW HTTP /entries/0/channelSender/nested/1/large: expected=0x54b249ad2594c37d actual=0x54b249ad2594c37d
+CJW HTTP /entries/0/channelSender/nested/1/negativeSmall: expected=0xbddb7cdfd9d7bdbb actual=0xbddb7cdfd9d7bdbb
+CJW HTTP /entries/0/channelSender/nested/1/negativeZero: expected=0x8000000000000000 actual=0x8000000000000000
+CJW HTTP /entries/0/channelSender/nested/1/small: expected=0x3ddb7cdfd9d7bdbb actual=0x3ddb7cdfd9d7bdbb
+CJW HTTP /entries/0/timestampMs: expected=0x427a17720ca00006 actual=0x427a17720ca00006
+test gateway_json_wire_fidelity::gateway_http_reply_preserves_finite_json_values ... ok
+CJW SSE raw synthetic response: HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Connection: keep-alive
+
+data: {"channel":"transcript","payload":{"agentId":"agent-wire","entry":{"channel":"fixture-channel","channelSender":{"id":"sender-wire","nested":[-1793000000000.0015,{"integral":1000.0,"large":1e+100,"negativeSmall":-1e-10,"negativeZero":-0.0,"small":1e-10},[null,true,false,42,-7,"ordinary JSON",[]]]},"content":"wire fixture\n雪","id":"t-wire-u","isStreaming":false,"kind":"message","role":"user","timestampMs":1793000000000.0015},"type":"appended"}}
+
+
+test gateway_reachability_matches_http_network_and_base_url_semantics ... ok
+CJW SSE /payload/entry/channelSender/nested/0: expected=0xc27a17720ca00006 actual=0xc27a17720ca00006
+CJW SSE /payload/entry/channelSender/nested/1/integral: expected=0x408f400000000000 actual=0x408f400000000000
+CJW SSE /payload/entry/channelSender/nested/1/large: expected=0x54b249ad2594c37d actual=0x54b249ad2594c37d
+CJW SSE /payload/entry/channelSender/nested/1/negativeSmall: expected=0xbddb7cdfd9d7bdbb actual=0xbddb7cdfd9d7bdbb
+CJW SSE /payload/entry/channelSender/nested/1/negativeZero: expected=0x8000000000000000 actual=0x8000000000000000
+CJW SSE /payload/entry/channelSender/nested/1/small: expected=0x3ddb7cdfd9d7bdbb actual=0x3ddb7cdfd9d7bdbb
+CJW SSE /payload/entry/timestampMs: expected=0x427a17720ca00006 actual=0x427a17720ca00006
+test gateway_json_wire_fidelity::gateway_sse_event_preserves_finite_json_values_after_connected ... ok
+test host_gateway_discovery_resolves_local_endpoint_and_bearer_header ... ok
+test host_restart_settles_old_generation_requests ... ok
+test gateway_request_dispatcher_posts_real_http_json_and_classifies_errors ... ok
+test inference_router_persists_bounded_transcripts_reactions_and_turn_ids ... ok
+test control_command_retirement::timeout_retires_only_owned_waiter_while_remote_effect_continues ... ok
+test local_exec_supervisor_matches_grok_spawn_adopt_replace_policy ... ok
+test mcp_routing_is_explicit_and_generation_bound ... ok
+test native_link_preview_carrier_reserves_cache_paths_for_main_data ... ok
+test oauth_forwarder_scopes_loopback_state_ttl_and_listener_lifecycle ... ok
+test local_exec_daemon_files_parse_and_retire_only_the_expected_generation ... ok
+test priority_peer_cancellation_redrives_agent_wake_exactly_once ... ok
+test protocol_hello_negotiates_exact_version ... ok
+test provider_history_projects_host_send_messages_as_assistant_turns ... ok
+test reconnect_resync_reports_generation_and_pending_state ... ok
+test redriven_peer_wake_prefers_urgent_queue_without_becoming_priority ... ok
+test redriven_peer_wake_runs_after_new_priority_but_before_later_normal_work ... ok
+test request_ids_are_unique_for_the_session ... ok
+test routed_mcp_bridge_serves_private_json_rpc_and_routes_cached_tools ... ok
+test server_direction_frames_from_renderer_are_protocol_breaches ... ok
+test shipping_agent_inbound_execution_admission_is_host_owned_and_precedes_provider_dispatch ... ok
+test shipping_cursor_agent_inbound_failure_redrives_priority_supersede_before_reporting_error ... ok
+test shipping_local_inference_uses_host_canonical_history_for_provider_messages ... ok
+test sse_decoder_preserves_chunk_boundaries_and_utf8_payloads ... ok
+test transport_stage_recorder_bounds_echo_correlation_and_settles_once ... ok
+test waitable_control_calls_resolve_reject_and_settle_on_disconnect ... ok
+test webauthn_provider_models_welcome_consent_sign_and_failure_frames ... ok
+test oauth_loopback_listener_binds_dispatches_and_releases_real_http_callback ... ok
+test deleted_agent_purge_skips_queued_inference_and_preserves_other_agents ... ok
+test inference_router_serializes_each_agent_but_allows_parallel_agents ... ok
+
+test result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/inference_host_boundary_contract.rs (source/host/target/debug/deps/inference_host_boundary_contract-cc77718a5531988d)
+
+running 14 tests
+test active_inference_stream_supersede_fences_start_accept_and_stale_finish ... ok
+test coordinator_projects_durable_turn_context_without_host_linkage ... ok
+test agent_inbound_wake_routes_only_the_addressed_session_without_user_echo ... ok
+test coordinator_respects_append_user_message_hidden_turn_contract ... ok
+test coordinator_waits_for_terminal_only_when_await_turn_is_explicit_true ... ok
+test host_routed_prompt_acceptance_supplies_authoritative_recovery_identity ... ok
+test only_direct_user_sends_supersede_the_active_provider_turn ... ok
+test renderer_tail_alias_is_normalized_before_host_dispatch ... ok
+test runner_inference_events_are_correlated_by_stream_id ... ok
+test runner_start_acceptance_preserves_exact_started_and_cancelled_outcomes ... ok
+test coordinator_workflow_run_now_preserves_visible_reference_and_expanded_runner_prompt ... ok
+test coordinator_provider_selection_is_pure_and_host_runtime_independent ... ok
+test runner_start_cancellation_rejects_malformed_foreign_and_contradictory_replies ... ok
+test renderer_transcript_is_host_authoritative_not_provider_projection ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/production_protocol.rs (source/host/target/debug/deps/production_protocol-d380f32a7d07900d)
+
+running 1 test
+test unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.04s
+

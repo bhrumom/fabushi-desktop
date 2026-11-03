@@ -1,0 +1,418 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 239c054aaccd42c0e5bc5e7ca0607431bcf400b7..673d6270d3c2a7f4b9e9f640acf88927f2f7b154 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -3965,6 +3965,9 @@
+               "source/host/Cargo.toml", "source/host/Cargo.lock",
+               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
++              "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++              "source/host/app/src/tests/cron_job_identity_tests.rs",
++              "source/host/src/automations/automation_id.rs",
+               "source/host/app/src/tests/config_secret_boundary_tests.rs",
+               "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+               "source/host/app/src/tests/local_media_file_url_tests.rs",
+@@ -4083,6 +4086,8 @@
+                   "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
+                   "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
+               "media_settlement_scope": "Actual file-backed App SendMessage/Session/Transcript/AgentDb path with real successful COMMIT followed by lost acknowledgement and actual receipt refusal followed by SQLite-denied rollback. Unknown retains owned bytes and exact identity through same-ID retry, abort, last-Arc Drop and two fresh owners; confirmed refusal cleans only owned files. Real pending ACK, channel, success counter, cache/multi-image, busy-entry/Tool cleanup and sealed unwind controls remain explicit. One generated Runner case requires sticky DownstreamOutcomeUnknown, no retry, no fabricated canonical history or completion. Controlled Responses/faults do not establish live provider/channel, arbitrary crash, full read-scope or packaged-platform acceptance.",
++              "cron_job_identity_contract": "OCRM-CRON-JOB-IDENTITY-v1",
++              "cron_job_identity_scope": "Actual App list/trigger functions with real Agent/Session/AutomationRuntime/FileStore owners and controlled final execution outcomes. Same-name Agents retain distinct canonical IDs, local command/history identity and unique legacy compatibility; ambiguous and stale UUID aliases refuse before effects, and reopen/delete plus existing terminal custody are exercised. Source wiring supplements those helpers; this is not full UnifiedGatewayApi/HTTP construction, real provider/backend or complete upstream cron.run/grant/wait/platform acceptance.",
+               "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
+               "subject_commit": head,
+               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+@@ -4306,6 +4311,15 @@
+                   "local_media_file_url_app_preserves_https_without_local_custody",
+               ]]
+               required += local_media_file_url_required
++              cron_job_identity_required = ["tests::cron_job_identity_tests::" + name for name in [
++                  "cron_job_identity_list_and_trigger_keep_same_name_agents_distinct",
++                  "cron_job_identity_legacy_aliases_refuse_ambiguity_without_effects",
++                  "cron_job_identity_canonical_legacy_collision_refuses_without_effects",
++                  "cron_job_identity_reopen_and_delete_preserve_target_continuity",
++                  "cron_job_identity_existing_execution_outcomes_remain_owned",
++              ]]
++              required += cron_job_identity_required
++              receipt["cron_job_identity_required_tests"] = cron_job_identity_required
+               receipt["local_media_file_url_required_tests"] = local_media_file_url_required
+               media_settlement_required = ["tests::channel_host_lane_tests::media_settlement_unknown::" + name for name in [
+                   "media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index e59c3f0fd702ef5a81eb133f3fe34bbf6b975198..99fd980c1f8bee47327efc49e59e0d5544dcf46f 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -10253,7 +10253,10 @@
+         "source/host/tests/gateway_protocol_contract.rs",
+         "source/host/tests/gateway_server_contract.rs",
+         "source/node-agent-coordinator/tests/production_protocol.rs",
+-        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md"
++        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index e2c00d404cf6737b750f389eb4c7f2cf45badf87..bd1a56a6990168c384bb553c269a3fc1b695a14a 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -174,7 +174,10 @@
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R04",
+@@ -2250,7 +2253,10 @@
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC11",
+diff --git a/source/host/app/src/main.rs b/source/host/app/src/main.rs
+index 7ec9bd8a22fd595f63cb3f4b632673e298294dfa..ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df 100644
+--- a/source/host/app/src/main.rs
++++ b/source/host/app/src/main.rs
+@@ -2963,6 +2963,164 @@
+     }
+ }
+ 
++// These compatibility functions use the existing durable Agent/Automation
++// owners. Keeping the production boundary here lets its actual file-backed
++// behavior be exercised without constructing unrelated desktop services.
++fn list_openclaw_cron_jobs(
++    store: &SandAgentSessionStore,
++    args: &serde_json::Value,
++) -> Result<serde_json::Value, GatewayCommandError> {
++    let agents = store.list_agents().map_err(GatewayCommandError::Internal)?;
++
++    let mut jobs = Vec::new();
++    for agent in agents {
++        let records = store
++            .list_agent_automations(&agent.id)
++            .map_err(GatewayCommandError::Internal)?;
++        for r in records {
++            let schedule = if r.schedule.trim().is_empty() {
++                serde_json::json!({ "kind": "event" })
++            } else {
++                serde_json::json!({
++                    "kind": "cron",
++                    "expr": r.schedule,
++                    "tz": "UTC"
++                })
++            };
++            // FileAutomationStore keeps runs newest-first; the first
++            // entry is therefore the only truthful last-run projection.
++            let last_run = r.runs.first();
++            let updated_at_ms = r
++                .last_run_at
++                .unwrap_or(r.created_at)
++                .clamp(i64::MIN as f64, i64::MAX as f64) as i64;
++            let job_id = stable_automation_id(&agent.id, &r.id);
++            jobs.push(serde_json::json!({
++                "id": job_id,
++                "jobId": job_id,
++                "name": r.name,
++                "description": r.prompt,
++                "enabled": r.is_enabled,
++                "createdAtMs": r.created_at as i64,
++                "updatedAtMs": updated_at_ms,
++                "agentId": agent.id,
++                "schedule": schedule,
++                "sessionTarget": "main",
++                "wakeMode": "now",
++                "payload": {
++                    "kind": "agentTurn",
++                    "message": r.prompt
++                },
++                "state": {
++                    "nextRunAtMs": r.next_run_at.map(|v| v as i64),
++                    "lastRunAtMs": r.last_run_at.map(|v| v as i64),
++                    "lastRunStatus": last_run.map(|run| run.status.clone()),
++                    "lastRunError": last_run.and_then(|run| run.detail.clone())
++                }
++            }));
++        }
++    }
++
++    let total = jobs.len();
++    let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(50) as usize;
++    let offset = args.get("offset").and_then(serde_json::Value::as_u64).unwrap_or(0) as usize;
++
++    let paged_jobs: Vec<serde_json::Value> = jobs.into_iter().skip(offset).take(limit).collect();
++    Ok(serde_json::json!({
++        "total": total,
++        "hasMore": offset + paged_jobs.len() < total,
++        "nextOffset": if offset + paged_jobs.len() < total { Some(offset + paged_jobs.len()) } else { None },
++        "jobs": paged_jobs,
++    }))
++}
++
++fn trigger_openclaw_cron_job(
++    store: &SandAgentSessionStore,
++    args: &serde_json::Value,
++    run_now: impl FnOnce(serde_json::Value) -> Result<serde_json::Value, GatewayCommandError>,
++) -> Result<serde_json::Value, GatewayCommandError> {
++    let job_id = args.get("id")
++        .or_else(|| args.get("jobId"))
++        .and_then(serde_json::Value::as_str)
++        .map(str::trim)
++        .filter(|id| !id.is_empty())
++        .ok_or_else(|| GatewayCommandError::BadRequest(
++            "cron.trigger requires id or jobId".into(),
++        ))?;
++
++    let mut target = None;
++    for agent in store.list_agents().map_err(GatewayCommandError::Internal)? {
++        for record in store.list_agent_automations(&agent.id)
++            .map_err(GatewayCommandError::Internal)?
++        {
++            let canonical_id = stable_automation_id(&agent.id, &record.id);
++            if canonical_id != job_id && record.id != job_id {
++                continue;
++            }
++            // Canonical and legacy inputs share one wire field. Do not let
++            // either namespace silently redirect a caller to another owner.
++            if target.is_some() {
++                return Err(GatewayCommandError::BadRequest(format!(
++                    "ambiguous cron job id: {job_id}",
++                )));
++            }
++            let previous_run_id = record.runs.first().map(|run| run.id.clone());
++            target = Some((agent.id.clone(), record.id, canonical_id, previous_run_id));
++        }
++    }
++    let Some((agent_id, local_id, canonical_id, previous_run_id)) = target else {
++        return Err(GatewayCommandError::BadRequest(format!(
++            "unknown cron job id: {job_id}",
++        )));
++    };
++
++    // The existing stable mapper emits UUID v5. A deleted canonical ID must
++    // never fall back to a different routine with that UUID as its local name.
++    let reserved_canonical_id = uuid::Uuid::parse_str(job_id).ok()
++        .is_some_and(|id| id.get_version_num() == 5);
++    if canonical_id != job_id && reserved_canonical_id {
++        return Err(GatewayCommandError::BadRequest(
++            "cron UUID requires its canonical job id from cron.list".into(),
++        ));
++    }
++
++    run_now(serde_json::json!({
++        "agentId": agent_id,
++        "automationId": local_id,
++    }))?;
++
++    let observed = store.list_agent_automations(&agent_id)
++        .map_err(GatewayCommandError::Internal)?
++        .into_iter()
++        .find(|record| record.id == local_id)
++        .and_then(|record| {
++            record.runs.first()
++                .filter(|run| previous_run_id.as_deref() != Some(run.id.as_str()))
++                .cloned()
++        });
++    let now = started_at_ms();
++    let finished = observed.as_ref().and_then(|run| run.finished_at).is_some();
++    let mut response = serde_json::json!({
++        "ok": true,
++        "enqueued": true,
++        "processInstanceId": format!("sand-host-{}", std::process::id()),
++        "finished": finished,
++        "run": {
++            "jobId": canonical_id,
++            "action": if finished { "finished" } else { "accepted" },
++            "status": observed.as_ref().map(|run| run.status.as_str()).unwrap_or("accepted"),
++            "detail": observed.as_ref().and_then(|run| run.detail.as_deref()),
++            "ts": now,
++        }
++    });
++    if let Some(run) = observed {
++        let run_id = serde_json::Value::String(run.id);
++        response["runId"] = run_id.clone();
++        response["run"]["runId"] = run_id;
++    }
++    Ok(response)
++}
++
+ impl UnifiedGatewayApi {
+ 
+     fn rearm_channel_delivery_failure(
+@@ -5261,140 +5419,17 @@
+         args: &serde_json::Value,
+     ) -> Result<serde_json::Value, GatewayCommandError> {
+         let store = SandAgentSessionStore::new(Arc::clone(&self.session_workers));
+-        let agents = store.list_agents().map_err(GatewayCommandError::Internal)?;
+-
+-        let mut jobs = Vec::new();
+-        for agent in agents {
+-            let records = store
+-                .list_agent_automations(&agent.id)
+-                .map_err(GatewayCommandError::Internal)?;
+-            for r in records {
+-                    let schedule = if r.schedule.trim().is_empty() {
+-                        serde_json::json!({ "kind": "event" })
+-                    } else {
+-                        serde_json::json!({
+-                            "kind": "cron",
+-                            "expr": r.schedule,
+-                            "tz": "UTC"
+-                        })
+-                    };
+-                    // FileAutomationStore keeps runs newest-first; the first
+-                    // entry is therefore the only truthful last-run projection.
+-                    let last_run = r.runs.first();
+-                    let updated_at_ms = r
+-                        .last_run_at
+-                        .unwrap_or(r.created_at)
+-                        .clamp(i64::MIN as f64, i64::MAX as f64) as i64;
+-                    jobs.push(serde_json::json!({
+-                        "id": r.id,
+-                        "jobId": r.id,
+-                        "name": r.name,
+-                        "description": r.prompt,
+-                        "enabled": r.is_enabled,
+-                        "createdAtMs": r.created_at as i64,
+-                        "updatedAtMs": updated_at_ms,
+-                        "agentId": agent.id,
+-                        "schedule": schedule,
+-                        "sessionTarget": "main",
+-                        "wakeMode": "now",
+-                        "payload": {
+-                            "kind": "agentTurn",
+-                            "message": r.prompt
+-                        },
+-                        "state": {
+-                            "nextRunAtMs": r.next_run_at.map(|v| v as i64),
+-                            "lastRunAtMs": r.last_run_at.map(|v| v as i64),
+-                            "lastRunStatus": last_run.map(|run| run.status.clone()),
+-                            "lastRunError": last_run.and_then(|run| run.detail.clone())
+-                        }
+-                    }));
+-            }
+-        }
+-
+-        let total = jobs.len();
+-        let limit = args.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(50) as usize;
+-        let offset = args.get("offset").and_then(serde_json::Value::as_u64).unwrap_or(0) as usize;
+-
+-        let paged_jobs: Vec<serde_json::Value> = jobs.into_iter().skip(offset).take(limit).collect();
+-        Ok(serde_json::json!({
+-            "total": total,
+-            "hasMore": offset + paged_jobs.len() < total,
+-            "nextOffset": if offset + paged_jobs.len() < total { Some(offset + paged_jobs.len()) } else { None },
+-            "jobs": paged_jobs,
+-        }))
++        list_openclaw_cron_jobs(&store, args)
+     }
+ 
+     fn call_openclaw_cron_trigger(
+         &self,
+         args: &serde_json::Value,
+     ) -> Result<serde_json::Value, GatewayCommandError> {
+-        let job_id = args.get("id")
+-            .or_else(|| args.get("jobId"))
+-            .and_then(serde_json::Value::as_str)
+-            .map(str::trim)
+-            .filter(|s| !s.is_empty())
+-            .ok_or_else(|| GatewayCommandError::BadRequest("cron.trigger requires id or jobId".into()))?;
+-
+         let store = SandAgentSessionStore::new(Arc::clone(&self.session_workers));
+-        let agents = store.list_agents().map_err(GatewayCommandError::Internal)?;
+-        let mut target_agent_id = None;
+-        let mut previous_run_id = None;
+-
+-        for agent in &agents {
+-            let records = store
+-                .list_agent_automations(&agent.id)
+-                .map_err(GatewayCommandError::Internal)?;
+-            if let Some(record) = records.iter().find(|r| r.id == job_id) {
+-                target_agent_id = Some(agent.id.clone());
+-                previous_run_id = record.runs.first().map(|run| run.id.clone());
+-                break;
+-            }
+-        }
+-
+-        let Some(agent_id) = target_agent_id else {
+-            return Err(GatewayCommandError::BadRequest(format!("unknown cron job id: {job_id}")));
+-        };
+-
+-        let run_args = serde_json::json!({
+-            "agentId": agent_id,
+-            "automationId": job_id,
+-        });
+-        let _ = self.call("runAgentAutomationNow", run_args)?;
+-
+-        let observed = store
+-            .list_agent_automations(&agent_id)
+-            .map_err(GatewayCommandError::Internal)?
+-            .into_iter()
+-            .find(|record| record.id == job_id)
+-            .and_then(|record| {
+-                record
+-                    .runs
+-                    .first()
+-                    .filter(|run| previous_run_id.as_deref() != Some(run.id.as_str()))
+-                    .cloned()
+-            });
+-
+-        let now = started_at_ms();
+-        let finished = observed.as_ref().and_then(|run| run.finished_at).is_some();
+-        let mut response = serde_json::json!({
+-            "ok": true,
+-            "enqueued": true,
+-            "processInstanceId": format!("sand-host-{}", std::process::id()),
+-            "finished": finished,
+-            "run": {
+-                "jobId": job_id,
+-                "action": if finished { "finished" } else { "accepted" },
+-                "status": observed.as_ref().map(|run| run.status.as_str()).unwrap_or("accepted"),
+-                "detail": observed.as_ref().and_then(|run| run.detail.as_deref()),
+-                "ts": now,
+-            }
+-        });
+-        if let Some(run) = observed {
+-            let run_id = serde_json::Value::String(run.id);
+-            response["runId"] = run_id.clone();
+-            response["run"]["runId"] = run_id;
+-        }
+-        Ok(response)
++        trigger_openclaw_cron_job(&store, args, |run_args| {
++            self.call("runAgentAutomationNow", run_args)
++        })
+     }
+ 
+     fn call_openclaw_node_register(
+@@ -18089,6 +18124,8 @@
+     mod channel_failure_handoff_tests;
+     #[path = "automation_terminal_custody_tests.rs"]
+     mod automation_terminal_custody_tests;
++    #[path = "cron_job_identity_tests.rs"]
++    mod cron_job_identity_tests;
+ 
+     #[path = "channel_inbound_readiness_tests.rs"]
+     mod channel_inbound_readiness_tests;
+diff --git a/source/host/app/src/tests/local_media_file_url_tests.rs b/source/host/app/src/tests/local_media_file_url_tests.rs
+index 280c68503daadecb5aa4a1c6eebec5744bc3b81d..57a0a3393f1bb9560eb036687688656b1f3fe6c8 100644
+--- a/source/host/app/src/tests/local_media_file_url_tests.rs
++++ b/source/host/app/src/tests/local_media_file_url_tests.rs
+@@ -1,6 +1,6 @@
+ use super::super::*;
+ use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
+-use serde_json::{Value, json};
++use serde_json::{json, Value};
+ use std::collections::BTreeSet;
+ use std::path::{Path, PathBuf};
+ use std::sync::atomic::{AtomicUsize, Ordering};

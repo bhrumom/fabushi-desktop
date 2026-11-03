@@ -1,0 +1,111 @@
+{
+  "source_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41582614116/attempts/1/jobs?per_page=100",
+  "job": {
+    "id": 125740667992,
+    "run_id": 41582614116,
+    "workflow_name": "Rust desktop runtime",
+    "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/runs/41582614116",
+    "run_attempt": 1,
+    "node_id": "CR_kwDOUfmb_c8AAAAdRrpUWA",
+    "head_sha": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125740667992",
+    "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41582614116/job/125740667992",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-03T05:13:12Z",
+    "started_at": "2026-11-03T05:13:14Z",
+    "completed_at": "2026-11-03T05:21:29Z",
+    "name": "OCRM media cleanup / Windows",
+    "steps": [
+      {
+        "name": "Set up job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 1,
+        "started_at": "2026-11-03T05:13:15Z",
+        "completed_at": "2026-11-03T05:13:16Z"
+      },
+      {
+        "name": "Run actions/checkout@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 2,
+        "started_at": "2026-11-03T05:13:16Z",
+        "completed_at": "2026-11-03T05:13:29Z"
+      },
+      {
+        "name": "Bind exact tested HEAD",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 3,
+        "started_at": "2026-11-03T05:13:29Z",
+        "completed_at": "2026-11-03T05:13:29Z"
+      },
+      {
+        "name": "Run dtolnay/rust-toolchain@stable",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 4,
+        "started_at": "2026-11-03T05:13:29Z",
+        "completed_at": "2026-11-03T05:13:43Z"
+      },
+      {
+        "name": "Run Swatinem/rust-cache@v2",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 5,
+        "started_at": "2026-11-03T05:13:43Z",
+        "completed_at": "2026-11-03T05:14:02Z"
+      },
+      {
+        "name": "Execute media cleanup owner and real service contracts",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 6,
+        "started_at": "2026-11-03T05:14:02Z",
+        "completed_at": "2026-11-03T05:21:00Z"
+      },
+      {
+        "name": "Upload exact-subject media cleanup evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 7,
+        "started_at": "2026-11-03T05:21:00Z",
+        "completed_at": "2026-11-03T05:21:01Z"
+      },
+      {
+        "name": "Post Run Swatinem/rust-cache@v2",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 13,
+        "started_at": "2026-11-03T05:21:01Z",
+        "completed_at": "2026-11-03T05:21:24Z"
+      },
+      {
+        "name": "Post Run actions/checkout@v6",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 14,
+        "started_at": "2026-11-03T05:21:24Z",
+        "completed_at": "2026-11-03T05:21:27Z"
+      },
+      {
+        "name": "Complete job",
+        "status": "completed",
+        "conclusion": "success",
+        "number": 15,
+        "started_at": "2026-11-03T05:21:27Z",
+        "completed_at": "2026-11-03T05:21:27Z"
+      }
+    ],
+    "check_run_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/check-runs/125740667992",
+    "labels": [
+      "windows-2025"
+    ],
+    "runner_id": 1000261462,
+    "runner_name": "GitHub Actions 1000261462",
+    "runner_group_id": 0,
+    "runner_group_name": "GitHub Actions"
+  }
+}

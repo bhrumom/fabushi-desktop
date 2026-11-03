@@ -1,0 +1,249 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 4,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "base": "d70f86f33b5e3c67545954b270373e1548809f4b",
+  "base_tree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+  "starting_head": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "candidate_tree": "46797d50cf4bd6841e78c6f4e1ba740fdff26102",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "scope_mode": "Fresh blind focused review of four corrective paths relative to immutable R3, retaining full original MSU20 paths and adding existing canonical inventory index as the necessary source-link input. Full21path scope against original base remains available. Source-only verdict is distinct from execution.",
+  "snapshot": "/workspace/scratch/7d27ea239237/media-settlement-r4",
+  "base_snapshot": "/workspace/scratch/7d27ea239237/media-settlement-r4-base",
+  "prior_round_snapshot": "/workspace/scratch/7d27ea239237/media-settlement-r4-prior",
+  "prior_round_tree": "4d3b9d9faa3dfa9bbeb4083bbc7c638283b14026",
+  "complete_patch": "/workspace/scratch/7d27ea239237/media-settlement-r4-complete.patch",
+  "complete_patch_sha256": "323b420ddcd93e54dc457a1c82cb12e7a5dd1f4119daa73226a31b82c5f8b0bf",
+  "fix_patch": "/workspace/scratch/7d27ea239237/media-settlement-r4-fix.patch",
+  "fix_patch_sha256": "3b97ee14fc94d987537fdd055f5d55106f0e897e4f1c6766fedf2bda9622472c",
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "bytes": 451308,
+      "sha256": "ea056ef0bb5d77f1aa680b649335b8ec141be1f8b27a69562af86e5ae16f7e44",
+      "blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "prior_round_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "base_blob": "2c9e310bff2dac5aa900ba4292742754ef0c059e",
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "bytes": 11432,
+      "sha256": "5fbdb25aec5808c0cf4121de18b6ccad8ae8e9c9194e69fc2d54c419c1b4eeed",
+      "blob": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "prior_round_blob": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "base_blob": "ec472b0ebc5b3a7aa86056c5d9d05eb4b6a94826",
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "bytes": 15188,
+      "sha256": "5207c37bc110fdaf777d8effde8c58ee8529090e83bf7726d11c38666eb3b7be",
+      "blob": "4caeb8ca80252351acc8b59b2528d1c75b9e8d44",
+      "prior_round_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "bytes": 1455876,
+      "sha256": "e3615f0841279b7056425c0deda42cc2909f21e63447d619e9d60359ae8d01c0",
+      "blob": "99fd980c1f8bee47327efc49e59e0d5544dcf46f",
+      "prior_round_blob": "99fd980c1f8bee47327efc49e59e0d5544dcf46f",
+      "base_blob": "1e56a25479e1390cb98c36d130b68f09946dc0bc",
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "bytes": 160906,
+      "sha256": "fffac7f04528438e30736f14f87d0e221211c2848196cd982eaf50dda8645e55",
+      "blob": "bd1a56a6990168c384bb553c269a3fc1b695a14a",
+      "prior_round_blob": "bd1a56a6990168c384bb553c269a3fc1b695a14a",
+      "base_blob": "7475cee0643fc0e52ddc9bd2cf303aee884c0956",
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "bytes": 33117,
+      "sha256": "c71338af5e81e39aae5e76485d1b9d2762d9df211eeb0d2bdfc0be005157d5f2",
+      "blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "prior_round_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "base_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "bytes": 104958,
+      "sha256": "e1a515590a5b2478e6e008e238de9c25237292efdb79406935a23723f713e93e",
+      "blob": "172485b8437151256fb5058fcec010f9a0665cc8",
+      "prior_round_blob": "172485b8437151256fb5058fcec010f9a0665cc8",
+      "base_blob": "aa8317a6ab5414d5e6667ceea170710614ce6aa2",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "bytes": 1899,
+      "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+      "blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "prior_round_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "base_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/app/Cargo.toml",
+      "bytes": 864,
+      "sha256": "3c16c8f1be109308612041e0543a935ea4b7748ed33279e061a44ba975e7846b",
+      "blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "prior_round_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "base_blob": "4cd51b5e35192f3f8ad1e6dff3699ec9a63e8928",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "bytes": 998098,
+      "sha256": "0ca4e2e81b459ac57c1a9aab9b31b54ef2d421d7131970519aa4f58faaa0011f",
+      "blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "prior_round_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "base_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "bytes": 126331,
+      "sha256": "616866391e288b5bc61436f2452cf9717c65fd380ea6d0b60d6d49ad43c18c50",
+      "blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "prior_round_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "base_blob": "ff4ebba71eae35f4be98a695654a0d33b84f1818",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "bytes": 36330,
+      "sha256": "a310f803114b6e3274ea6b8256a09ee2b5f590ef614508f22f8b8947e4126944",
+      "blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "prior_round_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "base_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "bytes": 58227,
+      "sha256": "f1ec56ebb6b7b31bcb9809645a60221e488269bbb841780d65da01d35da5fc68",
+      "blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "prior_round_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/src/attachment_paths.rs",
+      "bytes": 13178,
+      "sha256": "ce4ac8bc522d1b20ff97b486942dfbe2aacd1ff0f65ee70a0b657f6960fff381",
+      "blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "prior_round_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "base_blob": "c66a2d1ce8dfb70532a16857a0fe02d31788ca62",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "bytes": 426696,
+      "sha256": "624c19362c918260c6700e9023b6772b54d4420be8fbce2f3d49e343ae535ca1",
+      "blob": "f5160ff89bc6adb008296ed075da188c326a7db0",
+      "prior_round_blob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+      "base_blob": "78740768f7f1b0307dfd6756c4d50c368a91b721",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "bytes": 290084,
+      "sha256": "b5cac3ef9d0d761ce0a0f63dabf6a930524822f0758b47714a8ee6da3900f995",
+      "blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "prior_round_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "base_blob": "f585fae13720e08f34323bed82759253590a3753",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "bytes": 94621,
+      "sha256": "4e18cb4e29e5947ee200ca69c9ff4816ca753e9319573a1695e0736d3a55c3c1",
+      "blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "prior_round_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "base_blob": "1f336135cb1c521d16dc0d8ad9e42ef0cf6bccba",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "bytes": 16904,
+      "sha256": "2da2145a57c5ad7d245bd36c6463a731cc511059d87d9366f68fe385d5758e87",
+      "blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "prior_round_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "base_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "bytes": 165996,
+      "sha256": "6d8c327b85112fa20a53fc2f6e103c44fbf56fba0cb2327e0135b58cf5ed651c",
+      "blob": "6ec5edbd49fe7fb590b0c52c0f69e38d25a501bf",
+      "prior_round_blob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+      "base_blob": "2049875451202ba05aecb7e5de9a6841dc378d63",
+      "mode": "100644"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "bytes": 29914,
+      "sha256": "c76305ea99623c4f5cda5f18d323328cf508583b7f3d8dd3a4f78ca33f12b257",
+      "blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "prior_round_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "base_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "bytes": 2972,
+      "sha256": "b367f49df17f54445033cf2b1b1350e7491a687bedac1b9d7123a9fa3fda0a33",
+      "blob": "39aaaf5a9c25545c05184f451d4c1abcb4dad6fd",
+      "prior_round_blob": "a4f62bdd60e624b630b0e735bb42e020e8f82a35",
+      "base_blob": "a4f62bdd60e624b630b0e735bb42e020e8f82a35",
+      "mode": "100644"
+    }
+  ],
+  "focus_paths": [
+    "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+    "source/host/src/extensions/session/agent_db.rs",
+    "source/host/tests/openclaw_sessions_and_config_contract.rs",
+    "projects/openclaw-rust/inventory/index.json"
+  ],
+  "context": "/workspace/scratch/7d27ea239237/media-settlement-r4-context",
+  "remote_tree_readback": {
+    "tree": "46797d50cf4bd6841e78c6f4e1ba740fdff26102",
+    "parent_commit": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+    "parent_tree": "cbc9418ee7572f44d59e067e450a67f6c0bc22a0",
+    "truncated": false,
+    "all21match": true,
+    "allUnmodifiedParentLeavesPreserved": true,
+    "changedFromParent": [
+      "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "projects/openclaw-rust/parity-ledger.json",
+      "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "source/host/src/extensions/session/agent_db.rs",
+      "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "projects/openclaw-rust/inventory/index.json"
+    ]
+  },
+  "raw_execution_inputs": {
+    "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+    "source_run": 41580539540,
+    "runtime_run": 41580539491,
+    "attempt": 1,
+    "source_log": "/workspace/scratch/7d27ea239237/media-h74-ci/logs/source-job-log-125734077461.log",
+    "linux_media": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727",
+    "windows_media": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601",
+    "scope": "Raw failed receipts/logs are permitted context. Do not use collector reports or root diagnosis as source proof. H74 failures remain H74; no current-tree execution exists."
+  },
+  "blindness": "Do not read prior/other review reports, worker report/diagnosis, root adjudication, mutable work, or historical report bodies. Frozen source/spec and raw Actions evidence are allowed. Historical reference names/blob identities only may establish existence.",
+  "validation": "No local or htch build, test, test listing, parser, schema check, generator, lint or capture. Use source/Git/API/diffs/byte hashes only. Selected27 transaction controls and13 DB tests remain strict; actual App8/LFA6/SGF3/feature and broader acceptance still require exactH Actions."
+}

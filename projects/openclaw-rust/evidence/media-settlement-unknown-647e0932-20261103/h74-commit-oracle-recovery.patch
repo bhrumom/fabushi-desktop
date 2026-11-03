@@ -1,0 +1,382 @@
+diff --git a/workspace/scratch/7d27ea239237/media-settlement-r3/source/host/tests/openclaw_sessions_and_config_contract.rs b/workspace/scratch/7d27ea239237/media-settlement-work/source/host/tests/openclaw_sessions_and_config_contract.rs
+index ba7dde9..6ec5edb 100644
+--- a/workspace/scratch/7d27ea239237/media-settlement-r3/source/host/tests/openclaw_sessions_and_config_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-settlement-work/source/host/tests/openclaw_sessions_and_config_contract.rs
+@@ -1693,6 +1693,9 @@ const MEDIA_COMMIT_OWNER_TAIL: &str = r#"match result {
+ fn media_commit_inherent_impl<'a>(file: &'a syn::File, owner: &str) -> Option<&'a syn::ItemImpl> {
+     let mut candidates = file.items.iter().filter_map(|item| {
+         let syn::Item::Impl(item) = item else { return None; };
++        // Drop and other trait implementations are not inherent owners. Their
++        // tokens stay in the source checked for extra calls and raw COMMIT.
++        if item.trait_.is_some() { return None; }
+         let syn::Type::Path(ty) = item.self_ty.as_ref() else { return None; };
+         ty.path.segments.last()
+             .is_some_and(|segment| segment.ident == owner)
+@@ -1786,6 +1789,7 @@ fn media_commit_owner_is_handled(source: &str) -> Option<()> {
+             let boundary = input.fork();
+             let item = input.parse::<syn::Item>()?;
+             let syn::Item::Impl(implementation) = item else { continue; };
++            if implementation.trait_.is_some() { continue; }
+             let syn::Type::Path(ty) = implementation.self_ty.as_ref() else { continue; };
+             if !ty.path.is_ident("SandAgentDb") { continue; }
+             boundary.call(syn::Attribute::parse_outer)?;
+@@ -1860,6 +1864,10 @@ fn media_commit_owner_is_handled(source: &str) -> Option<()> {
+ }
+ 
+ fn source_without_owned_media_commit_adapter(source: &str) -> Option<String> {
++    // include_str! preserves checkout CRLF while multiline Rust string
++    // literals use LF. Normalize only that physical line-ending distinction.
++    let normalized = source.replace("\r\n", "\n");
++    let source = normalized.as_str();
+     media_commit_owner_is_handled(source)?;
+     // Prove the rollback method too, but keep all of it in the remaining scope.
+     media_commit_checked_method_source(source, "rollback", MEDIA_ROLLBACK_METHOD)?;
+@@ -1880,107 +1888,149 @@ fn source_without_owned_transaction_commit_adapters(source: &str) -> Option<Stri
+     source_without_owned_channel_commit_adapter(&owners)
+ }
+ 
++fn media_commit_oracle_fixture() -> String {
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    assert!(source_without_owned_transaction_commit_adapters(&source).is_some(),
++        "media counterfactuals require a proven actual-source baseline");
++    source
++}
++
++fn replace_media_commit_site(source: &str, before: &str, after: &str) -> String {
++    assert_eq!(source.matches(before).count(), 1,
++        "media mutation must bind exactly one intended source site");
++    assert_ne!(before, after, "media mutation must change its intended source site");
++    source.replacen(before, after, 1)
++}
++
++fn assert_media_commit_rejected_for_both_line_endings(
++    original: &str,
++    changed: &str,
++    reason: &str,
++) {
++    assert_ne!(original, changed, "media counterfactual must change actual source: {reason}");
++    for (line_ending, source) in [
++        ("LF", changed.to_string()),
++        ("CRLF", changed.replace('\n', "\r\n")),
++    ] {
++        assert!(source_without_owned_transaction_commit_adapters(&source).is_none(),
++            "{reason} ({line_ending})");
++    }
++}
++
+ #[test]
+ fn media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
+-    check_session_admission_guard_owners(source)
+-        .expect("the existing owner-local admission requirements, including all three media guards, remain intact");
+-    let media_scope = source_without_owned_media_commit_adapter(source)
+-        .expect("the actual media command and consumer must establish the bounded exception");
+-    assert!(media_scope.contains(CHANNEL_RAW_COMMIT_METHOD));
+-    assert!(media_scope.contains(MEDIA_ROLLBACK_METHOD));
+-    assert_eq!(media_scope.matches("db.execute_batch(\"COMMIT\")?;").count(), 1);
+-    let remaining = source_without_owned_transaction_commit_adapters(source)
+-        .expect("independent media proof composes with the original channel proof");
+-    assert!(!remaining.contains("db.execute_batch(\"COMMIT\")?;"));
+-
+-    for body in [
+-        "!(transaction.commit().is_ok())",
+-        "return !(transaction.commit().is_ok());",
+-        "if !(transaction.commit().is_ok()) { true } else { false }",
++    let source = include_str!("../src/extensions/session/agent_db.rs").replace("\r\n", "\n");
++    for (line_ending, source) in [
++        ("LF", source.clone()),
++        ("CRLF", source.replace('\n', "\r\n")),
+     ] {
+-        let ordinary = format!(
+-            "{source}\nfn unrelated_raii(transaction: rusqlite::Transaction<'_>) -> bool {{ {body} }}"
+-        );
+-        assert!(source_without_owned_transaction_commit_adapters(&ordinary).is_some(),
+-            "the new proof must preserve existing zero-argument RAII positives: {body}");
++        check_session_admission_guard_owners(&source)
++            .expect("the existing owner-local admission requirements, including all three media guards, remain intact");
++        let media_scope = source_without_owned_media_commit_adapter(&source)
++            .expect("the actual media command and consumer must establish the bounded exception");
++        assert!(media_scope.contains(CHANNEL_RAW_COMMIT_METHOD));
++        assert!(media_scope.contains(MEDIA_ROLLBACK_METHOD));
++        assert!(media_scope.contains("impl Drop for SandAgentDb {"));
++        assert_eq!(media_scope.matches("db.execute_batch(\"COMMIT\")?;").count(), 1);
++        let remaining = source_without_owned_transaction_commit_adapters(&source)
++            .expect("independent media proof composes with the original channel proof");
++        assert!(!remaining.contains("db.execute_batch(\"COMMIT\")?;"));
++        assert!(remaining.contains("impl Drop for SandAgentDb {"));
++
++        for body in [
++            "!(transaction.commit().is_ok())",
++            "return !(transaction.commit().is_ok());",
++            "if !(transaction.commit().is_ok()) { true } else { false }",
++        ] {
++            let ordinary = format!(
++                "{source}\nfn unrelated_raii(transaction: rusqlite::Transaction<'_>) -> bool {{ {body} }}"
++            );
++            assert!(source_without_owned_transaction_commit_adapters(&ordinary).is_some(),
++                "the new proof must preserve existing zero-argument RAII positives ({line_ending}): {body}");
++        }
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_helper() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = media_commit_oracle_fixture();
+     for changed in [
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD, "", 1),
+-        source.replacen("impl MediaSettlementCommands {", "impl OtherCommands {", 1),
+-        source.replacen("impl MediaSettlementCommands {", "impl other::MediaSettlementCommands {", 1),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD, ""),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl OtherCommands {"),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl other::MediaSettlementCommands {"),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {",
++            "impl MediaCommandsTrait for MediaSettlementCommands {"),
+         format!("{source}\nimpl MediaSettlementCommands {{}}"),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{MEDIA_RAW_COMMIT_METHOD}"), 1),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("/* {MEDIA_RAW_COMMIT_METHOD} */ fn commit() {{ other_command(); }}"), 1),
+-        source.replacen("impl MediaSettlementCommands {",
+-            "#[cfg(any())] impl MediaSettlementCommands {", 1),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("#[cfg(test)] {MEDIA_RAW_COMMIT_METHOD}"), 1),
+-        source.replacen(MEDIA_ROLLBACK_METHOD,
+-            &format!("#[cfg(test)] {MEDIA_ROLLBACK_METHOD}"), 1),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{MEDIA_RAW_COMMIT_METHOD}")),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("/* {MEDIA_RAW_COMMIT_METHOD} */ fn commit() {{ other_command(); }}")),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {",
++            "#[cfg(any())] impl MediaSettlementCommands {"),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("#[cfg(test)] {MEDIA_RAW_COMMIT_METHOD}")),
++        replace_media_commit_site(&source, MEDIA_ROLLBACK_METHOD,
++            &format!("#[cfg(test)] {MEDIA_ROLLBACK_METHOD}")),
+         format!("#![cfg(any())]\n{source}"),
+     ] {
+         assert!(syn::parse_file(&changed).is_ok(), "helper counterfactual must retain Rust syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "a missing, foreign, ambiguous, conditional, or textual helper cannot receive the exception");
+     }
+     for changed in [
+-        source.replacen("impl MediaSettlementCommands {", "impl MediaSettlementCommands", 1),
++        replace_media_commit_site(&source, "impl MediaSettlementCommands {", "impl MediaSettlementCommands"),
+         format!("{source}\nfn malformed() {{"),
+     ] {
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none());
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
++            "malformed helper source cannot receive the exception");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_missing_duplicate_or_conditional_owner() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = media_commit_oracle_fixture();
++    assert_eq!(source.matches(MEDIA_COMMIT_OWNER_SIGNATURE).count(), 1);
+     let start = source.find(MEDIA_COMMIT_OWNER_SIGNATURE).expect("actual media signature");
+-    let method = source[start..].split("\n    /// Atomically commits one guarded compaction entry")
+-        .next().expect("adjacent owner boundary");
++    let boundary = "\n    /// Atomically commits one guarded compaction entry";
++    assert_eq!(source[start..].matches(boundary).count(), 1);
++    let (method, _) = source[start..].split_once(boundary).expect("adjacent owner boundary");
+     assert!(method.ends_with("    }\n"), "the duplication fixture is one complete method");
+     for changed in [
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("append_transcript_entries_and_release_media", "other_media_owner"), 1),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("append_transcript_entries_and_release_media", "other_media_owner")),
+         format!("{source}\nimpl SandAgentDb {{ {method} }}"),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &format!("{method}\n{MEDIA_COMMIT_OWNER_SIGNATURE}"), 1),
+-        source.replacen("impl SandAgentDb {", "#[cfg(any())] impl SandAgentDb {", 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &format!("#[cfg(test)] {MEDIA_COMMIT_OWNER_SIGNATURE}"), 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &MEDIA_COMMIT_OWNER_SIGNATURE.replacen("pub fn", "pub(crate) fn", 1), 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_SIGNATURE,
+-            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("-> Result<usize, AgentDbProjectionError>", "-> Result<usize, String>"), 1),
+-        source.replacen("impl SandAgentDb {", "impl other::SandAgentDb {", 1),
+-        source.replacen(MEDIA_COMMIT_OWNER_TAIL,
+-            &format!("/* {MEDIA_COMMIT_OWNER_TAIL} */ Ok(0)"), 1),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &format!("{method}\n{MEDIA_COMMIT_OWNER_SIGNATURE}")),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "#[cfg(any())] impl SandAgentDb {"),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &format!("#[cfg(test)] {MEDIA_COMMIT_OWNER_SIGNATURE}")),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("pub fn", "pub(crate) fn")),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_SIGNATURE,
++            &MEDIA_COMMIT_OWNER_SIGNATURE.replace("-> Result<usize, AgentDbProjectionError>", "-> Result<usize, String>")),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "impl other::SandAgentDb {"),
++        replace_media_commit_site(&source, "impl SandAgentDb {", "impl MediaOwnerTrait for SandAgentDb {"),
++        replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_TAIL,
++            &format!("/* {MEDIA_COMMIT_OWNER_TAIL} */ Ok(0)")),
+     ] {
+         assert!(syn::parse_file(&changed).is_ok(), "owner counterfactual must retain Rust syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "only one unconditional actual media owner with the typed signature earns the exception");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_changed_commit_or_rollback_commands() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = media_commit_oracle_fixture();
+     for changed_method in [
+         MEDIA_RAW_COMMIT_METHOD.replace("db.execute_batch(\"COMMIT\")?;", "Ok::<(), rusqlite::Error>(())?;"),
+         MEDIA_RAW_COMMIT_METHOD.replace("db.execute_batch(\"COMMIT\")?;", "let _ = db.execute_batch(\"COMMIT\");"),
+         MEDIA_RAW_COMMIT_METHOD.replace("        Ok(())", "        another_transaction(); Ok(())"),
+         MEDIA_RAW_COMMIT_METHOD.replace("return Err(rusqlite::Error::InvalidQuery);", "return Ok(());"),
+     ] {
+-        let changed = source.replacen(MEDIA_RAW_COMMIT_METHOD, &changed_method, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD, &changed_method);
+         assert!(syn::parse_file(&changed).is_ok());
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "a changed real command or acknowledgement boundary must revoke the exception");
+     }
+     for changed_method in [
+@@ -1988,16 +2038,16 @@ fn media_commit_oracle_rejects_changed_commit_or_rollback_commands() {
+         MEDIA_ROLLBACK_METHOD.replace("drop(refusal);", "std::mem::forget(refusal);"),
+         MEDIA_ROLLBACK_METHOD.replace("        result\n", "        Ok(())\n"),
+     ] {
+-        let changed = source.replacen(MEDIA_ROLLBACK_METHOD, &changed_method, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_ROLLBACK_METHOD, &changed_method);
+         assert!(syn::parse_file(&changed).is_ok());
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "real rollback and authorizer cleanup must remain in the exact command method");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_extra_aliased_or_macro_callers() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = media_commit_oracle_fixture();
+     for call in [
+         "commands.commit(db)?;",
+         "let alias = commands; alias.commit(db)?;",
+@@ -2017,19 +2067,29 @@ fn media_commit_oracle_rejects_extra_aliased_or_macro_callers() {
+     ] {
+         let changed = format!("{source}\nfn extra_media_owner() {{ {call} }}");
+         assert!(syn::parse_file(&changed).is_ok(), "extra caller fixture syntax: {call}");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
+-            "normalization must leave every extra or unbounded call visible: {call}");
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
++            &format!("normalization must leave every extra or unbounded call visible: {call}"));
+     }
+-    let nested = source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-        &format!("{MEDIA_RAW_COMMIT_METHOD}\nfn extra(&self, db: &rusqlite::Connection) {{ self.commit(db)?; }}"), 1);
++    let nested = replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++        &format!("{MEDIA_RAW_COMMIT_METHOD}\nfn extra(&self, db: &rusqlite::Connection) {{ self.commit(db)?; }}"));
+     assert!(syn::parse_file(&nested).is_ok());
+-    assert!(source_without_owned_transaction_commit_adapters(&nested).is_none(),
++    assert_media_commit_rejected_for_both_line_endings(&source, &nested,
+         "a helper sibling is not part of the method-sized exception");
++    for owner in ["SandAgentDb", "MediaSettlementCommands"] {
++        let changed = format!(
++            "{source}\nimpl HiddenMediaCaller for {owner} {{ \
++             fn extra(&self, commands: &MediaSettlementCommands, db: &rusqlite::Connection) {{ \
++             let alias = commands; alias.commit(db)?; }} }}"
++        );
++        assert!(syn::parse_file(&changed).is_ok(), "trait caller fixture syntax");
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
++            "trait implementations remain visible to the global caller proof");
++    }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_discarded_or_changed_settlement_handling() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = media_commit_oracle_fixture();
+     for changed_tail in [
+         format!("{MEDIA_COMMIT_OWNER_TAIL}; Ok(0)"),
+         format!("#[cfg(test)] {MEDIA_COMMIT_OWNER_TAIL}"),
+@@ -2042,9 +2102,9 @@ fn media_commit_oracle_rejects_discarded_or_changed_settlement_handling() {
+         MEDIA_COMMIT_OWNER_TAIL.replace("if !db.is_autocommit()", "if false"),
+         MEDIA_COMMIT_OWNER_TAIL.replace("return Err(AgentDbProjectionError::TranscriptCommitUnknown(error.to_string()));", "return Ok(inserted.len());"),
+     ] {
+-        let changed = source.replacen(MEDIA_COMMIT_OWNER_TAIL, &changed_tail, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_TAIL, &changed_tail);
+         assert!(syn::parse_file(&changed).is_ok(), "settlement-tail fixture syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "the returned outcome must retain commit error, rollback, autocommit, retirement and publication handling");
+     }
+     let write_start = "let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {";
+@@ -2053,17 +2113,17 @@ fn media_commit_oracle_rejects_discarded_or_changed_settlement_handling() {
+         "let result = (async || -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {",
+         "let result = (move || -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {",
+     ] {
+-        let changed_writes = writes.replacen(write_start, replacement, 1);
+-        let changed = source.replacen(writes.as_str(), &changed_writes, 1);
++        let changed_writes = replace_media_commit_site(&writes, write_start, replacement);
++        let changed = replace_media_commit_site(&source, writes.as_str(), &changed_writes);
+         assert!(syn::parse_file(&changed).is_ok(), "deferred-body fixture syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "an altered write-closure entry cannot borrow the proven tail");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_rejects_changed_unknown_entry_handling() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = media_commit_oracle_fixture();
+     for changed_prefix in [
+         MEDIA_COMMIT_OWNER_PREFIX.replace("TranscriptCommitUnknown", "WorkAdmissionInvalid"),
+         MEDIA_COMMIT_OWNER_PREFIX.replace("self.retire_channel_inbound_connection(&mut guard);", ""),
+@@ -2072,31 +2132,39 @@ fn media_commit_oracle_rejects_changed_unknown_entry_handling() {
+         MEDIA_COMMIT_OWNER_PREFIX.replace("if db.is_autocommit()", "if true"),
+         MEDIA_COMMIT_OWNER_PREFIX.replace("let mut guard = match self.connection.lock()", "#[cfg(test)] let mut guard = match self.connection.lock()"),
+     ] {
+-        let changed = source.replacen(MEDIA_COMMIT_OWNER_PREFIX, &changed_prefix, 1);
++        let changed = replace_media_commit_site(&source, MEDIA_COMMIT_OWNER_PREFIX, &changed_prefix);
+         assert!(syn::parse_file(&changed).is_ok(), "entry failure fixture syntax");
+-        assert!(source_without_owned_transaction_commit_adapters(&changed).is_none(),
++        assert_media_commit_rejected_for_both_line_endings(&source, &changed,
+             "poisoned/prior/unsettled-BEGIN ownership cannot become ordinary refusal or retain the connection");
+     }
+ }
+ 
+ #[test]
+ fn media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method() {
+-    let source = include_str!("../src/extensions/session/agent_db.rs");
++    let source = media_commit_oracle_fixture();
+     let direct = "db.execute_batch(\"COMMIT\")?;";
+     let unguarded = format!("fn unguarded_media_owner() {{ {direct} }}");
+     let writes = format!("{MEDIA_COMMIT_OWNER_PREFIX}\n        let result = (|| -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {{");
+     for changed in [
+         format!("{unguarded}\n{source}"),
+         format!("{source}\n{unguarded}"),
+-        source.replacen(MEDIA_RAW_COMMIT_METHOD,
+-            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{unguarded}"), 1),
+-        source.replacen(writes.as_str(), &format!("{writes}\n{direct}"), 1),
++        replace_media_commit_site(&source, MEDIA_RAW_COMMIT_METHOD,
++            &format!("{MEDIA_RAW_COMMIT_METHOD}\n{unguarded}")),
++        replace_media_commit_site(&source, writes.as_str(), &format!("{writes}\n{direct}")),
++        format!("{source}\nimpl HiddenRawCommit for SandAgentDb {{ {unguarded} }}"),
++        format!("{source}\nimpl HiddenRawCommit for MediaSettlementCommands {{ {unguarded} }}"),
+     ] {
++        assert_ne!(changed, source, "raw COMMIT counterfactual must add a real owner");
+         assert!(syn::parse_file(&changed).is_ok(), "raw-owner fixture syntax");
+-        let remaining = source_without_owned_transaction_commit_adapters(&changed)
+-            .expect("the unchanged bounded adapters still prove their own handling");
+-        assert!(remaining.contains(direct),
+-            "the unchanged global prohibition must still reject every other raw COMMIT owner");
++        for (line_ending, changed) in [
++            ("LF", changed.clone()),
++            ("CRLF", changed.replace('\n', "\r\n")),
++        ] {
++            let remaining = source_without_owned_transaction_commit_adapters(&changed)
++                .expect("the unchanged bounded adapters still prove their own handling");
++            assert!(remaining.contains(direct),
++                "the unchanged global prohibition must still reject every other raw COMMIT owner ({line_ending})");
++        }
+     }
+ }
+ 

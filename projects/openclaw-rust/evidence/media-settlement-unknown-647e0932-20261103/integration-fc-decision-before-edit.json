@@ -1,0 +1,61 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "recorded_before_edit": true,
+  "incoming_commit": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "incoming_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "decision": "PRESERVE_PUBLISHED_COMPONENTS_AND_UNION_ORACLE_CONTROLS",
+  "root_source_read": "Full R4-to-fc diff of both shared Rust files; both complete incoming six-path source-only review reports; exact API commit/tree and scoped authority identities.",
+  "preserved": [
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "reason": "Same independent exact send-plus-receipt expectation as R4; only private helper naming and formatting differ. Adopt incoming file verbatim."
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "99fd980c1f8bee47327efc49e59e0d5544dcf46f",
+      "reason": "Exact byte identity with root six-reference correction; withdraw duplicate write."
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "bd1a56a6990168c384bb553c269a3fc1b695a14a",
+      "reason": "Exact byte identity with root six-reference correction; withdraw duplicate write."
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "blob": "6905d89a058a59f09a2ec3f5b3b4afc6f751919d",
+      "reason": "Already adopted exact incoming37 declaration; retain."
+    },
+    {
+      "path": "source/host/tests/openclaw_chat_cron_node_contract.rs",
+      "blob": "2bde1d3f9ab87f53e00079140a414ad492ac2ab6",
+      "reason": "Incoming actual-helper and thin-wrapper assertions retained unchanged; independent incoming reviewers read actual consumers. This root's integration has no cron rewrite."
+    }
+  ],
+  "remaining_oracle": {
+    "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+    "incoming_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+    "root_reviewed_blob": "6ec5edbd49fe7fb590b0c52c0f69e38d25a501bf",
+    "decision": "FIX_INTEGRATION",
+    "reason": "Retain both reviewed sets of valid assertions. Incoming adds full residual LF/CRLF equality, complete actual Drop preservation, harmless trait coexistence and raw-identifier trait callers. R4 adds actual-source baseline qualification before each negative group, unique changed-site binding, trait-only owner/helper negatives and every negative on both line endings. Replacing either whole file would discard valid controls; combine these in the existing oracle only.",
+    "required": "No production behavior, capture selection, dependencies, channel proof, Some(1), three admission guards, exact media prefix/tail or raw-COMMIT prohibition changes. Preserve all 27 names. New exact immutable integration review required before branch publication."
+  },
+  "specs": "Retain already-reviewed MAC App-vs-DB publication ordering clarification and MSU-06/MSU-09 oracle/getter requirements.",
+  "incoming_reviews": [
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/r1-general-review.md",
+      "blob": "c8f2b0bcf8b035c7358c6fa2eacf151a01f3e055",
+      "root_read": "full",
+      "verdict": "source-only APPROVE"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/h74-shared-contract-recovery-647e0932-20261103/r1-structure-review.md",
+      "blob": "0ae45eb6f227c5cd8d9edeb96b590ddd17203c0d",
+      "root_read": "full",
+      "verdict": "source-only APPROVE"
+    }
+  ],
+  "execution": "H74 failures remain H74. Hfc source run41582614099 reports success by API metadata only at this decision; raw evidence being collected. Runtime41582614116 still queued by run-level metadata. No runtime success or R5 acceptance claimed."
+}

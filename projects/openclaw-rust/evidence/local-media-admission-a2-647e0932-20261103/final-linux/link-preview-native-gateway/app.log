@@ -1,0 +1,981 @@
+   Compiling fabushi-messaging-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/native/mahayana-messaging)
+warning: unused import: `mahayana_host_protocol::ComputerAccessibilityNode`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:14:5
+   |
+14 | use mahayana_host_protocol::ComputerAccessibilityNode;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `mahayana_host_protocol::ComputerSemanticAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:18:5
+   |
+18 | use mahayana_host_protocol::ComputerSemanticAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `mahayana_host_protocol::ComputerWindowAction`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer/src/lib.rs:21:5
+   |
+21 | use mahayana_host_protocol::ComputerWindowAction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `mahayana-computer` (lib) generated 3 warnings (run `cargo fix --lib -p mahayana-computer` to apply 3 suggestions)
+warning: field `conversation_id` is never read
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-runtime/src/conversation_actor.rs:33:5
+   |
+32 | pub struct ConversationActor {
+   |            ----------------- field in this struct
+33 |     conversation_id: ConversationId,
+   |     ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `conversation_id` is never used
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-runtime/src/conversation_actor.rs:47:12
+   |
+38 | impl ConversationActor {
+   | ---------------------- method in this implementation
+...
+47 |     pub fn conversation_id(&self) -> &ConversationId {
+   |            ^^^^^^^^^^^^^^^
+
+warning: field `generation` is never read
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-runtime/src/runtime_store.rs:66:9
+   |
+62 | pub(crate) struct StoredTurnSnapshot {
+   |                   ------------------ field in this struct
+...
+66 |     pub generation: u32,
+   |         ^^^^^^^^^^
+   |
+   = note: `StoredTurnSnapshot` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: method `acquire_computer_lease` is never used
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-runtime/src/runtime_store.rs:857:12
+    |
+101 | impl RuntimeStore {
+    | ----------------- method in this implementation
+...
+857 |     pub fn acquire_computer_lease(
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `mahayana-runtime` (lib) generated 4 warnings
+   Compiling mahayana-host-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/host)
+   Compiling mahayana-social v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-social)
+warning: unused import: `AgentActivity`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/production_runtime.rs:15:44
+   |
+15 | use crate::sand_activity::{ActivityUpdate, AgentActivity};
+   |                                            ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DateTime`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/automation_run_path.rs:5:14
+  |
+5 | use chrono::{DateTime, Local, TimeZone, Utc};
+  |              ^^^^^^^^
+
+warning: unused import: `ConversationStructureRefs`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/session/session_conversation_state.rs:34:5
+   |
+34 |     ConversationStructureRefs, OutlineItem as RecoveryOutlineItem,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/sand_box_store_v2_client.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `SandBoxStoreCompletedPart`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/sand_box_store_v2_client.rs:12:5
+   |
+12 |     SandBoxStoreCompletedPart, SandBoxStoreListPage, SandBoxStoreMultipartCompletion,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `json`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:16:18
+   |
+16 | use serde_json::{json, Map, Value};
+   |                  ^^^^
+
+warning: unused imports: `BOX_STORE_BLOBS_PREFIX` and `BOX_STORE_MANIFEST_VERSION`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:38:46
+   |
+38 |     BoxStoreManifest, BoxStoreManifestEntry, BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH,
+   |                                              ^^^^^^^^^^^^^^^^^^^^^^
+39 |     BOX_STORE_MANIFEST_VERSION, SAND_MANIFEST_V2_ENV,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:56:40
+   |
+56 |     plan_periodic_cycle, BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `WorkspaceIgnore`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:86:28
+   |
+86 |     load_workspace_ignore, WorkspaceIgnore, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
+   |                            ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fmt`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_lifecycle/production.rs:1:5
+  |
+1 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `run_codex_direct_responses_with_cancel`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/inference/provider_session.rs:35:45
+   |
+35 |     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
+   |                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `DiskPressureReport`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/forever_box/disk_pressure.rs:17:44
+   |
+17 |     DiskPressureLevel, DiskPressureLogger, DiskPressureReport, DiskPressureReporter,
+   |                                            ^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Oneof`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs:4:22
+  |
+4 | use prost::{Message, Oneof};
+  |                      ^^^^^
+
+warning: unused import: `regex::Regex`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/input_files.rs:13:5
+   |
+13 | use regex::Regex;
+   |     ^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/load_options.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `SaveMediaSourceError`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_fetch.rs:22:5
+   |
+22 |     SaveMediaSourceError, SaveMediaSourceErrorCode,
+   |     ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `PathBuf` and `Path`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_generation_service.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^  ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:1:5
+  |
+1 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::fs::File`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:2:5
+  |
+2 | use std::fs::File;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::io::Read`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:3:5
+  |
+3 | use std::io::Read;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `std::path::Path`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:4:5
+  |
+4 | use std::path::Path;
+  |     ^^^^^^^^^^^^^^^
+
+warning: unused import: `std::sync::LazyLock`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:5:5
+  |
+5 | use std::sync::LazyLock;
+  |     ^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::time::Instant`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:6:5
+  |
+6 | use std::time::Instant;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `SeekFrom` and `Seek`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_store.rs:3:27
+  |
+3 | use std::io::{self, Read, Seek, SeekFrom, Write};
+  |                           ^^^^  ^^^^^^^^
+
+warning: unused import: `Component`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_store.rs:4:17
+  |
+4 | use std::path::{Component, Path, PathBuf};
+  |                 ^^^^^^^^^
+
+warning: unused imports: `Value` and `json`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_store.rs:10:18
+   |
+10 | use serde_json::{Value, json};
+   |                  ^^^^^  ^^^^
+
+warning: unused import: `format_media_size`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_store.rs:15:70
+   |
+15 |     MEDIA_FILE_MODE, SaveMediaSourceError, SaveMediaSourceErrorCode, format_media_size,
+   |                                                                      ^^^^^^^^^^^^^^^^^
+
+warning: unused import: `HashSet`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_understanding_service.rs:1:33
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `std::collections::HashSet`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/parse_output.rs:8:5
+  |
+8 | use std::collections::HashSet;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Duration`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/remote_workspace_file.rs:10:17
+   |
+10 | use std::time::{Duration, Instant};
+   |                 ^^^^^^^^
+
+warning: unused import: `Sha256`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/staged_inputs.rs:13:20
+   |
+13 | use sha2::{Digest, Sha256};
+   |                    ^^^^^^
+
+warning: unused import: `ImageMetadata`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/web_media.rs:20:35
+   |
+20 |     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
+   |                                   ^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/content_search/search_index_writer.rs:3:17
+  |
+3 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `HashSet`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugin_sdk/api_baseline.rs:2:33
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `PathBuf`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugin_sdk/api_baseline.rs:3:23
+  |
+3 | use std::path::{Path, PathBuf};
+  |                       ^^^^^^^
+
+warning: unused import: `Path`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugin_sdk/archive_blob.rs:6:17
+  |
+6 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `json`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugin_sdk/channel_entry.rs:2:18
+  |
+2 | use serde_json::{json, Value};
+  |                  ^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugin_sdk/channel_entry.rs:3:5
+  |
+3 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Engine as _` and `engine::general_purpose::STANDARD`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/clawhub.rs:1:14
+  |
+1 | use base64::{engine::general_purpose::STANDARD, Engine as _};
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^
+
+warning: unused import: `Sha256`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/clawhub.rs:3:20
+  |
+3 | use sha2::{Digest, Sha256};
+  |                    ^^^^^^
+
+warning: unused import: `HashMap`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/commands.rs:2:24
+  |
+2 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `Arc`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/commands.rs:4:17
+  |
+4 | use std::sync::{Arc, Condvar, Mutex};
+  |                 ^^^
+
+warning: unused import: `Arc`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/computer_use.rs:3:17
+  |
+3 | use std::sync::{Arc, Mutex};
+  |                 ^^^
+
+warning: unused import: `HashSet`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/config.rs:3:33
+  |
+3 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `Map`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/runner/tools/sand_multitask_todo_tool.rs:5:18
+  |
+5 | use serde_json::{Map, Value, json};
+  |                  ^^^
+
+warning: unused import: `std::fmt`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/box/box_transfer.rs:3:5
+  |
+3 | use std::fmt;
+  |     ^^^^^^^^
+
+warning: unused import: `Arc`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/workflows/workflow_library.rs:5:17
+  |
+5 | use std::sync::{Arc, OnceLock};
+  |                 ^^^
+
+warning: unused import: `HashMap`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/agents/agent_roster.rs:1:24
+  |
+1 | use std::collections::{HashMap, HashSet};
+  |                        ^^^^^^^
+
+warning: unused import: `ProductionAgentStoreWorkerBackend`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/transcript_mirror/production_provider.rs:6:5
+  |
+6 |     ProductionAgentStoreWorkerBackend, TranscriptMirrorOffloadPool, WorkerBlobStore,
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Path`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/device_pairing_owner.rs:2:17
+  |
+2 | use std::path::{Path, PathBuf};
+  |                 ^^^^
+
+warning: unused import: `Digest`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/staged_inputs.rs:13:12
+   |
+13 | use sha2::{Digest, Sha256};
+   |            ^^^^^^
+
+warning: unused import: `Digest`
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/clawhub.rs:3:12
+  |
+3 | use sha2::{Digest, Sha256};
+  |            ^^^^^^
+
+warning: unused import: `PermissionsExt`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/snapshot/git_backup_manager.rs:14:54
+   |
+14 | use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+   |                                                      ^^^^^^^^^^^^^^
+
+warning: unused variable: `session_key`
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/agent_to_agent_messaging.rs:302:44
+    |
+302 |         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
+    |                                            ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_session_key`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/production_runtime.rs:1592:13
+     |
+1592 |         let mut result = if suppress_stale_turn {
+     |             ----^^^^^^
+     |             |
+     |             help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_echo_entry_id` is never read
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/production_runtime.rs:1396:59
+     |
+1396 |         let mut persisted_echo_entry_id: Option<String> = None;
+     |                                                           ^^^^ this value is reassigned later and never used
+...
+1438 |                             persisted_echo_entry_id =
+     |                             ----------------------- `persisted_echo_entry_id` is overwritten here before the previous value is read
+     |
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `persisted_send_context` is never read
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/production_runtime.rs:1397:42
+     |
+1397 |         let mut persisted_send_context = PersistedSendContext::default();
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+1437 |                             persisted_send_context = persisted.into();
+     |                             ---------------------- `persisted_send_context` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/session/agent_db.rs:2009:13
+     |
+2009 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/session/agent_db.rs:2634:13
+     |
+2634 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/session/agent_db.rs:4971:13
+     |
+4971 |         let mut guard = self
+     |             ----^^^^^
+     |             |
+     |             help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/box_copy_in.rs:948:25
+    |
+948 |                     let mut event = build_copy_in_watchdog_event(
+    |                         ----^^^^^
+    |                         |
+    |                         help: remove this `mut`
+
+warning: value assigned to `manifest_committed` is never read
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:1555:17
+     |
+1555 |                 manifest_committed = false;
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/cloud_workers/store.rs:60:13
+   |
+60 |         let mut file = File::open(path).map_err(CloudWorkerStoreError::Read)?;
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+
+warning: value assigned to `held` is never read
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/telemetry/structured_log_telemetry.rs:312:29
+    |
+312 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: value assigned to `held` is never read
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/telemetry/structured_log_telemetry.rs:329:29
+    |
+329 | ...                   held = false;
+    |                       ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: unused variable: `current_ref`
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/inference/model_picker_service.rs:374:9
+    |
+374 |     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_current_ref`
+
+warning: value assigned to `should_sync` is never read
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/wallpaper/wallpaper_service.rs:149:9
+    |
+149 |           should_sync = false;
+    |           ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+185 | /         should_sync = wait_for_next(
+186 | |             &inner,
+187 | |             &receiver,
+188 | |             Duration::from_millis(remaining_ms),
+189 | |         );
+    | |_________- `should_sync` is overwritten here before the previous value is read
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:268:9
+    |
+268 |     let mut audio_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_probe.rs:279:9
+    |
+279 |     let mut video_streams: Vec<&Value> = streams
+    |         ----^^^^^^^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/attachments/media_store.rs:614:9
+    |
+614 |     let mut file = options.open(path)?;
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `ttl`
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugin_sdk/channel_runtime.rs:98:36
+   |
+98 |     pub fn claim(&self, key: &str, ttl: Duration) -> ReplayClaimResult {
+   |                                    ^^^ help: if this is intentional, prefix it with an underscore: `_ttl`
+
+warning: unused variable: `v`
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/plugins/capability_catalog.rs:2298:17
+     |
+2298 |         for (k, v) in configured_channels {
+     |                 ^ help: if this is intentional, prefix it with an underscore: `_v`
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/snapshot/git_backup_manager.rs:764:9
+    |
+764 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/snapshot/git_backup_manager.rs:877:9
+    |
+877 |     let mut file = open_unaliased_readonly(path)
+    |         ----^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/runner/tools/send_message_schema.rs:221:21
+    |
+221 |                 let mut path = prefix.clone();
+    |                     ----^^^^
+    |                     |
+    |                     help: remove this `mut`
+
+warning: variable does not need to be mutable
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/runner/tools/communicate_tool.rs:126:9
+    |
+126 |     let mut payload = executing_payload(tool_name, activity);
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+
+warning: unused variable: `stderr`
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/box/box_windows.rs:173:53
+    |
+173 |         ShellExecutionOutcome::Success { exit_code, stderr }
+    |                                                     ^^^^^^ help: try ignoring the field: `stderr: _`
+
+warning: method `sync_baseline` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/automation_runtime.rs:1260:8
+     |
+ 494 | impl AutomationRuntime {
+     | ---------------------- method in this implementation
+...
+1260 |     fn sync_baseline(&self, agent_id: &str, definitions: &[AutomationRecord]) {
+     |        ^^^^^^^^^^^^^
+     |
+     = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: method `assert_agent_transcript_write_admission` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/session/production.rs:2499:8
+     |
+ 269 | impl ProductionSessionWorkers {
+     | ----------------------------- method in this implementation
+...
+2499 |     fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `apply_download_owner` is never used
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/box_copy_in.rs:550:4
+    |
+550 | fn apply_download_owner(path: &Path, owner: Option<(u32, u32)>) -> Result<(), String> {
+    |    ^^^^^^^^^^^^^^^^^^^^
+
+warning: function `openclaw_portable_backup_enabled` is never used
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:105:4
+    |
+105 | fn openclaw_portable_backup_enabled() -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `load_manifest` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:1723:4
+     |
+1723 | fn load_manifest(store: &dyn BoxObjectStore) -> Result<Option<BoxStoreManifest>, String> {
+     |    ^^^^^^^^^^^^^
+
+warning: function `write_manifest_if_unchanged` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:1727:4
+     |
+1727 | fn write_manifest_if_unchanged(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `write_manifest` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:1754:4
+     |
+1754 | fn write_manifest(
+     |    ^^^^^^^^^^^^^^
+
+warning: function `sync_store_db_snapshots` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:2257:4
+     |
+2257 | fn sync_store_db_snapshots(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `sync_store_db_snapshots_with_options` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:2277:4
+     |
+2277 | fn sync_store_db_snapshots_with_options(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_excluded` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/box_store_sync/production.rs:2783:4
+     |
+2783 | fn is_excluded(rel_path: &str, excludes: &[&str]) -> bool {
+     |    ^^^^^^^^^^^
+
+warning: constant `MAX_ENV_NAME_CHARS` is never used
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/cloud_workers/auxiliary.rs:6:7
+  |
+6 | const MAX_ENV_NAME_CHARS: usize = 128;
+  |       ^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_ARCHIVE_MEMBER_CHARS` is never used
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/cloud_workers/artifact_admission.rs:8:7
+  |
+8 | const MAX_ARCHIVE_MEMBER_CHARS: usize = 4096;
+  |       ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `validate_archive_member_path` is never used
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/cloud_workers/artifact_admission.rs:204:8
+    |
+204 | pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifactAdmissionError> {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `is_windows_drive_path` is never used
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/cloud_workers/artifact_admission.rs:224:4
+    |
+224 | fn is_windows_drive_path(path: &str) -> bool {
+    |    ^^^^^^^^^^^^^^^^^^^^^
+
+warning: fields `windows_instance_name` and `windows_previous_profile_interval` are never read
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/telemetry/pressure_cpu_profiler.rs:320:5
+    |
+316 | struct ProductionCpuProfilerState {
+    |        -------------------------- fields in this struct
+...
+320 |     windows_instance_name: Option<String>,
+    |     ^^^^^^^^^^^^^^^^^^^^^
+321 |     windows_previous_profile_interval: Option<u64>,
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/inference/provider_session.rs:1696:4
+     |
+1696 | fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/inference/provider_session.rs:2688:4
+     |
+2688 | fn run_openrouter_provider_text(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `run_openrouter_provider_text_with_lifecycle` is never used
+    --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/inference/provider_session.rs:2702:4
+     |
+2702 | fn run_openrouter_provider_text_with_lifecycle(
+     |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: field `revocation_reason` is never read
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/mcp/installable_package/policy.rs:418:5
+    |
+409 | struct TrustKey {
+    |        -------- field in this struct
+...
+418 |     revocation_reason: String,
+    |     ^^^^^^^^^^^^^^^^^
+    |
+    = note: `TrustKey` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: method `as_str` is never used
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/node_host/secret_materializer.rs:35:19
+   |
+20 | impl NodeHostSecretInputRef {
+   | --------------------------- method in this implementation
+...
+35 |     pub(crate) fn as_str(&self) -> &str {
+   |                   ^^^^^^
+
+warning: associated function `new` is never used
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/node_host/secret_materializer.rs:68:19
+   |
+65 | impl NodeHostCloudflareAccessCredentials {
+   | ---------------------------------------- associated function in this implementation
+...
+68 |     pub(crate) fn new(
+   |                   ^^^
+
+warning: function `sysconf_pages` is never used
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/host_system_info.rs:119:4
+    |
+119 | fn sysconf_pages(name: libc::c_int, label: &str) -> Result<u64, String> {
+    |    ^^^^^^^^^^^^^
+
+warning: function `hex_nibble` is never used
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/agent_isolation/conversation_blob_store.rs:392:4
+    |
+392 | fn hex_nibble(value: u8) -> Option<u8> {
+    |    ^^^^^^^^^^
+
+warning: variant `Enum` is never constructed
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-cbcc7fd12e627250/out/agent_tool_json_schema.rs:5:47
+  |
+5 | enum AgentToolJsonMapValueKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str) }
+  |      -------------------------                ^^^^
+  |      |
+  |      variant in this enum
+  |
+  = note: `AgentToolJsonMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `optional` is never read
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-cbcc7fd12e627250/out/agent_tool_json_schema.rs:9:123
+  |
+9 | struct AgentToolJsonFieldDescriptor { number: u64, json_name: &'static str, kind: AgentToolJsonFieldKind, repeated: bool, optional: b...
+  |        ---------------------------- field in this struct                                                                  ^^^^^^^^
+  |
+  = note: `AgentToolJsonFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: variant `Enum` is never constructed
+ --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/cloud_agents/cloud_agent_trace_format.rs:8:5
+  |
+6 | enum CloudAgentProtoMapValueKind {
+  |      --------------------------- variant in this enum
+7 |     Scalar(u64),
+8 |     Enum,
+  |     ^^^^
+  |
+  = note: `CloudAgentProtoMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `proto_name` is never read
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/cloud_agents/cloud_agent_trace_format.rs:26:5
+   |
+24 | struct CloudAgentProtoFieldDescriptor {
+   |        ------------------------------ field in this struct
+25 |     number: u64,
+26 |     proto_name: &'static str,
+   |     ^^^^^^^^^^
+   |
+   = note: `CloudAgentProtoFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `db_path` is never read
+  --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/device_pairing_owner.rs:17:5
+   |
+15 | pub struct DevicePairingOwner {
+   |            ------------------ field in this struct
+16 |     conn: Mutex<Connection>,
+17 |     db_path: Option<PathBuf>,
+   |     ^^^^^^^
+
+   Compiling mahayana-model v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-model)
+   Compiling mahayana-native-engine v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-native-engine)
+   Compiling mahayana-native-agent v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-native-agent)
+   Compiling mahayana-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-host)
+   Compiling mahayana-feature-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-feature-host)
+warning: function `persist_automations` is never used
+     --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-feature-host/src/implementation.rs:13431:4
+      |
+13431 | fn persist_automations(
+      |    ^^^^^^^^^^^^^^^^^^^
+      |
+      = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `mahayana-feature-host` (lib) generated 1 warning
+   Compiling mahayana-app-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-app-host)
+   Compiling mahayana-unified-app-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-unified-app-host)
+warning: `mahayana-host-runtime` (lib) generated 105 warnings (run `cargo fix --lib -p mahayana-host-runtime` to apply 68 suggestions)
+   Compiling mahayana-app-host-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/app)
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:743:37
+    |
+743 |     let result = call_send(&bridge, json!({"type": "attachment", "url": url}), "https-passthrough")
+    |                                     ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:714:57
+    |
+714 |         assert_eq!(wakes[0].selected_images[0]["data"], json!(PNG));
+    |                                                         ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:690:42
+    |
+690 |     let result = bridge.call_tool(&tool, json!({
+    |                                          ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:650:59
+    |
+650 |             assert_invalid_source(bridge.call_tool(&tool, json!({
+    |                                                           ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:643:55
+    |
+643 |         assert_invalid_source(bridge.call_tool(&tool, json!({
+    |                                                       ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:576:37
+    |
+576 |     let second = call_send(&bridge, json!({"type": "attachment", "url": source_url}), "repaired-after-reopen")
+    |                                     ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:565:50
+    |
+565 |         assert_invalid_source(call_send(&bridge, json!({
+    |                                                  ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:545:39
+    |
+545 |     let repaired = call_send(&bridge, json!({"type": "attachment", "url": source_url}), "repaired-first")
+    |                                       ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:536:50
+    |
+536 |         assert_invalid_source(call_send(&bridge, json!({
+    |                                                  ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:475:41
+    |
+475 |         let result = call_send(&bridge, json!({
+    |                                         ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:431:36
+    |
+431 |     let error = call_send(&bridge, json!({
+    |                                    ^^^^
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:398:40
+    |
+398 |         let error = call_send(&bridge, json!({
+    |                                        ^^^^
+
+error[E0425]: cannot find type `Value` in this scope
+  --> src/tests/local_media_file_url_tests.rs:35:16
+   |
+35 |         _args: Value,
+   |                ^^^^^ not found in this scope
+
+error[E0425]: cannot find type `Value` in this scope
+  --> src/tests/local_media_file_url_tests.rs:37:17
+   |
+37 |     ) -> Result<Value, ProviderSessionError> {
+   |                 ^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+27 | impl<Value> RoutedToolBridge for UnusedLocalMediaDelegate {
+   |     +++++++
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:152:18
+    |
+152 |         message: Value,
+    |                  ^^^^^ not found in this scope
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:244:30
+    |
+244 |     fn entries(&self) -> Vec<Value> {
+    |                              ^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+171 | impl<Value> LocalMediaAppFixture {
+    |     +++++++
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:342:11
+    |
+342 |     args: Value,
+    |           ^^^^^ not found in this scope
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:344:13
+    |
+344 | ) -> Result<Value, ProviderSessionError> {
+    |             ^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+340 | fn call_send<Value>(
+    |             +++++++
+
+error[E0308]: mismatched types
+   --> src/tests/local_media_file_url_tests.rs:199:42
+    |
+198 |         deps.transcript_runtime.session_runtime().set_window_focused(
+    |                                                   ------------------ arguments to this method are incorrect
+199 |             &deps.session_workers, true, 1_000,
+    |                                          ^^^^^ expected `f64`, found integer
+    |
+note: method defined here
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/session_runtime.rs:315:12
+    |
+315 |     pub fn set_window_focused(
+    |            ^^^^^^^^^^^^^^^^^^
+help: use a float literal
+    |
+199 |             &deps.session_workers, true, 1_000.0,
+    |                                               ++
+
+warning: unused import: `mahayana_host_runtime::extensions::telemetry::analytics_service::TelemetryService`
+   --> src/main.rs:240:5
+    |
+240 | use mahayana_host_runtime::extensions::telemetry::analytics_service::TelemetryService;
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+    --> src/main.rs:2900:17
+     |
+2900 |             let mut acceptance = self
+     |                 ----^^^^^^^^^^
+     |                 |
+     |                 help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `transcript_events`
+     --> src/main.rs:16190:43
+      |
+16190 |     let (transcript_manager, roster_emit, transcript_events, transcript_profile_watch_error) =
+      |                                           ^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_transcript_events`
+      |
+      = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+Some errors have detailed explanations: E0308, E0425.
+For more information about an error, try `rustc --explain E0308`.
+warning: `mahayana-app-host-runtime` (bin "mahayana-app-host" test) generated 3 warnings
+error: could not compile `mahayana-app-host-runtime` (bin "mahayana-app-host" test) due to 19 previous errors; 3 warnings emitted

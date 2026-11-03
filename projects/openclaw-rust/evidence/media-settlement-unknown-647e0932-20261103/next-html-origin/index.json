@@ -1,0 +1,68 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "kind": "Bounded source assessment for the next generated HTML production gap; no implementation or validation approval",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "subjects": {
+    "prior_owner": "d70f86f33b5e3c67545954b270373e1548809f4b",
+    "origin_boundary": "871b033c5b9aabbe322cc7322af92648939db9b5"
+  },
+  "root_disposition": "Both reports fully read. Actual explicit HTML loading already exists; arbitrary path staging has no trusted generated producer grant. The proposed bounded producer capture requires a durable behavior contract and actual execution-owner extension before implementation. Do not infer origin from temp/workspace/caller flags. Windows ACL and generic shell-file origin remain unproved.",
+  "preservation": "Reports retained byte-for-byte, including original scratch links. This index maps the saved subset; source-identities records exact Git identities and original file locations for reconstruction. No package archive/transitive closure/signature verification claimed. The actual MIT license accompanies captured dependency source. No inventory/read/review/global flag is promoted.",
+  "files": [
+    {
+      "path": "prior-owner-assessment.md",
+      "original_scratch_path": "media-html-provenance-next-owner-audit.md",
+      "bytes": 29625,
+      "sha256": "f6640ca0ea439cf7e756f9f9585130851d85adfc71d5dee0572dff803f752c39"
+    },
+    {
+      "path": "origin-boundary-assessment.md",
+      "original_scratch_path": "html-origin-boundary-assessment.md",
+      "bytes": 32611,
+      "sha256": "ee1c77480b2c2ba5de4417ce2b8a502863da0fb61e525a4e36ff9bbd01844e0c"
+    },
+    {
+      "path": "source-identities.json",
+      "original_scratch_path": "html-origin-boundary-inputs/source-identities.json",
+      "bytes": 26895,
+      "sha256": "aa81864f7d7fe8a708669ab10e6c695c0791866de0bd249c43da5a6324df4d0c"
+    },
+    {
+      "path": "semantic-read-index.json",
+      "original_scratch_path": "html-origin-boundary-inputs/current-semantic-read-index.json",
+      "bytes": 14838,
+      "sha256": "fe3d1c828d949e18898f7504c498dcc5414c9664b9a32717d24211f9746e27a4"
+    },
+    {
+      "path": "fs-safe-archive-identity.json",
+      "original_scratch_path": "html-origin-boundary-inputs/fs-safe-archive-identity.json",
+      "bytes": 318,
+      "sha256": "57aeffdca872a9f9c75084196afc7e58d78207d495cdf0945d8251cf7d88e63b"
+    },
+    {
+      "path": "fs-safe-source-archive-identity.json",
+      "original_scratch_path": "html-origin-boundary-inputs/fs-safe-source-archive-identity.json",
+      "bytes": 1390,
+      "sha256": "c30ce703309dcbc13e57d8f2a2bba687bfddc9226900c611dd52f8653be3ee3c"
+    },
+    {
+      "path": "fixed-dependency/secure-temp-dir.js",
+      "original_scratch_path": "html-origin-boundary-inputs/fs-safe-npm/package/dist/secure-temp-dir.js",
+      "bytes": 10351,
+      "sha256": "2f37e8e6b1bb31fcab349986d08f9a2da074b00500ac2e66ec7cc524dd83ff04"
+    },
+    {
+      "path": "fixed-dependency/secure-temp-repair.js",
+      "original_scratch_path": "html-origin-boundary-inputs/fs-safe-npm/package/dist/secure-temp-repair.js",
+      "bytes": 5052,
+      "sha256": "097934801db8ef99bb3062d55f5639953b347ee55b2db146751141dfffeedbac"
+    },
+    {
+      "path": "fixed-dependency/LICENSE",
+      "original_scratch_path": "html-origin-boundary-inputs/fs-safe-npm/package/LICENSE",
+      "bytes": 1137,
+      "sha256": "8d703995c48aeb3726ab83f111a10ee696835e096802ee0329ac50216ab9434e"
+    }
+  ]
+}

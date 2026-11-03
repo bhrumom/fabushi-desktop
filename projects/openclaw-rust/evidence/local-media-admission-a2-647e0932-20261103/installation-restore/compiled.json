@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--manifest-path",
+    "source/host/Cargo.toml",
+    "--test",
+    "box_store_download_frozen_parity_contract",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "exit_code": 0,
+  "executable": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005",
+  "executable_sha256": "6e65582d7ecb53d17913ece4d3f1e83299162a4568ccaf7e5f2ee5afe6a371ef",
+  "manifest_sha256": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+  "lock_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+  "compiler_artifacts_sha256": "eacf949162ddb8a46b57aaef67132b1e8a5fadcb954892f827274060d4e039f1",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "compiler_uid": 1001
+}

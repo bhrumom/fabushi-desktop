@@ -1,0 +1,150 @@
+{
+  "task": "Read-only exact-H Actions evidence collection; no acceptance promotion",
+  "collector": "/root/media_admission_general_r7",
+  "head_sha": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+  "run_id": 41576543683,
+  "run_attempt": 1,
+  "initial_jobs_read_at": "2026-11-03T04:24:50.153Z",
+  "final_jobs_read_at": "2026-11-03T04:28:09.537Z",
+  "later_refresh_count": 1,
+  "jobs": [
+    {
+      "id": 125721250213,
+      "name": "OCRM installation key restore boundary / Linux",
+      "head_sha": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+      "run_id": 41576543683,
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-03T04:18:07Z",
+      "completed_at": "2026-11-03T04:20:24Z",
+      "active_steps": [],
+      "app_step": null
+    },
+    {
+      "id": 125721250429,
+      "name": "rust-host",
+      "head_sha": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+      "run_id": 41576543683,
+      "run_attempt": 1,
+      "status": "queued",
+      "conclusion": null,
+      "started_at": "2026-11-03T04:10:27Z",
+      "completed_at": null,
+      "active_steps": [],
+      "app_step": null
+    },
+    {
+      "id": 125721250552,
+      "name": "sqlite-native-path",
+      "head_sha": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+      "run_id": 41576543683,
+      "run_attempt": 1,
+      "status": "in_progress",
+      "conclusion": null,
+      "started_at": "2026-11-03T04:19:00Z",
+      "completed_at": null,
+      "active_steps": [
+        {
+          "number": 12,
+          "name": "Test portable recovery, Memory, pairing, palette, Session, MCP and channel controls on the existing Linux Host cache"
+        }
+      ],
+      "app_step": {
+        "name": "Check and execute the actual Automation, Settings and channel App owners on Linux",
+        "status": "pending",
+        "conclusion": null,
+        "number": 19,
+        "started_at": null,
+        "completed_at": null
+      }
+    }
+  ],
+  "artifacts_collected": [
+    {
+      "id": 13204935336,
+      "bytes": 47136,
+      "sha256": "cdef2325a900c10a1656c86116da7198219920bc4fe84b1ccab3bcad279fbc5e",
+      "member_count": 7
+    },
+    {
+      "id": 13203799823,
+      "bytes": 117699,
+      "sha256": "d1a134c702cb70be8e64fb841003d8b8e7161b1427803770dee54b30a20e5116",
+      "member_count": 17
+    }
+  ],
+  "installation": {
+    "compile_exit": 0,
+    "ordinary_passed": 29,
+    "ordinary_ignored": 2,
+    "native_file_passed": 1,
+    "native_symlink_passed": 1,
+    "all_execution_exits": 0,
+    "raw_log_and_receipt_hashes_match": true,
+    "independent_acceptance": "pending"
+  },
+  "linux_native": {
+    "invocations": 16,
+    "pass_lines": 163,
+    "all_cargo_and_capture_exits": 0,
+    "all_summaries_failed": 0,
+    "all_summaries_ignored": 0,
+    "all_log_hashes_match": true,
+    "inputs_before_after_equal": true,
+    "input_count": 46,
+    "actual_app_proven": false
+  },
+  "actual_app_lfa": [
+    {
+      "name": "tests::local_media_file_url_tests::local_media_file_url_app_rejects_invalid_before_materialization",
+      "status": "not observed; actual App step pending",
+      "exit_code": null,
+      "execution_log": null,
+      "failure": null
+    },
+    {
+      "name": "tests::local_media_file_url_tests::local_media_file_url_app_rolls_back_earlier_image_on_later_refusal",
+      "status": "not observed; actual App step pending",
+      "exit_code": null,
+      "execution_log": null,
+      "failure": null
+    },
+    {
+      "name": "tests::local_media_file_url_tests::local_media_file_url_app_commits_native_and_unicode_media_across_reopen",
+      "status": "not observed; actual App step pending",
+      "exit_code": null,
+      "execution_log": null,
+      "failure": null
+    },
+    {
+      "name": "tests::local_media_file_url_tests::local_media_file_url_app_repeated_refusal_then_repair_survives_reopen",
+      "status": "not observed; actual App step pending",
+      "exit_code": null,
+      "execution_log": null,
+      "failure": null
+    },
+    {
+      "name": "tests::local_media_file_url_tests::local_media_file_url_app_agent_management_refuses_image_before_outward_send",
+      "status": "not observed; actual App step pending",
+      "exit_code": null,
+      "execution_log": null,
+      "failure": null
+    },
+    {
+      "name": "tests::local_media_file_url_tests::local_media_file_url_app_preserves_https_without_local_custody",
+      "status": "not observed; actual App step pending",
+      "exit_code": null,
+      "execution_log": null,
+      "failure": null
+    }
+  ],
+  "macos": {
+    "status": "queued",
+    "steps_observed": 0
+  },
+  "no_local_or_htch_product_execution": true,
+  "no_source_or_existing_report_edits": true,
+  "no_reruns": true
+}

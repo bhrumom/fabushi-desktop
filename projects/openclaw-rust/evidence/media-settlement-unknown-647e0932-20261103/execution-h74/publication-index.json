@@ -1,0 +1,345 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "source_run": 41580539540,
+  "runtime_run": 41580539491,
+  "attempt": 1,
+  "scope": "Complete native artifact text members, complete decoded source/Linux/Windows job logs, permanent run/job/artifact metadata and root exact-tree input binding. Original artifact ZIPs retain their GitHub IDs/digests; no transient download capability is published. Collection report preserves original scratch relative paths. The file list below defines this publication, not the separate 73-file original scratch collection.",
+  "outcomes": {
+    "source": "failed before expansion; 21 materialization tests had passed",
+    "linux_native": "202 passed / 8 failed across 19 groups",
+    "windows_native": "196 passed / 9 failed across 19 groups",
+    "App": "skipped; feature/MSU8/LFA6/SGF3 unobserved",
+    "macOS": "queued at2026-11-03T05:00:00.025Z"
+  },
+  "artifacts": [
+    {
+      "id": 13205686727,
+      "sha256": "284a316258ebf9b60dd29d781c6aceb44ef3d1ca351a3337e0945efd7b2699b5",
+      "bytes": 142379
+    },
+    {
+      "id": 13206046601,
+      "sha256": "184296dcafd2b230021ed8523d4e159cc34473d4436a5a9f5198c28c1bcac96f",
+      "bytes": 149588
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 23439,
+      "sha256": "2c50133b4cafe8a4e2a944971ab97538e1bcb9fd71e20e2c23e2a83cd1bfa850",
+      "git_blob_sha": "53e145167291ccdc0ab31ac7b8f9963d5443516a"
+    },
+    {
+      "path": "accounting/native-receipt-accounting.json",
+      "bytes": 122036,
+      "sha256": "29d2627a35b315c820847020a51650354d6d30a21864dda09843d01dc9e0dc8f",
+      "git_blob_sha": "e5767a4e41dae21e298b44b378de9b1584867a7f"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/agent-management-consumers.log",
+      "bytes": 27684,
+      "sha256": "2b5e3928fda7ec4eec17247b890a9cc14cb86f7ad745df14ee03fabc1052b992",
+      "git_blob_sha": "74e2b399d24a3468b22fc27fcdadfff94cf369d2"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/bounded-reader-box-consumer.log",
+      "bytes": 27537,
+      "sha256": "01e1cdac6cfa34e0ff02e5830928815ca63bc231bdb07161f22d8f1dba1ec7df",
+      "git_blob_sha": "8a0d8a5ae49e02078b4a1ae3e345eab4f8ac24a0"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/bounded-reader-channel-consumers.log",
+      "bytes": 27941,
+      "sha256": "cfa9bf892d3a37b9e04789367cc942b6bf899ec1705dc16322a65a7613aae15f",
+      "git_blob_sha": "0908ca385d2724ca9e07d4a3074701198c92ae12"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/bounded-reader-image-consumer.log",
+      "bytes": 27425,
+      "sha256": "923f04ea2975909514c7ce97ff66f3641cbfe150a90e0d8fe385a501c285fa98",
+      "git_blob_sha": "06e7b4f9f98bb962bb41378e9b18000205c1c593"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/bounded-reader-owner.log",
+      "bytes": 27944,
+      "sha256": "0149691bc3fb9562f32d9042a9933c4f78a843b3d051225379ea6c7ee535fd84",
+      "git_blob_sha": "2276fc0f5f7d5c6e2a42295906267d70dab984d1"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/bounded-reader-public.log",
+      "bytes": 29905,
+      "sha256": "4ca0d911ae0409c8f888f8ffe273483bd9e315629a39b24320095429040f6b41",
+      "git_blob_sha": "196ce8fb092da983a9e2ed86843e039d4ec6a405"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/cleanup-consumers.log",
+      "bytes": 28639,
+      "sha256": "0faea9e4b8ad247d68dad55efc84c439e4d28c18a36bacba887d7b8f43184556",
+      "git_blob_sha": "1f052032dc6648a075fc96be87b7613444184f7e"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/cleanup-owner.log",
+      "bytes": 25578,
+      "sha256": "af2ad85d829433118dbe8dfe263c79d96d00ffb8f6d13f1d21ad25f1919efb9b",
+      "git_blob_sha": "1587af719a90b7f5f1dc8bcc44e8f47783b00e86"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/explicit-html-consumers.log",
+      "bytes": 29433,
+      "sha256": "bfad9fb28468cbc9e5d51ba523e7998bfed253f9056350032f3ef6d89050d689",
+      "git_blob_sha": "2cae625cf0cc957b4f99a695c7b6e945e806bb23"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/file-context-consumers.log",
+      "bytes": 28105,
+      "sha256": "b2a4f2290ede92813bf8691f04370dc1d2bab6e1d4ae652e46c5f0c5ea50c741",
+      "git_blob_sha": "f979925d63e0568ab5dff3408288ea060315b6c5"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/file-url-admission.log",
+      "bytes": 25410,
+      "sha256": "bd6ab4e0580a037b1b82f749dfeccec08e78f3c9f5c2acf7de3546b344417bf9",
+      "git_blob_sha": "564de38c7b54a6230f7021050519b9769646284d"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/host-read-format.log",
+      "bytes": 27540,
+      "sha256": "fe856724bfb63d6e093a0f5b205ee02e3a56a1108b01fa099341c04d4f355794",
+      "git_blob_sha": "0663421a93f34b4b0e5a66c9deb63d482bbf31a6"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/html-policy.log",
+      "bytes": 28200,
+      "sha256": "62616319485eee4a056168f492ef2ae5b69ff3001796ff8fc87036a05b12be73",
+      "git_blob_sha": "b8fffb254f5a543039950731ba614b1705b0d6e8"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/image-probe-consumers.log",
+      "bytes": 28484,
+      "sha256": "6271cef00e2a83ea6b892a7122edd5697a549b680029fc4d4504e31029ab0f06",
+      "git_blob_sha": "e3bf6bd271daccc26bced6341c60162ce50737ed"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/local-file-url-owner.log",
+      "bytes": 28096,
+      "sha256": "8bf4dbf06663971876e17f26997a86bd22d3c19e8ed53db95b440fc33baa9b51",
+      "git_blob_sha": "87629758881b728871fb053500205b04f26ec592"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/media-settlement-owner.log",
+      "bytes": 30567,
+      "sha256": "26ab3027d0bd03ff450927df814349347f9fb104f0b8ec2677b4126aa838fad8",
+      "git_blob_sha": "4525632074634d8dd88721d6276e8aa90faf80f8"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/outgoing-media-custody.log",
+      "bytes": 25266,
+      "sha256": "12fd5519dac296210ecc857ac42b461c5354c87921570426f54783ad61a6f19c",
+      "git_blob_sha": "ff0cbfdabd3fd3a1dcb76fc328541c0394c9194e"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/receipt.json",
+      "bytes": 120067,
+      "sha256": "5fc8dfd24cf2635e253056c12d06c1f67f29e66f5cabe9e3003a1efc0bdfc6e2",
+      "git_blob_sha": "86708948c8a6d1e246408536e1ad11a5c582150a"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/send-message-consumers.log",
+      "bytes": 28957,
+      "sha256": "3894e838fd5f8259607b1ffa8681b92b3eba3b4c477e30da4cb94b3da82e7df5",
+      "git_blob_sha": "34737d079568ee75c2228427ffaa5a30e7499916"
+    },
+    {
+      "path": "artifacts/linux-media-13205686727/transaction-commit-owners.log",
+      "bytes": 32185,
+      "sha256": "921b7317adf72cfad5ddd22b541f1e366a4d8beddc48214b913f642fbaaf1bc5",
+      "git_blob_sha": "8f66864af3f678b379f1918cc160b9ae991e5384"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/agent-management-consumers.log",
+      "bytes": 28939,
+      "sha256": "5365349baab4fb0dda3d98fff01b093f13cfc11c2cd21934a4e0b84e4d392482",
+      "git_blob_sha": "050ffa1e8b4da0cae76c77404ee1849174e7f36a"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/bounded-reader-box-consumer.log",
+      "bytes": 28792,
+      "sha256": "81f6d966791416e180bc634234a94f5bcef1c2ab8542ae80ea098b4db46b9660",
+      "git_blob_sha": "5fefe6c1b4a30e01271abbf0054b58048f89b668"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/bounded-reader-channel-consumers.log",
+      "bytes": 29269,
+      "sha256": "3d80b1f13208637ade299057af60b78701cd12b8980e6956a92afb3aeb130af4",
+      "git_blob_sha": "74410b65ad20befd24c94e5a5d0fe2d8718abae7"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/bounded-reader-image-consumer.log",
+      "bytes": 28693,
+      "sha256": "cf9fdf198a4ffee726f1d9ced9ad76a888448caf7af906bf996815d917c5f24c",
+      "git_blob_sha": "915583fcf43450aec0e0250107d0857fb0e64ace"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/bounded-reader-owner.log",
+      "bytes": 30237,
+      "sha256": "6e91286169ae1fa82ff1ad94658a9bf284198a17cf68c668a6eb0e2a3ec9949e",
+      "git_blob_sha": "dc98ce46320807ca09bb0cbdaf3c0668f6de9437"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/bounded-reader-public.log",
+      "bytes": 31160,
+      "sha256": "01cdb999a6d5cfdd8280b9f436b3f6d10ce59794d25d6d33d2014fcbf9cb866e",
+      "git_blob_sha": "ea92046e5396479f91f52d6402a70c95e1c70c16"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/cleanup-consumers.log",
+      "bytes": 29801,
+      "sha256": "d6b05e0dd4362d1a86fee12e4826824b43d30f80738281b6d8becc4fa141a896",
+      "git_blob_sha": "63e57531975f0d2210b98a7dbd091a93f0f06e9b"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/cleanup-owner.log",
+      "bytes": 29204,
+      "sha256": "09bc60e6dc793624dc4fb09a6941ce5d41bc11973bf3bebb45ce711fc809cfac",
+      "git_blob_sha": "e0466fa1e7443e0204483b43b140c4d25dcc8217"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/explicit-html-consumers.log",
+      "bytes": 30548,
+      "sha256": "46daf4d74d0053ebb56057d6733a4a5c1be9a2d076ab3774552e4a44d3b6d04c",
+      "git_blob_sha": "1283239da81c6d46ebc395fd96c43566ea76fe01"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/file-context-consumers.log",
+      "bytes": 29374,
+      "sha256": "51d4fe86aa36e7a1c4768839578dbbab264bd47c565e7400c784b3f090bef222",
+      "git_blob_sha": "38f906bfd5f94966078a49be03b1064a9b164fae"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/file-url-admission.log",
+      "bytes": 29042,
+      "sha256": "18d615ab7a8cacfc14cf6aac2c39756f54988df5ee3b86e018db22b2bb5e21b8",
+      "git_blob_sha": "5ec08dd1663f4b7065aabe6fd0aa6b38deae1eb0"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/host-read-format.log",
+      "bytes": 28795,
+      "sha256": "38888694f152c64a1f67cdd3836f3868f6fc840cc7528a44828833a60623af89",
+      "git_blob_sha": "7b70c8330ac4eba6eb12a4e1ce8df62735de757d"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/html-policy.log",
+      "bytes": 29247,
+      "sha256": "1c2e0a2ebc33649f81f3467d5804465aff0050d1d0a73eda070f419699b6e0d2",
+      "git_blob_sha": "e7f96b8230bfbe32394de3b55a27b2fffd185d93"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/image-probe-consumers.log",
+      "bytes": 29739,
+      "sha256": "6bf9b7bba7d7b25a29f29ce91e3e7494b40e91e9fb7f4dbab4ae56ad4eb9f9c6",
+      "git_blob_sha": "5ee1a7b7c3a167febea6b917d9ef04c49707879e"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/local-file-url-owner.log",
+      "bytes": 29427,
+      "sha256": "8860f20be403ab611542a4735133bff1d223f3e6390dcd93795f2e5e5557cbee",
+      "git_blob_sha": "26ede16e9fad0f84877459ec01b0d0029f4b895d"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/media-settlement-owner.log",
+      "bytes": 34262,
+      "sha256": "c73d70c1d9829a1b8404f8e888e048c4a5a997c63f4f0ead5221f6e4b3cffcb9",
+      "git_blob_sha": "6d18808a2620e0630692eef9fdb14e399bf875b3"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/outgoing-media-custody.log",
+      "bytes": 28779,
+      "sha256": "b721149c77bc329b06c084ecfe2ad5fee214793f7ec3462e2e6de607ce22c623",
+      "git_blob_sha": "d96e9734cae7b75f4d0dd5c6a69ba52107345f4c"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/receipt.json",
+      "bytes": 121109,
+      "sha256": "c79d4e0d447831aae967a80be6d74b5c39b71c0daa64d18ac0595f151f563ce8",
+      "git_blob_sha": "9aaed756ac79e9048f7c48111cf9d40213c660a2"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/send-message-consumers.log",
+      "bytes": 30212,
+      "sha256": "c9cba2ad7f3adc4ab960a3efc7493920408a4a44e272984ba361dc594c980c06",
+      "git_blob_sha": "b08176a788d4682b947b4e9c54ba495833c589da"
+    },
+    {
+      "path": "artifacts/windows-media-13206046601/transaction-commit-owners.log",
+      "bytes": 33774,
+      "sha256": "2e25b24f4252140b8d4c9f063b62b9d596b62d2ed833fc3b2afef896fa922bf3",
+      "git_blob_sha": "9a4533bdf3bc5898a104ad4ea6d44457fade0d42"
+    },
+    {
+      "path": "logs/linux-job-log-125734079585.log",
+      "bytes": 1220138,
+      "sha256": "4630d79b0ecbdbd01cf5f0ce4fd2f34a4696fed8e20dbff0501d529f125acf43",
+      "git_blob_sha": "13b76a82a492f2ae8c8b80bb1433483e61403ef1"
+    },
+    {
+      "path": "logs/source-job-log-125734077461.log",
+      "bytes": 28920,
+      "sha256": "31f25cb8af36bfb77ebfbd4179ea5728774379f2cf70f7dddebf2e1f2fc9dd1c",
+      "git_blob_sha": "9cf4fe0160c63468d3a0c63f925500334fcccfc2"
+    },
+    {
+      "path": "logs/windows-job-log-125734079542-final.log",
+      "bytes": 1281835,
+      "sha256": "44dd336b57476e793afa35134517b0fe888fd0d976eb583ddb5f0991dc7d4abc",
+      "git_blob_sha": "cccc43caa96370d61c0fe377e7f76878f7fc3fa1"
+    },
+    {
+      "path": "metadata/initial-runtime-attempt1.json",
+      "bytes": 13509,
+      "sha256": "c02da6c9990073822a304c884b3379b51dacd81c809de7a9966aa690b93848d5",
+      "git_blob_sha": "3feee710cec81e1746ffe290b241376cbb8a0f28"
+    },
+    {
+      "path": "metadata/initial-source-artifacts.json",
+      "bytes": 33,
+      "sha256": "d3ad979d01443a9d7342e7fbe39064b41ebdb340029293f1b099bcfb6c493c42",
+      "git_blob_sha": "623f6273c3c8e3adf76506bcdd7341c56b70ecbe"
+    },
+    {
+      "path": "metadata/initial-source-attempt1.json",
+      "bytes": 13517,
+      "sha256": "05eb4afe3ba6117fdb3674e6834db0aaafcc4868a2c88b23958843b7bd0f2a7c",
+      "git_blob_sha": "ee6b4baee3d92ddfed16d258ffe730afcba81f85"
+    },
+    {
+      "path": "metadata/initial-source-jobs-attempt1.json",
+      "bytes": 4999,
+      "sha256": "116cdc99be12b576525158b953dac41ff94cb21184a4d3489db9821b2aeabba0",
+      "git_blob_sha": "9371dc57f50fd3c44daf9482e2c33ad7f6cd585b"
+    },
+    {
+      "path": "metadata/runtime-artifacts-refresh.json",
+      "bytes": 4756,
+      "sha256": "25e4ed663317a972c6c325c27a5dfd8b79411a01e39a8b21d49e0c211cc0d123",
+      "git_blob_sha": "9398ca81c2d5aa7d43aa1d84a2bfa0042cf7a6da"
+    },
+    {
+      "path": "metadata/runtime-jobs-attempt1-closing.json",
+      "bytes": 20643,
+      "sha256": "c717d706d760f7e51db15c585340d47674b486ec559eb8f2bb0bc1f1915f1e69",
+      "git_blob_sha": "8e805546f7fbb93ad3a1ef2daf0ad8dd33ff7809"
+    },
+    {
+      "path": "root-input-binding.json",
+      "bytes": 69032,
+      "sha256": "d4c615a332b60ed7e3d7dae0481d4c7c98764b36f1134d900d8f38127f1aef9a",
+      "git_blob_sha": "52a95ae54c40fbf407a43d71343c54fb41901113"
+    }
+  ],
+  "limits": "Subject remains H74, regardless of evidence carrier. No failed control is relabeled approved; raw capture/log hashes are data accounting, not local product validation."
+}

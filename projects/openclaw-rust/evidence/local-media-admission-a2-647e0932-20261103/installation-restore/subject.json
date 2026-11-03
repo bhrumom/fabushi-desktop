@@ -1,0 +1,14 @@
+{
+  "contract": "OCRM-CONFIG-PUBLIC-SECRET-v1:CS06-ROOT/DELETE",
+  "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": "41576543683",
+  "run_attempt": "1",
+  "runner_os": "Linux",
+  "independent_acceptance": "pending"
+}

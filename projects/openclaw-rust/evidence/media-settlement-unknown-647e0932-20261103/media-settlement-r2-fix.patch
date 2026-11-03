@@ -1,0 +1,90 @@
+diff --git a/projects/openclaw-rust/docs/specs/final-assistant-media-custody.md b/projects/openclaw-rust/docs/specs/final-assistant-media-custody.md
+index bab905e889a472027a906b551a874081131cc85e..e89c27654614752fd4700e6506735bee3bde25a8 100644
+--- a/projects/openclaw-rust/docs/specs/final-assistant-media-custody.md
++++ b/projects/openclaw-rust/docs/specs/final-assistant-media-custody.md
+@@ -138,7 +138,9 @@
+ now requires typed unknown propagation, sealing cleanup authority before the
+ owner call, retirement of every unknown DB connection, and retained media on
+ unknown/abort/Drop. Only a confirmed precommit refusal authorizes cleanup.
+-Confirmed success settles local custody before publication, ACK or success count.
++Confirmed success settles local custody before App publication, ACK or success
++count. Existing DB listeners still run after COMMIT and before the App-local
++terminal transition; same-ID reentry refuses while that entry remains held.
+ Same-ID terminal entries remain in the existing App index to prevent recreation;
+ multiple distinct images and exact-source reuse remain supported before seal.
+ 
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 9e56c9f65259420b5cdde83e24bfbd1b35064cad..e59c3f0fd702ef5a81eb133f3fe34bbf6b975198 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -36785,8 +36785,8 @@
+       "evidence_refs": [
+         "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-unknown-current-audit.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/current-owner-audit.md",
+         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-concurrency-consumer-notes.md",
+         "source/host/src/extensions/session/agent_db.rs",
+         "source/host/src/attachment_paths.rs",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 1921355c3643650b835fe1cefce8d653758492b4..e2c00d404cf6737b750f389eb4c7f2cf45badf87 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1393,7 +1393,7 @@
+         "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R23",
+@@ -1550,7 +1550,7 @@
+         "source/host/tests/channel_attachment_contract.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R24",
+@@ -2913,7 +2913,7 @@
+         "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC23",
+@@ -3093,7 +3093,7 @@
+         "source/host/tests/channel_attachment_contract.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+diff --git a/source/host/app/src/tests/local_media_file_url_tests.rs b/source/host/app/src/tests/local_media_file_url_tests.rs
+index 60e6be8a61d446706ac2188366be9bff1f08cb71..280c68503daadecb5aa4a1c6eebec5744bc3b81d 100644
+--- a/source/host/app/src/tests/local_media_file_url_tests.rs
++++ b/source/host/app/src/tests/local_media_file_url_tests.rs
+@@ -1,5 +1,6 @@
+ use super::super::*;
+ use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
++use serde_json::{Value, json};
+ use std::collections::BTreeSet;
+ use std::path::{Path, PathBuf};
+ use std::sync::atomic::{AtomicUsize, Ordering};
+@@ -197,7 +198,7 @@
+         ));
+         deps.transcript_manager.bind_roster_emit(roster).expect("actual roster owner");
+         deps.transcript_runtime.session_runtime().set_window_focused(
+-            &deps.session_workers, true, 1_000,
++            &deps.session_workers, true, 1_000.0,
+         ).expect("actual focused desktop state");
+         let sink = Arc::new(ProductionSendMessageSink {
+             host_tx,

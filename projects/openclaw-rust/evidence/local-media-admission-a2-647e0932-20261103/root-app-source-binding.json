@@ -1,0 +1,62 @@
+{
+  "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+  "authority": "Exact recursive GitHub tree and each immutable git blob identity; file byte hashing only, no local executable validation.",
+  "files": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "git_blob": "5abace3386897aaca3c4a256a11f90b8e3b98119",
+      "bytes": 441439,
+      "sha256": "6f10da0e15d1463e144e58c3e8a63ca4c028623ba77fce7e2cc7f036a616b52e",
+      "receipt_sha256": "6f10da0e15d1463e144e58c3e8a63ca4c028623ba77fce7e2cc7f036a616b52e",
+      "receipt_match": true,
+      "captured_in_original_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "bytes": 3495,
+      "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "receipt_sha256": null,
+      "receipt_match": null,
+      "captured_in_original_receipt": false
+    },
+    {
+      "path": "source/host/app/Cargo.lock",
+      "git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "bytes": 158355,
+      "sha256": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+      "receipt_sha256": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+      "receipt_match": true,
+      "captured_in_original_receipt": true
+    },
+    {
+      "path": "source/host/app/Cargo.toml",
+      "git_blob": "4cd51b5e35192f3f8ad1e6dff3699ec9a63e8928",
+      "bytes": 795,
+      "sha256": "5a7070c724de5eac06274b1cc1aa8201d5b72649ae0313eddd110ee7e75fe777",
+      "receipt_sha256": "5a7070c724de5eac06274b1cc1aa8201d5b72649ae0313eddd110ee7e75fe777",
+      "receipt_match": true,
+      "captured_in_original_receipt": true
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "git_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "bytes": 35498,
+      "sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80",
+      "receipt_sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80",
+      "receipt_match": true,
+      "captured_in_original_receipt": true
+    },
+    {
+      "path": "source/host/src/extensions/transcript/session_runtime.rs",
+      "git_blob": "bf7e3533d2691aaf204888fcdb64e1f548716c10",
+      "bytes": 11925,
+      "sha256": "36fcf578afa24a408a4931a066fbaf7e8d627b132265721dff1eb94307bb637a",
+      "receipt_sha256": null,
+      "receipt_match": null,
+      "captured_in_original_receipt": false
+    }
+  ],
+  "scope": "Four original receipt entries matched exact-H Git blobs. The upstream lock and SessionRuntime defining API were independently read from exact-H Git blobs but are absent from the original App input map; no receipt coverage is fabricated."
+}

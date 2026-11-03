@@ -1,0 +1,94 @@
+{
+  "subject_commit": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "run_id": 41582614116,
+  "run_attempt": 1,
+  "job_id": 125740667992,
+  "job_key": "media-store-windows",
+  "job_name": "OCRM media cleanup / Windows",
+  "job_conclusion": "success",
+  "job_completed_at": "2026-11-03T05:21:29Z",
+  "artifact_id": 13206860961,
+  "artifact_bytes": 148489,
+  "artifact_sha256": "daeacc2c6573bf636c3a5c1a9ab59a84d84115cc9072a6b5ca01dd4758ba18cc",
+  "artifact_matches_api_digest": true,
+  "native_groups": 19,
+  "passed_test_results": 205,
+  "failed": 0,
+  "ignored": 0,
+  "DB_cases": 13,
+  "COMMIT_cases": 27,
+  "inputs_each_phase": 62,
+  "all_inputs_match_exact_Hfc_tree": true,
+  "before_after_equal": true,
+  "raw_logs_hash_matched": 19,
+  "line_endings": {
+    "logs": "LF exactly as extracted; all19 have zero CRLF and zero bare CR",
+    "receipt_crlf_count": 2445
+  },
+  "initial_report_preserved_sha256": "73ea2bd88e5911715faa3ffec33f3ae7d75219f238ca457c2e755182695ce0bf",
+  "initial_assessment_preserved_sha256": "2494f16498240c150de0a5df9446b554408da70a9eea969e0092ff9ae1090dc7",
+  "completion_observed_at_utc": "2026-11-03 05:23:43 UTC",
+  "completion_jobs": [
+    {
+      "id": 125740667771,
+      "name": "sqlite-native-path",
+      "status": "in_progress",
+      "conclusion": null,
+      "current_steps": [
+        "Test portable recovery, Memory, pairing, palette, Session, MCP and channel controls on the existing Linux Host cache"
+      ]
+    },
+    {
+      "id": 125740667992,
+      "name": "OCRM media cleanup / Windows",
+      "status": "completed",
+      "conclusion": "success",
+      "current_steps": []
+    },
+    {
+      "id": 125740668001,
+      "name": "rust-host",
+      "status": "queued",
+      "conclusion": null,
+      "current_steps": []
+    },
+    {
+      "id": 125740668051,
+      "name": "renderer",
+      "status": "completed",
+      "conclusion": "success",
+      "current_steps": []
+    },
+    {
+      "id": 125740668063,
+      "name": "OCRM installation key restore boundary / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "current_steps": []
+    },
+    {
+      "id": 125740668973,
+      "name": "Pressure profiler / ${{ matrix.os }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "current_steps": []
+    },
+    {
+      "id": 125740669639,
+      "name": "platform-worker",
+      "status": "completed",
+      "conclusion": "skipped",
+      "current_steps": []
+    }
+  ],
+  "actual_App_state": "pending; owning Linux App step not reached, no new App artifact",
+  "macOS_state": "queued",
+  "source_changes": [],
+  "local_or_htch_validation": "none",
+  "workflow_mutations": "none",
+  "transfer_to_R5": "none",
+  "scope": "Exact-Hfc completed Windows native evidence only; additive to preserved initial assessment."
+}

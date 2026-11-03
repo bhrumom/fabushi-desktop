@@ -1,0 +1,171 @@
+{
+  "subject_commit": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "selected_effort": "xhigh",
+  "model_policy": "configured parent model retained",
+  "observation_times_utc": [
+    "2026-11-03 05:16:50 UTC",
+    "2026-11-03 05:18:26 UTC",
+    "2026-11-03 05:19:39 UTC"
+  ],
+  "source_run": {
+    "id": 41582614099,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "source_gates": {
+    "materialization_tests": 21,
+    "pre_expansion": {
+      "result": "PASS",
+      "paths": 62130,
+      "mapped": 884,
+      "unread_partial": 62067,
+      "pending_forward_links": 5
+    },
+    "post_expansion": {
+      "result": "PASS",
+      "paths": 62130,
+      "mapped": 888,
+      "unread_partial": 62067,
+      "pending_forward_links": 0
+    },
+    "source_closure_ready": false,
+    "final_g02": "not-run"
+  },
+  "source_input_binding": {
+    "repository_paths_bound_to_exact_tree": 26,
+    "repository_paths_matching_receipt_sha256": 23,
+    "generated_changed_repository_inputs": [
+      "projects/openclaw-rust/inventory/index.json",
+      "projects/openclaw-rust/inventory/shards/manifest.json",
+      "projects/openclaw-rust/parity-ledger.json"
+    ],
+    "artifact_only_input": "upstream-recursive-inventory.json"
+  },
+  "runtime_run": {
+    "id": 41582614116,
+    "attempt": 1,
+    "status": "queued",
+    "conclusion": null
+  },
+  "jobs": [
+    {
+      "id": 125740667771,
+      "name": "sqlite-native-path",
+      "status": "in_progress",
+      "conclusion": null,
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "started_at": "2026-11-03T05:13:14Z",
+      "completed_at": null,
+      "current_steps": [
+        "Test portable recovery, Memory, pairing, palette, Session, MCP and channel controls on the existing Linux Host cache"
+      ]
+    },
+    {
+      "id": 125740667992,
+      "name": "OCRM media cleanup / Windows",
+      "status": "in_progress",
+      "conclusion": null,
+      "labels": [
+        "windows-2025"
+      ],
+      "started_at": "2026-11-03T05:13:14Z",
+      "completed_at": null,
+      "current_steps": [
+        "Execute media cleanup owner and real service contracts"
+      ]
+    },
+    {
+      "id": 125740668001,
+      "name": "rust-host",
+      "status": "queued",
+      "conclusion": null,
+      "labels": [
+        "macos-15"
+      ],
+      "started_at": "2026-11-03T05:13:12Z",
+      "completed_at": null,
+      "current_steps": []
+    },
+    {
+      "id": 125740668051,
+      "name": "renderer",
+      "status": "completed",
+      "conclusion": "success",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "started_at": "2026-11-03T05:13:14Z",
+      "completed_at": "2026-11-03T05:13:48Z",
+      "current_steps": []
+    },
+    {
+      "id": 125740668063,
+      "name": "OCRM installation key restore boundary / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "started_at": "2026-11-03T05:13:15Z",
+      "completed_at": "2026-11-03T05:15:11Z",
+      "current_steps": []
+    },
+    {
+      "id": 125740668973,
+      "name": "Pressure profiler / ${{ matrix.os }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "labels": [],
+      "started_at": "2026-11-03T05:13:13Z",
+      "completed_at": "2026-11-03T05:13:12Z",
+      "current_steps": []
+    },
+    {
+      "id": 125740669639,
+      "name": "platform-worker",
+      "status": "completed",
+      "conclusion": "skipped",
+      "labels": [
+        "ubuntu-24.04"
+      ],
+      "started_at": "2026-11-03T05:13:13Z",
+      "completed_at": "2026-11-03T05:13:12Z",
+      "current_steps": []
+    }
+  ],
+  "linux_native": {
+    "artifact_id": 13206394654,
+    "artifact_sha256": "7958e1fe247b9b889954728112625cd6bda205444f377a5b92a889107951406e",
+    "groups": 19,
+    "passed_test_results": 210,
+    "failed": 0,
+    "ignored": 0,
+    "db_cases": 13,
+    "commit_cases": 27,
+    "input_paths": 62,
+    "before_after_identity_equal": true,
+    "all_input_git_blobs_match_Hfc": true,
+    "raw_log_hashes_match_receipt": 19
+  },
+  "windows_native": {
+    "status": "in_progress",
+    "artifact_available": false
+  },
+  "app": {
+    "shipping_feature_proof": "pending",
+    "MSU8": "pending",
+    "LFA6": "pending",
+    "SGF3": "pending",
+    "cron5": "pending",
+    "reason": "Owning Linux App step pending at final observation; no App receipt artifact published."
+  },
+  "actions_performed": "Read-only GitHub GETs, source/log reads, JSON/ZIP decoding, byte hashing, exact-input binding, and evidence writes only.",
+  "prohibited_actions_performed": [],
+  "scope_limit": "No source/runtime inference for the distinct frozen R4 or later root edits. Hfc only. No broad migration acceptance."
+}

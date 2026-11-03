@@ -1,0 +1,193 @@
+{
+  "subject": {
+    "contract": "OCRM-CONFIG-PUBLIC-SECRET-v1:CS06-ROOT/DELETE",
+    "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+    "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    "run_id": "41576543683",
+    "run_attempt": "1",
+    "runner_os": "Linux",
+    "independent_acceptance": "pending"
+  },
+  "subject_matches_execution": true,
+  "compiled_matches_execution": true,
+  "compile_exit_code": 0,
+  "manifest_sha256": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+  "manifest_matches_receipt": true,
+  "lock_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+  "lock_matches_receipt": true,
+  "compiler_artifacts_sha256": "eacf949162ddb8a46b57aaef67132b1e8a5fadcb954892f827274060d4e039f1",
+  "compiler_artifacts_matches_receipt": true,
+  "compiler_artifact_executable_matches": [
+    {
+      "reason": "compiler-artifact",
+      "package_id": "path+file:///home/runner/work/fabushi-desktop/fabushi-desktop/source/host#mahayana-host-runtime@0.1.0",
+      "manifest_path": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/Cargo.toml",
+      "target": {
+        "kind": [
+          "test"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "box_store_download_frozen_parity_contract",
+        "src_path": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/tests/box_store_download_frozen_parity_contract.rs",
+        "edition": "2024",
+        "doc": false,
+        "doctest": false,
+        "test": true
+      },
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": 2,
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "features": [],
+      "filenames": [
+        "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005"
+      ],
+      "executable": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005",
+      "fresh": false
+    }
+  ],
+  "executable_sha256_receipt_only": "6e65582d7ecb53d17913ece4d3f1e83299162a4568ccaf7e5f2ee5afe6a371ef",
+  "binary_bytes_not_in_artifact": true,
+  "full_job_log_bytes": 88584,
+  "full_job_log_sha256": "4fa173ea2c5803348a4288f2a6b7bb7ffa35df00588628858bda0583d2d9988f",
+  "executions": [
+    {
+      "case": "ordinary",
+      "command": [
+        "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "declared_passed": 29,
+      "declared_failed": 0,
+      "declared_ignored": 2,
+      "oracle_accepted": true,
+      "log": "ordinary.log",
+      "bytes": 2744,
+      "sha256": "16919d27706549c326e4158ed832e8c669d8ccf8fccaf3f64cdf9a342d2aa43c",
+      "receipt_log_hash_matches": true,
+      "passed_names": [
+        "actual_installation_key_and_staging_native_aliases_refuse_local_hit_changes",
+        "byte_budget_admits_an_oversized_item_when_idle",
+        "actual_installation_root_refuses_key_staging_and_ancestor_imports_without_effects",
+        "actual_installation_neighbors_and_unrelated_matching_names_restore",
+        "distinct_same_content_and_unrelated_hardlinks_remain_ordinary_local_hits",
+        "all_local_pack_members_skip_pack_download_and_are_counted_by_bulk_phase",
+        "empty_installation_cannot_import_a_foreign_key_or_create_restore_directories",
+        "duplicate_large_blob_streams_once_then_copies_from_the_verified_local_file",
+        "critical_files_precede_bulk_and_prefetch_failure_falls_back_to_blob_reads",
+        "existing_and_manifest_symlink_aliases_cannot_route_restore_into_key_paths",
+        "hardlinked_local_hit_cannot_change_installed_key_metadata",
+        "file_and_symlink_ancestors_cannot_remove_an_installed_revision_key",
+        "ordinary_directory_symlink_replacement_preserves_installation_material",
+        "incoming_key_and_publication_artifacts_refuse_the_entire_restore_without_mutation",
+        "duplicate_small_blob_is_fetched_once_and_local_hits_are_reused",
+        "ordinary_directory_file_replacement_preserves_installation_material",
+        "protected_portable_namespace_case_aliases_are_refused_before_restore",
+        "recursive_removal_depth_limit_refuses_without_effects",
+        "recursive_removal_unreadable_identity_refuses_without_effects",
+        "ordinary_restore_preserves_key_and_allows_unrelated_matching_basenames",
+        "restore_cannot_detach_an_existing_symlink_to_the_installation_directory",
+        "pack_restore_reports_each_restored_path_and_skips_loose_blobs",
+        "recursive_replacement_refuses_descendant_key_and_staging_hardlinks_without_effects",
+        "symlink_restore_reports_all_frozen_steps_and_allows_absolute_targets_inside_root",
+        "symlink_target_checks_expand_existing_links_before_parent_components",
+        "unreadable_staging_identity_refuses_before_store_or_restore_effects",
+        "staged_key_hardlinks_refuse_but_distinct_same_content_local_hits_restore",
+        "staging_identity_limit_admits_32_and_refuses_33_without_effects",
+        "recursive_removal_entry_limit_refuses_without_effects"
+      ],
+      "ignored_names": [
+        "linux_bind_mounted_descendant_file_restore_boundary",
+        "linux_bind_mounted_descendant_symlink_restore_boundary"
+      ],
+      "failed_names": [],
+      "summaries": [
+        "test result: ok. 29 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 1.18s"
+      ],
+      "all_pass_lines_in_full_job_log": true
+    },
+    {
+      "case": "linux_bind_mounted_descendant_file_restore_boundary",
+      "command": [
+        "sudo",
+        "-n",
+        "unshare",
+        "--mount",
+        "--propagation",
+        "private",
+        "--",
+        "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005",
+        "--exact",
+        "linux_bind_mounted_descendant_file_restore_boundary",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "declared_passed": 1,
+      "declared_failed": 0,
+      "declared_ignored": 0,
+      "oracle_accepted": true,
+      "log": "linux_bind_mounted_descendant_file_restore_boundary.log",
+      "bytes": 177,
+      "sha256": "6a4e7e28651c7c2b1c5866aceeccaa4a15c99c363f0d035d26552ed73e1c7bf4",
+      "receipt_log_hash_matches": true,
+      "passed_names": [
+        "linux_bind_mounted_descendant_file_restore_boundary"
+      ],
+      "ignored_names": [],
+      "failed_names": [],
+      "summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.02s"
+      ],
+      "all_pass_lines_in_full_job_log": true
+    },
+    {
+      "case": "linux_bind_mounted_descendant_symlink_restore_boundary",
+      "command": [
+        "sudo",
+        "-n",
+        "unshare",
+        "--mount",
+        "--propagation",
+        "private",
+        "--",
+        "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/deps/box_store_download_frozen_parity_contract-f0b2103b670b7005",
+        "--exact",
+        "linux_bind_mounted_descendant_symlink_restore_boundary",
+        "--ignored",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "declared_passed": 1,
+      "declared_failed": 0,
+      "declared_ignored": 0,
+      "oracle_accepted": true,
+      "log": "linux_bind_mounted_descendant_symlink_restore_boundary.log",
+      "bytes": 180,
+      "sha256": "440cf3d7e0e6eace8956a7f34d65489d87be9b68b0d67ae796d9df965585c3b7",
+      "receipt_log_hash_matches": true,
+      "passed_names": [
+        "linux_bind_mounted_descendant_symlink_restore_boundary"
+      ],
+      "ignored_names": [],
+      "failed_names": [],
+      "summaries": [
+        "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.01s"
+      ],
+      "all_pass_lines_in_full_job_log": true
+    }
+  ],
+  "result_declared": "passed",
+  "scope": "Ordinary restore contracts plus real private-namespace bind-mounted descendant file/symlink replacements, using synthetic installation keys and owned fixtures. Missing privileges fail execution. This is not exclusion of concurrent external namespace mutation or full backup/client compatibility acceptance."
+}

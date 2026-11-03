@@ -1,0 +1,726 @@
+{
+  "method": "Root read/accounting of GitHub Actions receipts, raw logs and exact-H GitHub tree; no product or repository validator executed locally.",
+  "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": "41576543683",
+  "run_attempt": "1",
+  "job_id": 125721250482,
+  "artifact_id": 13204200615,
+  "receipt_sha256": "efde2b7019f0d893d0c2762395f95bdef1420a8e856406798296a5c82f692676",
+  "input_count": 46,
+  "inputs": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "committed_blob": "5abace3386897aaca3c4a256a11f90b8e3b98119",
+      "root_tree_blob": "5abace3386897aaca3c4a256a11f90b8e3b98119",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "committed_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "root_tree_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "committed_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "root_tree_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "committed_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "root_tree_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "committed_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "root_tree_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/Cargo.lock",
+      "committed_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "root_tree_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/build.rs",
+      "committed_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "root_tree_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/lib.rs",
+      "committed_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "root_tree_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_store.rs",
+      "committed_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "root_tree_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "committed_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "root_tree_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "committed_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "root_tree_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/extension.rs",
+      "committed_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "root_tree_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/host_production_extensions.rs",
+      "committed_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+      "root_tree_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "committed_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "root_tree_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "committed_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "root_tree_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_store_contract.rs",
+      "committed_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "root_tree_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "committed_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "root_tree_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "committed_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "root_tree_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "committed_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "root_tree_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "committed_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "root_tree_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "committed_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "root_tree_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "committed_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "root_tree_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "committed_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "root_tree_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "committed_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "root_tree_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "committed_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "root_tree_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/media_mime.rs",
+      "committed_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "root_tree_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "committed_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "root_tree_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "committed_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "root_tree_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/gateway_protocol.rs",
+      "committed_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "root_tree_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/host_gateway_api.rs",
+      "committed_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "root_tree_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "committed_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "root_tree_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_reference_contract.rs",
+      "committed_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "root_tree_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "committed_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "root_tree_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "committed_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "root_tree_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "committed_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "root_tree_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "committed_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "root_tree_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "committed_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "root_tree_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "committed_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "root_tree_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "committed_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "root_tree_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "committed_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "root_tree_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "committed_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "root_tree_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "committed_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "root_tree_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "committed_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "root_tree_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "committed_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "root_tree_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "committed_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "root_tree_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    },
+    {
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "committed_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "root_tree_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "committed_matches_exact_H": true,
+      "normalized_worktree_matches": true,
+      "before_after_unchanged": true
+    }
+  ],
+  "executions": [
+    {
+      "case": "cleanup-owner",
+      "log": "cleanup-owner.log",
+      "sha256": "f914dfef255db4cbb8e9b1138c28cac37883de4809ef0a142d3c3e413cf60997",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 8,
+      "raw_positive_count": 8,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "8",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "cleanup-consumers",
+      "log": "cleanup-consumers.log",
+      "sha256": "d4a0cd3d76ab43a94374672dcdbcf33c9e66b5ab6ca8409674745fc6463e6d0b",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 16,
+      "raw_positive_count": 16,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "16",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "html-policy",
+      "log": "html-policy.log",
+      "sha256": "3195f8198f5d35da3a826621959ec5c56d44407804813db91f7635253667eeaa",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 9,
+      "raw_positive_count": 9,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "9",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "host-read-format",
+      "log": "host-read-format.log",
+      "sha256": "8cbc45e9e3fc2c84b5c9f059d506c10c8c004ba2b75a9a6016b39f7aeb683aba",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 1,
+      "raw_positive_count": 1,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "file-url-admission",
+      "log": "file-url-admission.log",
+      "sha256": "609d30187a0708105fb309d2679fcd6d4615eb03d13e1f338f634fd363905ea9",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 6,
+      "raw_positive_count": 6,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "6",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "explicit-html-consumers",
+      "log": "explicit-html-consumers.log",
+      "sha256": "11c0c2eda86ce4c9e5e370c6740527faa8317bacea8069bd3991c100ccb7bd09",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 26,
+      "raw_positive_count": 26,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "26",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "image-probe-consumers",
+      "log": "image-probe-consumers.log",
+      "sha256": "d96433cb17a5d22cc77da8c0d1b10e8129d00e0587f8309d51390013d3e16093",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 16,
+      "raw_positive_count": 16,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "16",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "bounded-reader-owner",
+      "log": "bounded-reader-owner.log",
+      "sha256": "2842f65c759f2303ec941be590d1295bfa4ffde56a2cdb0ee5638cc6d5495e6a",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 8,
+      "raw_positive_count": 8,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "8",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "bounded-reader-public",
+      "log": "bounded-reader-public.log",
+      "sha256": "b4f8c738f16fc3c4db84ba30541eb081fb029534b1d59afc2564c7fce56b156c",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 17,
+      "raw_positive_count": 17,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "17",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "bounded-reader-box-consumer",
+      "log": "bounded-reader-box-consumer.log",
+      "sha256": "ce5a979ae50dbe8e18bd4117b5683a78a02341243f57ec5518c57ecebc627d20",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 1,
+      "raw_positive_count": 1,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "bounded-reader-image-consumer",
+      "log": "bounded-reader-image-consumer.log",
+      "sha256": "b77e15c6688357c6f1f7ae7d27c065cdffd5970e2a2a9bdc9cda00154ba12fac",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 1,
+      "raw_positive_count": 1,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "bounded-reader-channel-consumers",
+      "log": "bounded-reader-channel-consumers.log",
+      "sha256": "cd9e42a10575f4889ece5c9d0056eba8d16ded0478665c647bf21b47ba47c4b5",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 8,
+      "raw_positive_count": 8,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "8",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "local-file-url-owner",
+      "log": "local-file-url-owner.log",
+      "sha256": "fb9cea1198be7ef4ace294bb970f8bca635847dffd32fc0634e84f3570ff161f",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 11,
+      "raw_positive_count": 11,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "11",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "file-context-consumers",
+      "log": "file-context-consumers.log",
+      "sha256": "2518e3668b1a3c44783679443dfaf65a7e1060ab245b53e09f0f577d9e210e84",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 10,
+      "raw_positive_count": 10,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "10",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "send-message-consumers",
+      "log": "send-message-consumers.log",
+      "sha256": "faea61809fb5da5768ef8bd13a1fdbbf329a3de9c05f1f9c318a83e3977d7c52",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 17,
+      "raw_positive_count": 17,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "17",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    },
+    {
+      "case": "agent-management-consumers",
+      "log": "agent-management-consumers.log",
+      "sha256": "1b6ead60df9831c515c90d0ea6c33c64283a24f313467ec586425db8eb031d6e",
+      "sha256_matches_receipt": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "required_count": 3,
+      "raw_positive_count": 3,
+      "each_required_exactly_once": true,
+      "no_extra_positive": true,
+      "raw_summaries": [
+        [
+          "ok",
+          "3",
+          "0",
+          "0"
+        ]
+      ],
+      "raw_summary_matches_exact_selection": true
+    }
+  ],
+  "raw_positive_total": 158,
+  "scope": "Windows native media/LFA only; MSU and actual App execution are excluded. Renderer failure and queued/in-progress jobs retain separate verdicts."
+}

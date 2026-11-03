@@ -1,0 +1,33 @@
+{
+  "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "run": 41576543683,
+  "attempt": 1,
+  "job": 125721250552,
+  "status": "in_progress",
+  "conclusion": null,
+  "steps": [
+    {
+      "name": "Check and execute the actual Automation, Settings and channel App owners on Linux",
+      "status": "completed",
+      "conclusion": "failure",
+      "number": 19,
+      "started_at": "2026-11-03T04:30:13Z",
+      "completed_at": "2026-11-03T04:34:40Z"
+    },
+    {
+      "name": "Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache",
+      "status": "in_progress",
+      "conclusion": null,
+      "number": 21,
+      "started_at": "2026-11-03T04:34:40Z",
+      "completed_at": null
+    }
+  ],
+  "available_log_characters": 4256341,
+  "available_log_tail": [
+    "2026-11-03T04:28:55.3661480Z         \"inbound_append_old_worker_cannot_update_or_clear_replacement_owner_with_same_agent_and_payload\",",
+    "2026-11-03T04:28:55.3661689Z         \"inbound_append_pause_and_binding_without_entries_survive_later_wake\",",
+    ""
+  ],
+  "interpretation": "App step failure is reported by exact-attempt job metadata; the current decoded job log stops earlier within the portable receipt. This partial read supplies no App compilation/test cause. Do not infer a passing LFA App result or rerun blindly."
+}

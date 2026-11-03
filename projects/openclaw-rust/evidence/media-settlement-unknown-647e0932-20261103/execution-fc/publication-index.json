@@ -1,0 +1,481 @@
+{
+  "subject_commit": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "source_run": 41582614099,
+  "runtime_run": 41582614116,
+  "attempt": 1,
+  "cutoff": "2026-11-03 05:19:39 UTC",
+  "files": [
+    {
+      "path": "initial-report.md",
+      "original_scratch_path": "media-fc-ci-report.md",
+      "bytes": 14596,
+      "sha256": "73ea2bd88e5911715faa3ffec33f3ae7d75219f238ca457c2e755182695ce0bf"
+    },
+    {
+      "path": "root-linux-input-binding.json",
+      "original_scratch_path": "media-fc-root-native-input-binding.json",
+      "bytes": 39773,
+      "sha256": "11b369cfa57a7cecc9513ab7ee631d3a977c0ba87b7215c1a1d0ab3431078fb7"
+    },
+    {
+      "path": "assessment.json",
+      "original_scratch_path": "media-fc-ci/assessment.json",
+      "bytes": 4914,
+      "sha256": "2494f16498240c150de0a5df9446b554408da70a9eea969e0092ff9ae1090dc7"
+    },
+    {
+      "path": "linux-media-binding.json",
+      "original_scratch_path": "media-fc-ci/linux-media-binding.json",
+      "bytes": 61178,
+      "sha256": "890f37db1a6876462ad83f7ecb4d48481db010bd481711ee4937f699cff1ba95"
+    },
+    {
+      "path": "inputs/source-receipt-input-index.json",
+      "original_scratch_path": "media-fc-ci/inputs/source-receipt-input-index.json",
+      "bytes": 14540,
+      "sha256": "96fca0e925fc0d9910fc832e8b72cb1eceb57be346e2ab0cb7f4d4587e355a85"
+    },
+    {
+      "path": "inputs/source-dependency-root-binding.json",
+      "original_scratch_path": "media-fc-ci/inputs/source-dependency-root-binding.json",
+      "bytes": 3730,
+      "sha256": "72b7b018c255a1fb37ab4be8580ba1aece50f14df468350957bc6f9bb7a01b55"
+    },
+    {
+      "path": "logs/source-authority-job-125740666138.log",
+      "original_scratch_path": "media-fc-ci/logs/source-authority-job-125740666138.log",
+      "bytes": 31507,
+      "sha256": "278f277797722bf9f631ab2d89bbf65f7b86ea80abfac1ee9417a3b963be809a"
+    },
+    {
+      "path": "logs/persist-inventory-job-125741350050.log",
+      "original_scratch_path": "media-fc-ci/logs/persist-inventory-job-125741350050.log",
+      "bytes": 21389,
+      "sha256": "38ac9c41a258584e674bd7f99ccf3384b5632916085b5c2cfc7d7a503d9c43f4"
+    },
+    {
+      "path": "artifacts/source-authority-13206770678-manifest.json",
+      "original_scratch_path": "media-fc-ci/artifacts/source-authority-13206770678-manifest.json",
+      "bytes": 1205,
+      "sha256": "f3bc654fcbb5a52e04ac34c8f0e38a55e5235f2fecc21db3c76b7348d5cff1ab"
+    },
+    {
+      "path": "artifacts/linux-media-13206394654-manifest.json",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654-manifest.json",
+      "bytes": 3319,
+      "sha256": "8c750babd78f9439832560078961b44022866eb55bf7ed3f14db805dce3e89d6"
+    },
+    {
+      "path": "api/exact-commit.json",
+      "original_scratch_path": "media-fc-ci/api/exact-commit.json",
+      "bytes": 2042,
+      "sha256": "017dfa64ff9c35536b59056149a32b7c68c532352d69ca97754fe32571998e9e"
+    },
+    {
+      "path": "api/source-run-01.json",
+      "original_scratch_path": "media-fc-ci/api/source-run-01.json",
+      "bytes": 13277,
+      "sha256": "6efa7de8e01682f8ad0d53742dab44a91feb9d92727d28f1cbd561fdbac65911"
+    },
+    {
+      "path": "api/source-jobs-01.json",
+      "original_scratch_path": "media-fc-ci/api/source-jobs-01.json",
+      "bytes": 6510,
+      "sha256": "621d4239e82bc8607e31824f7f3dd64f0ac4655f75963be1513fd361baa1fbfe"
+    },
+    {
+      "path": "api/source-artifacts-01.json",
+      "original_scratch_path": "media-fc-ci/api/source-artifacts-01.json",
+      "bytes": 809,
+      "sha256": "7c0ab81c6e1a84f833810866bd87508cc8a82ebcd11ae211ec9e802bfd6e263a"
+    },
+    {
+      "path": "api/runtime-run-03.json",
+      "original_scratch_path": "media-fc-ci/api/runtime-run-03.json",
+      "bytes": 13269,
+      "sha256": "cc04f7744783be54b49c30f83ec12ba7f6bd32484ecfc046cbb2c217be1c1f00"
+    },
+    {
+      "path": "api/runtime-jobs-03.json",
+      "original_scratch_path": "media-fc-ci/api/runtime-jobs-03.json",
+      "bytes": 19563,
+      "sha256": "efea7b50ff6e86bf6103c74c9ea69538b55813abdeb04d2a267713d16e6d94f2"
+    },
+    {
+      "path": "api/runtime-artifacts-03.json",
+      "original_scratch_path": "media-fc-ci/api/runtime-artifacts-03.json",
+      "bytes": 3957,
+      "sha256": "c893732ab8690c5b842908f36704c329b256aa287de988014c183f547086d16f"
+    },
+    {
+      "path": "linux-media/agent-management-consumers.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/agent-management-consumers.log",
+      "bytes": 27684,
+      "sha256": "649819ead1bf27898ae96653a2d009b68bf45731c334883a2f48ab86a75f3bf8"
+    },
+    {
+      "path": "linux-media/bounded-reader-box-consumer.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/bounded-reader-box-consumer.log",
+      "bytes": 27537,
+      "sha256": "2de93273b872865db9f2296f1e2d4951f0a8b62f05b95badcdcbe44c2a5776ee"
+    },
+    {
+      "path": "linux-media/bounded-reader-channel-consumers.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/bounded-reader-channel-consumers.log",
+      "bytes": 27941,
+      "sha256": "933f180aa52f1873cd320a278784b9c6765474664abba2bf08f97ab36c10fc88"
+    },
+    {
+      "path": "linux-media/bounded-reader-image-consumer.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/bounded-reader-image-consumer.log",
+      "bytes": 27425,
+      "sha256": "6e2019e7300ad6b2c1be2062880ccc72fe10f6f35b0a129d9df79e585f142e56"
+    },
+    {
+      "path": "linux-media/bounded-reader-owner.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/bounded-reader-owner.log",
+      "bytes": 27944,
+      "sha256": "48934683456737653050591b0845bc8aaf564e90122bbd1202112e5290ca76ce"
+    },
+    {
+      "path": "linux-media/bounded-reader-public.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/bounded-reader-public.log",
+      "bytes": 29905,
+      "sha256": "5f8cb552517315342fc999fbbf26f7d74f7dd3aa12e986155229b77026f21a47"
+    },
+    {
+      "path": "linux-media/cleanup-consumers.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/cleanup-consumers.log",
+      "bytes": 28639,
+      "sha256": "859b26348bd9f691a280225f62a256b27f4843157cf762165249df32761442b5"
+    },
+    {
+      "path": "linux-media/cleanup-owner.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/cleanup-owner.log",
+      "bytes": 25578,
+      "sha256": "7f797e7246d9a58094530b8196b7c32085f40013d1b901f2095fb702e663fb65"
+    },
+    {
+      "path": "linux-media/explicit-html-consumers.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/explicit-html-consumers.log",
+      "bytes": 29433,
+      "sha256": "0dda6522a6f2b619d4f6834b6991ec60c8e5ccd24c6c274076ef47037a15861c"
+    },
+    {
+      "path": "linux-media/file-context-consumers.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/file-context-consumers.log",
+      "bytes": 28105,
+      "sha256": "6f068d90a0c6567cc02ee1ececb114b8c0790685af44dc68dbd0283d8665a788"
+    },
+    {
+      "path": "linux-media/file-url-admission.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/file-url-admission.log",
+      "bytes": 25410,
+      "sha256": "e2069d0d9042182c5899102e8cf18470c146f28d74dffd325d26f44479985e61"
+    },
+    {
+      "path": "linux-media/host-read-format.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/host-read-format.log",
+      "bytes": 27540,
+      "sha256": "4e3976dc6a0c926a28e97dca98eba413bac223ef8e78244afc0f34b811b3d392"
+    },
+    {
+      "path": "linux-media/html-policy.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/html-policy.log",
+      "bytes": 28200,
+      "sha256": "94600899674086f22e6acb53b4e3921539eb2106c1a4cda6cd6cc994b6b84276"
+    },
+    {
+      "path": "linux-media/image-probe-consumers.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/image-probe-consumers.log",
+      "bytes": 28484,
+      "sha256": "465e213c6d1856ab5bc754462bf2595d302c1f6bfe307e3e7b62a4ea063e8764"
+    },
+    {
+      "path": "linux-media/local-file-url-owner.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/local-file-url-owner.log",
+      "bytes": 28096,
+      "sha256": "766a6cb6c31b4eb06543c4b881cc7a89a2791d653956e068bec5aae3b951d199"
+    },
+    {
+      "path": "linux-media/media-settlement-owner.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/media-settlement-owner.log",
+      "bytes": 27140,
+      "sha256": "84fd7774a9434c2039cc87ebf046b4c196141907d13519d4b1d0eb208e09393e"
+    },
+    {
+      "path": "linux-media/outgoing-media-custody.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/outgoing-media-custody.log",
+      "bytes": 25266,
+      "sha256": "d6bab81e2621eb1e88f935906d07c3f640d1a2a63e2e8d48ad436dcf8ccebac5"
+    },
+    {
+      "path": "linux-media/receipt.json",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/receipt.json",
+      "bytes": 120167,
+      "sha256": "63638144c755c522b7f90b29cd697a292fef1c6bf61e067cad25c9b0ac6995d0"
+    },
+    {
+      "path": "linux-media/send-message-consumers.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/send-message-consumers.log",
+      "bytes": 28957,
+      "sha256": "e0fa213edf35dbf4bb7b863afb0aa32fa70425aa40c423f3eba3b47e8cbc626a"
+    },
+    {
+      "path": "linux-media/transaction-commit-owners.log",
+      "original_scratch_path": "media-fc-ci/artifacts/linux-media-13206394654/transaction-commit-owners.log",
+      "bytes": 29584,
+      "sha256": "cb1c95773d2a99f893473b160fe8680779ac021a2bbfb7367ed4b4cd7ea54112"
+    },
+    {
+      "path": "source-artifact/authority-summary.json",
+      "original_scratch_path": "media-fc-ci/artifacts/source-authority-13206770678/authority-summary.json",
+      "bytes": 607,
+      "sha256": "a6f8d9d5e72fa5092ef8b554d4763a869e6b330dcc3eb9f1a033dd54d30bfdd5"
+    },
+    {
+      "path": "source-artifact/p0-structural-receipt.json",
+      "original_scratch_path": "media-fc-ci/artifacts/source-authority-13206770678/p0-structural-receipt.json",
+      "bytes": 5080,
+      "sha256": "7c2afdfc415378a964791a9d04fed97a5f89365ae78e6433ddaaeb2ca8e9bd5c"
+    },
+    {
+      "path": "source-artifact/dependency-root-inputs.tsv",
+      "original_scratch_path": "media-fc-ci/artifacts/source-authority-13206770678/dependency-root-inputs.tsv",
+      "bytes": 171,
+      "sha256": "dd26a8316202da93dbca27ab63cd046c365ac2db499de18af844e51f654806f4"
+    },
+    {
+      "path": "source-artifact/lfs-pointer-candidates.count",
+      "original_scratch_path": "media-fc-ci/artifacts/source-authority-13206770678/lfs-pointer-candidates.count",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "source-artifact/lfs-pointer-candidates.txt",
+      "original_scratch_path": "media-fc-ci/artifacts/source-authority-13206770678/lfs-pointer-candidates.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-artifact/upstream-recursive-inventory.sha256",
+      "original_scratch_path": "media-fc-ci/artifacts/source-authority-13206770678/upstream-recursive-inventory.sha256",
+      "bytes": 65,
+      "sha256": "4acc8ff9da82505ebd5006c8038c46324893975b9a87ef517ee727b94bfc5823"
+    },
+    {
+      "path": "windows-report.md",
+      "original_scratch_path": "media-fc-ci-windows-report.md",
+      "bytes": 9576,
+      "sha256": "97b53c154df4efbafaed595416b502ac5c9311b5a76d603e9be3ab2524c4bf97"
+    },
+    {
+      "path": "root-windows-input-binding.json",
+      "original_scratch_path": "media-fc-root-windows-input-binding.json",
+      "bytes": 43434,
+      "sha256": "49c71aff03d3d08fa7176755c681f481ac0cba25b59b1d9e7bd65bab4667a317"
+    },
+    {
+      "path": "root-generated-input-binding.json",
+      "original_scratch_path": "media-fc-root-generated-input-binding.json",
+      "bytes": 1923,
+      "sha256": "894c12aad413f3c8cd50e0d23d92e86c2fa758f5125ebf795d361469784eabca"
+    },
+    {
+      "path": "windows-assessment.json",
+      "original_scratch_path": "media-fc-ci/windows-assessment.json",
+      "bytes": 3002,
+      "sha256": "7e8be1b675500e45710bea1d82bc37cff54e2fc6e25027f27396284ea2839435"
+    },
+    {
+      "path": "windows-media-binding.json",
+      "original_scratch_path": "media-fc-ci/windows-media-binding.json",
+      "bytes": 79997,
+      "sha256": "c50622bbd41775f6ab44fdc8d58962cb620fa4174cc9c5a6d3543cddc40980c2"
+    },
+    {
+      "path": "windows-media-13206860961-manifest.json",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961-manifest.json",
+      "bytes": 4103,
+      "sha256": "7194aeef97ae88082ad9aeabc4896651101847738717a8dc3d4ae09ccf487aa4"
+    },
+    {
+      "path": "windows-job-record.json",
+      "original_scratch_path": "media-fc-ci/windows-job-record.json",
+      "bytes": 3709,
+      "sha256": "33ff294d130c91a10f11a0d7ee45e8b13f52e2b4088d84818fe4ff9c2e024238"
+    },
+    {
+      "path": "windows-runtime-jobs-api.json",
+      "original_scratch_path": "media-fc-ci/windows-runtime-jobs-api.json",
+      "bytes": 19888,
+      "sha256": "5529a2c6cae6a433e9c6216a79de5fb83e11fd121481ad734356a4ae3e2e034d"
+    },
+    {
+      "path": "windows-artifacts-api.json",
+      "original_scratch_path": "media-fc-ci/windows-artifacts-api.json",
+      "bytes": 4756,
+      "sha256": "30da97f30fd8fab48ceb70e9a601f491894cc4978153e66e166a8094293087c7"
+    },
+    {
+      "path": "windows-completion-jobs-api.json",
+      "original_scratch_path": "media-fc-ci/windows-completion-jobs-api.json",
+      "bytes": 19888,
+      "sha256": "5529a2c6cae6a433e9c6216a79de5fb83e11fd121481ad734356a4ae3e2e034d"
+    },
+    {
+      "path": "windows-completion-artifacts-api.json",
+      "original_scratch_path": "media-fc-ci/windows-completion-artifacts-api.json",
+      "bytes": 4756,
+      "sha256": "30da97f30fd8fab48ceb70e9a601f491894cc4978153e66e166a8094293087c7"
+    },
+    {
+      "path": "windows-job-direct-fetch-error.json",
+      "original_scratch_path": "media-fc-ci/windows-job-direct-fetch-error.json",
+      "bytes": 344,
+      "sha256": "052cc04929d69c7e00f9dd60aa2154fa1fdbe8f40e1738cbca1bb1af3d4dab89"
+    },
+    {
+      "path": "windows-media/agent-management-consumers.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/agent-management-consumers.log",
+      "bytes": 28939,
+      "sha256": "bf9d6c27ffeb40d9fd5b29ba337f4673a615f3bc48f7d23630c07d2274901450"
+    },
+    {
+      "path": "windows-media/bounded-reader-box-consumer.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/bounded-reader-box-consumer.log",
+      "bytes": 28792,
+      "sha256": "596e99ec2200a104eb3c57a3417eeb8c507a225b539dde0f1f8d50b1eec97e4e"
+    },
+    {
+      "path": "windows-media/bounded-reader-channel-consumers.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/bounded-reader-channel-consumers.log",
+      "bytes": 29269,
+      "sha256": "c0eabe9c92f7c1469c863db8d4c77e8237492c937d840305ea411223ab8dde56"
+    },
+    {
+      "path": "windows-media/bounded-reader-image-consumer.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/bounded-reader-image-consumer.log",
+      "bytes": 28693,
+      "sha256": "c080edacfdbe4acf06e1018398080011369828a04ef18b2ae16d6fdb64cc3045"
+    },
+    {
+      "path": "windows-media/bounded-reader-owner.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/bounded-reader-owner.log",
+      "bytes": 30237,
+      "sha256": "a20d0c932c89e70bb8e3acd382a1d9f5d444ebef808bbe9418f04861f575ba49"
+    },
+    {
+      "path": "windows-media/bounded-reader-public.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/bounded-reader-public.log",
+      "bytes": 31160,
+      "sha256": "cfa59b6ccf002b871107d5b546c0b3f0a18cb41df34d7efef70f9d863eebdb1f"
+    },
+    {
+      "path": "windows-media/cleanup-consumers.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/cleanup-consumers.log",
+      "bytes": 29801,
+      "sha256": "75d5be662d79e6cb02c720dc2138615d7d92ca8066ad6bcc09bfdcc8c34ffbba"
+    },
+    {
+      "path": "windows-media/cleanup-owner.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/cleanup-owner.log",
+      "bytes": 29204,
+      "sha256": "3f852bb876a42f5ad1cf05fd5acbfa3b7973609510cf6f8f4c2ab0f3982c0ae2"
+    },
+    {
+      "path": "windows-media/explicit-html-consumers.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/explicit-html-consumers.log",
+      "bytes": 30548,
+      "sha256": "3034df0a347ae23691eed0f4abc60375d7d5c6560cca72b71ba3de2a8e7fed08"
+    },
+    {
+      "path": "windows-media/file-context-consumers.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/file-context-consumers.log",
+      "bytes": 29374,
+      "sha256": "df102a4ea70884034b8e0c7e885777b36acedf1d7d2c7dcccb178f526309c9e6"
+    },
+    {
+      "path": "windows-media/file-url-admission.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/file-url-admission.log",
+      "bytes": 29042,
+      "sha256": "058afe34b660991b882ab75727ac23e2b0f128ef33b50cce850f6a2688343980"
+    },
+    {
+      "path": "windows-media/host-read-format.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/host-read-format.log",
+      "bytes": 28795,
+      "sha256": "480dcd41211396559955756e6cd2f4c1699e1ae412f57adef91310ac536e0337"
+    },
+    {
+      "path": "windows-media/html-policy.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/html-policy.log",
+      "bytes": 29247,
+      "sha256": "722ee15e378aa6539604bb30f41755392e642d7669b9ad1fe35f3c10572a01dc"
+    },
+    {
+      "path": "windows-media/image-probe-consumers.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/image-probe-consumers.log",
+      "bytes": 29739,
+      "sha256": "7bf4d06c4ae24d05221e0edc3456435c1ccf2046a0f1b401ec878612224f0263"
+    },
+    {
+      "path": "windows-media/local-file-url-owner.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/local-file-url-owner.log",
+      "bytes": 29427,
+      "sha256": "b53149b1f7062d0841845e05d0f1ac0dd8bfc887e312a334df9d2b9a3dd8033a"
+    },
+    {
+      "path": "windows-media/media-settlement-owner.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/media-settlement-owner.log",
+      "bytes": 30601,
+      "sha256": "59f66a1f5520090a768de665dbc959119ae852346d30fc7144366efd5080a471"
+    },
+    {
+      "path": "windows-media/outgoing-media-custody.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/outgoing-media-custody.log",
+      "bytes": 28779,
+      "sha256": "3b57637d5bc3afcd9d7d6851b796c6c688f5a11c96053bd8e09937a30afd265e"
+    },
+    {
+      "path": "windows-media/receipt.json",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/receipt.json",
+      "bytes": 121219,
+      "sha256": "0cb5fff9310a3001208309099ee5d09989bcf0b51c87a5323695bb4d2a918a69"
+    },
+    {
+      "path": "windows-media/send-message-consumers.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/send-message-consumers.log",
+      "bytes": 30212,
+      "sha256": "e653b3bdc59e9a28cff4d701173a8bbf02ee8f69e647a9105d374dc866098cd1"
+    },
+    {
+      "path": "windows-media/transaction-commit-owners.log",
+      "original_scratch_path": "media-fc-ci/windows-media-13206860961/transaction-commit-owners.log",
+      "bytes": 30839,
+      "sha256": "18b59f18e7d6e59e9bc52e8873bd95776dd9a8ca56ef59393033cc86083525e1"
+    }
+  ],
+  "scope": "This publication index describes the copied subset. Original reports/manifests retain their original full-collection paths and claims. No report is rewritten. Native receipt plus all19 rawlogs and source complete decoded job logs retained.",
+  "omissions": [
+    "Original artifact ZIPs: exact IDs/API digest/byte counts and member manifests retained; original complete archives remain at GitHub artifact13206770678 and13206394654.",
+    "Duplicate source snapshots/API blob envelopes and exact-tree JSON; exact Git identities and receipt binding table retained.",
+    "Large generated canonical inventory and ls-tree.z members; exact artifact member hashes and canonical digest retained; Actions carrier14faff5d9605c99df1494303f1aa0ce31bcfd420 preserves complete committed inventory shards.",
+    "Windows archive artifact13206860961: exact ZIP SHA256daeacc2c6573bf636c3a5c1a9ab59a84d84115cc9072a6b5ca01dd4758ba18cc and148489bytes preserved in Windows metadata/manifest; raw receipt and all19logs are included byte-for-byte."
+  ],
+  "limits": "Source structural pass is not recursive closure/final review. Linux210 andWindows205 native results belong only to Hfc. ActualApp andmacOS remain pending at the latest named observation. No R5 execution result is claimed.",
+  "observations": [
+    {
+      "scope": "source and Linux",
+      "at": "2026-11-03 05:19:39 UTC",
+      "report": "initial-report.md"
+    },
+    {
+      "scope": "Windows completed artifact, App/macOS still pending",
+      "at": "2026-11-03 05:23:43 UTC",
+      "report": "windows-report.md"
+    }
+  ]
+}

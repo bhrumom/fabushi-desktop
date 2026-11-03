@@ -1,0 +1,33 @@
+{
+  "archive_read_only_source": "/tmp/fabushi-647e-pairing/media-fixed-dependency-closure/archives/fs-safe-source-67dee5ef4c03655a2aa98893539475ad041cb61b.tar.gz",
+  "bytes": 3269313,
+  "sha256": "6a8b657cc3da40d3092974969a1aa39061bcf38d41fd86467f296128342f156b",
+  "source_commit": "67dee5ef4c03655a2aa98893539475ad041cb61b",
+  "members": [
+    {
+      "name": "fs-safe-67dee5ef4c03655a2aa98893539475ad041cb61b/package.json",
+      "bytes": 7327,
+      "sha256": "792e20cdae1e959a5f2a7de5122f46ef8b498bd3854c46375e08dce0beb3418f",
+      "matches_pinned_github_raw_capture": true
+    },
+    {
+      "name": "fs-safe-67dee5ef4c03655a2aa98893539475ad041cb61b/LICENSE",
+      "bytes": 1137,
+      "sha256": "8d703995c48aeb3726ab83f111a10ee696835e096802ee0329ac50216ab9434e",
+      "matches_pinned_github_raw_capture": true
+    },
+    {
+      "name": "fs-safe-67dee5ef4c03655a2aa98893539475ad041cb61b/src/secure-temp-dir.ts",
+      "bytes": 11014,
+      "sha256": "b9b6d815a615be0e6607e4c7e2783935f0ba596d13438449344f9e4b8e4e205d",
+      "matches_pinned_github_raw_capture": true
+    },
+    {
+      "name": "fs-safe-67dee5ef4c03655a2aa98893539475ad041cb61b/src/secure-temp-repair.ts",
+      "bytes": 5860,
+      "sha256": "f9f315ce5d5f71e88ddd8743b23a37cc7e71e71bc0e00c25beda2996bf6817ee",
+      "matches_pinned_github_raw_capture": true
+    }
+  ],
+  "attestation_signatures_verified": false
+}

@@ -1,0 +1,36 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "run_id": 41582614116,
+  "attempt": 1,
+  "job_id": 125740667771,
+  "artifact": 13207615800,
+  "artifact_sha256": "67e6c96370531240a7d079a500b77860857f1bd144a6e62ab8d74d0ffa79b3c5",
+  "made_before_edit": true,
+  "decisions": [
+    {
+      "id": "MSU-ROOT-R6-001",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "original_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "failure": "actual link-preview App test compilation exits101 E0609 at805: PersistedSendContext has no duplicate field; therefore App tests did not execute",
+      "owner_evidence": "RoutedSendAcceptance in production_runtime.rs owns duplicate separately from context; accept_routed_send returns duplicate=true for coalesced/replay and false for new dispatch. PersistedSendContext owns accepted_durably. Exact send_pipeline blob12f58e2923cd909b9564b99e0a6393955a0945e0 read in full.",
+      "fix": "Keep the durable accepted and nonduplicate assertions, reading accepted.context.accepted_durably and accepted.duplicate. Preserve every real DB/Runner/fault/event/recovery assertion."
+    },
+    {
+      "id": "MSU-ROOT-R6-002",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "path": "source/host/tests/background_wakes_production_contract.rs",
+      "original_blob": "2da45cf1dbca8a80ef341f4624ea877b1629d9f9",
+      "failure": "portable integration target47passed1failed at2930 expects old for cleanup_error in custody.rollback(); adjacent old log literal is also obsolete",
+      "owner_evidence": "Exact App main blobab3cd46cfb869db19d12f2e1ee77a7c18e7b52df: actual abort1087–1092 obtains existing entry and per-entry try-lock then delegates ordinary=false to rollback_pending_media856–896. The helper allows Collecting or confirmed precommit refusal, retains other phases, reports each returned cleanup error and refuses fence release after cleanup failure.",
+      "fix": "Replace stale whole-file literals with bounded existing-owner/helper/abort checks preserving that same cleanup and diagnostic responsibility, including noncreation/try-lock/ordinary false, phase guard, returned errors and release ordering. Keep all unrelated channel assertions and all48 named tests."
+    }
+  ],
+  "prior_evidence": "Hfc source structural and native Linux210/Windows205, DB13/COMMIT27 remain bound to their actual inputs. No MSU8/LFA6/SGF3/cron5 or link-preview App pass is implied.",
+  "campaign_state": "The prepared R5 execution decision is suspended before any triggering publication. Add these causal corrected inputs, freeze a new source candidate, obtain focused independent reviews and update the independent directness/budget assessment before one newH campaign."
+}

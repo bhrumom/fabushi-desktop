@@ -1,0 +1,184 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "reviewed_snapshot_tree": "69f77b9dad3f6e42a7d7c53aa2df8f67c1f872a1",
+  "published_unverified_checkpoint": "71b039ae860c45e982dfbc8b1f401143d49d2454",
+  "decisions": [
+    {
+      "id": "MSU-ROOT-R1-001",
+      "origin": "root complete ledger/RTM diff and published tree readback",
+      "decision": "FIX",
+      "severity": "blocking-evidence-reference",
+      "finding": "The new responsibility and four RTM rows refer to media-settlement-fixed-u-contract.md and media-settlement-unknown-current-audit.md, but the published original report names are fixed-u-contract.md and current-owner-audit.md. These references are not resolvable in the candidate tree.",
+      "rationale": "Bind the existing exact report bytes by their actual published paths; do not fabricate evidence or duplicate/rename historical reports to conceal the mismatch.",
+      "allowed_fix_paths": [
+        "projects/openclaw-rust/parity-ledger.json",
+        "projects/openclaw-rust/requirements-traceability-matrix.json"
+      ],
+      "fix_state": "authorized before edit; fresh focused review and new exact-H Actions required"
+    },
+    {
+      "id": "MSU-ROOT-R1-002",
+      "origin": "root read of existing DB notifications and supplemental bounded App source audit",
+      "decision": "FIX",
+      "severity": "nonblocking-contract-precision",
+      "finding": "The new MAC correction's publication sentence does not qualify App publication. Existing DB listeners still run synchronously after confirmed COMMIT and before the App-local terminal transition.",
+      "rationale": "Qualify this sentence to App publication, ACK and counting; preserve the lower-level owner behavior and do not claim a new global callback-order guarantee. This documentation correction accompanies the independently blocking evidence-reference fix; it does not start a fix round alone.",
+      "allowed_fix_paths": [
+        "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md"
+      ],
+      "fix_state": "authorized before edit; source-only clarification"
+    },
+    {
+      "id": "MSU-ROOT-R1-003",
+      "origin": "exact a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74 runtime run41576543683 attempt1, artifact13205207341 automation-app receipt and compiler diagnostics",
+      "decision": "FIX",
+      "severity": "blocking-test-build",
+      "finding": "The actual App shipping check exits0, but the test build exits101 before every App case: local_media_file_url_tests.rs lacks serde_json json/Value imports and passes an integer timestamp to the f64 set_window_focused API. All19 reported compiler errors are these two causes, which remain in the immutable R1 file.",
+      "rationale": "Add the explicit serde_json import and correct the fixture timestamp literal to1_000.0. Preserve every behavioral assertion and existing MSU custody observation change. This is a test implementation defect; it is not an environment failure or successful behavioral execution.",
+      "allowed_fix_paths": [
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
+      ],
+      "fix_state": "authorized before edit; fresh focused review and new exact-H App test build/execution required"
+    }
+  ],
+  "independent_reviews": [
+    {
+      "round": 1,
+      "lens": "general-security-lifetime",
+      "report": "media-settlement-r1-general.md",
+      "sha256": "9a3b5c360cb7fa24a889c4f97e6843c765159621070fad7e518e64828614d1d4",
+      "actual_model": "GPT-6 Astra Pro configured",
+      "actual_effort": "xhigh",
+      "terminal": "source-only blocked F1"
+    },
+    {
+      "round": 1,
+      "lens": "structure-reuse-performance",
+      "report": "media-settlement-r1-structure.md",
+      "sha256": "484b5377293a0c601f8dbd5c7b3d34b43d27362c65e7beaebfd60103082599fe",
+      "actual_model": "gpt-6.1-sol",
+      "actual_effort": "xhigh",
+      "terminal": "source-only blocked SRP-R1-01"
+    },
+    {
+      "round": 2,
+      "lens": "general-security-lifetime",
+      "report": "media-settlement-r2-general.md",
+      "sha256": "70e7d8416b6944c770528783540b2f4b661e86a251e89874188a0e09ab115ee5",
+      "actual_model": "GPT-6 Astra Pro configured",
+      "actual_effort": "xhigh",
+      "terminal": "approved source-only; zero findings"
+    },
+    {
+      "round": 2,
+      "lens": "structure-reuse-performance",
+      "report": "media-settlement-r2-structure.md",
+      "sha256": "1b4822edeff2ab7731e3e5269b90f5fc92d86329da860feea10bd6aa6d998555",
+      "actual_model": "gpt-6.1-sol",
+      "actual_effort": "xhigh",
+      "terminal": "approved source-only; zero findings"
+    }
+  ],
+  "validation": "Authorized next exact-H Actions campaign reuses the existing source/runtime workflows and caches; no local or htch executable validation. A2 failures retained with their original H; native positives remain scoped to A2.",
+  "review_synthesis": [
+    {
+      "finding": "F1 / SRP-R1-01",
+      "decision": "FIX",
+      "root_decision": "MSU-ROOT-R1-001",
+      "rationale": "Both independent frozen source reviews establish the same six unresolvable paths. Root had independently recorded FIX before edits and audited the intended original report bytes. Correct paths only; no verification/acceptance/global flag promotion.",
+      "state": "Applied in the four-path R2 immutable source delta; fresh focused review pending."
+    }
+  ],
+  "r2_fix_patch_sha256": "4d9d40a81134e67f5eaaf72e30ef150852bfafe6cde33beb475c30f9fcacf90a",
+  "r2_snapshot_tree": "9892b15758904c23f3888ba8af1b5e429f29b59f",
+  "fix_status": "Root decisions001,002,003 applied and independently re-reviewed in immutable R2; no assertion weakened or source verification/acceptance/global flag promoted.",
+  "r2_adjudication": {
+    "decision": "CONVERGED_SOURCE_ONLY",
+    "reviewed_tree": "9892b15758904c23f3888ba8af1b5e429f29b59f",
+    "root_read": "Both complete terminal reports read; all R1 findings map to pre-edit root FIX001. Root FIX002 and observed exact-A2 test-build FIX003 are in the complete four-path R2 delta. Both fresh focused reviewers found zero defects.",
+    "open_findings": [],
+    "limits": "No compilation, fault application, actual App case, compiled feature or full migration acceptance follows from these source approvals. Required new exact-H Actions remain pending."
+  },
+  "round3_integration": {
+    "candidate_tree": "4d3b9d9faa3dfa9bbeb4083bbc7c638283b14026",
+    "publication_parent": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+    "reports": [
+      {
+        "path": "media-settlement-r3-general.md",
+        "bytes": 23768,
+        "sha256": "c4895d98bec226cdb3f0f77c8e68eea7f3b90418cd65fc0f1f1347ec430d161b"
+      },
+      {
+        "path": "media-settlement-r3-structure.md",
+        "bytes": 15331,
+        "sha256": "f1e5d03ffcd75401c61fafd13aec1fc15dc3877d29476f10cd1a7f8e94b3b97e"
+      }
+    ],
+    "root_read": "Complete terminal reports read and both source-only verdicts accepted for the frozen five-path integration delta. No new findings.",
+    "verdict": "CONVERGED_SOURCE_ONLY",
+    "execution_limit": "H74 source/native failures are outside this integration delta; their failures remain failed. Corrective scope is separately recorded before editing. No review approval substitutes for Actions."
+  },
+  "round4_recovery": {
+    "candidate_tree": "46797d50cf4bd6841e78c6f4e1ba740fdff26102",
+    "publication_parent": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+    "reports": [
+      {
+        "path": "media-settlement-r4-general.md",
+        "bytes": 31568,
+        "sha256": "68fe761f277e82a2a0979c839fdd716e6ab96b163457efa05a13e0ee5b2bd641",
+        "lens": "general-security-lifetime",
+        "accepted_model": "GPT-6 Astra Pro configured",
+        "accepted_effort": "xhigh",
+        "verdict": "APPROVE_SOURCE_ONLY",
+        "root_read": "full"
+      },
+      {
+        "path": "media-settlement-r4-structure.md",
+        "bytes": 16849,
+        "sha256": "7e45450d050e71571a83d8e5d3e45eeb8c634a521616cd65c71128f0dba3f5dc",
+        "lens": "structure-reuse-performance",
+        "accepted_model": "gpt-6.1-sol",
+        "accepted_effort": "xhigh",
+        "verdict": "APPROVE_SOURCE_ONLY",
+        "root_read": "full"
+      }
+    ],
+    "verdict": "CONVERGED_SOURCE_ONLY",
+    "open_findings": [],
+    "root_read": "Both complete terminal reports read. No source findings. Source approvals remain exclusively bound to immutable R4; incoming37/fc integration is a separate reconciliation.",
+    "execution_limit": "No R4 runtime result; historical H74 failures retained. New exact candidate execution still required."
+  },
+  "round5_integration": {
+    "candidate_tree": "fc752f889ce0d402f6f5af9911d9777c7cab7999",
+    "publication_parent": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+    "manifest_sha256": "1a33405b8920f79a0f2967e0caa9aa00cfd8dcb0c0f25cb52cdd31a4bbe272f6",
+    "reports": [
+      {
+        "path": "media-settlement-r5-general.md",
+        "bytes": 17485,
+        "sha256": "5166154e6ca1bbca6176028c0b4b6582306cedd766cc19dea3526232eede036e",
+        "lens": "general-security-lifetime",
+        "accepted_model": "GPT-6 Astra Pro configured",
+        "accepted_effort": "xhigh",
+        "verdict": "APPROVE_SOURCE_ONLY",
+        "root_read": "full"
+      },
+      {
+        "path": "media-settlement-r5-structure.md",
+        "bytes": 22245,
+        "sha256": "2f78cfaba2272d6d99dc85d53e0da143de7c848006bbb9aedaa0f0473bcf116e",
+        "lens": "structure-reuse-performance",
+        "accepted_model": "gpt-6.1-sol",
+        "accepted_effort": "xhigh",
+        "verdict": "APPROVE_SOURCE_ONLY",
+        "root_read": "full"
+      }
+    ],
+    "root_read": "Both complete terminal reports read. The complete three-path publication and R4-to-R5 reconciliation have zero source findings. No new source edit is requested. Incoming f41 Automation/workflow component is separately reconciled; the R5 verdict is not rebound to that later workflow.",
+    "verdict": "CONVERGED_SOURCE_ONLY",
+    "open_findings": [],
+    "execution_limit": "Oracle c0162f99b896c00d0cd100ba59ad700eb01ad802 has not executed. Hfc results retain their original subject and input identities. App compiled feature observations, MSU8/LFA6/SGF3/cron5, macOS and final acceptance remain pending."
+  }
+}

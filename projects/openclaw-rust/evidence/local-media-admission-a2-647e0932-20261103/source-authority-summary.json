@@ -1,0 +1,13 @@
+{
+  "blob_entries_total": 62128,
+  "canonical_file_records": 62130,
+  "canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+  "gitlink_entries_total": 0,
+  "reason": "Tracked source enumeration is established; dependency/LFS/semantic responsibility closure remains open.",
+  "source_closure_ready": false,
+  "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "symlink_entries_total": 2,
+  "tracked_entries_total": 62130,
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+}

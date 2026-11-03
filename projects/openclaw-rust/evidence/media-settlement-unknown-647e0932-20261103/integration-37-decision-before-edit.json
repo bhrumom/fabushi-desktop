@@ -1,0 +1,61 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "decision": "PRESERVE_PUBLISHED_OWNER_INPUT_AND_WITHDRAW_DUPLICATE",
+  "recorded_before_edit": true,
+  "incoming": {
+    "incoming_commit": "37ffd42410d37013512e8efbf3bda5b549f3a4db",
+    "incoming_index_blob": "6905d89a058a59f09a2ec3f5b3b4afc6f751919d",
+    "root_unpublished_blob": "39aaaf5a9c25545c05184f451d4c1abcb4dad6fd",
+    "same_all_nonpending_fields": true,
+    "same_anchor": true,
+    "same_exact_pending_set": true,
+    "incoming": {
+      "from_canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+      "entries": [
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/gateway/agent-turn/agent-run-final-media.ts",
+          "blob_sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/gateway/agent-turn/agent-run-media.ts",
+          "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/infra/sqlite-worker-error.ts",
+          "blob_sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/gateway/managed-image-attachments.custody.ts",
+          "blob_sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf"
+        },
+        {
+          "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+          "path": "src/media/store.read-scope.ts",
+          "blob_sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5"
+        }
+      ]
+    }
+  },
+  "reason": "The existing branch has already published the exact same pending source-link contract, with independent reviews bound to its own exact blob. Preserve that file verbatim and omit our equivalent unpublished index write. Difference is only JSON key/record order; the consumer compares record sets. Do not reorder an existing accepted component to manufacture a change.",
+  "read_reports": [
+    {
+      "path": "projects/openclaw-rust/evidence/media-ci-recovery-647e0932-20261103/mapping-r1/security-review.md",
+      "blob": "58ed55ffb6740e8251d8c1d59f47d4b48cdb425f",
+      "verdict": "source-only APPROVE",
+      "root_read": "full"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-ci-recovery-647e0932-20261103/mapping-r1/structure-review.md",
+      "blob": "e957079aeca21febd80378b2c4fef5bf8f22c803",
+      "verdict": "source-only APPROVE",
+      "root_read": "full"
+    }
+  ],
+  "r4_scope": "R4 remains an immutable21-path review tree. Its20othercore blobs and3newrecoveryfiles stay unchanged. Final publication will explicitly bind the preserved index to37, not falsely claim it equals the R4 index bytes. All actual unpublished edits still require fresh R4 verdicts and exactH Actions.",
+  "execution": "No H37 or final-H Actions result claimed. H74 source failure remains failed."
+}

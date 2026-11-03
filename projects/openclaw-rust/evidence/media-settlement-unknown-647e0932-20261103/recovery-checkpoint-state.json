@@ -1,0 +1,13 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "state": "unverified recovery checkpoint",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "current_integration_parent": "9059d0c4493505851339ab228ec0d58a6023c904",
+  "checkpoint_scope": "Evidence and immutable source-review identities only; no production, shared schema, ledger, workflow or source-lock mutation. This evidence-only save uses skip ci and does not start the suspended new-input campaign.",
+  "completed": "R5 general/structure source-only reviews read and converged; H74 failed receipts preserved; Hfc source structural and native Linux210/Windows205 raw receipts and exact input bindings preserved; incoming14 materialization and f41/905 owner deltas preserved.",
+  "new_terminal_evidence": "HfcLinux failed portable source shape and actual App test compilation (nonexistent context.duplicate). ActualAutomationApp skipped; no App success. Full terminal artifact13207615800 is being preserved separately.",
+  "current_repair": "R6 Appfixture reads accepted.duplicate; shared abort wiring oracle and incoming905/R5 COMMIT assertion union are under implementation/review. New exact-H execution requires frozen merged inputs, fresh focused reviews and an updated independent exhaustion decision.",
+  "source_candidates": "R5immutable treefc752f889ce0d402f6f5af9911d9777c7cab7999 remains source-only; R6 has not been frozen or executed.",
+  "acceptance": "All global OCRM gates and eight completion flags remain unaccepted/false; actualApp/macOS/live ecosystem/platform acceptance and remaining source closure are open."
+}

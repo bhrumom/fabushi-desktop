@@ -1,0 +1,136 @@
+   Compiling block-padding v0.3.3
+   Compiling inout v0.1.4
+   Compiling cipher v0.4.4
+   Compiling cmov v0.5.4
+   Compiling ctutils v0.4.3
+   Compiling digest v0.11.3
+   Compiling zerocopy v0.8.63
+   Compiling ppv-lite86 v0.2.21
+   Compiling allocator-api2 v0.2.21
+   Compiling hashbrown v0.17.1
+   Compiling sha2 v0.11.1
+   Compiling mahayana-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-core)
+   Compiling time v0.3.55
+   Compiling chacha20 v0.9.1
+   Compiling num-integer v0.1.47
+   Compiling chacha20poly1305 v0.10.1
+   Compiling psl-types v2.0.11
+   Compiling publicsuffix v2.3.0
+   Compiling cookie v0.18.2
+   Compiling indexmap v2.14.2
+   Compiling cookie_store v0.22.1
+   Compiling num-iter v0.1.46
+   Compiling unic-langid-impl v0.9.6
+   Compiling unic-langid v0.9.6
+   Compiling reqwest v0.12.28
+   Compiling mahayana-platform-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-platform-core)
+   Compiling sha1 v0.11.0
+   Compiling rand_chacha v0.9.0
+   Compiling rand_chacha v0.3.1
+   Compiling pbkdf2 v0.12.2
+   Compiling aes v0.8.4
+   Compiling type-map v0.5.1
+   Compiling rand v0.8.8
+   Compiling rand v0.9.5
+   Compiling hmac v0.13.0
+   Compiling cpubits v0.1.1
+   Compiling libbz2-rs-sys v0.2.5
+   Compiling static_assertions v1.1.0
+   Compiling self_cell v1.3.0
+   Compiling self_cell v0.10.3
+   Compiling zvariant v4.2.0
+   Compiling bzip2 v0.6.1
+   Compiling aes v0.9.3
+   Compiling pbkdf2 v0.13.0
+   Compiling constant_time_eq v0.6.1
+   Compiling intl-memoizer v0.5.3
+   Compiling intl_pluralrules v7.0.2
+   Compiling fluent-langneg v0.13.1
+   Compiling num-bigint v0.4.8
+   Compiling lzma-rust2 v0.21.0
+   Compiling fluent-syntax v0.11.1
+   Compiling mahayana-host-protocol v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-host-protocol)
+   Compiling deflate64 v0.1.12
+   Compiling zip v9.0.3
+   Compiling tungstenite v0.30.0
+   Compiling fluent-bundle v0.15.3
+   Compiling num-rational v0.4.2
+   Compiling zbus_names v3.0.0
+   Compiling parking_lot_core v0.9.12
+   Compiling rust-embed-utils v8.13.0
+   Compiling lock_api v0.4.14
+   Compiling async-fs v2.2.0
+   Compiling mahayana-kernel v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-kernel)
+   Compiling num-complex v0.4.6
+   Compiling xdg-home v1.3.0
+   Compiling unsafe-libyaml v0.2.11
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling zbus v4.4.0
+   Compiling num v0.4.3
+   Compiling parking_lot v0.12.5
+   Compiling rust-embed v8.13.0
+   Compiling fluent v0.16.1
+   Compiling fabushi-messaging-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/native/mahayana-messaging)
+   Compiling libm v0.2.16
+   Compiling fabushi-telegram-core v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-core)
+   Compiling arc-swap v1.9.3
+   Compiling cbc v0.1.2
+   Compiling salsa20 v0.10.2
+   Compiling secrecy v0.10.3
+   Compiling io_tee v0.1.1
+   Compiling age-core v0.11.0
+   Compiling pin-project v1.1.13
+   Compiling scrypt v0.11.0
+   Compiling secret-service v4.0.0
+   Compiling i18n-embed v0.15.4
+   Compiling num-bigint-dig v0.9.1
+   Compiling mahayana-computer v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-computer)
+   Compiling ureq v2.12.1
+   Compiling mahayana-agent v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-agent)
+   Compiling mahayana-tool-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-tool-host)
+   Compiling mahayana-conversation v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-conversation)
+   Compiling linux-keyutils v0.2.5
+   Compiling bech32 v0.9.1
+   Compiling lazy_static v1.5.1
+   Compiling mahayana-host-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/host)
+   Compiling age v0.11.5
+   Compiling keyring v3.6.3
+   Compiling mahayana-harness v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-harness)
+   Compiling fabushi-telegram-protocol v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-protocol)
+   Compiling mahayana-miniapp-protocol v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-miniapp-protocol)
+   Compiling mahayana-secrets v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-secrets)
+   Compiling fabushi-telegram-network v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-network)
+   Compiling mahayana-model v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-model)
+   Compiling fabushi-telegram-storage v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-storage)
+   Compiling mahayana-workspace-engine v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-workspace-engine)
+   Compiling mahayana-orchestrator v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-orchestrator)
+   Compiling mahayana-auth v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-auth)
+   Compiling html-escape v0.2.15
+   Compiling fabushi-official-miniapps v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/official-miniapps)
+   Compiling mahayana-platform-client v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-product)
+   Compiling mahayana-native-engine v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-native-engine)
+   Compiling fabushi-telegram-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/providers/telegram-runtime)
+   Compiling rquickjs-sys v0.12.2
+   Compiling mahayana-agent-kernel-bridge v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-agent-kernel-bridge)
+   Compiling mahayana-mcp-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-mcp-runtime)
+   Compiling crossbeam-channel v0.5.17
+   Compiling relative-path v2.0.2
+   Compiling rquickjs-core v0.12.2
+   Compiling mahayana-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-runtime)
+   Compiling mahayana-native-agent v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-native-agent)
+   Compiling mahayana-telegram v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-telegram)
+   Compiling mahayana-social v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-social)
+   Compiling mahayana-miniapp v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-miniapp)
+   Compiling mahayana-harness-services v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-harness-services)
+   Compiling mahayana-plugin-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-plugin-runtime)
+   Compiling mahayana-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-host)
+   Compiling rquickjs v0.12.2
+   Compiling mahayana-js-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-js-runtime)
+   Compiling mahayana-feature-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-feature-host)
+   Compiling mahayana-harness-advanced v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-harness-advanced)
+   Compiling mahayana-harness-protocol v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-harness-protocol)
+   Compiling mahayana-app-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-app-host)
+   Compiling mahayana-unified-app-host v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/mahayana/mahayana-rs/mahayana-unified-app-host)
+   Compiling signal-hook v0.3.18
+   Compiling mahayana-app-host-runtime v0.1.0 (/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/app)
+error: could not compile `mahayana-app-host-runtime` (bin "mahayana-app-host" test) due to 19 previous errors; 3 warnings emitted

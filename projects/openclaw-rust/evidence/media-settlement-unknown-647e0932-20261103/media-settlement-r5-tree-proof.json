@@ -1,0 +1,11 @@
+{
+  "candidate_tree": "fc752f889ce0d402f6f5af9911d9777c7cab7999",
+  "parent": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "parent_tree": "518e019acc61861af909fcfd48a5c103a7ac7fe3",
+  "truncated": false,
+  "scoped_paths": 21,
+  "all_scoped_match": true,
+  "unchanged_parent_leaves_preserved": true,
+  "wrong": [],
+  "outside": []
+}

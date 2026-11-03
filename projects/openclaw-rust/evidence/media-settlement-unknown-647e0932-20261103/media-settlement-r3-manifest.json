@@ -1,0 +1,362 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "base": "d70f86f33b5e3c67545954b270373e1548809f4b",
+  "base_tree": "4c4c9cfd3f5067fef57dca530042d149a8e2fc5c",
+  "starting_head": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "candidate_tree": "4d3b9d9faa3dfa9bbeb4083bbc7c638283b14026",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "snapshot": "/workspace/scratch/7d27ea239237/media-settlement-r3",
+  "base_snapshot": "/workspace/scratch/7d27ea239237/media-settlement-r1-base",
+  "complete_patch": "/workspace/scratch/7d27ea239237/media-settlement-r3-complete.patch",
+  "complete_patch_sha256": "1e6a5270acaa94e98d4289169d0438d00f45ff48d6a8798b4b17ed08f5aa004e",
+  "scope_mode": "Fresh blind focused integration review of five changed shared paths relative to R2; preserve declared20core MSU scope and inspect incoming adjacent cron composition as needed. Actual unpublished source delta from current74 parent is only MAC clarification and six metadata-reference replacements; all runtime/CI source already belongs to74. Do not manufacture a second implementation of the incoming fix.",
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "size": 451308,
+      "sha256": "ea056ef0bb5d77f1aa680b649335b8ec141be1f8b27a69562af86e5ae16f7e44",
+      "blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "base_blob": "2c9e310bff2dac5aa900ba4292742754ef0c059e",
+      "mode": "100644",
+      "prior_round_blob": "239c054aaccd42c0e5bc5e7ca0607431bcf400b7"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "size": 11432,
+      "sha256": "5fbdb25aec5808c0cf4121de18b6ccad8ae8e9c9194e69fc2d54c419c1b4eeed",
+      "blob": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "base_blob": "ec472b0ebc5b3a7aa86056c5d9d05eb4b6a94826",
+      "mode": "100644",
+      "prior_round_blob": "e89c27654614752fd4700e6506735bee3bde25a8"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "size": 14108,
+      "sha256": "6b8f4eff2cb191259df998f598a3375de12522e2bc2120ce312dbb1c15e6eb68",
+      "blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "base_blob": null,
+      "mode": "100644",
+      "prior_round_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "size": 1455876,
+      "sha256": "e3615f0841279b7056425c0deda42cc2909f21e63447d619e9d60359ae8d01c0",
+      "blob": "99fd980c1f8bee47327efc49e59e0d5544dcf46f",
+      "base_blob": "1e56a25479e1390cb98c36d130b68f09946dc0bc",
+      "mode": "100644",
+      "prior_round_blob": "e59c3f0fd702ef5a81eb133f3fe34bbf6b975198"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "size": 160906,
+      "sha256": "fffac7f04528438e30736f14f87d0e221211c2848196cd982eaf50dda8645e55",
+      "blob": "bd1a56a6990168c384bb553c269a3fc1b695a14a",
+      "base_blob": "7475cee0643fc0e52ddc9bd2cf303aee884c0956",
+      "mode": "100644",
+      "prior_round_blob": "e2c00d404cf6737b750f389eb4c7f2cf45badf87"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "size": 33117,
+      "sha256": "c71338af5e81e39aae5e76485d1b9d2762d9df211eeb0d2bdfc0be005157d5f2",
+      "blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "base_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "mode": "100644",
+      "prior_round_blob": "d5376d94f569b112c5778efb529eb64d2b863766"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "size": 104958,
+      "sha256": "e1a515590a5b2478e6e008e238de9c25237292efdb79406935a23723f713e93e",
+      "blob": "172485b8437151256fb5058fcec010f9a0665cc8",
+      "base_blob": "aa8317a6ab5414d5e6667ceea170710614ce6aa2",
+      "mode": "100644",
+      "prior_round_blob": "172485b8437151256fb5058fcec010f9a0665cc8"
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "size": 1899,
+      "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+      "blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "base_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "mode": "100644",
+      "prior_round_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820"
+    },
+    {
+      "path": "source/host/app/Cargo.toml",
+      "size": 864,
+      "sha256": "3c16c8f1be109308612041e0543a935ea4b7748ed33279e061a44ba975e7846b",
+      "blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "base_blob": "4cd51b5e35192f3f8ad1e6dff3699ec9a63e8928",
+      "mode": "100644",
+      "prior_round_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "size": 998098,
+      "sha256": "0ca4e2e81b459ac57c1a9aab9b31b54ef2d421d7131970519aa4f58faaa0011f",
+      "blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "base_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "mode": "100644",
+      "prior_round_blob": "7ec9bd8a22fd595f63cb3f4b632673e298294dfa"
+    },
+    {
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "size": 126331,
+      "sha256": "616866391e288b5bc61436f2452cf9717c65fd380ea6d0b60d6d49ad43c18c50",
+      "blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "base_blob": "ff4ebba71eae35f4be98a695654a0d33b84f1818",
+      "mode": "100644",
+      "prior_round_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "size": 36330,
+      "sha256": "a310f803114b6e3274ea6b8256a09ee2b5f590ef614508f22f8b8947e4126944",
+      "blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "base_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "mode": "100644",
+      "prior_round_blob": "280c68503daadecb5aa4a1c6eebec5744bc3b81d"
+    },
+    {
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "size": 58227,
+      "sha256": "f1ec56ebb6b7b31bcb9809645a60221e488269bbb841780d65da01d35da5fc68",
+      "blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "base_blob": null,
+      "mode": "100644",
+      "prior_round_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8"
+    },
+    {
+      "path": "source/host/src/attachment_paths.rs",
+      "size": 13178,
+      "sha256": "ce4ac8bc522d1b20ff97b486942dfbe2aacd1ff0f65ee70a0b657f6960fff381",
+      "blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "base_blob": "c66a2d1ce8dfb70532a16857a0fe02d31788ca62",
+      "mode": "100644",
+      "prior_round_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda"
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "size": 426548,
+      "sha256": "9a8ad4aa952f11a3d7595eebf636f7d20c450381120416c00667b93ef0149c7b",
+      "blob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+      "base_blob": "78740768f7f1b0307dfd6756c4d50c368a91b721",
+      "mode": "100644",
+      "prior_round_blob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "size": 290084,
+      "sha256": "b5cac3ef9d0d761ce0a0f63dabf6a930524822f0758b47714a8ee6da3900f995",
+      "blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "base_blob": "f585fae13720e08f34323bed82759253590a3753",
+      "mode": "100644",
+      "prior_round_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733"
+    },
+    {
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "size": 94621,
+      "sha256": "4e18cb4e29e5947ee200ca69c9ff4816ca753e9319573a1695e0736d3a55c3c1",
+      "blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "base_blob": "1f336135cb1c521d16dc0d8ad9e42ef0cf6bccba",
+      "mode": "100644",
+      "prior_round_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "size": 16904,
+      "sha256": "2da2145a57c5ad7d245bd36c6463a731cc511059d87d9366f68fe385d5758e87",
+      "blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "base_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "mode": "100644",
+      "prior_round_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5"
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "size": 162305,
+      "sha256": "e61629a709e4154dda1297d3f5fa9fd13efc38c00d67c08edbc93fb70a27d32e",
+      "blob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+      "base_blob": "2049875451202ba05aecb7e5de9a6841dc378d63",
+      "mode": "100644",
+      "prior_round_blob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "size": 29914,
+      "sha256": "c76305ea99623c4f5cda5f18d323328cf508583b7f3d8dd3a4f78ca33f12b257",
+      "blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "base_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "mode": "100644",
+      "prior_round_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c"
+    }
+  ],
+  "historical_evidence_root_audit": [
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/app-fault-port-design.md",
+      "size": 33445,
+      "sha256": "792b588f2872ee859ae517136d78d3c21ec508c01f08f8cc4a5998b8581b14b6",
+      "blob": "4583c29616019ee1302295f00cd436374f5ff9a5",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/current-owner-audit.md",
+      "size": 30927,
+      "sha256": "290c8b961a2cb7915b8aeacc385d542b2fc16e3416140ed7e88528890b549013",
+      "blob": "01b724729a97f33ad1ef63b937360022ee5e48b9",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+      "size": 34655,
+      "sha256": "7b95e327d21559235ad2131d52f88d9c6e052f1e97ce56f0952b26a437c35e9e",
+      "blob": "b143ea8d36f84c02793263bbadf39a2e138619bf",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-app-risk-audit.md",
+      "size": 14420,
+      "sha256": "cd4065290417a4d3a5615cffc16fd19f8d90442130cc8e5dbce6b2de16f4ec7d",
+      "blob": "a970e6465593ab56a569619bc0f38ddb7c788095",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-app-worker.md",
+      "size": 20075,
+      "sha256": "2061874aca7cff6acf863db24d25d6ebf6c17104c77ede3f78710457339edce9",
+      "blob": "bd7a3d34ca60071b42e94a51d07e922b7f097310",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-concurrency-consumer-notes.md",
+      "size": 18901,
+      "sha256": "2c66c584f794efe7fdd5f74620854f6eb9119094b91e4b1a0d7b6f6db9a37034",
+      "blob": "adc2947e5ac8ec6cde3010d585c8ad43a5e1eb28",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-db-worker-report.md",
+      "size": 18374,
+      "sha256": "76888e616bd40ddcd19f66e2930e631e719ab9a30b8791f8ec931c71cfda4c98",
+      "blob": "b7dc825ea4464ccba4108d7502d35892efbbb1e0",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-dependency-oracle-notes.md",
+      "size": 18127,
+      "sha256": "0b803ee36f1836c0ef81dfca503946d8f8e5bca2b82f4f8a69259cebd5a691ef",
+      "blob": "c291586ba2059eab0ec988ecf008451f13617745",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-oracle-worker-report.md",
+      "size": 16901,
+      "sha256": "78abadbcc5f73ceeb3b6686d54c8b6e78a0731628533d0ba57f73c1cdb75d00a",
+      "blob": "24e398658496bde04f958c9edfddf0c609bfeb5a",
+      "base_blob": null,
+      "mode": "100644"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-tool-worker-report.md",
+      "size": 7783,
+      "sha256": "dc48347693ea19e2bb075325783ea406e6396c62a6d4464b1976bcc62792ff46",
+      "blob": "691a315c2c70306270d03f9f8d6523508cfa87e7",
+      "base_blob": null,
+      "mode": "100644"
+    }
+  ],
+  "blindness": "Do not read prior review reports, root adjudications, worker reports, or mutable media-settlement-work. Historical filenames and blob identities only may be used for reference existence. R2 tree includes prior published evidence with unchanged identities; source-review outcomes and execution are separate.",
+  "validation": "No local or htch execution. Existing74 source/runtime runs retain74 as subject; no result is assigned to this R3tree or the later evidence carrier.",
+  "remote_tree_readback": {
+    "tree": "4d3b9d9faa3dfa9bbeb4083bbc7c638283b14026",
+    "parent_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+    "parent_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+    "truncated": false,
+    "changed_from_parent": [
+      "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "projects/openclaw-rust/parity-ledger.json",
+      "projects/openclaw-rust/requirements-traceability-matrix.json"
+    ],
+    "all_20_core_match": true,
+    "unmodified_parent_blobs_preserved": true,
+    "runtime_and_CI_files_equal_parent": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "sha": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+        "equal": true
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "sha": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+        "equal": true
+      },
+      {
+        "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+        "sha": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+        "equal": true
+      }
+    ],
+    "new_adjacent_cron_inputs": [
+      {
+        "path": "projects/openclaw-rust/docs/specs/cron-job-identity.md",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "988f36d855e3efffc5b5563006dddf926393fcbe",
+        "size": 14115,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/988f36d855e3efffc5b5563006dddf926393fcbe"
+      },
+      {
+        "path": "source/host/app/src/tests/cron_job_identity_tests.rs",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "646d24ab3d27dede7bfcb4f5fe421585694c390b",
+        "size": 30013,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/646d24ab3d27dede7bfcb4f5fe421585694c390b"
+      }
+    ],
+    "evidence_reference_blobs": [
+      {
+        "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "b143ea8d36f84c02793263bbadf39a2e138619bf",
+        "size": 34655,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/b143ea8d36f84c02793263bbadf39a2e138619bf"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/current-owner-audit.md",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "01b724729a97f33ad1ef63b937360022ee5e48b9",
+        "size": 30927,
+        "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs/01b724729a97f33ad1ef63b937360022ee5e48b9"
+      }
+    ]
+  },
+  "native_selection": "19 command groups; 13 real DB fault tests, 5 local custody tests, 27 transaction-source/retained commit tests, whole SendMessage19 plus retained media/native groups; actual App8/LFA6/SGF3 separately selected on Linux.",
+  "prior_round_snapshot": "/workspace/scratch/7d27ea239237/media-settlement-r2",
+  "prior_round_tree": "9892b15758904c23f3888ba8af1b5e429f29b59f",
+  "fix_patch": "/workspace/scratch/7d27ea239237/media-settlement-r3-integration.patch",
+  "fix_patch_sha256": "1312852a835935efd010ef11a7355d5f4fc2bae121a1876b86f4ddf608309ceb",
+  "focus_paths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/parity-ledger.json",
+    "projects/openclaw-rust/requirements-traceability-matrix.json",
+    "source/host/app/src/main.rs",
+    "source/host/app/src/tests/local_media_file_url_tests.rs"
+  ]
+}

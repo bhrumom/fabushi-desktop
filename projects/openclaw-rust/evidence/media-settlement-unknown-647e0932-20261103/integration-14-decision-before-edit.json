@@ -1,0 +1,21 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "recorded_before_edit": true,
+  "decision": "PRESERVE_ACTIONS_MATERIALIZED_INVENTORY",
+  "subject": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "carrier": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "carrier_tree": "518e019acc61861af909fcfd48a5c103a7ac7fe3",
+  "source_run": 41582614099,
+  "source_attempt": 1,
+  "source_result": "success from GitHub API; raw log/artifact independently collecting",
+  "changes": "Six exact incoming files: index, manifest, three shards and ledger. Parent is exact Hfc; author/committer github-actions[bot]. Copy published index and ledger bytes; preserve other generated leaves through parent tree. No local generator or manual review/status promotion.",
+  "identities": {
+    "index": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+    "manifest": "911019b1c4c3b629a4425610bf941caf88a97e18",
+    "ledger": "673c8defe212bc07d0bc031d9a10126c2df7ef24",
+    "canonical_sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a"
+  },
+  "preservation": "The five pending links were consumed by existing Actions. Published counters move mapped884->888 and unclassified61246->61242; unread62067 and all global flags remain unchanged. Values are copied from the exact published blobs, not locally derived.",
+  "review_boundary": "R5 reviewers have not been launched. Initial source-tree draft4491d07 is retained as unreviewed preparation only; freeze R5 on the materialized parent before independent review. R4 stays immutable. Shipping subject and evidence carrier remain separate."
+}

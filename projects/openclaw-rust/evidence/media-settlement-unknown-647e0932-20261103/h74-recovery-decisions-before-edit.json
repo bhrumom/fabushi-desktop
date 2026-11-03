@@ -1,0 +1,62 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "recorded_before_edits": true,
+  "purpose": "Classify concrete Actions failures before repair; preserve all historical failed evidence and exact subject identity.",
+  "decisions": [
+    {
+      "id": "MSU-H74-RECOVERY-001",
+      "decision": "FIX",
+      "classification": "IMPL_BUG",
+      "scope": "projects/openclaw-rust/inventory/index.json",
+      "evidence": {
+        "run_id": 41580539540,
+        "attempt": 1,
+        "job_id": 125734077461,
+        "failure": "Missing reverse source/responsibility link: OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
+      },
+      "rationale": "The new sole-ledger responsibility names five exact-U refs, each absent from the committed reverse links. The existing pre-expansion contract permits only explicit pending_mapping_additions anchored to the prior canonical digest. Supply those five exact inputs; do not alter validator, historical rows, counts, read/review states or completion flags.",
+      "prior_canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+      "next_instrument": "Existing Actions pre-expansion integrity, materialization negative controls, exact source authority and post-expansion integrity."
+    },
+    {
+      "id": "MSU-H74-RECOVERY-002",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "scope": "source/host/src/extensions/session/agent_db.rs::media_settlement_tests",
+      "evidence": {
+        "run_id": 41580539491,
+        "attempt": 1,
+        "linux_job": 125734079585,
+        "windows_job": 125734079542,
+        "linux_log_sha256": "26ab3027d0bd03ff450927df814349347f9fb104f0b8ec2677b4126aa838fad8",
+        "failures": [
+          "media_settlement_lost_commit_acknowledgement_retires_without_publication",
+          "media_settlement_fault_matches_three_identities_and_only_its_exact_owner"
+        ]
+      },
+      "rationale": "The production DB getter intentionally returns all owner rows, including the hidden outgoing-media-settlement receipt; UI filtering is elsewhere. Both failing test vectors omitted that receipt while their same fixture already asserts its exact payload via a separate SQL reader. Reuse that exact expected vector for both DB getter assertions. Keep cardinality/order/full values, two fresh opens, connection retirement, fault claim/application, bytes/fence and zero-publication assertions. No production getter/filter/storage change.",
+      "retained_positive": "H74 DB eleven other cases; native custody five and Tool nineteen. These remain H74-only, not approval of a later H.",
+      "next_instrument": "The same thirteen real file-backed DB tests on the corrected exact H, retaining all named positives and raw logs."
+    },
+    {
+      "id": "MSU-H74-RECOVERY-003",
+      "decision": "DEFER",
+      "classification": "UNRESOLVED_ORACLE_DIAGNOSIS",
+      "scope": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "evidence": {
+        "run_id": 41580539491,
+        "attempt": 1,
+        "linux_group": "21 passed; 6 failed",
+        "windows_group": "20 passed; 7 failed",
+        "linux_log_sha256": "921b7317adf72cfad5ddd22b541f1e366a4d8beddc48214b913f642fbaaf1bc5"
+      },
+      "rationale": "The actual positive media-owner proof fails before six broader assertions; Windows additionally cannot locate a multiline source signature. Diagnose the exact parser/token and LF/CRLF assumptions before editing. Preserve complete channel Some(1) proof, global raw-COMMIT ban, actual owner admission guards and every counterfactual. A failing positive proof makes negative-only passes insufficient.",
+      "next_instrument": "Independent source/dependency diagnosis, followed by a fresh focused immutable review and existing Actions COMMIT selection; no local parser or tests."
+    }
+  ],
+  "execution_constraints": "No local/htch build, test, parser, schema validator, generator or capture. No unchanged-H rerun. Source-only reviews do not approve runtime behavior."
+}

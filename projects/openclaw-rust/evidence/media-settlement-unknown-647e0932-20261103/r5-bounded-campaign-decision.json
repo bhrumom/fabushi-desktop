@@ -1,0 +1,68 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "decision": "ADOPT_BOUNDED_NEW_INPUT_CAMPAIGN",
+  "made_before_triggering_publication": true,
+  "authority": {
+    "repository_instruction": "AGENTS.md Adaptive verification and evidence recovery, blob e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "existing_user_authorization": "Current task instruction8 authorizes necessary push/PR/dispatch and requires exact-H Actions; the mandatory delivery instruction requires this round to be committed, pushed and remotely read back. The user instructs continued implementation and no redundant permission requests.",
+    "interpretation": "The default one-normal-plus-one-recovery budget is exhausted. After the required independent assessment, root adopts its one-off bounded changed-input recommendation under existing task authority. This is an explicit next campaign, not a reset or a waiver of evidence."
+  },
+  "independent_assessment": {
+    "path": "msu-r5-campaign-directness.md",
+    "sha256": "75ce6f2ed93f57a151b101efd72ba93a994a218ad8c5547021aee4049f605ef9",
+    "root_read": "full"
+  },
+  "prior_campaigns": [
+    {
+      "role": "normal",
+      "subject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+      "source_run": 41580539540,
+      "runtime_run": 41580539491,
+      "state": "failed; declarative mapping and test/oracle flaws retained with original logs"
+    },
+    {
+      "role": "focused recovery",
+      "subject": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+      "source_run": 41582614099,
+      "runtime_run": 41582614116,
+      "state": "source structural success, Linux native210 and Windows native205 pass; actual App/macOS pending at assessment cutoff"
+    }
+  ],
+  "new_input": {
+    "reviewed_tree": "fc752f889ce0d402f6f5af9911d9777c7cab7999",
+    "oracle_blob": "c0162f99b896c00d0cd100ba59ad700eb01ad802",
+    "oracle_sha256": "30a8daf3750f6997221b1efb0e0d089b92a174e16ac37b05e0dcdffaf499b172",
+    "executed_predecessor_oracle_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+    "obligation": "Execute the stricter actual-source baseline, exactly-one changed mutation site, LF/CRLF positives and negatives, residual trait/raw-COMMIT and unchanged channel controls through all27 named COMMIT tests."
+  },
+  "integration": {
+    "base": "f41a6d3c00150ba59453d14887b5b4914801d4f4",
+    "preserved_workflow_blob": "37f90cfcddef5fbc917d07b5fa5468707a4bc452",
+    "source_binding": "20 non-workflow R5 core blobs plus unchanged incoming f41 workflow; preserve every other publication-parent leaf.",
+    "final_commit_binding": "Before ref update, bind the GitHub-created immutable commit and full tree to this exact three-source-path plus evidence overlay; retain that created object/readback in the publication record. This precommit file does not claim its own future commit SHA."
+  },
+  "execution_selection": {
+    "maximum_new_subject_sets": 1,
+    "trigger": "existing writer-branch push source-authority/runtime workflows only",
+    "runtime_scope": "existing scoped writer/OCRM conditions",
+    "unavoidable_superset": "The existing capture has no group selector; all19 native groups and the existing scoped workflow execute as its inseparable carrier. Their prior positives remain valid at their original H. No workflow change is made merely to create a narrower dispatch.",
+    "fallback": "Only if no exact-subject runtime exists: reconsider an explicit single ocrm-config dispatch with expected_subject equal to the full created commit SHA. No duplicate is preauthorized.",
+    "prohibited": [
+      "duplicate push plus dispatch",
+      "unrelated full dispatch",
+      "unchanged-H rerun",
+      "automatic additional recovery campaign",
+      "local or htch executable verification",
+      "deleting assertions or promoting global flags"
+    ]
+  },
+  "acceptance": "Retain full final commit/tree, actual oracle blob, all27 named positives, zero failed or ignored, command/capture exits0, raw logs, before/after input maps and exact-source Actions receipts. Preserve unfinished actualApp/macOS as pending and global gates as unaccepted.",
+  "failure_stop_rule": "Adjudicate retained evidence causally as TEST_FLAW or IMPL_BUG; no additional run is automatic. Queue/time/budget alone is not BLOCKED/UNRECOVERABLE. Preserve exact owned runs and all historical artifacts.",
+  "pretrigger_terminal_update": {
+    "state": "SUSPENDED_BEFORE_TRIGGER",
+    "new_evidence": "Hfc Linux terminal failure05:30:26; Appstep skipped; link-preview Appcompile E0609 and portable old-source oracle failure",
+    "decision_record": "r6-fix-decision-before-edit.json",
+    "required_before_launch": "Freeze corrected R6 source, focused reviews and independent assessment addendum; no R5 campaign was launched."
+  }
+}

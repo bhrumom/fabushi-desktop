@@ -1,0 +1,37 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "recorded_before_edit": true,
+  "decision": "PRESERVE_INCOMING_AUTOMATION_COMPONENT",
+  "incoming_commit": "f41a6d3c00150ba59453d14887b5b4914801d4f4",
+  "incoming_tree": "f28846fdb71ecae8c9942e38a66da2031f54e626",
+  "parent": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "own_publication_paths_unchanged": true,
+  "own_evidence_paths_conflict": false,
+  "source_read": "Root read every incoming non-evidence diff, including whole-response Automation custody ordering, all3added tests, both spec deltas and the complete workflow delta. Root read both complete independent five-path component reports; their five reviewed blob identities match the incoming commit. No root reimplementation or new execution verdict.",
+  "workflow": {
+    "path": ".github/workflows/rust-desktop-runtime.yml",
+    "old_review_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+    "preserved_blob": "37f90cfcddef5fbc917d07b5fa5468707a4bc452",
+    "delta": "Only the existing Automation backend contract receipt block gains3named positive checks,3inputpaths and bounded scope fields. MSU media/App selectors, feature observations and raw evidence paths are unchanged.",
+    "handling": "Adopt published bytes in mutable working context; do not add this unchanged-parent path to our publication overlay."
+  },
+  "review_components": [
+    {
+      "path": "projects/openclaw-rust/evidence/automation-poll-custody-d56b3d1d-20261103/r1-general-review.md",
+      "blob": "e26add8475d9af006167f822988749d84aef41ed",
+      "reviewed_tree": "e9b2613c22285207c5c061592909f69bc830a8de",
+      "verdict": "source-only approve",
+      "root_read": "full"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/automation-poll-custody-d56b3d1d-20261103/r1-structure-review.md",
+      "blob": "c1db83a719b7f2320c14fa6dac972454934358ed",
+      "reviewed_tree": "e9b2613c22285207c5c061592909f69bc830a8de",
+      "verdict": "source-only no blocking findings",
+      "root_read": "full"
+    }
+  ],
+  "binding": "R5 remains frozen atfc752f889ce0d402f6f5af9911d9777c7cab7999 onparent14. Final composition must match its20non-workflow scoped blobs, and preserve incomingF41workflow plus every other incoming parent leaf. Never claim all21final blobs equal R5 or transfer Hfc results to the new subject.",
+  "execution": "Incoming Automation and integrated candidate need exact-H Actions. Existing Hfc source/Linux/Windows results remain Hfc-only. No status or completion flag promotion."
+}

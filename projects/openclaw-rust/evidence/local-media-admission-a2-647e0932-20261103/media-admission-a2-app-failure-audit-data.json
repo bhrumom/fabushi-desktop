@@ -1,0 +1,1379 @@
+{
+  "audit_kind": "supplemental read-only evidence and source-byte comparison; no executable project validation",
+  "job_id": "125721250552",
+  "terminal_job_status_source": "Parent supplied completed/failure; no new remote job metadata fetched. Raw receipts independently bind exact A2/tree/U/run/attempt/job key.",
+  "artifact_id": 13205207341,
+  "evidence_directory": "/workspace/scratch/7d27ea239237/media-admission-a2-actions/final-linux-20261103T0439Z",
+  "archive": {
+    "path": "/workspace/scratch/7d27ea239237/media-admission-a2-actions/final-linux-20261103T0439Z/artifact-13205207341.zip",
+    "bytes": 601501,
+    "sha256": "3dcc2d70b22a7b236eb2b2159ac2f8cb74cf9ca95584c9495922948223380586",
+    "inventory_zip_bytes_sha256_equal": true,
+    "file_member_count": 79,
+    "unique_member_count": 79,
+    "inventory_member_names_equal": true,
+    "members": [
+      {
+        "path": "automation-admission/receipt.json",
+        "bytes": 22783,
+        "sha256": "bca6491de7ec2dfec73c98e52c5db519f651e70791012288a37ac1ebae8c16c7",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "automation-app/receipt.json",
+        "bytes": 40751,
+        "sha256": "8dc4617e2eb5625bae2e6fc5b2f4f1ed03ffe883cda0bc15930421e115507f56",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "automation-admission/tests.log",
+        "bytes": 81881,
+        "sha256": "f726ac682e665a1c7d1e33224b5337ee6c82f92fbcfa14357d39b866323220af",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "automation-app/shipping-check.stderr.log",
+        "bytes": 50559,
+        "sha256": "0f26e720e6859bbd2fe4dc8ee95e113094ebb488d70e3950f0c8b945ed0c7231",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "automation-app/shipping-check.stdout.log",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "automation-app/test-build.stderr.log",
+        "bytes": 8890,
+        "sha256": "f820b69a230316781cc6f05ca77bcea0263ff840fb35dbda10534aee25c61590",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "automation-app/test-build.stdout.log",
+        "bytes": 862225,
+        "sha256": "6cf48c5357cc6251ed60792e70b9d5fa1ab7439e38331ac2f70fd7847d57657c",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "build-storage-subject.json",
+        "bytes": 586,
+        "sha256": "4a808367d80c5265f081756f1ff485af3768beb52f18482648af1c8acd555ab6",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/canonical-prior-root-image.log",
+        "bytes": 25405,
+        "sha256": "63bf62f8e61886c9a9f94ba105cd6e78dfad0556d68bc2c20ec16611e23fc892",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/canonical-prior-root-process.log",
+        "bytes": 27724,
+        "sha256": "c03b85d784036cf49e91b37509847773dae28c5c4a8c9fff7d1b49fb46ea6f0e",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/canonical-root-admission-contracts.log",
+        "bytes": 36563,
+        "sha256": "afc59fc363a61467f6395c02bd4883f29220d1e0fd475c78fa4cb251650ec929",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/canonical-root-admission.log",
+        "bytes": 28060,
+        "sha256": "d2231a090850852db9807fc5e941fa2fcdd782dbb9a7c2fd237d652dfd5874a3",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/channel-transport-chunks.log",
+        "bytes": 30085,
+        "sha256": "699db7f9707fdd86a27816400c51a052369c61237d42cd978629f539294f9c88",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/checked-store.log",
+        "bytes": 25303,
+        "sha256": "6e059f6ab32d28d798c17775c16f17c780dff0b2129a3fb4affc1747f93d18d8",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/codex-model-identity.log",
+        "bytes": 26260,
+        "sha256": "cc34bfecc840755c31dde4b04192059a52415216a8fc19fae5be703c7ed04693",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/codex-model-regressions.log",
+        "bytes": 38675,
+        "sha256": "8a56d7d9fe49840e12c9c43b9336b8d6fe2e9c307262cc1cff50e40efc8f86b8",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/codex-workspace-binding.log",
+        "bytes": 25758,
+        "sha256": "8976b1c802552e380619452e513c4c315cc9fbbf44be3664bb7d9d72f5cf49b9",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/codex-workspace-http.log",
+        "bytes": 27671,
+        "sha256": "1385de7e6b4962543da83648f0a54a68ce7baee6da0d1a077ef97c187a26508b",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-join-ingress-http.log",
+        "bytes": 27956,
+        "sha256": "cff9ba5d73fdb8b3da6d61e2e9765160b7d92f210f985bca1e1062a8ac2ec8b5",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-join-legacy-http.log",
+        "bytes": 27610,
+        "sha256": "5ade7c37942488ee1df26a79aa3659e05b6bf75800e630a5f929e10c7e4b325a",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-join-limit-state.log",
+        "bytes": 26012,
+        "sha256": "9eac25886a2a67d76e991a642ef330f2392012173b4b3229775406411afbb9d2",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-join-tls.log",
+        "bytes": 27406,
+        "sha256": "51fc0e74815fb436d46eb0f48a2f5f83e7a162bca928cad0dd0a3f09441bef2c",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-pairing-join.log",
+        "bytes": 28048,
+        "sha256": "f5f791af0e133c18fab2a244ac3453b9d168819d82b94dd65b4ef2560e4f7ed8",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-pairing-revocation-gateway.log",
+        "bytes": 28259,
+        "sha256": "c2b01a988fbf60179533050d80cf0c0a16eabfdeb8bb08df242fc364d74f2f39",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-pairing-retained-stream.log",
+        "bytes": 30043,
+        "sha256": "93029cc566a881ed29f2b905cf6a8645b4d3801e7374a9f36ae0b43f36d510da",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-pairing-revocation-authority.log",
+        "bytes": 29563,
+        "sha256": "e6ae0512dd7f54288742bd6dfaf71f6fb2f3f7487a6cb6cd75e6845568095f57",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-pairing-rotation-authority.log",
+        "bytes": 28187,
+        "sha256": "95a3c64bdcd7a8c943c53b73664be27a560019601749732e71ff4943d2aae8be",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-pairing-rotation-gateway.log",
+        "bytes": 28197,
+        "sha256": "ca630de7a6eb9acd065e110081397fa3f4b73c4471113fd65b5e1e7999ffd234",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-pairing.log",
+        "bytes": 28767,
+        "sha256": "95780e2b8112048f90ba8c9cab774f84f4e36a9bf6307b770819b8ec567c1acf",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-role-token-revocation-authority.log",
+        "bytes": 29847,
+        "sha256": "faa96df973441a6f454fe3d8655f0b775c2e0acb74a6ce74db47c4bd83dc64b1",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-role-token-revocation-gateway.log",
+        "bytes": 28398,
+        "sha256": "9427d2068d6dfe9b11bf794547d0834b8ce88fdd032a9374c07b8510a74395fe",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-token-rotation-wire-authority.log",
+        "bytes": 31293,
+        "sha256": "d2a545bcfc069ae610aa292a0fe17543b45a885fd2105c10e8f33a4017d73826",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/device-token-rotation-wire-gateway.log",
+        "bytes": 28893,
+        "sha256": "d2bbb7c8e0d28586079e8faf6bbda1048eab42278f1ed5a0fc23ca5ff42f65cf",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/generated-failure-history.log",
+        "bytes": 28254,
+        "sha256": "388d39d7f1aa68b06facf8937ca8c7f5a8089c34de56aa1fca406d2a4833bfd7",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/generated-send-message-contracts.log",
+        "bytes": 31530,
+        "sha256": "d1ae73be1794ef5e27e59f02d385212db0f3042968a4c18de08fd386c95b1e3d",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/generated-send-message-recorder.log",
+        "bytes": 28928,
+        "sha256": "a8ab3c0c7bdf8520c1104474d9be6c30ede0321b0563427953560d50a04d125d",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/integration.log",
+        "bytes": 49587,
+        "sha256": "5ee7434184c53a5a65aa5f593751bdcb3982fe69a9c110b6d450410b623efb32",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/memory-account-binding.log",
+        "bytes": 27537,
+        "sha256": "7d4f4263870d6d94b48ac428c313ca1107171cfc6a60be6eb14968c536dc4282",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/memory-synthesis-identity.log",
+        "bytes": 25565,
+        "sha256": "e3d581a491d0d82b325901319d4643e24a1ce0e3ef9546f722ffae8f51b2fd14",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/paired-device-sse.log",
+        "bytes": 24928,
+        "sha256": "7c2654f2f2e38687f032ada32f1c8fc908d8e788a0e6a80f026f8f7cff7582d3",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/plugin-cache-publication.log",
+        "bytes": 25170,
+        "sha256": "ae094dc39b0b3e2d765f42c66bf5bd6fed7a3c72bfcee000e519361a804e7af9",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/plugin-session-consumer.log",
+        "bytes": 25232,
+        "sha256": "824b4cb1467427e5d32eaf016e3672b6200f908c0d47fdaaa544d2978c6214e1",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/plugin-uninstall-binding.log",
+        "bytes": 26065,
+        "sha256": "4b6fd6fd2806cbe54016981705b254e35c3de4656550b10523a17769aa24ce2f",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/plugin-uninstall-relay-handoff.log",
+        "bytes": 24946,
+        "sha256": "a568e2b3c5c6526c13e032b24e3d9e5173b94dc147ca6fc9dc8027545be8bc47",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/plugin-uninstall-service.log",
+        "bytes": 38405,
+        "sha256": "f0792f18bcf3a911b893d848d18d5baa207057f7ce310d6ab7a0e3e7390f13c7",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/plugin-uninstall-state.log",
+        "bytes": 34429,
+        "sha256": "0d5a3fb8d6f1a124aa6ca54aef0b2c45c79c5f848050c763e9c084ff0a9bb88a",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/preentry-cancellation-wiring.log",
+        "bytes": 29588,
+        "sha256": "330dcea985a63c3b59b36a40b2d35740f5b30f919f18d92523c5e04fe67d8d8f",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/production-memory-synthesis.log",
+        "bytes": 25077,
+        "sha256": "d5de773116974313e054b7ced4c8d679d65ded892042d10e8bc71ff5c16a348d",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/provider-checkpoint-custody.log",
+        "bytes": 28804,
+        "sha256": "679fc81069fb48f3d01dd9b600b53f9f903baa203e70772912eb20163ba6e4c8",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/provider-checkpoint-publication.log",
+        "bytes": 25846,
+        "sha256": "aeb5ae6cf7b5bc0b69c3276aca8509681060ad3b7cc26ed3483d1177d02a3f0c",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/receipt.json",
+        "bytes": 367306,
+        "sha256": "d444b49e67ba8231ab66f6369cabc2dc5fea4bed66b92e5c0297af2ae684b760",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/received-catalog-builder-regressions.log",
+        "bytes": 29309,
+        "sha256": "5578e7b4feefcbae663f4f2c45703efc10ebe959c05ef66b6be29087ed7e8620",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/received-catalog-credential-match.log",
+        "bytes": 27884,
+        "sha256": "0a2234bed515f9146d5bd89cfc347b0823f29a0a85f422ba776ea64006ac2710",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/received-catalog-preparation.log",
+        "bytes": 28056,
+        "sha256": "15717f5eaac113ad6c481a786f651a571c40334a2b4d5f7010133be7e3a11016",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/received-catalog-projection.log",
+        "bytes": 28465,
+        "sha256": "52bc96c6527e475122a1cb718e78f06532424352e6cf66116be2c59b0c032f9e",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/received-catalog-retry.log",
+        "bytes": 24946,
+        "sha256": "cdca39fc6c308a234922ffcf3b31af64d2b2367d58f06d16993cff9e1ce00068",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/received-catalog-runtime.log",
+        "bytes": 29240,
+        "sha256": "30b6cc463a0105af21fa853ae54de0e89d60809324a18336d7e895a4bc40e236",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/received-catalog-toolset.log",
+        "bytes": 28218,
+        "sha256": "f66ad102e65bf79544986baa0f4f26d358e561db9d6da899dc99a0788d3c164b",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/session-claim-commit-custody.log",
+        "bytes": 26022,
+        "sha256": "a9bfecd97c8f98e61645679df4cf19f991d5f72358c6ca87fe54f27a76569925",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/session-claim-integration.log",
+        "bytes": 34080,
+        "sha256": "d0d800af3840fa0e07f3155f03fb7d31eed5a5ad2d0f45db3c82270fe4defe28",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "channel-pending-recovery/session-owner-namespace.log",
+        "bytes": 32531,
+        "sha256": "2e0904602e6686c0f35d7820c624d3fb93e00c06d7019446f9f59c6da5f89420",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "link-preview-native-gateway/app.log",
+        "bytes": 43694,
+        "sha256": "3f25586d29dea987e7c6c6f1b33e372d39f178a479aa2da8604b08db69ea7087",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "link-preview-native-gateway/coordinator.log",
+        "bytes": 12771,
+        "sha256": "4b0bed5cf8b5c6a04fde44d2e5f4c29f3d410f9894c70503a1cc6e6765caa3fd",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "link-preview-native-gateway/host.log",
+        "bytes": 31892,
+        "sha256": "93eee4c99f9f76a5b0ff011fec2ccee10c4b74f306dbd916ebad983fb69178f4",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "link-preview-native-gateway/receipt.json",
+        "bytes": 34005,
+        "sha256": "640fe265fec818858aa605a7f7bd01d036be9d452f1c30b1a0503e9f70ee7331",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "media-input-policy/projection.log",
+        "bytes": 24938,
+        "sha256": "0cf17bccc88197a2d7284493d8a2a30075cf16846ce48239a788c12f87bafa0c",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "media-input-policy/publication.log",
+        "bytes": 25956,
+        "sha256": "1a436c17aa00a4a40d27021ce54cec8ff1309046f76d8ec8f9f31974aa3bd1aa",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "media-input-policy/receipt.json",
+        "bytes": 20215,
+        "sha256": "2df2d213ac0e11ef1acea3f97e59a5dcc37c7de7ce6d31968c6bde036ddae16c",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "media-input-policy/tests.log",
+        "bytes": 36545,
+        "sha256": "47d1349e2ca6a36c4e8f905364e0599e46a752bf9bed2eba0dc32146c1346f0a",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "media-input-policy/unicode.log",
+        "bytes": 25094,
+        "sha256": "d7e1f88ef8b9a0d3803a4a42f1042e611cdb18d7745afb9b098c44f5a3527812",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "owned-fixtures.tar",
+        "bytes": 40960,
+        "sha256": "753678de5210122837cecc4f4d472ca0938c892d4b7234b7d1d1b768dd0b5905",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "palette-message/41576543683-1/consumer.log",
+        "bytes": 2599,
+        "sha256": "0755a7265e12a62709cba5de6302ce6236d9b6b5508085167db78b96ed05f6bb",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "palette-message/41576543683-1/palette-rust-results.json",
+        "bytes": 3294,
+        "sha256": "9e4fae525aa56efbae2621ef6948e188ecb81d14348b9ac24d6a128ba3060069",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "palette-message/41576543683-1/production-typecheck.log",
+        "bytes": 53,
+        "sha256": "147d1bd81d59046c355f2c6d0d7528fbf96fd42dc6fbc12d671d29d4133f332a",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "palette-message/41576543683-1/receipt.json",
+        "bytes": 10086,
+        "sha256": "9e3418fe4d1e17a771d17b5364a4a67f984e8393b554894de247f076d9c97c93",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "receipt.json",
+        "bytes": 9768,
+        "sha256": "fc0698696b3e639e19fb10e46445af4dfebf7b3ed0a95c394adbc305dedc1e94",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "storage-after-owner-checks.txt",
+        "bytes": 207,
+        "sha256": "a56348a4376c5f1ab29a562e0f1e12d2582800471326380a5c5b64f11c1b3104",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "storage-before.txt",
+        "bytes": 207,
+        "sha256": "dac19f02ff0378e2c409c1a2de594315471e7b707a73fd3542ea71285997c610",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      },
+      {
+        "path": "tests.log",
+        "bytes": 34796,
+        "sha256": "39c9d080b9e4e5ae18b4c1b39dc058b2a11a3c2b8f55cced8b92bce3687e5a5b",
+        "extracted_bytes_equal": true,
+        "inventory_bytes_sha256_equal": true
+      }
+    ]
+  },
+  "record_hashes": {
+    "inventory.json": {
+      "bytes": 14643,
+      "sha256": "4071afb29ed9aa3d52524de241e23c1aa2046657c3ce93f36d1b2323c833ea37"
+    },
+    "members/automation-app/receipt.json": {
+      "bytes": 40751,
+      "sha256": "8dc4617e2eb5625bae2e6fc5b2f4f1ed03ffe883cda0bc15930421e115507f56"
+    },
+    "members/link-preview-native-gateway/receipt.json": {
+      "bytes": 34005,
+      "sha256": "640fe265fec818858aa605a7f7bd01d036be9d452f1c30b1a0503e9f70ee7331"
+    }
+  },
+  "receipt_output_hashes": [
+    {
+      "path": "automation-app/shipping-check.stdout.log",
+      "receipt_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "equal": true
+    },
+    {
+      "path": "automation-app/shipping-check.stderr.log",
+      "receipt_sha256": "0f26e720e6859bbd2fe4dc8ee95e113094ebb488d70e3950f0c8b945ed0c7231",
+      "actual_sha256": "0f26e720e6859bbd2fe4dc8ee95e113094ebb488d70e3950f0c8b945ed0c7231",
+      "equal": true
+    },
+    {
+      "path": "automation-app/test-build.stdout.log",
+      "receipt_sha256": "6cf48c5357cc6251ed60792e70b9d5fa1ab7439e38331ac2f70fd7847d57657c",
+      "actual_sha256": "6cf48c5357cc6251ed60792e70b9d5fa1ab7439e38331ac2f70fd7847d57657c",
+      "equal": true
+    },
+    {
+      "path": "automation-app/test-build.stderr.log",
+      "receipt_sha256": "f820b69a230316781cc6f05ca77bcea0263ff840fb35dbda10534aee25c61590",
+      "actual_sha256": "f820b69a230316781cc6f05ca77bcea0263ff840fb35dbda10534aee25c61590",
+      "equal": true
+    },
+    {
+      "path": "link-preview-native-gateway/host.log",
+      "receipt_sha256": "93eee4c99f9f76a5b0ff011fec2ccee10c4b74f306dbd916ebad983fb69178f4",
+      "actual_sha256": "93eee4c99f9f76a5b0ff011fec2ccee10c4b74f306dbd916ebad983fb69178f4",
+      "equal": true
+    },
+    {
+      "path": "link-preview-native-gateway/coordinator.log",
+      "receipt_sha256": "4b0bed5cf8b5c6a04fde44d2e5f4c29f3d410f9894c70503a1cc6e6765caa3fd",
+      "actual_sha256": "4b0bed5cf8b5c6a04fde44d2e5f4c29f3d410f9894c70503a1cc6e6765caa3fd",
+      "equal": true
+    },
+    {
+      "path": "link-preview-native-gateway/app.log",
+      "receipt_sha256": "3f25586d29dea987e7c6c6f1b33e372d39f178a479aa2da8604b08db69ea7087",
+      "actual_sha256": "3f25586d29dea987e7c6c6f1b33e372d39f178a479aa2da8604b08db69ea7087",
+      "equal": true
+    },
+    {
+      "path": "automation-admission/tests.log",
+      "receipt_sha256": "f726ac682e665a1c7d1e33224b5337ee6c82f92fbcfa14357d39b866323220af",
+      "actual_sha256": "f726ac682e665a1c7d1e33224b5337ee6c82f92fbcfa14357d39b866323220af",
+      "equal": true
+    }
+  ],
+  "automation_app": {
+    "identity": {
+      "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+      "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41576543683",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux"
+    },
+    "environment": {
+      "TMPDIR": "/home/runner/work/_temp/ocrm-sqlite-native-41576543683-1",
+      "FABUSHI_AUTOMATION_CONTRACT_ARTIFACT_ROOT": "/home/runner/work/_temp/ocrm-sqlite-native-41576543683-1/automation-app",
+      "CARGO_TARGET_DIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/host/target",
+      "CARGO_BUILD_JOBS": "1"
+    },
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "input_shape": {
+      "inputs_sha256": {
+        "present": true,
+        "count": 255
+      },
+      "inputs_before_sha256": {
+        "present": false,
+        "count": null
+      },
+      "inputs_after_sha256": {
+        "present": false,
+        "count": null
+      },
+      "inputs_sha256_before": {
+        "present": false,
+        "count": null
+      },
+      "inputs_sha256_after": {
+        "present": false,
+        "count": null
+      }
+    },
+    "lfa_test_input_sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80",
+    "commands": [
+      {
+        "argv": [
+          "cargo",
+          "check",
+          "--locked",
+          "--manifest-path",
+          "source/host/app/Cargo.toml",
+          "--bin",
+          "mahayana-app-host"
+        ],
+        "exit": 0,
+        "stdout": ".evidence/sqlite-native-path/automation-app/shipping-check.stdout.log",
+        "stderr": ".evidence/sqlite-native-path/automation-app/shipping-check.stderr.log",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderr_sha256": "0f26e720e6859bbd2fe4dc8ee95e113094ebb488d70e3950f0c8b945ed0c7231"
+      },
+      {
+        "argv": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/app/Cargo.toml",
+          "--bin",
+          "mahayana-app-host",
+          "--no-run",
+          "--message-format=json"
+        ],
+        "exit": 101,
+        "stdout": ".evidence/sqlite-native-path/automation-app/test-build.stdout.log",
+        "stderr": ".evidence/sqlite-native-path/automation-app/test-build.stderr.log",
+        "stdout_sha256": "6cf48c5357cc6251ed60792e70b9d5fa1ab7439e38331ac2f70fd7847d57657c",
+        "stderr_sha256": "f820b69a230316781cc6f05ca77bcea0263ff840fb35dbda10534aee25c61590"
+      }
+    ],
+    "cases": [],
+    "result": "failed",
+    "error": "Traceback (most recent call last):\n  File \"<stdin>\", line 163, in <module>\n  File \"<stdin>\", line 154, in run\nRuntimeError: command failed: test-build\n",
+    "compiler_json_reason_counts": {
+      "compiler-artifact": 648,
+      "build-script-executed": 70,
+      "compiler-message": 137,
+      "build-finished": 1
+    },
+    "compiler_diagnostic_levels": {
+      "warning": 116,
+      "error": 19,
+      "failure-note": 2
+    },
+    "error_diagnostics": [
+      {
+        "json_line": 832,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 743,
+            "line_end": 743,
+            "column_start": 37,
+            "column_end": 41,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:743:37\n    |\n743 |     let result = call_send(&bridge, json!({\"type\": \"attachment\", \"url\": url}), \"https-passthrough\")\n    |                                     ^^^^\n\n"
+      },
+      {
+        "json_line": 833,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 714,
+            "line_end": 714,
+            "column_start": 57,
+            "column_end": 61,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:714:57\n    |\n714 |         assert_eq!(wakes[0].selected_images[0][\"data\"], json!(PNG));\n    |                                                         ^^^^\n\n"
+      },
+      {
+        "json_line": 834,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 690,
+            "line_end": 690,
+            "column_start": 42,
+            "column_end": 46,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:690:42\n    |\n690 |     let result = bridge.call_tool(&tool, json!({\n    |                                          ^^^^\n\n"
+      },
+      {
+        "json_line": 835,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 650,
+            "line_end": 650,
+            "column_start": 59,
+            "column_end": 63,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:650:59\n    |\n650 |             assert_invalid_source(bridge.call_tool(&tool, json!({\n    |                                                           ^^^^\n\n"
+      },
+      {
+        "json_line": 836,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 643,
+            "line_end": 643,
+            "column_start": 55,
+            "column_end": 59,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:643:55\n    |\n643 |         assert_invalid_source(bridge.call_tool(&tool, json!({\n    |                                                       ^^^^\n\n"
+      },
+      {
+        "json_line": 837,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 576,
+            "line_end": 576,
+            "column_start": 37,
+            "column_end": 41,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:576:37\n    |\n576 |     let second = call_send(&bridge, json!({\"type\": \"attachment\", \"url\": source_url}), \"repaired-after-reopen\")\n    |                                     ^^^^\n\n"
+      },
+      {
+        "json_line": 838,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 565,
+            "line_end": 565,
+            "column_start": 50,
+            "column_end": 54,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:565:50\n    |\n565 |         assert_invalid_source(call_send(&bridge, json!({\n    |                                                  ^^^^\n\n"
+      },
+      {
+        "json_line": 839,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 545,
+            "line_end": 545,
+            "column_start": 39,
+            "column_end": 43,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:545:39\n    |\n545 |     let repaired = call_send(&bridge, json!({\"type\": \"attachment\", \"url\": source_url}), \"repaired-first\")\n    |                                       ^^^^\n\n"
+      },
+      {
+        "json_line": 840,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 536,
+            "line_end": 536,
+            "column_start": 50,
+            "column_end": 54,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:536:50\n    |\n536 |         assert_invalid_source(call_send(&bridge, json!({\n    |                                                  ^^^^\n\n"
+      },
+      {
+        "json_line": 841,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 475,
+            "line_end": 475,
+            "column_start": 41,
+            "column_end": 45,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:475:41\n    |\n475 |         let result = call_send(&bridge, json!({\n    |                                         ^^^^\n\n"
+      },
+      {
+        "json_line": 842,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 431,
+            "line_end": 431,
+            "column_start": 36,
+            "column_end": 40,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:431:36\n    |\n431 |     let error = call_send(&bridge, json!({\n    |                                    ^^^^\n\n"
+      },
+      {
+        "json_line": 843,
+        "code": null,
+        "message": "cannot find macro `json` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 398,
+            "line_end": 398,
+            "column_start": 40,
+            "column_end": 44,
+            "label": null
+          }
+        ],
+        "rendered": "error: cannot find macro `json` in this scope\n   --> src/tests/local_media_file_url_tests.rs:398:40\n    |\n398 |         let error = call_send(&bridge, json!({\n    |                                        ^^^^\n\n"
+      },
+      {
+        "json_line": 844,
+        "code": "E0425",
+        "message": "cannot find type `Value` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 35,
+            "line_end": 35,
+            "column_start": 16,
+            "column_end": 21,
+            "label": "not found in this scope"
+          }
+        ],
+        "rendered": "error[E0425]: cannot find type `Value` in this scope\n  --> src/tests/local_media_file_url_tests.rs:35:16\n   |\n35 |         _args: Value,\n   |                ^^^^^ not found in this scope\n\n"
+      },
+      {
+        "json_line": 845,
+        "code": "E0425",
+        "message": "cannot find type `Value` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 37,
+            "line_end": 37,
+            "column_start": 17,
+            "column_end": 22,
+            "label": "not found in this scope"
+          }
+        ],
+        "rendered": "error[E0425]: cannot find type `Value` in this scope\n  --> src/tests/local_media_file_url_tests.rs:37:17\n   |\n37 |     ) -> Result<Value, ProviderSessionError> {\n   |                 ^^^^^ not found in this scope\n   |\nhelp: you might be missing a type parameter\n   |\n27 | impl<Value> RoutedToolBridge for UnusedLocalMediaDelegate {\n   |     +++++++\n\n"
+      },
+      {
+        "json_line": 846,
+        "code": "E0425",
+        "message": "cannot find type `Value` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 152,
+            "line_end": 152,
+            "column_start": 18,
+            "column_end": 23,
+            "label": "not found in this scope"
+          }
+        ],
+        "rendered": "error[E0425]: cannot find type `Value` in this scope\n   --> src/tests/local_media_file_url_tests.rs:152:18\n    |\n152 |         message: Value,\n    |                  ^^^^^ not found in this scope\n\n"
+      },
+      {
+        "json_line": 847,
+        "code": "E0425",
+        "message": "cannot find type `Value` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 244,
+            "line_end": 244,
+            "column_start": 30,
+            "column_end": 35,
+            "label": "not found in this scope"
+          }
+        ],
+        "rendered": "error[E0425]: cannot find type `Value` in this scope\n   --> src/tests/local_media_file_url_tests.rs:244:30\n    |\n244 |     fn entries(&self) -> Vec<Value> {\n    |                              ^^^^^ not found in this scope\n    |\nhelp: you might be missing a type parameter\n    |\n171 | impl<Value> LocalMediaAppFixture {\n    |     +++++++\n\n"
+      },
+      {
+        "json_line": 848,
+        "code": "E0425",
+        "message": "cannot find type `Value` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 342,
+            "line_end": 342,
+            "column_start": 11,
+            "column_end": 16,
+            "label": "not found in this scope"
+          }
+        ],
+        "rendered": "error[E0425]: cannot find type `Value` in this scope\n   --> src/tests/local_media_file_url_tests.rs:342:11\n    |\n342 |     args: Value,\n    |           ^^^^^ not found in this scope\n\n"
+      },
+      {
+        "json_line": 849,
+        "code": "E0425",
+        "message": "cannot find type `Value` in this scope",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 344,
+            "line_end": 344,
+            "column_start": 13,
+            "column_end": 18,
+            "label": "not found in this scope"
+          }
+        ],
+        "rendered": "error[E0425]: cannot find type `Value` in this scope\n   --> src/tests/local_media_file_url_tests.rs:344:13\n    |\n344 | ) -> Result<Value, ProviderSessionError> {\n    |             ^^^^^ not found in this scope\n    |\nhelp: you might be missing a type parameter\n    |\n340 | fn call_send<Value>(\n    |             +++++++\n\n"
+      },
+      {
+        "json_line": 850,
+        "code": "E0308",
+        "message": "mismatched types",
+        "primary_spans": [
+          {
+            "file_name": "src/tests/local_media_file_url_tests.rs",
+            "line_start": 199,
+            "line_end": 199,
+            "column_start": 42,
+            "column_end": 47,
+            "label": "expected `f64`, found integer"
+          }
+        ],
+        "rendered": "error[E0308]: mismatched types\n   --> src/tests/local_media_file_url_tests.rs:199:42\n    |\n198 |         deps.transcript_runtime.session_runtime().set_window_focused(\n    |                                                   ------------------ arguments to this method are incorrect\n199 |             &deps.session_workers, true, 1_000,\n    |                                          ^^^^^ expected `f64`, found integer\n    |\nnote: method defined here\n   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/session_runtime.rs:315:12\n    |\n315 |     pub fn set_window_focused(\n    |            ^^^^^^^^^^^^^^^^^^\nhelp: use a float literal\n    |\n199 |             &deps.session_workers, true, 1_000.0,\n    |                                               ++\n\n"
+      }
+    ],
+    "build_finished": [
+      {
+        "json_line": 856,
+        "success": false
+      }
+    ],
+    "app_compiler_artifacts": []
+  },
+  "link_preview": {
+    "identity": {
+      "subject_commit": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+      "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+      "upstream": {
+        "repository": "openclaw/openclaw",
+        "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+        "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+      },
+      "run_id": "41576543683",
+      "run_attempt": "1",
+      "job": "sqlite-native-path",
+      "runner_os": "Linux"
+    },
+    "input_shape": {
+      "inputs_sha256": {
+        "present": false,
+        "count": null
+      },
+      "inputs_before_sha256": {
+        "present": true,
+        "count": 31
+      },
+      "inputs_after_sha256": {
+        "present": true,
+        "count": 31
+      },
+      "inputs_sha256_before": {
+        "present": false,
+        "count": null
+      },
+      "inputs_sha256_after": {
+        "present": false,
+        "count": null
+      }
+    },
+    "before_after_equal": true,
+    "lfa_test_in_before": false,
+    "lfa_test_in_after": false,
+    "executions": [
+      {
+        "case": "host",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--no-fail-fast",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "gateway_protocol_contract",
+          "--test",
+          "gateway_server_contract"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "execution_error": null,
+        "oracle_accepted": true,
+        "log": "host.log",
+        "log_sha256": "93eee4c99f9f76a5b0ff011fec2ccee10c4b74f306dbd916ebad983fb69178f4",
+        "required_positive_names": [
+          "gateway_binds_node_token_to_the_addressed_node_before_dispatch",
+          "native_link_preview_registration_keeps_inventory_and_owner",
+          "native_link_preview_http_routes_preserve_fresh_cache_and_mapped_ip_admission",
+          "native_link_preview_configured_secret_cannot_be_replaced_by_headers",
+          "native_link_preview_rejects_restricted_unknown_and_empty_role_or_scope_before_owner",
+          "native_link_preview_rejects_real_node_and_operator_write_device_tokens_before_owner",
+          "native_link_preview_retains_origin_and_unauthenticated_host_checks",
+          "native_link_preview_nonloopback_configuration_requires_authentication",
+          "native_link_preview_malformed_json_and_unknown_neighbors_never_reach_owner",
+          "native_link_preview_service_argument_errors_keep_status_and_single_dispatch"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_name_count": 52
+      },
+      {
+        "case": "coordinator",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--no-fail-fast",
+          "--target-dir",
+          "source/host/target",
+          "--manifest-path",
+          "source/node-agent-coordinator/Cargo.toml",
+          "--test",
+          "coordinator_contract",
+          "--test",
+          "production_protocol",
+          "--test",
+          "inference_host_boundary_contract"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "execution_error": null,
+        "oracle_accepted": true,
+        "log": "coordinator.log",
+        "log_sha256": "4b0bed5cf8b5c6a04fde44d2e5f4c29f3d410f9894c70503a1cc6e6765caa3fd",
+        "required_positive_names": [
+          "native_link_preview_carrier_reserves_cache_paths_for_main_data",
+          "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash",
+          "runner_start_acceptance_preserves_exact_started_and_cancelled_outcomes",
+          "runner_start_cancellation_rejects_malformed_foreign_and_contradictory_replies"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_name_count": 73
+      },
+      {
+        "case": "app",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--target-dir",
+          "source/host/target",
+          "--manifest-path",
+          "source/host/app/Cargo.toml",
+          "--bin",
+          "mahayana-app-host",
+          "tests::link_preview_gateway_tests::"
+        ],
+        "cargo_exit": 101,
+        "capture_exit": 0,
+        "execution_error": null,
+        "oracle_accepted": false,
+        "log": "app.log",
+        "log_sha256": "3f25586d29dea987e7c6c6f1b33e372d39f178a479aa2da8604b08db69ea7087",
+        "required_positive_names": [
+          "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+          "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+          "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+        ],
+        "missing_or_nonunique_positive_results": [
+          "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+          "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+          "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+        ],
+        "observed_passed_test_name_count": 0
+      },
+      {
+        "case": "reused-mcp-composition",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--no-fail-fast",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "automation_run_path_contract",
+          "--test",
+          "automation_run_production_wiring_contract",
+          "--test",
+          "automation_runtime_contract",
+          "--test",
+          "automation_event_fires_contract",
+          "--test",
+          "automation_spend_guard_runtime_contract",
+          "--test",
+          "automation_lifecycle_production_wiring_contract",
+          "--test",
+          "automations_fire_delivery_contract",
+          "--test",
+          "automations_backend_contract",
+          "--test",
+          "host_runner_composition_production_wiring_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "execution_error": null,
+        "oracle_accepted": true,
+        "log": ".evidence/sqlite-native-path/automation-admission/tests.log",
+        "log_sha256": "f726ac682e665a1c7d1e33224b5337ee6c82f92fbcfa14357d39b866323220af",
+        "required_positive_names": [
+          "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
+          "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation"
+        ],
+        "missing_or_nonunique_positive_results": [],
+        "observed_passed_test_name_count": 94
+      }
+    ],
+    "result": "failed-or-incomplete"
+  },
+  "logs": {
+    "automation-app/shipping-check.stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "lines": 0,
+      "test_start_lines": [],
+      "test_result_lines": [],
+      "passed_test_line_count": 0,
+      "environment_fatal_pattern_hits": []
+    },
+    "automation-app/shipping-check.stderr.log": {
+      "bytes": 50559,
+      "sha256": "0f26e720e6859bbd2fe4dc8ee95e113094ebb488d70e3950f0c8b945ed0c7231",
+      "lines": 1110,
+      "test_start_lines": [],
+      "test_result_lines": [],
+      "passed_test_line_count": 0,
+      "environment_fatal_pattern_hits": []
+    },
+    "automation-app/test-build.stdout.log": {
+      "bytes": 862225,
+      "sha256": "6cf48c5357cc6251ed60792e70b9d5fa1ab7439e38331ac2f70fd7847d57657c",
+      "lines": 856,
+      "test_start_lines": [],
+      "test_result_lines": [],
+      "passed_test_line_count": 0,
+      "environment_fatal_pattern_hits": []
+    },
+    "automation-app/test-build.stderr.log": {
+      "bytes": 8890,
+      "sha256": "f820b69a230316781cc6f05ca77bcea0263ff840fb35dbda10534aee25c61590",
+      "lines": 136,
+      "test_start_lines": [],
+      "test_result_lines": [],
+      "passed_test_line_count": 0,
+      "environment_fatal_pattern_hits": []
+    },
+    "link-preview-native-gateway/app.log": {
+      "bytes": 43694,
+      "sha256": "3f25586d29dea987e7c6c6f1b33e372d39f178a479aa2da8604b08db69ea7087",
+      "lines": 981,
+      "test_start_lines": [],
+      "test_result_lines": [],
+      "passed_test_line_count": 0,
+      "environment_fatal_pattern_hits": []
+    },
+    "link-preview-native-gateway/host.log": {
+      "bytes": 31892,
+      "sha256": "93eee4c99f9f76a5b0ff011fec2ccee10c4b74f306dbd916ebad983fb69178f4",
+      "lines": 817,
+      "test_start_lines": [
+        {
+          "line": 756,
+          "text": "running 9 tests"
+        },
+        {
+          "line": 771,
+          "text": "running 43 tests"
+        }
+      ],
+      "test_result_lines": [
+        {
+          "line": 767,
+          "text": "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        },
+        {
+          "line": 816,
+          "text": "test result: ok. 43 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.36s"
+        }
+      ],
+      "passed_test_line_count": 52,
+      "environment_fatal_pattern_hits": []
+    },
+    "link-preview-native-gateway/coordinator.log": {
+      "bytes": 12771,
+      "sha256": "4b0bed5cf8b5c6a04fde44d2e5f4c29f3d410f9894c70503a1cc6e6765caa3fd",
+      "lines": 193,
+      "test_start_lines": [
+        {
+          "line": 76,
+          "text": "running 58 tests"
+        },
+        {
+          "line": 169,
+          "text": "running 14 tests"
+        },
+        {
+          "line": 189,
+          "text": "running 1 test"
+        }
+      ],
+      "test_result_lines": [
+        {
+          "line": 165,
+          "text": "test result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s"
+        },
+        {
+          "line": 185,
+          "text": "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        },
+        {
+          "line": 192,
+          "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.04s"
+        }
+      ],
+      "passed_test_line_count": 73,
+      "environment_fatal_pattern_hits": []
+    }
+  },
+  "source_comparison": {
+    "files": [
+      {
+        "path": "/workspace/scratch/7d27ea239237/media-settlement-r1/source/host/app/src/tests/local_media_file_url_tests.rs",
+        "bytes": 36297,
+        "lines": 782,
+        "sha256": "9b279aba96ba879332b45aeddcc9c8d156526917725a2c40b6e684b123915a76",
+        "git_blob_sha1": "60e6be8a61d446706ac2188366be9bff1f08cb71",
+        "assert_macro_containing_lines": 134,
+        "local_media_test_names": [
+          "local_media_file_url_app_rejects_invalid_before_materialization",
+          "local_media_file_url_app_rolls_back_earlier_image_on_later_refusal",
+          "local_media_file_url_app_commits_native_and_unicode_media_across_reopen",
+          "local_media_file_url_app_repeated_refusal_then_repair_survives_reopen",
+          "local_media_file_url_app_agent_management_refuses_image_before_outward_send",
+          "local_media_file_url_app_preserves_https_without_local_custody"
+        ]
+      },
+      {
+        "path": "/workspace/scratch/7d27ea239237/media-settlement-work/source/host/app/src/tests/local_media_file_url_tests.rs",
+        "bytes": 36330,
+        "lines": 783,
+        "sha256": "5bc24a39d3bbc77eab971ee0e58221f2a9c0ae6a226e1a35f311a69f80662106",
+        "git_blob_sha1": "280c68503daadecb5aa4a1c6eebec5744bc3b81d",
+        "assert_macro_containing_lines": 134,
+        "local_media_test_names": [
+          "local_media_file_url_app_rejects_invalid_before_materialization",
+          "local_media_file_url_app_rolls_back_earlier_image_on_later_refusal",
+          "local_media_file_url_app_commits_native_and_unicode_media_across_reopen",
+          "local_media_file_url_app_repeated_refusal_then_repair_survives_reopen",
+          "local_media_file_url_app_agent_management_refuses_image_before_outward_send",
+          "local_media_file_url_app_preserves_https_without_local_custody"
+        ]
+      }
+    ],
+    "import_anchor_occurrences_in_r1": 1,
+    "timestamp_literal_occurrences_in_r1": 1,
+    "two_expected_byte_edits_produce_repaired_file": true,
+    "diff": "--- media-settlement-r1/members/link-preview-native-gateway/receipt.json\n+++ media-settlement-work/members/link-preview-native-gateway/receipt.json\n@@ -1,5 +1,6 @@\n use super::super::*;\n use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};\n+use serde_json::{Value, json};\n use std::collections::BTreeSet;\n use std::path::{Path, PathBuf};\n use std::sync::atomic::{AtomicUsize, Ordering};\n@@ -197,7 +198,7 @@\n         ));\n         deps.transcript_manager.bind_roster_emit(roster).expect(\"actual roster owner\");\n         deps.transcript_runtime.session_runtime().set_window_focused(\n-            &deps.session_workers, true, 1_000,\n+            &deps.session_workers, true, 1_000.0,\n         ).expect(\"actual focused desktop state\");\n         let sink = Arc::new(ProductionSendMessageSink {\n             host_tx,\n",
+    "claim_limit": "Text/byte comparison only; no Rust parse, compile, test, or semantic validation."
+  }
+}

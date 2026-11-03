@@ -1,0 +1,2042 @@
+{
+  "subject_commit": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "subject_tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": "41582614116",
+  "run_attempt": "1",
+  "job": "media-store-windows",
+  "runner_os": "Windows",
+  "receipt_result": "passed",
+  "inputs_unchanged": true,
+  "before_after_equal": true,
+  "input_bindings": [
+    {
+      "phase": "inputs_before",
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "recorded_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "recorded_normalized_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "working_tree_sha256": "94db51c5c38aaa83df712fe8d1b937e0b36041c01406d5091ee2a04bd29120b7",
+      "working_tree_bytes": 456601,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "expected_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "recorded_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "recorded_normalized_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "working_tree_sha256": "212a0440e6116e887381180937ccd54d6efb4815be7dbedda0739d3c9667b2dc",
+      "working_tree_bytes": 33677,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "expected_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "recorded_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "recorded_normalized_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "working_tree_sha256": "f957f8d1e0732dc5e0f94430b79c277f133f4cc5959b001c55ca6887f4fb8545",
+      "working_tree_bytes": 22606,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "expected_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "recorded_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "recorded_normalized_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "working_tree_sha256": "67b80a262ce14ef7b12482fd9babd4628a10d1fa2056e470441908ec387e782e",
+      "working_tree_bytes": 3568,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/Cargo.toml",
+      "expected_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "recorded_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "recorded_normalized_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "working_tree_sha256": "26461d87adb948e2187d492d07256946548ebb8f9bcd2100ce407fac6b723226",
+      "working_tree_bytes": 1962,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/Cargo.lock",
+      "expected_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "recorded_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "recorded_normalized_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "working_tree_sha256": "4a62a2a12fd09ba7a36e9001eee41fff03f4d37488dc2e439bcc134b3085efac",
+      "working_tree_bytes": 124809,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/build.rs",
+      "expected_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "recorded_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "recorded_normalized_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "working_tree_sha256": "6b7470a88e5c0b41a39940bd65c935bd1312837e314176fbea533e95ea8252d2",
+      "working_tree_bytes": 71375,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/lib.rs",
+      "expected_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "recorded_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "recorded_normalized_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "working_tree_sha256": "7365cd5b4153b966c245f8497d10a8d4ba88ae9a3b19fbfeb7fc6cdc7810f472",
+      "working_tree_bytes": 3064,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/media_store.rs",
+      "expected_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "recorded_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "recorded_normalized_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "working_tree_sha256": "4af6634e7c4b139a2c4a9875d01a8e98214c48341dec6f85b76f76046ffdab9b",
+      "working_tree_bytes": 80607,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "expected_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "recorded_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "recorded_normalized_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "working_tree_sha256": "d66b30a67de4783955cf4dd8a52e727da9dca37354e173483c555e360b5237f8",
+      "working_tree_bytes": 2108,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "expected_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "recorded_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "recorded_normalized_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "working_tree_sha256": "858a12cb3403bfb42b387e672f0dfc4b816f2fe5ce98f601fb1c53025918e082",
+      "working_tree_bytes": 89778,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/extension.rs",
+      "expected_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "recorded_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "recorded_normalized_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "working_tree_sha256": "93db5e4d06cddd3882ac08fa6f0e054d18822a879defa0431c5960d3274be434",
+      "working_tree_bytes": 2790,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/host_production_extensions.rs",
+      "expected_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "recorded_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "recorded_normalized_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "working_tree_sha256": "b0f32137bae29fe134f7fdc341e9e012588f2bcb6ea9f26401f37bff5bddd181",
+      "working_tree_bytes": 93386,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/device_pairing_owner.rs",
+      "expected_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "recorded_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "recorded_normalized_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "working_tree_sha256": "513e02f1081b9973cc59e96aae03ef9c9b2607351ff98fab2ed789b2687cce7b",
+      "working_tree_bytes": 104268,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/app/src/main.rs",
+      "expected_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "recorded_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "recorded_normalized_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "working_tree_sha256": "410d9ba45445ad1cf7cef6ec173dc7a71420d33ec728eac60e38206f1e405f12",
+      "working_tree_bytes": 1019865,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_media_store_contract.rs",
+      "expected_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "recorded_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "recorded_normalized_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "working_tree_sha256": "3b0932a88f09e67d0493e92b7e52f85c7da4c33192520133a01fdf840c08a026",
+      "working_tree_bytes": 32695,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "expected_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "recorded_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "recorded_normalized_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "working_tree_sha256": "3eeee993e8b56d3b4ed42092162c1998bb401f8ec1caba41d150aa62aadf4f47",
+      "working_tree_bytes": 15306,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "expected_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "recorded_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "recorded_normalized_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "working_tree_sha256": "fcd3a8b45964ffdfa0b8a389710ee2ba134178fb6f44fac854c237c085782246",
+      "working_tree_bytes": 15656,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "expected_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "recorded_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "recorded_normalized_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "working_tree_sha256": "591faa0aa4732ef772a5bdb8f7e12212c7c6c3c6fded13d838b168cf2b022f19",
+      "working_tree_bytes": 30492,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "expected_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "recorded_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "recorded_normalized_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "working_tree_sha256": "79d28bb43ca207774df59d0d780a8ab03def2a19018e9b5123281e5d64fad23e",
+      "working_tree_bytes": 38886,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "expected_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "recorded_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "recorded_normalized_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "working_tree_sha256": "2d45d9baf5d5ff1156e6424615952a12cf9a3755966ee0bf528d4097d96da6b5",
+      "working_tree_bytes": 19930,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "expected_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "recorded_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "recorded_normalized_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "working_tree_sha256": "d34d50653a75a9731218d29dbf96120054b139ebb8ab87a76a51c14297a2a1ab",
+      "working_tree_bytes": 13783,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "expected_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "recorded_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "recorded_normalized_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "working_tree_sha256": "2b958c666bee5d4b6d091e8c77f232fbd8e0559feb447df9c164a45fac928bde",
+      "working_tree_bytes": 51774,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "expected_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "recorded_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "recorded_normalized_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "working_tree_sha256": "5aefd38601b4f0a27194728cfb4d3e8c24d467f456d9ce0f25259dcd0e426e21",
+      "working_tree_bytes": 5687,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "expected_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "recorded_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "recorded_normalized_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "working_tree_sha256": "a0b7c66cfae2ca992aaef4e9ea8da42efab5b960343e7f1460e36b41b2ee47f4",
+      "working_tree_bytes": 19681,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/media_mime.rs",
+      "expected_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "recorded_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "recorded_normalized_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "working_tree_sha256": "ba75b5233b5cd75c0fa70ecbae78af2ada7580ce27dc7ebe72b12ae8f9273758",
+      "working_tree_bytes": 12707,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "expected_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "recorded_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "recorded_normalized_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "working_tree_sha256": "a0c240c5f53654bac7a0a5ef4422dba6c97ac5279256affd20a1ae381ecc65b4",
+      "working_tree_bytes": 22892,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "expected_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "recorded_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "recorded_normalized_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "working_tree_sha256": "48e7855a854144d40070b4654c4ad76dba580be6b2f8e072e216556f25e98eeb",
+      "working_tree_bytes": 23826,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/gateway_protocol.rs",
+      "expected_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "recorded_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "recorded_normalized_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "working_tree_sha256": "b38c21bdb32dcb0f90d83bd8657e7114ed5dd45c577ef47d1f0fa6130fe884f9",
+      "working_tree_bytes": 3173,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/host_gateway_api.rs",
+      "expected_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "recorded_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "recorded_normalized_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "working_tree_sha256": "21b9b86489375196af9df67e9d9aeb066e6f0b9837dd71b44f8cff4cc9c2bff2",
+      "working_tree_bytes": 12998,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "expected_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "recorded_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "recorded_normalized_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "working_tree_sha256": "b9e9f90cd73dc8aa108af24c7ebbb5aef042d1701a72c691837ccc96c26f5a16",
+      "working_tree_bytes": 13576,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_media_reference_contract.rs",
+      "expected_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "recorded_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "recorded_normalized_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "working_tree_sha256": "925addcb191b659bacc3f0a2a5e81f2679eb4e1d42962c1e5c37d5ccaba1bd8c",
+      "working_tree_bytes": 20860,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "expected_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "recorded_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "recorded_normalized_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "working_tree_sha256": "720c290548ac0bd9d800c77815cc1f4efbf454d799c423470b079daa1736738f",
+      "working_tree_bytes": 34551,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "expected_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "recorded_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "recorded_normalized_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "working_tree_sha256": "4464a0dbca1b9378a49bd535dd7e90ad53f3124eb41ceae4cca410f7b8daf657",
+      "working_tree_bytes": 2424,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "expected_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "recorded_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "recorded_normalized_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "working_tree_sha256": "2f4355e9746c49051a28e721543ce52db1f355920b2d4ec99544a7e5efd60019",
+      "working_tree_bytes": 5415,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "expected_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "recorded_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "recorded_normalized_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "working_tree_sha256": "295f2d110a1ef442a023af7623b716e30b410df6ed4eb9dc57bee4d02dda735d",
+      "working_tree_bytes": 3301,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "expected_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "recorded_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "recorded_normalized_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "working_tree_sha256": "ccfd1792e781d5e32c69d6169ad9d8393eb3ec503c205d6880ed0865f3e03aea",
+      "working_tree_bytes": 8211,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "expected_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "recorded_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "recorded_normalized_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "working_tree_sha256": "ae8b59288422eea2991f45d3e0ed7ec534c907572f384dc42701f58a54221936",
+      "working_tree_bytes": 20621,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "expected_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "recorded_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "recorded_normalized_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "working_tree_sha256": "1567b08377c297f17858213d31d0dcbd3a737307bf0168ed6a9c3b0e996ffd63",
+      "working_tree_bytes": 10247,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "expected_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "recorded_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "recorded_normalized_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "working_tree_sha256": "4958046a5a27a5532a954f7f823bf04089371c95c126ccba6bc6821d89712dc8",
+      "working_tree_bytes": 17388,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "expected_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "recorded_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "recorded_normalized_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "working_tree_sha256": "10bb578a50d9b25eff04b26d289244070848c771cb25133eb1df8f6d1766a993",
+      "working_tree_bytes": 7492,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "expected_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "recorded_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "recorded_normalized_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "working_tree_sha256": "595dacfbf6f51c71528b3d312433621d764942410b2fa5568b08b9c229920224",
+      "working_tree_bytes": 17489,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "expected_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "recorded_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "recorded_normalized_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "working_tree_sha256": "d447b1ac2eeed3b57851f69620a419c777f40dfebcc8dcca0e921b2ec9ce3ef9",
+      "working_tree_bytes": 30720,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "expected_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "recorded_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "recorded_normalized_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "working_tree_sha256": "d40436aa71f69a24ce8d9a4716ecdf189e4466685d8fed808abf1a369be28f20",
+      "working_tree_bytes": 37113,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "expected_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "recorded_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "recorded_normalized_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "working_tree_sha256": "35f11e045b9035951cdc95bc09c685a918bef36998cf2967a4819895ef86ce71",
+      "working_tree_bytes": 8735,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "expected_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "recorded_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "recorded_normalized_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "working_tree_sha256": "daf192dd7138d120f7f50244b131c7893ba26447221843648eae318a13390250",
+      "working_tree_bytes": 6593,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "expected_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "recorded_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "recorded_normalized_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "working_tree_sha256": "0ae04ba716f856efbf9823ca75c6b5a5920ed6284116f6785e47ab6f96e7db68",
+      "working_tree_bytes": 11489,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "expected_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "recorded_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "recorded_normalized_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "working_tree_sha256": "14dc80e83130268b11ee12d1e7b4880bc834242624d7259b18b784f98cfcf83a",
+      "working_tree_bytes": 14315,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/attachment_paths.rs",
+      "expected_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "recorded_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "recorded_normalized_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "working_tree_sha256": "16f05e6c341977b94bb705b653037a823c5fc5c950d9a73c9ee007046c24e6e9",
+      "working_tree_bytes": 13571,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "expected_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "recorded_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "recorded_normalized_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "working_tree_sha256": "19e73f4aff95d8f5cec8a717bc02682d63799a9eddaef6988643e355b4e4f54e",
+      "working_tree_bytes": 437038,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/session/agent_db_serde.rs",
+      "expected_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "recorded_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "recorded_normalized_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "working_tree_sha256": "52d000a06098bf080efbae3f5197682c12c07ab3511ffc39e3dc536dd68e77ee",
+      "working_tree_bytes": 11761,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/session/production.rs",
+      "expected_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "recorded_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "recorded_normalized_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "working_tree_sha256": "1e7e7e40c2a8e60d30037e38bc124706c4620a08aaa2883ab392c7ed0e519f9a",
+      "working_tree_bytes": 297055,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "expected_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "recorded_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "recorded_normalized_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "working_tree_sha256": "f4b27a8f6aaaeb4e146b5c8d5b8726cd96d45c5430ace17b9c867c524ab80030",
+      "working_tree_bytes": 96949,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/transcript_mutation_events.rs",
+      "expected_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "recorded_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "recorded_normalized_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "working_tree_sha256": "04a2ec01c722fc65509be9599dbc3f77250c5f594c8b33fef618ec19a9ec81a2",
+      "working_tree_bytes": 1843,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/storage/store_db.rs",
+      "expected_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "recorded_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "recorded_normalized_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "working_tree_sha256": "8588d31b824bffd649fb3021181ed8302cd43ed61563cd1527ee30de5e0e2be9",
+      "working_tree_bytes": 4029,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/extensions/settings/settings_service.rs",
+      "expected_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "recorded_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "recorded_normalized_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "working_tree_sha256": "80364c4a63f7105641706c55cf649ea80405c234c0aa5786ec3f0d7b773d82ed",
+      "working_tree_bytes": 84898,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/src/agent_isolation/conversation_blob_store.rs",
+      "expected_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "recorded_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "recorded_normalized_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "working_tree_sha256": "ee11caa9ceb8e0cfaa6aa0a5c5f5a777e701e07711c91379d68acf45a68da751",
+      "working_tree_bytes": 19761,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "expected_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "recorded_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "recorded_normalized_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "working_tree_sha256": "6376b945c4fe2ee56ee4ad49534037393c09b77aefb7c10b74a5797d16338804",
+      "working_tree_bytes": 169417,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/app/Cargo.toml",
+      "expected_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "recorded_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "recorded_normalized_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "working_tree_sha256": "6f1d1c8c4ba4bc86280df3a56876e8e3f3489e621282c5817651c82e78a40b31",
+      "working_tree_bytes": 908,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/app/Cargo.lock",
+      "expected_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "recorded_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "recorded_normalized_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "working_tree_sha256": "5130b2bc25cc2d433f16b796c47dbc17e1f510b2d1397cdfdb878e5e56eae141",
+      "working_tree_bytes": 164953,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "expected_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "recorded_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "recorded_normalized_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "working_tree_sha256": "e3d6a14b9d60aa79f02af086aeadb362ba08400cdab8b97022dee2484940593e",
+      "working_tree_bytes": 128661,
+      "matches": true
+    },
+    {
+      "phase": "inputs_before",
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "expected_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "recorded_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "recorded_normalized_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "working_tree_sha256": "05e2b33a1e05747f4f816019196f698325d328a96c04bc4e847fae91f986f082",
+      "working_tree_bytes": 59262,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "recorded_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "recorded_normalized_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "working_tree_sha256": "94db51c5c38aaa83df712fe8d1b937e0b36041c01406d5091ee2a04bd29120b7",
+      "working_tree_bytes": 456601,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "expected_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "recorded_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "recorded_normalized_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "working_tree_sha256": "212a0440e6116e887381180937ccd54d6efb4815be7dbedda0739d3c9667b2dc",
+      "working_tree_bytes": 33677,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "expected_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "recorded_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "recorded_normalized_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "working_tree_sha256": "f957f8d1e0732dc5e0f94430b79c277f133f4cc5959b001c55ca6887f4fb8545",
+      "working_tree_bytes": 22606,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "expected_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "recorded_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "recorded_normalized_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "working_tree_sha256": "67b80a262ce14ef7b12482fd9babd4628a10d1fa2056e470441908ec387e782e",
+      "working_tree_bytes": 3568,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/Cargo.toml",
+      "expected_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "recorded_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "recorded_normalized_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "working_tree_sha256": "26461d87adb948e2187d492d07256946548ebb8f9bcd2100ce407fac6b723226",
+      "working_tree_bytes": 1962,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/Cargo.lock",
+      "expected_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "recorded_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "recorded_normalized_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "working_tree_sha256": "4a62a2a12fd09ba7a36e9001eee41fff03f4d37488dc2e439bcc134b3085efac",
+      "working_tree_bytes": 124809,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/build.rs",
+      "expected_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "recorded_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "recorded_normalized_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "working_tree_sha256": "6b7470a88e5c0b41a39940bd65c935bd1312837e314176fbea533e95ea8252d2",
+      "working_tree_bytes": 71375,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/lib.rs",
+      "expected_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "recorded_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "recorded_normalized_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "working_tree_sha256": "7365cd5b4153b966c245f8497d10a8d4ba88ae9a3b19fbfeb7fc6cdc7810f472",
+      "working_tree_bytes": 3064,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/media_store.rs",
+      "expected_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "recorded_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "recorded_normalized_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "working_tree_sha256": "4af6634e7c4b139a2c4a9875d01a8e98214c48341dec6f85b76f76046ffdab9b",
+      "working_tree_bytes": 80607,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "expected_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "recorded_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "recorded_normalized_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "working_tree_sha256": "d66b30a67de4783955cf4dd8a52e727da9dca37354e173483c555e360b5237f8",
+      "working_tree_bytes": 2108,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "expected_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "recorded_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "recorded_normalized_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "working_tree_sha256": "858a12cb3403bfb42b387e672f0dfc4b816f2fe5ce98f601fb1c53025918e082",
+      "working_tree_bytes": 89778,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/extension.rs",
+      "expected_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "recorded_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "recorded_normalized_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "working_tree_sha256": "93db5e4d06cddd3882ac08fa6f0e054d18822a879defa0431c5960d3274be434",
+      "working_tree_bytes": 2790,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/host_production_extensions.rs",
+      "expected_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "recorded_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "recorded_normalized_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "working_tree_sha256": "b0f32137bae29fe134f7fdc341e9e012588f2bcb6ea9f26401f37bff5bddd181",
+      "working_tree_bytes": 93386,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/device_pairing_owner.rs",
+      "expected_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "recorded_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "recorded_normalized_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "working_tree_sha256": "513e02f1081b9973cc59e96aae03ef9c9b2607351ff98fab2ed789b2687cce7b",
+      "working_tree_bytes": 104268,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/app/src/main.rs",
+      "expected_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "recorded_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "recorded_normalized_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "working_tree_sha256": "410d9ba45445ad1cf7cef6ec173dc7a71420d33ec728eac60e38206f1e405f12",
+      "working_tree_bytes": 1019865,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_media_store_contract.rs",
+      "expected_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "recorded_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "recorded_normalized_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "working_tree_sha256": "3b0932a88f09e67d0493e92b7e52f85c7da4c33192520133a01fdf840c08a026",
+      "working_tree_bytes": 32695,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "expected_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "recorded_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "recorded_normalized_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "working_tree_sha256": "3eeee993e8b56d3b4ed42092162c1998bb401f8ec1caba41d150aa62aadf4f47",
+      "working_tree_bytes": 15306,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "expected_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "recorded_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "recorded_normalized_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "working_tree_sha256": "fcd3a8b45964ffdfa0b8a389710ee2ba134178fb6f44fac854c237c085782246",
+      "working_tree_bytes": 15656,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "expected_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "recorded_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "recorded_normalized_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "working_tree_sha256": "591faa0aa4732ef772a5bdb8f7e12212c7c6c3c6fded13d838b168cf2b022f19",
+      "working_tree_bytes": 30492,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "expected_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "recorded_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "recorded_normalized_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "working_tree_sha256": "79d28bb43ca207774df59d0d780a8ab03def2a19018e9b5123281e5d64fad23e",
+      "working_tree_bytes": 38886,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "expected_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "recorded_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "recorded_normalized_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "working_tree_sha256": "2d45d9baf5d5ff1156e6424615952a12cf9a3755966ee0bf528d4097d96da6b5",
+      "working_tree_bytes": 19930,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "expected_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "recorded_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "recorded_normalized_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "working_tree_sha256": "d34d50653a75a9731218d29dbf96120054b139ebb8ab87a76a51c14297a2a1ab",
+      "working_tree_bytes": 13783,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "expected_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "recorded_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "recorded_normalized_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "working_tree_sha256": "2b958c666bee5d4b6d091e8c77f232fbd8e0559feb447df9c164a45fac928bde",
+      "working_tree_bytes": 51774,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "expected_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "recorded_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "recorded_normalized_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "working_tree_sha256": "5aefd38601b4f0a27194728cfb4d3e8c24d467f456d9ce0f25259dcd0e426e21",
+      "working_tree_bytes": 5687,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "expected_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "recorded_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "recorded_normalized_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "working_tree_sha256": "a0b7c66cfae2ca992aaef4e9ea8da42efab5b960343e7f1460e36b41b2ee47f4",
+      "working_tree_bytes": 19681,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/media_mime.rs",
+      "expected_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "recorded_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "recorded_normalized_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "working_tree_sha256": "ba75b5233b5cd75c0fa70ecbae78af2ada7580ce27dc7ebe72b12ae8f9273758",
+      "working_tree_bytes": 12707,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "expected_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "recorded_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "recorded_normalized_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "working_tree_sha256": "a0c240c5f53654bac7a0a5ef4422dba6c97ac5279256affd20a1ae381ecc65b4",
+      "working_tree_bytes": 22892,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "expected_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "recorded_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "recorded_normalized_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "working_tree_sha256": "48e7855a854144d40070b4654c4ad76dba580be6b2f8e072e216556f25e98eeb",
+      "working_tree_bytes": 23826,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/gateway_protocol.rs",
+      "expected_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "recorded_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "recorded_normalized_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "working_tree_sha256": "b38c21bdb32dcb0f90d83bd8657e7114ed5dd45c577ef47d1f0fa6130fe884f9",
+      "working_tree_bytes": 3173,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/host_gateway_api.rs",
+      "expected_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "recorded_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "recorded_normalized_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "working_tree_sha256": "21b9b86489375196af9df67e9d9aeb066e6f0b9837dd71b44f8cff4cc9c2bff2",
+      "working_tree_bytes": 12998,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "expected_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "recorded_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "recorded_normalized_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "working_tree_sha256": "b9e9f90cd73dc8aa108af24c7ebbb5aef042d1701a72c691837ccc96c26f5a16",
+      "working_tree_bytes": 13576,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_media_reference_contract.rs",
+      "expected_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "recorded_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "recorded_normalized_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "working_tree_sha256": "925addcb191b659bacc3f0a2a5e81f2679eb4e1d42962c1e5c37d5ccaba1bd8c",
+      "working_tree_bytes": 20860,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "expected_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "recorded_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "recorded_normalized_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "working_tree_sha256": "720c290548ac0bd9d800c77815cc1f4efbf454d799c423470b079daa1736738f",
+      "working_tree_bytes": 34551,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "expected_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "recorded_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "recorded_normalized_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "working_tree_sha256": "4464a0dbca1b9378a49bd535dd7e90ad53f3124eb41ceae4cca410f7b8daf657",
+      "working_tree_bytes": 2424,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "expected_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "recorded_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "recorded_normalized_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "working_tree_sha256": "2f4355e9746c49051a28e721543ce52db1f355920b2d4ec99544a7e5efd60019",
+      "working_tree_bytes": 5415,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "expected_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "recorded_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "recorded_normalized_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "working_tree_sha256": "295f2d110a1ef442a023af7623b716e30b410df6ed4eb9dc57bee4d02dda735d",
+      "working_tree_bytes": 3301,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "expected_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "recorded_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "recorded_normalized_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "working_tree_sha256": "ccfd1792e781d5e32c69d6169ad9d8393eb3ec503c205d6880ed0865f3e03aea",
+      "working_tree_bytes": 8211,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "expected_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "recorded_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "recorded_normalized_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "working_tree_sha256": "ae8b59288422eea2991f45d3e0ed7ec534c907572f384dc42701f58a54221936",
+      "working_tree_bytes": 20621,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "expected_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "recorded_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "recorded_normalized_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "working_tree_sha256": "1567b08377c297f17858213d31d0dcbd3a737307bf0168ed6a9c3b0e996ffd63",
+      "working_tree_bytes": 10247,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "expected_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "recorded_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "recorded_normalized_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "working_tree_sha256": "4958046a5a27a5532a954f7f823bf04089371c95c126ccba6bc6821d89712dc8",
+      "working_tree_bytes": 17388,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "expected_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "recorded_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "recorded_normalized_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "working_tree_sha256": "10bb578a50d9b25eff04b26d289244070848c771cb25133eb1df8f6d1766a993",
+      "working_tree_bytes": 7492,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "expected_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "recorded_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "recorded_normalized_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "working_tree_sha256": "595dacfbf6f51c71528b3d312433621d764942410b2fa5568b08b9c229920224",
+      "working_tree_bytes": 17489,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "expected_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "recorded_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "recorded_normalized_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "working_tree_sha256": "d447b1ac2eeed3b57851f69620a419c777f40dfebcc8dcca0e921b2ec9ce3ef9",
+      "working_tree_bytes": 30720,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "expected_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "recorded_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "recorded_normalized_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "working_tree_sha256": "d40436aa71f69a24ce8d9a4716ecdf189e4466685d8fed808abf1a369be28f20",
+      "working_tree_bytes": 37113,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "expected_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "recorded_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "recorded_normalized_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "working_tree_sha256": "35f11e045b9035951cdc95bc09c685a918bef36998cf2967a4819895ef86ce71",
+      "working_tree_bytes": 8735,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "expected_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "recorded_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "recorded_normalized_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "working_tree_sha256": "daf192dd7138d120f7f50244b131c7893ba26447221843648eae318a13390250",
+      "working_tree_bytes": 6593,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "expected_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "recorded_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "recorded_normalized_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "working_tree_sha256": "0ae04ba716f856efbf9823ca75c6b5a5920ed6284116f6785e47ab6f96e7db68",
+      "working_tree_bytes": 11489,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "expected_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "recorded_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "recorded_normalized_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "working_tree_sha256": "14dc80e83130268b11ee12d1e7b4880bc834242624d7259b18b784f98cfcf83a",
+      "working_tree_bytes": 14315,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/attachment_paths.rs",
+      "expected_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "recorded_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "recorded_normalized_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "working_tree_sha256": "16f05e6c341977b94bb705b653037a823c5fc5c950d9a73c9ee007046c24e6e9",
+      "working_tree_bytes": 13571,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "expected_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "recorded_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "recorded_normalized_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "working_tree_sha256": "19e73f4aff95d8f5cec8a717bc02682d63799a9eddaef6988643e355b4e4f54e",
+      "working_tree_bytes": 437038,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/session/agent_db_serde.rs",
+      "expected_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "recorded_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "recorded_normalized_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "working_tree_sha256": "52d000a06098bf080efbae3f5197682c12c07ab3511ffc39e3dc536dd68e77ee",
+      "working_tree_bytes": 11761,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/session/production.rs",
+      "expected_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "recorded_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "recorded_normalized_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "working_tree_sha256": "1e7e7e40c2a8e60d30037e38bc124706c4620a08aaa2883ab392c7ed0e519f9a",
+      "working_tree_bytes": 297055,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "expected_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "recorded_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "recorded_normalized_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "working_tree_sha256": "f4b27a8f6aaaeb4e146b5c8d5b8726cd96d45c5430ace17b9c867c524ab80030",
+      "working_tree_bytes": 96949,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/transcript_mutation_events.rs",
+      "expected_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "recorded_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "recorded_normalized_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "working_tree_sha256": "04a2ec01c722fc65509be9599dbc3f77250c5f594c8b33fef618ec19a9ec81a2",
+      "working_tree_bytes": 1843,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/storage/store_db.rs",
+      "expected_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "recorded_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "recorded_normalized_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "working_tree_sha256": "8588d31b824bffd649fb3021181ed8302cd43ed61563cd1527ee30de5e0e2be9",
+      "working_tree_bytes": 4029,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/extensions/settings/settings_service.rs",
+      "expected_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "recorded_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "recorded_normalized_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "working_tree_sha256": "80364c4a63f7105641706c55cf649ea80405c234c0aa5786ec3f0d7b773d82ed",
+      "working_tree_bytes": 84898,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/src/agent_isolation/conversation_blob_store.rs",
+      "expected_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "recorded_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "recorded_normalized_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "working_tree_sha256": "ee11caa9ceb8e0cfaa6aa0a5c5f5a777e701e07711c91379d68acf45a68da751",
+      "working_tree_bytes": 19761,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "expected_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "recorded_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "recorded_normalized_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "working_tree_sha256": "6376b945c4fe2ee56ee4ad49534037393c09b77aefb7c10b74a5797d16338804",
+      "working_tree_bytes": 169417,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/app/Cargo.toml",
+      "expected_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "recorded_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "recorded_normalized_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "working_tree_sha256": "6f1d1c8c4ba4bc86280df3a56876e8e3f3489e621282c5817651c82e78a40b31",
+      "working_tree_bytes": 908,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/app/Cargo.lock",
+      "expected_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "recorded_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "recorded_normalized_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "working_tree_sha256": "5130b2bc25cc2d433f16b796c47dbc17e1f510b2d1397cdfdb878e5e56eae141",
+      "working_tree_bytes": 164953,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "expected_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "recorded_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "recorded_normalized_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "working_tree_sha256": "e3d6a14b9d60aa79f02af086aeadb362ba08400cdab8b97022dee2484940593e",
+      "working_tree_bytes": 128661,
+      "matches": true
+    },
+    {
+      "phase": "inputs_after",
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "expected_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "recorded_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "recorded_normalized_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "working_tree_sha256": "05e2b33a1e05747f4f816019196f698325d328a96c04bc4e847fae91f986f082",
+      "working_tree_bytes": 59262,
+      "matches": true
+    }
+  ],
+  "logs": [
+    {
+      "case": "media-settlement-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::session::agent_db::media_settlement_tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          13,
+          0,
+          0
+        ]
+      ],
+      "required_names": 13,
+      "observed_names": 13,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "media-settlement-owner.log",
+      "bytes": 30601,
+      "crlf": 0,
+      "lf_total": 818,
+      "bare_cr": 0,
+      "sha256": "59f66a1f5520090a768de665dbc959119ae852346d30fc7144366efd5080a471",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "outgoing-media-custody",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "attachment_paths::tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          5,
+          0,
+          0
+        ]
+      ],
+      "required_names": 5,
+      "observed_names": 5,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "outgoing-media-custody.log",
+      "bytes": 28779,
+      "crlf": 0,
+      "lf_total": 805,
+      "bare_cr": 0,
+      "sha256": "3b57637d5bc3afcd9d7d6851b796c6c688f5a11c96053bd8e09937a30afd265e",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "transaction-commit-owners",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_sessions_and_config_contract",
+        "commit",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          27,
+          0,
+          0
+        ]
+      ],
+      "required_names": 27,
+      "observed_names": 27,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "transaction-commit-owners.log",
+      "bytes": 30839,
+      "crlf": 0,
+      "lf_total": 833,
+      "bare_cr": 0,
+      "sha256": "18b59f18e7d6e59e9bc52e8873bd95776dd9a8ca56ef59393033cc86083525e1",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "cleanup-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::media_store::cleanup::tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          8,
+          0,
+          0
+        ]
+      ],
+      "required_names": 8,
+      "observed_names": 8,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "cleanup-owner.log",
+      "bytes": 29204,
+      "crlf": 0,
+      "lf_total": 808,
+      "bare_cr": 0,
+      "sha256": "3f852bb876a42f5ad1cf05fd5acbfa3b7973609510cf6f8f4c2ab0f3982c0ae2",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "cleanup-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_media_store_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          16,
+          0,
+          0
+        ]
+      ],
+      "required_names": 16,
+      "observed_names": 16,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "cleanup-consumers.log",
+      "bytes": 29801,
+      "crlf": 0,
+      "lf_total": 822,
+      "bare_cr": 0,
+      "sha256": "75d5be662d79e6cb02c720dc2138615d7d92ca8066ad6bcc09bfdcc8c34ffbba",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "html-policy",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_html_provenance_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          9,
+          0,
+          0
+        ]
+      ],
+      "required_names": 9,
+      "observed_names": 9,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "html-policy.log",
+      "bytes": 29247,
+      "crlf": 0,
+      "lf_total": 815,
+      "bare_cr": 0,
+      "sha256": "722ee15e378aa6539604bb30f41755392e642d7669b9ad1fe35f3c10572a01dc",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "host-read-format",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_channel_and_local_roots_contract",
+        "test_ocrm_host_read_media_policy_format_admission",
+        "--",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "required_names": 1,
+      "observed_names": 1,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "host-read-format.log",
+      "bytes": 28795,
+      "crlf": 0,
+      "lf_total": 807,
+      "bare_cr": 0,
+      "sha256": "480dcd41211396559955756e6cd2f4c1699e1ae412f57adef91310ac536e0337",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "file-url-admission",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::web_media::file_url_admission_tests::",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          6,
+          0,
+          0
+        ]
+      ],
+      "required_names": 6,
+      "observed_names": 6,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "file-url-admission.log",
+      "bytes": 29042,
+      "crlf": 0,
+      "lf_total": 806,
+      "bare_cr": 0,
+      "sha256": "058afe34b660991b882ab75727ac23e2b0f128ef33b50cce850f6a2688343980",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "explicit-html-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_web_media_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          26,
+          0,
+          0
+        ]
+      ],
+      "required_names": 26,
+      "observed_names": 26,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "explicit-html-consumers.log",
+      "bytes": 30548,
+      "crlf": 0,
+      "lf_total": 832,
+      "bare_cr": 0,
+      "sha256": "3034df0a347ae23691eed0f4abc60375d7d5c6560cca72b71ba3de2a8e7fed08",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "image-probe-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_image_ops_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          16,
+          0,
+          0
+        ]
+      ],
+      "required_names": 16,
+      "observed_names": 16,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "image-probe-consumers.log",
+      "bytes": 29739,
+      "crlf": 0,
+      "lf_total": 822,
+      "bare_cr": 0,
+      "sha256": "7bf4d06c4ae24d05221e0edc3456435c1ccf2046a0f1b401ec878612224f0263",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "bounded-reader-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--lib",
+        "extensions::attachments::media_reference::bounded_read_tests::",
+        "--",
+        "--test-threads=1",
+        "--show-output"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          8,
+          0,
+          0
+        ]
+      ],
+      "required_names": 8,
+      "observed_names": 8,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "bounded-reader-owner.log",
+      "bytes": 30237,
+      "crlf": 0,
+      "lf_total": 820,
+      "bare_cr": 0,
+      "sha256": "a20d0c932c89e70bb8e3acd382a1d9f5d444ebef808bbe9418f04861f575ba49",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "bounded-reader-public",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_media_reference_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          17,
+          0,
+          0
+        ]
+      ],
+      "required_names": 17,
+      "observed_names": 17,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "bounded-reader-public.log",
+      "bytes": 31160,
+      "crlf": 0,
+      "lf_total": 844,
+      "bare_cr": 0,
+      "sha256": "cfa59b6ccf002b871107d5b546c0b3f0a18cb41df34d7efef70f9d863eebdb1f",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "bounded-reader-box-consumer",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "attachments_service_contract",
+        "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+        "--",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "required_names": 1,
+      "observed_names": 1,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "bounded-reader-box-consumer.log",
+      "bytes": 28792,
+      "crlf": 0,
+      "lf_total": 807,
+      "bare_cr": 0,
+      "sha256": "596e99ec2200a104eb3c57a3417eeb8c507a225b539dde0f1f8d50b1eec97e4e",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "bounded-reader-image-consumer",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "attachments_service_contract",
+        "image_reads_and_persistence_preserve_content_addressed_dimensions",
+        "--",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "required_names": 1,
+      "observed_names": 1,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "bounded-reader-image-consumer.log",
+      "bytes": 28693,
+      "crlf": 0,
+      "lf_total": 806,
+      "bare_cr": 0,
+      "sha256": "c080edacfdbe4acf06e1018398080011369828a04ef18b2ae16d6fdb64cc3045",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "bounded-reader-channel-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "channel_attachment_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          8,
+          0,
+          0
+        ]
+      ],
+      "required_names": 8,
+      "observed_names": 8,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "bounded-reader-channel-consumers.log",
+      "bytes": 29269,
+      "crlf": 0,
+      "lf_total": 814,
+      "bare_cr": 0,
+      "sha256": "c0eabe9c92f7c1469c863db8d4c77e8237492c937d840305ea411223ab8dde56",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "local-file-url-owner",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "local_media_file_url_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          11,
+          0,
+          0
+        ]
+      ],
+      "required_names": 11,
+      "observed_names": 11,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "local-file-url-owner.log",
+      "bytes": 29427,
+      "crlf": 0,
+      "lf_total": 817,
+      "bare_cr": 0,
+      "sha256": "b53149b1f7062d0841845e05d0f1ac0dd8bfc887e312a334df9d2b9a3dd8033a",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "file-context-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "openclaw_media_file_context_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          10,
+          0,
+          0
+        ]
+      ],
+      "required_names": 10,
+      "observed_names": 10,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "file-context-consumers.log",
+      "bytes": 29374,
+      "crlf": 0,
+      "lf_total": 816,
+      "bare_cr": 0,
+      "sha256": "df102a4ea70884034b8e0c7e885777b36acedf1d7d2c7dcccb178f526309c9e6",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "send-message-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "send_message_tool_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          19,
+          0,
+          0
+        ]
+      ],
+      "required_names": 19,
+      "observed_names": 19,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "send-message-consumers.log",
+      "bytes": 30212,
+      "crlf": 0,
+      "lf_total": 825,
+      "bare_cr": 0,
+      "sha256": "e653b3bdc59e9a28cff4d701173a8bbf02ee8f69e647a9105d374dc866098cd1",
+      "matches_receipt_log_hash": true
+    },
+    {
+      "case": "agent-management-consumers",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--manifest-path",
+        "source/host/Cargo.toml",
+        "--test",
+        "sand_agent_management_tools_contract",
+        "--",
+        "--test-threads=1"
+      ],
+      "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "execution_error": null,
+      "summaries": [
+        [
+          3,
+          0,
+          0
+        ]
+      ],
+      "required_names": 3,
+      "observed_names": 3,
+      "missing_or_nonunique": [],
+      "unexpected": [],
+      "oracle_accepted": true,
+      "log": "agent-management-consumers.log",
+      "bytes": 28939,
+      "crlf": 0,
+      "lf_total": 809,
+      "bare_cr": 0,
+      "sha256": "bf9d6c27ffeb40d9fd5b29ba337f4673a615f3bc48f7d23630c07d2274901450",
+      "matches_receipt_log_hash": true
+    }
+  ],
+  "qualification": {
+    "scope": "Synthetic oracle qualification only; no product behavior evidence.",
+    "controls": [
+      {
+        "control": "positive",
+        "expected": true,
+        "observed": true
+      },
+      {
+        "control": "crlf-positive",
+        "expected": true,
+        "observed": true
+      },
+      {
+        "control": "missing",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "duplicate",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "unexpected",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "failed",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "ignored",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "zero-test",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "partial-log",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "duplicate-summary",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "failed-summary",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "nonzero-command",
+        "expected": false,
+        "observed": false
+      },
+      {
+        "control": "capture-error",
+        "expected": false,
+        "observed": false
+      }
+    ],
+    "accepted": true
+  }
+}

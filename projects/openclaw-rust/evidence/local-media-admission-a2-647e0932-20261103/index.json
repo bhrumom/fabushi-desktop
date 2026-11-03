@@ -1,0 +1,422 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "tested_subject": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+  "subject_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "source_run": 41576543520,
+  "runtime_run": 41576543683,
+  "attempt": 1,
+  "evidence_carrier": "The containing commit preserves prior subject receipts; it is not relabeled as the tested subject.",
+  "outcomes": {
+    "source": "G01 tracked-tree and G02 structural passed; final source/dependency/LFS closure and eight global completion flags remain open/false.",
+    "Windows_native_media": "16 commands;158 exact named positives;46 inputs agree with root exact-H tree; raw logs and exit/summary/hash accounting match.",
+    "Linux_native_media": "16 commands;163 exact named positives;46 inputs agree with root exact-H tree; raw logs and exit/summary/hash accounting match.",
+    "Linux_installation_restore": "29 ordinary cases plus two individually executed private-mount cases; compiled executable/command receipts and all original text members retained.",
+    "renderer": "121 tests;117 pass;4 fail. Later incoming loader code/test corrections are source-assessed separately; this H remains failed. MAB test skipped, receipt failed-or-incomplete.",
+    "actual_App": "Linux job125721250552 completed failure. Actual shipping cargo check exited0; App cargo test --no-run exited101 with19 diagnostics, all from missing serde_json imports and one integer/f64 fixture timestamp. No actual App case executed. Same errors blocked the later link-preview App build. Original failed/pending observations are retained; repair requires a new exact-H campaign.",
+    "macOS": "Queued at latest root read; no native result.",
+    "MSU": "Excluded: no result from this A2 campaign proves later MSU checkpoint71b039ae860c45e982dfbc8b1f401143d49d2454.",
+    "Linux_job": "Completed failure at2026-11-03T04:37:37Z; native media successes remain their own bounded evidence. App test compilation and later link-preview App build failed."
+  },
+  "artifact_containers": [
+    {
+      "id": 13204200615,
+      "name": "ocrm-media-cleanup-Windows-a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74-41576543683-1",
+      "zip_sha256": "100c3955488e773f2ae9f59f445a6e6198f16e17b7b9fd9073ce7626213db323",
+      "preservation": "verbatim receipt and all16 raw command logs; ZIP identity recorded separately"
+    },
+    {
+      "id": 13203799823,
+      "name": "ocrm-media-cleanup-Linux-a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74-41576543683-1",
+      "zip_sha256": "d1a134c702cb70be8e64fb841003d8b8e7161b1427803770dee54b30a20e5116",
+      "preservation": "all17 unmodified text members"
+    },
+    {
+      "id": 13204935336,
+      "name": "ocrm-config-restore-linux-a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74-41576543683-1",
+      "zip_sha256": "cdef2325a900c10a1656c86116da7198219920bc4fe84b1ccab3bcad279fbc5e",
+      "preservation": "all7 original text members"
+    },
+    {
+      "id": 13204725638,
+      "name": "ocrm-mab-a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+      "zip_sha256": "cde93b52fea6d5de3851cc55b34faf1166938f4dad73ad7ffa021bc7b91f7451",
+      "preservation": "sole raw receipt and complete decoded renderer log"
+    },
+    {
+      "id": 13205207341,
+      "name": "ocrm-sqlite-native-path-a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74-41576543683-1",
+      "zip_sha256": "3dcc2d70b22a7b236eb2b2159ac2f8cb74cf9ca95584c9495922948223380586",
+      "zip_bytes": 601501,
+      "preservation": "All5 original automation-app text members and all4 original link-preview-native-gateway text members; full79-member ZIP inventory and independent byte accounting preserved. The reused automation-admission group is referenced by original artifact identity; no new App evidence is inferred from its result."
+    }
+  ],
+  "scope": "Original CI execution evidence plus root source/tree/byte accounting. No local product execution or repository validator. No unit/full migration/platform-package ACCEPT promotion.",
+  "files": [
+    {
+      "path": "final-linux/automation-app/receipt.json",
+      "bytes": 40751,
+      "sha256": "8dc4617e2eb5625bae2e6fc5b2f4f1ed03ffe883cda0bc15930421e115507f56"
+    },
+    {
+      "path": "final-linux/automation-app/shipping-check.stderr.log",
+      "bytes": 50559,
+      "sha256": "0f26e720e6859bbd2fe4dc8ee95e113094ebb488d70e3950f0c8b945ed0c7231"
+    },
+    {
+      "path": "final-linux/automation-app/shipping-check.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "final-linux/automation-app/test-build.stderr.log",
+      "bytes": 8890,
+      "sha256": "f820b69a230316781cc6f05ca77bcea0263ff840fb35dbda10534aee25c61590"
+    },
+    {
+      "path": "final-linux/automation-app/test-build.stdout.log",
+      "bytes": 862225,
+      "sha256": "6cf48c5357cc6251ed60792e70b9d5fa1ab7439e38331ac2f70fd7847d57657c"
+    },
+    {
+      "path": "final-linux/link-preview-native-gateway/app.log",
+      "bytes": 43694,
+      "sha256": "3f25586d29dea987e7c6c6f1b33e372d39f178a479aa2da8604b08db69ea7087"
+    },
+    {
+      "path": "final-linux/link-preview-native-gateway/coordinator.log",
+      "bytes": 12771,
+      "sha256": "4b0bed5cf8b5c6a04fde44d2e5f4c29f3d410f9894c70503a1cc6e6765caa3fd"
+    },
+    {
+      "path": "final-linux/link-preview-native-gateway/host.log",
+      "bytes": 31892,
+      "sha256": "93eee4c99f9f76a5b0ff011fec2ccee10c4b74f306dbd916ebad983fb69178f4"
+    },
+    {
+      "path": "final-linux/link-preview-native-gateway/receipt.json",
+      "bytes": 34005,
+      "sha256": "640fe265fec818858aa605a7f7bd01d036be9d452f1c30b1a0503e9f70ee7331"
+    },
+    {
+      "path": "final-linux-artifact-inventory.json",
+      "bytes": 14643,
+      "sha256": "4071afb29ed9aa3d52524de241e23c1aa2046657c3ce93f36d1b2323c833ea37"
+    },
+    {
+      "path": "final-linux-job-metadata.json",
+      "bytes": 24427,
+      "sha256": "feaaf060c6ed9a0b0f766b57c1a7d20deefc73ea2cce18bccef12e1858980a7a"
+    },
+    {
+      "path": "installation-and-linux-collection/collection-summary.json",
+      "bytes": 4766,
+      "sha256": "f84648ff29d5cb61a737fa5ea4f4fa63a0fa1f8119beea0b0b359419b5b68783"
+    },
+    {
+      "path": "installation-and-linux-collection/evidence-summary.md",
+      "bytes": 12690,
+      "sha256": "5c4ad812b7ff871eb7d4024bb6e8039671350a1124dbf7da9e9bf85b555ae033"
+    },
+    {
+      "path": "installation-and-linux-collection/installation-receipt-accounting.json",
+      "bytes": 8617,
+      "sha256": "334faf66e87d25199419ce9cc06a1cae512cdcb031fdb900ca57b0fefc09bcb2"
+    },
+    {
+      "path": "installation-restore/compiled.json",
+      "bytes": 1056,
+      "sha256": "f615c7e58e1022907383b67af99ffe684cec6a08fc3821661ff55b50cebe4c75"
+    },
+    {
+      "path": "installation-restore/compiler-artifacts.jsonl",
+      "bytes": 598292,
+      "sha256": "eacf949162ddb8a46b57aaef67132b1e8a5fadcb954892f827274060d4e039f1"
+    },
+    {
+      "path": "installation-restore/execution.json",
+      "bytes": 3993,
+      "sha256": "754a032ce6ab5adadb6c553926a47a13d902af36ea432541fd149c256be2a891"
+    },
+    {
+      "path": "installation-restore/linux_bind_mounted_descendant_file_restore_boundary.log",
+      "bytes": 177,
+      "sha256": "6a4e7e28651c7c2b1c5866aceeccaa4a15c99c363f0d035d26552ed73e1c7bf4"
+    },
+    {
+      "path": "installation-restore/linux_bind_mounted_descendant_symlink_restore_boundary.log",
+      "bytes": 180,
+      "sha256": "440cf3d7e0e6eace8956a7f34d65489d87be9b68b0d67ae796d9df965585c3b7"
+    },
+    {
+      "path": "installation-restore/ordinary.log",
+      "bytes": 2744,
+      "sha256": "16919d27706549c326e4158ed832e8c669d8ccf8fccaf3f64cdf9a342d2aa43c"
+    },
+    {
+      "path": "installation-restore/subject.json",
+      "bytes": 477,
+      "sha256": "16108e56a963081039730e9b98cd5208e4e7530ad4ed65edae1b30b650aeb5bc"
+    },
+    {
+      "path": "linux-native/agent-management-consumers.log",
+      "bytes": 27684,
+      "sha256": "346e1d5151f42113327114a60d982f47bdd098c236f46f84896fa4aeb2b8850e"
+    },
+    {
+      "path": "linux-native/bounded-reader-box-consumer.log",
+      "bytes": 27537,
+      "sha256": "f3b0eb084eb79ebcff24006b5f21954c841d38701c73c6b4421c0c7d0ce6f364"
+    },
+    {
+      "path": "linux-native/bounded-reader-channel-consumers.log",
+      "bytes": 27941,
+      "sha256": "524fa0e57e5c770fd0eac286de09d510f8530f428b60eef4e55cff652c9ce99b"
+    },
+    {
+      "path": "linux-native/bounded-reader-image-consumer.log",
+      "bytes": 27425,
+      "sha256": "28da1e73a06aff75f9306dcd60ee86dd05f1add7411ce1b3c9b26746623ba292"
+    },
+    {
+      "path": "linux-native/bounded-reader-owner.log",
+      "bytes": 27944,
+      "sha256": "a0789792114efb444eb76c217c1a5f0809f33e43d6f04358b3fef2b3affabb33"
+    },
+    {
+      "path": "linux-native/bounded-reader-public.log",
+      "bytes": 29905,
+      "sha256": "8cafe42d12f966675c7dbc2563b179becb9434d45e5e3f8e64a3834ec7adc001"
+    },
+    {
+      "path": "linux-native/cleanup-consumers.log",
+      "bytes": 28640,
+      "sha256": "f8727bc2381cb9325846aa03cd0bcf954cb8ad557c2ef5cde43f6f8b40e9f39d"
+    },
+    {
+      "path": "linux-native/cleanup-owner.log",
+      "bytes": 26117,
+      "sha256": "0e963c2be469f26f5f3f0434092e855a0d056b624e7a738cd69e3a3bb7070e52"
+    },
+    {
+      "path": "linux-native/explicit-html-consumers.log",
+      "bytes": 29433,
+      "sha256": "ed2a24e201536694e7e2f9616eac3cb7f8fd10136ee152bb1cf26264cc91aead"
+    },
+    {
+      "path": "linux-native/file-context-consumers.log",
+      "bytes": 28105,
+      "sha256": "5ff165b801b8287ac36bf1f0117b08280ba812954b212f8d632446cdd7f3b3e5"
+    },
+    {
+      "path": "linux-native/file-url-admission.log",
+      "bytes": 25410,
+      "sha256": "7d588a4b36ebadf4a43d3ebdd6484aecfb7bdeeedbf1b333e9e89fd1b2c9dc92"
+    },
+    {
+      "path": "linux-native/host-read-format.log",
+      "bytes": 27540,
+      "sha256": "a61a6612b29c90cc1c41e8db2a2b4da4e03256c2a884ab09f7c57dba1e638721"
+    },
+    {
+      "path": "linux-native/html-policy.log",
+      "bytes": 28200,
+      "sha256": "32a717d1d79b4787b750c83b2e197e0ff4c7edf830cff8368073f7facc59a2c5"
+    },
+    {
+      "path": "linux-native/image-probe-consumers.log",
+      "bytes": 28484,
+      "sha256": "0d7f045c15daaa3a60c99efc3991bf6c9e6105a1a806f049b0815b2a6cb3363d"
+    },
+    {
+      "path": "linux-native/local-file-url-owner.log",
+      "bytes": 28096,
+      "sha256": "aa21d4165bccc236027ed99e4c2334a35afff0fe9beb3b2fa5052517d7d07870"
+    },
+    {
+      "path": "linux-native/receipt.json",
+      "bytes": 91458,
+      "sha256": "fdb6a05b44cc1cbf453ae7ad812684f25fe5d4326478ab0aeb7165870f20d3c7"
+    },
+    {
+      "path": "linux-native/send-message-consumers.log",
+      "bytes": 28794,
+      "sha256": "0a2cb286f3db6223e6c44ba643bf352b2ccc0a8e38b6b2269c34c9c7c5c4d3b7"
+    },
+    {
+      "path": "media-admission-a2-app-failure-audit-data.json",
+      "bytes": 56157,
+      "sha256": "9c8db5f1fd5aa08029ae3799ca6c2df4f48101e0d4a151e79ec6942ee4741115"
+    },
+    {
+      "path": "media-admission-a2-app-failure-audit.md",
+      "bytes": 18012,
+      "sha256": "3a7c6a42904f907ffa1a7c7249939176c734f72697604b3e4b72905f2edfeccd"
+    },
+    {
+      "path": "renderer-job-125721250334-failure-classification.md",
+      "bytes": 7990,
+      "sha256": "89b86da43eebb887f7ca707861967b2e10e52ff948ea2031686381bf0fb2f356"
+    },
+    {
+      "path": "renderer-job-125721250334.log",
+      "bytes": 140527,
+      "sha256": "dc67d69790921fac5ac797a448be41908640de366de1ade9f3c275ca8c0acbb7"
+    },
+    {
+      "path": "renderer-mab-13204725638-receipt.json",
+      "bytes": 20875,
+      "sha256": "183a2af40ffe5da5d347eb03037ea7ef83efdb6478d122da7742166088c5213e"
+    },
+    {
+      "path": "root-app-failure-classification.json",
+      "bytes": 15050,
+      "sha256": "a0d9fafbbdd540bb2fc6f7f6e0957d98beb22ed15425f6b7addf2809acad5213"
+    },
+    {
+      "path": "root-app-failure-pending-raw-receipt.json",
+      "bytes": 1352,
+      "sha256": "ba2a5dcc44bf00d855536997c8ccbee83975096da1ba71ab5a5c6307db58855b"
+    },
+    {
+      "path": "root-app-source-binding.json",
+      "bytes": 2838,
+      "sha256": "477d1707e9ae4b36fb5b63ccd2814d3a5e8bee6d419053a61720f25b144c1d1d"
+    },
+    {
+      "path": "root-exact-h-input-blobs.json",
+      "bytes": 4865,
+      "sha256": "d72495ad20aa276851490c1a2302845e529cd1836345bb58c97674a543dc1d14"
+    },
+    {
+      "path": "root-linux-native-raw-readback.json",
+      "bytes": 20554,
+      "sha256": "4ab538c91dc462888f1e1233c6dccacd26a49c9fe2415ac9f64594f592d11891"
+    },
+    {
+      "path": "root-renderer-incoming-disposition.json",
+      "bytes": 2214,
+      "sha256": "1a5830cd6feffaff4c301650d9156973391c953657404045da9e0619d878eb4a"
+    },
+    {
+      "path": "root-windows-raw-readback.json",
+      "bytes": 25420,
+      "sha256": "66c3d1b5f948fcc06b90d2c9c785f92aa4975a61f5c9a4f7f4cf4d2f9986e8cc"
+    },
+    {
+      "path": "source-authority-job-125721248916.log",
+      "bytes": 31524,
+      "sha256": "90b8967b824c2696d4a8a8d65ec8673b1c318d85ff2ca53a6bae4c9dc77584a9"
+    },
+    {
+      "path": "source-authority-summary.json",
+      "bytes": 607,
+      "sha256": "bfe38231d5870fc9ca3fadf41b0a0448abd85e19b4234327a669fdd667f3ccfb"
+    },
+    {
+      "path": "source-p0-structural-receipt.json",
+      "bytes": 5080,
+      "sha256": "265c06ddf829a28f5a12472d89ccf5c2faf193de1fd78f4b80b5df4ee14284c3"
+    },
+    {
+      "path": "source-persist-job-125721834426.log",
+      "bytes": 18141,
+      "sha256": "365a2c70b888033efec0e1426ece67cc9408511f2b941ae70df7610ab15e05d7"
+    },
+    {
+      "path": "windows-command-logs/agent-management-consumers.log",
+      "bytes": 28939,
+      "sha256": "1b6ead60df9831c515c90d0ea6c33c64283a24f313467ec586425db8eb031d6e"
+    },
+    {
+      "path": "windows-command-logs/bounded-reader-box-consumer.log",
+      "bytes": 28792,
+      "sha256": "ce5a979ae50dbe8e18bd4117b5683a78a02341243f57ec5518c57ecebc627d20"
+    },
+    {
+      "path": "windows-command-logs/bounded-reader-channel-consumers.log",
+      "bytes": 29269,
+      "sha256": "cd9e42a10575f4889ece5c9d0056eba8d16ded0478665c647bf21b47ba47c4b5"
+    },
+    {
+      "path": "windows-command-logs/bounded-reader-image-consumer.log",
+      "bytes": 28693,
+      "sha256": "b77e15c6688357c6f1f7ae7d27c065cdffd5970e2a2a9bdc9cda00154ba12fac"
+    },
+    {
+      "path": "windows-command-logs/bounded-reader-owner.log",
+      "bytes": 30237,
+      "sha256": "2842f65c759f2303ec941be590d1295bfa4ffde56a2cdb0ee5638cc6d5495e6a"
+    },
+    {
+      "path": "windows-command-logs/bounded-reader-public.log",
+      "bytes": 31160,
+      "sha256": "b4f8c738f16fc3c4db84ba30541eb081fb029534b1d59afc2564c7fce56b156c"
+    },
+    {
+      "path": "windows-command-logs/cleanup-consumers.log",
+      "bytes": 29802,
+      "sha256": "d4a0cd3d76ab43a94374672dcdbcf33c9e66b5ab6ca8409674745fc6463e6d0b"
+    },
+    {
+      "path": "windows-command-logs/cleanup-owner.log",
+      "bytes": 29691,
+      "sha256": "f914dfef255db4cbb8e9b1138c28cac37883de4809ef0a142d3c3e413cf60997"
+    },
+    {
+      "path": "windows-command-logs/explicit-html-consumers.log",
+      "bytes": 30548,
+      "sha256": "11c0c2eda86ce4c9e5e370c6740527faa8317bacea8069bd3991c100ccb7bd09"
+    },
+    {
+      "path": "windows-command-logs/file-context-consumers.log",
+      "bytes": 29374,
+      "sha256": "2518e3668b1a3c44783679443dfaf65a7e1060ab245b53e09f0f577d9e210e84"
+    },
+    {
+      "path": "windows-command-logs/file-url-admission.log",
+      "bytes": 29042,
+      "sha256": "609d30187a0708105fb309d2679fcd6d4615eb03d13e1f338f634fd363905ea9"
+    },
+    {
+      "path": "windows-command-logs/host-read-format.log",
+      "bytes": 28795,
+      "sha256": "8cbc45e9e3fc2c84b5c9f059d506c10c8c004ba2b75a9a6016b39f7aeb683aba"
+    },
+    {
+      "path": "windows-command-logs/html-policy.log",
+      "bytes": 29247,
+      "sha256": "3195f8198f5d35da3a826621959ec5c56d44407804813db91f7635253667eeaa"
+    },
+    {
+      "path": "windows-command-logs/image-probe-consumers.log",
+      "bytes": 29739,
+      "sha256": "d96433cb17a5d22cc77da8c0d1b10e8129d00e0587f8309d51390013d3e16093"
+    },
+    {
+      "path": "windows-command-logs/local-file-url-owner.log",
+      "bytes": 29427,
+      "sha256": "fb9cea1198be7ef4ace294bb970f8bca635847dffd32fc0634e84f3570ff161f"
+    },
+    {
+      "path": "windows-command-logs/send-message-consumers.log",
+      "bytes": 30049,
+      "sha256": "faea61809fb5da5768ef8bd13a1fdbbf329a3de9c05f1f9c318a83e3977d7c52"
+    },
+    {
+      "path": "windows-receipt.json",
+      "bytes": 92048,
+      "sha256": "efde2b7019f0d893d0c2762395f95bdef1420a8e856406798296a5c82f692676"
+    }
+  ],
+  "input_binding_note": "The original App receipt contains one255-path inputs_sha256 map, with no before/after maps. Four relevant source/build/workflow receipt entries independently match exact-H blobs; the defining SessionRuntime API and U lock were separately read from exact-H blobs. No absent-field equality or full input-stability result is inferred.",
+  "supplemental_app_audit": {
+    "report": "media-admission-a2-app-failure-audit.md",
+    "sha256": "3a7c6a42904f907ffa1a7c7249939176c734f72697604b3e4b72905f2edfeccd",
+    "data": "media-admission-a2-app-failure-audit-data.json",
+    "data_sha256": "9c8db5f1fd5aa08029ae3799ca6c2df4f48101e0d4a151e79ec6942ee4741115",
+    "scope": "independent raw-byte failure classification and exact two-edit source preservation; not terminal approval"
+  }
+}

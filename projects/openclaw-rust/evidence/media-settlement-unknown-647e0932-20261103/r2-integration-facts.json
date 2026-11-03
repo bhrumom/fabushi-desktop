@@ -1,0 +1,139 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "reviewed_R2_tree": "9892b15758904c23f3888ba8af1b5e429f29b59f",
+  "R2_starting_head": "871b033c5b9aabbe322cc7322af92648939db9b5",
+  "publication_parent_candidate": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+  "publication_parent_tree": "ba707272d259b7da5f0def5f31eb3380ce6fd3e8",
+  "incoming_paths": [
+    "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+    "source/host/src/extensions/mcp/plugin_skills.rs",
+    "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+    "source/host/tests/mcp_coordinator_relay_contract.rs"
+  ],
+  "all_20_reviewed_core_checkpoint_blobs_unchanged": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "parent_blob": "239c054aaccd42c0e5bc5e7ca0607431bcf400b7",
+      "expected_checkpoint_blob": "239c054aaccd42c0e5bc5e7ca0607431bcf400b7",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "parent_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "expected_checkpoint_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "parent_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "expected_checkpoint_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "parent_blob": "9e56c9f65259420b5cdde83e24bfbd1b35064cad",
+      "expected_checkpoint_blob": "9e56c9f65259420b5cdde83e24bfbd1b35064cad",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "parent_blob": "1921355c3643650b835fe1cefce8d653758492b4",
+      "expected_checkpoint_blob": "1921355c3643650b835fe1cefce8d653758492b4",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "parent_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "expected_checkpoint_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "parent_blob": "172485b8437151256fb5058fcec010f9a0665cc8",
+      "expected_checkpoint_blob": "172485b8437151256fb5058fcec010f9a0665cc8",
+      "match": true
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "parent_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "expected_checkpoint_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "match": true
+    },
+    {
+      "path": "source/host/app/Cargo.toml",
+      "parent_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "expected_checkpoint_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "parent_blob": "7ec9bd8a22fd595f63cb3f4b632673e298294dfa",
+      "expected_checkpoint_blob": "7ec9bd8a22fd595f63cb3f4b632673e298294dfa",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "parent_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "expected_checkpoint_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "parent_blob": "60e6be8a61d446706ac2188366be9bff1f08cb71",
+      "expected_checkpoint_blob": "60e6be8a61d446706ac2188366be9bff1f08cb71",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "parent_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "expected_checkpoint_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "match": true
+    },
+    {
+      "path": "source/host/src/attachment_paths.rs",
+      "parent_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "expected_checkpoint_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "match": true
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "parent_blob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+      "expected_checkpoint_blob": "6c27e9bb9f665b1160457b9acc29dd5d64fba289",
+      "match": true
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "parent_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "expected_checkpoint_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "match": true
+    },
+    {
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "parent_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "expected_checkpoint_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "match": true
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "parent_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "expected_checkpoint_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "match": true
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "parent_blob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+      "expected_checkpoint_blob": "ba7dde9c12eb14cb0a0615a49a013a2e126b860d",
+      "match": true
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "parent_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "expected_checkpoint_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "match": true
+    }
+  ],
+  "disposition": "Preserve all incoming plugin admission source/test/spec changes and earlier871 evidence edits through parent-tree composition. Source reviews remain bound to9892 and cover only declared20core scope; this readback does not approve the unrelated incoming changes or turn their checkpoint into execution evidence.",
+  "execution_selection": "One new exact-H campaign reuses existing branch-scoped source authority and runtime workflow: native media19groups with DB13/custody5/COMMIT27/Tool19 plus retained consumers on Linux/macOS/Windows; existing actual Linux App shipping/test feature observation and MSU8 with retained LFA6/SGF3 and relevant existing App controls. No duplicate dispatch when push already supplies the exact-H run. Original A2 failures retain their own subject. No local or htch validation."
+}

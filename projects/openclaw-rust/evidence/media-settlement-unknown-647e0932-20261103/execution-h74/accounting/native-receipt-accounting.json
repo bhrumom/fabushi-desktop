@@ -1,0 +1,2724 @@
+{
+  "scope": "Data-only accounting of downloaded H74 native receipts and raw Cargo output; no project validator or product test executed locally.",
+  "platforms": {
+    "Linux": {
+      "receipt_path": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/receipt.json",
+      "receipt_bytes": 120067,
+      "receipt_sha256": "5fc8dfd24cf2635e253056c12d06c1f67f29e66f5cabe9e3003a1efc0bdfc6e2",
+      "identity": {
+        "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+        "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run_id": "41580539491",
+        "run_attempt": "1",
+        "job": "sqlite-native-path",
+        "runner_os": "Linux",
+        "result": "failed-or-incomplete"
+      },
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+      "environment": {
+        "CARGO_TERM_COLOR": "never",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "LIBSQLITE3_SYS_USE_PKG_CONFIG": null,
+        "LIBSQLITE3_FLAGS": null,
+        "SQLITE3_LIB_DIR": null,
+        "SQLITE3_INCLUDE_DIR": null,
+        "SQLITE3_STATIC": null
+      },
+      "input_count_before": 62,
+      "input_count_after": 62,
+      "inputs_before_after_equal": true,
+      "receipt_inputs_unchanged": true,
+      "normalized_worktree_blob_mismatch_paths": [],
+      "oracle_qualification": {
+        "scope": "Synthetic oracle qualification only; no product behavior evidence.",
+        "controls": [
+          {
+            "control": "positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "crlf-positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "missing",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "unexpected",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "ignored",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "zero-test",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "partial-log",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "nonzero-command",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "capture-error",
+            "expected": false,
+            "observed": false
+          }
+        ],
+        "accepted": true
+      },
+      "planned_group_count": 19,
+      "executed_group_count": 19,
+      "planned_case_names": [
+        "media-settlement-owner",
+        "outgoing-media-custody",
+        "transaction-commit-owners",
+        "cleanup-owner",
+        "cleanup-consumers",
+        "html-policy",
+        "host-read-format",
+        "file-url-admission",
+        "explicit-html-consumers",
+        "image-probe-consumers",
+        "bounded-reader-owner",
+        "bounded-reader-public",
+        "bounded-reader-box-consumer",
+        "bounded-reader-image-consumer",
+        "bounded-reader-channel-consumers",
+        "local-file-url-owner",
+        "file-context-consumers",
+        "send-message-consumers",
+        "agent-management-consumers"
+      ],
+      "executed_case_names": [
+        "media-settlement-owner",
+        "outgoing-media-custody",
+        "transaction-commit-owners",
+        "cleanup-owner",
+        "cleanup-consumers",
+        "html-policy",
+        "host-read-format",
+        "file-url-admission",
+        "explicit-html-consumers",
+        "image-probe-consumers",
+        "bounded-reader-owner",
+        "bounded-reader-public",
+        "bounded-reader-box-consumer",
+        "bounded-reader-image-consumer",
+        "bounded-reader-channel-consumers",
+        "local-file-url-owner",
+        "file-context-consumers",
+        "send-message-consumers",
+        "agent-management-consumers"
+      ],
+      "all_capture_exits_zero": true,
+      "all_receipt_log_hashes_match": true,
+      "raw_pass_total": 202,
+      "raw_fail_total": 8,
+      "groups": [
+        {
+          "case": "media-settlement-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::session::agent_db::media_settlement_tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 101,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 13,
+          "raw_passed_names": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_clean_begin_refusal_is_known_and_fault_is_one_shot",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_deferred_commit_failure_is_unknown_with_clean_or_denied_rollback",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_slot_rejects_invalid_occupied_closed_and_unsettled_owners",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_known_refusal_rolls_back_a_real_receipt_failure_prefix",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_old_lease_drop_cannot_clear_a_new_arm",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_poisoned_transaction_is_unknown_and_retired",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_prior_transaction_retires_before_claiming_or_appending",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_real_commit_error_is_not_replaced_by_lost_ack_fault",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_receipt_failure_with_real_rollback_denial_is_unknown",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_rollback_authorizer_denies_only_rollback_and_is_scoped",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_success_and_exact_replay_preserve_durable_contract"
+          ],
+          "raw_failed_names": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication"
+          ],
+          "raw_summaries": [
+            {
+              "line": 727,
+              "text": "test result: FAILED. 11 passed; 2 failed; 0 ignored; 0 measured; 719 filtered out; finished in 0.10s"
+            }
+          ],
+          "raw_pass_count": 11,
+          "raw_fail_count": 2,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner"
+          ],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner"
+          ],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": false,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/media-settlement-owner.log",
+          "log_bytes": 30567,
+          "log_sha256": "26ab3027d0bd03ff450927df814349347f9fb104f0b8ec2677b4126aa838fad8",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "outgoing-media-custody",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "attachment_paths::tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 5,
+          "raw_passed_names": [
+            "attachment_paths::tests::commit_prevents_cleanup_of_persisted_media",
+            "attachment_paths::tests::confirmed_refusal_restores_only_its_own_cleanup_authority",
+            "attachment_paths::tests::rollback_removes_every_uncommitted_path",
+            "attachment_paths::tests::sealed_custody_refuses_new_paths_without_reopening_retained_media",
+            "attachment_paths::tests::unknown_owner_settlement_retains_bytes_through_abort_and_drop"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 692,
+              "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 727 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 5,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/outgoing-media-custody.log",
+          "log_bytes": 25266,
+          "log_sha256": "12fd5519dac296210ecc857ac42b461c5354c87921570426f54783ad61a6f19c",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "transaction-commit-owners",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_sessions_and_config_contract",
+            "commit",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 101,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 27,
+          "raw_passed_names": [
+            "channel_commit_oracle_rejects_changed_missing_or_discarded_error_handling",
+            "channel_commit_oracle_rejects_extra_unhandled_callers_and_method_references",
+            "channel_commit_oracle_rejects_missing_ambiguous_or_malformed_helper_boundaries",
+            "config_set_racing_one_owner_hash_has_one_commit_and_one_conflict",
+            "media_commit_oracle_rejects_changed_commit_or_rollback_commands",
+            "media_commit_oracle_rejects_changed_unknown_entry_handling",
+            "media_commit_oracle_rejects_discarded_or_changed_settlement_handling",
+            "media_commit_oracle_rejects_extra_aliased_or_macro_callers",
+            "media_commit_oracle_rejects_missing_duplicate_or_conditional_helper",
+            "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+            "test_archive_owner_rolls_back_when_commit_fails",
+            "test_background_result_owner_rolls_back_when_commit_fails",
+            "test_compaction_owner_rolls_back_when_commit_fails",
+            "test_conversation_blob_cleanup_rolls_back_when_commit_fails",
+            "test_cron_owner_writes_rollback_when_commit_fails",
+            "test_session_checkpoint_and_root_metadata_roll_back_when_commit_fails",
+            "test_session_metadata_owners_roll_back_when_commit_fails",
+            "test_session_transcript_append_rolls_back_when_commit_fails",
+            "test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_fails",
+            "test_session_transcript_update_and_identity_settlement_roll_back_when_commit_fails",
+            "test_transcript_owners_roll_back_when_commit_fails"
+          ],
+          "raw_failed_names": [
+            "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+            "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+            "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+            "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+            "test_agent_db_has_no_direct_commit_error_propagation",
+            "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"
+          ],
+          "raw_summaries": [
+            {
+              "line": 826,
+              "text": "test result: FAILED. 21 passed; 6 failed; 0 ignored; 0 measured; 40 filtered out; finished in 26.48s"
+            }
+          ],
+          "raw_pass_count": 21,
+          "raw_fail_count": 6,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [
+            "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+            "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+            "test_agent_db_has_no_direct_commit_error_propagation",
+            "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+            "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+            "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source"
+          ],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [
+            "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+            "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+            "test_agent_db_has_no_direct_commit_error_propagation",
+            "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+            "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+            "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source"
+          ],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": false,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/transaction-commit-owners.log",
+          "log_bytes": 32185,
+          "log_sha256": "921b7317adf72cfad5ddd22b541f1e366a4d8beddc48214b913f642fbaaf1bc5",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "cleanup-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::media_store::cleanup::tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 7,
+          "raw_passed_names": [
+            "extensions::attachments::media_store::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_ancestor",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_leaf",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_root",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 694,
+              "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 725 filtered out; finished in 0.02s"
+            }
+          ],
+          "raw_pass_count": 7,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/cleanup-owner.log",
+          "log_bytes": 25578,
+          "log_sha256": "af2ad85d829433118dbe8dfe263c79d96d00ffb8f6d13f1d21ad25f1919efb9b",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "cleanup-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_store_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 17,
+          "raw_passed_names": [
+            "remote_media_download_is_bounded_before_payload_acceptance",
+            "test_ocrm_device_pairing_qr_wiring",
+            "test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning",
+            "test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors",
+            "test_ocrm_media_store_delete_and_lifecycle",
+            "test_ocrm_media_store_filename_sanitization_and_truncation",
+            "test_ocrm_media_store_gateway_service_dispatch",
+            "test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers",
+            "test_ocrm_media_store_local_file_source_boundaries",
+            "test_ocrm_media_store_playback_cache_and_clean_old_media",
+            "test_ocrm_media_store_recursive_cleanup_preserves_raw_names",
+            "test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries",
+            "test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets",
+            "test_ocrm_media_store_remote_fixture_scope_and_filename_support",
+            "test_ocrm_media_store_save_and_read_buffer",
+            "test_ocrm_media_store_size_limit_rejection",
+            "test_ocrm_media_store_subdir_traversal_protection"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 774,
+              "text": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s"
+            }
+          ],
+          "raw_pass_count": 17,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/cleanup-consumers.log",
+          "log_bytes": 28639,
+          "log_sha256": "0faea9e4b8ad247d68dad55efc84c439e4d28c18a36bacba887d7b8f43184556",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "html-policy",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_html_provenance_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 12,
+          "raw_passed_names": [
+            "test_html_policy_public_assertion_trust_mime_and_byte_identity",
+            "test_html_policy_public_assertion_unicode_and_malformed_shape",
+            "test_html_provenance_filter_stale_rows",
+            "test_html_provenance_host_read_admission",
+            "test_html_provenance_marker_validation",
+            "test_html_provenance_permission_denied_retained_and_recovered",
+            "test_html_provenance_stale_link_kinds_and_recovery",
+            "test_html_provenance_stale_snapshot_order_and_missing_kinds",
+            "test_html_provenance_symlink_loop_retained_and_recovered",
+            "test_html_shape_ecmascript_whitespace",
+            "test_html_shape_header_word_boundaries",
+            "test_html_shape_utf16_window_boundaries"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 769,
+              "text": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s"
+            }
+          ],
+          "raw_pass_count": 12,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/html-policy.log",
+          "log_bytes": 28200,
+          "log_sha256": "62616319485eee4a056168f492ef2ae5b69ff3001796ff8fc87036a05b12be73",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "host-read-format",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_channel_and_local_roots_contract",
+            "test_ocrm_host_read_media_policy_format_admission",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 1,
+          "raw_passed_names": [
+            "test_ocrm_host_read_media_policy_format_admission"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 758,
+              "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 1,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/host-read-format.log",
+          "log_bytes": 27540,
+          "log_sha256": "fe856724bfb63d6e093a0f5b205ee02e3a56a1108b01fa099341c04d4f355794",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "file-url-admission",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::web_media::file_url_admission_tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 5,
+          "raw_passed_names": [
+            "extensions::attachments::web_media::file_url_admission_tests::invalid_file_urls_never_enter_local_reader",
+            "extensions::attachments::web_media::file_url_admission_tests::local_path_enters_reader_once_with_original_options",
+            "extensions::attachments::web_media::file_url_admission_tests::local_reader_error_is_returned_without_retry",
+            "extensions::attachments::web_media::file_url_admission_tests::network_paths_never_enter_local_reader",
+            "extensions::attachments::web_media::file_url_admission_tests::remote_file_authorities_never_enter_local_reader"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 692,
+              "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 727 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 5,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/file-url-admission.log",
+          "log_bytes": 25410,
+          "log_sha256": "bd6ab4e0580a037b1b82f749dfeccec08e78f3c9f5c2acf7de3546b344417bf9",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "explicit-html-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_web_media_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 28,
+          "raw_passed_names": [
+            "lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry",
+            "lfa_web_media_normalized_file_urls_reach_loader_and_service",
+            "lfa_web_media_uses_shared_invalid_file_url_boundary",
+            "test_ocrm_anthropic_inline_content_blocks_normalization",
+            "test_ocrm_remote_workspace_file_transfer",
+            "test_ocrm_web_media_animated_webp_preservation",
+            "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+            "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+            "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+            "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+            "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+            "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+            "test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+            "test_ocrm_web_media_explicit_html_utf16_shape_window",
+            "test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+            "test_ocrm_web_media_file_url_and_traversal_guards",
+            "test_ocrm_web_media_file_url_authority_alias_is_not_read",
+            "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+            "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+            "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
+            "test_ocrm_web_media_gateway_service_dispatch",
+            "test_ocrm_web_media_html_publication_requires_exact_mode",
+            "test_ocrm_web_media_local_loading_and_roots_boundary",
+            "test_ocrm_web_media_reader_aliases_keep_actual_root_checks",
+            "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
+            "test_ocrm_web_media_service_reader_failures_and_fresh_retry",
+            "test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
+            "web_media_local_reads_are_bounded_before_buffer_acceptance"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 785,
+              "text": "test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s"
+            }
+          ],
+          "raw_pass_count": 28,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/explicit-html-consumers.log",
+          "log_bytes": 29433,
+          "log_sha256": "bfad9fb28468cbc9e5d51ba523e7998bfed253f9056350032f3ef6d89050d689",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "image-probe-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_image_ops_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 16,
+          "raw_passed_names": [
+            "test_ocrm_image_ops_animated_webp_detection",
+            "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+            "test_ocrm_image_ops_build_resize_side_grid",
+            "test_ocrm_image_ops_display_metadata_orientation_swap",
+            "test_ocrm_image_ops_gateway_dispatch",
+            "test_ocrm_image_ops_normalize_anthropic_inline_image",
+            "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+            "test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+            "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
+            "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+            "test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+            "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+            "test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+            "test_ocrm_image_ops_prepare_attachment",
+            "test_ocrm_image_ops_quality_steps_ladder",
+            "test_ocrm_image_ops_still_png_and_apng_detection"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 773,
+              "text": "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 16,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/image-probe-consumers.log",
+          "log_bytes": 28484,
+          "log_sha256": "6271cef00e2a83ea6b892a7122edd5697a549b680029fc4d4504e31029ab0f06",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::media_reference::bounded_read_tests::",
+            "--",
+            "--test-threads=1",
+            "--show-output"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 11,
+          "raw_passed_names": [
+            "extensions::attachments::media_reference::bounded_read_tests::br_initial_allocation_ignores_large_metadata_hint",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_allocation_failure_discards_prefix",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_growth_is_bounded_and_amortized",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_late_read_error_discards_prefix",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_short_reads_and_interrupted_preserve_bytes",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_zero_and_one_over_probe_without_allocating_extra_bytes",
+            "extensions::attachments::media_reference::bounded_read_tests::br_opened_admission_rechecks_size_after_preflight",
+            "extensions::attachments::media_reference::bounded_read_tests::br_opened_file_growth_is_not_successful_prefix",
+            "extensions::attachments::media_reference::bounded_read_tests::br_unix_fifo_replacement_after_preflight_does_not_block",
+            "extensions::attachments::media_reference::bounded_read_tests::br_unix_open_owns_nonblocking_descriptor",
+            "extensions::attachments::media_reference::bounded_read_tests::br_unix_opened_admission_rejects_directory_replacement"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 717,
+              "text": "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 721 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 11,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/bounded-reader-owner.log",
+          "log_bytes": 27944,
+          "log_sha256": "0149691bc3fb9562f32d9042a9933c4f78a843b3d051225379ea6c7ee535fd84",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-public",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_reference_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 17,
+          "raw_passed_names": [
+            "br_public_empty_zero_exact_and_over_limits",
+            "br_public_hard_links_preserve_bytes",
+            "br_public_missing_and_directory_preserve_not_found",
+            "br_public_retry_observes_replaced_file",
+            "br_public_symbolic_links_preserve_bytes",
+            "br_public_usize_max_returns_original_bytes",
+            "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
+            "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+            "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+            "test_ocrm_media_ref_01_inbound_uri_parsing_and_validation",
+            "test_ocrm_media_ref_02_classify_media_reference_source",
+            "test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite",
+            "test_ocrm_media_ref_04_bounded_read_file",
+            "test_ocrm_media_ref_05_playback_codec_policy_resolution",
+            "test_ocrm_media_ref_06_native_codec_compatibility_rules",
+            "test_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation",
+            "test_ocrm_media_ref_08_canonicalize_persisted_user_message_media"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 795,
+              "text": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 17,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/bounded-reader-public.log",
+          "log_bytes": 29905,
+          "log_sha256": "4ca0d911ae0409c8f888f8ffe273483bd9e315629a39b24320095429040f6b41",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-box-consumer",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "attachments_service_contract",
+            "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 1,
+          "raw_passed_names": [
+            "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 758,
+              "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 1,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/bounded-reader-box-consumer.log",
+          "log_bytes": 27537,
+          "log_sha256": "01e1cdac6cfa34e0ff02e5830928815ca63bc231bdb07161f22d8f1dba1ec7df",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-image-consumer",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "attachments_service_contract",
+            "image_reads_and_persistence_preserve_content_addressed_dimensions",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 1,
+          "raw_passed_names": [
+            "image_reads_and_persistence_preserve_content_addressed_dimensions"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 757,
+              "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 1,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/bounded-reader-image-consumer.log",
+          "log_bytes": 27425,
+          "log_sha256": "923f04ea2975909514c7ce97ff66f3641cbfe150a90e0d8fe385a501c285fa98",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-channel-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "channel_attachment_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 7,
+          "raw_passed_names": [
+            "empty_directory_zero_and_oversize_local_inputs_fail_closed",
+            "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules",
+            "frozen_shared_media_inventory_drives_channel_classification",
+            "lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
+            "lfa_channel_invalid_file_urls_never_become_local_paths",
+            "lfa_channel_native_url_variants_preserve_bytes_and_metadata",
+            "remote_urls_are_forwarded_without_host_fetching"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 764,
+              "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 7,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/bounded-reader-channel-consumers.log",
+          "log_bytes": 27941,
+          "log_sha256": "cfa9bf892d3a37b9e04789367cc942b6bf899ec1705dc16322a65a7613aae15f",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "local-file-url-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "local_media_file_url_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 10,
+          "raw_passed_names": [
+            "lfa_path_guard_rejects_nul_on_every_platform",
+            "lfa_shared_owner_decodes_path_once_and_ignores_url_metadata",
+            "lfa_shared_owner_distinguishes_non_file_sources",
+            "lfa_shared_owner_keeps_refusal_stateless",
+            "lfa_shared_owner_preserves_native_file_url_variants",
+            "lfa_shared_owner_rejects_all_remote_authorities",
+            "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
+            "lfa_shared_owner_rejects_malformed_file_urls_after_normalization",
+            "lfa_unix_file_url_preserves_posix_control",
+            "lfa_unix_path_guard_preserves_colon_and_double_slash_paths"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 767,
+              "text": "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 10,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/local-file-url-owner.log",
+          "log_bytes": 28096,
+          "log_sha256": "8bf4dbf06663971876e17f26997a86bd22d3c19e8ed53db95b440fc33baa9b51",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "file-context-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_file_context_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 10,
+          "raw_passed_names": [
+            "lfa_file_context_uses_shared_admission_without_lossy_fallback",
+            "lfa_unix_file_context_preserves_colon_file_names",
+            "test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization",
+            "test_ocrm_file_ctx_02_render_file_context_block_escaping",
+            "test_ocrm_file_ctx_03_resolve_local_media_path",
+            "test_ocrm_file_ctx_04_unlink_if_exists",
+            "test_ocrm_file_ctx_05_document_truncation_notice",
+            "test_ocrm_file_ctx_06_runtime_prompt_image_provenance",
+            "test_ocrm_file_ctx_07_image_processor_contracts",
+            "test_ocrm_file_ctx_08_gateway_service_dispatch"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 767,
+              "text": "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 10,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/file-context-consumers.log",
+          "log_bytes": 28105,
+          "log_sha256": "b2a4f2290ede92813bf8691f04370dc1d2bab6e1d4ae652e46c5f0c5ea50c741",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "send-message-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "send_message_tool_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 19,
+          "raw_passed_names": [
+            "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+            "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
+            "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
+            "cursor_agent_message_resolves_shipping_title_fail_soft",
+            "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+            "encoding_preserves_frozen_text_markdown_and_summary_projection",
+            "generated_send_message_schema_exposes_frozen_widget_constraints",
+            "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+            "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+            "schema_matches_frozen_type_fences_and_attachment_schemes",
+            "send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
+            "send_message_bridge_is_first_party_and_delegates_other_tools",
+            "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
+            "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
+            "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
+            "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
+            "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
+            "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+            "widget_schema_matches_frozen_choice_contract_and_normalization"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 776,
+              "text": "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 19,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/send-message-consumers.log",
+          "log_bytes": 28957,
+          "log_sha256": "3894e838fd5f8259607b1ffa8681b92b3eba3b4c477e30da4cb94b3da82e7df5",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "agent-management-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "sand_agent_management_tools_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "/home/runner/work/fabushi-desktop/fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 3,
+          "raw_passed_names": [
+            "create_and_update_tools_delegate_with_merge_semantics",
+            "lfa_agent_management_batch_admits_all_urls_before_resolving",
+            "runner_management_tools_are_first_party_and_validate_send_inputs"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 760,
+              "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 3,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/linux-media-13205686727/agent-management-consumers.log",
+          "log_bytes": 27684,
+          "log_sha256": "2b5e3928fda7ec4eec17247b890a9cc14cb86f7ad745df14ee03fabc1052b992",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        }
+      ],
+      "zip": {
+        "path": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/h74-linux-media-13205686727.zip",
+        "bytes": 142379,
+        "sha256": "284a316258ebf9b60dd29d781c6aceb44ef3d1ca351a3337e0945efd7b2699b5",
+        "github_digest": "sha256:284a316258ebf9b60dd29d781c6aceb44ef3d1ca351a3337e0945efd7b2699b5",
+        "github_size_in_bytes": 142379,
+        "matches_github_digest": true,
+        "matches_github_size": true,
+        "members": [
+          {
+            "path": "agent-management-consumers.log",
+            "bytes": 27684,
+            "sha256": "2b5e3928fda7ec4eec17247b890a9cc14cb86f7ad745df14ee03fabc1052b992",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-box-consumer.log",
+            "bytes": 27537,
+            "sha256": "01e1cdac6cfa34e0ff02e5830928815ca63bc231bdb07161f22d8f1dba1ec7df",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-channel-consumers.log",
+            "bytes": 27941,
+            "sha256": "cfa9bf892d3a37b9e04789367cc942b6bf899ec1705dc16322a65a7613aae15f",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-image-consumer.log",
+            "bytes": 27425,
+            "sha256": "923f04ea2975909514c7ce97ff66f3641cbfe150a90e0d8fe385a501c285fa98",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-owner.log",
+            "bytes": 27944,
+            "sha256": "0149691bc3fb9562f32d9042a9933c4f78a843b3d051225379ea6c7ee535fd84",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-public.log",
+            "bytes": 29905,
+            "sha256": "4ca0d911ae0409c8f888f8ffe273483bd9e315629a39b24320095429040f6b41",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "cleanup-consumers.log",
+            "bytes": 28639,
+            "sha256": "0faea9e4b8ad247d68dad55efc84c439e4d28c18a36bacba887d7b8f43184556",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "cleanup-owner.log",
+            "bytes": 25578,
+            "sha256": "af2ad85d829433118dbe8dfe263c79d96d00ffb8f6d13f1d21ad25f1919efb9b",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "explicit-html-consumers.log",
+            "bytes": 29433,
+            "sha256": "bfad9fb28468cbc9e5d51ba523e7998bfed253f9056350032f3ef6d89050d689",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "file-context-consumers.log",
+            "bytes": 28105,
+            "sha256": "b2a4f2290ede92813bf8691f04370dc1d2bab6e1d4ae652e46c5f0c5ea50c741",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "file-url-admission.log",
+            "bytes": 25410,
+            "sha256": "bd6ab4e0580a037b1b82f749dfeccec08e78f3c9f5c2acf7de3546b344417bf9",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "host-read-format.log",
+            "bytes": 27540,
+            "sha256": "fe856724bfb63d6e093a0f5b205ee02e3a56a1108b01fa099341c04d4f355794",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "html-policy.log",
+            "bytes": 28200,
+            "sha256": "62616319485eee4a056168f492ef2ae5b69ff3001796ff8fc87036a05b12be73",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "image-probe-consumers.log",
+            "bytes": 28484,
+            "sha256": "6271cef00e2a83ea6b892a7122edd5697a549b680029fc4d4504e31029ab0f06",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "local-file-url-owner.log",
+            "bytes": 28096,
+            "sha256": "8bf4dbf06663971876e17f26997a86bd22d3c19e8ed53db95b440fc33baa9b51",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "media-settlement-owner.log",
+            "bytes": 30567,
+            "sha256": "26ab3027d0bd03ff450927df814349347f9fb104f0b8ec2677b4126aa838fad8",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "outgoing-media-custody.log",
+            "bytes": 25266,
+            "sha256": "12fd5519dac296210ecc857ac42b461c5354c87921570426f54783ad61a6f19c",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "receipt.json",
+            "bytes": 120067,
+            "sha256": "5fc8dfd24cf2635e253056c12d06c1f67f29e66f5cabe9e3003a1efc0bdfc6e2",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "send-message-consumers.log",
+            "bytes": 28957,
+            "sha256": "3894e838fd5f8259607b1ffa8681b92b3eba3b4c477e30da4cb94b3da82e7df5",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "transaction-commit-owners.log",
+            "bytes": 32185,
+            "sha256": "921b7317adf72cfad5ddd22b541f1e366a4d8beddc48214b913f642fbaaf1bc5",
+            "extracted_bytes_equal": true
+          }
+        ]
+      }
+    },
+    "Windows": {
+      "receipt_path": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/receipt.json",
+      "receipt_bytes": 121109,
+      "receipt_sha256": "c79d4e0d447831aae967a80be6d74b5c39b71c0daa64d18ac0595f151f563ce8",
+      "identity": {
+        "subject_commit": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+        "subject_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+        "upstream": {
+          "repository": "openclaw/openclaw",
+          "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+          "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+        },
+        "run_id": "41580539491",
+        "run_attempt": "1",
+        "job": "media-store-windows",
+        "runner_os": "Windows",
+        "result": "failed-or-incomplete"
+      },
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-pc-windows-msvc\nrelease: 1.97.1\nLLVM version: 22.1.6",
+      "environment": {
+        "CARGO_TERM_COLOR": "never",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "LIBSQLITE3_SYS_USE_PKG_CONFIG": null,
+        "LIBSQLITE3_FLAGS": null,
+        "SQLITE3_LIB_DIR": null,
+        "SQLITE3_INCLUDE_DIR": null,
+        "SQLITE3_STATIC": null
+      },
+      "input_count_before": 62,
+      "input_count_after": 62,
+      "inputs_before_after_equal": true,
+      "receipt_inputs_unchanged": true,
+      "normalized_worktree_blob_mismatch_paths": [],
+      "oracle_qualification": {
+        "scope": "Synthetic oracle qualification only; no product behavior evidence.",
+        "controls": [
+          {
+            "control": "positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "crlf-positive",
+            "expected": true,
+            "observed": true
+          },
+          {
+            "control": "missing",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "unexpected",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "ignored",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "zero-test",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "partial-log",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "duplicate-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "failed-summary",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "nonzero-command",
+            "expected": false,
+            "observed": false
+          },
+          {
+            "control": "capture-error",
+            "expected": false,
+            "observed": false
+          }
+        ],
+        "accepted": true
+      },
+      "planned_group_count": 19,
+      "executed_group_count": 19,
+      "planned_case_names": [
+        "media-settlement-owner",
+        "outgoing-media-custody",
+        "transaction-commit-owners",
+        "cleanup-owner",
+        "cleanup-consumers",
+        "html-policy",
+        "host-read-format",
+        "file-url-admission",
+        "explicit-html-consumers",
+        "image-probe-consumers",
+        "bounded-reader-owner",
+        "bounded-reader-public",
+        "bounded-reader-box-consumer",
+        "bounded-reader-image-consumer",
+        "bounded-reader-channel-consumers",
+        "local-file-url-owner",
+        "file-context-consumers",
+        "send-message-consumers",
+        "agent-management-consumers"
+      ],
+      "executed_case_names": [
+        "media-settlement-owner",
+        "outgoing-media-custody",
+        "transaction-commit-owners",
+        "cleanup-owner",
+        "cleanup-consumers",
+        "html-policy",
+        "host-read-format",
+        "file-url-admission",
+        "explicit-html-consumers",
+        "image-probe-consumers",
+        "bounded-reader-owner",
+        "bounded-reader-public",
+        "bounded-reader-box-consumer",
+        "bounded-reader-image-consumer",
+        "bounded-reader-channel-consumers",
+        "local-file-url-owner",
+        "file-context-consumers",
+        "send-message-consumers",
+        "agent-management-consumers"
+      ],
+      "all_capture_exits_zero": true,
+      "all_receipt_log_hashes_match": true,
+      "raw_pass_total": 196,
+      "raw_fail_total": 9,
+      "groups": [
+        {
+          "case": "media-settlement-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::session::agent_db::media_settlement_tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 101,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 13,
+          "raw_passed_names": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_clean_begin_refusal_is_known_and_fault_is_one_shot",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_deferred_commit_failure_is_unknown_with_clean_or_denied_rollback",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_slot_rejects_invalid_occupied_closed_and_unsettled_owners",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_known_refusal_rolls_back_a_real_receipt_failure_prefix",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_old_lease_drop_cannot_clear_a_new_arm",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_poisoned_transaction_is_unknown_and_retired",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_prior_transaction_retires_before_claiming_or_appending",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_real_commit_error_is_not_replaced_by_lost_ack_fault",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_receipt_failure_with_real_rollback_denial_is_unknown",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_rollback_authorizer_denies_only_rollback_and_is_scoped",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_success_and_exact_replay_preserve_durable_contract"
+          ],
+          "raw_failed_names": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication"
+          ],
+          "raw_summaries": [
+            {
+              "line": 839,
+              "text": "test result: FAILED. 11 passed; 2 failed; 0 ignored; 0 measured; 706 filtered out; finished in 1.14s"
+            }
+          ],
+          "raw_pass_count": 11,
+          "raw_fail_count": 2,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner"
+          ],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_lost_commit_acknowledgement_retires_without_publication",
+            "extensions::session::agent_db::media_settlement_tests::media_settlement_fault_matches_three_identities_and_only_its_exact_owner"
+          ],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": false,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/media-settlement-owner.log",
+          "log_bytes": 34262,
+          "log_sha256": "c73d70c1d9829a1b8404f8e888e048c4a5a997c63f4f0ead5221f6e4b3cffcb9",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "outgoing-media-custody",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "attachment_paths::tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 5,
+          "raw_passed_names": [
+            "attachment_paths::tests::commit_prevents_cleanup_of_persisted_media",
+            "attachment_paths::tests::confirmed_refusal_restores_only_its_own_cleanup_authority",
+            "attachment_paths::tests::rollback_removes_every_uncommitted_path",
+            "attachment_paths::tests::sealed_custody_refuses_new_paths_without_reopening_retained_media",
+            "attachment_paths::tests::unknown_owner_settlement_retains_bytes_through_abort_and_drop"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 804,
+              "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 714 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 5,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/outgoing-media-custody.log",
+          "log_bytes": 28779,
+          "log_sha256": "b721149c77bc329b06c084ecfe2ad5fee214793f7ec3462e2e6de607ce22c623",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "transaction-commit-owners",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_sessions_and_config_contract",
+            "commit",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 101,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 27,
+          "raw_passed_names": [
+            "channel_commit_oracle_rejects_changed_missing_or_discarded_error_handling",
+            "channel_commit_oracle_rejects_extra_unhandled_callers_and_method_references",
+            "channel_commit_oracle_rejects_missing_ambiguous_or_malformed_helper_boundaries",
+            "config_set_racing_one_owner_hash_has_one_commit_and_one_conflict",
+            "media_commit_oracle_rejects_changed_commit_or_rollback_commands",
+            "media_commit_oracle_rejects_changed_unknown_entry_handling",
+            "media_commit_oracle_rejects_discarded_or_changed_settlement_handling",
+            "media_commit_oracle_rejects_extra_aliased_or_macro_callers",
+            "media_commit_oracle_rejects_missing_duplicate_or_conditional_helper",
+            "test_archive_owner_rolls_back_when_commit_fails",
+            "test_background_result_owner_rolls_back_when_commit_fails",
+            "test_compaction_owner_rolls_back_when_commit_fails",
+            "test_conversation_blob_cleanup_rolls_back_when_commit_fails",
+            "test_cron_owner_writes_rollback_when_commit_fails",
+            "test_session_checkpoint_and_root_metadata_roll_back_when_commit_fails",
+            "test_session_metadata_owners_roll_back_when_commit_fails",
+            "test_session_transcript_append_rolls_back_when_commit_fails",
+            "test_session_transcript_delete_and_conversation_clear_roll_back_when_commit_fails",
+            "test_session_transcript_update_and_identity_settlement_roll_back_when_commit_fails",
+            "test_transcript_owners_roll_back_when_commit_fails"
+          ],
+          "raw_failed_names": [
+            "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source",
+            "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+            "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+            "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+            "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+            "test_agent_db_has_no_direct_commit_error_propagation",
+            "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup"
+          ],
+          "raw_summaries": [
+            {
+              "line": 880,
+              "text": "test result: FAILED. 20 passed; 7 failed; 0 ignored; 0 measured; 40 filtered out; finished in 21.42s"
+            }
+          ],
+          "raw_pass_count": 20,
+          "raw_fail_count": 7,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [
+            "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+            "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+            "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+            "test_agent_db_has_no_direct_commit_error_propagation",
+            "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+            "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+            "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source"
+          ],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [
+            "media_commit_oracle_accepts_actual_owner_and_preserves_admission_guards",
+            "media_commit_oracle_rejects_missing_duplicate_or_conditional_owner",
+            "media_commit_oracle_preserves_raw_commit_prohibition_outside_proven_method",
+            "test_agent_db_has_no_direct_commit_error_propagation",
+            "test_commit_error_oracle_rejects_unguarded_propagation_and_missing_cleanup",
+            "channel_commit_oracle_retains_unsafe_owners_before_after_and_inside_helper_impl",
+            "channel_commit_oracle_rejects_hidden_owner_and_aliased_calls_in_actual_source"
+          ],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": false,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/transaction-commit-owners.log",
+          "log_bytes": 33774,
+          "log_sha256": "2e25b24f4252140b8d4c9f063b62b9d596b62d2ed833fc3b2afef896fa922bf3",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "cleanup-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::media_store::cleanup::tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 8,
+          "raw_passed_names": [
+            "extensions::attachments::media_store::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_ancestor",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_leaf",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_root",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary",
+            "extensions::attachments::media_store::cleanup::tests::cleanup_windows_identity_compares_full_file_id"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 807,
+              "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 711 filtered out; finished in 0.16s"
+            }
+          ],
+          "raw_pass_count": 8,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/cleanup-owner.log",
+          "log_bytes": 29204,
+          "log_sha256": "09bc60e6dc793624dc4fb09a6941ce5d41bc11973bf3bebb45ce711fc809cfac",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "cleanup-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_store_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 16,
+          "raw_passed_names": [
+            "remote_media_download_is_bounded_before_payload_acceptance",
+            "test_ocrm_device_pairing_qr_wiring",
+            "test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning",
+            "test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors",
+            "test_ocrm_media_store_cleanup_protects_top_level_case_variants",
+            "test_ocrm_media_store_delete_and_lifecycle",
+            "test_ocrm_media_store_filename_sanitization_and_truncation",
+            "test_ocrm_media_store_gateway_service_dispatch",
+            "test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers",
+            "test_ocrm_media_store_local_file_source_boundaries",
+            "test_ocrm_media_store_playback_cache_and_clean_old_media",
+            "test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets",
+            "test_ocrm_media_store_remote_fixture_scope_and_filename_support",
+            "test_ocrm_media_store_save_and_read_buffer",
+            "test_ocrm_media_store_size_limit_rejection",
+            "test_ocrm_media_store_subdir_traversal_protection"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 821,
+              "text": "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s"
+            }
+          ],
+          "raw_pass_count": 16,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/cleanup-consumers.log",
+          "log_bytes": 29801,
+          "log_sha256": "d6b05e0dd4362d1a86fee12e4826824b43d30f80738281b6d8becc4fa141a896",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "html-policy",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_html_provenance_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 9,
+          "raw_passed_names": [
+            "test_html_policy_public_assertion_trust_mime_and_byte_identity",
+            "test_html_policy_public_assertion_unicode_and_malformed_shape",
+            "test_html_provenance_filter_stale_rows",
+            "test_html_provenance_host_read_admission",
+            "test_html_provenance_marker_validation",
+            "test_html_provenance_stale_snapshot_order_and_missing_kinds",
+            "test_html_shape_ecmascript_whitespace",
+            "test_html_shape_header_word_boundaries",
+            "test_html_shape_utf16_window_boundaries"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 814,
+              "text": "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s"
+            }
+          ],
+          "raw_pass_count": 9,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/html-policy.log",
+          "log_bytes": 29247,
+          "log_sha256": "1c2e0a2ebc33649f81f3467d5804465aff0050d1d0a73eda070f419699b6e0d2",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "host-read-format",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_channel_and_local_roots_contract",
+            "test_ocrm_host_read_media_policy_format_admission",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 1,
+          "raw_passed_names": [
+            "test_ocrm_host_read_media_policy_format_admission"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 806,
+              "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 1,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/host-read-format.log",
+          "log_bytes": 28795,
+          "log_sha256": "38888694f152c64a1f67cdd3836f3868f6fc840cc7528a44828833a60623af89",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "file-url-admission",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::web_media::file_url_admission_tests::",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 6,
+          "raw_passed_names": [
+            "extensions::attachments::web_media::file_url_admission_tests::invalid_file_urls_never_enter_local_reader",
+            "extensions::attachments::web_media::file_url_admission_tests::local_path_enters_reader_once_with_original_options",
+            "extensions::attachments::web_media::file_url_admission_tests::local_reader_error_is_returned_without_retry",
+            "extensions::attachments::web_media::file_url_admission_tests::network_paths_never_enter_local_reader",
+            "extensions::attachments::web_media::file_url_admission_tests::remote_file_authorities_never_enter_local_reader",
+            "extensions::attachments::web_media::file_url_admission_tests::verbatim_drive_workspace_enters_local_reader"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 805,
+              "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 713 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 6,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/file-url-admission.log",
+          "log_bytes": 29042,
+          "log_sha256": "18d615ab7a8cacfc14cf6aac2c39756f54988df5ee3b86e018db22b2bb5e21b8",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "explicit-html-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_web_media_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 26,
+          "raw_passed_names": [
+            "lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry",
+            "lfa_web_media_normalized_file_urls_reach_loader_and_service",
+            "lfa_web_media_uses_shared_invalid_file_url_boundary",
+            "test_ocrm_anthropic_inline_content_blocks_normalization",
+            "test_ocrm_remote_workspace_file_transfer",
+            "test_ocrm_web_media_animated_webp_preservation",
+            "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
+            "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
+            "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes",
+            "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts",
+            "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext",
+            "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+            "test_ocrm_web_media_explicit_html_unicode_byte_boundary",
+            "test_ocrm_web_media_explicit_html_utf16_shape_window",
+            "test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
+            "test_ocrm_web_media_file_url_and_traversal_guards",
+            "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+            "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+            "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
+            "test_ocrm_web_media_gateway_service_dispatch",
+            "test_ocrm_web_media_html_publication_requires_exact_mode",
+            "test_ocrm_web_media_local_loading_and_roots_boundary",
+            "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
+            "test_ocrm_web_media_service_reader_failures_and_fresh_retry",
+            "test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
+            "web_media_local_reads_are_bounded_before_buffer_acceptance"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 831,
+              "text": "test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s"
+            }
+          ],
+          "raw_pass_count": 26,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/explicit-html-consumers.log",
+          "log_bytes": 30548,
+          "log_sha256": "46daf4d74d0053ebb56057d6733a4a5c1be9a2d076ab3774552e4a44d3b6d04c",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "image-probe-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_image_ops_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 16,
+          "raw_passed_names": [
+            "test_ocrm_image_ops_animated_webp_detection",
+            "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit",
+            "test_ocrm_image_ops_build_resize_side_grid",
+            "test_ocrm_image_ops_display_metadata_orientation_swap",
+            "test_ocrm_image_ops_gateway_dispatch",
+            "test_ocrm_image_ops_normalize_anthropic_inline_image",
+            "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+            "test_ocrm_image_ops_png_prefix_file_loader_and_retry",
+            "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
+            "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry",
+            "test_ocrm_image_ops_png_probe_preserves_required_header_metadata",
+            "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type",
+            "test_ocrm_image_ops_png_probe_rejects_zero_dimensions",
+            "test_ocrm_image_ops_prepare_attachment",
+            "test_ocrm_image_ops_quality_steps_ladder",
+            "test_ocrm_image_ops_still_png_and_apng_detection"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 821,
+              "text": "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+            }
+          ],
+          "raw_pass_count": 16,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/image-probe-consumers.log",
+          "log_bytes": 29739,
+          "log_sha256": "6bf9b7bba7d7b25a29f29ce91e3e7494b40e91e9fb7f4dbab4ae56ad4eb9f9c6",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "extensions::attachments::media_reference::bounded_read_tests::",
+            "--",
+            "--test-threads=1",
+            "--show-output"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 8,
+          "raw_passed_names": [
+            "extensions::attachments::media_reference::bounded_read_tests::br_initial_allocation_ignores_large_metadata_hint",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_allocation_failure_discards_prefix",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_growth_is_bounded_and_amortized",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_late_read_error_discards_prefix",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_short_reads_and_interrupted_preserve_bytes",
+            "extensions::attachments::media_reference::bounded_read_tests::br_loop_zero_and_one_over_probe_without_allocating_extra_bytes",
+            "extensions::attachments::media_reference::bounded_read_tests::br_opened_admission_rechecks_size_after_preflight",
+            "extensions::attachments::media_reference::bounded_read_tests::br_opened_file_growth_is_not_successful_prefix"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 819,
+              "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 711 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 8,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/bounded-reader-owner.log",
+          "log_bytes": 30237,
+          "log_sha256": "6e91286169ae1fa82ff1ad94658a9bf284198a17cf68c668a6eb0e2a3ec9949e",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-public",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_reference_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 17,
+          "raw_passed_names": [
+            "br_public_empty_zero_exact_and_over_limits",
+            "br_public_hard_links_preserve_bytes",
+            "br_public_missing_and_directory_preserve_not_found",
+            "br_public_retry_observes_replaced_file",
+            "br_public_symbolic_links_preserve_bytes",
+            "br_public_usize_max_returns_original_bytes",
+            "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
+            "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+            "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+            "test_ocrm_media_ref_01_inbound_uri_parsing_and_validation",
+            "test_ocrm_media_ref_02_classify_media_reference_source",
+            "test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite",
+            "test_ocrm_media_ref_04_bounded_read_file",
+            "test_ocrm_media_ref_05_playback_codec_policy_resolution",
+            "test_ocrm_media_ref_06_native_codec_compatibility_rules",
+            "test_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation",
+            "test_ocrm_media_ref_08_canonicalize_persisted_user_message_media"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 843,
+              "text": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+            }
+          ],
+          "raw_pass_count": 17,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/bounded-reader-public.log",
+          "log_bytes": 31160,
+          "log_sha256": "01cdb999a6d5cfdd8280b9f436b3f6d10ce59794d25d6d33d2014fcbf9cb866e",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-box-consumer",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "attachments_service_contract",
+            "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 1,
+          "raw_passed_names": [
+            "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 806,
+              "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.02s"
+            }
+          ],
+          "raw_pass_count": 1,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/bounded-reader-box-consumer.log",
+          "log_bytes": 28792,
+          "log_sha256": "81f6d966791416e180bc634234a94f5bcef1c2ab8542ae80ea098b4db46b9660",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-image-consumer",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "attachments_service_contract",
+            "image_reads_and_persistence_preserve_content_addressed_dimensions",
+            "--",
+            "--exact",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 1,
+          "raw_passed_names": [
+            "image_reads_and_persistence_preserve_content_addressed_dimensions"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 805,
+              "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 1,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/bounded-reader-image-consumer.log",
+          "log_bytes": 28693,
+          "log_sha256": "cf9fdf198a4ffee726f1d9ced9ad76a888448caf7af906bf996815d917c5f24c",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "bounded-reader-channel-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "channel_attachment_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 8,
+          "raw_passed_names": [
+            "empty_directory_zero_and_oversize_local_inputs_fail_closed",
+            "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules",
+            "frozen_shared_media_inventory_drives_channel_classification",
+            "lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
+            "lfa_channel_invalid_file_urls_never_become_local_paths",
+            "lfa_channel_native_url_variants_preserve_bytes_and_metadata",
+            "lfa_windows_channel_paths_reject_network_and_alias_spellings",
+            "remote_urls_are_forwarded_without_host_fetching"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 813,
+              "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s"
+            }
+          ],
+          "raw_pass_count": 8,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/bounded-reader-channel-consumers.log",
+          "log_bytes": 29269,
+          "log_sha256": "3d80b1f13208637ade299057af60b78701cd12b8980e6956a92afb3aeb130af4",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "local-file-url-owner",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "local_media_file_url_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 11,
+          "raw_passed_names": [
+            "lfa_path_guard_rejects_nul_on_every_platform",
+            "lfa_shared_owner_decodes_path_once_and_ignores_url_metadata",
+            "lfa_shared_owner_distinguishes_non_file_sources",
+            "lfa_shared_owner_keeps_refusal_stateless",
+            "lfa_shared_owner_preserves_native_file_url_variants",
+            "lfa_shared_owner_rejects_all_remote_authorities",
+            "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
+            "lfa_shared_owner_rejects_malformed_file_urls_after_normalization",
+            "lfa_windows_path_guard_accepts_rooted_drives",
+            "lfa_windows_path_guard_rejects_network_and_namespace_aliases",
+            "lfa_windows_shared_owner_rejects_drive_less_and_alias_urls"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 816,
+              "text": "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 11,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/local-file-url-owner.log",
+          "log_bytes": 29427,
+          "log_sha256": "8860f20be403ab611542a4735133bff1d223f3e6390dcd93795f2e5e5557cbee",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "file-context-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "openclaw_media_file_context_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 10,
+          "raw_passed_names": [
+            "lfa_file_context_uses_shared_admission_without_lossy_fallback",
+            "lfa_windows_file_context_rejects_plain_network_and_alias_paths",
+            "test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization",
+            "test_ocrm_file_ctx_02_render_file_context_block_escaping",
+            "test_ocrm_file_ctx_03_resolve_local_media_path",
+            "test_ocrm_file_ctx_04_unlink_if_exists",
+            "test_ocrm_file_ctx_05_document_truncation_notice",
+            "test_ocrm_file_ctx_06_runtime_prompt_image_provenance",
+            "test_ocrm_file_ctx_07_image_processor_contracts",
+            "test_ocrm_file_ctx_08_gateway_service_dispatch"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 815,
+              "text": "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s"
+            }
+          ],
+          "raw_pass_count": 10,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/file-context-consumers.log",
+          "log_bytes": 29374,
+          "log_sha256": "51d4fe86aa36e7a1c4768839578dbbab264bd47c565e7400c784b3f090bef222",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "send-message-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "send_message_tool_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 19,
+          "raw_passed_names": [
+            "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+            "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
+            "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
+            "cursor_agent_message_resolves_shipping_title_fail_soft",
+            "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+            "encoding_preserves_frozen_text_markdown_and_summary_projection",
+            "generated_send_message_schema_exposes_frozen_widget_constraints",
+            "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+            "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+            "schema_matches_frozen_type_fences_and_attachment_schemes",
+            "send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
+            "send_message_bridge_is_first_party_and_delegates_other_tools",
+            "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
+            "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
+            "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
+            "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
+            "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
+            "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+            "widget_schema_matches_frozen_choice_contract_and_normalization"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 824,
+              "text": "test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s"
+            }
+          ],
+          "raw_pass_count": 19,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/send-message-consumers.log",
+          "log_bytes": 30212,
+          "log_sha256": "c9cba2ad7f3adc4ab960a3efc7493920408a4a44e272984ba361dc594c980c06",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        },
+        {
+          "case": "agent-management-consumers",
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "sand_agent_management_tools_contract",
+            "--",
+            "--test-threads=1"
+          ],
+          "cwd": "D:\\a\\fabushi-desktop\\fabushi-desktop",
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "execution_error": null,
+          "required_count": 3,
+          "raw_passed_names": [
+            "create_and_update_tools_delegate_with_merge_semantics",
+            "lfa_agent_management_batch_admits_all_urls_before_resolving",
+            "runner_management_tools_are_first_party_and_validate_send_inputs"
+          ],
+          "raw_failed_names": [],
+          "raw_summaries": [
+            {
+              "line": 808,
+              "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+            }
+          ],
+          "raw_pass_count": 3,
+          "raw_fail_count": 0,
+          "raw_passed_names_match_receipt": true,
+          "raw_missing_or_nonunique": [],
+          "raw_unexpected_positive": [],
+          "receipt_missing_or_nonunique": [],
+          "receipt_unexpected_positive": [],
+          "receipt_oracle_accepted": true,
+          "log": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/windows-media-13206046601/agent-management-consumers.log",
+          "log_bytes": 28939,
+          "log_sha256": "5365349baab4fb0dda3d98fff01b093f13cfc11c2cd21934a4e0b84e4d392482",
+          "receipt_log_hash_matches": true,
+          "fatal_compiler_diagnostics": [],
+          "fatal_environment_pattern_hits": []
+        }
+      ],
+      "zip": {
+        "path": "/workspace/scratch/7d27ea239237/media-h74-ci/artifacts/h74-windows-media-13206046601.zip",
+        "bytes": 149588,
+        "sha256": "184296dcafd2b230021ed8523d4e159cc34473d4436a5a9f5198c28c1bcac96f",
+        "github_digest": "sha256:184296dcafd2b230021ed8523d4e159cc34473d4436a5a9f5198c28c1bcac96f",
+        "github_size_in_bytes": 149588,
+        "matches_github_digest": true,
+        "matches_github_size": true,
+        "members": [
+          {
+            "path": "agent-management-consumers.log",
+            "bytes": 28939,
+            "sha256": "5365349baab4fb0dda3d98fff01b093f13cfc11c2cd21934a4e0b84e4d392482",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-channel-consumers.log",
+            "bytes": 29269,
+            "sha256": "3d80b1f13208637ade299057af60b78701cd12b8980e6956a92afb3aeb130af4",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-box-consumer.log",
+            "bytes": 28792,
+            "sha256": "81f6d966791416e180bc634234a94f5bcef1c2ab8542ae80ea098b4db46b9660",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-image-consumer.log",
+            "bytes": 28693,
+            "sha256": "cf9fdf198a4ffee726f1d9ced9ad76a888448caf7af906bf996815d917c5f24c",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-owner.log",
+            "bytes": 30237,
+            "sha256": "6e91286169ae1fa82ff1ad94658a9bf284198a17cf68c668a6eb0e2a3ec9949e",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "bounded-reader-public.log",
+            "bytes": 31160,
+            "sha256": "01cdb999a6d5cfdd8280b9f436b3f6d10ce59794d25d6d33d2014fcbf9cb866e",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "cleanup-consumers.log",
+            "bytes": 29801,
+            "sha256": "d6b05e0dd4362d1a86fee12e4826824b43d30f80738281b6d8becc4fa141a896",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "cleanup-owner.log",
+            "bytes": 29204,
+            "sha256": "09bc60e6dc793624dc4fb09a6941ce5d41bc11973bf3bebb45ce711fc809cfac",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "explicit-html-consumers.log",
+            "bytes": 30548,
+            "sha256": "46daf4d74d0053ebb56057d6733a4a5c1be9a2d076ab3774552e4a44d3b6d04c",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "file-context-consumers.log",
+            "bytes": 29374,
+            "sha256": "51d4fe86aa36e7a1c4768839578dbbab264bd47c565e7400c784b3f090bef222",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "file-url-admission.log",
+            "bytes": 29042,
+            "sha256": "18d615ab7a8cacfc14cf6aac2c39756f54988df5ee3b86e018db22b2bb5e21b8",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "host-read-format.log",
+            "bytes": 28795,
+            "sha256": "38888694f152c64a1f67cdd3836f3868f6fc840cc7528a44828833a60623af89",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "html-policy.log",
+            "bytes": 29247,
+            "sha256": "1c2e0a2ebc33649f81f3467d5804465aff0050d1d0a73eda070f419699b6e0d2",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "image-probe-consumers.log",
+            "bytes": 29739,
+            "sha256": "6bf9b7bba7d7b25a29f29ce91e3e7494b40e91e9fb7f4dbab4ae56ad4eb9f9c6",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "local-file-url-owner.log",
+            "bytes": 29427,
+            "sha256": "8860f20be403ab611542a4735133bff1d223f3e6390dcd93795f2e5e5557cbee",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "media-settlement-owner.log",
+            "bytes": 34262,
+            "sha256": "c73d70c1d9829a1b8404f8e888e048c4a5a997c63f4f0ead5221f6e4b3cffcb9",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "outgoing-media-custody.log",
+            "bytes": 28779,
+            "sha256": "b721149c77bc329b06c084ecfe2ad5fee214793f7ec3462e2e6de607ce22c623",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "receipt.json",
+            "bytes": 121109,
+            "sha256": "c79d4e0d447831aae967a80be6d74b5c39b71c0daa64d18ac0595f151f563ce8",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "send-message-consumers.log",
+            "bytes": 30212,
+            "sha256": "c9cba2ad7f3adc4ab960a3efc7493920408a4a44e272984ba361dc594c980c06",
+            "extracted_bytes_equal": true
+          },
+          {
+            "path": "transaction-commit-owners.log",
+            "bytes": 33774,
+            "sha256": "2e25b24f4252140b8d4c9f063b62b9d596b62d2ed833fc3b2afef896fa922bf3",
+            "extracted_bytes_equal": true
+          }
+        ]
+      }
+    }
+  },
+  "cross_platform_inputs": {
+    "same_path_set": true,
+    "different_git_blob_paths": [],
+    "different_raw_worktree_hash_paths": [
+      "source/host/src/storage/store_db.rs",
+      "source/host/tests/openclaw_html_provenance_contract.rs",
+      "source/host/src/media_mime.rs",
+      "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "source/host/src/extensions/attachments/media_file_context.rs",
+      "source/host/tests/openclaw_media_file_context_contract.rs",
+      "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "source/host/src/extensions/attachments/media_store_shared.rs",
+      "source/host/tests/send_message_tool_contract.rs",
+      "source/host/src/host_production_extensions.rs",
+      "source/host/tests/local_media_file_url_contract.rs",
+      "source/host/src/extensions/attachments/web_media.rs",
+      "source/host/app/src/main.rs",
+      "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "source/host/src/gateway_protocol.rs",
+      "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "source/host/app/Cargo.lock",
+      "source/host/src/device_pairing_owner.rs",
+      "source/host/src/extensions/session/agent_db.rs",
+      "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "source/host/tests/sand_agent_management_tools_contract.rs",
+      "source/host/src/attachment_paths.rs",
+      "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "source/host/src/extensions/attachments/box_staging.rs",
+      "source/host/tests/openclaw_media_store_contract.rs",
+      "source/host/src/transcript_mutation_events.rs",
+      "source/host/app/src/tests/channel_host_lane_tests.rs",
+      ".github/workflows/rust-desktop-runtime.yml",
+      "source/host/src/extensions/attachments/media_store.rs",
+      "source/host/src/extensions/attachments/image_ops.rs",
+      "source/host/tests/openclaw_image_ops_contract.rs",
+      "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "source/host/src/host_gateway_api.rs",
+      "source/host/src/connectors/channel_attachment.rs",
+      "source/host/src/runner/tools/send_message_tool.rs",
+      "source/host/tests/openclaw_media_reference_contract.rs",
+      "source/host/build.rs",
+      "source/host/src/extensions/attachments/extension.rs",
+      "source/host/tests/attachments_service_contract.rs",
+      "source/host/tests/channel_attachment_contract.rs",
+      "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "source/host/app/Cargo.toml",
+      "source/host/tests/openclaw_web_media_contract.rs",
+      "source/host/Cargo.lock",
+      "source/host/src/extensions/attachments/attachments_service.rs",
+      "source/host/src/extensions/settings/settings_service.rs",
+      "source/host/src/extensions/session/agent_db_serde.rs",
+      "source/host/src/extensions/attachments/media_reference.rs",
+      "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "projects/openclaw-rust/upstream.lock.json",
+      "source/host/src/agent_isolation/conversation_blob_store.rs",
+      "source/host/src/lib.rs",
+      "source/host/src/extensions/transcript/production_runtime.rs",
+      "source/host/src/extensions/session/production.rs",
+      "source/host/Cargo.toml"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "decision": "PRESERVE_INCOMING_COMPONENT_AND_MERGE_OVERLAPPING_MEDIA_CONTRACT",
+  "before_edit": true,
+  "incoming_commit": "9059d0c4493505851339ab228ec0d58a6023c904",
+  "parent": "f41a6d3c00150ba59453d14887b5b4914801d4f4",
+  "tree": "63385ed61d0ef7074dab86baea7fab548224416d",
+  "scope": "13 changed paths: current DevicePairingOwner admission component and existing shared verification/ledger wiring; two media spec/oracle overlaps",
+  "read": "Complete incoming workflow17additions1deletion, capture6additions, ledger/RTM deltas, productionDevicePairingOwner33additions7deletions and full current media-spec delta. Oracle union is separately reviewed by assigned integration worker and root before adoption. Parent component is preserved; this record does not claim independent DFA source acceptance or execution.",
+  "adopt_verbatim": {
+    "workflow": "25e80da72d20d4dbfed8ab6f2a50a3eff62b53af",
+    "ledger": "285f9ca672947d9ad054832557c0b4abf38a0d68",
+    "RTM": "1bdbd1ca17b2ff334f365183c51bcd15c7ca0871",
+    "portable_capture": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae"
+  },
+  "overlap_rule": "Union incoming88a80214aa08a1d61b3bd290063069d5aa4d417e media/channel oracle controls with root c0162f99b896c00d0cd100ba59ad700eb01ad802 exact-site/full-LFCRLF assertions; never overwrite incoming assertions. Merge media spec8aee21c69bab72824025e4304eec38388ba1e9f8 with current scoped requirements.",
+  "preservation": "All other incoming source/test paths remain unchanged in final parent tree. Source lock, canonical inventory and eight global flags are not modified by this integration. Hfc Appcompile/portable failures require their separate causal fixes before the single new-subject campaign."
+}

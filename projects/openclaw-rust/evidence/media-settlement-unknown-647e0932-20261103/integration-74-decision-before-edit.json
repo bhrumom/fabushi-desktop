@@ -1,0 +1,11 @@
+{
+  "id": "MSU-INTEGRATION-74-001",
+  "decision": "PRESERVE_AND_RECONCILE",
+  "before_edit": true,
+  "reason": "Incoming74 publishes the same LFA import/type correction with a different harmless import ordering, plus disjoint cron helpers/test registration and narrow workflow/ledger/RTM additions. Preserve incoming source bytes and apply only the six already-reviewed evidence-reference replacements to current canonical JSON. Keep the reviewed MAC clarification. No old core file or concurrent commit is overwritten.",
+  "parent": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "parent_tree": "aca91e1cfbedeecb039d442fb3528caac89873a3",
+  "source_review_tree": "9892b15758904c23f3888ba8af1b5e429f29b59f",
+  "prior_proposed_tree_not_published": "b00d47d358a681f8d993ae15f8588aa6e6669356",
+  "scope": "New focused integration assessment checks preservation/adjacent composition; existing R1/R2 findings and corrected behaviors are not reopened without a concrete new failure."
+}

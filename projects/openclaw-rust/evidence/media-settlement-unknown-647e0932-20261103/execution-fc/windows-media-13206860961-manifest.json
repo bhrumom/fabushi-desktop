@@ -1,0 +1,162 @@
+[
+  {
+    "path": "agent-management-consumers.log",
+    "bytes": 28939,
+    "sha256": "bf9d6c27ffeb40d9fd5b29ba337f4673a615f3bc48f7d23630c07d2274901450",
+    "crlf": 0,
+    "lf_total": 809,
+    "bare_cr": 0
+  },
+  {
+    "path": "bounded-reader-channel-consumers.log",
+    "bytes": 29269,
+    "sha256": "c0eabe9c92f7c1469c863db8d4c77e8237492c937d840305ea411223ab8dde56",
+    "crlf": 0,
+    "lf_total": 814,
+    "bare_cr": 0
+  },
+  {
+    "path": "bounded-reader-box-consumer.log",
+    "bytes": 28792,
+    "sha256": "596e99ec2200a104eb3c57a3417eeb8c507a225b539dde0f1f8d50b1eec97e4e",
+    "crlf": 0,
+    "lf_total": 807,
+    "bare_cr": 0
+  },
+  {
+    "path": "bounded-reader-image-consumer.log",
+    "bytes": 28693,
+    "sha256": "c080edacfdbe4acf06e1018398080011369828a04ef18b2ae16d6fdb64cc3045",
+    "crlf": 0,
+    "lf_total": 806,
+    "bare_cr": 0
+  },
+  {
+    "path": "bounded-reader-owner.log",
+    "bytes": 30237,
+    "sha256": "a20d0c932c89e70bb8e3acd382a1d9f5d444ebef808bbe9418f04861f575ba49",
+    "crlf": 0,
+    "lf_total": 820,
+    "bare_cr": 0
+  },
+  {
+    "path": "cleanup-consumers.log",
+    "bytes": 29801,
+    "sha256": "75d5be662d79e6cb02c720dc2138615d7d92ca8066ad6bcc09bfdcc8c34ffbba",
+    "crlf": 0,
+    "lf_total": 822,
+    "bare_cr": 0
+  },
+  {
+    "path": "bounded-reader-public.log",
+    "bytes": 31160,
+    "sha256": "cfa59b6ccf002b871107d5b546c0b3f0a18cb41df34d7efef70f9d863eebdb1f",
+    "crlf": 0,
+    "lf_total": 844,
+    "bare_cr": 0
+  },
+  {
+    "path": "cleanup-owner.log",
+    "bytes": 29204,
+    "sha256": "3f852bb876a42f5ad1cf05fd5acbfa3b7973609510cf6f8f4c2ab0f3982c0ae2",
+    "crlf": 0,
+    "lf_total": 808,
+    "bare_cr": 0
+  },
+  {
+    "path": "explicit-html-consumers.log",
+    "bytes": 30548,
+    "sha256": "3034df0a347ae23691eed0f4abc60375d7d5c6560cca72b71ba3de2a8e7fed08",
+    "crlf": 0,
+    "lf_total": 832,
+    "bare_cr": 0
+  },
+  {
+    "path": "file-context-consumers.log",
+    "bytes": 29374,
+    "sha256": "df102a4ea70884034b8e0c7e885777b36acedf1d7d2c7dcccb178f526309c9e6",
+    "crlf": 0,
+    "lf_total": 816,
+    "bare_cr": 0
+  },
+  {
+    "path": "file-url-admission.log",
+    "bytes": 29042,
+    "sha256": "058afe34b660991b882ab75727ac23e2b0f128ef33b50cce850f6a2688343980",
+    "crlf": 0,
+    "lf_total": 806,
+    "bare_cr": 0
+  },
+  {
+    "path": "host-read-format.log",
+    "bytes": 28795,
+    "sha256": "480dcd41211396559955756e6cd2f4c1699e1ae412f57adef91310ac536e0337",
+    "crlf": 0,
+    "lf_total": 807,
+    "bare_cr": 0
+  },
+  {
+    "path": "html-policy.log",
+    "bytes": 29247,
+    "sha256": "722ee15e378aa6539604bb30f41755392e642d7669b9ad1fe35f3c10572a01dc",
+    "crlf": 0,
+    "lf_total": 815,
+    "bare_cr": 0
+  },
+  {
+    "path": "image-probe-consumers.log",
+    "bytes": 29739,
+    "sha256": "7bf4d06c4ae24d05221e0edc3456435c1ccf2046a0f1b401ec878612224f0263",
+    "crlf": 0,
+    "lf_total": 822,
+    "bare_cr": 0
+  },
+  {
+    "path": "local-file-url-owner.log",
+    "bytes": 29427,
+    "sha256": "b53149b1f7062d0841845e05d0f1ac0dd8bfc887e312a334df9d2b9a3dd8033a",
+    "crlf": 0,
+    "lf_total": 817,
+    "bare_cr": 0
+  },
+  {
+    "path": "outgoing-media-custody.log",
+    "bytes": 28779,
+    "sha256": "3b57637d5bc3afcd9d7d6851b796c6c688f5a11c96053bd8e09937a30afd265e",
+    "crlf": 0,
+    "lf_total": 805,
+    "bare_cr": 0
+  },
+  {
+    "path": "media-settlement-owner.log",
+    "bytes": 30601,
+    "sha256": "59f66a1f5520090a768de665dbc959119ae852346d30fc7144366efd5080a471",
+    "crlf": 0,
+    "lf_total": 818,
+    "bare_cr": 0
+  },
+  {
+    "path": "receipt.json",
+    "bytes": 121219,
+    "sha256": "0cb5fff9310a3001208309099ee5d09989bcf0b51c87a5323695bb4d2a918a69",
+    "crlf": 2445,
+    "lf_total": 2445,
+    "bare_cr": 0
+  },
+  {
+    "path": "send-message-consumers.log",
+    "bytes": 30212,
+    "sha256": "e653b3bdc59e9a28cff4d701173a8bbf02ee8f69e647a9105d374dc866098cd1",
+    "crlf": 0,
+    "lf_total": 825,
+    "bare_cr": 0
+  },
+  {
+    "path": "transaction-commit-owners.log",
+    "bytes": 30839,
+    "sha256": "18b59f18e7d6e59e9bc52e8873bd95776dd9a8ca56ef59393033cc86083525e1",
+    "crlf": 0,
+    "lf_total": 833,
+    "bare_cr": 0
+  }
+]

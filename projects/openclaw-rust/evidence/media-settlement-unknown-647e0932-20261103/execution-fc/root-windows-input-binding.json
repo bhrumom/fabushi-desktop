@@ -1,0 +1,1008 @@
+{
+  "subject": "fc187ecba404e2fa95d65871301aa8d83c7f0314",
+  "tree": "410414bcf3ad042cf49aeed86ce55836f4fbc1cd",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run": "41582614116",
+  "attempt": "1",
+  "input_count_each": 62,
+  "all_match": true,
+  "before_after_unchanged": true,
+  "bindings": [
+    {
+      "phase": "before",
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "recorded_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "normalized_worktree_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "expected_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "recorded_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "normalized_worktree_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "expected_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "recorded_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "normalized_worktree_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "expected_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "recorded_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "normalized_worktree_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/Cargo.toml",
+      "expected_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "recorded_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "normalized_worktree_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/Cargo.lock",
+      "expected_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "recorded_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "normalized_worktree_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/build.rs",
+      "expected_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "recorded_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "normalized_worktree_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/lib.rs",
+      "expected_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "recorded_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "normalized_worktree_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/media_store.rs",
+      "expected_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "recorded_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "normalized_worktree_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "expected_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "recorded_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "normalized_worktree_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "expected_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "recorded_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "normalized_worktree_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/extension.rs",
+      "expected_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "recorded_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "normalized_worktree_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/host_production_extensions.rs",
+      "expected_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "recorded_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "normalized_worktree_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/device_pairing_owner.rs",
+      "expected_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "recorded_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "normalized_worktree_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/app/src/main.rs",
+      "expected_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "recorded_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "normalized_worktree_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_media_store_contract.rs",
+      "expected_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "recorded_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "normalized_worktree_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "expected_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "recorded_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "normalized_worktree_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "expected_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "recorded_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "normalized_worktree_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "expected_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "recorded_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "normalized_worktree_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "expected_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "recorded_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "normalized_worktree_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "expected_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "recorded_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "normalized_worktree_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "expected_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "recorded_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "normalized_worktree_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "expected_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "recorded_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "normalized_worktree_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "expected_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "recorded_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "normalized_worktree_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "expected_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "recorded_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "normalized_worktree_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/media_mime.rs",
+      "expected_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "recorded_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "normalized_worktree_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "expected_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "recorded_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "normalized_worktree_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "expected_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "recorded_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "normalized_worktree_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/gateway_protocol.rs",
+      "expected_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "recorded_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "normalized_worktree_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/host_gateway_api.rs",
+      "expected_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "recorded_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "normalized_worktree_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "expected_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "recorded_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "normalized_worktree_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_media_reference_contract.rs",
+      "expected_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "recorded_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "normalized_worktree_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "expected_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "recorded_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "normalized_worktree_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "expected_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "recorded_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "normalized_worktree_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "expected_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "recorded_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "normalized_worktree_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "expected_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "recorded_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "normalized_worktree_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "expected_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "recorded_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "normalized_worktree_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "expected_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "recorded_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "normalized_worktree_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "expected_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "recorded_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "normalized_worktree_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "expected_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "recorded_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "normalized_worktree_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "expected_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "recorded_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "normalized_worktree_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "expected_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "recorded_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "normalized_worktree_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "expected_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "recorded_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "normalized_worktree_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "expected_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "recorded_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "normalized_worktree_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "expected_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "recorded_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "normalized_worktree_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "expected_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "recorded_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "normalized_worktree_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "expected_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "recorded_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "normalized_worktree_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "expected_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "recorded_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "normalized_worktree_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/attachment_paths.rs",
+      "expected_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "recorded_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "normalized_worktree_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "expected_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "recorded_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "normalized_worktree_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/session/agent_db_serde.rs",
+      "expected_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "recorded_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "normalized_worktree_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/session/production.rs",
+      "expected_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "recorded_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "normalized_worktree_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "expected_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "recorded_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "normalized_worktree_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/transcript_mutation_events.rs",
+      "expected_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "recorded_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "normalized_worktree_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/storage/store_db.rs",
+      "expected_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "recorded_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "normalized_worktree_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/extensions/settings/settings_service.rs",
+      "expected_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "recorded_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "normalized_worktree_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/src/agent_isolation/conversation_blob_store.rs",
+      "expected_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "recorded_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "normalized_worktree_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "expected_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "recorded_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "normalized_worktree_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/app/Cargo.toml",
+      "expected_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "recorded_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "normalized_worktree_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/app/Cargo.lock",
+      "expected_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "recorded_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "normalized_worktree_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "expected_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "recorded_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "normalized_worktree_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "matches": true
+    },
+    {
+      "phase": "before",
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "expected_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "recorded_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "normalized_worktree_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "recorded_git_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "normalized_worktree_blob": "673d6270d3c2a7f4b9e9f640acf88927f2f7b154",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "expected_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "recorded_git_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "normalized_worktree_blob": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "expected_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "recorded_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "normalized_worktree_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "expected_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "recorded_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "normalized_worktree_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/Cargo.toml",
+      "expected_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "recorded_git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "normalized_worktree_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/Cargo.lock",
+      "expected_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "recorded_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "normalized_worktree_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/build.rs",
+      "expected_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "recorded_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "normalized_worktree_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/lib.rs",
+      "expected_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "recorded_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "normalized_worktree_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/media_store.rs",
+      "expected_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "recorded_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "normalized_worktree_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "expected_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "recorded_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "normalized_worktree_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "expected_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "recorded_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "normalized_worktree_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/extension.rs",
+      "expected_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "recorded_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "normalized_worktree_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/host_production_extensions.rs",
+      "expected_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "recorded_git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "normalized_worktree_blob": "36b5dbac27d346f883150df179372034e0bea223",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/device_pairing_owner.rs",
+      "expected_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "recorded_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "normalized_worktree_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/app/src/main.rs",
+      "expected_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "recorded_git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "normalized_worktree_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_media_store_contract.rs",
+      "expected_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "recorded_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "normalized_worktree_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "expected_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "recorded_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "normalized_worktree_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "expected_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "recorded_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "normalized_worktree_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "expected_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "recorded_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "normalized_worktree_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "expected_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "recorded_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "normalized_worktree_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "expected_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "recorded_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "normalized_worktree_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "expected_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "recorded_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "normalized_worktree_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "expected_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "recorded_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "normalized_worktree_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "expected_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "recorded_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "normalized_worktree_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "expected_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "recorded_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "normalized_worktree_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/media_mime.rs",
+      "expected_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "recorded_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "normalized_worktree_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "expected_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "recorded_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "normalized_worktree_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "expected_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "recorded_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "normalized_worktree_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/gateway_protocol.rs",
+      "expected_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "recorded_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "normalized_worktree_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/host_gateway_api.rs",
+      "expected_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "recorded_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "normalized_worktree_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "expected_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "recorded_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "normalized_worktree_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_media_reference_contract.rs",
+      "expected_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "recorded_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "normalized_worktree_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "expected_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "recorded_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "normalized_worktree_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "expected_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "recorded_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "normalized_worktree_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "expected_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "recorded_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "normalized_worktree_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "expected_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "recorded_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "normalized_worktree_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "expected_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "recorded_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "normalized_worktree_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "expected_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "recorded_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "normalized_worktree_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "expected_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "recorded_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "normalized_worktree_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "expected_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "recorded_git_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "normalized_worktree_blob": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "expected_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "recorded_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "normalized_worktree_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "expected_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "recorded_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "normalized_worktree_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "expected_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "recorded_git_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "normalized_worktree_blob": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "expected_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "recorded_git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "normalized_worktree_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "expected_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "recorded_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "normalized_worktree_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "expected_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "recorded_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "normalized_worktree_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "expected_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "recorded_git_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "normalized_worktree_blob": "bab905e889a472027a906b551a874081131cc85e",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "expected_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "recorded_git_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "normalized_worktree_blob": "e42ea96e12c4647c23d98154fabd4a87749ea5c7",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/attachment_paths.rs",
+      "expected_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "recorded_git_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "normalized_worktree_blob": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "expected_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "recorded_git_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "normalized_worktree_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/session/agent_db_serde.rs",
+      "expected_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "recorded_git_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "normalized_worktree_blob": "d1885e2d31313c1f525fffd85bafc5031cf8d127",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/session/production.rs",
+      "expected_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "recorded_git_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "normalized_worktree_blob": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "expected_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "recorded_git_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "normalized_worktree_blob": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/transcript_mutation_events.rs",
+      "expected_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "recorded_git_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "normalized_worktree_blob": "842d4d06d8f0d788b0b730ea3aef942d75f673a2",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/storage/store_db.rs",
+      "expected_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "recorded_git_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "normalized_worktree_blob": "f52eddab95fcccec3b9c0e232ddf25b5f0fc27ce",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/extensions/settings/settings_service.rs",
+      "expected_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "recorded_git_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "normalized_worktree_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/src/agent_isolation/conversation_blob_store.rs",
+      "expected_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "recorded_git_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "normalized_worktree_blob": "f7c821d5802f23e4445dd072b904fa7c6f176fff",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "expected_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "recorded_git_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "normalized_worktree_blob": "35719fc77edb1fea8f7acf0b22524c6eff7b29aa",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/app/Cargo.toml",
+      "expected_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "recorded_git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "normalized_worktree_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/app/Cargo.lock",
+      "expected_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "recorded_git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "normalized_worktree_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "expected_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "recorded_git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "normalized_worktree_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "matches": true
+    },
+    {
+      "phase": "after",
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "expected_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "recorded_git_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "normalized_worktree_blob": "f525710de5833559de608e1cb8aaa89a8d58e2b8",
+      "matches": true
+    }
+  ]
+}
