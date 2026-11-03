@@ -530,7 +530,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   "feature.auth.telegramVerifyEmail": "auth",
   "feature.auth.telegramRefreshPasswordChallenge": "auth",
   getAgentTranscriptWindow: "transcript", getAgentThread: "transcript", getAgentTranscriptTail: "transcript", getHumanConversationTranscriptTail: "transcript", openAgentTail: "transcript", getConversationOutline: "transcript",
-  sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send",
+  sendPrompt: "send", interruptAgent: "send", promptAcceptanceStatus: "send", reactToMessage: "send", retryHumanMessage: "send",
   listRoutedMcpTools: "plugins", executeRoutedMcpTool: "plugins",
   respondToWidget: "widgets", dismissWidget: "widgets", submitSecret: "widgets",
   resolveAutoReviewApproval: "approvals", resolveLocalToolPermission: "approvals",
