@@ -1,0 +1,2232 @@
+{
+  "schema": "ocrm-exact-subject-native-batch-assessment-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "MSSA-v1",
+  "result": "selected-native-controls-passed; full OCRM acceptance not advanced",
+  "subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "commit": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca",
+    "tree": "6ab21658f5d70b7d27d1b6e06051f8c6fa18d0f9",
+    "role": "Executed production subject; evidence carrier is a later metadata-only commit"
+  },
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "review": {
+    "base": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
+    "candidate": "7e2b41893ea4800bab46fb6b84eecf4d6d6cd49c",
+    "tree": "8cc9accdb936d342850873b713ea18f437a70aee",
+    "scope_blob": "b37d37c5792daa51e383ea5ebe8c7fc525fd8e1a",
+    "patch_blob": "d5c51850f245d73c72fac31ec34fbac79d0edc3b",
+    "convergence_blob": "738841e7c904b100abade39cf342715ce1b8bac0",
+    "both_fresh_lenses": "APPROVE source only; exact twelve reviewed blobs read back identically at executed H"
+  },
+  "runtime": {
+    "run_id": 41667953092,
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41667953092",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "updated_at": "2026-11-03T15:57:02Z",
+    "scope": "ocrm-memory-synthesis-snapshot",
+    "normal_campaign": 1,
+    "focused_campaigns": 0,
+    "reruns": 0,
+    "platforms": [
+      {
+        "platform": "linux",
+        "runner_os": "Linux",
+        "job_id": 126028272609,
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41667953092/job/126028272609",
+        "state": "passed-selected-controls",
+        "actual_positive_count": 63,
+        "execution_records": [
+          {
+            "case": "memory-checked-list-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_service_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_service_creates_real_agent_scoped_store",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "memory_service_creates_real_agent_scoped_store",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_service_creates_real_agent_scoped_store",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                25,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                25,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-checked-list-store.log",
+            "log_sha256": "976a7c0331e7da170ac972bedb098a6043e2fc1fe1a512de23e42b48a184ca78"
+          },
+          {
+            "case": "memory-synthesis-snapshot-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_synthesis_store_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                11,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                11,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-store.log",
+            "log_sha256": "0ecb742c07b45ee623568e85c9c550cc53037075257ee645335ac47ab3759383"
+          },
+          {
+            "case": "memory-synthesis-snapshot-service",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_synthesis_service_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "evidence_bounding_keeps_both_ends",
+              "frozen_production_scheduling_constants_are_enforced",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
+              "evidence_bounding_keeps_both_ends",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "frozen_production_scheduling_constants_are_enforced",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "evidence_bounding_keeps_both_ends",
+              "frozen_production_scheduling_constants_are_enforced",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                12,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                12,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-service.log",
+            "log_sha256": "608d0c8d655589fd26ebaed5d619d27cd9442bfdae9235392c3edbae9b2e0770"
+          },
+          {
+            "case": "production-memory-synthesis",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::append_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                2,
+                0,
+                0,
+                0,
+                768
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "production-memory-synthesis.log",
+            "log_sha256": "7d8aa767519fb37ec3d16ea1b09169fad72a4a8152ed385faa6716e1ddc3bae7"
+          },
+          {
+            "case": "memory-synthesis-identity",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::identity_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply",
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply",
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                6,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                6,
+                0,
+                0,
+                0,
+                764
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-identity.log",
+            "log_sha256": "ffb25f868ba983dfca5467435901f36ab7ec781cbdd53644d0c74401d67c974c"
+          },
+          {
+            "case": "memory-synthesis-snapshot-codex",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                6,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                6,
+                0,
+                0,
+                0,
+                764
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-codex.log",
+            "log_sha256": "29c8ebcb4a45e1eeeee7ac3f93a1b8ba226e34c5ba8cbed8d195b8b9b639c26a"
+          },
+          {
+            "case": "memory-synthesis-snapshot-production",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::snapshot_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                769
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-production.log",
+            "log_sha256": "f40011a5583dc5ef7bb51fa7257eec52184ea699925ccc56e796732857d720ca"
+          }
+        ],
+        "constructor_compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "--test",
+            "memory_service_contract",
+            "--test",
+            "memory_synthesis_store_contract",
+            "--test",
+            "memory_synthesis_service_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "1d086c653010bc6e59a71f8db9db64080b585e9adf3f7f53b75950315c703a36"
+        },
+        "shipping_compile": [
+          {
+            "contract": "MSSA-v1-shipping-compile",
+            "validation_scope": "memory-synthesis-snapshot",
+            "subject_commit": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca",
+            "subject_tree": "6ab21658f5d70b7d27d1b6e06051f8c6fa18d0f9",
+            "upstream": {
+              "repository": "openclaw/openclaw",
+              "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+              "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+            },
+            "run_id": "41667953092",
+            "run_attempt": "1",
+            "job": "custody-recovery",
+            "runner_os": "Linux",
+            "command": [
+              "cargo",
+              "check",
+              "--locked",
+              "--profile",
+              "ci",
+              "--bin",
+              "mahayana-app-host",
+              "--manifest-path",
+              "source/host/app/Cargo.toml"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "log": "shipping-host.log",
+            "log_sha256": "915588f27be2ce47fe431160b7b51880c5de2caf658cc751b79f07ea2d148029",
+            "result": "compiled",
+            "scope": "Compilation only, not runtime, full-contract or package acceptance."
+          }
+        ],
+        "shipping_not_executed": null,
+        "selection_control_count": 141,
+        "all_selection_controls_match_expected": true,
+        "strict_result_control_count": 11,
+        "all_strict_result_controls_match_expected": true,
+        "box_producers_selected": false,
+        "source_inputs_before_after_equal": true,
+        "raw_job_log": {
+          "bytes": 1041314,
+          "sha256": "279d74e39e1fb673b49d1cc382ee494d96cfe56387d14eb3bc43c69f8c7aa0f1"
+        },
+        "extracted_complete_receipt": {
+          "path": "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-linux-receipt.json",
+          "blob": "f5ec13c899770018bc0dff76d6deeed61688da11",
+          "bytes": 304806,
+          "sha256": "7e9d4700b7838c4b17d043c19cf86c3453e36b81b968e09d0f18aef267b6f4a5",
+          "provenance": "Complete final receipt object extracted from actual GitHub job stdout after removing transport timestamps; not independently read or rehashed from artifact ZIP member."
+        },
+        "artifact": {
+          "id": 13247785357,
+          "name": "ocrm-memory-synthesis-snapshot-Linux-8c9eb3aad25b7440d67feb21bc2bb61599c43aca-41667953092-1",
+          "size_bytes": 203736,
+          "digest": "sha256:def6307e6916dd4fe9ed0c0015e9a576d43fab5fdf7d80f0c10a18bd568b319b",
+          "created_at": "2026-11-03T15:54:52Z",
+          "expires_at": "2027-02-01T15:50:07Z",
+          "expired": false,
+          "metadata_subject": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca"
+        }
+      },
+      {
+        "platform": "macos",
+        "runner_os": "macOS",
+        "job_id": 126028272583,
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41667953092/job/126028272583",
+        "state": "passed-selected-controls",
+        "actual_positive_count": 63,
+        "execution_records": [
+          {
+            "case": "memory-checked-list-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_service_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_service_creates_real_agent_scoped_store",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "memory_service_creates_real_agent_scoped_store",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "memory_list_checked_distinguishes_dangling_links_from_valid_directory_links",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_service_creates_real_agent_scoped_store",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                25,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                25,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-checked-list-store.log",
+            "log_sha256": "ca2f62744ac829a5b72b7fb082a06ec4f8eae2206fd8879f496dc529c992c4ee"
+          },
+          {
+            "case": "memory-synthesis-snapshot-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_synthesis_store_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                11,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                11,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-store.log",
+            "log_sha256": "3b134e7905978a3e729451754a314044001e53425d54529ee3ae2e8c57955f4f"
+          },
+          {
+            "case": "memory-synthesis-snapshot-service",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_synthesis_service_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "evidence_bounding_keeps_both_ends",
+              "frozen_production_scheduling_constants_are_enforced",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
+              "evidence_bounding_keeps_both_ends",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "frozen_production_scheduling_constants_are_enforced",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "evidence_bounding_keeps_both_ends",
+              "frozen_production_scheduling_constants_are_enforced",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                12,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                12,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-service.log",
+            "log_sha256": "a82dc26886a03352bb98818f1da6d9b51f6a4a7e212feb2e844c073b76b92342"
+          },
+          {
+            "case": "production-memory-synthesis",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::append_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                2,
+                0,
+                0,
+                0,
+                768
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "production-memory-synthesis.log",
+            "log_sha256": "54a99c8c22d029961e93ff6c05a6a938723b5315ba992eeace4b4c25d6afad63"
+          },
+          {
+            "case": "memory-synthesis-identity",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::identity_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply",
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply",
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                6,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                6,
+                0,
+                0,
+                0,
+                764
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-identity.log",
+            "log_sha256": "65d6fc1aae9f73b83c7684f0c266b593172a186b090fcdd17dbe21efbf771b50"
+          },
+          {
+            "case": "memory-synthesis-snapshot-codex",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                6,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                6,
+                0,
+                0,
+                0,
+                764
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-codex.log",
+            "log_sha256": "f8391cc9b23ebbc4a50c0d768c09f89343e37e1dcbb0fb446359996738505bf1"
+          },
+          {
+            "case": "memory-synthesis-snapshot-production",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::snapshot_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp",
+              "TEMP": "/Users/runner/work/fabushi-desktop/fabushi-desktop/.evidence/memory-synthesis-snapshot/owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                769
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-production.log",
+            "log_sha256": "cccbd08c5be5b7a76b3f8108661b05d437516b8af88c1904353a52230b5b9757"
+          }
+        ],
+        "constructor_compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "--test",
+            "memory_service_contract",
+            "--test",
+            "memory_synthesis_store_contract",
+            "--test",
+            "memory_synthesis_service_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "ab58b65a7b298a3a8128361f6714031b5ceb6219506a123a7b0cd2a9086c595d"
+        },
+        "shipping_compile": [
+          {
+            "contract": "MSSA-v1-shipping-compile",
+            "validation_scope": "memory-synthesis-snapshot",
+            "subject_commit": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca",
+            "subject_tree": "6ab21658f5d70b7d27d1b6e06051f8c6fa18d0f9",
+            "upstream": {
+              "repository": "openclaw/openclaw",
+              "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+              "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+            },
+            "run_id": "41667953092",
+            "run_attempt": "1",
+            "job": "custody-recovery",
+            "runner_os": "macOS",
+            "command": [
+              "cargo",
+              "check",
+              "--locked",
+              "--profile",
+              "ci",
+              "--bin",
+              "mahayana-app-host",
+              "--manifest-path",
+              "source/host/app/Cargo.toml"
+            ],
+            "command_exit": 0,
+            "capture_exit": 0,
+            "log": "shipping-host.log",
+            "log_sha256": "6ed467f9f8007086ba5ecf845fc4200191781f63d3e26ace0c8a9dcb3c0cda60",
+            "result": "compiled",
+            "scope": "Compilation only, not runtime, full-contract or package acceptance."
+          }
+        ],
+        "shipping_not_executed": null,
+        "selection_control_count": 141,
+        "all_selection_controls_match_expected": true,
+        "strict_result_control_count": 11,
+        "all_strict_result_controls_match_expected": true,
+        "box_producers_selected": false,
+        "source_inputs_before_after_equal": true,
+        "raw_job_log": {
+          "bytes": 1000365,
+          "sha256": "5e6d459e71c19bce829b5a11ccbfc683ca905b7ae1c83446c79cc6d78ce0ba63"
+        },
+        "extracted_complete_receipt": {
+          "path": "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-macos-receipt.json",
+          "blob": "3795ce55cb6d91bc64f509f6f799c7a834ddbb2e",
+          "bytes": 304827,
+          "sha256": "15509b8ee99bcdb777b45b0a1fd8bba3e37c1888a7c24641145de999fcc72331",
+          "provenance": "Complete final receipt object extracted from actual GitHub job stdout after removing transport timestamps; not independently read or rehashed from artifact ZIP member."
+        },
+        "artifact": {
+          "id": 13245794509,
+          "name": "ocrm-memory-synthesis-snapshot-macOS-8c9eb3aad25b7440d67feb21bc2bb61599c43aca-41667953092-1",
+          "size_bytes": 201798,
+          "digest": "sha256:6ca080b25599a24e64498019f6d160d5c161466880b8f3282f695ed0eac6f146",
+          "created_at": "2026-11-03T15:56:47Z",
+          "expires_at": "2027-02-01T15:50:07Z",
+          "expired": false,
+          "metadata_subject": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca"
+        }
+      },
+      {
+        "platform": "windows",
+        "runner_os": "Windows",
+        "job_id": 126028271923,
+        "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41667953092/job/126028271923",
+        "state": "passed-selected-controls",
+        "actual_positive_count": 61,
+        "execution_records": [
+          {
+            "case": "memory-checked-list-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_service_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TEMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_service_creates_real_agent_scoped_store",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "memory_service_creates_real_agent_scoped_store",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "bound_synthesis_gate_rejects_a_noncanonical_store_path",
+              "durable_memory_content_requires_a_valid_fact_in_profile_or_log",
+              "exact_memory_recovery_preserves_synthesis_metadata",
+              "existing_agent_store_tracks_dreaming_gate_enable_and_disable_dynamically",
+              "file_memory_store_append_directory_read_error_is_preserved",
+              "file_memory_store_append_preserves_missing_readable_empty_and_duplicate_controls",
+              "file_memory_store_append_read_errors_preserve_bytes_and_allow_repair",
+              "file_memory_store_duplicate_append_checks_corrupt_destination_before_metadata",
+              "file_memory_store_round_trips_recall_dedupe_remove_and_clear",
+              "memory_fact_parser_matches_frozen_markdown_contract",
+              "memory_list_checked_path_type_errors_preserve_obstacles_and_recover",
+              "memory_list_checked_preserves_missing_empty_order_and_limit",
+              "memory_list_checked_read_errors_preserve_bytes_reopen_and_repair",
+              "memory_list_checked_reads_older_logs_beyond_the_hundred_record_limit",
+              "memory_list_checked_rejects_nondirectory_ancestors_without_repair",
+              "memory_service_creates_real_agent_scoped_store",
+              "memory_service_dreaming_bridge_is_weak_single_owner_and_marks_explicit_memory",
+              "memory_service_frozen_facade_emits_only_for_real_mutations_and_disposes_listeners",
+              "production_session_workers_can_share_host_memory_extension_owner",
+              "profile_mutation_file_snapshots_are_exact_and_allowlisted",
+              "project_memory_store_reads_membership_shards_and_applies_global_cap",
+              "project_prompt_recall_uses_frontmatter_names_and_frozen_top_three_ordering",
+              "synthesis_apply_fails_closed_until_an_owner_gate_is_bound",
+              "user_memory_store_aggregates_frozen_shards_and_recent_order"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                24,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                24,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-checked-list-store.log",
+            "log_sha256": "d59ccfdc12f73912da5912947e520e31568c31615a80421c121646b70859e430"
+          },
+          {
+            "case": "memory-synthesis-snapshot-store",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_synthesis_store_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TEMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
+              "checked_synthesis_snapshot_reads_beyond_the_input_limit",
+              "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
+              "checked_synthesis_snapshot_refuses_native_type_obstacles",
+              "explicit_memories_are_protected_from_synthesis_updates_and_removals",
+              "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
+              "synthesis_batch_preflights_later_append_before_earlier_remove",
+              "synthesis_create_read_errors_preserve_memory_and_metadata",
+              "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
+              "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                10,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                10,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-store.log",
+            "log_sha256": "be108919493444d1f9dcf707a0a20885b786842505ec1c72010432ae971b89c8"
+          },
+          {
+            "case": "memory-synthesis-snapshot-service",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "memory_synthesis_service_contract",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TEMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "evidence_bounding_keeps_both_ends",
+              "frozen_production_scheduling_constants_are_enforced",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
+              "evidence_bounding_keeps_both_ends",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "frozen_production_scheduling_constants_are_enforced",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "evidence_bounding_keeps_both_ends",
+              "frozen_production_scheduling_constants_are_enforced",
+              "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
+              "one_snapshot_factory_survives_worker_timeout_and_retry",
+              "parser_rejects_unknown_evidence_and_clock_only_creation",
+              "proposal_and_verification_commit_through_synthesis_target",
+              "snapshot_read_cancellation_suppresses_failure_and_model_work",
+              "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
+              "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
+              "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
+              "typed_identity_refusals_settle_without_retry_or_temporal_review",
+              "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                12,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                12,
+                0,
+                0,
+                0,
+                0
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-service.log",
+            "log_sha256": "5eee5f9369c37caea43164007ada92926592b49cf9b4ca511e0a2f0bb7937c4e"
+          },
+          {
+            "case": "production-memory-synthesis",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::append_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TEMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
+              "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                2,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                2,
+                0,
+                0,
+                0,
+                755
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "production-memory-synthesis.log",
+            "log_sha256": "8bfcab494d059eec596b634590ef135b8f60225ccd7d9055eb767ec8ab2d3cfa"
+          },
+          {
+            "case": "memory-synthesis-identity",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::identity_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TEMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply",
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::identity_tests::production_native_synthesis_cancellation_after_worker_success_prevents_apply",
+              "extensions::memory::production::identity_tests::production_native_synthesis_pins_model_and_rotates_token",
+              "extensions::memory::production::identity_tests::production_native_synthesis_refuses_changed_context_without_writes",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_keeps_snapshot_identity",
+              "extensions::memory::production::identity_tests::production_native_synthesis_retry_refuses_changed_context",
+              "extensions::memory::production::identity_tests::production_native_temporal_synthesis_refuses_changed_context_without_review"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                6,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                6,
+                0,
+                0,
+                0,
+                751
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-identity.log",
+            "log_sha256": "ec5ebebf6eec2f13fd98056b964b89597d1557b2d0260ef6165faaeb04897898"
+          },
+          {
+            "case": "memory-synthesis-snapshot-codex",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TEMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
+              "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                6,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                6,
+                0,
+                0,
+                0,
+                751
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-codex.log",
+            "log_sha256": "4bf89b2e431e618b3145f1015bca50b71cc957e67ac1f4a5abac302185be154c"
+          },
+          {
+            "case": "memory-synthesis-snapshot-production",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--lib",
+              "extensions::memory::production::snapshot_read_tests::",
+              "--",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "TMPDIR": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp",
+              "TEMP": "D:\\a\\fabushi-desktop\\fabushi-desktop\\.evidence\\memory-synthesis-snapshot\\owned-tmp"
+            },
+            "djc_reader_trace_records": [],
+            "djc_reader_trace_errors": [],
+            "djc_reader_trace_accepted": null,
+            "observed_raw_passed_test_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                756
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "memory-synthesis-snapshot-production.log",
+            "log_sha256": "a29275aa36cfda63b6c188c93f0760134442c48b5abb261e5620a51407864e57"
+          }
+        ],
+        "constructor_compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--lib",
+            "--test",
+            "memory_service_contract",
+            "--test",
+            "memory_synthesis_store_contract",
+            "--test",
+            "memory_synthesis_service_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "3abb603f80485ecb3629f06e7ce2c47702b5eb25f93d413d313dd1ecd2f73448"
+        },
+        "shipping_compile": [],
+        "shipping_not_executed": {
+          "result": "not-executed",
+          "accepted": false,
+          "reason": "Windows shipping App signal-hook repair remains a separate Host lifecycle batch; this job compiles and runs the selected Host library consumers."
+        },
+        "selection_control_count": 137,
+        "all_selection_controls_match_expected": true,
+        "strict_result_control_count": 11,
+        "all_strict_result_controls_match_expected": true,
+        "box_producers_selected": false,
+        "source_inputs_before_after_equal": true,
+        "raw_job_log": {
+          "bytes": 996724,
+          "sha256": "1aa37231d79ab986bf7a2900968dc3ab615e2c9e19d03561d72a9abf971593a8"
+        },
+        "extracted_complete_receipt": {
+          "path": "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-windows-receipt.json",
+          "blob": "9f57fdd20d5a0f1ace8eaf2e74a6dcee68096b9d",
+          "bytes": 303710,
+          "sha256": "3c28c7d1ede1bb333b98494b09817818d0208ead3741687650c48439c567fcae",
+          "provenance": "Complete final receipt extracted from actual GitHub job stdout after timestamp removal and CRLF-to-LF normalization; not independently read or rehashed from artifact ZIP member."
+        },
+        "artifact": {
+          "id": 13247166665,
+          "name": "ocrm-memory-synthesis-snapshot-Windows-8c9eb3aad25b7440d67feb21bc2bb61599c43aca-41667953092-1",
+          "size_bytes": 212601,
+          "digest": "sha256:2e4a68b60042d1c899de2730db245b53a120593c8d3e6d1d6749f391f65d2151",
+          "created_at": "2026-11-03T15:56:57Z",
+          "expires_at": "2027-02-01T15:50:07Z",
+          "expired": false,
+          "metadata_subject": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca"
+        }
+      }
+    ]
+  },
+  "source_bindings": {
+    "count": 33,
+    "identical_across_all_three_OS": true,
+    "all_match_exact_H_before_and_after": true,
+    "bindings": {
+      "projects/openclaw-rust/upstream.lock.json": {
+        "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+        "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+        "bytes": 3495,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md": {
+        "git_blob": "f64cdce30fa33c20c371b177d9100031c4faf260",
+        "sha256": "0c5e0678d11fe9766331f66247b120afcae436bba1843b3fcdafd67d4d3a126b",
+        "bytes": 9491,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md": {
+        "git_blob": "fc5984bfbbad3febfbda0fc05f377836b1613f04",
+        "sha256": "3385475c7424f643c23e5bac1068c6cff24968cefb18982c3e0103da808e33c3",
+        "bytes": 22652,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md": {
+        "git_blob": "4d654dadff225fb1a2329b2ce2302583fc657391",
+        "sha256": "016a51b391a15c9bc3593160f7d9170f6ab09358198458efdc05e94fe4ed548b",
+        "bytes": 27970,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md": {
+        "git_blob": "78836851ec45d1ca8884fdea36a3ff791fcdba38",
+        "sha256": "5fab55c0cdf4d30c7f67a54891ca5a5cd26ae036dd570c67cee74ccd786f4bd2",
+        "bytes": 10445,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json": {
+        "git_blob": "440527533e19c733141568e7accb7f1c50fb77ac",
+        "sha256": "be573b2f0b257759d990f392b7c87e3b4f76077f99915de3560d63626d1032b3",
+        "bytes": 16227,
+        "matches_head_bytes": true
+      },
+      ".github/workflows/rust-desktop-runtime.yml": {
+        "git_blob": "472b9bea1cabfb8f3eb9731c02c1ea74f8d82701",
+        "sha256": "4004d893a424d37bb1ac25e6c11abdf20c9d7d6358a03a4a9db983df6ab1681b",
+        "bytes": 488629,
+        "matches_head_bytes": true
+      },
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+        "git_blob": "c63851a254b26a5a841dd07f2d8e37e4694b2ecc",
+        "sha256": "0bf9655ffbdb39cbe412f71bc149fe0b692494988f39be47fd1a7fc90d2abafa",
+        "bytes": 257315,
+        "matches_head_bytes": true
+      },
+      "source/host/Cargo.toml": {
+        "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+        "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+        "bytes": 1899,
+        "matches_head_bytes": true
+      },
+      "source/host/Cargo.lock": {
+        "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+        "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "bytes": 119989,
+        "matches_head_bytes": true
+      },
+      "source/host/app/Cargo.toml": {
+        "git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+        "sha256": "3c16c8f1be109308612041e0543a935ea4b7748ed33279e061a44ba975e7846b",
+        "bytes": 864,
+        "matches_head_bytes": true
+      },
+      "source/host/app/Cargo.lock": {
+        "git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+        "sha256": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+        "bytes": 158355,
+        "matches_head_bytes": true
+      },
+      "source/host/app/src/main.rs": {
+        "git_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+        "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37",
+        "bytes": 1008894,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/memory/memory_service.rs": {
+        "git_blob": "f4e77202b3fd7bd59f4d1c5572211a1c2c6cc2a0",
+        "sha256": "ed384ca46c48fcd2dafc849bd7dd0d79f24743c3c244968b5d453cb4d114dd91",
+        "bytes": 57972,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/memory/memory_synthesis_service.rs": {
+        "git_blob": "e7c7c1669fa6fa7a51b9dfe75fb57eb80fa3e27b",
+        "sha256": "ce11cb1f69296e76657d9d14d89e297737d9a60eaa3601b9b6d100346955c3b9",
+        "bytes": 48322,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/memory/production.rs": {
+        "git_blob": "f45cf96676c3dad4fb72d954956681d21e377140",
+        "sha256": "4c56f308a664cd2e11ebbbb8ff943bd02c9e74dab1b508c994eb20cc88452ffc",
+        "bytes": 7564,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/memory/production_append_read_tests.rs": {
+        "git_blob": "7dc05a68f5d58420200d44fec1404e4050f137bf",
+        "sha256": "41d765562a726605612c7c637b3ed8f5512dd2bee2780a32476ac58cf841344d",
+        "bytes": 19423,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/memory/production_snapshot_read_tests.rs": {
+        "git_blob": "4a0aaaf6d1ae4a7905c654d36c9e999bca3445bc",
+        "sha256": "9891e44a6e53c9bea79893dcb7b10a5c95170c44acae0140fbbe62cf4f414163",
+        "bytes": 27327,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/memory/production_identity_tests.rs": {
+        "git_blob": "b9d2a2457b5464991fc21cb3c6fd17c4249d46fc",
+        "sha256": "a36255acef481dc50380af88e5f4f8bdbada372698e0a342b044bb381c1914c7",
+        "bytes": 28474,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/memory/extension.rs": {
+        "git_blob": "c57cd1e66a31e7fb35f9208aed0f5f9f6a1447ca",
+        "sha256": "ceef3a80ccf829d2440633f2ec3c0e2a457db9d91baf80bc2f3d093a2c21b0a5",
+        "bytes": 2851,
+        "matches_head_bytes": true
+      },
+      "source/host/src/host_production_extensions.rs": {
+        "git_blob": "36b5dbac27d346f883150df179372034e0bea223",
+        "sha256": "f29bc58b755172790b46b93441a46e3a2c12831c521db553f6779b77e5c5824f",
+        "bytes": 91251,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/session/production.rs": {
+        "git_blob": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+        "sha256": "577a8a46990d805754fa300d79cc113b0d17a24aa84d6b68ea03b251f81cd6ee",
+        "bytes": 290933,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/production.rs": {
+        "git_blob": "ecb3fa84772ac09e3dd7ccc73d859555ab624208",
+        "sha256": "e2b4a65e28358c8da875ac00378ae090b839dcb7bdd18b3909e6e75e45037b18",
+        "bytes": 38854,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/summary_job.rs": {
+        "git_blob": "dac583462adde1697a17a80a68f4bb66f584d32b",
+        "sha256": "7c9283f27b2fc5b37c8fe62b17c5b2cbc30ce79acf52e9bf272c89fd6626086d",
+        "bytes": 6970,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/memory_service_contract.rs": {
+        "git_blob": "2171ce61768aff44ab2c2cc19eb8c1001d1505c6",
+        "sha256": "da79afd9e850e72a4df9e10193897dc243312127bec02d81298cf968bf2e3dbb",
+        "bytes": 61374,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/memory_synthesis_store_contract.rs": {
+        "git_blob": "2546fa0c7de4b596fbfd539af7fc5cbbd5a03ddd",
+        "sha256": "9ca47ab74916216f0fdea56bcd6d01dec5735f39115224d06c8bf58ca6afd36d",
+        "bytes": 24744,
+        "matches_head_bytes": true
+      },
+      "source/host/tests/memory_synthesis_service_contract.rs": {
+        "git_blob": "03ef1e198da5a98adcce5726f3b1fef6a677ea1f",
+        "sha256": "3d5ac8d5373e32f3690f973dedd86e0f06f5c8a49680d2ce5c9dc1948b7c08dd",
+        "bytes": 26483,
+        "matches_head_bytes": true
+      },
+      "source/host/src/watched_directory.rs": {
+        "git_blob": "eb7bb0106966e9a8b5adb7205667ff81678dce80",
+        "sha256": "32f4bba78fe5f240ec3945ca3d1c2cf324ad7ad905c9d2f05ad84a7053baa0fd",
+        "bytes": 6498,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs": {
+        "git_blob": "2dde20ad80fde5d7f3f387204e7821a7b48cbdc4",
+        "sha256": "b99e92088491e801070675514d3c98c79385ff37007a525c7e1796b69a936741",
+        "bytes": 2437,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/provider_session.rs": {
+        "git_blob": "5cba4171ca0ea2806c1f5b715ca366581196c841",
+        "sha256": "e1efcc11e46796f33576aac961d9015a1cd4772e1c2df7b07a79aba66dd10f10",
+        "bytes": 171004,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/codex_request_binding.rs": {
+        "git_blob": "cf02eac4f37990a4a61686367ce5749340562cb4",
+        "sha256": "7d99827f0e6e9bacf0af7d6ed0f2df726b288a297a6b682e6370c92a592f85bf",
+        "bytes": 35196,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/codex_request_workspace_tests.rs": {
+        "git_blob": "52a9ec15c33e19b0a4d24131244173282a82f674",
+        "sha256": "65b06acc6f4ffbc87fab0aed4cf3efa12ac959c391498cc2055b658d21c948dd",
+        "bytes": 88288,
+        "matches_head_bytes": true
+      },
+      "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs": {
+        "git_blob": "1cba631e50f5e42f850cc5fb1a3a90f2b90329aa",
+        "sha256": "0a30adbce01405ef76c96fe77127d57338fb8f9a3edb2ddd7e1aa74a61c8ead1",
+        "bytes": 31674,
+        "matches_head_bytes": true
+      }
+    }
+  },
+  "source_authority": {
+    "run_id": 41667953197,
+    "run_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41667953197",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "source_job": 126028275793,
+    "persist_job": 126029617282,
+    "review_controls": 33,
+    "inventory_controls": 21,
+    "tracked_paths": 62130,
+    "mapped_paths": 888,
+    "unread_or_partial": 62067,
+    "pending_forward_links": 0,
+    "shards": 61,
+    "canonical_inventory_sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
+    "structural_gate_qualification": "G01 tracked-source and G02 structural checks passed; full source/dependency/LFS/applicability closure and semantic acceptance remain open.",
+    "negative_probes_rejected": [
+      "duplicate source path",
+      "unread denominator tamper",
+      "unbacked accepted verdict",
+      "orphan responsibility"
+    ],
+    "persist_observation": "Successful exact-H receipt/summary/hash checks; downloaded artifact digest verified by the Actions job; No new source-derived shard content; follow-up dispatch skipped.",
+    "source_log": {
+      "bytes": 31544,
+      "sha256": "cff4274799c42dbcd0c3f354cde68ad9e3d56aeac051c82b1ca08b9fb2d8204a"
+    },
+    "persist_log": {
+      "bytes": 18150,
+      "sha256": "a11be37ddaac7727c63baeae661835d173b0ad3149577e3bd017edf035bf0e24"
+    },
+    "artifact": {
+      "id": 13246108625,
+      "name": "ocrm-p0-authority-8c9eb3aad25b7440d67feb21bc2bb61599c43aca",
+      "size_bytes": 4951972,
+      "digest": "sha256:bb305deed99d60b90ef36bd08a11bf51466b1553ae8f90b3ee65162394a0fefa",
+      "created_at": "2026-11-03T15:52:19Z",
+      "expires_at": "2026-12-03T15:52:17Z",
+      "expired": false,
+      "subject": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca"
+    }
+  },
+  "requirements": [
+    {
+      "id": "MSSA-01",
+      "state": "selected-oracles-passed",
+      "evidence": "Complete same-read fingerprint/facts, preserved projection and beyond-512 corruption controls on all three native platforms."
+    },
+    {
+      "id": "MSSA-02",
+      "state": "selected-oracles-passed",
+      "evidence": "Precise absence, invalid UTF-8 and native path/type obstacles on three OS; Unix readable/dangling symlink control on Linux/macOS only."
+    },
+    {
+      "id": "MSSA-03",
+      "state": "selected-oracles-passed",
+      "evidence": "Required fallible trait compiled; actual production factory and real Native peer reject before job/inference on corrupt profile/log/queued temporal acquisition."
+    },
+    {
+      "id": "MSSA-04",
+      "state": "selected-oracles-passed",
+      "evidence": "Captured-evidence-only Failed settlement, zero accepted input/change, cancellation precedence and unchanged durable review bytes; fresh distinct evidence recovery."
+    },
+    {
+      "id": "MSSA-05",
+      "state": "selected-oracles-passed",
+      "evidence": "New real production test passes each OS: zero requests on refusal and exactly six post-repair proposal/verification requests, real Session-gated applies, preserved histories/admission and correct due marker."
+    },
+    {
+      "id": "MSSA-06",
+      "state": "selected-oracles-passed",
+      "evidence": "Both original independent write-stage production controls, six Native identity and six Codex identity controls pass each OS; original Invalid/Stale/cancellation/no-replay/repair assertions retained."
+    }
+  ],
+  "evidence_access": {
+    "actual_complete_job_logs_read": true,
+    "final_runtime_receipts_extracted_from_actual_stdout": true,
+    "root_independently_compared_raw_names_source_names_exits_counts_and_bindings": true,
+    "artifact_metadata_and_upload_log_digests_correlated": true,
+    "artifact_ZIP_members_independently_read": false,
+    "artifact_ZIP_digest_recomputed_by_root": false,
+    "reported_upload_file_counts": {
+      "linux": 12,
+      "macos": 12,
+      "windows": 16
+    },
+    "qualification": "Opaque artifact-download wrapper did not expose ZIP member bytes. Additional Windows member identities and artifact-root emptiness are uninspected; count alone proves no fixture defect. Actual selected fixture lifetime assertions passed; no general temporary-root emptiness claim."
+  },
+  "preservation": {
+    "OCRM_inventory_read_flags_advanced": false,
+    "RTM_acceptance_statuses_advanced": false,
+    "eight_global_completion_flags_advanced": false,
+    "failed_DJC_gate": "H45847 macOS original eight-second observation remains failed and DEFER; not executed or accepted by MSSA",
+    "RMD_upload_boundary": "Prior explicit auto-approval rejection remains separate and unresolved; no denied payload retried here"
+  },
+  "remaining": [
+    "Windows ordinary shipping Host/native lifecycle is a separate SHS batch and unexecuted at H8c9eb3.",
+    "Loopback Native/Codex peers do not establish real provider/account compatibility.",
+    "Ordinary prompt read/freeze policy, concurrent multi-file snapshots, hostile replacement, metadata-error classification and durable synthesis attempt/restart are outside this bounded implementation.",
+    "Full mapped responsibility closure, G01-G12/AC01-AC24, actual ecosystems/devices/UI/soak/packages/upgrade/rollback and independent final ACCEPT remain open."
+  ]
+}

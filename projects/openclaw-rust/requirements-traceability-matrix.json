@@ -972,7 +972,8 @@
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
         "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
         "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
-        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-terminal-assessment.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -2610,7 +2611,8 @@
         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
         "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
         "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
-        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-terminal-assessment.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC13",
@@ -2883,7 +2885,8 @@
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
         "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
         "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
-        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-terminal-assessment.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -3029,7 +3032,8 @@
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
         "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
         "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
-        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-terminal-assessment.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -3533,7 +3537,8 @@
         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
         "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
         "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
-        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+        "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-terminal-assessment.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

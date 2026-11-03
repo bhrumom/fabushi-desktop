@@ -213,7 +213,7 @@
     "failure_policy": "Forced cleanup cannot pass. Bounded regular-file UTF-8 diagnostics fail on oversize rather than truncating, failure roots retained. Retire exact child, peer, target closures and Session owner before strict deletion."
   },
   "verification": {
-    "state": "not-executed",
+    "state": "selected-native-controls-passed",
     "environment": "GitHub Actions only",
     "workflow": ".github/workflows/rust-desktop-runtime.yml",
     "scope": "ocrm-memory-synthesis-snapshot",
@@ -229,7 +229,7 @@
       "unix": 63,
       "windows": 61
     },
-    "count_qualification": "Source-declared expected counts; no execution result yet",
+    "count_qualification": "Observed exact unique positive results in complete actual job logs and final per-platform receipts; selected native controls only.",
     "groups_expected": {
       "native_store": {
         "unix": 25,
@@ -246,7 +246,7 @@
       "production_snapshot": 1
     },
     "compile": "cargo check --locked --manifest-path source/host/Cargo.toml --lib --test memory_service_contract --test memory_synthesis_store_contract --test memory_synthesis_service_contract; selected private Cargo unit commands also compile their graph",
-    "shipping": "Existing ordinary App compilation on Linux/macOS only. Windows shipping signal-hook repair is an independent pending Host lifecycle batch; no package or shipping acceptance.",
+    "shipping": "Ordinary App compilation passed on Linux/macOS at H8c9eb3. Windows ordinary shipping App explicitly not executed and remains the separate SHS gate.",
     "evidence": "Exact H/tree/U; each declared source matches H before/after; unique exact positive names with complete count/zero ignored/measured; whole integration targets zero filtered; private modules permit filtered counts; command/capture exits and hashed raw logs; existing 11 strict-result controls and new 141 Unix/137 Windows parent/name/platform selection controls.",
     "input_paths": [
       "projects/openclaw-rust/upstream.lock.json",
@@ -285,7 +285,23 @@
     ],
     "Box_producers_selected": false,
     "normal_campaign_budget": 1,
-    "focused_recovery_campaign_budget": 1
+    "focused_recovery_campaign_budget": 1,
+    "executed_subject": {
+      "commit": "8c9eb3aad25b7440d67feb21bc2bb61599c43aca",
+      "tree": "6ab21658f5d70b7d27d1b6e06051f8c6fa18d0f9",
+      "runtime_run": 41667953092,
+      "source_authority_run": 41667953197,
+      "attempt": 1
+    },
+    "actual_counts": {
+      "Linux": 63,
+      "macOS": 63,
+      "Windows": 61
+    },
+    "assessment": "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/h-8c9eb3-terminal-assessment.json",
+    "artifact_member_access": "Full runtime receipts read from actual stdout; artifact metadata/digests read, ZIP members not independently inspected.",
+    "completed_normal_campaigns": 1,
+    "completed_focused_campaigns": 0
   },
   "preservation": {
     "source_ledger_read_flags_changed": false,
