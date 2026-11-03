@@ -469,7 +469,10 @@ fn isolated_join_case(case: &str, body: fn(&Path)) {
         return;
     }
 
-    if case == "join_storage_commit_refusal_never_publishes_payload" {
+    if matches!(case,
+        "join_storage_commit_refusal_never_publishes_payload"
+            | "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
+    ) {
         for (mode, expected) in [
             ("control-valid", JoinChildOutcome::Completed),
             ("control-missing", JoinChildOutcome::MissingReceipt),
@@ -653,6 +656,155 @@ fn join_storage_commit_refusal_never_publishes_payload() {
         join_phase(started, "consumed-marker-checked");
         assert!(observation_failures.is_empty(),
             "DJC original observation failed despite later diagnostics: {observation_failures:?}");
+    });
+}
+
+#[test]
+fn join_deferred_commit_refusal_is_qualified_and_preserves_recovery() {
+    isolated_join_case("join_deferred_commit_refusal_is_qualified_and_preserves_recovery", |root| {
+        let started = Instant::now();
+        let mut fixture = Fixture::in_owned_root(root.join("deferred-commit-refusal"));
+        let code = fixture.register(&payload());
+        let before = fixture.observe(&code);
+        assert!(before.redeemed_at_ms.is_none());
+        fixture.execute(
+            "CREATE TABLE djc_deferred_parent (id INTEGER PRIMARY KEY);
+             CREATE TABLE djc_deferred_child (
+                 shortcode TEXT NOT NULL,
+                 parent_id INTEGER NOT NULL REFERENCES djc_deferred_parent(id)
+                     DEFERRABLE INITIALLY DEFERRED
+             );
+             CREATE TRIGGER djc_deferred_consume AFTER UPDATE OF redeemed_at_ms
+             ON device_pairing_join_codes
+             WHEN NEW.redeemed_at_ms IS NOT OLD.redeemed_at_ms
+             BEGIN
+                 INSERT INTO djc_deferred_child (shortcode, parent_id) VALUES (NEW.shortcode, 7);
+             END;",
+        );
+        let assert_no_child = |fixture: &Fixture| {
+            let connection = Connection::open_with_flags(&fixture.db_path, OpenFlags::SQLITE_OPEN_READ_ONLY)
+                .expect("open independent deferred-child observer");
+            let children: i64 = connection.query_row(
+                "SELECT COUNT(*) FROM djc_deferred_child", [], |row| row.get(0),
+            ).expect("observe every committed fixture child");
+            assert_eq!(children, 0, "refused commit must not retain its deferred child");
+            connection.close().expect("close independent deferred-child observer");
+        };
+        assert_no_child(&fixture);
+
+        // Qualify the same fixture through another connection in this exact
+        // binary. Never enable foreign keys just for the control: the public
+        // owner also relies on the locked bundled SQLite connection defaults.
+        let qualifier = fixture.sql();
+        assert!(qualifier.is_autocommit(), "qualification begins outside a transaction");
+        assert_eq!(qualifier.query_row("PRAGMA foreign_keys", [], |row| row.get::<_, i64>(0))
+            .expect("observe untouched foreign-key default"), 1);
+        join_phase(started, "deferred-default-foreign-keys-qualified");
+        qualifier.execute_batch("BEGIN IMMEDIATE").expect("qualification BEGIN IMMEDIATE succeeds");
+        assert!(!qualifier.is_autocommit());
+        let marker = now_ms();
+        assert!(marker > 0);
+        assert_eq!(qualifier.execute(
+            "UPDATE device_pairing_join_codes SET redeemed_at_ms = ?1
+             WHERE shortcode = ?2 AND redeemed_at_ms IS NULL",
+            params![marker, &code],
+        ).expect("qualification consumption UPDATE succeeds before COMMIT"), 1);
+        let changed_marker: Option<i64> = qualifier.query_row(
+            "SELECT redeemed_at_ms FROM device_pairing_join_codes WHERE shortcode = ?1",
+            [&code], |row| row.get(0),
+        ).expect("observe the actual uncommitted consumption marker");
+        assert_eq!(changed_marker, Some(marker));
+        let invalid_child: (String, i64, i64) = qualifier.query_row(
+            "SELECT child.shortcode, child.parent_id,
+                    (SELECT COUNT(*) FROM djc_deferred_parent WHERE id = child.parent_id)
+             FROM djc_deferred_child AS child",
+            [], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        ).expect("observe the actual deferred child and absent referenced parent");
+        assert_eq!(invalid_child, (code.clone(), 7, 0));
+        assert_eq!(qualifier.query_row(
+            "SELECT COUNT(*) FROM djc_deferred_child", [], |row| row.get::<_, i64>(0),
+        ).expect("observe one uncommitted deferred child"), 1);
+        join_phase(started, "deferred-update-and-invalid-child-observed");
+        let commit_error = qualifier.execute_batch("COMMIT").expect_err("only COMMIT refuses the qualified update");
+        match commit_error {
+            rusqlite::Error::SqliteFailure(error, _) => {
+                assert_eq!(error.code, rusqlite::ErrorCode::ConstraintViolation);
+                assert_eq!(error.extended_code, rusqlite::ffi::SQLITE_CONSTRAINT_FOREIGNKEY);
+            }
+            other => panic!("qualification requires exact SQLITE_CONSTRAINT_FOREIGNKEY: {other}"),
+        }
+        assert!(!qualifier.is_autocommit(), "refused deferred COMMIT leaves the transaction open");
+        join_phase(started, "deferred-exact-commit-refusal-qualified");
+        qualifier.execute_batch("ROLLBACK").expect("explicitly roll back only the qualification transaction");
+        assert!(qualifier.is_autocommit(), "explicit qualification rollback completes");
+        qualifier.close().expect("close qualification connection before public-owner calls");
+        assert_eq!(fixture.observe(&code), before, "qualification rollback restores every target column");
+        assert_no_child(&fixture);
+        join_phase(started, "deferred-qualification-rollback-observed");
+
+        let mut observation_failures = Vec::new();
+        for attempt in ["initial", "repeat", "reopened"] {
+            if attempt == "reopened" {
+                fixture.reopen();
+                assert_eq!(fixture.observe(&code), before);
+                assert_no_child(&fixture);
+            }
+            eprintln!("DJC deferred public-owner attempt={attempt}");
+            let refusal = thread::scope(|scope| {
+                let (sender, receiver) = mpsc::channel();
+                let owner = fixture.owner();
+                let code = &code;
+                let worker = scope.spawn(move || {
+                    join_phase(started, "deferred-owner-call-started");
+                    let result = owner.redeem_device_pairing_join_code(code);
+                    join_result_phase(started, &result);
+                    let _ = sender.send(());
+                    result
+                });
+                match receiver.recv_timeout(Duration::from_secs(8)) {
+                    Ok(()) => join_phase(started, "deferred-completion-notification-received"),
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        join_phase(started, "deferred-8s-observation-expired");
+                        observation_failures.push("bounded deferred COMMIT refusal: 8s observation timed out");
+                    }
+                    Err(mpsc::RecvTimeoutError::Disconnected) => {
+                        observation_failures.push("deferred owner completion notification disconnected");
+                    }
+                }
+                // Keep a late result as diagnostics without turning the 8s
+                // observation into success. The unchanged parent owns the
+                // 120s outer deadline and 5s stop/reap boundary.
+                worker.join().expect("join the owned deferred-refusal redemption worker")
+            });
+            let error = match refusal {
+                Err(error) => error,
+                Ok(None) => panic!("deferred COMMIT refusal cannot become a miss"),
+                Ok(Some(_)) => panic!("deferred COMMIT refusal cannot publish a payload"),
+            };
+            assert_storage_error(error, &code);
+            assert_eq!(fixture.observe(&code), before, "public refusal preserves every target column");
+            assert_no_child(&fixture);
+            join_phase(started, "deferred-public-refusal-and-rollback-checked");
+        }
+
+        fixture.execute("DROP TRIGGER djc_deferred_consume");
+        join_phase(started, "deferred-obstacle-explicitly-repaired");
+        assert_eq!(fixture.owner().redeem_device_pairing_join_code(&code)
+            .expect("ordinary redemption succeeds only after explicit trigger repair"), Some(payload()));
+        let consumed = fixture.assert_consumed(&before);
+        assert_no_child(&fixture);
+        assert!(fixture.owner().redeem_device_pairing_join_code(&code)
+            .expect("repaired redemption remains single use").is_none());
+        assert_eq!(fixture.observe(&code), consumed);
+        fixture.reopen();
+        assert_eq!(fixture.observe(&code), consumed);
+        assert_no_child(&fixture);
+        assert!(fixture.owner().redeem_device_pairing_join_code(&code)
+            .expect("repaired consumption survives reopen").is_none());
+        assert_eq!(fixture.observe(&code), consumed);
+        join_phase(started, "deferred-repair-payload-and-durable-single-use-checked");
+        assert!(observation_failures.is_empty(),
+            "DJC deferred refusal observation failed despite later diagnostics: {observation_failures:?}");
     });
 }
 
