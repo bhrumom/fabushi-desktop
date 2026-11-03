@@ -59,7 +59,7 @@ That target intentionally stops before readiness and is not a shutdown oracle.
   generator execution. The first Actions `--locked` build must confirm the
   resulting manifest/lock contract without rewriting source. Windows-native
   test APIs may use the already locked windows-sys0.61.2 as a target-specific
-  dev dependency with only the console/process/job features actually used.
+  dev dependency with only the console/process/job and guard-file identity APIs actually used.
   Preserve licensing: ctrlc's source at tag3.5.2 commit
   `0aed47c35355ab7de53fa281201b8b924c2cfcb3` declares MIT/Apache-2.0;
   license blobs are `31aa79387f27e730e33d871925e152e35e428031` and
@@ -143,3 +143,45 @@ isolated Host exit proves only the lifecycle behavior it actually executes.
 Record missing native/platform capability as non-passing with its unblock
 condition. Preserve all earlier H511/6266 failures and valid scoped evidence;
 this independent batch cannot substitute for the unresolved Memory or DJC checks.
+
+
+## Selected shipping and startup verification
+
+The `host-shutdown` capture scope runs on Ubuntu24.04, macOS15 and
+Windows2025 through the existing runtime workflow and caches. The ordinary
+shipping producer and its copied/hash-bound binary are required before any
+selected case, including the existing startup custody target. The new shutdown
+target refuses an absent or invalid `OCRM_SHUTDOWN_SHIPPING_BINARY`; it has
+no Cargo-built test-binary fallback. The existing startup target gains only
+an optional explicit path adapter for this same variable: when supplied, it
+must be an absolute existing file and may never silently fall back; when absent,
+its pre-existing Cargo entrypoint selection remains. The actual child receives
+the existing isolated allowlist, not this selector or ambient credentials.
+
+The new integration target `shutdown_signal_contract` selects five normal
+Unix tests and six normal Windows tests, with no ignored helper tests:
+
+- `shipping_host_eof_releases_guard_and_restarts` on all three platforms;
+- `shipping_host_sigint_releases_guard_and_restarts` and
+  `shipping_host_sigterm_releases_guard_and_restarts` on Unix;
+- `shipping_host_ctrl_c_releases_guard_and_restarts` and
+  `shipping_host_ctrl_break_releases_guard_and_restarts` on Windows;
+- `shutdown_installer_native_events_coalesce_and_completion_suppresses_watchdog`
+  and `shutdown_installer_native_event_watchdog_exits_one` on all platforms;
+- `shutdown_installer_duplicate_registration_is_error` on Windows.
+
+The existing `startup_admission_contract` target retains all seven real
+shipping custody/pairing controls: refused missing root, refused existing
+runtime/settings then admitted recovery, admitted startup failure guard
+retirement, auxiliary-role rejection without startup, pairing-store obstacle
+preservation/recovery, first creation/reopen, and durable tokens/revision through
+startup and storage repair. Their names and assertions remain. The selected
+receipt therefore requires12named positives on Unix and13on Windows across
+two exact targets. Compile those two App test targets after the ordinary binary
+has been preserved; no unrelated complete Host test graph or Box producer is
+required by this scope. Before/after evidence binds both manifests/locks,
+shipping entrypoint/adapter, fixtures, actual HostLock/Gateway/startup consumers,
+spec, source contract and existing capture/workflow. Binary path/hash drift,
+missing/duplicate named results, ignored/measured tests, bad command/capture
+exits and unavailable native capability fail closed. The fixture snapshots are
+not signed/package artifacts or final shipping-SHA acceptance.
