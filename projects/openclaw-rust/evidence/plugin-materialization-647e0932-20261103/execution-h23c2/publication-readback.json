@@ -1,0 +1,237 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "commit": "23c2a567d874509f56353b8cae737cdf1437309d",
+  "tree": "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+  "parent": [
+    "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74"
+  ],
+  "commit_url": "https://github.com/bhrumom/fabushi-desktop/commit/23c2a567d874509f56353b8cae737cdf1437309d",
+  "branch_verified_at_readback": "23c2a567d874509f56353b8cae737cdf1437309d",
+  "method": "GitHub connector API readback of branch, full commit metadata and all36 changed paths; exact blob and full UTF-8 content equality against frozen uploaded files.",
+  "files": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "sha": "b97a3a2622620078b7654862c0b33ac47230cca6",
+      "characters": 444481,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+      "sha": "6252635f8a7d1abeae26bc4913e3e4fb134d9e89",
+      "characters": 19295,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json",
+      "sha": "3f2bff7e4a56142690f3d5b30dc41c6472c23bce",
+      "characters": 11855,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "1e56a25479e1390cb98c36d130b68f09946dc0bc",
+      "characters": 1446340,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "7475cee0643fc0e52ddc9bd2cf303aee884c0956",
+      "characters": 158118,
+      "fullContentMatches": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/cursor-marketplace.ts",
+      "sha": "6a2433588b5f17f3609e6ca85e4aa0f2a8612e21",
+      "characters": 9690,
+      "fullContentMatches": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.ts",
+      "sha": "f0028c8fbecc602828fb6ed48dce9fd77855102c",
+      "characters": 29114,
+      "fullContentMatches": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.contract.test.ts",
+      "sha": "fa41d87a2e9f8b03ca7d8125309a96673d57482e",
+      "characters": 30540,
+      "fullContentMatches": true
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+      "sha": "b8ff7fbdf1c8ff540fa4eaf1b9e798d12077d722",
+      "characters": 54353,
+      "fullContentMatches": true
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.ts",
+      "sha": "d81e1da13c9b39f4e2943ab48e8b9073bb8dc987",
+      "characters": 13965,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r1/changed-paths.txt",
+      "sha": "da6625a7554cb596123594c6d7841c1efe3b5a3f",
+      "characters": 551,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r1/complete.patch",
+      "sha": "f13005537a5c302af23fd71d547b6d8beb87033b",
+      "characters": 71997,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r1/general-review.md",
+      "sha": "4e932ceae92af424bdb435d3de1b47620f0aa812",
+      "characters": 9921,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r1/manifest.json",
+      "sha": "cc535d2e987273ef96b8b60fd80575b143add6d9",
+      "characters": 2067,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r1/structure-review.md",
+      "sha": "801e23be0f0f923650d85cc0324813ac203560fa",
+      "characters": 11756,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r2/changed-paths.txt",
+      "sha": "da6625a7554cb596123594c6d7841c1efe3b5a3f",
+      "characters": 551,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r2/complete.patch",
+      "sha": "d07681904c5333f53bd9011024b1aa09e6589014",
+      "characters": 80092,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r2/fix-delta.patch",
+      "sha": "e0af2692faf3a040eee8b2d7b1d79b0778ff770b",
+      "characters": 61514,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r2/general-review.md",
+      "sha": "d041705efed353999eac620f35c91e9d8023e79e",
+      "characters": 15516,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r2/manifest.json",
+      "sha": "66e581f218190f88c407af0267ffd134f1aa5dab",
+      "characters": 2356,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r2/structure-review.md",
+      "sha": "b0a15e53b147012089aee858225b75454883350b",
+      "characters": 12280,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r3/changed-paths.txt",
+      "sha": "428dea3327138957afb121b2806a2ae585150a19",
+      "characters": 607,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r3/complete.patch",
+      "sha": "58d841d25008372429d67f142849dbaf6ae6bc2e",
+      "characters": 85622,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r3/fix-delta.patch",
+      "sha": "fd79e939f1c764383e85c6eecc861d6f3254aad2",
+      "characters": 15047,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r3/general-review.md",
+      "sha": "78f9cf873188af520b815997479f097e5c3e420b",
+      "characters": 15975,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r3/manifest.json",
+      "sha": "8e0b113b90bb17b0c5cae91258da69892d2d388c",
+      "characters": 2396,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r3/structure-review.md",
+      "sha": "ffefefb6f24786aa870e43b4c318714735720652",
+      "characters": 12791,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r4/changed-paths.txt",
+      "sha": "428dea3327138957afb121b2806a2ae585150a19",
+      "characters": 607,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r4/complete.patch",
+      "sha": "ca4d2e73ac7941d5eba842fa9b92f1d2127fb065",
+      "characters": 104438,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r4/fix-delta.patch",
+      "sha": "b74512d5113dab482720ec7473a4000fdef14567",
+      "characters": 66284,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r4/implementation-return.md",
+      "sha": "e5905e07ca58a9a11ccc146ac3468f617ed6a573",
+      "characters": 9158,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r4/manifest.json",
+      "sha": "2a71b3bbe8ecf9029889b1442a8734453110fee3",
+      "characters": 2610,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-scope.md",
+      "sha": "5f6e79b87fae849d3e81e3c2e397998e2b06f654",
+      "characters": 15548,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r4/general-review.md",
+      "sha": "2b1277795d74717570ff3c8892a100c0d94103d7",
+      "characters": 16741,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/plugin-custody-r4/structure-review.md",
+      "sha": "1d1aab2bfc988f9bbc3d7a8505009bc7650f5a7c",
+      "characters": 13155,
+      "fullContentMatches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/review-decisions.json",
+      "sha": "7cdb95d842c4f35b08c47c832e6dc6cc4fbaa54e",
+      "characters": 12119,
+      "fullContentMatches": true
+    }
+  ],
+  "source_review_tree": "77fa185818b171a5b3829fc54104a0beec9ad8b4",
+  "source_review_verdict": "Two fresh blind source-only approvals",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "source_run": 41576692891,
+  "runtime_run": 41576693105,
+  "execution_at_initial_readback": "queued; not accepted",
+  "unit_or_global_verified": false
+}

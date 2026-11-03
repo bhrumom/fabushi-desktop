@@ -1,0 +1,122 @@
+{
+  "format": "OCRM-exact-subject-execution-readback-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "observed_at": "2026-11-03 04:20:50 UTC",
+  "subject_target_commit": "23c2a567d874509f56353b8cae737cdf1437309d",
+  "subject_target_tree": "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "evidence_carrier": "The commit containing this file is a later evidence carrier, not the tested subject; no H acceptance is inherited.",
+  "source": {
+    "run_id": 41576692891,
+    "job_id": 125721730402,
+    "run_attempt": 1,
+    "conclusion": "success",
+    "artifact_id": 13204015885,
+    "artifact_sha256": "ec3f98855726789b54cec956c086dee4d790252652887da3091dfedd4fd8805d",
+    "source_review_tests": 33,
+    "inventory_materialization_tests": 21,
+    "tracked_paths": 62130,
+    "input_hashes_matched": 27,
+    "gate_verdicts": {
+      "OCRM-G01-dependency-LFS-closure": "open",
+      "OCRM-G01-tracked-tree": "success",
+      "OCRM-G02-final": "not-run",
+      "OCRM-G02-structural": "success"
+    },
+    "completion_flags": {
+      "baseline_identity_accepted": false,
+      "ecosystem_compatibility_accepted": false,
+      "production_wiring_complete": false,
+      "release_accepted": false,
+      "responsibility_mapping_complete": false,
+      "rust_implementation_complete": false,
+      "source_closure_ready": false,
+      "ui_accepted": false
+    },
+    "limits": "Only global tracked-source structural candidate; not dependency closure, source semantic review, scoped unit admission or final G02."
+  },
+  "windows_media": {
+    "run_id": 41576693105,
+    "job_id": 125721731609,
+    "run_attempt": 1,
+    "conclusion": "success",
+    "artifact_id": 13203789210,
+    "artifact_sha256": "d086d1ff201c6d7824e98005eda0359310970ba5e9539f8a09a736fa27fbc256",
+    "commands": 16,
+    "tests_passed": 158,
+    "tests_failed": 0,
+    "tests_ignored": 0,
+    "source_input_identities_matched": 46,
+    "raw_logs_verified": 16,
+    "web_media_contract_tests": 26,
+    "limits": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."
+  },
+  "runtime_pending": {
+    "run_id": 41576693105,
+    "jobs": [
+      {
+        "id": 125721731215,
+        "name": "renderer",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125721731498,
+        "name": "sqlite-native-path",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125721731609,
+        "name": "OCRM media cleanup / Windows",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 125721731668,
+        "name": "rust-host",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125721731685,
+        "name": "OCRM installation key restore boundary / Linux",
+        "status": "queued",
+        "conclusion": null
+      },
+      {
+        "id": 125721732761,
+        "name": "platform-worker",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 125721733549,
+        "name": "Pressure profiler / ${{ matrix.os }}",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "plugin_materialization_required_controls": 11,
+    "plugin_result": "pending renderer; authored or source-approved controls are not execution evidence",
+    "app_native_result": "pending Linux App and other affected native jobs"
+  },
+  "incoming_source": {
+    "commit": "bb5a7f6098f952df6d388a672c4fb01045bc645c",
+    "parent": "23c2a567d874509f56353b8cae737cdf1437309d",
+    "assessment": "Incoming Rust auth-refusal/refresh recovery addresses the earlier fdb process-loss gap. Bounded exact-source compatibility check found unchanged SDK/Host blobs and wire fields. No duplicate implementation was made. Full independent review and exact-bb5 Actions remain separate and pending; H23 results are not bb5 acceptance.",
+    "report": "incoming-auth-recovery-assessment.md"
+  },
+  "remaining": {
+    "global_source_dependency_review_closure": "open",
+    "plugin_scope_execution": "pending",
+    "full_G01_G12_AC01_AC24": "open",
+    "real_provider_channel_plugin_node_device_platform_packages": "unaccepted",
+    "independent_ACCEPT": "not obtained"
+  },
+  "local_product_execution": false
+}
