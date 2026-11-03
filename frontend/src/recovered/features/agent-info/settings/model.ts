@@ -23,12 +23,31 @@ export interface AgentSettingsProfile {
 export interface AgentSettingsSource {
   updateAgent(args: { readonly id: string; readonly profile: AgentSettingsProfile }): Promise<unknown>;
   setAgentNotifyOnUpdates(args: { readonly id: string; readonly isEnabled: boolean }): Promise<unknown>;
+  getSessionModelSelection(args: { readonly key: string }): Promise<unknown>;
+  resetSessionModelSelection(args: {
+    readonly key: string;
+    readonly expectedSessionId: string;
+    readonly expectedLifecycleRevision: string;
+    readonly modelSelection: { readonly resetToDefault: true };
+  }): Promise<unknown>;
   subscribe?(listener: CoordinatorSourceEventListener): { dispose(): void };
+}
+
+export interface SessionModelStatus {
+  readonly sessionId: string;
+  readonly lifecycleRevision: string;
+  readonly supported: boolean;
+  readonly override: { readonly provider: string; readonly modelId: string } | null;
+  readonly default: { readonly provider: string; readonly modelId: string } | null;
+  readonly locked: boolean;
+  readonly canReset: boolean;
 }
 
 export interface AgentSettingsSnapshot {
   readonly agent: AgentSettingsAgent;
-  readonly pending: "profile" | "notifications" | null;
+  readonly pending: "profile" | "notifications" | "model-selection" | null;
+  readonly modelSelection: SessionModelStatus | null;
+  readonly modelLoading: boolean;
   readonly error: unknown | null;
   readonly generation: number;
 }
@@ -79,6 +98,42 @@ function eventAgent(value: unknown): AgentSettingsAgent | null {
   return projectAgentSettingsAgent(value.agent);
 }
 
+
+function requireSessionModelStatus(value: unknown, expectedAgent: string): SessionModelStatus {
+  if (!isRecord(value) || value.sessionId !== expectedAgent
+      || typeof value.lifecycleRevision !== "string" || value.lifecycleRevision.length === 0
+      || !isRecord(value.modelSelection)) {
+    throw new Error("Session model status response is malformed");
+  }
+  const status = value.modelSelection;
+  const pair = (candidate: unknown) => {
+    if (candidate === null) return null;
+    if (!isRecord(candidate) || typeof candidate.provider !== "string"
+        || candidate.provider.trim() === "" || typeof candidate.modelId !== "string"
+        || candidate.modelId.trim() === "") throw new Error("Session model pair is malformed");
+    return { provider: candidate.provider, modelId: candidate.modelId };
+  };
+  if (status.version !== 1 || typeof status.supported !== "boolean"
+      || typeof status.locked !== "boolean" || typeof status.canReset !== "boolean") {
+    throw new Error("Session model status contract is malformed");
+  }
+  const current = pair(status.override);
+  const configured = pair(status.default);
+  if (status.supported !== (configured !== null) || (status.canReset && (
+      !status.supported || status.locked || current === null))) {
+    throw new Error("Session model status has inconsistent policy");
+  }
+  return {
+    sessionId: value.sessionId,
+    lifecycleRevision: value.lifecycleRevision,
+    supported: status.supported,
+    override: current,
+    default: configured,
+    locked: status.locked,
+    canReset: status.canReset
+  };
+}
+
 /**
  * Controller for the shipped Agent Settings section. It consumes authoritative
  * roster events and fences late mutation replies after selection/disposal.
@@ -87,9 +142,11 @@ export function createAgentSettingsController(source: AgentSettingsSource, initi
   let current = initialAgent;
   let generation = 0;
   let pending: AgentSettingsSnapshot["pending"] = null;
+  let modelSelection: SessionModelStatus | null = null;
+  let modelLoading = false;
   let error: unknown | null = null;
   let disposed = false;
-  let snapshot: AgentSettingsSnapshot = { agent: current, pending, error, generation };
+  let snapshot: AgentSettingsSnapshot = { agent: current, pending, modelSelection, modelLoading, error, generation };
   const listeners = new Set<() => void>();
   const subscription = source.subscribe?.({
     agents: (value) => {
@@ -105,7 +162,7 @@ export function createAgentSettingsController(source: AgentSettingsSource, initi
 
   const emit = () => {
     if (disposed) return;
-    snapshot = { agent: current, pending, error, generation };
+    snapshot = { agent: current, pending, modelSelection, modelLoading, error, generation };
     for (const listener of [...listeners]) listener();
   };
   function applyAuthoritative(next: AgentSettingsAgent): void {
@@ -115,6 +172,73 @@ export function createAgentSettingsController(source: AgentSettingsSource, initi
     emit();
   }
 
+
+  async function loadSessionModelSelection(): Promise<void> {
+    if (disposed || current.isGroup) return;
+    const observed = generation;
+    const id = current.id;
+    modelLoading = true;
+    error = null;
+    emit();
+    try {
+      const result = requireSessionModelStatus(
+        await source.getSessionModelSelection({ key: `agent:${id}:main` }), id
+      );
+      if (disposed || generation !== observed || current.id !== id) return;
+      modelSelection = result;
+    } catch (cause) {
+      if (disposed || generation !== observed || current.id !== id) return;
+      modelSelection = null;
+      error = cause;
+    } finally {
+      if (!disposed && generation === observed && current.id === id) {
+        modelLoading = false;
+        emit();
+      }
+    }
+  }
+  async function resetSessionModelSelection(): Promise<boolean> {
+    if (disposed || current.isGroup || pending != null || modelLoading
+        || modelSelection == null || !modelSelection.canReset) return false;
+    const observed = generation;
+    const id = current.id;
+    const captured = modelSelection;
+    pending = "model-selection";
+    error = null;
+    emit();
+    try {
+      const response = await source.resetSessionModelSelection({
+        key: `agent:${id}:main`,
+        expectedSessionId: captured.sessionId,
+        expectedLifecycleRevision: captured.lifecycleRevision,
+        modelSelection: { resetToDefault: true }
+      });
+      if (disposed || generation !== observed || current.id !== id) return false;
+      if (!isRecord(response) || response.ok !== true) {
+        throw new Error("Session model reset was not acknowledged");
+      }
+      const settled = requireSessionModelStatus(response, id);
+      if (settled.lifecycleRevision !== captured.lifecycleRevision || settled.override !== null) {
+        throw new Error("Session model reset acknowledgement is inconsistent");
+      }
+      modelSelection = settled;
+      emit();
+      return true;
+    } catch (cause) {
+      if (!disposed && generation === observed && current.id === id) {
+        error = cause;
+        emit();
+      }
+      throw cause;
+    } finally {
+      if (!disposed && generation === observed && current.id === id) {
+        pending = null;
+        emit();
+      }
+    }
+  }
+  void loadSessionModelSelection();
+
   return {
     subscribe(listener: () => void): () => void {
       if (disposed) return () => {};
@@ -122,13 +246,18 @@ export function createAgentSettingsController(source: AgentSettingsSource, initi
       return () => listeners.delete(listener);
     },
     getSnapshot(): AgentSettingsSnapshot { return snapshot; },
+    refreshSessionModelSelection: loadSessionModelSelection,
+    resetSessionModelSelection,
     setAgent(next: AgentSettingsAgent): void {
       if (disposed || next.id === current.id && next === current) return;
       generation += 1;
       pending = null;
+      modelSelection = null;
+      modelLoading = false;
       error = null;
       current = next;
       emit();
+      void loadSessionModelSelection();
     },
     async updateProfile(next: AgentSettingsProfile): Promise<boolean> {
       if (disposed || pending != null) return false;
@@ -193,6 +322,8 @@ export function coordinatorAgentSettingsSource(source: RawPortCoordinatorSource)
   return {
     updateAgent: (args) => source.updateAgent(args),
     setAgentNotifyOnUpdates: (args) => source.setAgentNotifyOnUpdates(args),
+    getSessionModelSelection: (args) => source.getSessionModelSelection(args),
+    resetSessionModelSelection: (args) => source.resetSessionModelSelection(args),
     subscribe: (listener) => source.subscribe(listener)
   };
 }

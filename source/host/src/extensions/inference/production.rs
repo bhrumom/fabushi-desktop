@@ -530,6 +530,32 @@ impl ProductionInferenceExtension {
         self.service.route()
     }
 
+    /// One checked Settings snapshot and the shipping inference route decide
+    /// whether a native main-session reset has a supported configured default.
+    /// Unsupported routes remain unsupported; this is not a model catalog.
+    pub fn checked_session_model_default(&self) -> Result<Option<(String, String)>, String> {
+        let (configured, default) = self.port().settings.get_session_model_source_checked()?;
+        let route = resolve_production_inference_provider(
+            std::env::var("FABUSHI_PRODUCT_MODE").ok().as_deref(),
+            std::env::var("SAND_PACKAGED").ok().as_deref(),
+            &configured,
+        );
+        let provider = match route {
+            RoutedProvider::Fabushi => "fabushi",
+            RoutedProvider::Codex => "codex",
+            _ => return Ok(None),
+        };
+        let stored = default.as_ref()
+            .filter(|value| value.get("provider").and_then(serde_json::Value::as_str) == Some(provider))
+            .and_then(|value| value.get("modelId").and_then(serde_json::Value::as_str));
+        let model = match route {
+            RoutedProvider::Fabushi => resolve_fabushi_request_model(stored, None),
+            RoutedProvider::Codex => resolve_codex_request_model(stored, None),
+            _ => unreachable!("supported provider already matched"),
+        }.map_err(|error| error.to_string())?;
+        Ok(Some((provider.to_string(), model)))
+    }
+
     pub fn record_usage(&self, provider: RoutedProvider, usage: InferenceUsage) {
         self.service.record_usage(provider, usage);
     }

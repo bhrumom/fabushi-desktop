@@ -233,6 +233,8 @@ export const COORDINATOR_METHOD_TABLE = {
   setAgentHiddenFromSidebar: { args: "object", reply: "void" },
   setAgentNotificationsEnabled: { args: "object", reply: "void" },
   setAgentNotifyOnUpdates: { args: "object", reply: "void" },
+  getSessionModelSelection: { args: "object", reply: "record" },
+  resetSessionModelSelection: { args: "object", reply: "record" },
   setAgentAvatarBytes: { args: "object", reply: "record-or-null" },
   getAgentAvatar: { args: "object", reply: "record" },
   getAgentWorkflows: { args: "object", reply: "array" },

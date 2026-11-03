@@ -859,6 +859,26 @@ impl SettingsService {
 
     /// Read one document without persisting compatibility normalization. Invalid
     /// sources and malformed present selections must not become absent defaults.
+    /// Strict, single-document view for native session model policy. Never
+    /// normalize malformed stored configuration into an apparent default.
+    pub fn get_session_model_source_checked(&self) -> Result<(String, Option<Value>), String> {
+        let _guard = self.write_lock.lock().unwrap();
+        let settings = self.load_checked().map_err(|error| error.to_string())?;
+        let provider = match settings.get("inferenceProvider") {
+            None | Some(Value::Null) => "cursor",
+            Some(Value::String(value)) if INFERENCE_PROVIDERS.contains(&value.as_str()) => value,
+            _ => return Err("persisted inferenceProvider is invalid".into()),
+        };
+        let default = match settings.get("agentDefaultModel") {
+            None | Some(Value::Null) => None,
+            Some(value) => {
+                validate_agent_default_model(value)?;
+                Some(force_model_max_mode(value.clone()))
+            }
+        };
+        Ok((provider.to_string(), default))
+    }
+
     pub fn get_agent_default_model_checked(&self) -> Result<Option<Value>, String> {
         let _guard = self.write_lock.lock().unwrap();
         let settings = self.load_checked().map_err(|error| error.to_string())?;

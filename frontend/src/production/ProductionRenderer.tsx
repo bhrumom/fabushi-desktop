@@ -1579,6 +1579,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     return createAgentSettingsController({
       updateAgent: (args) => client == null ? Promise.reject(new Error("coordinator is unavailable for updateAgent")) : client.call("updateAgent", args),
       setAgentNotifyOnUpdates: (args) => client == null ? Promise.reject(new Error("coordinator is unavailable for setAgentNotifyOnUpdates")) : client.call("setAgentNotifyOnUpdates", args),
+      getSessionModelSelection: (args) => client == null ? Promise.reject(new Error("coordinator is unavailable for getSessionModelSelection")) : client.call("getSessionModelSelection", args),
+      resetSessionModelSelection: (args) => client == null ? Promise.reject(new Error("coordinator is unavailable for resetSessionModelSelection")) : client.call("resetSessionModelSelection", args),
       subscribe: (listener) => {
         if (client == null) return { dispose() {} };
         const stopAgents = client.subscribe("agents", (value) => listener.agents?.(value));

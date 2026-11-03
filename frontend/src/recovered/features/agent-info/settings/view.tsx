@@ -47,7 +47,7 @@ export interface AgentSettingsPanelProps {
 
 export function AgentSettingsPanel({ controller }: AgentSettingsPanelProps) {
   const snapshot = useControllerSnapshot(controller);
-  const { agent, pending, error } = snapshot;
+  const { agent, pending, error, modelSelection, modelLoading } = snapshot;
   const notificationsLabelId = useId();
   const commit = (field: "name" | "title" | "description", value: string) => {
     const profile: AgentSettingsProfile = { ...profileFor(agent), [field]: value };
@@ -64,6 +64,25 @@ export function AgentSettingsPanel({ controller }: AgentSettingsPanelProps) {
         <span className="sand-agent-settings__text"><span id={notificationsLabelId}>Notifications</span><small>Get notified when this agent finishes or needs input</small></span>
         <span className="sand-agent-settings__control"><button aria-checked={agent.notifyOnUpdatesEnabled} aria-labelledby={notificationsLabelId} disabled={pending != null} onClick={() => void controller.setNotifications(!agent.notifyOnUpdatesEnabled).catch(() => {})} role="switch" type="button">{agent.notifyOnUpdatesEnabled ? "On" : "Off"}</button></span>
       </div>
+    </div>}
+    {agent.isGroup ? null : <div className="sand-agent-settings__card" aria-label="Session model">
+      <div className="sand-info-pane__section-heading">Model for future turns</div>
+      {modelLoading ? <p aria-live="polite">Loading session model…</p> : modelSelection == null ? <p>Session model unavailable</p> :
+        <>
+          <p>Current: {modelSelection.override == null ? "Configured default" : `${modelSelection.override.provider}/${modelSelection.override.modelId}`}</p>
+          <p>Configured default: {modelSelection.default == null ? "Unavailable for this route" : `${modelSelection.default.provider}/${modelSelection.default.modelId}`}</p>
+          {modelSelection.locked ? <p>Session model selection is locked.</p> : null}
+          <button type="button"
+            disabled={!modelSelection.canReset || pending != null}
+            onClick={() => void controller.resetSessionModelSelection().catch(() => {})}>
+            Use configured default for future turns
+          </button>
+        </>
+      }
+      <button type="button" disabled={modelLoading || pending != null}
+        onClick={() => void controller.refreshSessionModelSelection()}>
+        Refresh model status
+      </button>
     </div>}
     {error == null ? null : <div aria-live="polite" role="status">{error instanceof Error ? error.message : String(error)}</div>}
   </section>;

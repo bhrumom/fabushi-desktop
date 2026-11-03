@@ -532,6 +532,7 @@ const TELEMETRY_DOMAIN_BY_METHOD: Record<CoordinatorMethod, string> = {
   broadcastToAgents: "roster", setAgentUnread: "roster", setAgentHiddenFromSidebar: "roster",
   setAgentNotificationsEnabled: "roster", setAgentNotifyOnUpdates: "roster", setAgentAvatarBytes: "roster",
   getAgentAvatar: "roster", searchMedia: "search", getCloudAgentInfo: "cloud_agents",
+  getSessionModelSelection: "sessions", resetSessionModelSelection: "sessions",
   getListenerIntegrations: "listeners", getListenerConnectUrl: "listeners",
   getAgentWorkflows: "workflows", createAgentWorkflow: "workflows", updateAgentWorkflow: "workflows",
   setAgentWorkflowEnabled: "workflows", deleteAgentWorkflow: "workflows", runAgentWorkflowNow: "workflows",

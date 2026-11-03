@@ -2543,6 +2543,14 @@ fn dispatch_to_host(
         return Ok(());
     }
 
+    // Presentation-only aliases of existing authenticated Session methods.
+    // The Host owns model policy, authority, admission and SQLite mutation.
+    let method = match method.as_str() {
+        "getSessionModelSelection" => "sessions.get".to_string(),
+        "resetSessionModelSelection" => "sessions.patch".to_string(),
+        _ => method,
+    };
+
     let host_running = state
         .host_stdin
         .lock()

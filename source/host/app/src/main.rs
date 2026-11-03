@@ -232,7 +232,10 @@ use mahayana_host_runtime::extensions::inference::inference_service::{
     InferenceUsage, authorize_routed_provider_request,
 };
 use mahayana_host_runtime::extensions::inference::production::ProductionInferenceExtension;
-use mahayana_host_runtime::extensions::inference::model_picker_service::SessionModelEntryState;
+use mahayana_host_runtime::extensions::inference::model_picker_service::{
+    ApplySessionModelSelectionParams, ApplySessionModelSelectionResult,
+    SessionModelEntryState, SessionModelSelectionRequest, SessionModelSelectionRuntime,
+};
 use mahayana_host_runtime::extensions::inference::cursor_session::{
     RequestLineage, SandSessionOptions,
 };
@@ -4453,7 +4456,7 @@ impl UnifiedGatewayApi {
             "config.set" => self.call_openclaw_config_set(&args),
             "system.info" => self.call_openclaw_system_info(&args),
             "sessions.list" => self.call_openclaw_sessions_list(&args),
-            "sessions.get" => self.call_openclaw_sessions_get(&args),
+            "sessions.get" => self.call_openclaw_sessions_get(&args, None),
             "sessions.create" => self.call_openclaw_sessions_create(&args),
             "sessions.patch" => Err(GatewayCommandError::Internal(
                 "sessions.patch requires the authenticated Gateway request context".into(),
@@ -4672,9 +4675,52 @@ impl UnifiedGatewayApi {
         }))
     }
 
+    /// Read only the existing Session KV and checked Inference Settings owner.
+    /// No renderer-provided catalog, policy or permission is consulted.
+    fn session_model_selection_projection(
+        &self,
+        agent_id: &str,
+        native: bool,
+        unarchived: bool,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        // Check the source before unsupported-route fallback, never conceal corruption.
+        let default = self.inference.checked_session_model_default()
+            .map_err(GatewayCommandError::Internal)?;
+        let state = SandAgentSessionStore::new(Arc::clone(&self.session_workers))
+            .read_session_model_entry(agent_id)
+            .map_err(GatewayCommandError::Internal)?;
+        let override_pair = match (
+            state.provider_override.as_deref(), state.model_override.as_deref(),
+        ) {
+            (None, None) => None,
+            (Some(provider), Some(model))
+                if !provider.trim().is_empty() && !model.trim().is_empty() => {
+                    Some(serde_json::json!({"provider": provider, "modelId": model}))
+                }
+            _ => return Err(GatewayCommandError::Internal(
+                "persisted session model override is incomplete".into(),
+            )),
+        };
+        let supported = default.is_some();
+        let default_pair = default.map(|(provider, model)| {
+            serde_json::json!({"provider": provider, "modelId": model})
+        });
+        let can_reset = native && unarchived && supported && !state.is_locked
+            && override_pair.is_some();
+        Ok(serde_json::json!({
+            "version": 1,
+            "supported": supported,
+            "override": override_pair,
+            "default": default_pair,
+            "locked": state.is_locked,
+            "canReset": can_reset,
+        }))
+    }
+
     fn call_openclaw_sessions_get(
         &self,
         args: &serde_json::Value,
+        context: Option<&GatewayCommandContext>,
     ) -> Result<serde_json::Value, GatewayCommandError> {
         let raw_key = args.get("key")
             .or_else(|| args.get("sessionKey"))
@@ -4750,16 +4796,33 @@ impl UnifiedGatewayApi {
             }));
         }
 
+        let canonical_admission = if raw_key == canonical_key {
+            Some(self.session_workers.read_session_work_admission(agent_id)
+                .map_err(GatewayCommandError::Internal)?
+                .ok_or_else(|| GatewayCommandError::Conflict(
+                    "SESSION_LIFECYCLE_CHANGED".into(),
+                ))?)
+        } else {
+            None
+        };
+        let lifecycle_revision = canonical_admission.as_ref()
+            .map(|record| record.lifecycle_revision.clone())
+            .or_else(|| summary.as_ref().map(|value| value.lifecycle_revision.clone()));
         let mut response = serde_json::json!({
             "messages": messages,
             "key": raw_key,
             "kind": session_kind,
             "sessionId": summary.as_ref().map(|value| value.id.clone()),
             "updatedAt": summary.as_ref().map(|value| value.updated_at),
-            "lifecycleRevision": summary
-                .as_ref()
-                .map(|value| value.lifecycle_revision.clone()),
+            "lifecycleRevision": lifecycle_revision,
         });
+        if let Some(admission) = canonical_admission.as_ref() {
+            response["modelSelection"] = self.session_model_selection_projection(
+                agent_id,
+                context.is_some_and(|context| context.authenticated && context.native_operator_control),
+                admission.archived_at_ms.is_none(),
+            )?;
+        }
         if let Some(session_id) = summary.as_ref().map(|value| value.id.as_str())
             && let Some(review) = self.provider_review_projection(agent_id, &canonical_key, session_id)?
         {
@@ -4942,12 +5005,33 @@ impl UnifiedGatewayApi {
             })?),
             None => None,
         };
+        let model_reset = args.get("modelSelection");
+        if model_reset.is_some() && (policy.is_some() || archived.is_some()) {
+            return Err(GatewayCommandError::BadRequest(
+                "sessions.patch modelSelection cannot combine with archive or communicationPolicy".into(),
+            ));
+        }
+        if let Some(intent) = model_reset {
+            let object = intent.as_object().ok_or_else(|| GatewayCommandError::BadRequest(
+                "sessions.patch modelSelection must be an object".into(),
+            ))?;
+            if object.len() != 1 || object.get("resetToDefault") != Some(&serde_json::Value::Bool(true)) {
+                return Err(GatewayCommandError::BadRequest(
+                    "sessions.patch modelSelection only accepts resetToDefault=true".into(),
+                ));
+            }
+            if !context.native_operator_control {
+                return Err(GatewayCommandError::Forbidden(
+                    "sessions.patch modelSelection requires native operator control".into(),
+                ));
+            }
+        }
         if policy.is_some() && archived.is_some() {
             return Err(GatewayCommandError::BadRequest(
                 "sessions.patch cannot combine communicationPolicy with archived".into(),
             ));
         }
-        if policy.is_none() && archived.is_none() {
+        if policy.is_none() && archived.is_none() && model_reset.is_none() {
             return Err(GatewayCommandError::BadRequest(
                 "sessions.patch requires archived or communicationPolicy".into(),
             ));
@@ -4981,6 +5065,67 @@ impl UnifiedGatewayApi {
             .ok_or_else(|| GatewayCommandError::BadRequest(
                 "sessions.patch requires expectedLifecycleRevision".into(),
             ))?;
+        if model_reset.is_some() {
+            // The route, checked configured default and persisted state are Rust
+            // owner inputs; no model/provider/policy/runtime supplied by a caller.
+            let Some((provider, model)) = self.inference.checked_session_model_default()
+                .map_err(GatewayCommandError::Internal)? else {
+                return Err(GatewayCommandError::BadRequest(
+                    "session model default reset is not supported for the selected inference route".into(),
+                ));
+            };
+            let session = SandAgentSessionStore::new(Arc::clone(&self.session_workers));
+            let result = session.apply_session_model_selection(
+                &route.agent_id,
+                expected_session_id,
+                expected_revision,
+                ApplySessionModelSelectionParams {
+                    agent_id: &route.agent_id,
+                    session_key: &expected_key,
+                    default_provider: &provider,
+                    default_model: &model,
+                    current_provider: &provider,
+                    current_model: &model,
+                    model_catalog: &[],
+                    visibility_policy: None,
+                    operator_authority: None,
+                    placement_context: None,
+                    candidate_execution_mode: None,
+                    initial_generation: None,
+                    current_generation: None,
+                    request: SessionModelSelectionRequest {
+                        provider: provider.clone(), model: model.clone(),
+                        is_default: true, reset_to_default: true,
+                        alias: None, profile_override: None,
+                        runtime: SessionModelSelectionRuntime::Unchanged,
+                    },
+                },
+                started_at_ms() as u64,
+            ).map_err(|error| {
+                if error == "SESSION_LIFECYCLE_CHANGED" || error.contains("not admitted") {
+                    GatewayCommandError::Conflict(error)
+                } else {
+                    GatewayCommandError::Internal(error)
+                }
+            })?;
+            match result {
+                ApplySessionModelSelectionResult::Applied(_) => {}
+                ApplySessionModelSelectionResult::Conflict { message } => {
+                    return Err(GatewayCommandError::Conflict(message));
+                }
+                ApplySessionModelSelectionResult::Rejected { message, .. } => {
+                    return Err(GatewayCommandError::Conflict(message));
+                }
+            }
+            let model_selection = self.session_model_selection_projection(
+                &route.agent_id, true, true,
+            )?;
+            return Ok(serde_json::json!({
+                "ok": true, "key": expected_key, "sessionId": expected_session_id,
+                "lifecycleRevision": expected_revision,
+                "modelSelection": model_selection,
+            }));
+        }
         if let Some(policy) = policy {
             self.session_workers
                 .write_session_communication_policy(
@@ -15030,6 +15175,9 @@ impl GatewayApi for UnifiedGatewayApi {
         }
         if method == "sessions.patch" {
             return self.call_openclaw_sessions_patch(&args, context);
+        }
+        if method == "sessions.get" {
+            return self.call_openclaw_sessions_get(&args, Some(context));
         }
         if method == RUNNER_ACCEPT_ROUTED_PROMPT_GATEWAY_METHOD {
             return self.call_accept_routed_prompt(args, Some(context));

@@ -151,6 +151,9 @@ pub struct GatewayCommandContext {
     pub trace_id: Option<String>,
     pub span_id: Option<String>,
     pub authenticated: bool,
+    /// Authenticated native control-plane fact, never read from request JSON.
+    /// Paired tokens and narrowed role/scope headers cannot assert this.
+    pub native_operator_control: bool,
     pub dispatch_started: Instant,
 }
 
@@ -1274,6 +1277,7 @@ fn valid_traceparent(value: &str) -> bool {
 fn gateway_command_context(
     request: &HttpRequest,
     authenticated: bool,
+    native_operator_control: bool,
     dispatch_started: Instant,
 ) -> GatewayCommandContext {
     let request_id = request
@@ -1303,6 +1307,7 @@ fn gateway_command_context(
         trace_id,
         span_id,
         authenticated,
+        native_operator_control,
         dispatch_started,
     }
 }
@@ -2004,7 +2009,9 @@ fn handle_connection(
         }
     }
     let started = Instant::now();
-    let command_context = gateway_command_context(&request, authenticated, started);
+    let command_context = gateway_command_context(
+        &request, authenticated, authenticated && native_mcp_control, started,
+    );
     let result = match device_authorization.as_ref() {
         authorization if method == "device.token.rotate" => {
             deps.api.rotate_device_token(
