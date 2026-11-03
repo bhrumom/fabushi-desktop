@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   QUICK_REACTION_EMOJIS,
   SAND_REACTION_SELF,
@@ -77,7 +78,7 @@ export function ReactionPicker({ entryId, agentId, myReactions, transport, contr
   if (controller == null && (agentId == null || transport == null)) return null;
   const react = (emoji: string) => {
     if (controller != null) {
-      controller.react(entryId, emoji);
+      if (controller.react(entryId, emoji)) onReacted?.();
       return;
     }
     if (agentId == null || transport == null) return;
@@ -85,7 +86,7 @@ export function ReactionPicker({ entryId, agentId, myReactions, transport, contr
     void transport.reactToMessage({ entryId, emoji, agentId }).catch(() => undefined);
   };
   return (
-    <div aria-label="Add reaction" className="sand-reaction-picker" role="group">
+    <div aria-label="Add reaction" className="sand-reaction-picker" role="group" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "4px" }}>
       {QUICK_REACTION_EMOJIS.map((emoji) => (
         <ReactionCell emoji={emoji} isReacted={myReactions.has(emoji)} key={emoji} onReact={() => react(emoji)} />
       ))}
@@ -154,18 +155,74 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
   const canReact = controller != null || (agentId != null && transport != null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
+  const popoverId = useId();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
   const setOpen = (next: boolean, restoreFocus = false) => {
     if (controlledOpen === undefined) setUncontrolledOpen(next);
     onOpenChange?.(next);
     if (!next && restoreFocus) triggerRef.current?.focus();
   };
 
+  useLayoutEffect(() => {
+    if (!open) return;
+    const trigger = triggerRef.current;
+    const popover = popoverRef.current;
+    if (trigger == null || popover == null) return;
+    const viewport = trigger.closest<HTMLElement>(".sand-virtual-transcript");
+    const position = () => {
+      const triggerBox = trigger.getBoundingClientRect();
+      const viewportBox = viewport?.getBoundingClientRect();
+      const leftEdge = Math.max(8, (viewportBox?.left ?? 0) + 8);
+      const rightEdge = Math.min(window.innerWidth - 8, (viewportBox?.right ?? window.innerWidth) - 8);
+      const topEdge = Math.max(8, (viewportBox?.top ?? 0) + 8);
+      const bottomEdge = Math.min(window.innerHeight - 8, (viewportBox?.bottom ?? window.innerHeight) - 8);
+      if (rightEdge <= leftEdge || bottomEdge <= topEdge || triggerBox.bottom < topEdge || triggerBox.top > bottomEdge) {
+        setOpen(false);
+        return;
+      }
+      popover.style.maxWidth = String(rightEdge - leftEdge) + "px";
+      popover.style.maxHeight = String(bottomEdge - topEdge) + "px";
+      const box = popover.getBoundingClientRect();
+      const width = Math.min(box.width, rightEdge - leftEdge);
+      const height = Math.min(box.height, bottomEdge - topEdge);
+      const below = bottomEdge - triggerBox.bottom - 6;
+      const above = triggerBox.top - topEdge - 6;
+      const preferredTop = below >= height || below >= above
+        ? triggerBox.bottom + 6
+        : triggerBox.top - height - 6;
+      popover.style.left = String(Math.max(leftEdge, Math.min(rightEdge - width, triggerBox.right - width))) + "px";
+      popover.style.top = String(Math.max(topEdge, Math.min(bottomEdge - height, preferredTop))) + "px";
+      popover.style.visibility = "visible";
+    };
+    let frame = 0;
+    const schedule = () => {
+      if (frame === 0) frame = window.requestAnimationFrame(() => { frame = 0; position(); });
+    };
+    position();
+    window.addEventListener("resize", schedule);
+    document.addEventListener("scroll", schedule, true);
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
+    resizeObserver?.observe(trigger.closest(".sand-message-action-anchor") ?? trigger);
+    resizeObserver?.observe(popover);
+    if (viewport != null) resizeObserver?.observe(viewport);
+    const mutationObserver = viewport == null || typeof MutationObserver === "undefined" ? null : new MutationObserver(schedule);
+    if (viewport != null) mutationObserver?.observe(viewport, { childList: true, characterData: true, subtree: true });
+    return () => {
+      window.removeEventListener("resize", schedule);
+      document.removeEventListener("scroll", schedule, true);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+      if (frame !== 0) window.cancelAnimationFrame(frame);
+    };
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
+    popoverRef.current?.querySelector<HTMLButtonElement>(".sand-emoji-cell")?.focus();
     const onPointerDown = (event: globalThis.PointerEvent) => {
-      if (!(event.target instanceof Node) || wrapperRef.current?.contains(event.target)) return;
+      if (!(event.target instanceof Node) || wrapperRef.current?.contains(event.target) || popoverRef.current?.contains(event.target)) return;
       setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
@@ -189,8 +246,9 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
   return (
     <div ref={wrapperRef}>
       <button
+        aria-controls={open ? popoverId : undefined}
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-label="Add reaction"
         className="sand-message-hover-actions__button"
         onClick={() => setOpen(!open)}
@@ -199,15 +257,48 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
       >
         <span aria-hidden="true" data-icon-name="smiley-happy">{children}</span>
       </button>
-      {open ? <ReactionPicker
-        agentId={agentId}
-        controller={controller}
-        entryId={entryId}
-        myReactions={myReactions}
-        onExpandPicker={onExpandPicker}
-        onReacted={handleReacted}
-        transport={transport}
-      /> : null}
+      {open ? createPortal(
+        <div
+          aria-label="Choose reaction"
+          className="sand-reaction-popover"
+          id={popoverId}
+          onKeyDown={(event) => {
+            if (event.key !== "Tab") return;
+            const buttons = Array.from(popoverRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
+            if (buttons.length === 0) return;
+            if (event.shiftKey && document.activeElement === buttons[0]) {
+              event.preventDefault();
+              buttons[buttons.length - 1]?.focus();
+            } else if (!event.shiftKey && document.activeElement === buttons[buttons.length - 1]) {
+              event.preventDefault();
+              buttons[0]?.focus();
+            }
+          }}
+          ref={popoverRef}
+          role="dialog"
+          style={{
+            position: "fixed", top: 0, left: 0, zIndex: 3000,
+            boxSizing: "border-box", width: "max-content", maxWidth: "min(340px, calc(100vw - 16px))",
+            overflow: "auto", visibility: "hidden", pointerEvents: "auto",
+            padding: 6, borderRadius: 10,
+            border: "1px solid var(--cursor-border-subtle, #343832)",
+            background: "var(--cursor-bg-primary, #20231f)",
+            color: "var(--cursor-text-primary, #eef3e7)",
+            boxShadow: "0 12px 28px rgba(0, 0, 0, .35)",
+          }}
+        >
+          <ReactionPicker
+            agentId={agentId}
+            controller={controller}
+            entryId={entryId}
+            myReactions={myReactions}
+            onExpandPicker={onExpandPicker}
+            onReacted={handleReacted}
+            transport={transport}
+          />
+        </div>,
+        document.body,
+      ) : null}
     </div>
   );
 }

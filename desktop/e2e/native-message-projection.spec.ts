@@ -37,6 +37,10 @@ async function openReactionPicker(page: Page, id: string) {
   const trigger = row.getByRole('button', { name: 'Add reaction', exact: true });
   await trigger.click();
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  const popover = page.getByRole('dialog', { name: 'Choose reaction' });
+  await expect(popover).toBeVisible();
+  await expect(popover).toBeInViewport({ ratio: 0.95 });
+  await expect(popover.getByRole('button', { name: 'React with 👍', exact: true })).toBeInViewport();
 }
 
 async function openAlice(page: Page, theme = 'dark') {
@@ -294,13 +298,15 @@ test('NMR-26 old-row reaction commands settle the page cache and cannot overwrit
   await openAlice(page);
   await loadOlder(page);
   await openReactionPicker(page, 'm1');
-  await messageRow(page, 'm1').getByRole('button', { name: 'React with 👍', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Choose reaction' }).getByRole('button', { name: 'React with 👍', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Choose reaction' })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(1);
   await page.evaluate(() => window.nativeMessageFixture.settleReaction());
   await expect(messageRow(page, 'm1').locator('.sand-reaction-pill')).toContainText('👍');
 
   await openReactionPicker(page, 'm2');
-  await messageRow(page, 'm2').getByRole('button', { name: 'React with ❤️', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Choose reaction' }).getByRole('button', { name: 'React with ❤️', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Choose reaction' })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(2);
   await page.evaluate(() => {
     window.nativeMessageFixture.mutate('human:a', 'm2', { content: '', attachments: [], reactions: [] });
@@ -310,6 +316,29 @@ test('NMR-26 old-row reaction commands settle the page cache and cannot overwrit
   await expect(messageRow(page, 'm2').locator('.sand-message')).not.toContainText('Old second message');
   await expect(messageRow(page, 'm2')).not.toContainText('note.txt');
   await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5']);
+  await openReactionPicker(page, 'm5');
+  const popover = page.getByRole('dialog', { name: 'Choose reaction' });
+  const bounds = await popover.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const viewport = document.querySelector('.sand-virtual-transcript')?.getBoundingClientRect();
+    if (viewport == null) throw new Error('The real transcript viewport is missing');
+    return { left: box.left, right: box.right, top: box.top, bottom: box.bottom,
+      minLeft: viewport.left + 8, maxRight: viewport.right - 8,
+      minTop: viewport.top + 8, maxBottom: viewport.bottom - 8 };
+  });
+  expect(bounds.left).toBeGreaterThanOrEqual(bounds.minLeft - 1);
+  expect(bounds.right).toBeLessThanOrEqual(bounds.maxRight + 1);
+  expect(bounds.top).toBeGreaterThanOrEqual(bounds.minTop - 1);
+  expect(bounds.bottom).toBeLessThanOrEqual(bounds.maxBottom + 1);
+  const firstEmoji = popover.getByRole('button', { name: 'React with 👍', exact: true });
+  await expect(firstEmoji).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(popover.getByRole('button', { name: 'More emoji' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(firstEmoji).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(popover).toHaveCount(0);
+  await expect(messageRow(page, 'm5').getByRole('button', { name: 'Add reaction', exact: true })).toBeFocused();
   await milestone(page, info, 'old-row-reaction-receipt');
 });
 
