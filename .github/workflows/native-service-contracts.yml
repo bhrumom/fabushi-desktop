@@ -853,9 +853,13 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# tests 10' artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# pass 10' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 14' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 14' artifacts/native-message-ui/production-transcript.log
           grep -F 'ok 1 - UI-NMR-CURSOR-ACTIVATION-001 initial and scope commits activate near-top history without scroll while pending and failed reads remain fenced' artifacts/native-message-ui/production-transcript.log
+          grep -F 'UI-HRR-AC-03-PERSISTED-ERROR-001' artifacts/native-message-ui/production-transcript.log
+          grep -F 'UI-HRR-AC-03-IDENTITY-RETRY-001' artifacts/native-message-ui/production-transcript.log
+          grep -F 'UI-HRR-AC-03-SELECTION-ABA-001' artifacts/native-message-ui/production-transcript.log
+          grep -F 'UI-HRR-AC-03-ACCOUNT-ABA-001' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log

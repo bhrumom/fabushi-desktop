@@ -496,3 +496,138 @@ test("UI-NMR-RESELECT-ACTIVE-PAGE-001 reselecting the active loaded Human conver
   await f.expectRows(ids(21, 64));
 });
 
+
+
+const RETRY_HUMAN = "retryHumanMessage";
+
+const failedHumanEntry = (clientNonce, accountId = "fixture-a") => ({
+  id: `human-message:${clientNonce}`,
+  kind: "message",
+  role: "user",
+  content: `Durable Human retry ${clientNonce}`,
+  timestampMs: 1_700_000_000_000,
+  delivery: "pending",
+  authorKind: "human",
+  authorId: accountId,
+  clientNonce,
+  lastDispatchError: "connection dropped after dispatch",
+});
+
+const settledHumanEntryWithOldError = (clientNonce, remoteMessageId, accountId = "fixture-a") => ({
+  id: `human-server-message:${remoteMessageId}`,
+  kind: "message",
+  role: "user",
+  content: `Settled Human message ${clientNonce}`,
+  timestampMs: 1_700_000_000_001,
+  delivery: "sent",
+  authorKind: "human",
+  authorId: accountId,
+  clientNonce,
+  remoteMessageId,
+  lastDispatchError: "stale error from an earlier dispatch",
+});
+
+async function loadFailedHuman(f, entries) {
+  const initial = await f.request(TAIL, { conversationId: A, beforeSeq: null });
+  await f.resolveRequest(initial, historyPage(entries));
+  await f.expectRows(entries.map((entry) => entry.id));
+  await f.page.getByRole("button", { name: "Resend", exact: true }).waitFor();
+}
+
+async function settlePendingTranscriptReads(f) {
+  const pending = (await f.call("requests")).filter((request) =>
+    !request.settled && (request.method === TAIL || request.method === FULL)
+  );
+  for (const request of pending) await f.call("resolve", request.id, historyPage([]));
+  await f.frames();
+}
+
+test("UI-HRR-AC-03-PERSISTED-ERROR-001 Host lastDispatchError reprojects as failed after a real Renderer reload without regressing settled Human rows", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  const failed = failedHumanEntry("retry-after-renderer-reload");
+  const settled = settledHumanEntryWithOldError("already-settled", "remote-settled");
+  await loadFailedHuman(f, [failed, settled]);
+
+  await f.page.reload();
+  await f.page.getByTestId("messenger-workspace").waitFor();
+  await f.page.getByRole("button", { name: "Alpha", exact: true }).waitFor();
+  await loadFailedHuman(f, [failed, settled]);
+
+  const failedRow = f.page.locator(`[data-entry-id="${failed.id}"]`);
+  const settledRow = f.page.locator(`[data-entry-id="${settled.id}"]`);
+  assert.equal(await failedRow.getAttribute("data-failed"), "true");
+  assert.equal(await settledRow.getAttribute("data-failed"), null);
+  assert.equal(await f.page.getByRole("group", { name: "Failed message actions" }).count(), 1);
+});
+
+test("UI-HRR-AC-03-IDENTITY-RETRY-001 retry sends only durable identities, single-flights rapid clicks, and preserves the failed intent for retry after an error", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  const clientNonce = "retry-double-click";
+  await loadFailedHuman(f, [failedHumanEntry(clientNonce)]);
+  const resend = f.page.getByRole("button", { name: "Resend", exact: true });
+
+  await resend.click();
+  await resend.click();
+  const first = await f.request(RETRY_HUMAN, { conversationId: A, clientNonce });
+  assert.deepEqual(first.args, { conversationId: A, clientNonce });
+  assert.equal(await f.count(RETRY_HUMAN, { conversationId: A, clientNonce }), 1);
+  assert.equal(await f.count("sendHumanMessage"), 0);
+
+  await f.rejectRequest(first, "temporary retry failure");
+  await f.page.getByText("temporary retry failure", { exact: true }).waitFor();
+  await resend.click();
+  const second = await f.request(RETRY_HUMAN, { conversationId: A, clientNonce }, first.id);
+  assert.deepEqual(second.args, { conversationId: A, clientNonce });
+  assert.equal(await f.count(RETRY_HUMAN, { conversationId: A, clientNonce }), 2);
+  await f.resolveRequest(second, { accepted: true, clientNonce });
+  await f.frames();
+
+  assert.equal(await f.count("sendHumanMessage"), 0);
+  assert.deepEqual(await f.call("unexpected"), []);
+});
+
+test("UI-HRR-AC-03-SELECTION-ABA-001 stale A-B-A selection cannot post a Human retry Coordinator frame after the replacement port becomes ready", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  const clientNonce = "retry-selection-aba";
+  await loadFailedHuman(f, [failedHumanEntry(clientNonce)]);
+
+  await f.call("holdNextReady");
+  const portId = await f.call("replaceCoordinatorPort");
+  await f.page.getByRole("button", { name: "Resend", exact: true }).click();
+  await f.frames();
+
+  await f.page.getByRole("button", { name: "Beta", exact: true }).click();
+  await f.page.getByRole("button", { name: "Alpha", exact: true }).click();
+  await f.frames();
+  await f.call("releaseReady", portId);
+  await f.frames();
+
+  const posted = (await f.call("requests")).filter((request) => request.method === RETRY_HUMAN);
+  for (const request of posted) if (!request.settled) await f.call("reject", request.id, "stale selection retry must not dispatch");
+  assert.equal(posted.length, 0, "selection generation must be checked before the Coordinator request frame");
+  await settlePendingTranscriptReads(f);
+  assert.deepEqual(await f.call("unexpected"), []);
+});
+
+test("UI-HRR-AC-03-ACCOUNT-ABA-001 stale A-B-A account lifetime cannot post a Human retry Coordinator frame after the replacement port becomes ready", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  const clientNonce = "retry-account-aba";
+  await loadFailedHuman(f, [failedHumanEntry(clientNonce)]);
+
+  await f.call("holdNextReady");
+  const portId = await f.call("replaceCoordinatorPort");
+  await f.page.getByRole("button", { name: "Resend", exact: true }).click();
+  await f.frames();
+
+  await f.call("switchAccount", "fixture-b");
+  await f.call("switchAccount", "fixture-a");
+  await f.frames();
+  await f.call("releaseReady", portId);
+  await f.frames();
+
+  const posted = (await f.call("requests")).filter((request) => request.method === RETRY_HUMAN);
+  for (const request of posted) if (!request.settled) await f.call("reject", request.id, "stale account retry must not dispatch");
+  assert.equal(posted.length, 0, "account generation must be checked before the Coordinator request frame");
+  await settlePendingTranscriptReads(f);
+  assert.deepEqual(await f.call("unexpected"), []);
+});

@@ -50,7 +50,9 @@ function humanConversationsForAccount(accountId: string) {
   }
   return conversations;
 }
-const controlled = new Set(["getHumanConversationTranscriptTail", "getHumanConversationTranscript", "searchHumanMessages"]);
+const controlled = new Set(["getHumanConversationTranscriptTail", "getHumanConversationTranscript", "searchHumanMessages", "retryHumanMessage"]);
+let holdNextReady = false;
+const heldReadyPorts = new Set<FixturePort>();
 const fixedReplies: Record<string, unknown> = {
   listAgents: [], searchAgents: [], countAgents: 0,
   syncHumanConversation: null, syncHumanCalls: null, listCallSessions: [],
@@ -64,7 +66,7 @@ class FixturePort implements TransferredCoordinatorPort {
   readonly listeners = new Set<(event: { data: unknown }) => void>();
   closed = false;
   start() {}
-  close() { this.closed = true; }
+  close() { this.closed = true; heldReadyPorts.delete(this); }
   addEventListener(type: "message" | "close", listener: (event: any) => void) {
     if (type === "message") this.listeners.add(listener);
   }
@@ -76,7 +78,14 @@ class FixturePort implements TransferredCoordinatorPort {
   postMessage(value: unknown) {
     const frame = value as Frame;
     if (frame.kind === "lifecycle") {
-      if (frame.phase === "hello") queueMicrotask(() => this.receive({ kind: "lifecycle", phase: "ready", protocolVersion: 1 }));
+      if (frame.phase === "hello") {
+        if (holdNextReady) {
+          holdNextReady = false;
+          heldReadyPorts.add(this);
+        } else {
+          queueMicrotask(() => this.receive({ kind: "lifecycle", phase: "ready", protocolVersion: 1 }));
+        }
+      }
       return;
     }
     if (frame.kind !== "request" || typeof frame.requestId !== "string" || typeof frame.method !== "string") {
@@ -227,6 +236,18 @@ Object.assign(window, {
     switchAccount: (id: string) => {
       account = { kind: "logged-in", authId: id, email: `${id}@example.invalid`, displayName: id };
       auth.emit(account);
+    },
+    holdNextReady: () => { holdNextReady = true; },
+    replaceCoordinatorPort: () => {
+      const port = new FixturePort();
+      ports.add(port);
+      broker.deliver(port);
+      return port.id;
+    },
+    releaseReady: (portId: number) => {
+      const port = [...ports].find((candidate) => candidate.id === portId);
+      if (port == null || !heldReadyPorts.delete(port)) throw new Error(`Coordinator port ${portId} is not held`);
+      port.receive({ kind: "lifecycle", phase: "ready", protocolVersion: 1 });
     },
     unmount: () => { if (mounted) { mounted = false; root.unmount(); } },
   },

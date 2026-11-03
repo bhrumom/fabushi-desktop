@@ -3715,7 +3715,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     // failure after an A→B→A switch would otherwise strand a pending row.
     resendSubmissionNoncesRef.current.add(retryFlightKey);
     try {
-      await client.call("retryHumanMessage", { conversationId, clientNonce });
+      await client.call("retryHumanMessage", { conversationId, clientNonce }, isCurrent);
     } catch (error) {
       if (isCurrent()) setNotice(error instanceof Error ? error.message : String(error));
     } finally {
