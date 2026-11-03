@@ -5,7 +5,7 @@
   "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
   "subject": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
   "tree": "f609dcdc22418f313177c3d86e01103a226799de",
-  "state": "STRUCTURE review terminal REQUEST_CHANGES; GENERAL report pending. Root confirms R2S-01 and records all currently reported dispositions before correction.",
+  "state": "R2 terminal REQUEST_CHANGES: GENERAL source approval and STRUCTURE R2S-01 mandatory constructor correction. Root retains the specific FIX and prior nonblocking performance disposition; no executable verification.",
   "decisions": [
     {
       "id": "PS-R2-CONSTRUCTOR-CONTENDED-OBSERVATION",
@@ -40,7 +40,10 @@
       "classification": "NON_BLOCKING",
       "decision": "DEFER",
       "finding": "Per-record admission performs repeated complete image I/O/strict decoding; source-level fanout has no measured latency result.",
-      "rationale": "Same nonblocking performance observation as the already preserved R1 disposition. It cannot start a fix round and does not waive performance/soak acceptance; no new cache or permission owner is introduced."
+      "rationale": "Same nonblocking performance observation as the already preserved R1 disposition. It cannot start a fix round and does not waive performance/soak acceptance; no new cache or permission owner is introduced.",
+      "aliases": [
+        "PSLOCK-R2-G-N1"
+      ]
     }
   ],
   "reviews": [
@@ -66,6 +69,28 @@
       "hidden_runtime_attestation": false,
       "execution": "not-run",
       "report": "Complete independent report returned in the task conversation; no report blob was created by that reviewer."
+    },
+    {
+      "reviewer": "/root/plugin_admission_r2_general",
+      "lens": "GENERAL/security/lifetime/concurrency/oracle",
+      "outcome": "APPROVE_SOURCE_ONLY",
+      "required_fix_ids": [],
+      "non_blocking_ids": [
+        "PSLOCK-R2-G-N1"
+      ],
+      "scope": "Complete frozen fourteen-path source scope, full original diff and proper R1-to-R2 delta with actual affected functions/consumers/state/capture.",
+      "model_requested": "gpt-6-astra",
+      "effort_requested": "xhigh",
+      "spawn_parameters_applied": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "hidden_runtime_attestation": false,
+      "execution": "not-run",
+      "report_path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/general.md",
+      "report_blob": "51282be20bec163ebcadfcf29c1ee88ae00147be",
+      "report_readback": "author full byte equality and root independent fetch"
     }
   ]
 }

@@ -181,7 +181,8 @@
         "source/host/app/src/tests/cron_job_identity_tests.rs",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -488,7 +489,8 @@
         "source/host/tests/memory_synthesis_service_contract.rs",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -675,7 +677,8 @@
         "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/execution-r1/assessment.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -1329,7 +1332,8 @@
         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R21",
@@ -1610,7 +1614,8 @@
         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2080,7 +2085,8 @@
         "source/host/tests/memory_synthesis_service_contract.rs",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",
@@ -2902,7 +2908,8 @@
         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC21",
@@ -3213,7 +3220,8 @@
         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

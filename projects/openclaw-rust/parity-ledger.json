@@ -33123,7 +33123,8 @@
         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
         "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
       ],
       "existing_owner_candidates": [
         {
@@ -33270,7 +33271,11 @@
         "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication",
         "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease",
         "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication",
-        "source/host/src/extensions/mcp/skill_publish.rs::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"
+        "source/host/src/extensions/mcp/skill_publish.rs::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_contended_constructor_recovers_after_actual_first_image_publication",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_authoritative_constructor_corruption_remains_faulted_after_restore",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes"
       ],
       "typed_contracts": [
         "SkillDefinition",

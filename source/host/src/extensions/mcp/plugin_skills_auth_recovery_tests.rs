@@ -1360,3 +1360,177 @@ fn auth_contended_unlocked_image_error_does_not_latch_recovery_fault() {
     assert_skill_file_bytes(&files);
     h.assert_calls(3);
 }
+
+
+#[test]
+fn auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery() {
+    for corruption in ["malformed-image", "marker-only-view", "directory-image"] {
+        for confirmed in [false, true] {
+            let root = TempRoot::new();
+            let (prior, loader, records) = seed(&root);
+            let files = skill_file_bytes(&records);
+            let cache = fs::read(root.cache_path()).unwrap();
+            let intent = prior.begin_uninstall("9").unwrap();
+            if confirmed {
+                prior.settle_uninstall(&intent, PluginUninstallSettlement::Removed).unwrap();
+            }
+            let journal = fs::read(root.uninstall_state_path()).unwrap();
+            let marker = fs::read(root.uninstall_version_path()).unwrap();
+            let writer = AdmissionFileLock::exclusive(&root.0).unwrap();
+            assert!(AdmissionFileLock::try_shared(&root.0).unwrap().is_none());
+            // These actual file faults model an unowned image observation, not
+            // a claim that the ordinary writer publishes a malformed image.
+            match corruption {
+                "malformed-image" => fs::write(root.uninstall_state_path(), b"{unserialized-constructor-view").unwrap(),
+                "marker-only-view" => fs::remove_file(root.uninstall_state_path()).unwrap(),
+                "directory-image" => {
+                    fs::remove_file(root.uninstall_state_path()).unwrap();
+                    fs::create_dir(root.uninstall_state_path()).unwrap();
+                }
+                _ => unreachable!(),
+            }
+            let corrupt_image = fs::read(root.uninstall_state_path()).ok();
+            let service = SandPluginSkillsService::new(&root.0, loader.clone())
+                .with_now(Arc::new(|| 1_000));
+            let reader = service.admission_reader();
+            {
+                let live = service.admission.state.lock().unwrap();
+                assert!(live.recovery_required, "{corruption}");
+                assert!(!live.recovery_fault, "contention is not an authoritative image fault");
+            }
+            assert!(reader.is_denied("9"));
+            assert!(reader.is_denied("10"));
+            assert!(service.current().is_empty());
+            assert_auth_recovery(&service, &[], true);
+            assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+            assert_eq!(fs::read(root.uninstall_state_path()).ok(), corrupt_image);
+            assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), marker);
+            assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
+            assert_skill_file_bytes(&files);
+
+            if corruption == "directory-image" {
+                fs::remove_dir(root.uninstall_state_path()).unwrap();
+            }
+            fs::write(root.uninstall_state_path(), &journal).unwrap();
+            drop(writer);
+            // A complete SH observation imports adverse facts but cannot turn
+            // unknown startup custody into positive cached admission.
+            assert!(reader.is_denied("9"));
+            assert!(reader.is_denied("10"));
+            assert!(reader.acquire("10").unwrap().is_none());
+            assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), journal);
+            assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+            let status = <SandPluginSkillsService as PluginSkillsPort>::status(&service);
+            assert!(status["authRecovery"].get("fault").is_none());
+            assert!(status["uninstallRecovery"].get("fault").is_none());
+            assert_eq!(status["authRecovery"]["refreshOutcomeUnknown"], true);
+            if confirmed {
+                assert_eq!(status["uninstallRecovery"]["confirmedPluginIds"], json!(["9"]));
+            } else {
+                assert_eq!(status["uninstallRecovery"]["pending"],
+                    json!([{"pluginId":"9","operationId":intent.operation_id}]));
+            }
+
+            let recovered = service.sync("explicit-after-contended-construction").unwrap();
+            assert_eq!(record_ids(&recovered), if confirmed { vec!["10", "9"] } else { vec!["10"] });
+            assert_eq!(loader.calls.load(Ordering::SeqCst), 2);
+            assert!(!reader.is_denied("10"));
+            assert_eq!(reader.is_denied("9"), !confirmed);
+            assert!(reader.acquire("10").unwrap().is_some());
+            assert_auth_recovery(&service, &[], false);
+            assert_skill_file_bytes(&files);
+        }
+    }
+}
+
+#[test]
+fn auth_contended_constructor_recovers_after_actual_first_image_publication() {
+    let root = TempRoot::new();
+    let loader = Arc::new(InlineLoader {
+        result: Mutex::new(Ok(two_plugins(&root, "first"))),
+        calls: AtomicUsize::new(0),
+    });
+    let writer = AdmissionFileLock::exclusive(&root.0).unwrap();
+    assert!(!root.uninstall_state_path().exists());
+    assert!(!root.uninstall_version_path().exists());
+    let service = SandPluginSkillsService::new(&root.0, loader.clone())
+        .with_now(Arc::new(|| 1_000));
+    assert_auth_recovery(&service, &[], true);
+    assert!(!service.admission.state.lock().unwrap().recovery_fault);
+    assert!(!root.uninstall_state_path().exists());
+    assert!(!root.uninstall_version_path().exists());
+    assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
+
+    // The actual existing publisher performs its real image/marker barriers
+    // while the same EX lease remains held; construction creates no state.
+    super::uninstall_state::persist_uninstall_image_locked(
+        &get_plugin_skills_dir(&root.0),
+        &DurableUninstallImage::default(),
+        &UninstallState::default(),
+    ).unwrap();
+    let published = fs::read(root.uninstall_state_path()).unwrap();
+    assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), b"1\n");
+    drop(writer);
+    let reader = service.admission_reader();
+    assert!(reader.is_denied("10"));
+    assert_auth_recovery(&service, &[], true);
+    assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), published);
+    assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
+    assert_eq!(record_ids(&service.sync("explicit-after-first-writer").unwrap()), vec!["10", "9"]);
+    assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+    assert!(!reader.is_denied("9"));
+    assert!(!reader.is_denied("10"));
+    assert_auth_recovery(&service, &[], false);
+}
+
+#[test]
+fn auth_authoritative_constructor_corruption_remains_faulted_after_restore() {
+    const LOSS_ERROR: &str = "plugin uninstall recovery state is unavailable";
+    let root = TempRoot::new();
+    let (_prior, loader, records) = seed(&root);
+    let journal = fs::read(root.uninstall_state_path()).unwrap();
+    let cache = fs::read(root.cache_path()).unwrap();
+    let files = skill_file_bytes(&records);
+    fs::write(root.uninstall_state_path(), b"{authoritative-constructor-fault").unwrap();
+    let service = SandPluginSkillsService::new(&root.0, loader.clone());
+    assert!(service.admission.state.lock().unwrap().recovery_fault);
+    fs::write(root.uninstall_state_path(), &journal).unwrap();
+    let reader = service.admission_reader();
+    assert!(reader.is_denied("9"));
+    assert!(reader.is_denied("10"));
+    assert!(reader.acquire("10").unwrap().is_none());
+    assert_eq!(service.sync("must-not-heal-authoritative-constructor-fault").unwrap_err(), LOSS_ERROR);
+    assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+    assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), journal);
+    assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
+    assert_skill_file_bytes(&files);
+    let fresh = SandPluginSkillsService::new(&root.0, loader.clone());
+    assert!(!fresh.admission_reader().is_denied("9"));
+    assert!(!fresh.admission_reader().is_denied("10"));
+    assert_eq!(fresh.current(), records);
+    assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+}
+
+
+#[test]
+fn auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes() {
+    let parent = TempRoot::new();
+    let absent = parent.0.join("not-created").join("sand");
+    let loader = Arc::new(InlineLoader {
+        result: Mutex::new(Err("constructor must not call loader".into())),
+        calls: AtomicUsize::new(0),
+    });
+    let service = SandPluginSkillsService::new(&absent, loader.clone());
+    {
+        let live = service.admission.state.lock().unwrap();
+        assert!(!live.recovery_fault);
+        assert!(!live.recovery_required);
+        assert!(live.durable == DurableUninstallImage::default());
+    }
+    assert!(service.current().is_empty());
+    assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), json!({"authBlocked":[]}));
+    assert!(service.admission_reader().is_denied("9"), "absence grants no existing plugin");
+    assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
+    assert_eq!(fs::symlink_metadata(parent.0.join("not-created")).unwrap_err().kind(),
+        std::io::ErrorKind::NotFound);
+}

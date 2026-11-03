@@ -641,25 +641,33 @@ impl SandPluginSkillsService {
         // this fresh candidate outside its binding lock and rechecks the owner
         // before installation; same-root successors preserve the live reader.
         let observed = match AdmissionFileLock::try_shared(&sand_root_dir) {
-            Ok(lock) => load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir))
-                .map(|durable| (durable, lock.is_none())),
+            Ok(Some(_lock)) => load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir))
+                .map(Some),
+            // A contended constructor has no accepted image to reconcile. An
+            // unlocked image/marker pair may straddle a legitimate publication;
+            // neither its success nor its error is authoritative. Defer the
+            // read and retain unknown admission until explicit fresh recovery.
+            Ok(None) => Ok(None),
             // A genuinely absent root has no old cache or custody to admit.
             // Construction must not create its directory chain.
             Err(_) if matches!(fs::symlink_metadata(&sand_root_dir),
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound) =>
             {
-                load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir))
-                    .map(|durable| (durable, false))
+                // Do not follow this absence check with an unlocked two-file
+                // read that could race the root's first creation/publication.
+                Ok(Some(DurableUninstallImage::default()))
             }
             Err(error) => Err(error),
         };
         let state = match observed {
-            Ok((durable, writer_active)) => PluginSkillsAdmissionState {
+            Ok(Some(durable)) => PluginSkillsAdmissionState {
                 denied: durable.state.auth_refusals.clone(),
-                // Without SH, a fresh owner cannot know whether a positive
-                // image is only partially published. Preserve that unknown.
-                recovery_required: writer_active || durable.state.refresh_intent.is_some(),
+                recovery_required: durable.state.refresh_intent.is_some(),
                 durable,
+                ..PluginSkillsAdmissionState::default()
+            },
+            Ok(None) => PluginSkillsAdmissionState {
+                recovery_required: true,
                 ..PluginSkillsAdmissionState::default()
             },
             Err(_) => PluginSkillsAdmissionState {
