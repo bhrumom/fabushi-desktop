@@ -74,6 +74,18 @@
         "prune_committed_if_current"
       ],
       "reason": "Process lock stored only in live.refresh survives a completed failed worker's Fenced state, preventing a distinct fresh owner from the explicit offline/recovery call in the retained negative-write oracle. Conversely successful publication drops live.refresh before run_pass cleanup; a different process can refresh/materialize before the old pruner. Root read exact paths. Bind exclusion to actual owned work, release after its terminal/cleanup boundary, and prevent old guards from releasing a successor."
+    },
+    {
+      "id": "PS-LOCK-OBSERVED-STATE-LOSS",
+      "severity": "P1",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "symbols": [
+        "PluginSkillsAdmissionState::observe_durable",
+        "SandPluginSkillsService::load_uninstall_image_locked"
+      ],
+      "reason": "Root source review of candidate bbf329a8eb4c36992465f46ff68c9e6f8bf1497d and private image0cbada753423020706cd8c9660be2b227be867e1 found: a retained initialized owner has confirmed or pending9; both custody files disappear; the pure loader returns legacy default; observe_durable replaces known state and loses confirmed/pending denial, readmitting old cached9. Auth-only retain guards do not protect uninstall facts. When an already observed initialized exact image becomes wholly absent, latch recovery fault, retain accepted state, and ensure writer load refuses before any reinitialization. Preserve truly never-initialized legacy behavior. Add actual retained reader/Workflow and no-loader/no-write controls with explicit repair followed by fresh owner."
     }
   ],
   "scope": "Repair existing owner and preserve incoming cross-process mutation/admission serialization; no new runtime/permission/scheduler owner.",
