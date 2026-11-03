@@ -1,0 +1,60 @@
+{
+  "schema": "ocrm-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "RMD-v1",
+  "round": 1,
+  "original_base": "f46bf90857fd4e7e0d2186e4eabfd158c0f0c8a0",
+  "reviewed_candidate": "ed6e0b09205f26a723395571692b8cfb1870f9da",
+  "reviewed_tree": "52f5512c1b9c19be0304bb0647603ef6a68eaa3f",
+  "review_packet": "af5749a9a4dcef821827f4118f61547e58c6eeef",
+  "review_status": "Both fresh reviewers have reported the same concrete integration defect; final reports are being collected. This records the runner's current arbitration before applying this fix, not a convergence verdict.",
+  "findings": [
+    {
+      "id": "RMD-R1-OPAQUE-REVISION",
+      "severity": "P2",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "reported_by": [
+        "/root/rmd_r1_general",
+        "/root/rmd_r1_structure"
+      ],
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "base_blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "symbol": "SandAgentDb::write_session_kv_if_generation",
+      "reason": "Session admission CAS accepts and preserves any nonblank opaque lifecycle revision. New status and owner prechecks preserve the exact caller value. The existing SQLite guard trims expected_lifecycle_revision before its transactional equality check, so a legitimate stored whitespace-bearing revision cannot reset despite canReset=true.",
+      "source_observations": [
+        "agent_db.rs:1324-1379 atomic generation write, specifically normalization at1333 and comparison1351",
+        "agent_db.rs:1534-1572 admission CAS nonblank check and byte-preserving serialization/equality",
+        "production.rs:2896-2937 exact caller fence through existing Session writer",
+        "agent_session.rs:78-98 same expected revision delegated to existing DB owner",
+        "App native reset/status and UI preserve opaque revision strings"
+      ],
+      "required_change": "Preserve expected_lifecycle_revision unchanged in the existing atomic guard and use trim only for blank validation. Retain the existing Session ID compatibility check, transaction/admission/reserved-key behavior, notifications and write-generation semantics. Add a real HTTP reset/status/reopen positive using a revision committed through the actual admission CAS, with trimmed/differently padded expectation refusals. Add actual shared DB positive/refusal controls and retain its existing admission-CAS/stale-generation controls.",
+      "validation_change": "Extend the same exact-H RMD selection and source binding for the newly affected existing DB owner/test paths; preserve every previously selected test and assertion. No broad responsibility or global flag promotion.",
+      "semantics_authority": "Existing RMD04 requires opaque byte-exact lifecycle identity through the original SQLite write; no new product behavior or owner is introduced.",
+      "execution_observation": "Source-established defect; no Actions failure or local reproduction is claimed."
+    }
+  ],
+  "source_scope_extension": {
+    "added_required_paths": [
+      "source/host/src/extensions/session/agent_db.rs",
+      "source/host/tests/agent_db_owner_contract.rs"
+    ],
+    "reason": "Necessary existing atomic writer dependency of the original RMD04 chain; all original21paths remain in the complete frozen scope.",
+    "original_base_retained": true
+  },
+  "next_review": {
+    "kind": "fresh-focused-fix-delta-and-affected-callers",
+    "lenses": [
+      "GENERAL",
+      "STRUCTURE"
+    ],
+    "complete_original_scope_retained": true,
+    "max_rounds": 10
+  },
+  "acceptance": {
+    "source_converged": false,
+    "execution": "not-run",
+    "global_flags_promoted": false
+  }
+}
