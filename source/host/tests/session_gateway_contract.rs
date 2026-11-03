@@ -4697,6 +4697,7 @@ struct ForwardHttpState {
     mutated_second_pin: Option<(std::path::PathBuf, Vec<u8>)>,
     mutation_observed_by_second_upload: bool,
     mutation_restored_before_message_ack: bool,
+    fail_first_message_post: bool,
 }
 
 // Keep multipart payloads binary. The older text helper is sufficient for JSON
@@ -4863,6 +4864,10 @@ impl ForwardHttpFixture {
                                 state.mutation_restored_before_message_ack = true;
                             }
                         }
+                        if state.fail_first_message_post && post_count == 1 {
+                            (json!({"success":false,"error":"fixture first dispatch failure"})
+                                .to_string().into_bytes(), "application/json", 503)
+                        } else {
                         let submitted = fixture_request_json(&request);
                         let nonce = submitted["clientRequestId"].as_str().expect("forward nonce");
                         let peer = submitted["targetUserId"].as_str().expect("forward target")
@@ -4884,6 +4889,7 @@ impl ForwardHttpFixture {
                         state.accepted.insert(nonce.to_string(), message.clone());
                         (json!({"success":true,"deduplicated":deduplicated,"message":message})
                             .to_string().into_bytes(), "application/json", 200)
+                        }
                     } else {
                         assert!(request.starts_with("GET /api/social/messages?"), "{request}");
                         let after = request.split("afterId=").nth(1)
@@ -4950,6 +4956,11 @@ impl ForwardHttpFixture {
     fn mutate_second_pin_after_first_upload(&self) {
         self.state.lock().expect("owned pin mutation")
             .mutate_second_pin_after_first_upload = true;
+    }
+
+    fn fail_first_message_post(&self) {
+        self.state.lock().expect("configure first Human dispatch failure")
+            .fail_first_message_post = true;
     }
 
     fn finish(mut self) {
@@ -7203,6 +7214,57 @@ fn shipping_human_forward_ordinary_send_rejects_lost_provenance_before_dispatch(
     server.finish(); fs::remove_dir_all(root).unwrap();
 }
 
+
+#[test]
+fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_settled_replay() {
+    let root = temp_root("human-retry-resource-restart");
+    let server = ForwardHttpFixture::start(false);
+    server.fail_first_message_post();
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").unwrap()["id"]
+        .as_str().unwrap().to_owned();
+    let foreign_conversation_id = runtime.create_human_conversation("3", "Foreign").unwrap()["id"]
+        .as_str().unwrap().to_owned();
+    let attachment_path = root.join("retry-report.pdf");
+    fs::create_dir_all(&root).unwrap();
+    fs::write(&attachment_path, [0_u8, 1, 2, 0xfe, 0xff]).unwrap();
+
+    runtime.append_human_message(&conversation_id, "retry with durable file",
+        "retry-resource-nonce", Some(1234.0), None, &[json!({
+            "path":attachment_path.to_string_lossy(),"name":"retry-report.pdf"
+        })]).expect_err("first remote message dispatch fails after upload receipt is durable");
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).unwrap();
+    let pending = owner.get_transcript_entries().unwrap();
+    assert_eq!(pending.len(), 1);
+    assert_eq!(pending[0]["delivery"], "pending");
+    assert_eq!(pending[0]["clientNonce"], "retry-resource-nonce");
+    assert_eq!(pending[0]["remoteDispatchAttachments"][0]["resourceId"], "forward-resource-1");
+    assert_eq!(server.resource_post_count(), 1);
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &server.url);
+    let foreign = dispatch_production_session_gateway_call(&restarted, "retryHumanMessage",
+        &json!({"conversationId":foreign_conversation_id,"clientNonce":"retry-resource-nonce"}))
+        .expect("retry gateway").expect_err("foreign conversation cannot claim another conversation's nonce");
+    assert!(!foreign.to_string().is_empty());
+    let settled = dispatch(&restarted, "retryHumanMessage", json!({
+        "conversationId":conversation_id,"clientNonce":"retry-resource-nonce"
+    }));
+    assert_eq!(settled["delivery"], "sent");
+    assert_eq!(settled["clientNonce"], "retry-resource-nonce");
+    assert_eq!(settled["attachments"][0]["resourceId"], "forward-resource-1");
+    assert_eq!(dispatch(&restarted, "retryHumanMessage", json!({
+        "conversationId":conversation_id,"clientNonce":"retry-resource-nonce"
+    })), settled, "settled replay is a pure local read");
+    assert_eq!(restarted.read_human_conversation_transcript(&conversation_id).unwrap().len(), 1);
+    assert_eq!(server.resource_post_count(), 1, "restart retry must reuse the uploaded receipt");
+    assert_eq!(server.post_count(), 2, "one failed send and one retry, never a third replay POST");
+    restarted.shutdown();
+    server.finish();
+    fs::remove_dir_all(root).unwrap();
+}
 
 #[test]
 fn shipping_human_retry_identity_is_concurrent_idempotent_and_reuses_settled_intent() {
