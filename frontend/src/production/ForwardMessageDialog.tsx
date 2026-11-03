@@ -219,6 +219,35 @@ export function ForwardMessageDialog({
     });
   };
 
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!canInteract()) return;
+    if (isForwardSubmitShortcut(event)) {
+      event.preventDefault();
+      void submit();
+      return;
+    }
+    if (recipients.length === 0) return;
+    if (
+      event.key === "ArrowDown"
+      || event.key === "ArrowUp"
+      || event.key === "PageDown"
+      || event.key === "PageUp"
+    ) {
+      event.preventDefault();
+      const next = nextForwardRecipientIndex(activeRecipientIndex, recipients.length, event.key);
+      if (next != null) {
+        setActiveRecipientIndex(next);
+        focusActiveRecipient(next);
+      }
+      return;
+    }
+    if (event.key === "Enter" && !event.ctrlKey && !event.metaKey) {
+      event.preventDefault();
+      const recipient = recipients[activeRecipientIndex];
+      if (recipient != null) toggleRecipient(recipient.id);
+    }
+  };
+
   const handleRecipientKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!canInteract() || recipients.length === 0) return;
     if (isForwardSubmitShortcut(event)) {
@@ -360,6 +389,7 @@ export function ForwardMessageDialog({
 
   return <OverlayDialog
     className="fabushi-forward-dialog"
+    closeOnBackdrop={selected.size === 0 && !snapshotLocked && !submitting}
     initialFocusRef={searchRef}
     label="Forward message"
     onClose={close}
@@ -374,12 +404,15 @@ export function ForwardMessageDialog({
         <label className="fabushi-forward-dialog__search">
           <span>Recipients</span>
           <input
+            aria-activedescendant={recipients.length === 0 ? undefined : `fabushi-forward-recipient-${activeRecipientIndex}`}
             aria-busy={searching || undefined}
+            aria-controls="fabushi-forward-recipient-list"
             autoComplete="off"
             onChange={(event) => {
               const lifetime = lifetimeRef.current;
               if (lifetime != null && isCurrent(lifetime)) setQuery(event.currentTarget.value);
             }}
+            onKeyDown={handleSearchKeyDown}
             placeholder="Search conversations"
             ref={searchRef}
             type="search"
@@ -392,6 +425,7 @@ export function ForwardMessageDialog({
           aria-label="Forward recipients"
           aria-multiselectable="true"
           className="fabushi-forward-dialog__recipients"
+          id="fabushi-forward-recipient-list"
           onKeyDown={handleRecipientKeyDown}
           ref={recipientListRef}
           role="listbox"

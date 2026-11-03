@@ -624,6 +624,17 @@ test("human_entry_refresh_retires_action_menus_without_hook_order_errors", { tim
   await menu.getByRole("menuitem", { name: "Reply", exact: true }).click();
   await f.page.getByRole("button", { name: "Cancel reply", exact: true }).waitFor();
   assert.equal(await f.page.locator(".sand-prompt-reply-pill").innerText(), "ACTION_RESTORED");
+  await f.update({ ...restored, content: "", attachments: [], richText: "" });
+  await f.page.locator(".sand-prompt-reply-pill").waitFor({ state: "detached" });
+  await f.frames();
+  assert.equal(await f.editor.innerText(), "ACTION_DRAFT_MUST_SURVIVE");
+  await f.update(restored);
+  await f.frames();
+  assert.equal(await f.page.locator(".sand-prompt-reply-pill").count(), 0, "eligibility restoration cannot reopen a retired reply target");
+  await row.locator(".sand-message-prose").click({ button: "right" });
+  await menu.getByRole("menuitem", { name: "Reply", exact: true }).click();
+  await f.page.getByRole("button", { name: "Cancel reply", exact: true }).waitFor();
+  assert.equal(await f.page.locator(".sand-prompt-reply-pill").innerText(), "ACTION_RESTORED");
   await f.page.getByRole("button", { name: "Cancel reply", exact: true }).click();
   assert.equal(await f.editor.innerText(), "ACTION_DRAFT_MUST_SURVIVE");
 

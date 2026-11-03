@@ -8,7 +8,7 @@ import { createComposerDraftPersistence, createComposerDraftStateStore } from ".
 import { createComposerSubmissionQueue, composerSubmissionBusyState, type ComposerSubmission, type ComposerSubmissionQueue, type ComposerSubmissionAdmission } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
 import { createTranscriptAcknowledgementController } from "../recovered/features/conversation/workspace/acknowledgement";
-import { createReplyThreadController, type ReplySelection } from "../recovered/features/conversation/workspace/reply-thread-controller";
+import { createReplyThreadController, isActionableReplyTargetEntry, type ReplySelection } from "../recovered/features/conversation/workspace/reply-thread-controller";
 import type { ComposerReplyTarget } from "../recovered/features/conversation/workspace/reply-preview";
 import { ConversationSidebar } from "../recovered/features/conversation/workspace/sidebar";
 import { AgentAvatar } from "../recovered/features/conversation/workspace/agent-avatar";
@@ -2627,7 +2627,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [client, transcriptCardListenerIntegrations, transcriptCardUrlCards]);
   useEffect(() => {
     replyThreadController.replaceEntries(entries);
-  }, [entries, replyThreadController]);
+    const currentScope = replyThreadController.getScope();
+    if (
+      activeAgentId.length === 0
+      || currentScope.accountSlot !== transcriptAccountSlot
+      || currentScope.agentId !== activeAgentId
+    ) return;
+    const snapshot = activeDraftSnapshotStore.get();
+    const current = snapshot.draft ?? snapshot.recovery;
+    if (current?.replyToId == null) return;
+    const targetEntry = entries.find((candidate) => candidate.id === current.replyToId);
+    if (targetEntry == null || isActionableReplyTargetEntry(targetEntry)) return;
+    composerDraftStore.setDraft(activeAgentId, replyThreadController.clearReplyFromDraft(current));
+    if (snapshot.draft == null && snapshot.recovery != null) composerDraftStore.clearRecovery(activeAgentId);
+  }, [activeAgentId, activeDraftSnapshotStore, composerDraftStore, entries, replyThreadController, transcriptAccountSlot]);
   const selectComposerReply = useCallback((targetId: string) => {
     const currentScope = replyThreadController.getScope();
     if (currentScope.accountSlot !== transcriptAccountSlot || currentScope.agentId !== activeAgentId
@@ -2727,7 +2740,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const currentReplyScope = replyThreadController.getScope();
   const replyScopeCurrent = currentReplyScope.accountSlot === transcriptAccountSlot
     && currentReplyScope.agentId === activeAgentId;
-  const replyTarget: ComposerReplyTarget | undefined = !replyScopeCurrent || draft.replyToId == null
+  const replyTargetClearedInEntries = draft.replyToId != null
+    && entries.some((candidate) => candidate.id === draft.replyToId && !isActionableReplyTargetEntry(candidate));
+  const replyTarget: ComposerReplyTarget | undefined = !replyScopeCurrent || draft.replyToId == null || replyTargetClearedInEntries
     ? undefined
     : { targetId: draft.replyToId, preview: replySelection?.targetId === draft.replyToId
       && replySelection.scope.accountSlot === transcriptAccountSlot && replySelection.scope.agentId === activeAgentId

@@ -141,6 +141,14 @@ async function assertPreReadyForwardRetired(t, retirement) {
 test("current forward closes and settles exactly once", async (t) => {
   const f = await fixture(t); await f.settleSearch();
   await f.page.waitForFunction(() => document.activeElement === document.querySelector('input[type="search"]'));
+  await f.page.keyboard.press("Enter");
+  assert.equal(await f.page.getByRole("option", { name: "human:b" }).getAttribute("aria-selected"), "true");
+  await f.page.locator("[data-ui-dialog-backdrop]").click({ position: { x: 4, y: 4 } });
+  assert.equal(await f.page.getByRole("dialog", { name: "Forward message" }).count(), 1);
+  assert.equal((await f.call("events")).filter((e) => e.kind === "closed").length, 0);
+  await f.page.getByRole("searchbox").focus();
+  await f.page.keyboard.press("Enter");
+  assert.equal(await f.page.getByRole("option", { name: "human:b" }).getAttribute("aria-selected"), "false");
   await f.page.keyboard.press("Tab");
   assert.equal(await f.page.getByRole("listbox").evaluate((node) => node === document.activeElement), true);
   await f.page.keyboard.press("Space");

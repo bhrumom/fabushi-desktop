@@ -66,6 +66,10 @@ function messagePreview(entry: TranscriptMessage): TranscriptReplyPreview {
   return attachment == null ? { kind: "missing" } : attachmentPreview(attachment);
 }
 
+export function isActionableReplyTargetEntry(entry: ConversationTranscriptEntry): boolean {
+  return entry.kind === "message" && (entry.text.trim().length > 0 || (entry.attachments?.length ?? 0) > 0);
+}
+
 function previewForEntry(entry: ConversationTranscriptEntry): TranscriptReplyPreview {
   return entry.kind === "message" ? messagePreview(entry) : { kind: "missing" };
 }
@@ -83,9 +87,13 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
   let disposed = false;
 
   const notify = () => options.onSelectionChange?.(selection == null ? null : { ...selection, scope: cloneScope(selection.scope) });
+  const isTargetClearedInEntries = (targetId: string): boolean => {
+    const entry = entries.get(targetId);
+    return entry != null && !isActionableReplyTargetEntry(entry);
+  };
   const currentResolution = (targetId: string): ReplyTargetResolution => {
     const entry = entries.get(targetId);
-    return entry == null
+    return entry == null || !isActionableReplyTargetEntry(entry)
       ? { targetId, preview: { kind: "missing" }, isInScope: false, status: "missing" }
       : { targetId, preview: previewForEntry(entry), isInScope: true, status: "resolved" };
   };
@@ -94,9 +102,14 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
     if (disposed) return;
     entries = indexEntries(nextEntries);
     if (selection != null) {
-      const next = currentResolution(selection.targetId);
-      selection = { ...next, scope: cloneScope(scope) };
-      notify();
+      if (isTargetClearedInEntries(selection.targetId)) {
+        selection = null;
+        notify();
+      } else {
+        const next = currentResolution(selection.targetId);
+        selection = { ...next, scope: cloneScope(scope) };
+        notify();
+      }
     }
   };
   const mergeEntries = (nextEntries: readonly ConversationTranscriptEntry[], prepend: boolean) => {
@@ -108,9 +121,14 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
     if (!prepend) for (const [id, entry] of incoming) merged.set(id, entry);
     entries = merged;
     if (selection != null) {
-      const next = currentResolution(selection.targetId);
-      selection = { ...next, scope: cloneScope(scope) };
-      notify();
+      if (isTargetClearedInEntries(selection.targetId)) {
+        selection = null;
+        notify();
+      } else {
+        const next = currentResolution(selection.targetId);
+        selection = { ...next, scope: cloneScope(scope) };
+        notify();
+      }
     }
   };
 
@@ -125,7 +143,13 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
       return currentResolution(targetId);
     },
     selectReply(targetId) {
-      if (disposed || scope.accountSlot == null || scope.agentId == null || targetId.length === 0) return false;
+      if (
+        disposed
+        || scope.accountSlot == null
+        || scope.agentId == null
+        || targetId.length === 0
+        || isTargetClearedInEntries(targetId)
+      ) return false;
       const resolution = currentResolution(targetId);
       selection = { ...resolution, scope: cloneScope(scope) };
       notify();
@@ -151,9 +175,15 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
     applyReplyToDraft(draft, draftScope) {
       // A new render can precede setScope. Never overlay the retired account's
       // in-memory selection on an explicitly scoped persisted draft.
-      if (disposed || draftScope != null && !sameScope(draftScope, scope)
-        || selection == null || !sameScope(selection.scope, scope)) return { ...draft };
-      return { ...draft, replyToId: selection.targetId };
+      if (disposed || draftScope != null && !sameScope(draftScope, scope)) return { ...draft };
+      if (selection != null && sameScope(selection.scope, scope)) {
+        return { ...draft, replyToId: selection.targetId };
+      }
+      if (typeof draft.replyToId === "string" && isTargetClearedInEntries(draft.replyToId)) {
+        const { replyToId: _replyToId, ...withoutReply } = draft;
+        return withoutReply;
+      }
+      return { ...draft };
     },
     clearReplyFromDraft(draft) {
       const { replyToId: _replyToId, ...withoutReply } = draft;
@@ -169,6 +199,7 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
       // Legacy callers still require a current selection. Only the mounted
       // owner may provide the exact account/conversation of its restored draft.
       return draftScope != null && typeof replyToId === "string" && replyToId.trim().length > 0
+        && !isTargetClearedInEntries(replyToId)
         ? { ...withoutReply, replyToId } : withoutReply;
     },
     setScope(nextScope) {

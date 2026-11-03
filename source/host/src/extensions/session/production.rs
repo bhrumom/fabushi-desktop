@@ -4483,6 +4483,36 @@ impl ProductionSessionWorkers {
                     .filter(|value| !value.is_empty())
                     .ok_or_else(|| "sendHumanMessage attachment requires name".to_string())?;
                 let mut normalized = serde_json::json!({ "path": path, "name": name });
+                if let Some(mime_type) = object
+                    .get("mimeType")
+                    .and_then(serde_json::Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                {
+                    normalized
+                        .as_object_mut()
+                        .expect("attachment object")
+                        .insert("mimeType".into(), serde_json::Value::String(mime_type.into()));
+                }
+                for dim in ["width", "height"] {
+                    if let Some(value) = object
+                        .get(dim)
+                        .and_then(|value| {
+                            value.as_i64().or_else(|| {
+                                value
+                                    .as_f64()
+                                    .filter(|number| number.is_finite())
+                                    .map(|number| number.round() as i64)
+                            })
+                        })
+                        .filter(|value| *value > 0)
+                    {
+                        normalized
+                            .as_object_mut()
+                            .expect("attachment object")
+                            .insert(dim.into(), serde_json::json!(value));
+                    }
+                }
                 if forward_context.is_some() {
                     if let Some(snapshot) = object.get("forwardSnapshot") {
                         normalized.as_object_mut().expect("attachment object")

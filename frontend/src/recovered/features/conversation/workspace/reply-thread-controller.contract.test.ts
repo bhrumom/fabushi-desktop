@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createReplyThreadController } from "./reply-thread-controller.ts";
-import type { ComposerDraft } from "./model.ts";
+import { createReplyThreadController, isActionableReplyTargetEntry } from "./reply-thread-controller.ts";
+import type { ComposerDraft, ConversationTranscriptEntry } from "./model.ts";
 import type { ComposerSubmission } from "./submission.ts";
 
 const scopeA = { accountSlot: "account-a", agentId: "agent-a" };
@@ -84,6 +84,38 @@ test("NMR-DRAFT-01 explicit reply cancellation preserves recovery content and pr
   assert.equal(draft.replyToId, "persisted-reply", "Cancellation does not mutate another retained input");
   assert.equal(controller.selectReply("explicit-new-selection"), true);
   assert.equal(controller.projectSubmission(cancelledInput, scopeA).replyToId, "explicit-new-selection");
+
+  const activeEntry: ConversationTranscriptEntry = {
+    kind: "message",
+    id: "explicit-new-selection",
+    role: "assistant",
+    author: "Peer",
+    text: "Actionable target",
+    timestampMs: 100,
+    attachments: [],
+  };
+  const emptiedEntry: ConversationTranscriptEntry = {
+    ...activeEntry,
+    text: "   ",
+    attachments: [],
+  };
+  assert.equal(isActionableReplyTargetEntry(activeEntry), true);
+  assert.equal(isActionableReplyTargetEntry(emptiedEntry), false);
+  controller.replaceEntries([activeEntry]);
+  assert.equal(controller.getSelection()?.targetId, "explicit-new-selection");
+  assert.equal(controller.resolve("explicit-new-selection").isInScope, true);
+  controller.replaceEntries([emptiedEntry]);
+  assert.equal(controller.getSelection(), null);
+  assert.equal(controller.resolve("explicit-new-selection").isInScope, false);
+  assert.equal(controller.selectReply("explicit-new-selection"), false);
+  assert.deepEqual(
+    controller.applyReplyToDraft({ ...draft, replyToId: "explicit-new-selection" }, scopeA),
+    cancelled,
+  );
+  assert.equal(
+    controller.projectSubmission({ ...input, replyToId: "explicit-new-selection" }, scopeA).replyToId,
+    undefined,
+  );
 });
 
 test("NMR-DRAFT-01 a disposed reply controller cannot consume a persisted draft target", () => {
