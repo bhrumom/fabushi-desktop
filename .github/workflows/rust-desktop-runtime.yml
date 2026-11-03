@@ -517,7 +517,23 @@ jobs:
               "source/host/src/transcript_mirror/transcript_mirror.rs",
               "source/host/src/transcript_mirror/transcript_journal_codec.rs",
               "source/host/src/transcript_mirror/transcript_mirror_router.rs",
+              "source/host/src/runner/tools/send_message_tool.rs",
+              "source/host/src/extensions/session/session_conversation_state.rs",
+              "source/host/tests/session_conversation_state_contract.rs",
+              "projects/fabushi-communication-platform/current-owner-inventory.md",
+              "projects/fabushi-communication-platform/owner-resolution-matrix.md",
+              "projects/openclaw-rust/docs/specs/generated-send-message-fidelity.md",
+              "source/host/src/runner/turn_agent_composition/tool_call_recorder.rs",
+              "source/host/src/runner/turn_agent_composition/tool_call_recorder_tests.rs",
+              "source/host/src/runner/agent_v1_wire.rs",
+              "source/host/src/runner/tools/send_message_encoding.rs",
+              "source/host/tests/send_message_tool_contract.rs",
+              "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "source/packages/proto/generated/agent/v1/send_message_tool_pb.ts",
           ]
+          source_paths = sorted(set(source_paths) | {
+              str(path) for path in Path("source/packages/proto/generated").rglob("*.ts")
+          })
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
               "kind": "ocrm-recovery-command-diagnostics",
@@ -1308,6 +1324,9 @@ jobs:
               tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate \
               tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch \
               tests::received_mcp_catalog_preserves_accepted_wire_values_and_order \
+              tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_live_sql_and_canonical_bytes \
+              tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_history_without_observation \
+              tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay \
               tests::automation_terminal_event_maps_runner_settlement_without_guessing; do
               run_recovery_check "app-${admission_test//::/_}" cargo test --locked --manifest-path source/host/app/Cargo.toml --bin mahayana-app-host \
                 "$admission_test" -- --exact || admission_status=1
@@ -1596,6 +1615,7 @@ jobs:
             --test production_agent_store_recovery_contract \
             --test canonical_checkpoint_recovery_contract \
             --test session_conversation_state_contract \
+            --test send_message_tool_contract \
             --test transcript_mirror_production_provider_contract \
             --test checkpoint_root_identity_contract \
             --test generated_occurrence_codec_contract \
@@ -1725,6 +1745,7 @@ jobs:
               runner::compaction_planning::tests \
               runner::production_turn_run_shell_adapter::tests \
               runner::routed_provider_runtime::checkpoint_publication_tests \
+              runner::turn_agent_composition::tool_call_recorder::tests \
               runner::tools::mcp_meta_tools::tests \
               runner::turn_shape::tests \
               extensions::inference::production::tests \
@@ -1774,6 +1795,48 @@ jobs:
                   "canonical_root_admission_same_sink_staging_and_persistence_keep_captured_base",
                   "canonical_root_admission_early_errors_permanently_revoke_prior_completion",
                   "canonical_root_admission_post_durable_journal_failure_refuses_stale_sink",
+                  "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
+                  "schema_matches_frozen_type_fences_and_attachment_schemes",
+                  "widget_schema_matches_frozen_choice_contract_and_normalization",
+                  "generated_send_message_schema_exposes_frozen_widget_constraints",
+                  "encoding_preserves_frozen_text_markdown_and_summary_projection",
+                  "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
+                  "send_message_bridge_is_first_party_and_delegates_other_tools",
+                  "cursor_agent_message_resolves_shipping_title_fail_soft",
+                  "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
+                  "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
+                  "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
+                  "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
+                  "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+                  "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+                  "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+                  "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
+                  "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
+                  "generated_send_message_text_success_survives_session_backfill_reopen",
+                  "generated_send_message_attachment_success_survives_session_backfill_reopen",
+                  "generated_send_message_empty_success_id_remains_compatible_after_reopen",
+                  "generated_send_message_initial_error_and_empty_results_never_backfill",
+                  "generated_send_message_absent_empty_and_unsupported_arguments_never_backfill",
+                  "generated_send_message_malformed_outer_envelopes_never_backfill",
+                  "generated_send_message_malformed_nested_payloads_never_backfill",
+                  "generated_send_message_effective_later_error_never_backfills",
+                  "generated_send_message_repeated_payloads_merge_through_session_backfill_reopen",
+                  "generated_send_message_effective_arguments_follow_protobuf_merge_semantics",
+                  "generated_send_message_intervening_tools_reset_success_before_backfill",
+                  "generated_send_message_final_other_tool_keeps_complete_oneof_selection",
+                  "generated_turn_and_user_message_shapes_match_frozen_agent_v1_fields",
+                  "generated_assistant_thinking_and_tool_boundaries_match_frozen_cases",
+                  "tool_steps_fail_closed_without_canonical_generated_json_projection",
+                  "frozen_tool_case_field_numbers_map_to_stable_names",
+                  "canonical_generated_projection_matches_frozen_send_message_to_json_semantics",
+                  "canonical_generated_projection_ignores_unknown_tool_message_fields",
+                  "canonical_generated_tool_encoder_round_trips_send_message_json",
+                  "canonical_generated_mcp_receipt_matches_independent_protobuf_wire",
+                  "canonical_generated_mcp_json_values_match_independent_protobuf_wire",
+                  "canonical_generated_tool_encoder_preserves_original_turn_structured_receipt",
+                  "canonical_generated_tool_encoder_preserves_scalar_and_empty_value_wire",
+                  "canonical_generated_tool_encoder_preserves_nested_lists_and_envelope_named_keys",
+                  "canonical_generated_tool_encoder_refuses_nonobject_structured_content",
               ],
               "lib-runner_routed_provider_runtime_checkpoint_publication_tests": [
                   "runner::routed_provider_runtime::checkpoint_publication_tests::production_checkpoint_round_trip_preserves_payload_and_hashed_isolation",
@@ -1784,6 +1847,41 @@ jobs:
                   "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_directory_barrier_failure_is_retried_before_descendants",
                   "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_final_barrier_failure_retains_visible_payload_without_success",
               ],
+              "lib-runner_turn_agent_composition_tool_call_recorder_tests": [
+                  "runner::turn_agent_composition::tool_call_recorder::tests::actual_producer_normalization_is_captured_without_live_observation",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::generic_none_id_preserves_the_actual_generated_success",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::actual_producer_error_keeps_its_original_type_and_generated_error",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::actual_producer_pre_observation_rejection_has_no_invented_arguments",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::fanout_preserves_actual_events_after_releasing_the_recorder_lock",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::capture_faults_keep_live_events_and_the_public_result_unchanged",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::reversed_worker_completion_drains_in_registration_order",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::late_old_worker_with_identical_id_cannot_attach_to_a_fresh_invocation",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::duplicate_send_ids_are_refused_while_active_and_after_completion",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::nested_registration_never_replaces_the_outer_receipt",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::send_message_registration_requires_the_exact_first_party_definition",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::invalid_initial_callbacks_fault_the_invocation_without_latest_match_recovery",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::completed_callbacks_require_unchanged_arguments_start_and_terminal_fields",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::duplicate_and_out_of_order_callback_phases_refuse_publication",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::callbacks_after_finish_cannot_replace_history_or_reopen_a_sealed_recorder",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::observed_success_must_match_the_actual_flat_public_result",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::terminal_disposition_and_error_text_must_match_the_original_result",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::initial_only_and_unobserved_success_are_never_qualified",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::pre_observation_typed_errors_encode_rejection_without_raw_argument_inference",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::unobserved_unknown_effect_is_never_recast_as_a_known_rejection",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::foreign_thread_callbacks_never_search_other_active_slots_by_provider_id",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::callbacks_cannot_attach_to_a_non_send_message_call",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::receipt_from_another_recorder_faults_both_invocations",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::receipt_cannot_be_finished_on_a_foreign_worker_thread",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::abandoned_receipts_and_active_drains_permanently_refuse_publication",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::poisoned_mutex_is_never_recovered_by_capture_finish_begin_or_drain",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::begin_and_seal_are_one_use_and_a_new_invocation_requires_a_fresh_recorder",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::checked_sequence_exhaustion_never_wraps_or_delegates_an_unregistered_call",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::non_send_message_calls_keep_existing_results_arguments_and_duplicate_id_behavior",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::producer_timestamps_are_preserved_without_wrapper_clock_or_monotonicity_assumptions",
+              ],
+              "app-tests_channel_host_lane_tests_generated_send_message_fidelity_generated_send_message_app_sink_preserves_live_sql_and_canonical_bytes": ["tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_live_sql_and_canonical_bytes"],
+              "app-tests_channel_host_lane_tests_generated_send_message_fidelity_generated_send_message_app_sink_preserves_history_without_observation": ["tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_history_without_observation"],
+              "app-tests_channel_host_lane_tests_generated_send_message_fidelity_generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay": ["tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay"],
           }
           executions = []
           for label, required in required_by_command.items():
@@ -1798,6 +1896,10 @@ jobs:
               evidence = read_command_evidence(root, label)
               accepted = (bool(command) and evidence["accepted"] and not missing
                   and bool(counts) and any(row[0] > 0 for row in counts) and all(row[1] == 0 for row in counts))
+              if label == "lib-runner_turn_agent_composition_tool_call_recorder_tests":
+                  accepted = accepted and counts == [(30, 0, 0)] and len(names) == 30
+              if label.startswith("app-tests_channel_host_lane_tests_generated_send_message_fidelity_"):
+                  accepted = accepted and all(row == (1, 0, 0) for row in counts)
               executions.append({"case": label, "command": command,
                   "command_exit_records": evidence["command_exit_records"],
                   "capture_exit_records": evidence["capture_exit_records"],
@@ -1813,7 +1915,8 @@ jobs:
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           receipt.update({"contract": "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "executions": executions,
-              "additional_contracts": ["OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1"],
+              "additional_contracts": ["OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1"],
+              "send_message_fidelity_scope": "SGF-v1 preserves actual completed SendMessage producer wire through existing canonical field 2 independently of live observation, using a fresh invocation recorder and checked receipt/callback/drain custody. Actual Session success-only decoding retains full-envelope and effective oneof semantics through backfill/reopen. Controlled actual App SQL sends compare message identity, normalized arguments, timestamps, live/canonical bytes and Journal projection; original typed failure, completion revocation and two fresh owner reads retain no replay or marker authority. Real providers/channels, external delivery ACK, lost SQL identity reconstruction, original interrupted-turn restart, rich variants and packaged-platform acceptance remain open.",
               "generated_history_scope": "Actual generated Runner retains ordered known successful tool observations and the accepted user through the existing canonical root/Journal transaction after provider failure or cancellation. Owned fresh processes observe history without provider/tool replay or completion/marker authority. Real provider-store refusal retains unaccepted effect custody; unknown/no-effect/root-drift controls, original typed error preservation, prior-completion invalidation and ordinary success remain required. Controlled Responses do not prove real provider compatibility, unknown/pending history, complete typed replay/UI, original-turn restart or packaged-platform acceptance.",
               "canonical_root_admission_scope": "Actual checked optional canonical snapshots bind Host composition, Runner projection, preflight, staging and guarded publication. Required process controls distinguish absent/present-empty and legacy-root identities, strict read/retirement refusals, same-sink successor drift, early-error permanent completion revocation, and post-durable Journal failure with fresh-owner recovery. Controlled Responses are not real provider compatibility. No lock spans provider execution; MCP catalog preparation precedes admission; recursive graph validation, prior-root wire provenance, original-turn restart, complete typed replay and package acceptance remain open.",
               "result": "passed" if accepted else "failed",
@@ -2795,7 +2898,7 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "openclaw_chat_cron_node_contract", "group_member_runner_deletion_production_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "connector_secret_store_contract", "widget_responses_full_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "openclaw_chat_cron_node_contract", "group_member_runner_deletion_production_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "connector_secret_store_contract", "widget_responses_full_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract", "send_message_tool_contract"],
               "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::routed_provider_runtime::checkpoint_publication_tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills::uninstall_state::tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
               "plugin_uninstall_recovery_contract": "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1",
@@ -3607,7 +3710,24 @@ jobs:
               "source/host/src/transcript_mirror/transcript_mirror.rs",
               "source/host/src/transcript_mirror/transcript_journal_codec.rs",
               "source/host/src/transcript_mirror/transcript_mirror_router.rs",
+              "source/host/src/runner/tools/send_message_tool.rs",
+              "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
+              "source/host/tests/session_conversation_state_contract.rs",
+              "source/host/app/src/tests/channel_host_lane_tests.rs",
+              "projects/fabushi-communication-platform/current-owner-inventory.md",
+              "projects/fabushi-communication-platform/owner-resolution-matrix.md",
+              "projects/openclaw-rust/docs/specs/generated-send-message-fidelity.md",
+              "source/host/src/runner/turn_agent_composition/tool_call_recorder.rs",
+              "source/host/src/runner/turn_agent_composition/tool_call_recorder_tests.rs",
+              "source/host/src/runner/agent_v1_wire.rs",
+              "source/host/src/runner/tools/send_message_encoding.rs",
+              "source/host/tests/send_message_tool_contract.rs",
+              "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "source/packages/proto/generated/agent/v1/send_message_tool_pb.ts",
           ]
+          inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/generated_occurrence_codec_contract.rs"} | {
+              str(path) for path in pathlib.Path("source/packages/proto/generated").rglob("*.ts")
+          })
           base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
           integration = base + ["--no-fail-fast"]
           for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
@@ -3847,6 +3967,82 @@ jobs:
               "retained_bridge_responses_admit_after_decode_before_effect_and_keep_native_and_prior_admission_controls",
           ]
           cases = [
+              ("generated-send-message-recorder", base + ["--lib", "runner::turn_agent_composition::tool_call_recorder::tests::", "--", "--test-threads=1"], [
+                  "runner::turn_agent_composition::tool_call_recorder::tests::actual_producer_normalization_is_captured_without_live_observation",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::generic_none_id_preserves_the_actual_generated_success",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::actual_producer_error_keeps_its_original_type_and_generated_error",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::actual_producer_pre_observation_rejection_has_no_invented_arguments",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::fanout_preserves_actual_events_after_releasing_the_recorder_lock",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::capture_faults_keep_live_events_and_the_public_result_unchanged",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::reversed_worker_completion_drains_in_registration_order",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::late_old_worker_with_identical_id_cannot_attach_to_a_fresh_invocation",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::duplicate_send_ids_are_refused_while_active_and_after_completion",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::nested_registration_never_replaces_the_outer_receipt",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::send_message_registration_requires_the_exact_first_party_definition",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::invalid_initial_callbacks_fault_the_invocation_without_latest_match_recovery",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::completed_callbacks_require_unchanged_arguments_start_and_terminal_fields",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::duplicate_and_out_of_order_callback_phases_refuse_publication",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::callbacks_after_finish_cannot_replace_history_or_reopen_a_sealed_recorder",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::observed_success_must_match_the_actual_flat_public_result",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::terminal_disposition_and_error_text_must_match_the_original_result",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::initial_only_and_unobserved_success_are_never_qualified",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::pre_observation_typed_errors_encode_rejection_without_raw_argument_inference",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::unobserved_unknown_effect_is_never_recast_as_a_known_rejection",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::foreign_thread_callbacks_never_search_other_active_slots_by_provider_id",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::callbacks_cannot_attach_to_a_non_send_message_call",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::receipt_from_another_recorder_faults_both_invocations",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::receipt_cannot_be_finished_on_a_foreign_worker_thread",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::abandoned_receipts_and_active_drains_permanently_refuse_publication",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::poisoned_mutex_is_never_recovered_by_capture_finish_begin_or_drain",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::begin_and_seal_are_one_use_and_a_new_invocation_requires_a_fresh_recorder",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::checked_sequence_exhaustion_never_wraps_or_delegates_an_unregistered_call",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::non_send_message_calls_keep_existing_results_arguments_and_duplicate_id_behavior",
+                  "runner::turn_agent_composition::tool_call_recorder::tests::producer_timestamps_are_preserved_without_wrapper_clock_or_monotonicity_assumptions",
+              ]),
+              ("generated-send-message-contracts", base + ["--no-fail-fast", "--test", "send_message_tool_contract", "--test", "session_conversation_state_contract", "--test", "generated_occurrence_codec_contract", "--", "--test-threads=1"], [
+                  "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
+                  "schema_matches_frozen_type_fences_and_attachment_schemes",
+                  "widget_schema_matches_frozen_choice_contract_and_normalization",
+                  "generated_send_message_schema_exposes_frozen_widget_constraints",
+                  "encoding_preserves_frozen_text_markdown_and_summary_projection",
+                  "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
+                  "send_message_bridge_is_first_party_and_delegates_other_tools",
+                  "cursor_agent_message_resolves_shipping_title_fail_soft",
+                  "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
+                  "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
+                  "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
+                  "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
+                  "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+                  "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+                  "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+                  "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
+                  "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
+                  "generated_send_message_text_success_survives_session_backfill_reopen",
+                  "generated_send_message_attachment_success_survives_session_backfill_reopen",
+                  "generated_send_message_empty_success_id_remains_compatible_after_reopen",
+                  "generated_send_message_initial_error_and_empty_results_never_backfill",
+                  "generated_send_message_absent_empty_and_unsupported_arguments_never_backfill",
+                  "generated_send_message_malformed_outer_envelopes_never_backfill",
+                  "generated_send_message_malformed_nested_payloads_never_backfill",
+                  "generated_send_message_effective_later_error_never_backfills",
+                  "generated_send_message_repeated_payloads_merge_through_session_backfill_reopen",
+                  "generated_send_message_effective_arguments_follow_protobuf_merge_semantics",
+                  "generated_send_message_intervening_tools_reset_success_before_backfill",
+                  "generated_send_message_final_other_tool_keeps_complete_oneof_selection",
+                  "generated_turn_and_user_message_shapes_match_frozen_agent_v1_fields",
+                  "generated_assistant_thinking_and_tool_boundaries_match_frozen_cases",
+                  "tool_steps_fail_closed_without_canonical_generated_json_projection",
+                  "frozen_tool_case_field_numbers_map_to_stable_names",
+                  "canonical_generated_projection_matches_frozen_send_message_to_json_semantics",
+                  "canonical_generated_projection_ignores_unknown_tool_message_fields",
+                  "canonical_generated_tool_encoder_round_trips_send_message_json",
+                  "canonical_generated_mcp_receipt_matches_independent_protobuf_wire",
+                  "canonical_generated_mcp_json_values_match_independent_protobuf_wire",
+                  "canonical_generated_tool_encoder_preserves_original_turn_structured_receipt",
+                  "canonical_generated_tool_encoder_preserves_scalar_and_empty_value_wire",
+                  "canonical_generated_tool_encoder_preserves_nested_lists_and_envelope_named_keys",
+                  "canonical_generated_tool_encoder_refuses_nonobject_structured_content",
+              ]),
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
               ("session-owner-namespace", base + ["--no-fail-fast", "--test", "session_paths_contract", "--test", "agent_lifecycle_contract", "--test", "agent_session_contract", "--", "--test-threads=1"], [
                   "sni_reserved_human_root_and_portable_aliases_are_not_agent_session_paths",
@@ -4170,7 +4366,8 @@ jobs:
 
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1"],
+              "send_message_fidelity_scope": "SGF-v1 preserves actual completed SendMessage producer wire through existing canonical field 2 independently of live observation, using a fresh invocation recorder and checked receipt/callback/drain custody. Actual Session success-only decoding retains full-envelope and effective oneof semantics through backfill/reopen. Controlled actual App SQL sends compare message identity, normalized arguments, timestamps, live/canonical bytes and Journal projection; original typed failure, completion revocation and two fresh owner reads retain no replay or marker authority. Real providers/channels, external delivery ACK, lost SQL identity reconstruction, original interrupted-turn restart, rich variants and packaged-platform acceptance remain open.",
               "codex_workspace_binding_scope": "Actual private credential loading, per-turn source/workspace continuity, same-workspace rotation, recreated retry/checkpoint refusal, one-401 refresh before persistence and bound/fresh Memory consumers through real HTTP with owned redirected destinations. Real service, external-writer settlement and process-restart acceptance remain open.",
               "generated_history_scope": "Actual generated Runner retains ordered known successful tool observations and the accepted user through the existing canonical root/Journal transaction after provider failure or cancellation. Owned fresh processes observe history without provider/tool replay or completion/marker authority. Real provider-store refusal retains unaccepted effect custody; unknown/no-effect/root-drift controls, original typed error preservation, prior-completion invalidation and ordinary success remain required. Controlled Responses do not prove real provider compatibility, unknown/pending history, complete typed replay/UI, original-turn restart or packaged-platform acceptance.",
               "canonical_root_admission_scope": "Actual checked optional canonical snapshots bind Host composition, Runner projection, preflight, staging and guarded publication. Required process controls distinguish absent/present-empty and legacy-root identities, strict read/retirement refusals, same-sink successor drift, early-error permanent completion revocation, and post-durable Journal failure with fresh-owner recovery. Controlled Responses are not real provider compatibility. No lock spans provider execution; MCP catalog preparation precedes admission; recursive graph validation, prior-root wire provenance, original-turn restart, complete typed replay and package acceptance remain open.",
@@ -4208,13 +4405,16 @@ jobs:
               missing = [name for name in required if passed.count(name) != 1]
               counts = successful_test_summaries(text)
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
-              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http"):
+              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http", "generated-send-message-recorder"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
               complete_counts = None
               if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-pairing-retained-stream"):
                   complete_counts = [tuple(map(int, count)) for count in re.findall(
                       r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
                   accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]
+              if label == "generated-send-message-contracts":
+                  accepted = (accepted and sorted(counts) == [(13, 0, 0), (14, 0, 0), (15, 0, 0)]
+                      and len(passed) == len(required))
               if label == "canonical-root-admission-contracts":
                   accepted = accepted and canonical_contract_results_accepted(cargo_exit, capture_exit, required, text)
               if label == "session-owner-namespace":
@@ -4571,7 +4771,27 @@ jobs:
               "source/host/src/runner/coordinator_tool_relay.rs",
               "source/host/src/runner/routed_provider_runtime.rs",
               "source/host/tests/production_turn_run_shell_adapter_contract.rs",
+              "source/host/src/runner/turn_agent_composition.rs",
+              "source/host/src/runner/tools/send_message_tool.rs",
+              "source/host/src/runner/generated_agent_turn_stream.rs",
+              "source/host/src/transcript_mirror/generated_occurrence_codec.rs",
+              "source/host/src/extensions/session/session_conversation_state.rs",
+              "source/host/tests/session_conversation_state_contract.rs",
+              "projects/fabushi-communication-platform/current-owner-inventory.md",
+              "projects/fabushi-communication-platform/owner-resolution-matrix.md",
+              "projects/openclaw-rust/docs/specs/generated-send-message-fidelity.md",
+              "source/host/src/runner/turn_agent_composition/tool_call_recorder.rs",
+              "source/host/src/runner/turn_agent_composition/tool_call_recorder_tests.rs",
+              "source/host/src/runner/agent_v1_wire.rs",
+              "source/host/src/runner/tools/send_message_encoding.rs",
+              "source/host/src/runner/tools/turn_toolset.rs",
+              "source/host/tests/send_message_tool_contract.rs",
+              "source/packages/proto/generated/agent/v1/agent_pb.ts",
+              "source/packages/proto/generated/agent/v1/send_message_tool_pb.ts",
           ]
+          inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/generated_occurrence_codec_contract.rs"} | {
+              str(path) for path in pathlib.Path("source/packages/proto/generated").rglob("*.ts")
+          })
           receipt = {
               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
@@ -4586,6 +4806,8 @@ jobs:
               "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "commands": [], "cases": [], "result": "failed",
+              "additional_contracts": ["OCRM-SEND-MESSAGE-FIDELITY-v1"],
+              "send_message_fidelity_scope": "SGF-v1 preserves actual completed SendMessage producer wire through existing canonical field 2 independently of live observation, using a fresh invocation recorder and checked receipt/callback/drain custody. Actual Session success-only decoding retains full-envelope and effective oneof semantics through backfill/reopen. Controlled actual App SQL sends compare message identity, normalized arguments, timestamps, live/canonical bytes and Journal projection; original typed failure, completion revocation and two fresh owner reads retain no replay or marker authority. Real providers/channels, external delivery ACK, lost SQL identity reconstruction, original interrupted-turn restart, rich variants and packaged-platform acceptance remain open.",
               "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. MCP cases exercise the actual Coordinator relay list decoder, typed secret-free whole-catalog refusal and accepted-wire compatibility with zero execution/review calls. PRC-v1 exercises three shipping cancellation helpers and actual early start refusal, model-capture admission, shared late token and generation-bound retirement, with existing worker terminal controls; no original-turn restart or real provider effects are claimed. Actual normal Host startup additionally covers profile custody and durable pairing admission before its existing daemon stop, with file-backed token/revision persistence and fixture-owned storage repair. Full startup, linked production package, live Gateway/device transport, real external provider/backend/client, macOS and whole-platform acceptance remain open. Mandatory raw-source CAS, legacy-slot reconciliation, metadata/open races and unknown write effects remain open.",
           }
           def save():
@@ -4746,6 +4968,11 @@ jobs:
                   "tests::routed_provider_terminal_keeps_real_guard_custody_after_local_retirement",
                   "tests::routed_provider_terminal_custody_refuses_missing_and_foreign_reports",
                   "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary",
+              ]
+              required += [
+                  "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_live_sql_and_canonical_bytes",
+                  "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_history_without_observation",
+                  "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay",
               ]
               receipt["required_tests"] = required
               save()

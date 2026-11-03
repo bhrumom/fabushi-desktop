@@ -12,7 +12,9 @@ use crate::extensions::session::production_agent_store::ProductionAgentCheckpoin
 use crate::transcript_mirror::conversation_state_binary::{
     ConversationStateRecoveryFields, decode_conversation_state_recovery_fields,
 };
-use crate::transcript_mirror::generated_occurrence_codec::encode_generated_agent_tool_step;
+use crate::transcript_mirror::generated_occurrence_codec::{
+    encode_generated_agent_tool_step, encode_generated_agent_tool_step_wire,
+};
 
 use super::inactive_turn_agent_stream::{
     InactiveTurnAgentLifecycleHooks, InactiveTurnAgentOutputSink,
@@ -240,6 +242,9 @@ fn mcp_generated_result(value: &Value) -> Value {
 }
 
 fn checkpoint_tool_step(call: CompletedRoutedToolCall) -> Result<Vec<u8>, ProviderSessionError> {
+    if let Some(wire) = call.send_message_wire.as_ref() {
+        return Ok(encode_generated_agent_tool_step_wire(wire.as_bytes()));
+    }
     let effective = if call.tool.tool_name.trim().is_empty() {
         call.tool.name.as_str()
     } else {
@@ -367,11 +372,11 @@ impl<'ctx>
                     context.typed_replay,
                     &mut forward_delta,
                 ) {
-                    Ok(assistant_content) => self.stage_generated_state(
-                        context,
-                        self.composition.take_completed_tool_calls(),
-                        assistant_content,
-                    ),
+                    Ok(assistant_content) => {
+                        let calls = self.composition.take_completed_tool_calls_checked()
+                            .map_err(GeneratedAgentTurnStreamError::Provider)?;
+                        self.stage_generated_state(context, calls, assistant_content)
+                    }
                     Err(error) => {
                         let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() else {
                             return Err(GeneratedAgentTurnStreamError::Provider(error));

@@ -3,13 +3,20 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+use prost::Message;
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 use serde_json::Value;
 use uuid::Uuid;
 
 use crate::agent_isolation::{AgentWorkerPool, ProductionAgentStoreWorkerBackend};
+use crate::runner::agent_v1_wire::{
+    SendMessageToolCall, send_message_args, send_message_result,
+};
 use crate::storage::store_db::live_db_handle_count;
+use crate::transcript_mirror::generated_occurrence_codec::{
+    GeneratedWireValue as WireValue, read_generated_wire_field, validate_generated_agent_tool_call,
+};
 
 use super::agent_db::{
     read_persisted_latest_root_blob_id,
@@ -1022,7 +1029,7 @@ fn decode_outline_tool_call_input(data: &[u8]) -> Option<OutlineToolCall> {
     };
 
     if field == 55 {
-        tool_call.send_message = decode_send_message(payload);
+        tool_call.send_message = decode_send_message(data);
         return Some(tool_call);
     }
 
@@ -1066,22 +1073,47 @@ fn decode_outline_tool_call_input(data: &[u8]) -> Option<OutlineToolCall> {
 }
 
 fn decode_send_message(data: &[u8]) -> Option<Value> {
-    let args = first_bytes_field(data, 1)?;
-    let (case, payload) = last_oneof_bytes(args, &[1, 2])?;
-    match case {
-        1 => {
-            let content = first_string_field(payload, 1)?;
-            Some(serde_json::json!({"type":"text","content":content}))
+    // Validate the complete envelope, including known strings and nested
+    // messages, before deriving a sent-message projection from any prefix.
+    validate_generated_agent_tool_call(data).ok()?;
+
+    // The frozen Rust envelope binds only some tool variants. Keep the full
+    // selector authoritative: another recognized tool resets the oneof, while
+    // repeated SendMessage payloads merge through the frozen prost binding.
+    let mut selected: Option<SendMessageToolCall> = None;
+    let mut position = 0usize;
+    while position < data.len() {
+        let (field, wire, value) = read_wire_field(data, &mut position)?;
+        if wire != 2 || tool_case_name(field).is_none() {
+            continue;
         }
-        2 => {
-            let url = first_string_field(payload, 1)?;
-            let alt = first_string_field(payload, 2);
-            Some(match alt.filter(|value| !value.is_empty()) {
-                Some(alt) => serde_json::json!({"type":"attachment","url":url,"alt":alt}),
-                None => serde_json::json!({"type":"attachment","url":url}),
+        if field != 55 {
+            selected = None;
+            continue;
+        }
+        let WireValue::Bytes(payload) = value else { return None };
+        selected
+            .get_or_insert_with(SendMessageToolCall::default)
+            .merge(payload)
+            .ok()?;
+    }
+
+    let selected = selected?;
+    if !matches!(selected.result?.result?, send_message_result::Result::Success(_)) {
+        return None;
+    }
+    // A generated success may legitimately have an empty message ID when the
+    // generic sink returned Ok(None). It still proves a completed send.
+    match selected.args?.message? {
+        send_message_args::Message::Text(text) => {
+            Some(serde_json::json!({"type":"text","content":text.content}))
+        }
+        send_message_args::Message::Attachment(attachment) => {
+            Some(match attachment.alt.filter(|value| !value.is_empty()) {
+                Some(alt) => serde_json::json!({"type":"attachment","url":attachment.url,"alt":alt}),
+                None => serde_json::json!({"type":"attachment","url":attachment.url}),
             })
         }
-        _ => None,
     }
 }
 
@@ -1171,57 +1203,11 @@ fn tool_case_name(field: u64) -> Option<&'static str> {
     })
 }
 
-enum WireValue<'a> {
-    Varint(u64),
-    Bytes(&'a [u8]),
-    Fixed,
-}
-
 fn read_wire_field<'a>(
     data: &'a [u8],
     position: &mut usize,
 ) -> Option<(u64, u8, WireValue<'a>)> {
-    let tag = read_varint(data, position)?;
-    let field = tag >> 3;
-    let wire = (tag & 0x07) as u8;
-    if field == 0 {
-        return None;
-    }
-    let value = match wire {
-        0 => WireValue::Varint(read_varint(data, position)?),
-        1 => {
-            *position = position.checked_add(8)?;
-            if *position > data.len() { return None; }
-            WireValue::Fixed
-        }
-        2 => {
-            let len: usize = read_varint(data, position)?.try_into().ok()?;
-            let end = position.checked_add(len)?;
-            let bytes = data.get(*position..end)?;
-            *position = end;
-            WireValue::Bytes(bytes)
-        }
-        5 => {
-            *position = position.checked_add(4)?;
-            if *position > data.len() { return None; }
-            WireValue::Fixed
-        }
-        _ => return None,
-    };
-    Some((field, wire, value))
-}
-
-fn read_varint(data: &[u8], position: &mut usize) -> Option<u64> {
-    let mut value = 0u64;
-    for shift in (0..70).step_by(7) {
-        let byte = *data.get(*position)?;
-        *position += 1;
-        value |= u64::from(byte & 0x7f) << shift;
-        if byte & 0x80 == 0 {
-            return Some(value);
-        }
-    }
-    None
+    read_generated_wire_field(data, position).ok()
 }
 
 fn first_bytes_field(data: &[u8], wanted: u64) -> Option<&[u8]> {

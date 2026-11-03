@@ -39,7 +39,7 @@ Refresh through `a538679392bc09531041030a98fa0880107e7d40` revalidated the live 
 | Coordinator | Independent Rust Node Agent Coordinator role | `source/node-agent-coordinator/src/main.rs`; `lib.rs`; `renderer_port_server.rs`; `supervisor.rs` | Explicit Human→Agent escalation reuses this boundary; native messaging must not collapse it. |
 | Electron ↔ Coordinator bridge | Electron launcher/port/runtime boundary | `source/electron-main/coordinator/*`; `source/electron-preload/coordinator-port-bridge.ts`; frontend `coordinator-client.ts` | Preserve process boundary and protocol ownership. |
 | Host | Independent Rust Host process and extension registry | `source/host/app/src/main.rs`; `source/host/src/lib.rs`; `source/host/src/extensions/registry.rs`; `host_production_extensions.rs` | Native communication runtime support may be hosted here only where lifecycle/cohesion fits; Host must not become a broad parallel CommunicationCore. |
-| Runner | Host Runner / turn execution owner | `source/host/src/runner/*`; `source/host/src/extensions/turn_execution/*`; `host_runner_composition.rs` | Agent execution remains Runner-owned. Human message transport is not a Runner responsibility. |
+| Runner | Host Runner / turn execution owner | `source/host/src/runner/*`; `source/host/src/extensions/turn_execution/*`; `host_runner_composition.rs`; `runner/turn_agent_composition.rs`; `runner/tools/send_message_tool.rs` | Agent execution and emitted SendMessage observation custody remain Runner-owned. Canonical generated history, SQL messages and recovery remain with Session/Transcript; Human message transport retains its existing owner. |
 | Computer | Existing Computer UX + Runner Computer dependencies + VNC bridge | `frontend/src/recovered/features/computer/*`; `source/host/src/runner/computer_use.rs`; `source/electron-main/vnc/*` | Screen-share/call work must inspect and reuse this realtime surface where applicable. |
 | Plugins / MCP | Existing plugin UI plus Electron/Coordinator/Host MCP lifecycle | `frontend/src/recovered/features/plugins/*`; `source/electron-main/mcp/*`; `source/node-agent-coordinator/src/mcp*`; `source/host/src/extensions/mcp/*` | Human-triggered Agent flows retain the existing MCP boundary. |
 | Automations | Existing automation UI, Host domain/store/trigger, Host extension | `frontend/src/recovered/features/automations/*`; `source/host/src/automations/*`; `source/host/src/extensions/automations/*`; `source/shared/automations.ts` | Scheduled send should become an automation action, not a separate scheduler. |
@@ -84,3 +84,16 @@ The existing channel connector path models outside platforms and delivery addres
 Before using this inventory for implementation, compare the live PR #20 head to `a538679392bc09531041030a98fa0880107e7d40`. If it changed, re-run the source inspection and replace stale owner evidence before coding.
 
 PR #20 rebaseline 2026-10-03: the exact `dcb19a94..a5386793` delta was inspected file-by-file at the ownership boundary. It advances send-pipeline/send-turn dispatch, workflow commands, runner registry/turn shell, Coordinator inference routing, and Session runtime behavior inside the same canonical Host Transcript/Runner/Coordinator architecture. `session-runtime.ts` now has a production Rust owner with focus/contact freshness, live-session ownership, deferred bounded-open activation/catch-up, snapshot/roster activation wiring, boot fallback ordering evidence, and focused contracts; `a5386793` is the first head that marks that row implemented, and only its own Actions may accept it. No FBCP product owner root moved in this delta.
+
+### 2026-11-03 Agent SendMessage fidelity batch
+
+At integration base `4fdf18a4906f5ea924e125aed6082de634d410e1`, the actual
+`ProductionSendMessageSink` appends through Session while the Runner producer
+emits its frozen generated call. [SGF-v1](../openclaw-rust/docs/specs/generated-send-message-fidelity.md)
+keeps private invocation/call observation custody in `TurnAgentComposition`,
+retains the emitted completed bytes in the existing canonical checkpoint, and
+requires complete decoded success before Session outline/recovery backfill.
+The Journal remains its existing semantic projection. No store, permission or
+transport owner is added. Exact-H execution is pending; original SQL-identity
+reconstruction during backfill, external delivery acknowledgement and complete
+ordinary-history replay remain open.

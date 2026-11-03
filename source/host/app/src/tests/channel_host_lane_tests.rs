@@ -2,6 +2,8 @@
 //!
 //! Session, the sink, lane dispatcher, delivery router and failure owners are
 //! real. Only the external ChannelDeliveryPort chooses a transport outcome.
+//! SGF-v1 additionally drives the actual generated Runner and private App sink
+//! with controlled Responses, preserving canonical wire and Journal projection.
 
 use super::super::*;
 use mahayana_host_runtime::connectors::channel_delivery::{
@@ -1531,4 +1533,788 @@ fn channel_recovery_exact_settlement_preserves_newer_marker_and_full_metadata() 
     fixture.assert_failure_queue_idle();
     fixture.assert_no_followup(&entries);
     fixture.close();
+}
+
+// The App owns ProductionSendMessageSink, so this oracle lives beside its
+// existing shipping fixture. The Responses adapter, generated Runner, checked
+// checkpoint, Session SQL, media custody and Journal remain production code.
+mod generated_send_message_fidelity {
+    use super::*;
+    use super::super::UnusedCompactionProviderPorts;
+    use mahayana_host_runtime::extensions::inference::provider_session::{
+        ProviderMessage, ProviderSessionError, RoutedProvider,
+    };
+    use mahayana_host_runtime::extensions::session::agent_db::{
+        OriginalTurnReceiptCommit, OriginalTurnReference,
+    };
+    use mahayana_host_runtime::extensions::session::gateway::persist_accepted_send_prompt_context;
+    use mahayana_host_runtime::extensions::session::session_conversation_state::ConversationOutlineItem;
+    use mahayana_host_runtime::extensions::transcript::production_runtime::ProductionSendError;
+    use mahayana_host_runtime::extensions::transcript::sand_ack_obligation_store::SandAckObligationStore;
+    use mahayana_host_runtime::runner::production_agent_checkpoint::{
+        AgentStateCheckpointSink, reconcile_completed_original_turn,
+    };
+    use mahayana_host_runtime::runner::production_turn_agent_owner::{
+        ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
+        ProductionTurnAgentStaticConfig,
+    };
+    use mahayana_host_runtime::runner::routed_provider_runtime::{
+        ProductionRoutedProviderCheckpointStore, RunnerRequestContextSnapshot,
+    };
+    use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
+    use mahayana_host_runtime::runner::tools::send_message_tool::{
+        CountingSendMessageSink, SendMessageDeliveryCounter, SendMessageSink,
+    };
+    use mahayana_host_runtime::runner::turn_agent_composition::{
+        SAND_AGENT_TOKEN_LIMIT, TurnAgentComposition,
+    };
+    use mahayana_host_runtime::runner::turn_observation::TurnObservation;
+    use mahayana_host_runtime::runner::{
+        TerminalOutcome, ToolEffectCustodyObservation, ToolEffectCustodyReport,
+        ToolEffectCustodySnapshot, TurnRunOptions,
+    };
+    use mahayana_host_runtime::runner_production_bridge::create_production_runner;
+    use mahayana_host_runtime::transcript_mirror::conversation_state_binary::{
+        ConversationTurnStructureFields, decode_conversation_state_recovery_fields,
+        decode_conversation_turn_structure_fields, decode_user_message_identity_fields,
+    };
+    use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
+        CanonicalGeneratedToolJsonProjection, GeneratedTranscriptOccurrenceCodec,
+    };
+    use mahayana_host_runtime::transcript_mirror::transcript_occurrence_deriver::{
+        DecodedTranscriptStep, TranscriptOccurrenceCodec,
+    };
+    use std::collections::BTreeMap;
+    use std::io::{Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::process::{Child, Command, ExitStatus, Stdio};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use std::time::Instant;
+
+    const CHILD_REQUEST_ENV: &str = "FABUSHI_SEND_MESSAGE_FIDELITY_REQUEST";
+    const STREAM: &str = "generated-send-message-app-stream";
+    const MODEL: &str = "Vendor/SendMessage/Fidelity@ActualApp";
+    const PROMPT: &str = "Send the text and the local attachment once, in that order.";
+    const TEXT: &str = "Actual App send: preserved text, Unicode 雪, and\na second line.";
+    const ALT: &str = "The normalized local attachment";
+    const ATTACHMENT_BYTES: &[u8] = b"actual local attachment custody\n";
+    const FINAL_TEXT: &str = "Both local messages were recorded.";
+    const PARTIAL_TEXT: &str = "This interrupted continuation is not a final result.";
+    const REFUSAL: &str = "controlled permanent refusal after actual App sends";
+    const TERMINAL_SLOT: &str = "original-routed-terminal:current";
+
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    enum Case { Observed, Unobserved, ProviderFailure }
+
+    impl Case {
+        fn label(self) -> &'static str {
+            match self {
+                Self::Observed => "observed",
+                Self::Unobserved => "unobserved",
+                Self::ProviderFailure => "provider-failure",
+            }
+        }
+
+        fn test_name(self) -> &'static str {
+            match self {
+                Self::Observed => "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_live_sql_and_canonical_bytes",
+                Self::Unobserved => "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_history_without_observation",
+                Self::ProviderFailure => "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay",
+            }
+        }
+    }
+
+    fn call_id(ordinal: usize) -> String { format!("actual-app-send-{ordinal}") }
+
+    fn arguments(root: &Path, ordinal: usize) -> Value {
+        match ordinal {
+            0 => json!({"type":"text", "content":TEXT}),
+            1 => json!({"type":"attachment", "url":file_url_for_path(
+                root.join("attachment-source.txt")).expect("actual local fixture file URL"), "alt":ALT}),
+            _ => panic!("unexpected SendMessage ordinal"),
+        }
+    }
+
+    fn response_events(root: &Path, case: Case, ordinal: usize) -> Result<Vec<Value>, String> {
+        match ordinal {
+            0 => Ok(vec![json!({"type":"response.completed", "response":{
+                "id":"actual-app-send-tools", "output":(0..2).map(|index| json!({
+                    "type":"function_call", "name":"SendMessage", "call_id":call_id(index),
+                    "arguments":arguments(root, index).to_string(),
+                })).collect::<Vec<_>>(),
+            }})]),
+            1 if case == Case::ProviderFailure => Ok(vec![
+                json!({"type":"response.output_text.delta", "delta":PARTIAL_TEXT}),
+                json!({"type":"response.failed", "response":{"error":{
+                    "code":"misalignment_policy_violation", "misalignment":{
+                        "detailed_explanation":REFUSAL,
+                        "steer":{"message":"retain the original typed provider refusal"},
+                    },
+                }}}),
+            ]),
+            1 => Ok(vec![
+                json!({"type":"response.output_text.delta", "delta":FINAL_TEXT}),
+                json!({"type":"response.completed", "response":{"id":"actual-app-send-final", "output":[]}}),
+            ]),
+            _ => Err(format!("unexpected extra Responses request {ordinal}")),
+        }
+    }
+
+    fn read_request(stream: &mut TcpStream) -> Result<Value, String> {
+        // Accepted sockets can inherit a nonblocking listener's mode. Match
+        // the existing Responses fixture contract before bounded Read/Write.
+        stream.set_nonblocking(false).map_err(|error| format!("request blocking mode: {error}"))?;
+        stream.set_read_timeout(Some(Duration::from_secs(2)))
+            .map_err(|error| format!("request timeout: {error}"))?;
+        stream.set_write_timeout(Some(Duration::from_secs(2)))
+            .map_err(|error| format!("response timeout: {error}"))?;
+        let deadline = Instant::now() + Duration::from_secs(4);
+        let mut bytes = Vec::new();
+        let mut buffer = [0_u8; 4096];
+        let header_end = loop {
+            if Instant::now() >= deadline { return Err("request header deadline".into()); }
+            let count = stream.read(&mut buffer).map_err(|error| format!("request headers: {error}"))?;
+            if count == 0 { return Err("closed request headers".into()); }
+            bytes.extend_from_slice(&buffer[..count]);
+            if let Some(index) = bytes.windows(4).position(|part| part == b"\r\n\r\n") { break index + 4; }
+            if bytes.len() > 64 * 1024 { return Err("oversized request headers".into()); }
+        };
+        let headers = std::str::from_utf8(&bytes[..header_end]).map_err(|_| "request header encoding")?;
+        if !headers.starts_with("POST /v1/responses HTTP/1.1\r\n") {
+            return Err("unexpected Responses request route".into());
+        }
+        let length = headers.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name.eq_ignore_ascii_case("content-length").then(|| value.trim().parse::<usize>().ok()).flatten()
+        }).ok_or("missing request content length")?;
+        if length > 1024 * 1024 { return Err("oversized Responses request".into()); }
+        while bytes.len() < header_end + length {
+            if Instant::now() >= deadline { return Err("request body deadline".into()); }
+            let count = stream.read(&mut buffer).map_err(|error| format!("request body: {error}"))?;
+            if count == 0 { return Err("closed request body".into()); }
+            bytes.extend_from_slice(&buffer[..count]);
+        }
+        serde_json::from_slice(&bytes[header_end..header_end + length])
+            .map_err(|error| format!("request JSON: {error}"))
+    }
+
+    struct Responses {
+        endpoint: String,
+        credential: PathBuf,
+        requests: Arc<Mutex<Vec<Value>>>,
+        stop: Arc<AtomicBool>,
+        worker: Option<thread::JoinHandle<Result<(), String>>>,
+        outcome: Option<Result<(), String>>,
+    }
+
+    impl Responses {
+        fn new(root: &Path, case: Case) -> Self {
+            let listener = TcpListener::bind("127.0.0.1:0").expect("owned Responses listener");
+            listener.set_nonblocking(true).expect("bounded Responses accept");
+            let origin = format!("http://{}", listener.local_addr().unwrap());
+            let credential = root.join("responses-credential.json");
+            let mut options = fs::OpenOptions::new();
+            options.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                options.mode(0o600);
+            }
+            options.open(&credential).expect("private controlled Responses credential")
+                .write_all(json!({"version":1, "issuer":origin,
+                    "accessToken":"send-message-fixture-token", "expiresAtMs":4_102_444_800_000_u64,
+                    "sessionId":"send-message-fixture-session", "deviceId":"send-message-fixture-device",
+                    "userId":"send-message-fixture-account",
+                }).to_string().as_bytes()).expect("write fixture credential");
+            let requests = Arc::new(Mutex::new(Vec::new()));
+            let captured = Arc::clone(&requests);
+            let stop = Arc::new(AtomicBool::new(false));
+            let worker_stop = Arc::clone(&stop);
+            let worker_root = root.to_path_buf();
+            let worker = thread::spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(90);
+                while !worker_stop.load(Ordering::Acquire) {
+                    if Instant::now() >= deadline { return Err("Responses fixture deadline".into()); }
+                    let (mut stream, _) = match listener.accept() {
+                        Ok(connection) => connection,
+                        Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                            thread::sleep(Duration::from_millis(2));
+                            continue;
+                        }
+                        Err(error) => return Err(format!("Responses accept: {error}")),
+                    };
+                    let request = read_request(&mut stream)?;
+                    let ordinal = {
+                        let mut captured = captured.lock().map_err(|_| "request capture poisoned")?;
+                        let ordinal = captured.len();
+                        captured.push(request);
+                        ordinal
+                    };
+                    let body = response_events(&worker_root, case, ordinal)?.iter()
+                        .map(|event| format!("data: {event}\n\n")).collect::<String>();
+                    write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len())
+                        .map_err(|error| format!("Responses write: {error}"))?;
+                }
+                Ok(())
+            });
+            Self { endpoint: format!("{origin}/v1/responses"), credential, requests,
+                stop, worker: Some(worker), outcome: None }
+        }
+
+        fn finish(&mut self) -> Result<(), String> {
+            self.stop.store(true, Ordering::Release);
+            if let Some(outcome) = &self.outcome {
+                let outcome = outcome.clone();
+                if self.worker.as_ref().is_some_and(|worker| worker.is_finished()) {
+                    let _ = self.worker.take().unwrap().join();
+                }
+                return outcome;
+            }
+            let worker = self.worker.take().expect("one owned Responses worker");
+            let deadline = Instant::now() + CLEANUP_WAIT;
+            while !worker.is_finished() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(2));
+            }
+            let result = if worker.is_finished() {
+                worker.join().unwrap_or_else(|_| Err("Responses worker panicked".into()))
+            } else {
+                self.worker = Some(worker);
+                Err("owned Responses worker did not stop before its deadline".into())
+            };
+            self.outcome = Some(result.clone());
+            result
+        }
+    }
+
+    impl Drop for Responses {
+        fn drop(&mut self) {
+            if let Err(error) = self.finish() { eprintln!("SGF Responses cleanup: {error}"); }
+        }
+    }
+
+    struct OwnedChild(Option<Child>);
+
+    impl OwnedChild {
+        fn wait(&mut self) -> Result<ExitStatus, String> {
+            let deadline = Instant::now() + Duration::from_secs(60);
+            loop {
+                match self.0.as_mut().expect("owned App child").try_wait() {
+                    Ok(Some(status)) => { self.0.take(); return Ok(status); }
+                    Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(5)),
+                    Ok(None) => return Err("owned App child exceeded its deadline".into()),
+                    Err(error) => return Err(format!("owned App child wait: {error}")),
+                }
+            }
+        }
+    }
+
+    impl Drop for OwnedChild {
+        fn drop(&mut self) {
+            if let Some(child) = self.0.as_mut() {
+                // This handle identifies only the subprocess started below.
+                let _ = child.kill();
+                let deadline = Instant::now() + CLEANUP_WAIT;
+                while Instant::now() < deadline {
+                    match child.try_wait() {
+                        Ok(Some(_)) => { self.0.take(); break; }
+                        Ok(None) => thread::sleep(Duration::from_millis(5)),
+                        Err(error) => { eprintln!("SGF owned child cleanup wait: {error}"); break; }
+                    }
+                }
+                if self.0.is_some() { eprintln!("SGF owned child cleanup remains unresolved"); }
+            }
+        }
+    }
+
+    fn optional_bytes(path: &Path) -> Option<Vec<u8>> {
+        match fs::read(path) {
+            Ok(bytes) => Some(bytes),
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+            Err(error) => panic!("read owned fixture {}: {error}", path.display()),
+        }
+    }
+
+    fn file_bytes(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
+        fn visit(root: &Path, directory: &Path, files: &mut BTreeMap<PathBuf, Vec<u8>>) {
+            if !directory.exists() { return; }
+            for entry in fs::read_dir(directory).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() { visit(root, &path, files); }
+                else { files.insert(path.strip_prefix(root).unwrap().to_path_buf(), fs::read(path).unwrap()); }
+            }
+        }
+        let mut files = BTreeMap::new();
+        visit(root, root, &mut files);
+        files
+    }
+
+    fn varint(bytes: &[u8], position: &mut usize) -> u64 {
+        let mut value = 0_u64;
+        for shift in (0..70).step_by(7) {
+            let byte = *bytes.get(*position).expect("complete actual generated varint");
+            *position += 1;
+            assert!(shift < 63 || byte <= 1, "bounded generated varint");
+            value |= u64::from(byte & 0x7f) << shift;
+            if byte & 0x80 == 0 { return value; }
+        }
+        panic!("oversized actual generated varint");
+    }
+
+    #[derive(Debug, PartialEq)]
+    enum Field<'a> { Number(u64), Bytes(&'a [u8]) }
+
+    fn fields(bytes: &[u8]) -> BTreeMap<u64, Field<'_>> {
+        // This reads the frozen producer's observed wire for byte/identity
+        // assertions only; production decoding remains with its actual owners.
+        let mut position = 0;
+        let mut fields = BTreeMap::new();
+        while position < bytes.len() {
+            let tag = varint(bytes, &mut position);
+            assert!(tag >> 3 > 0);
+            let field = match tag & 7 {
+                0 => Field::Number(varint(bytes, &mut position)),
+                2 => {
+                    let length = usize::try_from(varint(bytes, &mut position)).unwrap();
+                    let end = position.checked_add(length).unwrap();
+                    let value = bytes.get(position..end).expect("complete generated field");
+                    position = end;
+                    Field::Bytes(value)
+                }
+                _ => panic!("unexpected frozen SendMessage wire type"),
+            };
+            assert!(fields.insert(tag >> 3, field).is_none(), "one actual producer field per identity");
+        }
+        fields
+    }
+
+    fn sql_timestamp(entry: &Value) -> u64 {
+        // The shipping transcript writer stores its timestamp as JSON f64;
+        // SendMessage's public/protobuf result retains the original integer.
+        let timestamp = entry["timestampMs"].as_f64().expect("actual SQL send timestamp");
+        assert!(timestamp > 0.0 && timestamp <= 9_007_199_254_740_991.0);
+        assert_eq!(timestamp.fract(), 0.0, "lossless integer millisecond timestamp");
+        timestamp as u64
+    }
+
+    fn assert_wire_identity(wire: &[u8], ordinal: usize, entry: &Value) {
+        let call = fields(wire);
+        assert_eq!(call.len(), 4);
+        assert_eq!(call.get(&57), Some(&Field::Bytes(call_id(ordinal).as_bytes())));
+        let Some(Field::Number(started)) = call.get(&59) else { panic!("producer start timestamp"); };
+        let Some(Field::Number(completed)) = call.get(&60) else { panic!("producer completion timestamp"); };
+        let timestamp = sql_timestamp(entry);
+        assert!(*started > 0 && *completed > 0, "actual producer wall-clock timestamps are positive");
+        let Some(Field::Bytes(send)) = call.get(&55) else { panic!("actual SendMessage variant"); };
+        let send = fields(send);
+        assert_eq!(send.len(), 2, "actual args and completed result");
+        let Some(Field::Bytes(result)) = send.get(&2) else { panic!("completed result"); };
+        let result = fields(result);
+        assert_eq!(result.len(), 1);
+        let Some(Field::Bytes(success)) = result.get(&1) else { panic!("actual successful result"); };
+        let success = fields(success);
+        assert_eq!(success.get(&1), Some(&Field::Number(timestamp)));
+        assert_eq!(success.get(&2), Some(&Field::Bytes(entry["id"].as_str().unwrap().as_bytes())));
+    }
+
+    fn read_history(fixture: &ChannelHostLaneFixture, original: &OriginalTurnReference, case: Case) -> Value {
+        let sessions = &fixture.deps().session_workers;
+        let store = sessions.open_agent_store_owner(&fixture.agent_id).unwrap();
+        let checkpoint = store.checkpoint_snapshot_checked().unwrap().expect("actual committed generated history");
+        let state = decode_conversation_state_recovery_fields(&checkpoint.checkpoint_bytes).unwrap();
+        assert_eq!(state.turns.len(), 1);
+        let turn = store.get_blob(&state.turns[0]).unwrap().unwrap();
+        let Some(ConversationTurnStructureFields::Agent { user_message, steps, request_id }) =
+            decode_conversation_turn_structure_fields(&turn).unwrap() else { panic!("actual generated Agent turn"); };
+        assert_eq!(request_id.as_deref(), Some(STREAM));
+        let user_bytes = store.get_blob(&user_message).unwrap().unwrap();
+        let user = decode_user_message_identity_fields(&user_bytes).unwrap();
+        assert_eq!(user.message_id, original.user_message_id);
+        assert_eq!(user.text, PROMPT);
+        let entries = fixture.entries();
+        assert_eq!(entries.len(), 3, "one accepted user and two actual App SQL sends");
+        assert_eq!(entries[0]["id"], original.user_message_id);
+        assert_eq!(entries[0]["confirmed"], true);
+        let sends = entries.iter().filter(|entry| entry["kind"] == "send-message").cloned().collect::<Vec<_>>();
+        assert_eq!(sends.len(), 2);
+        assert_ne!(sends[0]["id"], sends[1]["id"]);
+        for entry in &sends {
+            assert!(!entry["id"].as_str().unwrap().is_empty());
+            assert_eq!(entry["sessionKey"], fixture.session_key);
+            assert!(entry["message"].get("channel").is_none(), "local SQL success makes no external delivery claim");
+        }
+        assert_eq!(sends[0]["message"], json!({"type":"text", "content":TEXT}));
+        let normalized_url = sends[1]["message"]["url"].as_str().unwrap();
+        assert_ne!(normalized_url, arguments(&fixture.root, 1)["url"].as_str().unwrap());
+        let normalized_path = file_path_from_file_url(normalized_url).unwrap();
+        assert!(normalized_path.starts_with(fixture.root.join("agents").join(&fixture.agent_id)));
+        assert_eq!(fs::read(&normalized_path).unwrap(), ATTACHMENT_BYTES);
+        assert_eq!(sends[1]["message"], json!({"type":"attachment", "url":normalized_url,
+            "alt":ALT, "file_name":"attachment-source.txt"}));
+        let normalized = vec![
+            json!({"type":"text", "content":TEXT}),
+            json!({"type":"attachment", "url":normalized_url, "alt":ALT}),
+        ];
+        let outline_sends = sessions.read_agent_outline(&fixture.agent_id).unwrap().into_iter()
+            .filter_map(|item| match item { ConversationOutlineItem::SendMessage { message, .. } => Some(message), _ => None })
+            .collect::<Vec<_>>();
+        assert_eq!(outline_sends, normalized, "the real Session consumer selects the two completed sends in order");
+        let success = case != Case::ProviderFailure;
+        assert_eq!(steps.len(), 2 + usize::from(success), "failed generation cannot invent a final Assistant step");
+        let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+        let mut blobs = vec![(checkpoint.root_blob_id.clone(), checkpoint.checkpoint_bytes.clone()),
+            (state.turns[0].clone(), turn), (user_message, user_bytes)];
+        let mut wires = Vec::new();
+        let mut journal = vec![json!({"role":"user", "message":{"content":[{"type":"text", "text":PROMPT}]}})];
+        for (ordinal, id) in steps.iter().enumerate() {
+            let bytes = store.get_blob(id).unwrap().unwrap();
+            if ordinal < 2 {
+                let step = fields(&bytes);
+                assert_eq!(step.len(), 1);
+                let Some(Field::Bytes(wire)) = step.get(&2) else { panic!("canonical ConversationStep field 2"); };
+                assert_wire_identity(wire, ordinal, &sends[ordinal]);
+                wires.push(wire.to_vec());
+                let input = if ordinal == 0 { json!({"text":{"content":TEXT}}) }
+                    else { json!({"attachment":{"url":normalized_url, "alt":ALT}}) };
+                let result = json!({"success":{"timestamp":sql_timestamp(&sends[ordinal]).to_string(),
+                    "messageId":sends[ordinal]["id"]}});
+                assert_eq!(codec.decode_step(&bytes).unwrap(), DecodedTranscriptStep::Tool {
+                    name:"send_message".into(), input:input.clone(), result:Some(result.clone()),
+                });
+                journal.push(json!({"role":"assistant", "message":{"content":[{
+                    "type":"tool_use", "name":"send_message", "input":input,
+                }]}}));
+                journal.push(json!({"role":"tool", "message":{"content":[{
+                    "type":"tool_result", "name":"send_message", "result":result,
+                }]}}));
+            } else {
+                assert_eq!(codec.decode_step(&bytes).unwrap(), DecodedTranscriptStep::Assistant { text:FINAL_TEXT.into() });
+                journal.push(json!({"role":"assistant", "message":{"content":[{"type":"text", "text":FINAL_TEXT}]}}));
+            }
+            blobs.push((id.clone(), bytes));
+        }
+        let journal_path = fixture.root.join("transcripts").join(&fixture.agent_id).join(format!("{}.jsonl", fixture.agent_id));
+        let actual_journal = fs::read_to_string(journal_path).unwrap().lines()
+            .map(|line| serde_json::from_str::<Value>(line).unwrap()).collect::<Vec<_>>();
+        assert_eq!(actual_journal, journal, "Journal preserves projected normalized args, result, SQL identity and order");
+        let connection = rusqlite::Connection::open_with_flags(sessions.session_db_path(&fixture.agent_id).unwrap(),
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
+        let sql_rows = connection.prepare("SELECT seq,id,CAST(entry AS BLOB) FROM transcript_entries ORDER BY seq").unwrap()
+            .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, Vec<u8>>(2)?))).unwrap()
+            .collect::<Result<Vec<_>, _>>().unwrap();
+        let terminal = sessions.open_agent_db_owner(&fixture.agent_id).unwrap().read_kv(TERMINAL_SLOT).unwrap();
+        assert_eq!(terminal.is_some(), success, "only the actual successful invocation may own a completion receipt");
+        json!({"root":checkpoint.root_blob_id, "checkpoint":checkpoint.checkpoint_bytes, "blobs":blobs,
+            "entries":entries, "sends":sends, "wires":wires, "sqlRows":sql_rows, "terminal":terminal,
+            "journal":actual_journal, "mirrorFiles":file_bytes(&fixture.root.join("transcripts")),
+            "providerFiles":file_bytes(&fixture.root.join("runner-provider-checkpoints"))})
+    }
+
+    fn produce_and_reopen(root: PathBuf, case: Case) -> Value {
+        let mut fixture = ChannelHostLaneFixture::open("generated-send-message", root.clone(), None);
+        let sessions = Arc::clone(&fixture.deps().session_workers);
+        let runtime = Arc::clone(&fixture.deps().transcript_runtime);
+        let registry = fixture.deps().runner_registry.clone();
+        let args = json!({"agentId":fixture.agent_id, "sessionKey":fixture.session_key,
+            "streamId":STREAM, "clientNonce":"actual-app-send-nonce", "prompt":PROMPT});
+        let accepted = runtime.accept_routed_send(&args, |accepted| {
+            persist_accepted_send_prompt_context(&sessions, &args, accepted)
+                .map_err(|error| ProductionSendError::Internal(format!("{error:?}")))
+        }).expect("actual accepted user input");
+        assert!(accepted.context.accepted_durably && !accepted.duplicate);
+        let control = runtime.capture_routed_turn_start(&fixture.agent_id, STREAM).unwrap();
+        let cancellation = registry.register_routed_provider_with_cancellation(
+            &fixture.agent_id, STREAM, false, control.cancellation(),
+        ).unwrap();
+        assert!(registry.mark_routed_provider_dispatched(STREAM));
+        let admission = sessions.read_session_work_admission(&fixture.agent_id).unwrap().unwrap();
+        let original = runtime.bind_original_turn_model(&fixture.agent_id, STREAM, &admission, MODEL).unwrap().unwrap();
+        assert_eq!(accepted.context.user_message_id.as_deref(), Some(original.user_message_id.as_str()));
+        let checkpoint: Arc<dyn AgentStateCheckpointSink> = fixture.deps().host_runner_composition.compose_production_checkpoint_sink(
+            &sessions, &root, &fixture.agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
+        ).unwrap().unwrap();
+        assert!(checkpoint.committed_original_turn_observations().unwrap().is_empty());
+        let events = Arc::new(Mutex::new(Vec::<Value>::new()));
+        let observed = Arc::clone(&events);
+        let observation = (case != Case::Unobserved).then(|| TurnObservation::shared(
+            &fixture.agent_id, Some(Arc::new(move |event| { observed.lock().unwrap().push(event); })),
+        ));
+        let send_counter = SendMessageDeliveryCounter::default();
+        // Transfer the fixture's actual private App sink into the production
+        // wrapper. Direct fixture.send() would bypass this entire oracle.
+        let app_sink: Arc<dyn SendMessageSink> = Arc::new(fixture.sink.take().unwrap());
+        let send_sink: Arc<dyn SendMessageSink> = Arc::new(CountingSendMessageSink::new(app_sink, send_counter.clone()));
+        let provider_store = Arc::new(ProductionRoutedProviderCheckpointStore::new(&root, &fixture.agent_id, STREAM));
+        let retries = Arc::new(AtomicUsize::new(0));
+        let retry_count = Arc::clone(&retries);
+        let mut composition = TurnAgentComposition::new(
+            RoutedProvider::Fabushi, Arc::new(UnusedCompactionProviderPorts),
+            RunnerRequestContextSnapshot { context: mahayana_host_runtime::host_request_context::HostRequestContext {
+                os_version:"send-message-fidelity".into(), shell:None, time_zone:Some("UTC".into()),
+                transcripts_folder:root.join("transcripts").to_string_lossy().into_owned(), user_full_name:None,
+            }, rules:None }, cancellation.clone(), provider_store,
+        ).with_fabushi_model(MODEL).with_send_message_sink(send_sink)
+            .with_retry_sink(Arc::new(move |_| { retry_count.fetch_add(1, Ordering::AcqRel); }));
+        if let Some(observation) = &observation { composition = composition.with_observation(Arc::clone(observation)); }
+        let successful_hooks = Arc::new(AtomicUsize::new(0));
+        let hook_count = Arc::clone(&successful_hooks);
+        let mut runner = create_production_runner(composition,
+            ProductionTurnAgentBuildBindings::new(ProductionTurnAgentStaticConfig {
+                model_id:MODEL.into(), agent_token_limit:SAND_AGENT_TOKEN_LIMIT,
+                conversation_id:fixture.agent_id.clone(), is_box_scoped_subagent:false,
+                is_subagent_runner:false, is_shared_room_runner:false,
+                sand_send_message_delivery_owed:false, transcripts_folder_available:true,
+            }, Arc::new(|| None), Arc::new(|_, _, _| panic!("bounded SendMessage fixture must not summarize"))),
+            ProductionTurnAgentLifecycleBindings::new(&fixture.agent_id, STREAM)
+                .with_profile_announcement_commit(Some(Arc::new(move || { hook_count.fetch_add(1, Ordering::AcqRel); }))),
+            Some(Arc::clone(&checkpoint)), Arc::new(AtomicBool::new(false)),
+            Arc::new(Mutex::new(SubagentRuntime::default())), observation, None, None, None,
+        );
+        let mut deltas = Vec::new();
+        let result = runner.run_routed_provider_with_options(&root,
+            &[ProviderMessage { role:"user".into(), content:PROMPT.into() }],
+            TurnRunOptions { inference_request_id:Some(STREAM.into()), message_id:Some(original.user_message_id.clone()),
+                recent_message_text:Some(PROMPT.into()), turn_started_at_ms:Some(1), ..TurnRunOptions::default() },
+            &mut |delta, _| deltas.push(delta.to_string()),
+        );
+        assert_eq!(send_counter.count(), 2, "the real counting wrapper observes exactly two SQL sends");
+        assert_eq!(retries.load(Ordering::Acquire), 0);
+        let failed = case == Case::ProviderFailure;
+        assert_eq!(deltas, vec![if failed { PARTIAL_TEXT } else { FINAL_TEXT }.to_string()]);
+        let finished = runner.last_finished().expect("actual generated shell terminal");
+        assert_eq!(finished.owner.request_id, STREAM);
+        assert!(finished.owner.generation > 0);
+        if failed {
+            let Err(ProviderSessionError::ProviderRefusal(refusal)) = &result else {
+                panic!("generated history must preserve the primary typed refusal: {result:?}");
+            };
+            assert_eq!(refusal.category, "misalignment");
+            assert_eq!(refusal.explanation.as_deref(), Some(REFUSAL));
+            assert_eq!(finished.outcome, TerminalOutcome::Failed { retryable:false,
+                message:result.as_ref().unwrap_err().to_string() });
+            assert!(checkpoint.committed_original_turn_observations().is_err());
+        } else {
+            assert_eq!(result.as_ref().unwrap(), FINAL_TEXT);
+            assert_eq!(finished.outcome, TerminalOutcome::Completed);
+            assert_eq!(checkpoint.committed_original_turn_observations().unwrap().len(), 1);
+        }
+        assert_eq!(successful_hooks.load(Ordering::Acquire), usize::from(!failed));
+        assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::Known {
+            run_generation:finished.owner.generation, snapshot:ToolEffectCustodySnapshot {
+                started_revision:2, checkpoint_revision:2, pending_effects:0, unknown_result:None,
+            },
+        }), "canonical history must not advance the accepted provider checkpoint custody");
+        let mut custody = ToolEffectCustodyReport::new(STREAM);
+        custody.record(runner.last_tool_effect_custody());
+        let terminal = crate::RoutedProviderTerminal::capture(STREAM, false, &cancellation,
+            result, send_counter.count(), false, custody);
+        assert_eq!(terminal.event["payload"]["type"], if failed { "failed" } else { "completed" });
+        if failed {
+            assert!(terminal.persist_original_turn(&sessions, &original, checkpoint.as_ref()).is_err());
+            assert!(reconcile_completed_original_turn(&sessions, &original).unwrap().is_none());
+        } else {
+            assert_eq!(terminal.persist_original_turn(&sessions, &original, checkpoint.as_ref()).unwrap(),
+                OriginalTurnReceiptCommit::Inserted);
+            assert!(reconcile_completed_original_turn(&sessions, &original).unwrap().is_some());
+        }
+        let history = read_history(&fixture, &original, case);
+        let tool_events = events.lock().unwrap().iter().filter(|event| event["type"] == "agent-tool-call")
+            .cloned().collect::<Vec<_>>();
+        assert_eq!(tool_events.len(), if case == Case::Unobserved { 0 } else { 4 });
+        if case != Case::Unobserved {
+            for ordinal in 0..2 {
+                let initial = &tool_events[ordinal * 2];
+                let completed = &tool_events[ordinal * 2 + 1];
+                for (event, phase) in [(initial, "initial"), (completed, "completed")] {
+                    assert_eq!(event["agentId"], fixture.agent_id);
+                    assert_eq!(event["tool"], "SendMessage");
+                    assert_eq!(event["toolCallId"], call_id(ordinal));
+                    assert_eq!(event["encoding"], "agent.v1.protobuf");
+                    assert_eq!(event["phase"], phase);
+                }
+                assert_eq!(completed["wire"], history["wires"][ordinal],
+                    "canonical field 2 must contain the unchanged actual completed producer bytes");
+                let initial_wire = serde_json::from_value::<Vec<u8>>(initial["wire"].clone()).unwrap();
+                let completed_wire = serde_json::from_value::<Vec<u8>>(completed["wire"].clone()).unwrap();
+                let initial_fields = fields(&initial_wire);
+                let completed_fields = fields(&completed_wire);
+                assert_eq!(initial_fields.get(&57), completed_fields.get(&57));
+                assert_eq!(initial_fields.get(&59), completed_fields.get(&59));
+                assert!(!initial_fields.contains_key(&60));
+                let (Some(Field::Bytes(initial_send)), Some(Field::Bytes(completed_send))) =
+                    (initial_fields.get(&55), completed_fields.get(&55)) else { panic!("actual paired SendMessage variant"); };
+                let initial_send = fields(initial_send);
+                let completed_send = fields(completed_send);
+                assert!(!initial_send.contains_key(&2));
+                assert_eq!(initial_send.get(&1), completed_send.get(&1), "producer normalization remains frozen across phases");
+            }
+        }
+        // A failed original invocation has a real pending upgrade marker, but
+        // neither a completion capability nor an independent ACK obligation.
+        let marker = if failed {
+            runtime.quiesce_for_upgrade().unwrap();
+            let markers = runtime.upgrade_resume_store().unwrap().list_pending_checked().unwrap();
+            assert_eq!(markers.len(), 1);
+            assert_eq!(markers[0].original_work.as_ref(), Some(&original));
+            Some(markers[0].clone())
+        } else { None };
+        registry.finish_routed_provider(STREAM);
+        runtime.settle_routed_turn(&fixture.agent_id, STREAM, started_at_ms()).unwrap().unwrap();
+        runtime.resume_after_recreate();
+        assert!(!runtime.is_agent_running(&fixture.agent_id));
+        assert_eq!(registry.active_count(), 0, "marker refusal must not rely on a still-running turn");
+        let ack = SandAckObligationStore::new(&root);
+        assert!(ack.get_checked(&fixture.agent_id).unwrap().is_none());
+        let ack_bytes = optional_bytes(ack.file_path());
+        let marker_store = runtime.upgrade_resume_store().unwrap();
+        let marker_bytes = optional_bytes(marker_store.file_path());
+        if let Some(marker) = &marker {
+            assert_eq!(crate::acknowledge_completed_upgrade_marker(&sessions, &runtime, &registry, &ack, marker), Ok(false));
+            assert_eq!(optional_bytes(marker_store.file_path()), marker_bytes);
+            assert!(checkpoint.committed_original_turn_observations().is_err(), "settlement cannot restore failed completion authority");
+        }
+        assert_eq!(optional_bytes(ack.file_path()), ack_bytes);
+        fixture.assert_no_worker_observation();
+        assert!(matches!(fixture.lane_observations.try_recv(), Err(mpsc::TryRecvError::Empty)),
+            "channel-free sends must not enter external delivery");
+        fixture.assert_no_failure();
+        drop((runner, checkpoint, terminal, control));
+        let (root, agent_id) = fixture.stop_for_reopen();
+        sessions.shutdown_with_checkpoint();
+        assert_eq!(sessions.active_worker_count(), 0);
+        drop((sessions, runtime, registry));
+        fs::remove_file(root.join("responses-credential.json")).expect("no provider credential for fresh consumers");
+        for reopen in 0..2 {
+            let fresh = ChannelHostLaneFixture::open("send-message-fresh-reader", root.clone(), Some(agent_id.clone()));
+            let sessions = Arc::clone(&fresh.deps().session_workers);
+            let prepared = sessions.prepare_existing_agent(&agent_id).unwrap().unwrap();
+            assert_eq!(json!(prepared.persisted_root_blob_id), history["root"]);
+            let fresh_sink = fresh.deps().host_runner_composition.compose_production_checkpoint_sink(
+                &sessions, &root, &agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
+            ).unwrap().unwrap();
+            assert!(fresh_sink.committed_original_turn_observations().unwrap().is_empty(),
+                "reading history does not issue a new invocation's completion observation");
+            assert_eq!(read_history(&fresh, &original, case), history,
+                "fresh owner {reopen} cannot append SQL rows, alter wire/Journal, retry tools or rewrite terminal authority");
+            assert_eq!(reconcile_completed_original_turn(&sessions, &original).unwrap().is_some(), !failed);
+            assert!(!fresh.deps().transcript_runtime.is_agent_running(&agent_id));
+            assert_eq!(fresh.deps().runner_registry.active_count(), 0);
+            if let Some(marker) = &marker {
+                assert_eq!(fresh.deps().transcript_runtime.upgrade_resume_store().unwrap().list_pending_checked().unwrap(), vec![marker.clone()]);
+                assert_eq!(crate::acknowledge_completed_upgrade_marker(&sessions, &fresh.deps().transcript_runtime,
+                    &fresh.deps().runner_registry, &ack, marker), Ok(false));
+            }
+            assert_eq!(optional_bytes(fresh.deps().transcript_runtime.upgrade_resume_store().unwrap().file_path()), marker_bytes);
+            assert_eq!(optional_bytes(ack.file_path()), ack_bytes);
+            assert_eq!(read_history(&fresh, &original, case), history,
+                "completion reconciliation and marker refusal cannot mutate SQL, canonical history or Journal");
+            let entries = history["entries"].as_array().unwrap();
+            fresh.assert_no_followup(entries);
+            fresh.assert_no_failure();
+            assert!(matches!(fresh.lane_observations.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            drop((fresh_sink, prepared));
+            let _ = fresh.stop_for_reopen();
+            sessions.shutdown_with_checkpoint();
+            assert_eq!(sessions.active_worker_count(), 0);
+        }
+        json!({"history":history, "events":tool_events, "reopens":2, "marker":marker,
+            "sentCount":send_counter.count(), "retryCount":retries.load(Ordering::Acquire)})
+    }
+
+    fn run_case(case: Case) {
+        if let Some(path) = std::env::var_os(CHILD_REQUEST_ENV) {
+            let request: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+            assert_eq!(request["case"], case.label());
+            assert_ne!(request["parentPid"].as_u64().unwrap(), u64::from(std::process::id()));
+            let root = PathBuf::from(request["root"].as_str().unwrap());
+            assert!(root.is_absolute() && PathBuf::from(path).starts_with(&root));
+            let proof = produce_and_reopen(root.clone(), case);
+            let mut receipt = fs::OpenOptions::new().write(true).create_new(true)
+                .open(root.join("completed.json")).expect("fresh post-shutdown child receipt");
+            receipt.write_all(json!({"token":request["token"], "parentPid":request["parentPid"],
+                "pid":std::process::id(), "case":case.label(), "proof":proof}).to_string().as_bytes()).unwrap();
+            receipt.sync_all().unwrap();
+            return;
+        }
+        let root = std::env::temp_dir().join(format!("fabushi-send-message-fidelity-{}-{}", case.label(), uuid::Uuid::new_v4()));
+        fs::create_dir(&root).unwrap();
+        let root = root.canonicalize().unwrap();
+        fs::write(root.join("settings.json"), b"{}").unwrap();
+        fs::write(root.join("attachment-source.txt"), ATTACHMENT_BYTES).unwrap();
+        let token = uuid::Uuid::new_v4().to_string();
+        let request_path = root.join("request.json");
+        fs::write(&request_path, json!({"token":token, "parentPid":std::process::id(),
+            "case":case.label(), "root":root}).to_string()).unwrap();
+        let mut responses = Responses::new(&root, case);
+        let stdout_path = root.join("child.stdout");
+        let stderr_path = root.join("child.stderr");
+        let mut child = OwnedChild(Some(Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", case.test_name(), "--nocapture", "--test-threads=1"])
+            .env(CHILD_REQUEST_ENV, &request_path)
+            .env("FABUSHI_RESPONSES_URL", &responses.endpoint)
+            .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", &responses.credential)
+            .env("FABUSHI_RESPONSES_MODEL", MODEL)
+            .env("NO_PROXY", "127.0.0.1,localhost")
+            .env("no_proxy", "127.0.0.1,localhost")
+            .env_remove("HTTP_PROXY").env_remove("HTTPS_PROXY").env_remove("ALL_PROXY")
+            .env_remove("http_proxy").env_remove("https_proxy").env_remove("all_proxy")
+            .current_dir(&root).stdin(Stdio::null())
+            .stdout(Stdio::from(fs::File::create(&stdout_path).unwrap()))
+            .stderr(Stdio::from(fs::File::create(&stderr_path).unwrap()))
+            .spawn().expect("isolated actual App test process")));
+        let pid = child.0.as_ref().unwrap().id();
+        let child_result = child.wait();
+        drop(child);
+        let server_result = responses.finish();
+        let stdout = fs::read_to_string(stdout_path).unwrap();
+        let stderr = fs::read_to_string(stderr_path).unwrap();
+        assert!(child_result.as_ref().is_ok_and(|status| status.success()) && server_result.is_ok(),
+            "SGF case={case:?} child={child_result:?} server={server_result:?}\n{stdout}\n{stderr}\nretained fixture={}", root.display());
+        let receipt: Value = serde_json::from_slice(&fs::read(root.join("completed.json")).unwrap()).unwrap();
+        assert_eq!(receipt["token"], token);
+        assert_eq!(receipt["pid"], pid);
+        assert_eq!(receipt["parentPid"], std::process::id());
+        assert_eq!(receipt["case"], case.label());
+        assert_eq!(receipt["proof"]["reopens"], 2);
+        assert_eq!(receipt["proof"]["sentCount"], 2);
+        assert_eq!(receipt["proof"]["retryCount"], 0);
+        let requests = responses.requests.lock().unwrap();
+        assert_eq!(requests.len(), 2, "fresh consumers cannot send another provider request");
+        assert!(requests.iter().all(|request| request["model"] == MODEL));
+        let input = requests[1]["input"].as_array().expect("actual serialized provider continuation");
+        let tools = input.iter().filter(|item| matches!(item["type"].as_str(),
+            Some("function_call" | "function_call_output"))).collect::<Vec<_>>();
+        assert_eq!(tools.len(), 4);
+        for ordinal in 0..2 {
+            assert_eq!(tools[ordinal * 2]["type"], "function_call");
+            assert_eq!(tools[ordinal * 2]["name"], "SendMessage");
+            assert_eq!(tools[ordinal * 2]["call_id"], call_id(ordinal));
+            let actual_args: Value = serde_json::from_str(tools[ordinal * 2]["arguments"].as_str().unwrap()).unwrap();
+            assert_eq!(actual_args, arguments(&root, ordinal));
+            assert_eq!(tools[ordinal * 2 + 1]["type"], "function_call_output");
+            assert_eq!(tools[ordinal * 2 + 1]["call_id"], call_id(ordinal));
+            let result: Value = serde_json::from_str(tools[ordinal * 2 + 1]["output"].as_str().unwrap()).unwrap();
+            let entry = &receipt["proof"]["history"]["sends"][ordinal];
+            assert_eq!(result, json!({"sent":true, "timestampMs":sql_timestamp(entry), "messageId":entry["id"]}),
+                "the public result stays flat and identifies the actual SQL append");
+        }
+        drop(requests);
+        eprintln!("SGF case={} producer_pid={pid} requests=2 sends=2 fresh_owners=2 outcome=complete", case.label());
+        drop(responses);
+        fs::remove_dir_all(root).expect("remove only this fully settled fixture");
+    }
+
+    #[test]
+    fn generated_send_message_app_sink_preserves_live_sql_and_canonical_bytes() {
+        run_case(Case::Observed);
+    }
+
+    #[test]
+    fn generated_send_message_app_sink_preserves_history_without_observation() {
+        run_case(Case::Unobserved);
+    }
+
+    #[test]
+    fn generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay() {
+        run_case(Case::ProviderFailure);
+    }
 }

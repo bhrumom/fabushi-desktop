@@ -1478,3 +1478,11 @@ and equality of summary positives with captured names. Qualify those result
 controls in the existing Actions instrument; they are synthetic oracle
 controls, not additional product positives. No source or global completion
 claim follows until the corrected exact-H receipt executes.
+
+### Subsequent generated SendMessage consumer contract
+
+[SGF-v1](generated-send-message-fidelity.md) continues the existing loop/history
+responsibility through actual producer observation, canonical bytes, Journal
+projection and success-aware Session recovery. It retains GTH and CRA guards.
+Its implementation/evidence does not promote complete typed replay, interrupted
+original-turn restart, real-channel delivery or any global acceptance flag.

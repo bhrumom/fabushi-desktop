@@ -1,5 +1,4 @@
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -72,6 +71,9 @@ use super::tools::turn_toolset::{
     build_turn_toolset, fence_turn_toolset, project_turn_mcp_toolset,
 };
 
+mod tool_call_recorder;
+pub(crate) use tool_call_recorder::RecordedSendMessage;
+use tool_call_recorder::ToolCallRecorder;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CompletedRoutedToolCall {
@@ -82,12 +84,12 @@ pub struct CompletedRoutedToolCall {
     pub started_at_ms: u64,
     pub completed_at_ms: u64,
     pub sequence: u64,
+    pub(crate) send_message_wire: Option<RecordedSendMessage>,
 }
 
 struct CheckpointRecordingRoutedToolBridge {
     delegate: Arc<dyn RoutedToolBridge>,
-    completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
-    next_sequence: Arc<AtomicU64>,
+    recorder: Arc<ToolCallRecorder>,
     tool_loop_gate: Option<(ToolLoopGate, TurnOwnerToken)>,
     cancellation: RoutedProviderCancellation,
 }
@@ -95,15 +97,13 @@ struct CheckpointRecordingRoutedToolBridge {
 impl CheckpointRecordingRoutedToolBridge {
     fn new(
         delegate: Arc<dyn RoutedToolBridge>,
-        completed: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
-        next_sequence: Arc<AtomicU64>,
+        recorder: Arc<ToolCallRecorder>,
         tool_loop_gate: Option<(ToolLoopGate, TurnOwnerToken)>,
         cancellation: RoutedProviderCancellation,
     ) -> Self {
         Self {
             delegate,
-            completed,
-            next_sequence,
+            recorder,
             tool_loop_gate,
             cancellation,
         }
@@ -151,25 +151,13 @@ impl RoutedToolBridge for CheckpointRecordingRoutedToolBridge {
                 }
             }
         }
-        let sequence = self.next_sequence.fetch_add(1, Ordering::Relaxed);
         let started_at_ms = unix_epoch_ms();
-        let result = self.delegate.call_tool(tool, args.clone(), tool_call_id);
+        let receipt = self.recorder.register(tool, args.clone(), tool_call_id, started_at_ms)?;
+        let result = self.delegate.call_tool(tool, args, tool_call_id);
         let completed_at_ms = unix_epoch_ms();
-        self.completed
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .push(CompletedRoutedToolCall {
-                tool: tool.clone(),
-                args,
-                tool_call_id: tool_call_id.to_string(),
-                result: result
-                    .as_ref()
-                    .map(Clone::clone)
-                    .map_err(ToString::to_string),
-                started_at_ms,
-                completed_at_ms,
-                sequence,
-            });
+        // Delegation may already have performed the effect. Keep its public
+        // result; a failed finish permanently refuses the later checked drain.
+        let _ = self.recorder.finish(receipt, &result, completed_at_ms);
         result
     }
 }
@@ -329,8 +317,7 @@ pub struct TurnAgentComposition {
     cancellation: RoutedProviderCancellation,
     checkpoint_store: Arc<dyn RoutedProviderCheckpointStore>,
     latest_provider_checkpoint: Arc<Mutex<Option<RoutedProviderCheckpoint>>>,
-    completed_tool_calls: Arc<Mutex<Vec<CompletedRoutedToolCall>>>,
-    next_tool_sequence: Arc<AtomicU64>,
+    tool_call_recorder: Arc<ToolCallRecorder>,
     retry_sink: Option<Arc<dyn Fn(&ProviderRetryEvent) + Send + Sync>>,
     retry_report_sink: Option<Arc<dyn Fn(&ProviderRetryReport) + Send + Sync>>,
     stream_attempt_runtime: Option<Arc<StreamAttemptRuntime>>,
@@ -401,8 +388,7 @@ impl TurnAgentComposition {
             cancellation,
             checkpoint_store,
             latest_provider_checkpoint,
-            completed_tool_calls: Arc::new(Mutex::new(Vec::new())),
-            next_tool_sequence: Arc::new(AtomicU64::new(0)),
+            tool_call_recorder: Arc::new(ToolCallRecorder::default()),
             retry_sink: None,
             retry_report_sink: None,
             stream_attempt_runtime: None,
@@ -525,6 +511,9 @@ impl TurnAgentComposition {
         mut self,
         runtime: Arc<StreamAttemptRuntime>,
     ) -> Self {
+        // A worker from a prior invocation may still retain its composition.
+        // Its observations must never be cleared into or joined to this run.
+        self.tool_call_recorder = Arc::new(ToolCallRecorder::default());
         self.stream_attempt_runtime = Some(runtime);
         self
     }
@@ -976,37 +965,10 @@ impl TurnAgentComposition {
             .unwrap_or_else(|poisoned| poisoned.into_inner()) = None;
     }
 
-    fn reset_completed_tool_calls(&self) {
-        self.completed_tool_calls
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clear();
-        self.next_tool_sequence.store(0, Ordering::Relaxed);
-    }
-
-    pub fn take_completed_tool_calls(&self) -> Vec<CompletedRoutedToolCall> {
-        let mut calls = std::mem::take(
-            &mut *self
-                .completed_tool_calls
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner()),
-        );
-        calls.sort_by_key(|call| call.sequence);
-        calls
-    }
-
     pub(crate) fn take_completed_tool_calls_checked(
         &self,
     ) -> Result<Vec<CompletedRoutedToolCall>, ProviderSessionError> {
-        let mut calls = std::mem::take(
-            &mut *self.completed_tool_calls.lock().map_err(|_| {
-                ProviderSessionError::Protocol(
-                    "Runner completed tool observations are poisoned".into(),
-                )
-            })?,
-        );
-        calls.sort_by_key(|call| call.sequence);
-        Ok(calls)
+        self.tool_call_recorder.take_completed_checked()
     }
 
     pub fn run(
@@ -1016,8 +978,8 @@ impl TurnAgentComposition {
         typed_replay: Option<&[TypedReplayEntry]>,
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
+        self.tool_call_recorder.begin_run()?;
         self.reset_latest_provider_checkpoint();
-        self.reset_completed_tool_calls();
         let bridge = project_turn_mcp_toolset(
             Arc::clone(&self.bridge),
             self.projected_mcp_tools.clone(),
@@ -1038,11 +1000,14 @@ impl TurnAgentComposition {
             )),
             None => bridge,
         };
-        let send_message_interaction_sink: Option<Arc<dyn SendMessageInteractionSink>> =
+        let live_send_message_sink: Option<Arc<dyn SendMessageInteractionSink>> =
             self.observation.as_ref().map(|observation| {
                 Arc::new(TurnObservationSendMessageSink::new(Arc::clone(observation)))
                     as Arc<dyn SendMessageInteractionSink>
             });
+        let send_message_interaction_sink = Some(
+            self.tool_call_recorder.interaction_sink(live_send_message_sink),
+        );
         let bridge = build_turn_toolset(
             bridge,
             TurnToolsetDependencies {
@@ -1096,8 +1061,7 @@ impl TurnAgentComposition {
         let bridge: Arc<dyn RoutedToolBridge> = Arc::new(
             CheckpointRecordingRoutedToolBridge::new(
                 bridge,
-                Arc::clone(&self.completed_tool_calls),
-                Arc::clone(&self.next_tool_sequence),
+                Arc::clone(&self.tool_call_recorder),
                 self.tool_loop_gate.clone(),
                 self.cancellation.clone(),
             ),

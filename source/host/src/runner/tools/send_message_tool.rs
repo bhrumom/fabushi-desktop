@@ -222,7 +222,7 @@ impl SendMessageToolBridge {
 }
 
 
-fn provider_error_message(error: &ProviderSessionError) -> String {
+pub(crate) fn provider_error_message(error: &ProviderSessionError) -> String {
     match error {
         ProviderSessionError::Tool(message) => message.clone(),
         other => other.to_string(),
