@@ -77,6 +77,90 @@ fn shell_terminal_footer_and_poll_interval_follow_frozen_rules() {
 }
 
 #[test]
+fn shell_terminal_footer_handles_canonical_producer_endings_and_actual_poll() {
+    use mahayana_host_runtime::runner::shell_terminal_watch::{
+        ShellTerminalPollState, ShellWatchStatus, TerminalFileSnapshot,
+    };
+
+    // Keep the daemon's trailing LF unchanged. The old parser selected its
+    // closing delimiter and could not settle these canonical producer bytes.
+    for ending in ["", "\n", "\r\n"] {
+        for code in [0, 7] {
+            let content = format!(
+                "---\nstatus: running\n---\nstdout-prefix\nstderr-tail\n\
+                 \n---\nexit_code: {code}\nelapsed_ms: 19\n\
+                 ended_at: 2026-11-03T00:00:00.000Z\n---{ending}"
+            );
+            let footer = parse_shell_terminal_footer(&content);
+            assert!(footer.is_complete, "producer ending {ending:?} must be consumed");
+            assert_eq!(footer.exit_code, Some(code));
+            assert!(!footer.is_stream_failure);
+            let settlement = ShellTerminalPollState::new(10).observe_snapshot(
+                11, "/term/7.txt", &TerminalFileSnapshot { exists: true, content },
+            ).expect("actual Runner poll must settle the unmodified terminal snapshot");
+            assert_eq!(settlement.status, if code == 0 {
+                ShellWatchStatus::Success
+            } else {
+                ShellWatchStatus::Error
+            });
+            assert_eq!(settlement.output_path.as_deref(), Some("/term/7.txt"));
+            assert_eq!(settlement.detail, if code == 0 { None } else {
+                Some("exit_code=7".into())
+            });
+        }
+
+        let failure = format!(
+            "actual-prefix\n---\nerror: background capture failed\n\
+             ended_at: 2026-11-03T00:00:00.000Z\n---{ending}"
+        );
+        let footer = parse_shell_terminal_footer(&failure);
+        assert!(footer.is_complete);
+        assert!(footer.is_stream_failure);
+        assert_eq!(footer.exit_code, None);
+        let settlement = ShellTerminalPollState::new(10).observe_snapshot(
+            11, "/term/8.txt", &TerminalFileSnapshot { exists: true, content: failure },
+        ).expect("the existing explicit failure footer must settle as error");
+        assert_eq!(settlement.status, ShellWatchStatus::Error);
+        assert_eq!(settlement.detail.as_deref(),
+            Some("the command's output stream failed; read its output file for the error"));
+    }
+}
+
+#[test]
+fn shell_terminal_footer_preserves_last_footer_and_incomplete_snapshot_refusal() {
+    use mahayana_host_runtime::runner::shell_terminal_watch::{
+        ShellTerminalPollState, TerminalFileSnapshot,
+    };
+
+    let previous = "earlier output\n---\nexit_code: 0\n---\nmore output";
+    let latest = format!("{previous}\n---\nexit_code: 23\n---\n");
+    assert_eq!(parse_shell_terminal_footer(&latest).exit_code, Some(23),
+        "only the final complete footer determines the observation");
+    let malformed = parse_shell_terminal_footer("body\n---\nexit_code: nope\n---\n");
+    assert!(malformed.is_complete);
+    assert_eq!(malformed.exit_code, None);
+    assert!(!malformed.is_stream_failure);
+
+    for content in [
+        "body only",
+        "body\n---\nexit_code: 0\n",
+        "body\n---\nexit_code: 0\n--\n",
+        "body\n---\nexit_code: 0\n---\ntrailing data",
+        "body\n---\nexit_code: 0\n---\n\n",
+        "body\n---\nerror: lost\n---\n",
+        "body\n---\nerror: lost\nended_at: \n---\n",
+        "body\n---\n---\n",
+    ] {
+        assert!(!parse_shell_terminal_footer(content).is_complete,
+            "incomplete or trailing snapshot cannot complete: {content:?}");
+        assert!(ShellTerminalPollState::new(10).observe_snapshot(
+            11, "/term/pending.txt",
+            &TerminalFileSnapshot { exists: true, content: content.into() },
+        ).is_none(), "the actual poll must retain pending work");
+    }
+}
+
+#[test]
 fn reviving_registry_preserves_work_wakeup_completion_and_quiet_origin_semantics() {
     let completions = Arc::new(Mutex::new(Vec::<(String, Option<String>)>::new()));
     let registrations = Arc::new(Mutex::new(Vec::<(String, Option<String>)>::new()));

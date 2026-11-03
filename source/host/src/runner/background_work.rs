@@ -260,16 +260,19 @@ pub fn shell_rewatch_poll_ms(raw: Option<&str>) -> u64 {
 }
 
 pub fn parse_shell_terminal_footer(content: &str) -> ShellTerminalFooter {
-    let Some(marker_start) = content.rfind("\n---\n") else {
-        return ShellTerminalFooter::default();
-    };
-    let footer_and_end = &content[marker_start + 5..];
-    let Some(footer) = footer_and_end.strip_suffix("\n---")
-        .or_else(|| footer_and_end.strip_suffix("\n---\n"))
-        .or_else(|| footer_and_end.strip_suffix("\n---\r\n"))
+    // The producer includes a newline after its closing delimiter. Remove
+    // that exact ending before finding the opening delimiter, so the closing
+    // delimiter cannot be mistaken for an empty footer.
+    let Some(body_and_footer) = content.strip_suffix("\n---")
+        .or_else(|| content.strip_suffix("\n---\n"))
+        .or_else(|| content.strip_suffix("\n---\r\n"))
     else {
         return ShellTerminalFooter::default();
     };
+    let Some(marker_start) = body_and_footer.rfind("\n---\n") else {
+        return ShellTerminalFooter::default();
+    };
+    let footer = &body_and_footer[marker_start + 5..];
 
     for line in footer.lines() {
         if let Some(raw) = line.strip_prefix("exit_code:") {
