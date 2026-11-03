@@ -1,0 +1,58 @@
+{
+  "taskId": "750ef5d6-f3df-4fd3-ae97-443dcc26c1be",
+  "round": 1,
+  "kind": "recovery_checkpoint",
+  "observed_at": "2026-11-03",
+  "repository": "bhrumom/fabushi-desktop",
+  "canonical_owner_confirmed_by_root_agents": true,
+  "canonical_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "migration_branch": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+  "migration_branch_head": "64bce6748353eaead0d273d55ee9e2ab0d08e30a",
+  "pr": 189,
+  "pr_state": "open",
+  "pr_draft": true,
+  "pr_body_h_claim": "7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18",
+  "pr_api_head": "64bce6748353eaead0d273d55ee9e2ab0d08e30a",
+  "upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "fixed_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "acceptance": false
+  },
+  "authorities_read": [
+    "root AGENTS.md",
+    "TDRP-001 SOURCE_OF_TRUTH Revision 10",
+    "FBCP-001 SOURCE_OF_TRUTH Revision 8",
+    "FMEP-001 Revision 2 including FMEP-SOURCE-01",
+    "parity-ledger.schema.json",
+    "tdrp-source-review-schema.test.py",
+    "tdrp-source-review.mjs",
+    "validate-tdrp-revision9-authority.mjs"
+  ],
+  "source_review_contract": {
+    "schema_path": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+    "schema_blob": "e52b2ba92c8cf966bb506cc8b9f81320462474ae",
+    "validator_path": "scripts/tdrp-source-review.mjs",
+    "validator_blob": "d27c366a4407db935bbc50cdfa07d01969a0c0e9",
+    "acceptance_validator_path": "scripts/validate-tdrp-revision9-authority.mjs",
+    "acceptance_validator_blob": "99f8506be44a8ad2f2da75a21ad929c070e7020b",
+    "schema_contains_source_reviews": true,
+    "validator_contains_identity_category_risk_depth_status_evidence_and_responsibility_checks": true,
+    "acceptance_calls_validateSourceReviews": true,
+    "note": "FMEP-SOURCE-01 contract is present in the active branch schema and validator; this does not prove all exact-U identities are reviewed or accepted."
+  },
+  "exact_head_verification": {
+    "pr_triggered_workflow_runs_returned": 0,
+    "combined_statuses_returned": 0,
+    "interpretation": "No current exact-head CI pass is established by these reads; predecessor results are not reused."
+  },
+  "verified_gaps": [
+    "PR #189 body H claim is stale relative to GitHub API head; reconcile task evidence and description.",
+    "Full Human Retry HRR-01..06 fresh-nonce/reply/restaging and persisted-error projection remain absent per task evidence.",
+    "Full source/legal/generated/dependency disposition and final packaging/visual/accessibility/security/performance/soak/upgrade/rollback/Bot regression/independent ACCEPT remain open.",
+    "PR #189 remains draft and unmerged; no product acceptance is claimed."
+  ],
+  "this_round_product_changes": [],
+  "this_round_validation": "GitHub API read-only inspection only; no local or htch-runtime build/test executed.",
+  "next_action": "Reconcile PR #189 live head and task evidence, inspect exact-head Actions and current Human Retry/pagination recovery path, then implement the next unclosed production behavior in the existing owner path with tests."
+}
