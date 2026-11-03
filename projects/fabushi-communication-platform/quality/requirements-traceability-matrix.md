@@ -943,6 +943,7 @@ and Mac workflow path filters.
 | NMR-UI-ENTRY-REFRESH-01b | Existing MessageActionAnchor hooks, eligibility and listeners | human_entry_refresh_retires_action_menus_without_hook_order_errors | Pending containing-H Actions |
 | NMR-UI-ENTRY-REFRESH-01c | TranscriptAttachmentGallery and shared transcriptAttachmentIdentity | human_entry_refresh_retires_removed_pdf_and_late_resource_reads | Pending containing-H Actions |
 | NMR-UI-ENTRY-REFRESH-01d | ProductionRenderer original row/attachment-bound spreadsheet mount and existing provider | human_entry_refresh_retires_spreadsheet_mount_when_source_changes | Pending containing-H Actions |
+| NMR-AC-UI-ENTRY-REFRESH-01 | Existing Native/UI Actions job and real ProductionRenderer/Coordinator/feed/viewer harness | Original8 plus four named cases above; UI209 = Node173 + projection13 + author23, with zero failures/skips/retries and retained Host/shipping gates | Authored; containing-H execution required |
 
 All four cases extend the existing ProductionRenderer.transcript.behavior.test.mjs
 from8 to12 without changing original8 bodies or strict diagnostics. Required
