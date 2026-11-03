@@ -21,6 +21,7 @@ const older: Pending[] = [];
 const initials: Pending[] = [];
 const refreshes: Pending[] = [];
 const sends: Pending[] = [];
+const humanRetries: Pending[] = [];
 const reactions: Pending[] = [];
 const sendRosterRefreshes: Pending[] = [];
 const sendPositions = new Map<string, number>();
@@ -86,6 +87,27 @@ function receive(request: Request) {
       if (holdInitial && id === 'human:a') { initials.push({ request, value }); return; }
       break;
     case 'openAgentTail': case 'getAgentTranscriptTail': value = { entries: [] }; break;
+    case 'retryHumanMessage': {
+      // Exercise the real renderer/Coordinator boundary with a Host-authoritative
+      // outbox identity. No renderer-provided replacement fields are accepted.
+      if (Object.keys(request.args).sort().join(',') !== 'clientNonce,conversationId')
+        throw new Error('Human retry added replacement payload outside its two-field contract');
+      const existing = transcript.find((entry) =>
+        entry.id === `human-message:${String(request.args.clientNonce)}`
+        && entry.clientNonce === request.args.clientNonce
+        && entry.authorKind === 'human'
+        && entry.authorId === (account.kind === 'logged-in' ? account.authId : null)
+      );
+      if (existing == null) throw new Error('No durable locally authored Human message for retry');
+      const remoteMessageId = '901';
+      const recovered = {
+        ...clone(existing), id: `human-server-message:${remoteMessageId}`,
+        delivery: 'sent', remoteMessageId, timestampMs: Date.now(),
+      };
+      delete recovered.lastDispatchError;
+      humanRetries.push({ request, value: recovered });
+      return;
+    }
     case 'sendHumanMessage': {
       const remoteMessageId = String(100 + sends.length);
       const entry = row(`human-server-message:${remoteMessageId}`, String(request.args.text), {
@@ -180,7 +202,42 @@ const bridge = optionalCapability('', {
 const fixture = {
   requests,
   approvalClears,
-  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, reactions: reactions.length, sendRosterRefreshes: sendRosterRefreshes.length }),
+  pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, humanRetries: humanRetries.length, reactions: reactions.length, sendRosterRefreshes: sendRosterRefreshes.length }),
+  stageFailedHuman(nonce: string) {
+    const id = 'human:a';
+    const source = row(`human-message:${nonce}`, 'Original pending Human text', {
+      authorId: account.kind === 'logged-in' ? account.authId : '',
+      clientNonce: nonce, delivery: 'pending', composedAtMs: 1234,
+      lastDispatchError: 'Original ambiguous request ended without receipt',
+      replyToId: 'human-server-message:7',
+      attachments: [{ path: '/committed/original.txt', name: 'original.txt', resourceId: 'resource-1' }],
+    });
+    const list = rows.get(id) ?? [];
+    list.push(source);
+    rows.set(id, list);
+    persistRows();
+    emit({ type: 'appended', agentId: id, entry: clone(source) });
+  },
+  rejectHumanRetry(index: number) {
+    const pending = humanRetries[index];
+    if (pending == null) throw new Error('No Human retry to reject');
+    sendFrame({ kind: 'reply', requestId: pending.request.requestId,
+      outcome: { status: 'failed', failure: { code: 'fixture-retry', message: 'temporary retry refusal' } } });
+  },
+  settleHumanRetry(index: number) {
+    const pending = humanRetries[index];
+    if (pending == null) throw new Error('No Human retry settlement');
+    const conversationId = String(pending.request.args.conversationId);
+    const value = clone(pending.value as Row);
+    const entries = rows.get(conversationId) ?? [];
+    const oldId = `human-message:${pending.request.args.clientNonce}`;
+    const idx = entries.findIndex((entry) => entry.id === oldId);
+    if (idx < 0) throw new Error('Retry settlement lost durable original message');
+    entries[idx] = value;
+    rows.set(conversationId, entries);
+    persistRows();
+    reply(pending);
+  },
   releaseInitial(newestFirst = false) {
     holdInitial = false;
     const pending = initials.splice(0);

@@ -195,23 +195,15 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
       popover.style.left = String(Math.max(leftEdge, Math.min(rightEdge - width, triggerBox.right - width))) + "px";
       popover.style.top = String(Math.max(topEdge, Math.min(bottomEdge - height, preferredTop))) + "px";
       popover.style.visibility = "visible";
-      // Geometry and keyboard ownership are independent: pointer-click
-      // default focus can settle after this layout effect, so a synchronous
-      // focus here is immediately stolen back by the triggering button.
+      // Geometry does not take focus. This is a non-modal picker: opening
+      // leaves focus on the triggering message action, and its next Tab
+      // enters the first emoji. Resize/message updates never steal focus.
     };
     let frame = 0;
     const schedule = () => {
       if (frame === 0) frame = window.requestAnimationFrame(() => { frame = 0; position(); });
     };
     position();
-    // Take initial focus after the activating click has finished its default
-    // focus action. Only once per opening; scroll/resize and message updates
-    // must not take focus back from keyboard navigation.
-    const firstFocusFrame = window.requestAnimationFrame(() => {
-      if (popover.isConnected && trigger.isConnected) {
-        popover.querySelector<HTMLButtonElement>(".sand-emoji-cell")?.focus({ preventScroll: true });
-      }
-    });
     window.addEventListener("resize", schedule);
     document.addEventListener("scroll", schedule, true);
     const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
@@ -226,7 +218,6 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
       resizeObserver?.disconnect();
       mutationObserver?.disconnect();
       if (frame !== 0) window.cancelAnimationFrame(frame);
-      window.cancelAnimationFrame(firstFocusFrame);
     };
   }, [open]);
 
@@ -262,7 +253,11 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
         aria-haspopup="dialog"
         aria-label="Add reaction"
         className="sand-message-hover-actions__button"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          // Keep the real message action as the Tab/Escape return point.
+          triggerRef.current?.focus({ preventScroll: true });
+          setOpen(!open);
+        }}
         onKeyDown={(event) => {
           if (open && event.key === "Tab" && !event.shiftKey) {
             const first = popoverRef.current?.querySelector<HTMLButtonElement>(".sand-emoji-cell");

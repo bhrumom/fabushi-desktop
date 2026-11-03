@@ -333,6 +333,8 @@ test('NMR-26 old-row reaction commands settle the page cache and cannot overwrit
   const firstEmoji = popover.getByRole('button', { name: 'React with 👍', exact: true });
   const trigger = messageRow(page, 'm5').getByRole('button', { name: 'Add reaction', exact: true });
   const nextAction = messageRow(page, 'm5').getByRole('button', { name: 'Reply to your message' });
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(firstEmoji).toBeFocused();
   // Non-modal portal traversal: backward Tab returns to the real trigger,
   // forward Tab re-enters the first emoji, never cycles around the picker.
@@ -349,6 +351,8 @@ test('NMR-26 old-row reaction commands settle the page cache and cannot overwrit
   await trigger.focus();
   await page.keyboard.press('Enter');
   await expect(popover).toBeVisible();
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(firstEmoji).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(popover).toHaveCount(0);
@@ -382,4 +386,40 @@ test('NMR-26 a disconnected Human send queues and reconnect dispatches it exactl
   expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage').length)).toBe(1);
   await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'human-server-message:100']);
   await milestone(page, info, 'queued-send-settled-after-reconnect');
+});
+
+test('HRR-05 persisted Human Resend uses one original Host nonce across refusal and recovery without changing the composer', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  const nonce = 'durable-human-retry-1';
+  await page.evaluate((original) => window.nativeMessageFixture.stageFailedHuman(original), nonce);
+  const pendingId = `human-message:${nonce}`;
+  const failed = messageRow(page, pendingId);
+  await expect(failed).toContainText('Original pending Human text');
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await page.locator('[contenteditable="true"]').fill('This is a different, still unsent draft');
+
+  await failed.getByRole('button', { name: 'Resend', exact: true }).dblclick();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(1);
+  const first = await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'retryHumanMessage'));
+  expect(first).toHaveLength(1);
+  expect(first[0].args).toEqual({ conversationId: 'human:a', clientNonce: nonce });
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'sendHumanMessage'))).toEqual([]);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('This is a different, still unsent draft');
+  await page.evaluate(() => window.nativeMessageFixture.rejectHumanRetry(0));
+  await expect(failed.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await failed.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+  const attempts = await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'retryHumanMessage'));
+  expect(attempts).toHaveLength(2);
+  expect(attempts[0].args).toEqual(attempts[1].args);
+  await page.evaluate(() => window.nativeMessageFixture.settleHumanRetry(1));
+  const canonical = messageRow(page, 'human-server-message:901');
+  await expect(canonical).toContainText('Original pending Human text');
+  await expect(canonical).toContainText('original.txt');
+  await expect(failed).toHaveCount(0);
+  await expect(canonical.getByRole('button', { name: 'Resend', exact: true })).toHaveCount(0);
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('This is a different, still unsent draft');
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'sendHumanMessage'))).toEqual([]);
+  await milestone(page, info, 'human-durable-retry-settled');
 });
