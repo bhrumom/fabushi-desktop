@@ -948,6 +948,16 @@ mod lifecycle_tests {
             assert!(result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err().contains("requires servers"));
             worker.join().unwrap();
             assert!(retained.get("plugin-41-retained").is_none());
+            let journal_path = cache_dir.join("uninstall-state.json");
+            let confirmed: Value = serde_json::from_slice(&fs::read(&journal_path).unwrap()).unwrap();
+            let confirmed_observation = confirmed["uninstallObservation"].as_str().unwrap().to_string();
+            assert_eq!(uuid::Uuid::parse_str(&confirmed_observation).unwrap().to_string(),
+                confirmed_observation, "the real settlement emits a canonical observation");
+            assert_eq!(confirmed, json!({
+                "formatVersion":3, "confirmedPluginIds":["41"], "pending":[],
+                "authRefusals":[], "refreshIntent":null,
+                "uninstallObservation":confirmed_observation.clone(),
+            }));
 
             // This distinct operation genuinely enters the old backend before
             // handoff. Its durable pending fact must survive a late receipt.
@@ -963,11 +973,16 @@ mod lifecycle_tests {
             assert_eq!(pending[0]["pluginId"], "43");
             let operation_id = pending[0]["operationId"].as_str().unwrap();
             assert_eq!(uuid::Uuid::parse_str(operation_id).unwrap().to_string(), operation_id);
-            let journal_path = cache_dir.join("uninstall-state.json");
             let journal = fs::read(&journal_path).unwrap();
-            assert_eq!(serde_json::from_slice::<Value>(&journal).unwrap(), json!({
-                "formatVersion":2, "confirmedPluginIds":["41"], "pending":pending,
+            let decoded: Value = serde_json::from_slice(&journal).unwrap();
+            let observation = decoded["uninstallObservation"].as_str().unwrap();
+            assert_eq!(uuid::Uuid::parse_str(observation).unwrap().to_string(), observation);
+            assert_ne!(observation, confirmed_observation,
+                "the next real reservation rotates the earlier settlement observation");
+            assert_eq!(decoded, json!({
+                "formatVersion":3, "confirmedPluginIds":["41"], "pending":pending,
                 "authRefusals":[], "refreshIntent":null,
+                "uninstallObservation":observation,
             }));
             assert_eq!(fs::read(cache_dir.join("uninstall-state.version")).unwrap(), b"1\n");
             assert!(retained.get("plugin-43-retained").is_none());
