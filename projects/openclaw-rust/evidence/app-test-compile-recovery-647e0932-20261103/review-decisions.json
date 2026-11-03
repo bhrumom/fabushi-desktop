@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "repair_id": "LFA-APP-COMPILE-01",
+  "reviewed_base": "871b033c5b9aabbe322cc7322af92648939db9b5",
+  "reviewed_tree": "7dec21739a84f7a238a60ac420a72a3d8e859928",
+  "reviewed_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+  "reviews": [
+    {
+      "path": "general-review.md",
+      "verdict": "SOURCE-ONLY APPROVE",
+      "blocking_findings": 0,
+      "model": "configured",
+      "effort": "xhigh"
+    },
+    {
+      "path": "structure-review.md",
+      "verdict": "SOURCE-ONLY APPROVE",
+      "blocking_findings": 0,
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh"
+    }
+  ],
+  "findings": [],
+  "decisions": [],
+  "source_convergence": true,
+  "execution": "pending exact new-H GitHub Actions; no local/htch validation",
+  "integration": "The repair file at cron checkpoint6d65f108476e5e481bc8a9edf28e85da633a743b is byte-identical to reviewed base60e6be8a61d446706ac2188366be9bff1f08cb71. Preserve the reviewed one-file delta and every incoming change.",
+  "validation_selection": {
+    "reuse": "Existing exact-subject OCRM P0/source and Rust desktop runtime canonical-branch lanes; no new workflow or repeated unchanged H23 run.",
+    "why": "The App test binary previously did not compile; all App cases, startup/prior-root and App dispatch remain unmet. New integrated cron, incoming Session/media and plugin owner changes require compilation and affected existing owner controls on the same new H.",
+    "required": "shipping App check; linked App test build; five CJI cases plus all six LFA cases and incoming media/other exact required cases; actual feature capture; startup admission; prior-root and native App dispatch; original raw receipts/logs. Native, plugin, source and renderer checks retain their exact-H scopes.",
+    "limits": "Queued/in_progress or missing receipts are pending, never pass. Diagnose the first failure causally; do not drop assertions or rerun unchanged failing subjects."
+  },
+  "global_completion_flags_changed": false,
+  "independent_acceptance": "pending"
+}

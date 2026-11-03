@@ -1,0 +1,20 @@
+diff --git a/source/host/app/src/tests/local_media_file_url_tests.rs b/source/host/app/src/tests/local_media_file_url_tests.rs
+index 60e6be8a61d446706ac2188366be9bff1f08cb71..57a0a3393f1bb9560eb036687688656b1f3fe6c8 100644
+--- a/source/host/app/src/tests/local_media_file_url_tests.rs
++++ b/source/host/app/src/tests/local_media_file_url_tests.rs
+@@ -1,5 +1,6 @@
+ use super::super::*;
+ use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
++use serde_json::{json, Value};
+ use std::collections::BTreeSet;
+ use std::path::{Path, PathBuf};
+ use std::sync::atomic::{AtomicUsize, Ordering};
+@@ -197,7 +198,7 @@ impl LocalMediaAppFixture {
+         ));
+         deps.transcript_manager.bind_roster_emit(roster).expect("actual roster owner");
+         deps.transcript_runtime.session_runtime().set_window_focused(
+-            &deps.session_workers, true, 1_000,
++            &deps.session_workers, true, 1_000.0,
+         ).expect("actual focused desktop state");
+         let sink = Arc::new(ProductionSendMessageSink {
+             host_tx,

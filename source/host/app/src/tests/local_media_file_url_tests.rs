@@ -1,5 +1,6 @@
 use super::super::*;
 use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
+use serde_json::{json, Value};
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -197,7 +198,7 @@ impl LocalMediaAppFixture {
         ));
         deps.transcript_manager.bind_roster_emit(roster).expect("actual roster owner");
         deps.transcript_runtime.session_runtime().set_window_focused(
-            &deps.session_workers, true, 1_000,
+            &deps.session_workers, true, 1_000.0,
         ).expect("actual focused desktop state");
         let sink = Arc::new(ProductionSendMessageSink {
             host_tx,

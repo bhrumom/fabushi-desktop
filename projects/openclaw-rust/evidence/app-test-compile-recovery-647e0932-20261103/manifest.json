@@ -1,0 +1,22 @@
+{
+  "repository": "/workspace/scratch/425c55809bda/fabushi-desktop",
+  "remote": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "base_commit": "871b033c5b9aabbe322cc7322af92648939db9b5",
+  "base_tree": "f641366eea64364f4d029487d04276c4c567790a",
+  "starting_local_HEAD": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "snapshot_tree": "7dec21739a84f7a238a60ac420a72a3d8e859928",
+  "scope_mode": "one exact live-base test path; isolated index",
+  "paths": [
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "base_sha": "60e6be8a61d446706ac2188366be9bff1f08cb71",
+      "sha": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "local": "/workspace/scratch/425c55809bda/reviews/lfa-app-compile-recovery/local_media_file_url_tests.rs"
+    }
+  ],
+  "contract": "LFA-v1, existing actual App verification scope",
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "execution": "not run; local/htch validation forbidden",
+  "repair": "One explicit serde_json import plus exact f64 fixture literal; assertions, incoming MSU custody, production code and workflow unchanged."
+}
