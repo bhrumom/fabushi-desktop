@@ -1,0 +1,850 @@
+{
+  "schema": "ocrm-focused-execution-assessment-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "BGC-v1 focused recovery",
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "b62468a800971b46e2e937185438960f92e58629",
+  "subject_tree": "b0f0e4d48f69afbb2449f93d232304b2ca612801",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "verdict": "APPROVED-scoped-only",
+  "runtime": {
+    "run_id": 41643527879,
+    "attempt": 1,
+    "conclusion": "success",
+    "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41643527879",
+    "platforms": [
+      {
+        "os": "linux",
+        "job_id": 125942790943,
+        "raw_connector_log": {
+          "bytes": 585968,
+          "sha256": "1440a9eab8dfce4b0f1166fdf8840c4a31f348f5d55bf0c7c9afed23ebe6307e"
+        },
+        "subject_commit": "b62468a800971b46e2e937185438960f92e58629",
+        "subject_tree": "b0f0e4d48f69afbb2449f93d232304b2ca612801",
+        "validation_scope": "background-custody-recovery",
+        "result": "passed-scoped-only",
+        "raw_observed_positive_names": [
+          "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+          "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+          "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+          "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+        ],
+        "complete_summary_lines": [
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 5.03s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 2.04s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.16s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.06s"
+        ],
+        "shipping_compile": {
+          "contract": "BGC-v1-recovery-shipping-compile",
+          "validation_scope": "background-custody-recovery",
+          "subject_commit": "b62468a800971b46e2e937185438960f92e58629",
+          "subject_tree": "b0f0e4d48f69afbb2449f93d232304b2ca612801",
+          "upstream": {
+            "repository": "openclaw/openclaw",
+            "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+          },
+          "run_id": "41643527879",
+          "run_attempt": "1",
+          "job": "custody-recovery",
+          "runner_os": "Linux",
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--profile",
+            "ci",
+            "--bin",
+            "mahayana-app-host",
+            "--manifest-path",
+            "source/host/app/Cargo.toml"
+          ],
+          "command_exit": 0,
+          "capture_exit": 0,
+          "log": "shipping-host.log",
+          "log_sha256": "0646ac87a58a56b898dde3371e5e668dc935cffa3100dd2b6bb3f04f741f3e85",
+          "result": "compiled",
+          "scope": "Compilation only, not runtime, full-contract or package acceptance."
+        },
+        "host_test_graph_compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--tests"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "04e017a5d126ba6be70873db475ab7ae739adeb5c767d5259a0dc09e8140b5b3"
+        },
+        "executions": [
+          {
+            "case": "box-response-background-recovery-handoff",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-handoff.log",
+            "log_sha256": "6eab6837b55abd40ffb69277d5dce086a868a3036ab11871df985fe08b20a913"
+          },
+          {
+            "case": "box-response-background-recovery-retention",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-retention.log",
+            "log_sha256": "ccd903b4adaac466bba4143eb7785690243c2fb31a903bdef975cd06505b1454"
+          },
+          {
+            "case": "box-response-background-recovery-admission",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-admission.log",
+            "log_sha256": "cc94c6bf61e8f21ef6975933c0e03016295b49dfc2369090f296261c368cbd42"
+          },
+          {
+            "case": "box-response-background-recovery-autonomous",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-autonomous.log",
+            "log_sha256": "b84a3b7f056a9ad08b1c917e1981958f9c4fb1cbf69faf13b2c7968deea7a6eb"
+          }
+        ],
+        "source_bindings": {
+          "custody_recovery": {
+            "input_count": 10,
+            "before_equals_after": true,
+            "all_match_head": true
+          },
+          "box_response": {
+            "input_count": 57,
+            "before_equals_after": true,
+            "all_match_head": true
+          },
+          "plugin_admission_lock": {
+            "input_count": 21,
+            "before_equals_after": true,
+            "all_match_head": true
+          },
+          "local_exec_outcome": {
+            "input_count": 41,
+            "before_equals_after": true,
+            "all_match_head": true
+          }
+        },
+        "oracle_controls": {
+          "scope_selection_controls": {
+            "count": 21,
+            "all_match_expected": true
+          },
+          "selected_result_oracle_controls": {
+            "count": 11,
+            "all_match_expected": true
+          },
+          "box_background_recovery_selection_controls": {
+            "count": 16,
+            "all_match_expected": true
+          },
+          "box_response_result_oracle_controls": {
+            "count": 16,
+            "all_match_expected": true
+          },
+          "synthetic_result_oracle_controls": {
+            "count": 14,
+            "all_match_expected": true
+          },
+          "artifact_selection_oracle_controls": {
+            "count": 12,
+            "all_match_expected": true
+          }
+        },
+        "daemon": {
+          "binary": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target/debug/box-exec-daemon",
+          "binary_sha256_before_cases": "f4c4911924ebcc7cd4e5876852fdfd4c0a47253b80bbd8ec3c6fedd7e016bee2",
+          "unchanged": true,
+          "command": [
+            "cargo",
+            "build",
+            "--locked",
+            "--manifest-path",
+            "source/box-exec-daemon/Cargo.toml",
+            "--bin",
+            "box-exec-daemon",
+            "--target-dir",
+            "source/box-exec-daemon/target"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0
+        },
+        "test_producer": {
+          "binary": "/home/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target/debug/deps/fabushi_box_exec_daemon-60fc98c15c717ac2",
+          "binary_sha256_before_cases": "9b1f1775861e5a6c990b34f61709daa5cff376458dbbadc53d016b5453759c47",
+          "unchanged": true,
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "/home/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/Cargo.toml",
+            "--lib",
+            "--no-run",
+            "--message-format=json",
+            "--target-dir",
+            "/home/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0
+        }
+      },
+      {
+        "os": "mac",
+        "job_id": 125942791106,
+        "raw_connector_log": {
+          "bytes": 564899,
+          "sha256": "01936b80ca46da93d51fd1ad936f754a5231896b864ae7250fd8448951598804"
+        },
+        "subject_commit": "b62468a800971b46e2e937185438960f92e58629",
+        "subject_tree": "b0f0e4d48f69afbb2449f93d232304b2ca612801",
+        "validation_scope": "background-custody-recovery",
+        "result": "passed-scoped-only",
+        "raw_observed_positive_names": [
+          "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+          "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+          "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+          "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+        ],
+        "complete_summary_lines": [
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 5.13s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 2.17s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.50s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out; finished in 0.25s"
+        ],
+        "shipping_compile": {
+          "contract": "BGC-v1-recovery-shipping-compile",
+          "validation_scope": "background-custody-recovery",
+          "subject_commit": "b62468a800971b46e2e937185438960f92e58629",
+          "subject_tree": "b0f0e4d48f69afbb2449f93d232304b2ca612801",
+          "upstream": {
+            "repository": "openclaw/openclaw",
+            "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+            "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+          },
+          "run_id": "41643527879",
+          "run_attempt": "1",
+          "job": "custody-recovery",
+          "runner_os": "macOS",
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--profile",
+            "ci",
+            "--bin",
+            "mahayana-app-host",
+            "--manifest-path",
+            "source/host/app/Cargo.toml"
+          ],
+          "command_exit": 0,
+          "capture_exit": 0,
+          "log": "shipping-host.log",
+          "log_sha256": "08be1f63316923e0e5afcf6262a0b7a3efcf7353b4831a526daea3974efd2a41",
+          "result": "compiled",
+          "scope": "Compilation only, not runtime, full-contract or package acceptance."
+        },
+        "host_test_graph_compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--tests"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "3c8e3d0e489717f58e74bafafa5b481949f4285be72bdc80e73c89692634b975"
+        },
+        "executions": [
+          {
+            "case": "box-response-background-recovery-handoff",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-handoff.log",
+            "log_sha256": "7eed4d7ecc593960b9fb4322492329bfbf63770538f6674c95bd25903b352c71"
+          },
+          {
+            "case": "box-response-background-recovery-retention",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-retention.log",
+            "log_sha256": "e2c3d991c5eaecdd447bf4536c63ce6356c4a03fa2318118f808081891977a42"
+          },
+          {
+            "case": "box-response-background-recovery-admission",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-admission.log",
+            "log_sha256": "af5ba2f7c44b91f1633666c201752ac80b89f6c855bc1b0dda4c2d2f78b3a2f2"
+          },
+          {
+            "case": "box-response-background-recovery-autonomous",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/box-exec-daemon/Cargo.toml",
+              "--lib",
+              "--target-dir",
+              "source/box-exec-daemon/target",
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion",
+              "--",
+              "--exact",
+              "--test-threads=1"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "child_environment_overrides": {
+              "SAND_DISABLE_LARGE_OUTPUT_SPILL": "0"
+            },
+            "observed_raw_passed_test_names": [
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+            ],
+            "execution_error": null,
+            "required_positive_names": [
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+            ],
+            "missing_or_nonunique_positive_results": [],
+            "observed_passed_test_names": [
+              "server::tests::background_custody_normal_and_handoff_preserve_output_stdin_and_autonomous_completion"
+            ],
+            "summaries_passed_failed_ignored": [
+              [
+                1,
+                0,
+                0
+              ]
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                44
+              ]
+            ],
+            "oracle_accepted": true,
+            "log": "box-response-background-recovery-autonomous.log",
+            "log_sha256": "98903c13ea37020d1fc2b5c92abfa313556ab0c3f5a5ba22aebef83d03eac7b4"
+          }
+        ],
+        "source_bindings": {
+          "custody_recovery": {
+            "input_count": 10,
+            "before_equals_after": true,
+            "all_match_head": true
+          },
+          "box_response": {
+            "input_count": 57,
+            "before_equals_after": true,
+            "all_match_head": true
+          },
+          "plugin_admission_lock": {
+            "input_count": 21,
+            "before_equals_after": true,
+            "all_match_head": true
+          },
+          "local_exec_outcome": {
+            "input_count": 41,
+            "before_equals_after": true,
+            "all_match_head": true
+          }
+        },
+        "oracle_controls": {
+          "scope_selection_controls": {
+            "count": 21,
+            "all_match_expected": true
+          },
+          "selected_result_oracle_controls": {
+            "count": 11,
+            "all_match_expected": true
+          },
+          "box_background_recovery_selection_controls": {
+            "count": 16,
+            "all_match_expected": true
+          },
+          "box_response_result_oracle_controls": {
+            "count": 16,
+            "all_match_expected": true
+          },
+          "synthetic_result_oracle_controls": {
+            "count": 14,
+            "all_match_expected": true
+          },
+          "artifact_selection_oracle_controls": {
+            "count": 12,
+            "all_match_expected": true
+          }
+        },
+        "daemon": {
+          "binary": "/Users/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target/debug/box-exec-daemon",
+          "binary_sha256_before_cases": "934cf5e897259228d410164cc15c518d24e901e90e33cf2533047a4fb9bf3068",
+          "unchanged": true,
+          "command": [
+            "cargo",
+            "build",
+            "--locked",
+            "--manifest-path",
+            "source/box-exec-daemon/Cargo.toml",
+            "--bin",
+            "box-exec-daemon",
+            "--target-dir",
+            "source/box-exec-daemon/target"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0
+        },
+        "test_producer": {
+          "binary": "/Users/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target/debug/deps/fabushi_box_exec_daemon-8a5df91a58d0e8c4",
+          "binary_sha256_before_cases": "9665d27cc081d02c17c0a3d7db459b0ccc42c295f887a74c64843285366a4be1",
+          "unchanged": true,
+          "command": [
+            "cargo",
+            "test",
+            "--locked",
+            "--manifest-path",
+            "/Users/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/Cargo.toml",
+            "--lib",
+            "--no-run",
+            "--message-format=json",
+            "--target-dir",
+            "/Users/runner/work/fabushi-desktop/fabushi-desktop/source/box-exec-daemon/target"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0
+        }
+      }
+    ],
+    "artifacts": [
+      {
+        "id": 13233962498,
+        "name": "ocrm-background-custody-recovery-macOS-b62468a800971b46e2e937185438960f92e58629-41643527879-1",
+        "size": 82994,
+        "digest": "sha256:82384ceb0dad8f3ab247333344848949158f245b627f8d685f5aced133e10f2d",
+        "expired": false,
+        "head": "b62468a800971b46e2e937185438960f92e58629"
+      },
+      {
+        "id": 13233802626,
+        "name": "ocrm-background-custody-recovery-Linux-b62468a800971b46e2e937185438960f92e58629-41643527879-1",
+        "size": 83089,
+        "digest": "sha256:b0d1e960c6b38ad03b8cc386651380c8f13f2a7b163afc000cd1f8b1ae39ec3d",
+        "expired": false,
+        "head": "b62468a800971b46e2e937185438960f92e58629"
+      }
+    ]
+  },
+  "independent_observation": {
+    "worker": "/root/bgc_execution_observer",
+    "verdict": "APPROVED for the four-command BGC focused recovery on Linux and macOS",
+    "configured_model": "configured parent model inherited",
+    "effort": "inherited session setting; independent observer report does not expose a numeric/API effort setting",
+    "scope_reason": "Stateful process/reader custody, exact producer and evidence verification",
+    "independent_root_readback": true,
+    "raw_log_digests_match": true,
+    "full_report_location": "task conversation; no uploaded report object is claimed",
+    "requested_phase_effort": "xhigh"
+  },
+  "source_authority": {
+    "run_id": 41643528166,
+    "attempt": 1,
+    "conclusion": "success",
+    "source_job": 125942788755,
+    "persistence_job": 125943827575,
+    "source_log": {
+      "bytes": 31536,
+      "sha256": "2ba296ad5ceda361b43041b9962c71e970a8a2782c9b872bb2fd2190e8f9ba0a"
+    },
+    "persistence_log": {
+      "bytes": 18155,
+      "sha256": "7703a2bcbf4ea1ad9ff8eb50758b199aaa7ac48f39975099a29a9fb1a7fe7b9d"
+    },
+    "source_review_controls": 33,
+    "inventory_materialization_tests": 21,
+    "negative_probes": [
+      "duplicate source path",
+      "unread denominator tamper",
+      "unbacked accepted verdict",
+      "orphan responsibility"
+    ],
+    "paths": 62130,
+    "mapped": 888,
+    "unread_or_partial": 62067,
+    "pending_forward_links": 0,
+    "shards": 61,
+    "canonical_inventory_sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
+    "persistence_result": "No new source-derived shard content",
+    "closure": "open",
+    "artifacts": [
+      {
+        "id": 13234860367,
+        "name": "ocrm-p0-authority-b62468a800971b46e2e937185438960f92e58629",
+        "size": 4951973,
+        "digest": "sha256:6006eb1aa1d31de5e6d04ef83ec0d30c2e8a4f174afea20b9bfa76502e155fa5"
+      }
+    ]
+  },
+  "retained_history": {
+    "normal_subject": "6d3806857b58887245ae861c15c0ecb740e5d7d6",
+    "normal_runtime_run": 41639406287,
+    "conclusion": "failure",
+    "linux_positive_names": 121,
+    "macos_positive_names": 120,
+    "macos_failed_name": "server::tests::background_custody_handoff_id_exhaustion_retains_entered_capture",
+    "classification": "TEST_FLAW",
+    "durable_decision": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/h6d380-recovery-decisions.json",
+    "recovery_coverage": "Four names per OS. The 117 previously positive unselected names remain historical results, not a fresh execution at recovery H.",
+    "repair": "Only the handoff-ID-exhaustion test function changed; actual reader completion is observed before the existing normal admission performs cleanup. No product source changed in the recovery; autonomous completion, effect-once, Throw/no Exit, exact custody, final reader/pipe release and no-resignal assertions remain.",
+    "campaign_budget": "One normal campaign plus one focused recovery; terminal success, no third campaign or unchanged rerun."
+  },
+  "evidence_limits": [
+    "Archive digests are the API/upload-reported hashes. The ZIP files were not downloaded or independently rehashed by root/observer.",
+    "Job text digests are independently computed over the complete connector-returned UTF-8 text, including returned timestamps/BOM.",
+    "Shipping compilation is separate from runtime/package acceptance.",
+    "No full OCRM responsibility or global completion flag is promoted. All G01-G12/AC01-AC24, unresolved source closure, real ecosystems, devices, durable restart, UI, supported packages and final ACCEPT remain open."
+  ],
+  "ci_dispatch_decision": {
+    "finding": "A review-artifact-only push e3837eac2c6bd693f058ccc58268ed97df2c1f99 unintentionally triggered broad runtime run 41642220354 because the existing projects/openclaw-rust/** path trigger includes evidence.",
+    "action": "Use GitHub's [skip ci] commit directive only on subsequent metadata/spec-only preservation commits. Freeze and execute each actual source/capture/workflow candidate without the directive. Do not change or delete runtime/source-authority gates.",
+    "current_run": "Last read in_progress; no cancellation operation is available through the connected GitHub tools. No repeated dispatch/rerun was requested.",
+    "acceptance": "The unintended broad run is not substituted for a selected campaign. Required PR checks remain required."
+  }
+}

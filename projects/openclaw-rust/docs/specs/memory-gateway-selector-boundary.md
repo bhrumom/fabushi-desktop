@@ -158,7 +158,7 @@ notification, permission rule or runtime is introduced.
 
 | ID | Required behavior and oracle |
 | --- | --- |
-| MGL-01 | A genuinely absent optional profile or log directory retains empty-input behavior by matching only `io::ErrorKind::NotFound`. Other errors reading the profile or enumerating its log directory propagate. Do not use `exists()` or a generic empty fallback as proof of absence. A missing safe Agent ID still returns `[]` without creating its directory. |
+| MGL-01 | A genuinely absent optional profile or log directory retains empty-input behavior. `io::ErrorKind::NotFound` is necessary but is not sufficient proof of absence on every supported platform; the native-filesystem supplement below defines the checked distinction. Other errors reading the profile or enumerating its log directory propagate. Do not use `exists()` or a generic empty fallback as proof of absence. A missing safe Agent ID still returns `[]` without creating its directory. |
 | MGL-02 | Propagate log directory-entry and file-type lookup errors. Keep the existing nonregular and non-`.md` entry filtering. Every selected regular Markdown log must read successfully; an error, including disappearance after enumeration, refuses the checked list. Parse readable Markdown with the same existing parser: comments, malformed fact lines and invalid dates keep their existing skip policy. |
 | MGL-03 | Assemble the complete checked fact set before applying the limit. Share parsing and profile-first/date/order projection with the existing implementation; preserve raw record identity, normalization, date, tie order and the 100-record native bound. A failed older log cannot be hidden merely because 100 newer facts are already available. Existing best-effort recall and other legacy list consumers retain their behavior until separately reviewed. |
 | MGL-04 | `getAgentMemories` validates the original trimmed canonical selector before resolving the store, then consumes the checked result. Store failures become the existing string/Internal Gateway failure, never a successful empty/partial list. Do not include memory content in error messages. Paired/native authorization and its zero-owner-dispatch refusals remain unchanged. |
@@ -198,3 +198,72 @@ all final migration gates remain required separately. The narrow MWR append
 contract's historical read-listing limitation is addressed here only for this
 checked native entry. No global completion flag or source-review status is
 promoted.
+
+
+## Native path components and portable missing-input proof — MGS/MGL supplement
+
+Discovery subject: `b62468a800971b46e2e937185438960f92e58629`.
+This completes a dependency of the checked native read before its initial
+review and execution. It retains fixed U, all existing Memory/Session owners,
+the OCRM RTM anchors above, and every previously applicable MGS/MGA/MGL oracle.
+
+The current canonical Agent-ID validator rejects separators, NUL, dot IDs and
+outer whitespace, but permits a Windows drive-relative selector such as
+`C:outside`. Rust's native `PathBuf::push`/join clears the existing left path
+for a prefixed right path even when that right path is not absolute. The
+native Memory store joins its explicit agents root directly, so the later
+checks in the environment-based directory resolver do not protect this entry.
+`SandAgentState::with_workflow_store_factory`, reached by the shipping Runner
+composition, repeats the weaker folder check before creating its same
+agent/user/project state owners. Both entry contracts must use the one
+canonical validator; no second resolver or root authority is introduced.
+
+Decision **MGS-NATIVE-COMPONENT — FIX / IMPL_BUG**: the existing
+`storage/agent_paths.rs::assert_valid_sand_agent_id` additionally requires
+exactly one native `Component::Normal`. Its existing generic checks and
+canonical error text remain. Reuse it in the shared SandAgentState constructor
+while preserving that constructor's existing `invalid agent id: ...` error
+contract. The native Memory Gateway continues validating before store lookup.
+Do not derive a different root from environment state. On Unix, literal colon
+components remain valid where they already were; a global colon ban would
+change that existing platform contract without fixing the native distinction.
+
+| ID | Required behavior and oracle |
+| --- | --- |
+| MGS-05 | Windows drive-prefixed/rooted selectors, including drive-relative `C:`, `C:outside`, lowercase drive variants and drive-prefixed dot/parent variants, fail before owner path resolution. Existing separator, whitespace, dot/NUL, safe/Unicode, trimmed Gateway, and missing-safe-ID behavior remains. Unix single normal components containing a literal colon remain valid. |
+| MGS-06 | Actual Memory manager and HTTP fixtures must establish a readable outside sentinel for the native Windows drive-relative path, then prove refusal, no private fact disclosure, unchanged bytes/state and valid-after-refusal. Use only an owned child process's working directory when drive-relative resolution needs it; never mutate the test process's ambient current directory or drive environment. The real SandAgentState constructor refuses the same invalid IDs before creating its stores and retains valid-state behavior. |
+| MGL-07 | A reported missing optional profile/log directory may be treated as empty only when checked filesystem metadata establishes absence under an existing directory. An existing file or dangling link at the input or an ancestor is an error, including when Windows classifies the operation as `NotFound`; an unknown/failed metadata observation is not proof of absence. A log input must be an actual directory before an empty enumeration is accepted. Preserve an actual operation's original error when available, and retain the existing content-free I/O/String/Internal error channel for a type obstacle. No file creation, fallback repair, new state or mutation notification is allowed. |
+
+The supplemental FileMemoryStore oracle first proves each obstacle's actual
+type and raw bytes. It records native operation error kind/raw OS code when
+an operation fails; it must not assume that every existing obstacle produces
+a non-`NotFound` kind. A file at the log-directory path, a non-directory
+ancestor and a directory at the profile path must refuse the checked list.
+Keep truly absent/empty/readable positives, invalid UTF-8, complete-before-limit,
+owner reopen, unrelated-state preservation and explicit repair controls.
+This is a source-discovered portability uncertainty being resolved before the
+first MGL campaign, not a claimed Windows runtime failure or a waived assertion.
+
+Changes stay in the existing Agent-ID, SandAgentState and Memory owners, their
+current contract targets, and the root-owned existing Actions/capture wiring.
+Run the affected library/native HTTP contracts on actual Windows as well as
+Linux/macOS at the frozen MGL H. Keep shipping Host compile on Linux/macOS.
+Windows library evidence cannot stand for a Windows shipping App or package:
+the current App's unconditional `signal_hook::iterator::Signals` import has
+a separately identified Windows compile incompatibility because that crate
+module is gated off on Windows. Repair and real shipping verification remain
+required in the full platform scope, without a no-op lifecycle substitute.
+No packaged Windows acceptance is claimed by this supplement.
+
+Primary dependency inspection is Rust 1.97.1 commit
+`8bab26f4f68e0e26f0bb7960be334d5b520ea452`:
+`library/std/src/path.rs` blob
+`222bf77996c7f102e93c6714f4d91d7d679ec18f` (native prefix replacement),
+`library/std/src/sys/fs/windows.rs` blob
+`e0b02670264d964b89e7ba54d6fd36505f9ed1cd` (wildcard enumeration), and
+`library/std/src/sys/io/error/windows.rs` blob
+`3c2f41a90781314cbb4f7dc71baefc98387fc29e` (native error mapping).
+This is actual dependency-contract review, not full dependency source reading
+or new fixed-U reading credit. Windows reserved names/trailing-dot aliases,
+symlink confinement and concurrent external writers remain explicit separate
+platform requirements; none is silently marked accepted here.
