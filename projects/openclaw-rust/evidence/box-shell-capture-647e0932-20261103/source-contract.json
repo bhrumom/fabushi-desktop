@@ -1,0 +1,247 @@
+{
+  "schema": "ocrm-scoped-production-contract-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BXR-SHELL-CAPTURE-v1",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "original_review_base": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "producer_implementation_base": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
+  "authority": {
+    "path": "docs/specs/g11-box-browser-wire-completion.md",
+    "blob": "f495d1a04dcf39453f0a6da5b7a2bce310e7dd44",
+    "preimplementation_commit": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
+    "ownership_clarification_commit": "d2187abaef74f979fb5bf85cd59e7d75700cba0a",
+    "requirements": [
+      "SC01",
+      "SC02",
+      "SC03",
+      "SC04",
+      "SC05",
+      "SC06",
+      "SC07"
+    ]
+  },
+  "responsibility_id": "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+  "scope": "Necessary foreground execution/capture custody prerequisite under existing Box and Runner owners. It does not implement or accept the complete generated HTML provenance responsibility.",
+  "chain": [
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "role": "Existing authenticated Exec dispatch and sole child/process registry; run_process creates and owns foreground child and capture workers. Both ShellArgs and MiniSweAgentBashArgs use it."
+    },
+    {
+      "path": "source/host/src/box/generated_production.rs",
+      "role": "Existing actual wire/framing and post-write uncertainty owner."
+    },
+    {
+      "path": "source/host/src/box/box_remote_accessor.rs",
+      "role": "Existing response identity/completion owner; matching Throw remains unknown."
+    },
+    {
+      "path": "source/host/src/extensions/forever_box/runner_tools.rs",
+      "role": "Existing resource port preserves ToolOutcomeUnknown from actual accessor."
+    },
+    {
+      "path": "source/host/src/runner/box_tool_access.rs",
+      "role": "Existing registered RunnerBoxToolBridge selects the same ForeverBox resource owner."
+    },
+    {
+      "path": "source/host/src/runner/tools/mcp_meta_tools.rs",
+      "role": "Existing guarded tool call marks downstream uncertainty before local completion."
+    },
+    {
+      "path": "source/host/src/runner/stream_attempt.rs",
+      "role": "Existing unique attempt/effect custody refuses later admission and replay after uncertainty."
+    },
+    {
+      "path": "source/host/src/runner/production_turn_run_shell_adapter.rs",
+      "role": "Existing provider attempt and checkpoint admission owner preserves unknown and SAND-E0407 without retry."
+    },
+    {
+      "path": "source/host/src/runner/routed_provider_runtime.rs",
+      "role": "Existing checkpoint store; actual consumer controls refuse writing unknown state and retain valid known outcomes."
+    }
+  ],
+  "required_behaviors": {
+    "SC01": "Pre-spawn refusal retains known SpawnError. Successful spawn followed by missing pipe, setup, worker creation, read, wait or join failure yields typed execution uncertainty without partial/empty substitution; Interrupted read is retried.",
+    "SC02": "Retain Child and both capture workers in existing ownership chain through terminal cleanup. Signal only while owned unreaped child is observed; bounded cleanup retains unresolved child in the same registry and stop cannot claim clean completion. No second process registry.",
+    "SC03": "Both foreground dispatch variants emit existing matching Throw/StreamClose with bounded static phase diagnostics, no command/output payload and no new protobuf fields.",
+    "SC04": "Complete success/nonzero/timeout/abort and existing lossy UTF-8 display remain; no independent EOF deadline for a still-authorized request. Cancellation/stop/explicit timeout bounds incomplete drain.",
+    "SC05": "Actual Host/ForeverBox/Runner consumer receives ToolOutcomeUnknown, sticky DownstreamOutcomeUnknown, refusal of further tools/checkpoint/replay and one provider attempt; counted external effect remains one.",
+    "SC06": "Per-runtime cfg(test)-only faults run after real observed prefix and real counted effect; stdout/stderr read/worker/wait variants, both dispatches, both capture worker cleanup, known refusal and successful checkpoint controls. No production fault configuration.",
+    "SC07": "Locked producer build plus exact compiler artifact selection, separate normal daemon and test executable identities, before/after input/binary/lock hashes and exact required names/counts in existing portable workflow. No stale executable fallback."
+  },
+  "source_review": {
+    "fixed_u_refs_retained": [
+      {
+        "blob_sha": "d00a635b7ee764126236a7f7c4c32969acf3f893",
+        "path": "src/media/generated-html-provenance.ts",
+        "range": {
+          "end_line": 97,
+          "start_line": 1
+        },
+        "symbol": "readGeneratedHtmlProvenance, writeGeneratedHtmlProvenance, pruneGeneratedHtmlProvenance"
+      },
+      {
+        "blob_sha": "e49c01be45ac77f6275498eeeece0b83feb648a1",
+        "path": "src/media/generated-html-provenance.test.ts",
+        "range": {
+          "end_line": 293,
+          "start_line": 1
+        },
+        "symbol": "generated HTML provenance worker boundary test suite"
+      },
+      {
+        "blob_sha": "0dd1b22b82eb26d4c53e00a8bc8bf9ae62b035fa",
+        "path": "src/media/generated-html-provenance.worker.ts",
+        "range": {
+          "end_line": 90,
+          "start_line": 1
+        },
+        "symbol": "generatedHtmlProvenanceReadOperations, generatedHtmlProvenanceOperations"
+      },
+      {
+        "blob_sha": "3d1ad1f65212e1b7dd166e647c426c38fe4283d6",
+        "path": "src/media/generated-html-provenance.worker-contract.ts",
+        "range": {
+          "end_line": 23,
+          "start_line": 1
+        },
+        "symbol": "GeneratedHtmlProvenanceRow, GeneratedHtmlProvenanceOperations"
+      }
+    ],
+    "historical_facts": "Retain recorded fixed-U read identities and prior source review facts in the existing Box source contract; this prerequisite adds no new full-file upstream reading claim or recursive closure.",
+    "generated_inputs": "Existing protocol-generated fields and actual producer/consumer contracts are reused unchanged. Original Shell generator/reserved-tag inputs remain unclosed; no wire/schema allocation.",
+    "target_read_depth": "High-risk actual capture/child cleanup/stop/dispatch and real Host-ForeverBox-Runner guard/checkpoint call chain inspected at exact blobs; complete candidate independent reviews still required.",
+    "adjacent_semantic_inputs": [
+      {
+        "path": "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
+        "blob": "43079a2f5df12a5f570589ce312fd7fcfb71bd1f",
+        "fact": "ShellStream field8 is hook_context metadata; field9 is sandbox_unsupported, not a second metadata variant"
+      },
+      {
+        "path": "source/packages/agent/tools/core/shell/create-shell-tool.ts",
+        "blob": "f7e875e6e08ac6df9afc0bf904b2a814510b981f",
+        "fact": "executeStream stores Exit rather than returning, continues collecting stdout/stderr through stream completion, and ignores hookContext metadata"
+      },
+      {
+        "path": "source/box-exec-daemon/src/server.rs",
+        "blob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+        "fact": "actual current producer drains output before its single Exit and returns after Backgrounded; source-only confirmation"
+      },
+      {
+        "path": "source/packages/proto/generated/agent/v1/background_shell_exec_pb.ts",
+        "blob": "71a9c516dd1ca89b2e389a85115407ad06b3bac2",
+        "fact": "Background field5 selects the same ShellSandboxUnsupported message whose policy field3 is STRING."
+      },
+      {
+        "path": "source/packages/local-exec/background-shell.ts",
+        "blob": "b7468894536d7e432e34bd52820dfc93956552a5",
+        "fact": "The actual existing producer returns policy?.type ?? unknown as a string for a SandboxUnsupportedError."
+      }
+    ],
+    "dependency": {
+      "contract": "BXR-LOCK-v1",
+      "path": "source/box-exec-daemon/Cargo.lock",
+      "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561",
+      "bytes": 15520,
+      "sha256": "9c26a883d53db1c5de9d69c0b6247d87be982eb86c0074ad3cc13526dc491431",
+      "original_output_subject": "14e637798b7c76c8530f9a3710051461f793924f",
+      "original_run": 41597864483,
+      "original_attempt": 1,
+      "original_job": 125789361548,
+      "output_carrier": "fa1daa79d11f7b3f64b108fed3815eb8633d3642",
+      "output_path": "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/box-response-daemon-resolved.Cargo.lock",
+      "preimplementation_spec_commit": "7722759802847348346c538e7eaf3b25058f40f1",
+      "preimplementation_spec_blob": "6cc8b03c7badabbbc693f59dbd796ba2508599e0",
+      "manifest_unchanged_blob": "477f8705412d38ed775bcd2f17058689b1ef0c0e",
+      "package_records": 68,
+      "registry_records": 67,
+      "checksummed_registry_records": 67,
+      "read_depth": "Generated lock identity/graph and existing manifest/build/capture contract; no claimed full crate-source or legal closure.",
+      "production_wiring": "Use the existing tracked-lock branch of capture_portable_contracts.py; it binds the source bytes, builds with --locked and refuses a stale executable after build failure.",
+      "acceptance": "Pending fresh focused source review and exact-H locked-build/real-daemon/unchanged-input proof."
+    },
+    "necessary_dependency_limits": [
+      "No new manifest, dependency declaration, feature or lock resolution.",
+      "Exact locked registry archives/legal full closure and all supported-platform runtime acceptance remain open."
+    ]
+  },
+  "pre_freeze_decisions": [
+    {
+      "id": "SC-PRE-R1-ALIVE-ORACLE",
+      "priority": "P2",
+      "classification": "TEST_FLAW",
+      "source": "daemon_capture_contract_read",
+      "subjectBlob": "9490fc4ac96dbf79b179d678311ce74a85c81779",
+      "path": "source/box-exec-daemon/src/server.rs",
+      "lines": "3480-3489",
+      "decision": "FIX",
+      "finding": "Changed adjacent disconnect control parses positive PID but fails to prove actual child alive before disconnect; early child exit may satisfy later gone assertion without cancellation causality. The external kill status probe maps launch failure or arbitrary nonzero errors to exited.",
+      "fix": "Observe the matching registered Capture owner's Child as live immediately before disconnect, then require that same owned Child's observed terminal/reap before the bounded deadline; retain positive PID and stop cleanup controls.",
+      "execution": "not-run",
+      "durableDecision": "This contract records FIX before the root applies the disconnect oracle correction."
+    }
+  ],
+  "validation": {
+    "environment": "GitHub Actions only",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "compile": "Existing affected Host --locked --tests compilation, ordinary daemon --locked build and daemon --locked --lib test-artifact build.",
+    "new_cases": {
+      "unit": [
+        "server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches",
+        "server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal",
+        "server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child",
+        "server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals",
+        "server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging",
+        "server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes"
+      ],
+      "consumer": [
+        "foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
+        "foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"
+      ],
+      "disconnect": [
+        "server::tests::disconnect_aborts_foreground_shell_process_group"
+      ]
+    },
+    "test_producer": {
+      "manifest": "source/box-exec-daemon/Cargo.toml",
+      "lib_source": "source/box-exec-daemon/src/lib.rs",
+      "target_name": "fabushi_box_exec_daemon",
+      "profile_test": true,
+      "kind": [
+        "lib"
+      ],
+      "child": "server::tests::foreground_shell_capture_probe_child",
+      "consumer_env": "FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN",
+      "scope": "Only cfg(test) artifact may expose the private owned fault probe; normal shipping binary is separately built and exercised."
+    },
+    "retained": "All existing BXR 77 direct positives in eight cases and 14 actual downstream custody names remain required; three added cases require nine additional direct positives. Existing Plugin/LocalExec capture contracts remain intact.",
+    "execution": "not-run",
+    "source_review": "pending frozen complete scope with fresh independent GENERAL and STRUCTURE review",
+    "oracle_limits": "Owned real children and actual authenticated loopback producers/consumers with cfg(test) operation faults are controlled evidence, not live service/device/platform/package acceptance."
+  },
+  "recovery": {
+    "owner": "Existing ephemeral BoxExecRuntime foreground registry and durable existing Runner custody only.",
+    "unknown": "Do not replay or claim no effect after uncertain execution; retain unresolved owned child until observation. Restart may not grant prior effects fresh attempt authority.",
+    "database_migration": "none",
+    "rollback": "Atomic existing-owner source batch rollback subject to preserved unknown-custody and no-replay constraints; no authority downgrade."
+  },
+  "open_work": [
+    "Full generated origin/raw-byte provenance grant, existing Session/AgentDb persistence, marker-aware send/media consumer and prune/restart chain",
+    "Raw capture byte caps and attempt-to-socket cancellation proof",
+    "Descendant-process closure and arbitrary hostile process/filesystem changes",
+    "Fixed-U recursive dependency/resource/legal closure",
+    "Real provider/channel/plugin/node/device, UI/timing/security/performance/soak, all supported packages, upgrade/rollback, full Fabushi regressions, G01-G12/AC01-AC24 and independent ACCEPT"
+  ],
+  "acceptance": {
+    "full_unit_verified": false,
+    "canonical_source_review_changed": false,
+    "global_flags_changed": false,
+    "real_ecosystem_accepted": false,
+    "shipping_accepted": false
+  }
+}
