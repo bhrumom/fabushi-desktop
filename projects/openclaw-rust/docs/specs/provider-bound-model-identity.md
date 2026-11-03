@@ -1171,3 +1171,33 @@ The repaired subject requires its own Actions materialization and structural
 source receipt; any resulting generated-evidence commit requires its own
 exact-H affected runtime evidence. Source/dependency closure, scoped semantic
 acceptance and final OCRM acceptance remain open. No local/htch validation.
+
+### PRC-ORACLE-03: exact-H portable contract recovery
+
+H `6273f9252f308355526c68e833da8dea194bb6cf`, runtime run `41550052024`,
+Linux job `125635116924`, artifact `13192085740` has four assertion failures
+across three portable commands (Cargo 101, capture 0; no compile failure).
+Decision **FIX / TEST_FLAW**, recorded before repair: CGWA's reopen test compares
+sealed proofs from different owner allocations, contrary to DPA-v1; two Session
+source oracles still require the old inline abort/Runner success shape; the
+node oracle requires `execute_shell` instead of the existing timeout-aware call.
+
+Keep the production code unchanged. For CGWA, retain actual HTTP mutation,
+file/metadata isolation and reopen controls; compare persisted device, role and
+scopes and require old/new issuer proofs to differ. Adopt the existing owner's
+same repair from `31cac7c95ec0297f7dee72d4bc40dad56aee4f01` unchanged; retain
+the DPA owner/proof controls. For Session, require the exact abort delegation
+and helper route/rejection, and require both provider-review release operations
+to exist in order in send failure, Runner error and exact-stream cancellation.
+For node invocation, require the same local execution owner, timeout argument
+and existing request/result/refusal constraints. No valid assertion is removed.
+Re-execute the affected existing targets and unmet actual-owner gates in Actions
+at the repair H; prior positives retain their original subject identities.
+
+Decision **PRC-ORACLE-04 — FIX / TEST_FLAW** (independent source review): the
+old send-failure slice selected the earlier acknowledgment-claim refusal, where
+no claimed continuation is owned. Optional index ordering could falsely pass
+without finding a release call. Bind the slice to the actual `accept_routed_send`
+failure and require both release operations and their order. The earlier claim
+refusal remains a distinct path. This finding is source evidence, not a new
+executed Actions failure.

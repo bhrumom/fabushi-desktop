@@ -503,26 +503,40 @@ fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path
     assert!(continuation.contains("providerReviewLifecycleRevision"));
     assert!(continuation.contains("release_provider_review_continuation"));
     let send_failure = continuation
-        .split("if let Err(error) = self")
-        .nth(1)
-        .expect("provider-review send failure branch exists")
+        .split_once(".accept_routed_send(&runner_args, |accepted| {")
+        .expect("provider-review send failure follows actual Transcript acceptance")
+        .1
         .split("match self.call_with_context")
         .next()
         .expect("provider-review send failure branch boundary exists");
-    assert!(
-        send_failure.find("release_provider_review_continuation")
-            < send_failure.find("release_session_work_admission"),
-        "provider review must release before its admitted-work marker"
-    );
-    let runner_failure = continuation
-        .split("Ok(result) => Ok(result),")
-        .nth(1)
+    let assert_release_order = |branch: &str| {
+        let review_release = branch.find("release_provider_review_continuation")
+            .expect("branch must release provider-review continuation");
+        let work_release = branch.find("release_session_work_admission")
+            .expect("branch must release admitted work");
+        assert!(review_release < work_release,
+            "provider review must release before its admitted-work marker");
+    };
+    assert_release_order(send_failure);
+    let runner_match = continuation
+        .split_once("match self.call_with_context(")
+        .expect("provider-review continuation uses the actual Runner boundary")
+        .1;
+    let (runner_success, runner_failure) = runner_match
+        .split_once("Err(error) => {")
         .expect("provider-review Runner failure branch exists");
-    assert!(
-        runner_failure.find("release_provider_review_continuation")
-            < runner_failure.find("release_session_work_admission"),
-        "provider review must release before its admitted-work marker"
-    );
+    assert_release_order(runner_failure);
+    let runner_cancelled = runner_success
+        .split_once("Ok(result) => {")
+        .expect("provider-review Runner success branch exists")
+        .1;
+    assert!(runner_cancelled.contains(
+        "result.get(\"accepted\").and_then(serde_json::Value::as_bool) == Some(false)"));
+    assert!(runner_cancelled.contains(
+        "result.get(\"cancelled\").and_then(serde_json::Value::as_bool) == Some(true)"));
+    assert!(runner_cancelled.contains(
+        "result.get(\"streamId\").and_then(serde_json::Value::as_str) == Some(next_run_id)"));
+    assert_release_order(runner_cancelled);
     assert!(!continuation.contains("serde_json::from_value::<ProviderReviewAcknowledgment"));
 }
 
@@ -2143,7 +2157,6 @@ fn test_ocrm_session_o01_session_key_routing() {
         ("fn call_openclaw_sessions_get(", "fn call_openclaw_sessions_create("),
         ("fn call_openclaw_sessions_delete(", "fn call_openclaw_chat_send("),
         ("fn call_openclaw_chat_send(", "fn call_openclaw_chat_abort("),
-        ("fn call_openclaw_chat_abort(", "fn call_openclaw_cron_list("),
     ] {
         let method = shipping_source
             .split(start)
@@ -2161,7 +2174,17 @@ fn test_ocrm_session_o01_session_key_routing() {
         .split("fn call_openclaw_cron_list(")
         .next()
         .expect("shipping chat.abort function boundary exists");
-    assert!(chat_abort.contains("reject_agent_wide_session_route(&route, \"chat.abort\")"));
+    assert!(chat_abort.contains(
+        "request_openclaw_chat_abort(args, &self.runner_registry, &self.transcript_runtime)"));
+    let chat_abort_owner = shipping_source
+        .split_once("\nfn request_openclaw_chat_abort(")
+        .expect("shipping chat.abort delegates to the shared cancellation owner")
+        .1
+        .split_once("\nfn request_agent_cancellation(")
+        .expect("shipping chat.abort helper boundary exists")
+        .0;
+    assert!(chat_abort_owner.contains("resolve_gateway_session_route(args, session_key)?"));
+    assert!(chat_abort_owner.contains("reject_agent_wide_session_route(&route, \"chat.abort\")?"));
     let chat_send = shipping_source
         .split("fn call_openclaw_chat_send(")
         .nth(1)

@@ -547,7 +547,22 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
     assert!(invoke.contains("GatewayLocalToolScope"));
     assert!(invoke.contains(".local_exec"));
     assert!(invoke.contains(".exec_manager()"));
-    assert!(invoke.contains(".execute_shell("));
+    let execution = invoke
+        .split_once(".execute_shell_with_timeout(")
+        .expect("shipping node.invoke uses the timeout-aware local execution owner")
+        .1
+        .split_once("let terminal_result = match &result")
+        .expect("shipping execution result enters the terminal projection")
+        .0;
+    assert!(execution.contains("&scope"));
+    assert!(execution.contains("shell_command"));
+    assert!(execution.contains("working_directory"));
+    assert!(execution.contains("tool_call_id"));
+    assert!(execution.contains("args.get(\"timeoutMs\")"));
+    assert!(execution.contains(".and_then(serde_json::Value::as_u64)"));
+    assert!(execution.contains(".map(std::time::Duration::from_millis)"));
+    assert!(invoke.contains(
+        "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)"));
     assert!(invoke.contains("NodeInvokeRequest"));
     assert!(invoke.contains("NodeInvokeResult::failure"));
     assert!(invoke.contains("NodeHostInvocationRuntime::start"));
