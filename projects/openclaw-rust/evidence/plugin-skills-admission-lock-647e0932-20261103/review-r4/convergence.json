@@ -1,0 +1,64 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "PS-LOCK-RECONCILE-v2",
+  "round": 4,
+  "subject": {
+    "commit": "d29be0b93225943851c6054016686d571f8d9e2a",
+    "tree": "16a9b18517874fa7d82e562729bbe4782bd99d79",
+    "role": "actual integrated immutable source candidate; corrected oracles not yet executed"
+  },
+  "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "previous_source_candidate": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+  "scope_blob": "0569f7bf2fb1c3767b4813d46edcb66a811d3923",
+  "result": "APPROVED_SOURCE_ONLY",
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "blob": "30e5a26fdec8adf6bb619ff5d7ccd7267dcfe8fd",
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r4/general.md",
+      "readback_verified": true,
+      "must_fix": [],
+      "non_blocking": []
+    },
+    {
+      "lens": "STRUCTURE/REUSE",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "blob": "6a1eaff188bb21dae80e433e0b6a7ddf5cbd0cf8",
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r4/structure.md",
+      "readback_verified": true,
+      "must_fix": [],
+      "non_blocking": []
+    }
+  ],
+  "runner_decision": "Both fresh independent complete-scope reviews converge without findings; no additional source-fix round is justified. Complete image/status/marker, dynamic observation lifecycle, stale/late/closed/no-replay, same-root reader and exact byte assertions remain. Earlier TEST_FLAW executions remain failed historical executions; this does not claim corrected tests have run.",
+  "carry_forward": {
+    "checked_through": "4b47a31ab70b85bf807460a726fe9e8e3feb5728",
+    "method": "GitHub immutable compare against frozen subject, complete matching-path changed hunks read by root",
+    "scope_changes": [
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "before": "fc050c02a7cd51ed6ba32f1551ac3b36598d1174",
+        "after": "f8c163b0e3679fe7ac7fbd8d6d2103c037b22886",
+        "reason": "SC02 exceptional stream recovery invariant and three daemon test references only; Plugin entries unchanged"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "before": "da49d33dff3c272a3e330b8c129f0f9a73e4864a",
+        "after": "40cb3b4e8a629e36b04ecb6654035d868b6b57bb",
+        "reason": "SC02 three mandatory unit names and scope explanation only; Plugin inputs, commands, four repaired required test names and evidence oracle unchanged"
+      }
+    ],
+    "remaining_fourteen_paths": "unchanged by the complete compare; no review retargeting to mutable head",
+    "independent_scope": "SC runtime/source acceptance remains independent"
+  },
+  "execution": {
+    "corrected_exact_H": "not-run",
+    "local_or_htch_execution": false,
+    "required": "Freeze combined H and execute affected compilation, the actual desktop service cases and same-root relay-handoff case through the existing Actions/capture owners."
+  },
+  "acceptance": "No full unit, real ecosystem/platform/package, source closure, global flag or final OCRM ACCEPT promotion."
+}
