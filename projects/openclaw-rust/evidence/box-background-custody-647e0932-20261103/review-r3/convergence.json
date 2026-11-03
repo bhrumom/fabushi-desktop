@@ -1,0 +1,118 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "BGC-v1",
+  "round": 3,
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "original_base": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+  "reviewed_candidate": "e93728bd720075aff0d53efac5cc66c164ec8f19",
+  "reviewed_tree": "44f42b6725396d90b3af1ae3b1e2f28a3fa3d670",
+  "review_packet": "f46bf90857fd4e7e0d2186e4eabfd158c0f0c8a0",
+  "scope_blob": "a94c00911740acff30d839b45536c9d7ec4c4671",
+  "complete_diff_blob": "262eb984bd2cf9792c6958d5a26c48dec2009810",
+  "fix_diff_blob": "61d77038a4d34a772ffb42bb023db0bf08044c59",
+  "prior_source_convergence": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/review-r2/convergence.json",
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/bgc_r3_general",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "verdict": "APPROVED"
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/bgc_r3_structure",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "verdict": "APPROVED"
+    }
+  ],
+  "review_carrier": "Completed fresh blind conversation reports; no full reports uploaded.",
+  "coverage": "Complete three-path integration delta and affected callers, selectors, helper, source binding and receipt consumers. All original ten-path scope identities retained and available. This is not a fresh deep reread of unchanged Rust production paths.",
+  "findings": [],
+  "conclusion": "Prior production/source correction convergence plus approved exact-body workflow extraction and shared selector integration; no remaining source-review blocker in the declared BGC scope.",
+  "reviewed_blobs": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "sha": "bc0f5de312135db7a531779478b37dc7c4ab8f7e"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-background-custody-647e0932-20261103/source-contract.json",
+      "sha": "f603601dd6a9a6b439a6d71e434b48be5c1e10eb"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "d0c3081bba725956e5eb261150c6c57513dedaea"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "4a415a830fccdfec7b7ae73fa16133929c84652f"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "7e74b03b08cba4a6cf70d1d33160ac85e3ff4c1e"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/record_configuration_evidence.py",
+      "sha": "aa9984a83b002747d26960b85b3ef7ba83b70d98"
+    },
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "sha": "bcd29696e2b4f20f0d2e158353fa5673d62b5802"
+    },
+    {
+      "path": "source/host/src/runner/background_work.rs",
+      "sha": "275261c1676f2eac5acdb8378280c5d8f0e69e07"
+    },
+    {
+      "path": "source/host/tests/background_work_contract.rs",
+      "sha": "fc2d1724e2978450bd3a40fc584afa8d50587403"
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "sha": "a9da224c6c05e89d67eb3efe8a6233a7a486b013"
+    }
+  ],
+  "workflow_recovery": {
+    "original_failed_subject": "10d7c42c47b85ca6c8d1fcedb2825981a6f4fd53",
+    "original_run": 41637226714,
+    "observed_jobs": 0,
+    "causal_record": "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h10d7-workflow-admission.json",
+    "workflow_blob": "bc0f5de312135db7a531779478b37dc7c4ab8f7e",
+    "workflow_bytes": 462342,
+    "helper_blob": "aa9984a83b002747d26960b85b3ef7ba83b70d98",
+    "helper_identity": {
+      "bytes": 50320,
+      "sha256": "f519d76272e49fe852207253ca1b86fac99fde3287872a99d186790e4bed7825"
+    },
+    "semantics": "Original evidence body byte-for-byte preserved; configuration caller retains gate, cwd, env, assertions and output. Both caller and custody admission bind exact-H helper bytes and syntax-check in Actions."
+  },
+  "execution_selection": {
+    "state": "awaiting-exact-subject-Actions",
+    "trigger_prefix": "fix(ocrm-background-custody):",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "validation_scope": "background-custody",
+    "groups": 15,
+    "exact_named_cases": 121,
+    "matrix": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "shipping_host": "locked compile, separate from cfg(test)",
+    "binding": "The activation commit is frozen after creation. Workflow must bind actual event/checkout HEAD, tree, U, sources, exact selected names and output identities. This source convergence record is not an execution receipt.",
+    "prior_crf_subject": "1e96b24d41fe79b572ced22fd0a7fb0945ea5b03",
+    "prior_crf_covers_bgc": false
+  },
+  "acceptance": {
+    "source_review": "converged",
+    "execution": "not-yet-observed",
+    "full_unit_verified": false,
+    "global_flags_promoted": false,
+    "full_migration_accepted": false
+  }
+}
