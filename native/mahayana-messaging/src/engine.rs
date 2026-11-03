@@ -911,6 +911,24 @@ impl MessagingEngine {
         self.state
     }
 
+    pub fn story_visibility_flags(&self, owner_id: &ActorId, viewer_id: &ActorId) -> (bool, bool) {
+        let Some(owner) = self.state.actors.get(owner_id) else {
+            return (false, false);
+        };
+        let contact_cap = format!("contact:{}", viewer_id.0);
+        let close_friend_cap = format!("close_friend:{}", viewer_id.0);
+        let is_close_friend = owner
+            .capabilities
+            .iter()
+            .any(|cap| cap == &close_friend_cap);
+        let is_contact = is_close_friend
+            || owner
+                .capabilities
+                .iter()
+                .any(|cap| cap == &contact_cap);
+        (is_contact, is_close_friend)
+    }
+
     pub fn execute(&mut self, command: Command) -> Result<Vec<Event>, EngineError> {
         let events = self.decide(command)?;
         for event in events.iter().cloned() {
@@ -1247,23 +1265,22 @@ impl MessagingEngine {
                     id: pending.local_message_id.clone(),
                     conversation_id: pending.conversation_id.clone(),
                     sender_id: pending.sender_id.clone(),
-                    client_message_id: Some(pending.client_message_id.clone()),
                     content: pending.content,
                     reply_to_message_id: pending.reply_to_message_id,
                     thread_root_message_id: pending.thread_root_message_id,
                     forward_origin: None,
-                    forward_from_actor_id: None,
-                    forward_from_display_name: None,
-                    forward_privacy: None,
-                    delivery_state: DeliveryState::Failed,
+                    reply_markup: None,
                     reactions: Vec::new(),
+                    delivery_state: DeliveryState::Failed {
+                        code: "presence_trigger_policy_rejected".into(),
+                        retryable: false,
+                    },
                     created_at_ms: failed_at_ms,
                     edited_at_ms: None,
                     scheduled_at_ms: None,
-                    expires_at_ms: None,
-                    pinned: false,
                     silent: pending.silent,
                     protected_content: pending.protected_content,
+                    pinned: false,
                     deleted: false,
                 };
                 Ok(vec![
@@ -2528,7 +2545,9 @@ impl MessagingEngine {
                     .get(&story_id)
                     .cloned()
                     .ok_or_else(|| EngineError::StoryNotFound(story_id.clone()))?;
-                if !story.is_visible_to(&actor_id, false, false) {
+                let (is_contact, is_close_friend) =
+                    self.story_visibility_flags(&story.owner_id, &actor_id);
+                if !story.is_visible_to(&actor_id, is_contact, is_close_friend) {
                     return Err(EngineError::StoryPermissionDenied(story_id));
                 }
                 story.record_view(actor_id, viewed_at_ms)?;
@@ -2545,7 +2564,9 @@ impl MessagingEngine {
                     .get(&story_id)
                     .cloned()
                     .ok_or_else(|| EngineError::StoryNotFound(story_id.clone()))?;
-                if !story.is_visible_to(&actor_id, false, false) {
+                let (is_contact, is_close_friend) =
+                    self.story_visibility_flags(&story.owner_id, &actor_id);
+                if !story.is_visible_to(&actor_id, is_contact, is_close_friend) {
                     return Err(EngineError::StoryPermissionDenied(story_id));
                 }
                 story.react(&actor_id, reaction)?;
@@ -3452,7 +3473,7 @@ impl MessagingEngine {
                 self.state.pending_presence_sends.remove(&client_message_id);
             }
             Event::MessageQueued { message } => {
-                if message.delivery_state != DeliveryState::Failed {
+                if !matches!(message.delivery_state, DeliveryState::Failed { .. }) {
                     if let Some(conversation) =
                         self.state.conversations.get_mut(&message.conversation_id)
                     {
@@ -3465,7 +3486,7 @@ impl MessagingEngine {
                     .entry(message.conversation_id.clone())
                     .or_default()
                     .insert(message.id.clone(), message.clone());
-                if message.delivery_state != DeliveryState::Failed {
+                if !matches!(message.delivery_state, DeliveryState::Failed { .. }) {
                     if let Some(thread_root) = &message.thread_root_message_id {
                         if let Some(topic_id) = topic_id_from_root(thread_root) {
                             if let Some(topic) = self

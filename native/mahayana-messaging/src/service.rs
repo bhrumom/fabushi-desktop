@@ -261,7 +261,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .iter()
                     .filter_map(|event| match event {
                         Event::MessageQueued { message }
-                            if message.delivery_state != DeliveryState::Failed =>
+                            if !matches!(message.delivery_state, DeliveryState::Failed { .. }) =>
                         {
                             Some(message)
                         }
@@ -406,7 +406,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
             .iter()
             .filter_map(|event| match event {
                 Event::MessageQueued { message }
-                    if message.delivery_state != DeliveryState::Failed =>
+                    if !matches!(message.delivery_state, DeliveryState::Failed { .. }) =>
                 {
                     Some(message)
                 }
@@ -1715,7 +1715,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .filter_map(|id| state.messages.get(id))
                     .flat_map(|messages| messages.values())
                     .filter(|message| {
-                        message.delivery_state != DeliveryState::Failed
+                        !matches!(message.delivery_state, DeliveryState::Failed { .. })
                             || &message.sender_id == actor_id
                     })
                     .take(max_items)
@@ -1786,8 +1786,10 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .stories
                     .values()
                     .filter(|story| {
+                        let (is_contact, is_close_friend) =
+                            self.engine.story_visibility_flags(&story.owner_id, actor_id);
                         (story.pinned_to_profile || story.expires_at_ms > server_time_ms)
-                            && story.is_visible_to(actor_id, false, false)
+                            && story.is_visible_to(actor_id, is_contact, is_close_friend)
                     })
                     .take(max_items)
                     .cloned()
@@ -2763,7 +2765,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .messages
                     .values()
                     .flat_map(|messages| messages.values())
-                    .find(|message| message.client_message_id.as_ref() == Some(client_message_id))
+                    .find(|message| {
+                        message.id == stable_message_id(&message.sender_id, client_message_id)
+                    })
                     .map(|message| message.sender_id.clone())
                 {
                     audience.insert(sender_id);
@@ -2813,7 +2817,7 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 audience.insert(draft.actor_id.clone());
             }
             ServerEvent::MessageAdded { message } | ServerEvent::MessageChanged { message } => {
-                if message.delivery_state == DeliveryState::Failed {
+                if matches!(message.delivery_state, DeliveryState::Failed { .. }) {
                     audience.clear();
                     audience.insert(message.sender_id.clone());
                 } else {
@@ -2846,6 +2850,13 @@ impl<S: MessagingStateStore> MessagingService<S> {
             }
             ServerEvent::StoryChanged { story } => {
                 audience.insert(story.owner_id.clone());
+                for candidate_id in self.engine.state().actors.keys() {
+                    let (is_contact, is_close_friend) =
+                        self.engine.story_visibility_flags(&story.owner_id, candidate_id);
+                    if story.is_visible_to(candidate_id, is_contact, is_close_friend) {
+                        audience.insert(candidate_id.clone());
+                    }
+                }
             }
             ServerEvent::CommunityChanged { community } => {
                 self.extend_conversation_id_audience(&mut audience, &community.conversation_id);

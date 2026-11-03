@@ -749,3 +749,188 @@ fn stories_communities_and_bot_execution_enforce_actor_permissions() {
         })
         .unwrap();
 }
+
+#[test]
+fn story_sibling_resolution_fences_stale_suggestions_contacts_visibility_and_media_fallback() {
+    let mut engine = MessagingEngine::default();
+    let owner_id = ActorId::new("human:story-owner");
+    let contact_id = ActorId::new("human:story-contact");
+    let close_friend_id = ActorId::new("human:story-close-friend");
+    let stranger_id = ActorId::new("human:story-stranger");
+    let foreign_owner_id = ActorId::new("human:foreign-owner");
+
+    let mut owner = Actor::human("human:story-owner", "Story Owner");
+    owner.capabilities.push("contact:human:story-contact".into());
+    owner
+        .capabilities
+        .push("close_friend:human:story-close-friend".into());
+
+    for actor in [
+        owner,
+        Actor::human("human:story-contact", "Contact"),
+        Actor::human("human:story-close-friend", "Close Friend"),
+        Actor::human("human:story-stranger", "Stranger"),
+        Actor::human("human:foreign-owner", "Foreign Owner"),
+    ] {
+        engine.execute(Command::UpsertActor { actor }).unwrap();
+    }
+
+    let make_story = |id: &str, owner: &ActorId, kind: StoryPrivacyKind, created: i64, expires: i64| Story {
+        id: StoryId(id.into()),
+        owner_id: owner.clone(),
+        media: MediaRef {
+            id: format!("media:{id}"),
+            file_name: Some(format!("{id}.mp4")),
+            mime_type: Some("video/mp4".into()),
+            size_bytes: Some(1024),
+            width: Some(1080),
+            height: Some(1920),
+            duration_ms: Some(5000),
+            thumbnail_id: Some(format!("thumb:{id}")),
+            local_path: None,
+            remote_url: Some(format!("fabushi-blob://media:{id}")),
+            content_hash: None,
+        },
+        caption: FormattedText::plain(id),
+        privacy: StoryPrivacy {
+            kind,
+            included_actor_ids: Default::default(),
+            excluded_actor_ids: Default::default(),
+        },
+        created_at_ms: created,
+        expires_at_ms: expires,
+        edited_at_ms: None,
+        pinned_to_profile: false,
+        protected_content: false,
+        allow_replies: true,
+        views: Default::default(),
+    };
+
+    for (actor_id, story) in [
+        (
+            owner_id.clone(),
+            make_story("story:contacts:1", &owner_id, StoryPrivacyKind::Contacts, 10, 100),
+        ),
+        (
+            owner_id.clone(),
+            make_story("story:contacts:2", &owner_id, StoryPrivacyKind::Contacts, 20, 100),
+        ),
+        (
+            owner_id.clone(),
+            make_story("story:close:3", &owner_id, StoryPrivacyKind::CloseFriends, 30, 100),
+        ),
+        (
+            foreign_owner_id.clone(),
+            make_story("story:foreign:1", &foreign_owner_id, StoryPrivacyKind::Everyone, 15, 100),
+        ),
+    ] {
+        engine
+            .execute(Command::PublishStory { actor_id, story })
+            .unwrap();
+    }
+
+    // Contact can view Contacts story, but Stranger cannot; Contact cannot view CloseFriends story, CloseFriend can
+    engine
+        .execute(Command::ViewStory {
+            actor_id: contact_id.clone(),
+            story_id: StoryId("story:contacts:1".into()),
+            viewed_at_ms: 25,
+        })
+        .unwrap();
+    assert!(matches!(
+        engine
+            .execute(Command::ViewStory {
+                actor_id: stranger_id.clone(),
+                story_id: StoryId("story:contacts:1".into()),
+                viewed_at_ms: 25,
+            })
+            .unwrap_err(),
+        EngineError::StoryPermissionDenied(_)
+    ));
+    assert!(matches!(
+        engine
+            .execute(Command::ViewStory {
+                actor_id: contact_id.clone(),
+                story_id: StoryId("story:close:3".into()),
+                viewed_at_ms: 25,
+            })
+            .unwrap_err(),
+        EngineError::StoryPermissionDenied(_)
+    ));
+    engine
+        .execute(Command::ViewStory {
+            actor_id: close_friend_id.clone(),
+            story_id: StoryId("story:close:3".into()),
+            viewed_at_ms: 26,
+        })
+        .unwrap();
+    engine
+        .execute(Command::ReactStory {
+            actor_id: close_friend_id.clone(),
+            story_id: StoryId("story:close:3".into()),
+            reaction: Some("❤️".into()),
+        })
+        .unwrap();
+
+    // LookupShownId (resolve_shown_story_id) fences foreign/expired/unauthorized suggestions and falls back to first unread story
+    let (contact_flag, close_flag) = engine.story_visibility_flags(&owner_id, &contact_id);
+    assert_eq!((contact_flag, close_flag), (true, false));
+
+    // Suggested foreign story id is fenced and falls back to first unread story for contact ("story:contacts:2", since "story:contacts:1" was viewed)
+    let resolved_after_foreign_suggestion = resolve_shown_story_id(
+        engine.state().stories.values(),
+        &owner_id,
+        &contact_id,
+        contact_flag,
+        close_flag,
+        50,
+        Some(&StoryId("story:foreign:1".into())),
+    );
+    assert_eq!(
+        resolved_after_foreign_suggestion,
+        Some(StoryId("story:contacts:2".into()))
+    );
+
+    // Suggested valid same-owner visible story id is preserved even if already viewed
+    let resolved_explicit_valid = resolve_shown_story_id(
+        engine.state().stories.values(),
+        &owner_id,
+        &contact_id,
+        contact_flag,
+        close_flag,
+        50,
+        Some(&StoryId("story:contacts:1".into())),
+    );
+    assert_eq!(
+        resolved_explicit_valid,
+        Some(StoryId("story:contacts:1".into()))
+    );
+
+    // Media/thumbnail fallback state machine and generation token fencing
+    let story_media = &engine.state().stories[&StoryId("story:contacts:1".into())].media;
+    let mut media_state = StorySiblingMediaState::from_media(story_media);
+    assert_eq!(
+        media_state.active_display_resource_id(),
+        Some("thumb:story:contacts:1")
+    );
+    assert!(media_state.begin_load());
+    assert!(!media_state.begin_load());
+    assert!(!media_state.complete_load("media:wrong"));
+    media_state.fail_stream_or_load();
+    assert_eq!(
+        media_state,
+        StorySiblingMediaState::TerminalFallback {
+            thumbnail_id: Some("thumb:story:contacts:1".into()),
+        }
+    );
+    assert!(!media_state.begin_load());
+
+    let token = StoryResolutionToken {
+        owner_id: owner_id.clone(),
+        story_id: StoryId("story:contacts:1".into()),
+        generation: 7,
+    };
+    assert!(token.matches_callback(&owner_id, &StoryId("story:contacts:1".into()), 7));
+    assert!(!token.matches_callback(&owner_id, &StoryId("story:contacts:1".into()), 6));
+    assert!(!token.matches_callback(&foreign_owner_id, &StoryId("story:contacts:1".into()), 7));
+}

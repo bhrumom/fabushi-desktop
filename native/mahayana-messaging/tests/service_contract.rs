@@ -1338,12 +1338,19 @@ fn presence_triggered_send_enforces_last_seen_privacy_cancellation_reschedule_an
         [&ConversationId::new("chat:schedule-direct")]
         .values()
         .find(|msg| {
-            msg.client_message_id
-                .as_ref()
-                .is_some_and(|id| id.0 == "client:fail-on-policy-change")
+            msg.content
+                == MessageContent::Text {
+                    text: FormattedText::plain("policy revoked while pending"),
+                }
         })
         .expect("terminal failed message recorded");
-    assert_eq!(failed_message.delivery_state, DeliveryState::Failed);
+    assert!(matches!(
+        &failed_message.delivery_state,
+        DeliveryState::Failed {
+            code,
+            retryable: false,
+        } if code == "presence_trigger_policy_rejected"
+    ));
 
     // Sender's second device receives both the terminal Failed MessageAdded and PresenceTriggeredSendChanged(None)
     let sender_fail_delta = service
@@ -1361,8 +1368,8 @@ fn presence_triggered_send_enforces_last_seen_privacy_cancellation_reschedule_an
     assert!(sender_fail_delta.iter().any(|env| matches!(
         &env.event,
         ServerEvent::MessageAdded { message }
-            if message.client_message_id.as_ref().is_some_and(|id| id.0 == "client:fail-on-policy-change")
-                && message.delivery_state == DeliveryState::Failed
+            if message.id == failed_message.id
+                && matches!(message.delivery_state, DeliveryState::Failed { retryable: false, .. })
     )));
     assert!(sender_fail_delta.iter().any(|env| matches!(
         &env.event,
@@ -1387,7 +1394,6 @@ fn presence_triggered_send_enforces_last_seen_privacy_cancellation_reschedule_an
         .unwrap();
     assert!(!target_fail_delta.iter().any(|env| matches!(
         &env.event,
-        ServerEvent::MessageAdded { message }
-            if message.client_message_id.as_ref().is_some_and(|id| id.0 == "client:fail-on-policy-change")
+        ServerEvent::MessageAdded { message } if message.id == failed_message.id
     )));
 }
