@@ -1,0 +1,40 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index ede3b6b9586383a2d0245de933d6ff4417e6ff10..25e80da72d20d4dbfed8ab6f2a50a3eff62b53af 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -3895,12 +3895,22 @@ jobs:
+           ]
+           legacy_slot_occurrences = {name: passed.count(name) for name in legacy_slot_tests}
+           legacy_slot_passed = all(count == 1 for count in legacy_slot_occurrences.values())
++          poll_custody_tests = [
++              "fire_runtime_invalid_poll_preserves_all_custody_until_checked_recovery",
++              "fire_runtime_invalid_poll_does_not_consume_notify_or_unschedulable_drain",
++              "fire_runtime_checked_poll_preserves_opaque_ids_duplicates_and_optional_fields",
++          ]
++          poll_custody_occurrences = {name: passed.count(name) for name in poll_custody_tests}
++          poll_custody_passed = all(count == 1 for count in poll_custody_occurrences.values())
+           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+-          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and memory_consumer_passed and legacy_slot_passed and head == os.environ["FABUSHI_TARGET_SHA"]
++          accepted = cargo_exit == 0 and capture_exit == 0 and not missing and summaries_pass and memory_consumer_passed and legacy_slot_passed and poll_custody_passed and head == os.environ["FABUSHI_TARGET_SHA"]
+           lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+           inputs = [
+               ".github/workflows/rust-desktop-runtime.yml", "source/host/Cargo.toml", "source/host/Cargo.lock",
+               "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
++              "docs/specs/sand-completion-ack-safety.md",
++              "source/host/src/extensions/automations/backend_transport.rs",
++              "source/host/src/extensions/automations/production_lifecycle.rs",
+               "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
+               "source/host/src/extensions/memory/memory_service.rs",
+               "source/host/src/extensions/memory/memory_synthesis_service.rs",
+@@ -3942,6 +3952,11 @@ jobs:
+               "legacy_slot_required_tests": legacy_slot_tests,
+               "legacy_slot_positive_occurrences": legacy_slot_occurrences,
+               "legacy_slot_passed": legacy_slot_passed,
++              "poll_custody_contract": "OCRM-AUTOMATION-POLL-CUSTODY-v1",
++              "poll_custody_required_tests": poll_custody_tests,
++              "poll_custody_positive_occurrences": poll_custody_occurrences,
++              "poll_custody_passed": poll_custody_passed,
++              "poll_custody_scope": "Actual existing AutomationFireBackendRuntime poll/complete/dispatch state machine with controlled final transport; invalid complete-list decode retains Running/Completed/Reported custody and exact payloads, applies backoff without consuming successful notify/drain, then permits valid retry and per-ID ACK handling. Exact identity, valid duplicate, optional/extra-field controls retained. This is local in-memory response acceptance, not persisted restart recovery, Sand principal binding or deployed ACK/idempotency evidence.",
+               "target_and_owned_child_summaries": summaries, "summaries_pass": summaries_pass,
+               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+               "log_sha256": hashlib.sha256(log).hexdigest(),

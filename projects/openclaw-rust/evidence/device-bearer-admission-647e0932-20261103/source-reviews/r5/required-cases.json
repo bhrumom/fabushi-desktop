@@ -1,0 +1,13 @@
+{
+  "ownerTarget": "device_pairing_revocation_authority_contract",
+  "ownerCases": [
+    "fresh_authorization_requires_approved_role_and_entire_canonical_grant",
+    "fresh_authorization_rejects_corrupt_decisive_storage_without_writes",
+    "fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary"
+  ],
+  "appCases": [
+    "tests::config_secret_boundary_tests::fresh_bearer_http_config_mutation_requires_current_approval",
+    "tests::config_secret_boundary_tests::fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners"
+  ],
+  "retained": "Every existing selected DPA/DVR/DRT/DTR, retained-stream, ordinary Gateway, configuration, media and App assertion remains required; no executable result yet"
+}

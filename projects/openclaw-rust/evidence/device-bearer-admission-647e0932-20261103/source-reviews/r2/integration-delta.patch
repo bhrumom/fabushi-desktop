@@ -1,0 +1,98 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index d46e99280dd33cb33510d5c79be9c3b3b943904d..ede3b6b9586383a2d0245de933d6ff4417e6ff10 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -3976,6 +3976,9 @@ jobs:
+               "source/host/Cargo.toml", "source/host/Cargo.lock",
+               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
++              "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++              "source/host/app/src/tests/cron_job_identity_tests.rs",
++              "source/host/src/automations/automation_id.rs",
+               "source/host/app/src/tests/config_secret_boundary_tests.rs",
+               "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+               "source/host/app/src/tests/local_media_file_url_tests.rs",
+@@ -4097,6 +4100,8 @@ jobs:
+                   "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
+                   "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
+               "media_settlement_scope": "Actual file-backed App SendMessage/Session/Transcript/AgentDb path with real successful COMMIT followed by lost acknowledgement and actual receipt refusal followed by SQLite-denied rollback. Unknown retains owned bytes and exact identity through same-ID retry, abort, last-Arc Drop and two fresh owners; confirmed refusal cleans only owned files. Real pending ACK, channel, success counter, cache/multi-image, busy-entry/Tool cleanup and sealed unwind controls remain explicit. One generated Runner case requires sticky DownstreamOutcomeUnknown, no retry, no fabricated canonical history or completion. Controlled Responses/faults do not establish live provider/channel, arbitrary crash, full read-scope or packaged-platform acceptance.",
++              "cron_job_identity_contract": "OCRM-CRON-JOB-IDENTITY-v1",
++              "cron_job_identity_scope": "Actual App list/trigger functions with real Agent/Session/AutomationRuntime/FileStore owners and controlled final execution outcomes. Same-name Agents retain distinct canonical IDs, local command/history identity and unique legacy compatibility; ambiguous and stale UUID aliases refuse before effects, and reopen/delete plus existing terminal custody are exercised. Source wiring supplements those helpers; this is not full UnifiedGatewayApi/HTTP construction, real provider/backend or complete upstream cron.run/grant/wait/platform acceptance.",
+               "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
+               "subject_commit": head,
+               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+@@ -4322,6 +4327,15 @@ jobs:
+                   "local_media_file_url_app_preserves_https_without_local_custody",
+               ]]
+               required += local_media_file_url_required
++              cron_job_identity_required = ["tests::cron_job_identity_tests::" + name for name in [
++                  "cron_job_identity_list_and_trigger_keep_same_name_agents_distinct",
++                  "cron_job_identity_legacy_aliases_refuse_ambiguity_without_effects",
++                  "cron_job_identity_canonical_legacy_collision_refuses_without_effects",
++                  "cron_job_identity_reopen_and_delete_preserve_target_continuity",
++                  "cron_job_identity_existing_execution_outcomes_remain_owned",
++              ]]
++              required += cron_job_identity_required
++              receipt["cron_job_identity_required_tests"] = cron_job_identity_required
+               receipt["local_media_file_url_required_tests"] = local_media_file_url_required
+               media_settlement_required = ["tests::channel_host_lane_tests::media_settlement_unknown::" + name for name in [
+                   "media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 228f10fa834ce1a3b25e17fd38843261be880c3e..2914b1a9aa1e07dac123af7fbcb10f88b1dee93c 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -10260,7 +10260,10 @@
+         "source/host/tests/gateway_protocol_contract.rs",
+         "source/host/tests/gateway_server_contract.rs",
+         "source/node-agent-coordinator/tests/production_protocol.rs",
+-        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md"
++        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 7b6688bbe0f0054c69396f519dd83cde0649b677..58a6a94c9cb19b67199b628561d4345a26656410 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -175,7 +175,10 @@
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+         "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
+-        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md"
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R04",
+@@ -2258,7 +2261,10 @@
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+         "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
+         "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+-        "source/host/app/src/tests/config_secret_boundary_tests.rs"
++        "source/host/app/src/tests/config_secret_boundary_tests.rs",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC11",
+diff --git a/source/host/app/src/tests/local_media_file_url_tests.rs b/source/host/app/src/tests/local_media_file_url_tests.rs
+index aefc325fa76365dc79c3f7d997d37b79f337da5a..57a0a3393f1bb9560eb036687688656b1f3fe6c8 100644
+--- a/source/host/app/src/tests/local_media_file_url_tests.rs
++++ b/source/host/app/src/tests/local_media_file_url_tests.rs
+@@ -1,9 +1,9 @@
+ use super::super::*;
+ use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
++use serde_json::{json, Value};
+ use std::collections::BTreeSet;
+ use std::path::{Path, PathBuf};
+ use std::sync::atomic::{AtomicUsize, Ordering};
+-use serde_json::{Value, json};
+ 
+ use mahayana_host_runtime::attachment_paths::{
+     get_agent_assets_dir, get_agent_attachments_dir, get_agent_media_store_roots,

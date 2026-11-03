@@ -1,0 +1,1200 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 239c054aaccd42c0e5bc5e7ca0607431bcf400b7..ede3b6b9586383a2d0245de933d6ff4417e6ff10 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -366,6 +366,7 @@ jobs:
+               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+               "source/host/src/gateway_config.rs",
+               "source/host/src/host_event_bus.rs",
+               "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+@@ -462,6 +463,7 @@ jobs:
+               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+               "source/host/src/device_pairing_owner.rs",
+               "source/host/src/extensions/node_host/runtime_state.rs",
+               "source/host/src/extensions/node_host/session_registry.rs",
+@@ -1230,6 +1232,8 @@ jobs:
+               tests::config_secret_boundary_tests::public_key_refusal_precedes_all_four_routes_and_read_normalization \
+               tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects \
+               tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls \
++              tests::config_secret_boundary_tests::fresh_bearer_http_config_mutation_requires_current_approval \
++              tests::config_secret_boundary_tests::fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners \
+               tests::original_turn_recovery_tests::original_turn_completed_marker_acknowledges_frozen_terminal_without_new_work \
+               tests::original_turn_recovery_tests::original_turn_completed_marker_retains_fresh_pending_corrupt_ack_and_live_work \
+               tests::original_turn_recovery_tests::original_turn_marker_retains_unbound_missing_and_foreign_original_references \
+@@ -2449,6 +2453,9 @@ jobs:
+               "retained_authorization_replacement_leaves_other_roles_and_devices_current",
+               "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
+               "revocation_and_retained_authorization_propagate_storage_read_failure",
++              "fresh_authorization_requires_approved_role_and_entire_canonical_grant",
++              "fresh_authorization_rejects_corrupt_decisive_storage_without_writes",
++              "fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary",
+           ]
+           revocation_http_required = [
+               "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
+@@ -2662,7 +2669,8 @@ jobs:
+               and all(case["oracle_accepted"] for case in wiring_cases))
+           rotation_receipt = {key: subject[key] for key in (
+               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+-          rotation_receipt.update({"contract": "DPA-v1/DVR-v1/DRT-v1/DTR-v1", "executions": rotation_cases,
++          rotation_receipt.update({"contract": "DPA-v1/DVR-v1/DRT-v1/DTR-v1/OCRM-DEVICE-FRESH-AUTHORIZATION-v1", "executions": rotation_cases,
++              "fresh_bearer_admission_scope": "Existing pairing owner reuses the same current-credential validator before issuing a fresh sealed proof. Approved role and complete canonical live grant are required; typed currentness refusal is absent authentication, decisive corruption remains a fixed internal error, and every outcome preserves exact persisted state. Retained/management proof checks and valid repair/reopen controls remain mandatory. Actual TCP config.set to the App Settings helper and mutation-sensitive shipping source bindings have separate App evidence; no full App construction, handshake, issuer-generation or physical-device acceptance is claimed.",
+               "shipping_wiring_regressions": wiring_cases,
+               "existing_node_binding_positive": node_binding_control,
+               "existing_node_binding_command": node_binding_command,
+@@ -3004,6 +3012,9 @@ jobs:
+               "media_http_error_scope": "Actual AttachmentsService buffer/save dispatch stops failed-response diagnostics at the bounded prefix without awaiting EOF, preserves remote status, formats Unicode safely, redacts the existing bot-token pattern and leaves the store unchanged. Controlled HTTP fixtures and supplied-byte cases do not establish outer Host HTTP registration, general SSRF, redirect/proxy, idle-timeout, redaction, chat-wiring or real provider parity.",
+               "media_input_policy_scope": "Actual AttachmentsService file RPCs reject malformed explicit resolved policy before decoding or URL processing, preserve omitted/null defaults and valid restrictive limits, and shared file/image source handling rejects '=' and '==' without arithmetic panic or underflow-generated size errors. Longer malformed input retains upstream size-before-validation precedence. This does not establish URL allowlist/redirect/cancellation parity, real PDF or HEIC behavior, accepted-turn multimodal composition, or real service acceptance.",
+               "config_public_secret_contract": "OCRM-CONFIG-PUBLIC-SECRET-v1",
++              "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
++              "fresh_bearer_admission_app_tests": ["tests::config_secret_boundary_tests::fresh_bearer_http_config_mutation_requires_current_approval", "tests::config_secret_boundary_tests::fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners"],
++              "fresh_bearer_admission_scope": "Actual file-backed DevicePairingOwner, TCP Gateway ingress and App dispatch_public_settings_command/Settings consumer decide fresh role/grant/corruption refusal before dispatch or state mutation and retain ordinary native/read/writer/reopen controls. Separate mutation-sensitive source bindings and App compilation bind the shipping owner/authentication/configuration chain. The fixture does not construct the complete UnifiedGatewayApi or establish packaged/remote-device acceptance.",
+               "config_revision_input_contract": "CS05-INPUT-v1",
+               "config_revision_input_app_tests": ["tests::config_secret_boundary_tests::public_config_set_rejects_malformed_base_hash_before_owner_effects", "tests::config_secret_boundary_tests::public_config_set_revision_input_preserves_newer_commit_and_legacy_controls"],
+               "config_revision_input_result": "passed",
+@@ -3965,6 +3976,9 @@ jobs:
+               "source/host/Cargo.toml", "source/host/Cargo.lock",
+               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
++              "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++              "source/host/app/src/tests/cron_job_identity_tests.rs",
++              "source/host/src/automations/automation_id.rs",
+               "source/host/app/src/tests/config_secret_boundary_tests.rs",
+               "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+               "source/host/app/src/tests/local_media_file_url_tests.rs",
+@@ -3998,6 +4012,7 @@ jobs:
+               "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+               "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+               "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++              "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+               "source/host/src/device_pairing_owner.rs",
+               "source/host/src/extensions/node_host/runtime_state.rs",
+               "source/host/src/extensions/node_host/session_registry.rs",
+@@ -4075,6 +4090,8 @@ jobs:
+           })
+           receipt = {
+               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1/DRT-v1/DTR-v1",
++              "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
++              "fresh_bearer_admission_scope": "Actual file-backed pairing owner and TCP Gateway execute ordinary config.set through the real App Settings helper, with zero dispatch/commit/state effects on fresh role/grant or decisive-storage refusal and valid native/read/writer/reopen controls. Shipping UnifiedGatewayApi auth/configuration/shared-owner composition has separate mutation-sensitive source bindings plus this affected App compilation; the test does not instantiate the complete App or claim remote/device/package acceptance.",
+               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
+               "model_contract": "CMI-v1/CWB-v1",
+               "local_media_file_url_contract": "LFA-v1",
+@@ -4083,6 +4100,8 @@ jobs:
+                   "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
+                   "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
+               "media_settlement_scope": "Actual file-backed App SendMessage/Session/Transcript/AgentDb path with real successful COMMIT followed by lost acknowledgement and actual receipt refusal followed by SQLite-denied rollback. Unknown retains owned bytes and exact identity through same-ID retry, abort, last-Arc Drop and two fresh owners; confirmed refusal cleans only owned files. Real pending ACK, channel, success counter, cache/multi-image, busy-entry/Tool cleanup and sealed unwind controls remain explicit. One generated Runner case requires sticky DownstreamOutcomeUnknown, no retry, no fabricated canonical history or completion. Controlled Responses/faults do not establish live provider/channel, arbitrary crash, full read-scope or packaged-platform acceptance.",
++              "cron_job_identity_contract": "OCRM-CRON-JOB-IDENTITY-v1",
++              "cron_job_identity_scope": "Actual App list/trigger functions with real Agent/Session/AutomationRuntime/FileStore owners and controlled final execution outcomes. Same-name Agents retain distinct canonical IDs, local command/history identity and unique legacy compatibility; ambiguous and stale UUID aliases refuse before effects, and reopen/delete plus existing terminal custody are exercised. Source wiring supplements those helpers; this is not full UnifiedGatewayApi/HTTP construction, real provider/backend or complete upstream cron.run/grant/wait/platform acceptance.",
+               "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
+               "subject_commit": head,
+               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+@@ -4201,6 +4220,8 @@ jobs:
+                   "public_key_refusal_precedes_all_four_routes_and_read_normalization",
+                   "public_config_set_rejects_malformed_base_hash_before_owner_effects",
+                   "public_config_set_revision_input_preserves_newer_commit_and_legacy_controls",
++                  "fresh_bearer_http_config_mutation_requires_current_approval",
++                  "fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners",
+               ]]
+               required += ["tests::channel_failure_readiness_tests::" + name for name in [
+                   "channel_failure_settings_commit_rearms_paused_head_with_exact_marker",
+@@ -4306,6 +4327,15 @@ jobs:
+                   "local_media_file_url_app_preserves_https_without_local_custody",
+               ]]
+               required += local_media_file_url_required
++              cron_job_identity_required = ["tests::cron_job_identity_tests::" + name for name in [
++                  "cron_job_identity_list_and_trigger_keep_same_name_agents_distinct",
++                  "cron_job_identity_legacy_aliases_refuse_ambiguity_without_effects",
++                  "cron_job_identity_canonical_legacy_collision_refuses_without_effects",
++                  "cron_job_identity_reopen_and_delete_preserve_target_continuity",
++                  "cron_job_identity_existing_execution_outcomes_remain_owned",
++              ]]
++              required += cron_job_identity_required
++              receipt["cron_job_identity_required_tests"] = cron_job_identity_required
+               receipt["local_media_file_url_required_tests"] = local_media_file_url_required
+               media_settlement_required = ["tests::channel_host_lane_tests::media_settlement_unknown::" + name for name in [
+                   "media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
+diff --git a/projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md b/projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0d8a608d1556ff2dd71bc9829df478af3c01116
+--- /dev/null
++++ b/projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md
+@@ -0,0 +1,133 @@
++# Fresh paired-bearer approval admission — DFA-v1
++
++Contract: `OCRM-DEVICE-FRESH-AUTHORIZATION-v1`.
++Status: specified before implementation; exact-H execution and acceptance pending.
++Implementation base: `d70f86f33b5e3c67545954b270373e1548809f4b`.
++Fixed U: `1440bb1771372334bea23d7642bb52deb7db1845`, tree
++`90c8aab39972da11cfad220361781d49e1bc6700`.
++
++## Problem, producer and unique owner
++
++The shipping Gateway obtains paired bearer identity through
++`UnifiedGatewayApi::authenticate_device_token` and the existing Rust
++`DevicePairingOwner::authenticate_device_token`. That owner currently matches
++the token and active marker, projects its role/scopes and issues a sealed proof
++without checking its approved role or scope baseline. Ordinary operator
++commands then pass the App's node-address-only request hook. In particular, a
++stored `operator.write` grant outside an `operator.read` approval can reach
++`config.set` and the actual Settings mutation consumer.
++
++The same pairing owner already has the decisive current-credential and grant
++checks in `validate_current_device_authorization`; retained connections and
++bound management operations use them. Reuse that implementation at fresh
++bearer admission. Gateway transports the result, Settings remains the sole
++configuration owner, and no second authorization store, cache, revision,
++account authority or runtime is introduced.
++
++This closes a concrete admission gap in the actual Rust request chain. It
++does not claim complete device/handshake parity or cancel an effect already
++admitted downstream.
++
++## Required behavior and causal oracles
++
++| ID | Contract and oracle |
++| --- | --- |
++| DFA-01 | A matching active bearer produces `Some(DeviceTokenAuthorization)` only after the existing owner validates the exact credential, its approved role, its complete current grant and its approved baseline. Reuse the sealed proof facts, canonical scope rules and operator implications; never promote the public projection or reinterpret a malformed field as an empty allow set. |
++| DFA-02 | Reuse a private connection-taking form of the existing validator while `authenticate_device_token` holds its existing connection lock. The public retained validator acquires its lock and calls that same implementation. No recursive mutex acquisition, duplicate policy implementation, new connection, new state or extra write. |
++| DFA-03 | At the fresh lookup API only, the validator's typed `Unauthorized` result becomes `Ok(None)`, consistent with an unknown or revoked bearer. Matched corrupt/unreadable decisive authority remains the existing fixed internal error and HTTP 500. Do not catch all errors, compare only numeric status, or turn corruption into a positive proof. The retained public validator keeps its original `Err(Unauthorized)` behavior. |
++| DFA-04 | Preserve valid approval fallback, empty grants, canonical trimming/deduplication, admin/write/read implications, nonoperator rules, token comparison, active-marker semantics and owner-local proof identity. Opaque metadata does not become authority. Invalid or withdrawn grants refuse; repairing valid stored authority permits a fresh lookup again, including after reopen. |
++| DFA-05 | Authentication remains read-only. Positive, refused and failed lookups preserve the exact paired/pending/token/revision state, selected and unselected credentials, lifecycle metadata and node surfaces. Do not add last-use writes or fabricate rollback of an already admitted operation. |
++| DFA-06 | Exercise the actual owner and actual HTTP Gateway ingress with known bearer bytes whose role/grant/approval is changed in stored state. A refused ordinary `config.set` must have zero dispatches and preserve the actual Settings file and full pairing-state oracle. A valid current credential must reach the same actual Settings consumer and commit the requested setting. Include malformed matched authority, valid legacy fallback, role withdrawal, overbroad live scopes, redacted errors and repair/reopen positives. Static native control-plane authentication remains unchanged. |
++| DFA-07 | Execute the actual pairing owner, HTTP Gateway and App `dispatch_public_settings_command`/Settings consumer. Bind shipping `UnifiedGatewayApi` authentication, configuration dispatch and composition through the existing mutation-sensitive source-binding method and affected App compilation; report that source evidence separately from runtime execution. A synthetic Gateway wrapper alone does not establish shipping composition. Preserve all existing DPA/DVR/DRT/DTR management, retained-stream, ordinary Gateway and App assertions. |
++| DFA-08 | Existing late-admission tests must capture genuine valid proofs before withdrawing/corrupting authority in the same owner, then retain their mutation or retained-connection refusal assertions and unchanged-state controls. After reopening, an old-owner proof cannot substitute for a decisive role/grant check: either test the fresh refusal directly, or acquire a valid proof under the reopened owner before the precise invalidating transition. Valid implication cases still acquire their intended valid grant. Explicitly pin the known unselected invalid grant in the DPA empty-baseline case; do not weaken a global all-current helper. |
++
++## Implementation and state boundaries
++
++The product change is confined to `source/host/src/device_pairing_owner.rs`.
++The public authorization type, Gateway API, SQLite schema, lock, transaction
++owners and all downstream command signatures remain unchanged. Construct the
++candidate proof from the matched token as today, validate it through the shared
++private owner function, and return it only on success. Only the explicit fresh
++lookup `Unauthorized` outcome is represented as absence. Errors remain free of
++bearer bytes, fingerprints, stored token objects and other credential material.
++
++No source-refresh or persistent migration is required. Existing invalid stored
++authority may now refuse an ordinary request that previously reached a command;
++that refusal is intentional. Recovery is repair through the existing trusted
++owner/state path, followed by a new lookup. Do not auto-repair, clear grants,
++mint a successor, reuse a cached proof or substitute another credential. The
++existing state image is preserved on all authentication outcomes.
++
++The preexisting management transaction and retained-connection boundaries keep
++their own currentness checks. Fresh admission is an additional use of the same
++policy, not permission to remove those checks. It does not hold a pairing mutex
++through an unrelated Settings operation or promise atomic cancellation across
++all product owners. Already-entered commands keep their existing settlement
++contract.
++
++## Test placement and verification
++
++Use real stored pairing rows and existing owner APIs for fresh/retained controls;
++do not forge the private proof, mock its validator or replace the production
++grant predicate. Reuse the existing Gateway TCP harness and actual Settings
++service for the ordinary mutation oracle. Add the bounded App case to the
++existing shipping test module using the real configuration dispatch helper and
++owner, plus its explicit shipping source-binding controls. The existing App
++tests do not construct the full `UnifiedGatewayApi` with its many mandatory
++owners. Do not describe this bounded helper/HTTP/source-binding evidence as
++full App construction, server startup or packaged end-to-end acceptance.
++The finite compatibility edits identified in DPA, DVR, DTR and retained-stream
++tests change only the valid-proof acquisition ordering or the newly explicit
++fresh-refusal expectation; they preserve the decisive later assertions.
++
++Root serializes the existing portable capture/workflow selections, source-input
++bindings and canonical OCRM evidence references. A dedicated contract target
++is permitted inside the existing Host test owner; it is not a new product
++module. Freeze the complete candidate, obtain fresh independent security and
++structure/reuse/performance reviews, then run affected owner, HTTP, retained,
++App and prior management controls only in GitHub Actions at exact published H.
++No local or htch build, test, formatter, generator, schema or harness execution.
++Require actual named positives, negative state/dispatch oracles, exact inputs
++and original artifact custody before claiming the selected checks passed.
++
++The original `d70f86f33b5e3c67545954b270373e1548809f4b` Linux link-preview
++App build also exposed an independent test-compilation prerequisite in
++`source/host/app/src/tests/local_media_file_url_tests.rs`: missing explicit
++`serde_json::{Value, json}` imports and an integer fixture timestamp passed to
++the existing `set_window_focused` floating-point API. Correct only those
++test inputs before this batch's App compilation, preserving the imported MSU
++custody adaptations and every existing media assertion. This is a test-harness
++repair, not a new product behavior or evidence that any skipped test passed.
++
++Scoped G01/G02 authority and responsibility coverage are required before unit
++`verified`. Runtime test success alone does not establish them. All original
++G01–G12/AC01–AC24, real devices/providers/platforms, package/upgrade/rollback and
++independent acceptance remain open.
++
++## Source provenance and remaining responsibilities
++
++Reuse the fixed-U identity pack
++`projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json`:
++
++- `src/infra/device-pairing-token-policy.ts`, blob
++  `36b7e7da9ee177b31fad17e379743418c558a18f`: approved baseline and live grant
++  checks in actual token verification; token reuse additionally requires an
++  approved role.
++- `src/infra/device-pairing-tokens.ts`, blob
++  `4d155f298b4219c536f4e7e86e7d5ff8188cb7d2`: current paired-state lookup invokes
++  that policy before reporting successful verification.
++- `src/infra/device-pairing-tokens.kernel.ts`, blob
++  `5c61ce1a12a816dd5c147a91f66a0f1f837051d4`, and
++  `src/infra/device-pairing-identity.ts`, blob
++  `cba1da2c85a9955b5793acefc70d86b5c3bc68cf`: existing current-state and approval
++  ownership, referenced with their previously recorded literal read facts.
++- `src/shared/operator-scope-compat.ts`, blob
++  `a265fb895a8535378e9bb9626c19a030df463e1f`: fixed operator implications.
++
++Native stored-authority parsing, role vocabulary, opaque issuer treatment and
++read-only authentication follow the existing DPA/DVR/DRT/DTR contracts. U's
++issuer-generation/browser policy, last-use recording, complete handshake and
++remote node transport remain distinct unfinished responsibilities; this batch
++does not mark them inapplicable or verified. No historical read fact is upgraded
++by referencing this source pack. Withdrawal of this fix restores the fresh
++admission gap; it changes no stored format or previously entered effect.
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 9e56c9f65259420b5cdde83e24bfbd1b35064cad..2914b1a9aa1e07dac123af7fbcb10f88b1dee93c 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -9061,7 +9061,7 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Pairing token derivation, single-use auth key invalidation, authenticated rotation, and selected-role credential retirement through the existing durable DevicePairingOwner; fresh and retained admission observe the same retirement marker. DTR-v1 adds the bound device.token.rotate protocol contract with an optional resulting grant, approved-role issuance/repair, preserved supported metadata and sealed same-device-only replacement delivery. Issued scope spelling remains consistent across fresh, retained and adjacent management consumers; approved primary-only successors become usable through the same atomic selected-role materialization.",
++      "behavior": "Pairing token derivation, single-use auth key invalidation, authenticated rotation, and selected-role credential retirement through the existing durable DevicePairingOwner; fresh and retained admission observe the same retirement marker. DTR-v1 adds the bound device.token.rotate protocol contract with an optional resulting grant, approved-role issuance/repair, preserved supported metadata and sealed same-device-only replacement delivery. Issued scope spelling remains consistent across fresh, retained and adjacent management consumers; approved primary-only successors become usable through the same atomic selected-role materialization. DFA-v1 checks current approved role and the entire canonical live grant in the same owner before a fresh bearer proof escapes to ordinary Gateway consumers.",
+       "blocker_ids": [
+         "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
+         "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
+@@ -9077,7 +9077,8 @@
+         "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
+         "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+-        "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json"
++        "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -9138,7 +9139,8 @@
+         "Every HTTP protocol-rotation request uses the bound owner hook. Native and cross-device callers receive no bearer; paired same-device delivery is decided from the sealed proof after the single durable commit.",
+         "Persisted, live and admitted credential scope grants share ECMAScript canonical spelling and exact policy comparison in DevicePairingOwner; literal NEL grants never become canonical admin. Explicit legacy DPA request normalization and native identity/role adapters retain their separate contracts.",
+         "Primary-only selected approval is materialized by appending only that normalized role to the original role array in the token UPDATE. Existing members/order remain intact; already-present membership preserves original bytes. Currentness still requires role-array membership, so withdrawal retires the successor even if its primary label remains.",
+-        "Current caller admission decodes only the decisive approved baseline or its SQL-NULL fallback. Unused malformed fallback storage cannot invalidate an otherwise valid issued successor; malformed decisive storage still fails closed."
++        "Current caller admission decodes only the decisive approved baseline or its SQL-NULL fallback. Unused malformed fallback storage cannot invalidate an otherwise valid issued successor; malformed decisive storage still fails closed.",
++        "DFA-v1: fresh lookup and retained validation share one connection-taking current-credential/grant validator. Fresh typed Unauthorized alone becomes absent authentication; decisive stored corruption remains a fixed internal error. Both outcomes and success preserve the exact durable pairing image, with no revision or activity write."
+       ],
+       "migration_rollback": "Single-use key clearing ensures forward secrecy; DRT-v1 uses existing token/surface columns without schema migration. Rollback must not restore a version that accepts tombstoned credentials without explicit credential retirement/migration. DTR-v1 also uses the existing schema; disabling its registration must retain committed token generations and never revive a predecessor credential.",
+       "oracle_ids": [
+@@ -9148,12 +9150,14 @@
+       "postconditions": [
+         "Auth key set to None after worker launch",
+         "DRT-v1: only selected revokedAtMs and, for node only, both node surface columns change with one existing revision increment and a successful commit; fresh and retained original credentials lose authority without deleting the pairing.",
+-        "DTR-v1: one checked revision and target update commit a fresh selected token, normalized resulting scopes, preserved supported lifecycle/opaque metadata, and node-only surface invalidation. The exact receipt distinguishes in-band from withheld delivery, and old selected fingerprints fail existing fresh/retained admission. Primary-only selected membership commits and rolls back with the token, surfaces and revision. A fresh successor passes currentness immediately and after reopen; no unselected primary role is revived."
++        "DTR-v1: one checked revision and target update commit a fresh selected token, normalized resulting scopes, preserved supported lifecycle/opaque metadata, and node-only surface invalidation. The exact receipt distinguishes in-band from withheld delivery, and old selected fingerprints fail existing fresh/retained admission. Primary-only selected membership commits and rolls back with the token, surfaces and revision. A fresh successor passes currentness immediately and after reopen; no unselected primary role is revived.",
++        "DFA-v1: unapproved fresh credentials cannot dispatch config.set or alter the real Settings file. Valid current writers reach the existing App Settings helper; repair/reopen accepts only a new genuine proof from the current owner. Full UnifiedGatewayApi construction and remote/physical-device acceptance remain separate."
+       ],
+       "preconditions": [
+         "Valid enrollment state and one-time auth key",
+         "DRT-v1: closed deviceId/role request and existing selected role token; current sealed operator pairing authority or admitted native authority, intersected with the singular header ceiling.",
+-        "DTR-v1: closed deviceId/role/optional-scopes request, current sealed pairing authority or admitted native ceiling, approved target role and a strictly typed decisive approval baseline; an approved role need not already have a valid active credential."
++        "DTR-v1: closed deviceId/role/optional-scopes request, current sealed pairing authority or admitted native ceiling, approved target role and a strictly typed decisive approval baseline; an approved role need not already have a valid active credential.",
++        "DFA-v1: an ordinary explicit paired bearer must match an active exact credential, approved role and complete live grant within the decisive approved baseline before Gateway dispatch."
+       ],
+       "required_evidence_dimensions": [
+         "unit",
+@@ -9172,7 +9176,7 @@
+       ],
+       "responsibility_kind": "business-runtime",
+       "reviewer": "xuyao@ombhrum.com",
+-      "risk": "High: sealed credential currentness, intersected management authority, cross-device information disclosure, durable selected-role mutation and retained connection effects require deep review. DTR-v1 additionally requires result-grant normalization/caps, repair versus corruption, secret delivery, issuance races and lost-response scrutiny. Historical read/mapping status is preserved, not a new claim of full fixed-U or dependency review. Issuer-generation policy, external credential cache/WebSocket fencing, precise upstream node-surface compatibility and real device/platform acceptance remain open. Fresh-issuance to later management scope interpretation, selected-primary materialization, decisive approval reads and rollback are explicit causal controls; all remain unverified until exact-H Actions.",
++      "risk": "High: sealed credential currentness, intersected management authority, cross-device information disclosure, durable selected-role mutation and retained connection effects require deep review. DTR-v1 additionally requires result-grant normalization/caps, repair versus corruption, secret delivery, issuance races and lost-response scrutiny. Historical read/mapping status is preserved, not a new claim of full fixed-U or dependency review. Issuer-generation policy, external credential cache/WebSocket fencing, precise upstream node-surface compatibility and real device/platform acceptance remain open. Fresh-issuance to later management scope interpretation, selected-primary materialization, decisive approval reads and rollback are explicit causal controls; all remain unverified until exact-H Actions. DFA-v1 adds first-admission role/whole-grant validation and causal fixture preservation; source binding is reported separately from actual HTTP/helper execution, and exact-H Actions plus scoped authority/coverage remain required.",
+       "selected_owner": "source/host/src/device_pairing_owner.rs",
+       "source_refs": [
+         {
+@@ -9233,12 +9237,15 @@
+         "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "source/host/tests/device_pairing_revocation_authority_contract.rs",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs"
+       ],
+       "typed_contracts": [
+         "Single-use token invalidation",
+         "DRT-v1: device.token.revoke retires one existing role without removing the pairing; HTTP dispatch never falls back from bound authority to native dispatch.",
+-        "DTR-v1: device.token.rotate -> {deviceId, role, scopes, rotatedAtMs, tokenDelivery, token?}; HTTP carries optional sealed proof plus singular native/header ceiling to DevicePairingOwner::rotate_token_with_authority."
++        "DTR-v1: device.token.rotate -> {deviceId, role, scopes, rotatedAtMs, tokenDelivery, token?}; HTTP carries optional sealed proof plus singular native/header ceiling to DevicePairingOwner::rotate_token_with_authority.",
++        "DFA-v1: authenticate_device_token -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError>; no wire/schema change, no alternate proof issuer, store or downstream policy owner."
+       ],
+       "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
+     },
+@@ -10253,7 +10260,10 @@
+         "source/host/tests/gateway_protocol_contract.rs",
+         "source/host/tests/gateway_server_contract.rs",
+         "source/node-agent-coordinator/tests/production_protocol.rs",
+-        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md"
++        "docs/specs/fabushi-plugins-marketplace-open-ecosystem.md",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 1921355c3643650b835fe1cefce8d653758492b4..58a6a94c9cb19b67199b628561d4345a26656410 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -174,7 +174,11 @@
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R04",
+@@ -731,7 +735,10 @@
+         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
++        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "source/host/tests/device_pairing_revocation_authority_contract.rs",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R10",
+@@ -883,7 +890,9 @@
+         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+         "source/host/src/extensions/memory/production_identity_tests.rs",
+-        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
++        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R13",
+@@ -2250,7 +2259,12 @@
+         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+-        "source/host/app/src/tests/device_token_rotation_wire_tests.rs"
++        "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
++        "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
++        "source/host/app/src/tests/config_secret_boundary_tests.rs",
++        "projects/openclaw-rust/docs/specs/cron-job-identity.md",
++        "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
++        "source/host/app/src/tests/cron_job_identity_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC11",
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index 172485b8437151256fb5058fcec010f9a0665cc8..f5f3d5624568cb553441b8ca0c0f63aff76ebeae 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -92,6 +92,7 @@ inputs = [
+     "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
+     "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+     "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
++    "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+     "source/host/src/gateway_config.rs",
+     "source/host/src/host_event_bus.rs",
+     "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+@@ -451,6 +452,9 @@ revocation_owner_required = [
+     "retained_authorization_replacement_leaves_other_roles_and_devices_current",
+     "retained_authorization_reopen_requires_fresh_owner_issued_provenance",
+     "revocation_and_retained_authorization_propagate_storage_read_failure",
++    "fresh_authorization_requires_approved_role_and_entire_canonical_grant",
++    "fresh_authorization_rejects_corrupt_decisive_storage_without_writes",
++    "fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary",
+ ]
+ revocation_http_required = [
+     "paired_revoke_self_operator_only_delivers_final_reply_and_reports_bound_context_once",
+@@ -1047,6 +1051,8 @@ for label, output, cargo_exit, capture_exit, expected in [
+     assert actual == expected, f"CRA result oracle control failed: {label}"
+ 
+ receipt = {
++    "fresh_bearer_admission_contract": "OCRM-DEVICE-FRESH-AUTHORIZATION-v1",
++    "fresh_bearer_admission_scope": "Actual existing pairing owner refuses a fresh proof when the approved role or whole canonical live grant is no longer current, preserves fixed decisive-storage errors and exact durable state, and admits repaired valid state after reopen. Retained proof checks keep their existing issuer and late-admission semantics. Actual HTTP config.set through the App Settings helper and shipping source bindings are separately required in the App receipt; these owner controls do not establish full App construction, remote handshake, last-use writes, issuer-generation or physical-device acceptance.",
+     "media_settlement_support_scope": "MSU-v1 support only: actual Tool construction-error classification and the independently bounded media COMMIT adapter/consumer proof, composed with all retained channel/admission/raw-COMMIT controls. Real file-backed media DB faults and local cleanup states are required by the separate native-media receipt; eight private App/Session/Runner cases and ordinary shipping feature-off compilation are required by the separate Linux App receipt. No runtime or full acceptance is inferred from source-oracle positives.",
+     "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
+     "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DTR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1", "OCRM-CANONICAL-PRIOR-ROOT-IDENTITY-v1"],
+diff --git a/source/host/app/src/tests/config_secret_boundary_tests.rs b/source/host/app/src/tests/config_secret_boundary_tests.rs
+index 7cd6584d56c6e89be7570f3b6734864c44b9da17..04f7b0da6600c60b6540008fbd4f542007bdcf34 100644
+--- a/source/host/app/src/tests/config_secret_boundary_tests.rs
++++ b/source/host/app/src/tests/config_secret_boundary_tests.rs
+@@ -6,6 +6,18 @@ use std::fs;
+ use std::path::PathBuf;
+ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+ use std::sync::{Arc, Mutex};
++use std::collections::BTreeMap;
++use std::io::{Read, Write};
++use std::net::{SocketAddr, TcpStream};
++use std::sync::mpsc::{self, Receiver, SyncSender};
++use std::time::{Duration, Instant};
++use mahayana_host_runtime::device_pairing_owner::{DevicePairingOwner, DeviceTokenAuthorization};
++use mahayana_host_runtime::gateway_config::GatewayServerConfig;
++use mahayana_host_runtime::gateway_server::{
++    GatewayApi, GatewayCommandReport, GatewayEventHub, GatewayServer, GatewayServerDeps,
++    start_gateway_server,
++};
++use rusqlite::{Connection, OpenFlags, params, types::Value as SqlValue};
+ 
+ const AGENT_SECRET: &str = "synthetic-agent-credential-for-contract";
+ const SKILL_SECRET: &str = "synthetic-skill-credential-for-contract";
+@@ -465,3 +477,339 @@ fn public_key_refusal_precedes_all_four_routes_and_read_normalization() {
+         assert!(fs::read(&key_path).unwrap().as_slice() == b"invalid-synthetic-key");
+     }
+ }
++
++// DFA-v1: actual owner + TCP ingress + shipping Settings helper. The separate
++// source-binding test below establishes wiring, not full UnifiedGatewayApi startup.
++const DFA_NATIVE_SECRET: &str = "dfa-private-native-secret";
++const DFA_WAIT: Duration = Duration::from_secs(15);
++type DfaRow = BTreeMap<String, SqlValue>;
++
++#[derive(PartialEq)]
++struct DfaPairingState { paired: Vec<DfaRow>, pending: Vec<DfaRow>, machine: Vec<DfaRow> }
++
++fn dfa_rows(conn: &Connection, sql: &str) -> Vec<DfaRow> {
++    let mut statement = conn.prepare(sql).unwrap();
++    let names: Vec<_> = statement.column_names().into_iter().map(str::to_owned).collect();
++    statement.query_map([], |row| {
++        names.iter().enumerate().map(|(index, name)| {
++            Ok((name.clone(), row.get::<_, SqlValue>(index)?))
++        }).collect::<rusqlite::Result<DfaRow>>()
++    }).unwrap().collect::<rusqlite::Result<Vec<_>>>().unwrap()
++}
++
++#[derive(Default)]
++struct DfaCounts {
++    lookups: AtomicUsize, accepted: AtomicUsize, bound: AtomicUsize,
++    dispatches: AtomicUsize, commits: AtomicUsize, completed: AtomicUsize, errors: AtomicUsize,
++}
++
++impl DfaCounts {
++    fn read(&self) -> [usize; 7] {
++        [&self.lookups, &self.accepted, &self.bound, &self.dispatches, &self.commits, &self.completed, &self.errors]
++            .map(|counter| counter.load(Ordering::SeqCst))
++    }
++}
++
++struct DfaGatewayApi {
++    owner: Option<DevicePairingOwner>,
++    settings: Arc<SettingsService>,
++    counts: Arc<DfaCounts>,
++    closed: SyncSender<()>,
++}
++
++impl GatewayApi for DfaGatewayApi {
++    fn authenticate_device_token(&self, token: &str) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
++        self.counts.lookups.fetch_add(1, Ordering::SeqCst);
++        let result = self.owner.as_ref().unwrap().authenticate_device_token(token)?;
++        if result.is_some() { self.counts.accepted.fetch_add(1, Ordering::SeqCst); }
++        Ok(result)
++    }
++
++    fn authorize_device_token_request(&self, _authorization: &DeviceTokenAuthorization, _method: &str, _args: &Value) -> Result<(), GatewayCommandError> {
++        self.counts.bound.fetch_add(1, Ordering::SeqCst);
++        Ok(())
++    }
++
++    fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
++        self.counts.dispatches.fetch_add(1, Ordering::SeqCst);
++        dispatch_public_settings_command(&self.settings, method, &args, |_, _| {
++            self.counts.commits.fetch_add(1, Ordering::SeqCst);
++        })
++    }
++
++    fn on_command_complete(&self, _report: GatewayCommandReport) {
++        self.counts.completed.fetch_add(1, Ordering::SeqCst);
++    }
++
++    fn on_command_error(&self, _report: GatewayCommandReport) {
++        self.counts.errors.fetch_add(1, Ordering::SeqCst);
++    }
++}
++
++impl Drop for DfaGatewayApi {
++    fn drop(&mut self) { drop(self.owner.take()); let _ = self.closed.try_send(()); }
++}
++
++struct DfaHttpFixture {
++    settings: Option<Fixture>,
++    api: Option<Arc<DfaGatewayApi>>,
++    server: Option<GatewayServer>,
++    closed: Option<Receiver<()>>,
++    counts: Arc<DfaCounts>,
++    configured: bool,
++    shutdown_failed: bool,
++}
++
++impl DfaHttpFixture {
++    fn new(configured: bool) -> Self {
++        let settings = Fixture::new();
++        settings.call("config.get", &json!({})).unwrap();
++        let mut fixture = Self { settings: Some(settings), api: None, server: None, closed: None,
++            counts: Arc::new(DfaCounts::default()), configured, shutdown_failed: false };
++        fixture.open();
++        for (device, roles, scopes) in [
++            ("dfa-writer", vec!["operator", "node"], vec!["operator.write", "node.invoke"]),
++            ("dfa-reader", vec!["operator"], vec!["operator.read"]),
++            ("dfa-other", vec!["operator"], vec!["operator.write"]),
++        ] {
++            let request = fixture.owner().handle_pair_request(&json!({
++                "deviceId":device, "publicKey":format!("{device}-public-key"),
++                "role":roles[0], "roles":roles, "scopes":scopes,
++            })).unwrap();
++            fixture.owner().handle_pair_approve(&json!({"requestId":request["requestId"]})).unwrap();
++        }
++        fixture.owner().handle_pair_request(&json!({
++            "deviceId":"dfa-pending", "publicKey":"pending-public-key", "role":"operator", "scopes":["operator.read"],
++        })).unwrap();
++        let conn = fixture.writer();
++        conn.execute("UPDATE device_pairing_paired SET node_surface_json = ?1, pending_node_surface_json = ?2 WHERE device_id = 'dfa-writer'",
++            params!["{\"generation\":7}", "{\"generation\":8}"]).unwrap();
++        conn.close().unwrap();
++        fixture
++    }
++
++    fn settings(&self) -> &Fixture { self.settings.as_ref().unwrap() }
++    fn db(&self) -> PathBuf { self.settings().root.join("dfa-pairing.db") }
++    fn owner(&self) -> &DevicePairingOwner { self.api.as_ref().unwrap().owner.as_ref().unwrap() }
++    fn writer(&self) -> Connection { Connection::open_with_flags(self.db(), OpenFlags::SQLITE_OPEN_READ_WRITE).unwrap() }
++
++    fn open(&mut self) {
++        let (closed, receiver) = mpsc::sync_channel(1);
++        let api = Arc::new(DfaGatewayApi {
++            owner: Some(DevicePairingOwner::new(self.db()).unwrap()), settings: Arc::clone(&self.settings().owner),
++            counts: Arc::clone(&self.counts), closed,
++        });
++        self.server = Some(start_gateway_server(GatewayServerDeps {
++            api: api.clone(), events: GatewayEventHub::default(), local_exec: None, webauthn: None,
++            config: GatewayServerConfig { host:"127.0.0.1".into(), port:None,
++                auth_token:self.configured.then(|| DFA_NATIVE_SECRET.into()), tls:None }, started_at:1,
++        }).unwrap());
++        self.api = Some(api);
++        self.closed = Some(receiver);
++    }
++
++    fn stop(&mut self) -> bool {
++        if let Some(server) = self.server.take() { server.close(); }
++        drop(self.api.take());
++        if let Some(receiver) = self.closed.take() {
++            self.shutdown_failed |= receiver.recv_timeout(DFA_WAIT).is_err();
++        }
++        !self.shutdown_failed
++    }
++
++    fn reopen(&mut self) {
++        assert!(self.stop(), "all HTTP handlers and their pairing connection close before reopen");
++        self.open();
++    }
++
++    fn observe(&self) -> DfaPairingState {
++        let conn = Connection::open_with_flags(self.db(), OpenFlags::SQLITE_OPEN_READ_ONLY).unwrap();
++        conn.execute_batch("BEGIN DEFERRED").unwrap();
++        let state = DfaPairingState {
++            paired: dfa_rows(&conn, "SELECT * FROM device_pairing_paired ORDER BY device_id"),
++            pending: dfa_rows(&conn, "SELECT * FROM device_pairing_pending ORDER BY request_id"),
++            machine: dfa_rows(&conn, "SELECT *, typeof(value_json) AS value_type, typeof(updated_at_ms) AS timestamp_type FROM config_machine_state ORDER BY state_key"),
++        };
++        conn.execute_batch("COMMIT").unwrap();
++        conn.close().unwrap();
++        state
++    }
++
++    fn token(&self, device: &str, role: &str) -> String {
++        let conn = self.writer();
++        let raw: String = conn.query_row("SELECT tokens_json FROM device_pairing_paired WHERE device_id = ?1", [device], |row| row.get(0)).unwrap();
++        conn.close().unwrap();
++        serde_json::from_str::<Value>(&raw).unwrap()[role]["token"].as_str().unwrap().to_owned()
++    }
++
++    fn post(&self, bearer: Option<&str>, header: &str, zone: &str) -> (u16, Value, String) {
++        let address = SocketAddr::from(([127,0,0,1], self.server.as_ref().unwrap().port()));
++        let mut stream = TcpStream::connect_timeout(&address, DFA_WAIT).unwrap();
++        stream.set_write_timeout(Some(DFA_WAIT)).unwrap();
++        let auth = bearer.map(|token| format!("Authorization: Bearer {token}\r\n")).unwrap_or_default();
++        let body = json!({"config":{"userTimeZone":zone}}).to_string();
++        write!(stream, "POST /api/config.set HTTP/1.1\r\nHost: 127.0.0.1\r\n{auth}{header}Content-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
++        stream.flush().unwrap();
++        let deadline = Instant::now() + DFA_WAIT;
++        let mut bytes = Vec::new();
++        loop {
++            let remaining = deadline.checked_duration_since(Instant::now()).filter(|remaining| !remaining.is_zero()).expect("bounded HTTP response");
++            stream.set_read_timeout(Some(remaining)).unwrap();
++            let mut buffer = [0_u8; 4096];
++            let count = stream.read(&mut buffer).unwrap();
++            if count == 0 { break; }
++            bytes.extend_from_slice(&buffer[..count]);
++            assert!(bytes.len() <= 1024 * 1024, "bounded response size");
++        }
++        let raw = String::from_utf8(bytes).unwrap();
++        let status = raw.lines().next().unwrap().split_whitespace().nth(1).unwrap().parse().unwrap();
++        let body = serde_json::from_str(raw.split_once("\r\n\r\n").unwrap().1).unwrap();
++        (status, body, raw)
++    }
++
++    fn refused(&self, bearer: &str, status: u16, admitted: bool) {
++        let state = self.observe();
++        let bytes = self.settings().bytes();
++        let entries = self.settings().entries();
++        let mut expected = self.counts.read();
++        expected[0] += 1;
++        expected[1] += usize::from(admitted);
++        let (actual, body, raw) = self.post(Some(bearer), "X-Sand-Scope: operator.admin\r\n", "Asia/Tokyo");
++        assert_eq!(actual, status, "fresh HTTP refusal status, response omitted");
++        assert!(body["error"].as_str().is_some_and(|error| !error.is_empty()));
++        if status == 500 { assert_eq!(body["error"], "stored pairing authority is invalid"); }
++        for secret in [bearer, DFA_NATIVE_SECRET, AGENT_SECRET, SKILL_SECRET, ENV_SECRET] {
++            assert!(!raw.contains(secret), "HTTP response discloses private material");
++        }
++        assert!(!raw.contains("dfa-private-malformed"));
++        assert_eq!(self.counts.read(), expected, "ingress refusal cannot dispatch, commit or report a command");
++        assert!(self.observe() == state, "HTTP refusal preserves every pairing/pending/revision row");
++        assert!(self.settings().bytes() == bytes, "HTTP refusal preserves actual Settings bytes");
++        assert_eq!(self.settings().entries(), entries, "HTTP refusal creates no Settings sidecar");
++    }
++
++    fn committed(&self, bearer: Option<&str>, paired: bool, zone: &str) {
++        let state = self.observe();
++        let bytes = self.settings().bytes();
++        let mut expected = self.counts.read();
++        if paired { expected[0] += 1; expected[1] += 1; expected[2] += 1; }
++        expected[3] += 1; expected[4] += 1; expected[5] += 1;
++        let (status, body, raw) = self.post(bearer, "", zone);
++        assert_eq!(status, 200, "healthy request reaches actual Settings consumer");
++        assert_eq!(body["settings"]["userTimeZone"], zone);
++        assert_public(&body, &[AGENT_SECRET, SKILL_SECRET, ENV_SECRET, DFA_NATIVE_SECRET]);
++        if let Some(token) = bearer { assert!(!raw.contains(token)); }
++        assert_eq!(self.counts.read(), expected);
++        assert!(self.observe() == state, "positive authentication does not record last-use or alter pairing");
++        assert!(self.settings().bytes() != bytes, "positive writes the real Settings file");
++        let reopened = SettingsService::new(self.settings().owner.get_settings_path().to_path_buf());
++        assert_eq!(reopened.get_host_settings()["userTimeZone"], zone, "commit survives a new Settings owner");
++    }
++}
++
++impl Drop for DfaHttpFixture {
++    fn drop(&mut self) {
++        if !self.stop() {
++            // Never remove a fixture whose connection teardown was not acknowledged.
++            std::mem::forget(self.settings.take());
++            assert!(std::thread::panicking(), "bounded HTTP adapter teardown failed");
++        }
++    }
++}
++
++#[test]
++fn fresh_bearer_http_config_mutation_requires_current_approval() {
++    for configured in [false, true] {
++        let mut fixture = DfaHttpFixture::new(configured);
++        let bearer = fixture.token("dfa-writer", "operator");
++        let node = fixture.token("dfa-writer", "node");
++        let reader = fixture.token("dfa-reader", "operator");
++        let other = fixture.token("dfa-other", "operator");
++        let initial = fixture.observe();
++        let row = initial.paired.iter().find(|row| row.get("device_id") == Some(&SqlValue::Text("dfa-writer".into()))).unwrap();
++        let original_tokens = match row.get("tokens_json").unwrap() { SqlValue::Text(raw) => raw.clone(), _ => panic!("fixture tokens text") };
++        for corruption in ["overgrant", "partial-overgrant", "role", "malformed"] {
++            let conn = fixture.writer();
++            conn.execute("UPDATE device_pairing_paired SET roles_json = ?1, approved_scopes_json = ?2, tokens_json = ?3 WHERE device_id = 'dfa-writer'",
++                params![row.get("roles_json").unwrap(), row.get("approved_scopes_json").unwrap(), &original_tokens]).unwrap();
++            match corruption {
++                "overgrant" => { conn.execute("UPDATE device_pairing_paired SET approved_scopes_json = '[\"operator.read\",\"node.invoke\"]' WHERE device_id = 'dfa-writer'", []).unwrap(); }
++                "partial-overgrant" => {
++                    let mut tokens: Value = serde_json::from_str(&original_tokens).unwrap();
++                    tokens["operator"]["scopes"] = json!(["operator.write", "operator.approvals"]);
++                    conn.execute("UPDATE device_pairing_paired SET tokens_json = ?1 WHERE device_id = 'dfa-writer'", [tokens.to_string()]).unwrap();
++                }
++                "role" => { conn.execute("UPDATE device_pairing_paired SET roles_json = '[\"node\"]' WHERE device_id = 'dfa-writer'", []).unwrap(); }
++                "malformed" => { conn.execute("UPDATE device_pairing_paired SET approved_scopes_json = 'dfa-private-malformed' WHERE device_id = 'dfa-writer'", []).unwrap(); }
++                _ => unreachable!(),
++            }
++            conn.close().unwrap();
++            fixture.refused(&bearer, if corruption == "malformed" { 500 } else { 401 }, false);
++            if corruption == "overgrant" {
++                let durable = fixture.observe();
++                fixture.reopen();
++                assert!(fixture.observe() == durable);
++                fixture.refused(&bearer, 401, false);
++            }
++            if corruption != "malformed" {
++                let before = fixture.observe();
++                assert!(fixture.owner().authenticate_device_token(&node).unwrap().is_some(), "unselected node remains valid");
++                assert!(fixture.observe() == before);
++            }
++        }
++        let conn = fixture.writer();
++        conn.execute("UPDATE device_pairing_paired SET roles_json = ?1, approved_scopes_json = NULL, tokens_json = ?2 WHERE device_id = 'dfa-writer'",
++            params![row.get("roles_json").unwrap(), original_tokens]).unwrap();
++        conn.close().unwrap();
++        fixture.committed(Some(&bearer), true, "Asia/Tokyo");
++        fixture.refused(&reader, 403, true);
++        fixture.refused("dfa-unknown-explicit-bearer", 401, false);
++        fixture.committed(Some(&other), true, "Europe/London");
++        let native = configured.then_some(DFA_NATIVE_SECRET);
++        fixture.committed(native, false, "America/New_York");
++    }
++}
++
++fn fresh_bearer_shipping_bindings(source: &str) -> bool {
++    let body = |start: &str, end: &str| source.split_once(start).and_then(|(_, rest)| rest.split_once(end).map(|(body, _)| body));
++    let Some(api) = body("impl GatewayApi for UnifiedGatewayApi {", "    fn rotate_paired_device_token(\n") else { return false; };
++    let Some(dispatch) = body("    fn call_openclaw_gateway_command(\n", "    fn call_public_settings_command(\n") else { return false; };
++    let Some(settings) = body("    fn call_public_settings_command(\n", "    fn call_openclaw_config_get(\n") else { return false; };
++    let Some(config) = body("    fn call_openclaw_config_set(\n", "    fn call_openclaw_system_info(\n") else { return false; };
++    let Some(consumer) = body("fn dispatch_public_settings_command(\n", "struct UnifiedGatewayApi {") else { return false; };
++    let Some(composition) = body("    let gateway_api = Arc::new(UnifiedGatewayApi {", "    let channel_inbound_gateway =") else { return false; };
++    api.contains("self.device_pairing.authenticate_device_token(token)")
++        && !api.contains("Ok(Some(") && !api.contains("Ok(None)")
++        && dispatch.contains("\"config.set\" => self.call_openclaw_config_set(&args)")
++        && settings.contains("dispatch_public_settings_command(&self.settings, method, args,")
++        && config.contains("self.call_public_settings_command(\"config.set\", args)")
++        && consumer.contains("settings.set_public_host_settings_if_current(base_hash, target.clone())")
++        && source.contains("return self.call_openclaw_gateway_command(method, args);")
++        && source.contains("let device_pairing = match DevicePairingOwner::new(&device_pairing_db_path)")
++        && composition.contains("            device_pairing,\n")
++        && composition.contains("\n            settings: Arc::clone(&settings_extension),")
++        && source.contains("api: gateway_api.clone(),")
++}
++
++#[test]
++fn fresh_bearer_shipping_authentication_and_settings_bindings_use_existing_owners() {
++    // Read against imported main.rs blob 7ec9bd8a22fd595f63cb3f4b632673e298294dfa.
++    // This is mutation-sensitive source evidence, separate from the TCP test.
++    let source = include_str!("../main.rs").split_once("\n#[cfg(test)]\nmod tests {").unwrap().0;
++    assert!(fresh_bearer_shipping_bindings(source));
++    for (from, to) in [
++        ("self.device_pairing.authenticate_device_token(token)", "Ok(None)"),
++        ("\"config.set\" => self.call_openclaw_config_set(&args)", "\"config.set\" => discarded_config(&args)"),
++        ("dispatch_public_settings_command(&self.settings, method, args,", "discarded_settings_command(&self.settings, method, args,"),
++        ("self.call_public_settings_command(\"config.set\", args)", "discarded_config_set(args)"),
++        ("settings.set_public_host_settings_if_current(base_hash, target.clone())", "discarded_settings_commit()"),
++        ("return self.call_openclaw_gateway_command(method, args);", "return discarded_gateway_command(method, args);"),
++        ("let device_pairing = match DevicePairingOwner::new(&device_pairing_db_path)", "let device_pairing = match unrelated_owner()"),
++        ("            device_pairing,\n", "            device_pairing: unrelated_owner,\n"),
++        ("\n            settings: Arc::clone(&settings_extension),", "\n            settings: Arc::clone(&unrelated_settings),"),
++        ("api: gateway_api.clone(),", "api: unrelated_api.clone(),"),
++    ] {
++        assert!(source.contains(from), "negative binding control must edit real shipping source");
++        assert!(!fresh_bearer_shipping_bindings(&source.replacen(from, to, 1)), "dead or changed owner binding must fail");
++    }
++}
+diff --git a/source/host/app/src/tests/local_media_file_url_tests.rs b/source/host/app/src/tests/local_media_file_url_tests.rs
+index 60e6be8a61d446706ac2188366be9bff1f08cb71..57a0a3393f1bb9560eb036687688656b1f3fe6c8 100644
+--- a/source/host/app/src/tests/local_media_file_url_tests.rs
++++ b/source/host/app/src/tests/local_media_file_url_tests.rs
+@@ -1,5 +1,6 @@
+ use super::super::*;
+ use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
++use serde_json::{json, Value};
+ use std::collections::BTreeSet;
+ use std::path::{Path, PathBuf};
+ use std::sync::atomic::{AtomicUsize, Ordering};
+@@ -197,7 +198,7 @@ impl LocalMediaAppFixture {
+         ));
+         deps.transcript_manager.bind_roster_emit(roster).expect("actual roster owner");
+         deps.transcript_runtime.session_runtime().set_window_focused(
+-            &deps.session_workers, true, 1_000,
++            &deps.session_workers, true, 1_000.0,
+         ).expect("actual focused desktop state");
+         let sink = Arc::new(ProductionSendMessageSink {
+             host_tx,
+diff --git a/source/host/src/device_pairing_owner.rs b/source/host/src/device_pairing_owner.rs
+index 12125c53b84a1cbd1b46cd4a2860c7970894f0ed..6645d073450ce3fab5b726a4579cccc41cabaad5 100644
+--- a/source/host/src/device_pairing_owner.rs
++++ b/source/host/src/device_pairing_owner.rs
+@@ -657,7 +657,7 @@ impl DevicePairingOwner {
+                         canonical_scope_strings(values.iter().filter_map(Value::as_str))
+                     })
+                     .unwrap_or_default();
+-                return Ok(Some(DeviceTokenAuthorization {
++                let authorization = DeviceTokenAuthorization {
+                     proof: DeviceTokenProof {
+                         issuer: Arc::clone(&self.token_proof_issuer),
+                         device_id: device_id.clone(),
+@@ -668,7 +668,14 @@ impl DevicePairingOwner {
+                     device_id,
+                     role: role.to_string(),
+                     scopes,
+-                }));
++                };
++                // Fresh admission and retained use share one decisive grant
++                // check under this same lock; no unapproved proof may escape.
++                return match self.validate_current_device_authorization_in(&conn, &authorization) {
++                    Ok(()) => Ok(Some(authorization)),
++                    Err(GatewayCommandError::Unauthorized(_)) => Ok(None),
++                    Err(error) => Err(error),
++                };
+             }
+         }
+         Ok(None)
+@@ -1553,7 +1560,15 @@ impl DevicePairingOwner {
+         authorization: &DeviceTokenAuthorization,
+     ) -> Result<(), GatewayCommandError> {
+         let conn = self.conn.lock().map_err(|_| invalid_stored_authority())?;
+-        let caller = self.current_pairing_record(&conn, authorization)?;
++        self.validate_current_device_authorization_in(&conn, authorization)
++    }
++
++    fn validate_current_device_authorization_in(
++        &self,
++        conn: &Connection,
++        authorization: &DeviceTokenAuthorization,
++    ) -> Result<(), GatewayCommandError> {
++        let caller = self.current_pairing_record(conn, authorization)?;
+         let proof = &authorization.proof;
+         let tokens = caller.token_entries()?;
+         let live_scopes = tokens.get(&proof.role)
+diff --git a/source/host/tests/device_pairing_revocation_authority_contract.rs b/source/host/tests/device_pairing_revocation_authority_contract.rs
+index 60e8dc87d6fdaa94db7b167f15f4808520c62ee1..65f57e3c458d0ea74099c20d8b284af6bbd40c0d 100644
+--- a/source/host/tests/device_pairing_revocation_authority_contract.rs
++++ b/source/host/tests/device_pairing_revocation_authority_contract.rs
+@@ -1,4 +1,4 @@
+-//! DVR-v1 owner contracts: production authentication/mutations, real SQLite files,
++//! DVR-v1 / DFA-v1 owner contracts: production authentication/mutations, real SQLite files,
+ //! and independent complete-row observations. No HTTP or device acceptance claim.
+ //! Spec: projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md.
+ //! Fixed U: 1440bb1771372334bea23d7642bb52deb7db1845.
+@@ -818,8 +818,9 @@ fn paired_revocation_live_grants_bound_sealed_management_admission() {
+     fixture.baseline(CALLER, &["operator.write"]);
+     fixture.deny(&proof, json!({"deviceId": CALLER}), None, 401);
+     fixture.stale(&proof, 401);
+-    let fresh = fixture.proof(CALLER, "operator");
+-    fixture.stale(&fresh, 401);
++    let before = fixture.observe();
++    assert!(fixture.owner().authenticate_device_token(&before.token(CALLER, "operator")).unwrap().is_none());
++    assert!(fixture.observe() == before, "fresh refusal preserves the narrowed state");
+ }
+ 
+ #[test]
+@@ -1121,11 +1122,176 @@ fn retained_authorization_uses_fixed_role_implications_and_complete_live_grant()
+     ];
+     for (role, baseline, live, allowed) in cases {
+         let fixture = Fixture::seeded("retained-implication", &[*role], baseline);
++        if *allowed {
++            fixture.grant(CALLER, role, live);
++            let proof = fixture.proof(CALLER, role);
++            fixture.current(&proof);
++        } else {
++            // A genuine empty grant fits even a cross-role baseline. The later
++            // refusal must be caused by the complete invalid live grant.
++            fixture.grant(CALLER, role, &[]);
++            let proof = fixture.proof(CALLER, role);
++            fixture.grant(CALLER, role, live);
++            fixture.stale(&proof, 401);
++            let before = fixture.observe();
++            assert!(fixture.owner().authenticate_device_token(&before.token(CALLER, role)).unwrap().is_none());
++            assert!(fixture.observe() == before);
++        }
++    }
++}
++
++#[test]
++fn fresh_authorization_requires_approved_role_and_entire_canonical_grant() {
++    let cases: &[(&str, &[&str], &[&str], bool)] = &[
++        ("operator", &["operator.read"], &["operator.write"], false),
++        ("operator", &["operator.write"], &["operator.read", "operator.approvals"], false),
++        ("operator", &["operator.write"], &["operator.read", "operator.sessions.write"], true),
++        ("operator", &["operator.admin"], &["operator.future.permission"], true),
++        ("operator", &[], &[], true),
++        ("node", &["node.invoke"], &["node.invoke"], true),
++        ("observer", &["observer.read"], &["observer.read"], true),
++        ("node", &["other.read"], &["other.read"], false),
++        ("operator", &["operator.write"], &["\u{feff}operator.write\u{feff}", "operator.write"], true),
++        ("operator", &["operator.write"], &["operator.write\u{85}"], false),
++        ("operator", &["operator.write\u{85}"], &["operator.write\u{85}"], true),
++    ];
++    for (role, baseline, live, admitted) in cases {
++        let fixture = Fixture::seeded("fresh-grant", &[*role], baseline);
++        fixture.grant(CALLER, role, &[]);
++        let prior = fixture.proof(CALLER, role);
+         fixture.grant(CALLER, role, live);
+-        let proof = fixture.proof(CALLER, role);
+-        if *allowed { fixture.current(&proof); }
+-        else { fixture.stale(&proof, 401); }
++        let before = fixture.observe();
++        let result = fixture.owner().authenticate_device_token(&before.token(CALLER, role)).unwrap();
++        assert_eq!(result.is_some(), *admitted, "literal fresh grant case");
++        if let Some(proof) = result {
++            assert_eq!(proof.role, *role);
++            assert_eq!(proof.device_id, CALLER);
++            fixture.assert_secret_free(&format!("{proof:?}"));
++            fixture.current(&proof);
++            if live.first().is_some_and(|scope| scope.starts_with('\u{feff}')) {
++                assert_eq!(proof.scopes, ["operator.write"]);
++            }
++        } else {
++            fixture.stale(&prior, 401);
++        }
++        fixture.current(&fixture.proof(BYSTANDER, "node"));
++        assert!(fixture.observe() == before, "all fresh outcomes preserve complete raw state");
+     }
++
++    for mismatch in ["withdraw-role", "entry-role", "map-key"] {
++        let fixture = Fixture::seeded("fresh-role", &["operator", "node"], &["operator.write", "node.invoke"]);
++        let before = fixture.observe();
++        let bearer = before.token(CALLER, "operator");
++        let prior = fixture.authenticate(&bearer);
++        match mismatch {
++            "withdraw-role" => fixture.write_column(CALLER, "roles_json", &SqlValue::Text("[\"node\"]".into())),
++            "entry-role" => fixture.edit_entries(CALLER, |entries| entries["operator"]["role"] = json!("observer")),
++            "map-key" => fixture.edit_entries(CALLER, |entries| {
++                let entry = entries.as_object_mut().unwrap().remove("operator").unwrap();
++                entries["other"] = entry;
++            }),
++            _ => unreachable!(),
++        }
++        let withdrawn = fixture.observe();
++        assert_eq!(text(withdrawn.device(CALLER), "role"), "operator", "primary label cannot restore approval");
++        assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
++        fixture.stale(&prior, 401);
++        fixture.current(&fixture.proof(CALLER, "node"));
++        fixture.current(&fixture.proof(BYSTANDER, "node"));
++        assert!(fixture.observe() == withdrawn);
++    }
++}
++
++#[test]
++fn fresh_authorization_rejects_corrupt_decisive_storage_without_writes() {
++    for field in ["roles_json", "approved_scopes_json"] {
++        for raw in ["DVR-private-malformed-authority", "null", "{}", "[\"operator.write\",7]"] {
++            let fixture = Fixture::seeded("fresh-shape", &["operator"], &["operator.write"]);
++            let bearer = fixture.observe().token(CALLER, "operator");
++            fixture.write_column(CALLER, field, &SqlValue::Text(raw.into()));
++            let before = fixture.observe();
++            let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &before);
++            assert_eq!(error.to_string(), "stored pairing authority is invalid");
++            assert!(fixture.observe() == before);
++        }
++        let fixture = Fixture::seeded("fresh-sql-type", &["operator"], &["operator.write"]);
++        let bearer = fixture.observe().token(CALLER, "operator");
++        fixture.write_column(CALLER, field, &SqlValue::Blob(vec![0xff, 0, 0x33]));
++        let before = fixture.observe();
++        let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &before);
++        assert_eq!(error.to_string(), "stored pairing authority is invalid");
++        assert!(fixture.observe() == before);
++    }
++    for scopes in [None, Some(Value::Null), Some(json!("operator.write")), Some(json!(["operator.write", 7]))] {
++        let fixture = Fixture::seeded("fresh-token-shape", &["operator"], &["operator.write"]);
++        let bearer = fixture.observe().token(CALLER, "operator");
++        fixture.edit_entries(CALLER, |entries| match scopes {
++            Some(value) => { entries["operator"]["scopes"] = value; }
++            None => { entries["operator"].as_object_mut().unwrap().remove("scopes"); }
++        });
++        let before = fixture.observe();
++        let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &before);
++        assert_eq!(error.to_string(), "stored pairing authority is invalid");
++        assert!(fixture.observe() == before);
++    }
++
++    let fixture = Fixture::seeded("fresh-baseline-choice", &["operator"], &["operator.write"]);
++    let bearer = fixture.observe().token(CALLER, "operator");
++    fixture.write_column(CALLER, "approved_scopes_json", &SqlValue::Null);
++    let fallback = fixture.observe();
++    fixture.current(&fixture.authenticate(&bearer));
++    assert!(fixture.observe() == fallback, "SQL NULL approval uses valid legacy scope baseline");
++    fixture.write_column(CALLER, "scopes_json", &SqlValue::Null);
++    let absent = fixture.observe();
++    let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &absent);
++    assert_eq!(error.to_string(), "stored pairing authority is invalid");
++    assert!(fixture.observe() == absent, "missing both baselines must not repair storage");
++    fixture.baseline(CALLER, &["operator.write"]);
++    fixture.write_column(CALLER, "scopes_json", &SqlValue::Blob(vec![0xff, 0, 0x44]));
++    let decisive = fixture.observe();
++    fixture.current(&fixture.authenticate(&bearer));
++    assert!(fixture.observe() == decisive, "valid present approval ignores malformed unused fallback");
++    fixture.write_column(CALLER, "roles_json", &SqlValue::Null);
++    let missing_roles = fixture.observe();
++    let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &missing_roles);
++    assert_eq!(error.to_string(), "stored pairing authority is invalid");
++    assert!(fixture.observe() == missing_roles);
++}
++
++#[test]
++fn fresh_authorization_reopen_preserves_current_approval_and_issuer_boundary() {
++    let mut fixture = Fixture::seeded("fresh-reopen", &["operator", "node"], &["operator.write", "node.invoke"]);
++    let initial = fixture.observe();
++    let bearer = initial.token(CALLER, "operator");
++    let old = fixture.authenticate(&bearer);
++    fixture.baseline(CALLER, &["operator.read", "node.invoke"]);
++    let withdrawn = fixture.observe();
++    assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
++    fixture.stale(&old, 401);
++    assert!(fixture.observe() == withdrawn);
++    fixture.reopen();
++    assert!(fixture.observe() == withdrawn);
++    assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
++    assert!(fixture.observe() == withdrawn, "persisted overgrant still refuses after reopen");
++    fixture.baseline(CALLER, &["operator.write", "node.invoke"]);
++    assert!(fixture.observe() == initial, "explicit repair changes only the injected approval");
++    let repaired = fixture.authenticate(&bearer);
++    assert_eq!(repaired.device_id, old.device_id);
++    assert_eq!(repaired.role, old.role);
++    assert_eq!(repaired.scopes, old.scopes);
++    fixture.current(&repaired);
++    fixture.stale(&old, 401);
++    fixture.reopen();
++    let reopened = fixture.observe();
++    assert!(reopened == initial);
++    fixture.current(&fixture.authenticate(&bearer));
++    fixture.stale(&repaired, 401);
++    assert!(fixture.owner().authenticate_device_token("dfa-unknown-bearer").unwrap().is_none());
++    fixture.edit_entries(CALLER, |entries| entries["operator"]["revokedAtMs"] = json!(1));
++    let retired = fixture.observe();
++    assert!(fixture.owner().authenticate_device_token(&bearer).unwrap().is_none());
++    fixture.current(&fixture.proof(CALLER, "node"));
++    assert!(fixture.observe() == retired);
+ }
+ 
+ #[test]
+diff --git a/source/host/tests/device_pairing_rotation_authority_contract.rs b/source/host/tests/device_pairing_rotation_authority_contract.rs
+index c2d5257fa745867219e4cde94a77021d38b1d6d4..a06e0593cf3be3673e91706e1636399dab90d0a8 100644
+--- a/source/host/tests/device_pairing_rotation_authority_contract.rs
++++ b/source/host/tests/device_pairing_rotation_authority_contract.rs
+@@ -328,6 +328,19 @@ fn assert_rotation(
+     role: &str,
+     expected_scopes: &[&str],
+     in_band: bool,
++) -> String {
++    assert_rotation_with_refused_unselected(fixture, before, receipt, target, role, expected_scopes, in_band, None)
++}
++
++fn assert_rotation_with_refused_unselected(
++    fixture: &Fixture,
++    before: &StoredState,
++    receipt: &Value,
++    target: &str,
++    role: &str,
++    expected_scopes: &[&str],
++    in_band: bool,
++    refused_unselected: Option<(&str, &str)>,
+ ) -> String {
+     let after = fixture.observe();
+     let expected_revision = revision(before).checked_add(1).expect("successful fixture has counter headroom");
+@@ -383,6 +396,7 @@ fn assert_rotation(
+     }
+     fixture.issued_tokens.borrow_mut().push(new_bearer.clone());
+     assert_authorized(fixture, &new_bearer, target, role, expected_scopes);
++    let mut refused_count = 0;
+     for prior in &before.paired {
+         let device = text(prior, "device_id");
+         let entries = tokens(before, device);
+@@ -392,9 +406,16 @@ fn assert_rotation(
+             }
+             let scopes: Vec<_> = entry["scopes"].as_array().expect("unchanged scope array").iter()
+                 .map(|value| value.as_str().expect("unchanged string scope")).collect();
+-            assert_authorized(fixture, entry["token"].as_str().expect("unchanged bearer"), device, entry_role, &scopes);
++            let bearer = entry["token"].as_str().expect("unchanged bearer");
++            if refused_unselected == Some((device, entry_role.as_str())) {
++                assert_invalid(fixture, bearer);
++                refused_count += 1;
++            } else {
++                assert_authorized(fixture, bearer, device, entry_role, &scopes);
++            }
+         }
+     }
++    assert_eq!(refused_count, usize::from(refused_unselected.is_some()), "pin the exact unselected invalid credential");
+     new_bearer
+ }
+ 
+@@ -595,13 +616,17 @@ fn paired_rotation_desired_scopes_preserve_narrow_tokens_and_explicit_empty() {
+     fixture.write_column(TARGET, "scopes_json", &SqlValue::Text(json!(["operator.admin", "node.invoke"]).to_string()));
+     fixture.write_column(TARGET, "approved_scopes_json", &SqlValue::Text(json!(["operator.read", "node.invoke"]).to_string()));
+     fixture.refuse(&proof, json!({"deviceId": TARGET, "scopes": ["operator.write"]}), None, 403);
++    let node = fixture.authorize_token(&fixture.token(TARGET, "node"));
+     fixture.write_column(TARGET, "approved_scopes_json", &SqlValue::Text("[]".to_owned()));
+     fixture.refuse(&proof, json!({"deviceId": TARGET, "scopes": ["operator.read"]}), None, 403);
+     let before = fixture.observe();
+     let receipt = fixture.owner().rotate_token_for_authenticated_device(
+         &json!({"deviceId": TARGET, "scopes": []}), &proof, None,
+     ).expect("explicit empty desired scopes remain bounded by an explicitly empty approval");
+-    assert_rotation(&fixture, &before, &receipt, TARGET, "operator", &[], false);
++    assert_rotation_with_refused_unselected(&fixture, &before, &receipt, TARGET, "operator", &[], false, Some((TARGET, "node")));
++    let after = fixture.observe();
++    assert_eq!(fixture.owner().validate_current_device_authorization(&node).unwrap_err().status(), 401);
++    assert!(fixture.observe() == after, "unselected retired proof validation preserves the committed rotation");
+ }
+ 
+ #[test]
+@@ -643,9 +668,10 @@ fn paired_rotation_live_credentials_and_approval_narrow_prior_proofs() {
+     let durable = fixture.observe();
+     fixture.reopen();
+     assert_eq!(fixture.observe(), durable);
+-    // Authentication is provenance, not a promise that the grant is still admissible.
+-    let fresh = fixture.authorize_token(&bearer);
+-    fixture.refuse(&fresh, json!({"deviceId": CALLER, "scopes": ["operator.write"]}), None, 401);
++    // Fresh admission must refuse this persisted unapproved grant after reopen.
++    let after_reopen = fixture.observe();
++    assert_invalid(&fixture, &bearer);
++    assert_eq!(fixture.observe(), after_reopen, "fresh refusal does not repair narrowed approval");
+ 
+     // Live amplification cannot retroactively enlarge what authentication sealed.
+     let fixture = Fixture::seeded("sealed-grant", &["operator.write"], &["operator.write"]);
+diff --git a/source/host/tests/device_token_rotation_wire_authority_contract.rs b/source/host/tests/device_token_rotation_wire_authority_contract.rs
+index 19cc7a87a28f33188c0b775f02ea8565d8c6a39f..7c37e8093b8b7f2975eb031d76dae1b1419ed13c 100644
+--- a/source/host/tests/device_token_rotation_wire_authority_contract.rs
++++ b/source/host/tests/device_token_rotation_wire_authority_contract.rs
+@@ -836,9 +836,11 @@ fn wire_rotation_two_current_admin_owners_serialize_replacements_without_lost_up
+     for primary_only in [false, true] {
+     let f = Fixture::seeded("admin-race", &["operator"], &["operator.admin"]);
+     if primary_only {
++        let prior = f.proof(TARGET, "operator");
+         f.write_column(TARGET, "roles_json", &SqlValue::Text("[\" node \",\"\",\"node\"]".into()));
+         f.write_column(TARGET, "role", &SqlValue::Text(" operator ".into()));
+-        f.stale(&f.proof(TARGET, "operator"), 401);
++        f.stale(&prior, 401);
++        assert!(f.owner().authenticate_device_token(&f.observe().token(TARGET, "operator")).unwrap().is_none());
+     }
+     let writer = f.writer();
+     writer.execute_batch(
+@@ -1742,9 +1744,9 @@ fn wire_rotation_unselected_primary_never_revives_and_existing_role_bytes_surviv
+ fn wire_rotation_primary_materialization_rolls_back_with_target_revision_and_commit_faults() {
+     for fault in ["zero-target", "target-error", "zero-revision", "revision-error", "revision-missing", "revision-overflow", "commit"] {
+         let mut f = Fixture::seeded(fault, &["operator"], &["operator.admin"]);
++        let old_node = f.proof(TARGET, "node");
+         f.write_column(TARGET, "roles_json", &SqlValue::Text("[ \"operator\" ]".into()));
+         f.write_column(TARGET, "role", &SqlValue::Text("node".into()));
+-        let old_node = f.proof(TARGET, "node");
+         f.stale(&old_node, 401);
+         let healthy = f.observe();
+         let writer = f.writer();
+@@ -1776,7 +1778,8 @@ fn wire_rotation_primary_materialization_rolls_back_with_target_revision_and_com
+         f.stale(&old_node, 401);
+         f.reopen();
+         assert!(f.observe() == before);
+-        f.stale(&f.proof(TARGET, "node"), 401);
++        assert!(f.owner().authenticate_device_token(&f.observe().token(TARGET, "node")).unwrap().is_none());
++        assert!(f.observe() == before, "fresh refusal after reopen preserves failed-rotation state");
+         let writer = f.writer();
+         if matches!(fault, "revision-missing" | "revision-overflow") {
+             let counter = healthy.counter();
+diff --git a/source/host/tests/device_token_rotation_wire_gateway_contract.rs b/source/host/tests/device_token_rotation_wire_gateway_contract.rs
+index fb038d518350deebcb22e8f48a87e2d5a8c3b96e..e7c42f88067d8d4695ff7ee356987e493b1f4224 100644
+--- a/source/host/tests/device_token_rotation_wire_gateway_contract.rs
++++ b/source/host/tests/device_token_rotation_wire_gateway_contract.rs
+@@ -1278,9 +1278,7 @@ fn token_rotate_wire_http_primary_only_successors_materialize_roles_atomically_a
+         assert_eq!(fixture.owner().validate_current_device_authorization(&fresh).unwrap_err().status(), 401, "primary label cannot resurrect role-array withdrawal");
+         fixture.reopen();
+         assert_eq!(fixture.observe(), withdrawn);
+-        if let Some(proof) = fixture.owner().authenticate_device_token(&successor).expect("withdrawn lookup") {
+-            assert_eq!(fixture.owner().validate_current_device_authorization(&proof).unwrap_err().status(), 401);
+-        }
++        assert!(fixture.owner().authenticate_device_token(&successor).expect("withdrawn lookup").is_none());
+         assert_eq!(fixture.observe(), withdrawn);
+         before.secrets().assert_reports_redacted(&fixture.observed);
+         withdrawn.secrets().assert_reports_redacted(&fixture.observed);

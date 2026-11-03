@@ -1,0 +1,93 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 1,
+  "scope": "Complete DFA-v1 production, causal regression controls, existing Actions integration and single ledger/RTM references; includes necessary LFA App test-compilation repair",
+  "base": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+  "startingHead": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+  "tree": "9cef1a8dc09c684ad09594fcd85b82f5f8514d40",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "preImplementationSpecBlob": "90729eb0e49af3f0a08d9ce6b81f7d8dc498c4c4",
+  "appPrerequisiteSpecBlob": "f0d8a608d1556ff2dd71bc9829df478af3c01116",
+  "members": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+      "blob": "f0d8a608d1556ff2dd71bc9829df478af3c01116",
+      "bytes": 10796,
+      "sha256": "b5876c11f660929ac6636f79d0811a077c46dd5b69c2da8fbdd9f3fddc08ebb9"
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "blob": "6645d073450ce3fab5b726a4579cccc41cabaad5",
+      "bytes": 102525,
+      "sha256": "939c8a9ffa3d12d6ac03cda18564e7d1b0a19f33c6d13402e78dbaae6fcd13e7"
+    },
+    {
+      "path": "source/host/tests/device_pairing_rotation_authority_contract.rs",
+      "blob": "a06e0593cf3be3673e91706e1636399dab90d0a8",
+      "bytes": 53748,
+      "sha256": "c274e92f0cdc112115b30a61c6c51ce07ea994f1b3f71c0dc112e6c481a66bf0"
+    },
+    {
+      "path": "source/host/tests/device_pairing_revocation_authority_contract.rs",
+      "blob": "65f57e3c458d0ea74099c20d8b284af6bbd40c0d",
+      "bytes": 74217,
+      "sha256": "59cc7b5213eece3f4d741b1f0d7e9028ecbcfdcd0ffba178be326721a5e3317e"
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+      "blob": "7c37e8093b8b7f2975eb031d76dae1b1419ed13c",
+      "bytes": 100799,
+      "sha256": "5b8777a7959a283c682287def308f92d41fe3e9f03023da9a3aa87195d0f7396"
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+      "blob": "e7c42f88067d8d4695ff7ee356987e493b1f4224",
+      "bytes": 73706,
+      "sha256": "913542fe4597457c96500843f057c1b5952d27ec22956ad3b32a77bd2dcdb736"
+    },
+    {
+      "path": "source/host/app/src/tests/config_secret_boundary_tests.rs",
+      "blob": "04f7b0da6600c60b6540008fbd4f542007bdcf34",
+      "bytes": 44369,
+      "sha256": "e1a330fb4da9bc460a496e4f75a6a53e533ca015d0a64947eb138226748d132c"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "blob": "aefc325fa76365dc79c3f7d997d37b79f337da5a",
+      "bytes": 36330,
+      "sha256": "776198ca916fafc1fe7aa230f5eccc4d42fbcbab63d950b3a1e5089dc10e5762"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "d46e99280dd33cb33510d5c79be9c3b3b943904d",
+      "bytes": 452941,
+      "sha256": "183e79ad4db03495b31fae3bacbc9ae7854968c174561f575398360fae3076fd"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae",
+      "bytes": 105974,
+      "sha256": "e101cf22f5dbda30f2a024010bff64e13d0ed4bee7b6dbac89afee4c629d8b2e"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "228f10fa834ce1a3b25e17fd38843261be880c3e",
+      "bytes": 1457362,
+      "sha256": "55bc0df085cca9c5c4caaa0804d71868d613b1df542e5ef069fd87328fbc21ce"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "7b6688bbe0f0054c69396f519dd83cde0649b677",
+      "bytes": 161122,
+      "sha256": "55120f0a3428963512e976923d097483daffb8662090abd18994f6782ca75e80"
+    }
+  ],
+  "patchBytes": 82558,
+  "patchSha256": "4fc6eb682286d13b96f478b028f1d529637cca1b1cf68aba383c1526bad799cd",
+  "excluded": "All foreign work and all evidence carriers; preceding plugin recovery is immutable base, independently reviewed separately",
+  "execution": "not-run; Git identity snapshot only; GitHub Actions required",
+  "unitVerified": false,
+  "globalAcceptance": false
+}

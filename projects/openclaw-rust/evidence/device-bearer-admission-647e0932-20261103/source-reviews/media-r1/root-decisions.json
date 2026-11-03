@@ -1,0 +1,143 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subjectH": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "runtimeRun": 41580539491,
+  "attempt": 1,
+  "failedJobs": [
+    125734079585,
+    125734079542
+  ],
+  "implementationBase": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "decisions": [
+    {
+      "id": "MSU-CI-OWNER-RECEIPT-01",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "beforeImplementation": true,
+      "evidence": "Original Linux and Windows fail two get_transcript_entries equality assertions: actual contains the exact send plus outgoing-media-settlement receipt; expected contains only send. Actual owner getter delegates to complete owner-row reader. Session production project_agent_transcript_entries/hide_session_work_receipts owns presentation filtering. Existing independent raw SQLite assertion already expects exact two rows.",
+      "fix": "Retain the fixture's independently specified complete receipt object in an expected_committed_entries helper; reuse it for full raw-row and reopened/other-owner equality assertions. Preserve order/count/content, durable fence and file bytes, real fault applied, connection retirement, no-publication, duplicate/reopen and other-owner checks. No production getter filtering or assertion removal.",
+      "contract": "Append MSU CI recovery clause before test edits; fresh immutable review and exact-H Actions remain required."
+    },
+    {
+      "id": "MSU-CI-INHERENT-OWNER-02",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "beforeImplementation": true,
+      "evidence": "Actual exact74 source contains impl SandAgentDb and impl Drop for SandAgentDb. media_commit_inherent_impl counts both before its trait check, so uniqueness rejects the actual owner at1744. Later token walk also fails to skip trait impls before parsing inherent impl syntax. Root directly read both implementations and helper.",
+      "fix": "Exclude trait impls only from inherent-owner candidate selection and inherent-owner token walk. Keep all trait source in the subsequent global raw-COMMIT and unsafe-call scan. Preserve conditional/foreign/duplicate inherent owner refusals; add trait-only-owner and trait-owned unsafe-call negative controls plus valid actual Drop positive."
+    },
+    {
+      "id": "MSU-CI-SOURCE-NEWLINES-03",
+      "classification": "TEST_FLAW",
+      "decision": "FIX",
+      "beforeImplementation": true,
+      "evidence": "Original Windows receipt raw agent_db426548LFbytes becomes436762CRLFbytes and raw contract162305 becomes165691, with source-derived CRLF hashes exactly matching original before/after receipt. Linux raw bytes remainLF. Rust raw string constants use normalized newlines while include_str preserves checkout bytes, invalidating Windows literal method substitutions.",
+      "fix": "Normalize only oracle-local source syntax images CRLF to LF before exact token/literal comparisons and destructive substitutions. Retain raw source/input receipt hashes. Qualify LF and CRLF real-source positives and changed-branch/trait unsafe negatives; require every intended substitution actually changes its source. No newline-based exemption or product source rewrite."
+    }
+  ],
+  "sourceOracleFailure": "Exact inherent-vs-trait candidate ambiguity plus latent trait token-walk failure identified; Windows additional literal mismatch bound to original CRLF receipt. Earlier bars/cursor guesses disproved and not implemented.",
+  "execution": "New candidate not run; original failures and skipped downstream steps retained",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "frozenReview": {
+    "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+    "round": 1,
+    "tree": "f3a5f945195bd82f32537a6740817b5bdbf45857",
+    "publicationBase": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+    "publicationBaseTree": "518e019acc61861af909fcfd48a5c103a7ac7fe3",
+    "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "execution": "not-run; Git-only immutable source snapshot; Actions execution required",
+    "unitVerified": false,
+    "globalAcceptance": false,
+    "reviewRound": 1,
+    "contract": "MSU-v1 / MSU-06 and MSU-09 recovery",
+    "scope": "Separate complete three-path media oracle/fixture recovery; source-only, no product settlement change",
+    "base": "37ffd42410d37013512e8efbf3bda5b549f3a4db",
+    "startingHead": "37ffd42410d37013512e8efbf3bda5b549f3a4db",
+    "members": [
+      {
+        "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+        "blob": "8aee21c69bab72824025e4304eec38388ba1e9f8",
+        "bytes": 15620,
+        "sha256": "80a797304c932120d19dc077c4828caf2e2b83d68e7e1296a313c37eb7b16927"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db.rs",
+        "blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+        "bytes": 426814,
+        "sha256": "1d1632094c80d6ba204f7c3a75db5eab0619628b25898449a1880e5ccca81900"
+      },
+      {
+        "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "blob": "88a80214aa08a1d61b3bd290063069d5aa4d417e",
+        "bytes": 168267,
+        "sha256": "d93a5301f5cfac83d647a759785c259d9b78e87e7e2e4038e8aca7dbaac38121"
+      }
+    ],
+    "patchBytes": 28565,
+    "patchSha256": "0499dc632ac0a9707dda1b4b466fe7d9cccebe72b463f2f3a34968aef152451f",
+    "integrationDeltaBytes": 23639,
+    "integrationDeltaSha256": "e018b1cac3175d058d71bbfe5e38d95d7bd280ec9f107b87cdcc27c5fe08d009",
+    "originalFailureSubject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+    "originalRuntimeRun": 41580539491,
+    "incomingRecovery": "fc187 equivalent DB fixture adopted exactly; oracle controls from both authored variants retained without changing selected names; no historical pass transferred"
+  },
+  "phase": "R1sourceapprovedbybothlenses; exact3memberblobspreservedinR5integration; runtimepending",
+  "sourceReviewsR1": [
+    {
+      "path": "reviews/dfa4-media1-security-review.md",
+      "bytes": 19119,
+      "sha256": "342822347cbc9816090a6aec052be3308cb2787e92f0d0cca6b22449a8386ed1",
+      "actualModel": "gpt-6-astra",
+      "actualEffort": "xhigh",
+      "freshFork": "none",
+      "rootRead": "complete-final-report",
+      "A": "APPROVE_SOURCE_ONLY",
+      "B": "APPROVE_SOURCE_ONLY",
+      "tree": "f3a5f945195bd82f32537a6740817b5bdbf45857"
+    },
+    {
+      "path": "reviews/dfa4-media1-structure-review.md",
+      "bytes": 22592,
+      "sha256": "2a1240cf8c7836c0bcd67c640fbd92de64d76bde78f3ddab14c9f4ea78a3bcde",
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "xhigh",
+      "freshFork": "none",
+      "rootRead": "complete-final-report",
+      "A": "APPROVE_SOURCE_ONLY",
+      "B": "APPROVE_SOURCE_ONLY",
+      "tree": "f3a5f945195bd82f32537a6740817b5bdbf45857"
+    }
+  ],
+  "integrationPreservation": {
+    "originalMediaManifest": "/workspace/scratch/29e7135d8bfe/reviews/device-bearer-admission-r4/media-manifest.json",
+    "sourceReviewTree": "f3a5f945195bd82f32537a6740817b5bdbf45857",
+    "integrationTree": "63385ed61d0ef7074dab86baea7fab548224416d",
+    "members": [
+      {
+        "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+        "blob": "8aee21c69bab72824025e4304eec38388ba1e9f8",
+        "bytes": 15620,
+        "sha256": "80a797304c932120d19dc077c4828caf2e2b83d68e7e1296a313c37eb7b16927"
+      },
+      {
+        "path": "source/host/src/extensions/session/agent_db.rs",
+        "blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+        "bytes": 426814,
+        "sha256": "1d1632094c80d6ba204f7c3a75db5eab0619628b25898449a1880e5ccca81900"
+      },
+      {
+        "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "blob": "88a80214aa08a1d61b3bd290063069d5aa4d417e",
+        "bytes": 168267,
+        "sha256": "d93a5301f5cfac83d647a759785c259d9b78e87e7e2e4038e8aca7dbaac38121"
+      }
+    ],
+    "allMemberBlobsUnchanged": true,
+    "workflowOnlyDelta": ".github/workflows/rust-desktop-runtime.yml",
+    "globalAcceptance": false
+  }
+}

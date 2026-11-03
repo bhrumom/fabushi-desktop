@@ -1,0 +1,28 @@
+{
+  "originalMediaManifest": "/workspace/scratch/29e7135d8bfe/reviews/device-bearer-admission-r4/media-manifest.json",
+  "sourceReviewTree": "f3a5f945195bd82f32537a6740817b5bdbf45857",
+  "integrationTree": "63385ed61d0ef7074dab86baea7fab548224416d",
+  "members": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "blob": "8aee21c69bab72824025e4304eec38388ba1e9f8",
+      "bytes": 15620,
+      "sha256": "80a797304c932120d19dc077c4828caf2e2b83d68e7e1296a313c37eb7b16927"
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "blob": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "bytes": 426814,
+      "sha256": "1d1632094c80d6ba204f7c3a75db5eab0619628b25898449a1880e5ccca81900"
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "blob": "88a80214aa08a1d61b3bd290063069d5aa4d417e",
+      "bytes": 168267,
+      "sha256": "d93a5301f5cfac83d647a759785c259d9b78e87e7e2e4038e8aca7dbaac38121"
+    }
+  ],
+  "allMemberBlobsUnchanged": true,
+  "workflowOnlyDelta": ".github/workflows/rust-desktop-runtime.yml",
+  "globalAcceptance": false
+}

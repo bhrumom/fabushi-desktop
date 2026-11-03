@@ -1,0 +1,175 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "DFA-v1 / separate MSU recovery",
+  "fixedU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "reviewSubjectTree": "63385ed61d0ef7074dab86baea7fab548224416d",
+  "sourceCheckpoint": "9059d0c4493505851339ab228ec0d58a6023c904",
+  "reviewResult": "DFA original12 R5 source-only approved by fresh independent general/security/lifetime and structure/reuse/performance lenses; root full-read. Separate MSU3 R4 source review and R5 identical blobs recorded.",
+  "scope": "Immutable source-review history and genuine source checkpoint readback; this carrier is not an executed subject, scoped authority closure or acceptance.",
+  "execution": "not-run; known fc media recovery must be integrated before one successor-H Actions campaign",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "members": [
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r1/security-review.md",
+      "bytes": 16172,
+      "sha256": "fb43aa5dd6b3cef0113e186d72fc4125ecff9cc2fceb762f4eef955c1e821cf4"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r1/structure-review.md",
+      "bytes": 12965,
+      "sha256": "75ebd6fdd9be0b4241b70f213981aa7827296fbafd73473146a7ebc23506d707"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r2/security-review.md",
+      "bytes": 12713,
+      "sha256": "201f2686f79271a0726f28260f9e8e924c5c8856b577eaa7f0ddefe3d05350cd"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r2/structure-review.md",
+      "bytes": 13747,
+      "sha256": "421d536930f27416aef3298a9b42934b941fb33096888336d15447c428ea55f5"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r3/security-review.md",
+      "bytes": 15693,
+      "sha256": "f9c0787ccf127e966e425eaf1f1ad54dcb7269b821f095a19d0108a45f64aed7"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r3/structure-review.md",
+      "bytes": 17946,
+      "sha256": "b611dfff6c173ab93648e4c5bc6d0eb3137b15cecd33098c7873f1e54a6c39a1"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r1/manifest.json",
+      "bytes": 4128,
+      "sha256": "b0e25d394033d60b17f056ba41dc9b6754c8234bdc36890b441a5a200688e83a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r1/complete.patch",
+      "bytes": 82558,
+      "sha256": "4fc6eb682286d13b96f478b028f1d529637cca1b1cf68aba383c1526bad799cd"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r2/manifest.json",
+      "bytes": 5806,
+      "sha256": "ecc692c2a3dd1dcc34f88c5b473c44f5f9f9e0c88b604b9425fe9a851c2c90ff"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r2/complete.patch",
+      "bytes": 87863,
+      "sha256": "94945a6f24bb751dcb748be1c1688a65a65ddfdb285ba678b4366c535301053d"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r2/integration-delta.patch",
+      "bytes": 8064,
+      "sha256": "aeb6909eefc21fd6c6cbbca1d58a2f2e87cee68acc68570c6b2e0078967c498b"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r3/manifest.json",
+      "bytes": 5835,
+      "sha256": "34f3a87124d448eb478eba4be95a237ac94d04e2991e5190358df20495d7f32a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r3/complete.patch",
+      "bytes": 94110,
+      "sha256": "5b39b47b0d09fe197179de7afb7bda2717493f5a15e4b23e4c4b23dd87afc684"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r3/focused-delta.patch",
+      "bytes": 10259,
+      "sha256": "4d15729b783c84da476e730290515c9b32e6c0f161a610b09be2622d963ccd79"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r4/manifest.json",
+      "bytes": 5893,
+      "sha256": "de1878296297e373a78a92fff634c4afb2dbcb051d0ecd7c1e35189ab8494e7f"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r4/complete.patch",
+      "bytes": 100754,
+      "sha256": "916513e6f74129540cc79e5cae3dc637bc0424d0d1c63f6b9918d2eb547d2147"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r4/focused-delta.patch",
+      "bytes": 12714,
+      "sha256": "1224d0201e52c2865adbe20a081bb618ba97f993ea60fe279b923e33bdbb7136"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r5/manifest.json",
+      "bytes": 5837,
+      "sha256": "609853986621786d0bf474f9599a3a1827317bd8179da473bcd65196339eb595"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r5/complete.patch",
+      "bytes": 104106,
+      "sha256": "246be0aeb1cdc86153e0a2922f8bc1fca16a1b66b08eef38738f9c2016a3cc85"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r5/focused-delta.patch",
+      "bytes": 3647,
+      "sha256": "c06e34f77857158443dd639494a7c909851ac412649cc2b941d9936b89a3afde"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r4/security-review.md",
+      "bytes": 19119,
+      "sha256": "342822347cbc9816090a6aec052be3308cb2787e92f0d0cca6b22449a8386ed1"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r5/security-review.md",
+      "bytes": 16654,
+      "sha256": "0c6fdcdb363c08ac0e818e8b54ea031b74420d1eba81c0f18f61812b6f556141"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r4/structure-review.md",
+      "bytes": 22592,
+      "sha256": "2a1240cf8c7836c0bcd67c640fbd92de64d76bde78f3ddab14c9f4ea78a3bcde"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r5/structure-review.md",
+      "bytes": 25132,
+      "sha256": "4bd6c6bd118e2c3e3c789132e2e19777e672e603ca9510b8466f7b5669c2edc1"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/media-r1/media-manifest.json",
+      "bytes": 2129,
+      "sha256": "66326d8151048e121e2da05854b71c513d84800769a7f2ca7a7f28a15280895c"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/media-r1/media-complete.patch",
+      "bytes": 28565,
+      "sha256": "0499dc632ac0a9707dda1b4b466fe7d9cccebe72b463f2f3a34968aef152451f"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/media-r1/media-integration.patch",
+      "bytes": 23639,
+      "sha256": "e018b1cac3175d058d71bbfe5e38d95d7bd280ec9f107b87cdcc27c5fe08d009"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r5/required-cases.json",
+      "bytes": 745,
+      "sha256": "fd1c10e2d310a6f0607f337848bc33c559022429e275e53ca088d0dcd12e2fc4"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/r5/media-scope-preservation.json",
+      "bytes": 1152,
+      "sha256": "eac53f2f208d395d42883146e156e4fc5561cff9cca56d9888c1563b56b8f2a9"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/root-decisions.json",
+      "bytes": 39920,
+      "sha256": "e0c7f687df68eb76bfbdd4f663591d1e7ce7c9d97c8ef8aea64092872f04166c"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/media-r1/root-decisions.json",
+      "bytes": 8162,
+      "sha256": "cb30c5986d8bbe12b4dc26310c3cc12113a120b4a993bafd7f7fb08bb614ef3a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-bearer-admission-647e0932-20261103/source-reviews/source-checkpoint-readback.json",
+      "bytes": 4783,
+      "sha256": "31f1ab00461e499e24627f155cec9171503c292f453f0c6295b72b70e3716e68"
+    }
+  ]
+}

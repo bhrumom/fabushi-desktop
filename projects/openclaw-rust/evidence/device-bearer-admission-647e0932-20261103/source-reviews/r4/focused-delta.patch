@@ -1,0 +1,161 @@
+diff --git a/projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md b/projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md
+index 49ead89ce610835037bc67085dd1b44fe8f8503e..f99fe2e81da2822ef7dd871bceba1215d3b0229e 100644
+--- a/projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md
++++ b/projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md
+@@ -41,6 +41,7 @@ admitted downstream.
+ | DFA-07 | Execute the actual pairing owner, HTTP Gateway and App `dispatch_public_settings_command`/Settings consumer. Bind shipping `UnifiedGatewayApi` authentication, configuration dispatch and composition through the existing mutation-sensitive source-binding method and affected App compilation; report that source evidence separately from runtime execution. A synthetic Gateway wrapper alone does not establish shipping composition. Preserve all existing DPA/DVR/DRT/DTR management, retained-stream, ordinary Gateway and App assertions. |
+ | DFA-08 | Existing late-admission tests must capture genuine valid proofs before withdrawing/corrupting authority in the same owner, then retain their mutation or retained-connection refusal assertions and unchanged-state controls. After reopening, an old-owner proof cannot substitute for a decisive role/grant check: either test the fresh refusal directly, or acquire a valid proof under the reopened owner before the precise invalidating transition. Valid implication cases still acquire their intended valid grant. Explicitly pin the known unselected invalid grant in the DPA empty-baseline case; do not weaken a global all-current helper. |
+ | DFA-09 | Complete-grant validation must not scan a complete grant vector for each checked scope while holding the pairing mutex. Build local membership sets once and use the existing role-scope policy with those sets. Preserve literal scope spelling, canonical vector projections, operator implications, role prefixes, complete live/admitted grant checks and error precedence. Do not add a persistent cache or an incompatible scope-count limit. Exercise a large valid literal grant through fresh and retained owner authentication and actual HTTP Settings dispatch, then refuse a single unapproved tail scope without dispatch or state changes; repair and reopen must restore the same valid behavior. Source review establishes the membership complexity; these controls establish behavior without a machine-dependent timing assertion. |
++| DFA-10 | The approved-role parser newly reached by fresh admission must deduplicate large role arrays with a local membership set, retaining the existing first-seen vector order, Rust `str::trim`, empty filtering and strict string validation of every element. Do not stop parsing when the selected role is found or reinterpret malformed trailing data as approval. Preserve all existing callers and role vocabulary. Extend the large-authority owner and actual HTTP controls with a large valid role array, duplicate/trimmed/empty entries and a final non-string: valid authority remains usable; the malformed tail produces the existing internal error without mutation or dispatch, and repair/reopen restores admission. No role-count cap, persistent cache or measured timing claim. |
+ 
+ ## Implementation and state boundaries
+ 
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 2914b1a9aa1e07dac123af7fbcb10f88b1dee93c..285f9ca672947d9ad054832557c0b4abf38a0d68 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -12,10 +12,10 @@
+   "file_coverage": {
+     "applicability_assessed_paths": 0,
+     "dispositioned_paths": 0,
+-    "mapped_paths": 884,
++    "mapped_paths": 888,
+     "omitted_known": 0,
+     "tracked_paths": 62130,
+-    "unclassified_paths": 61246,
++    "unclassified_paths": 61242,
+     "unreviewed_applicable_paths": 0
+   },
+   "inventory_authority": {
+@@ -36795,8 +36795,8 @@
+       "evidence_refs": [
+         "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-unknown-current-audit.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/current-owner-audit.md",
+         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-concurrency-consumer-notes.md",
+         "source/host/src/extensions/session/agent_db.rs",
+         "source/host/src/attachment_paths.rs",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 58a6a94c9cb19b67199b628561d4345a26656410..1bdbd1ca17b2ff334f365183c51bcd15c7ca0871 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1402,7 +1402,7 @@
+         "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R23",
+@@ -1559,7 +1559,7 @@
+         "source/host/tests/channel_attachment_contract.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R24",
+@@ -2927,7 +2927,7 @@
+         "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC23",
+@@ -3107,7 +3107,7 @@
+         "source/host/tests/channel_attachment_contract.rs",
+         "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+         "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+-        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+diff --git a/source/host/app/src/tests/config_secret_boundary_tests.rs b/source/host/app/src/tests/config_secret_boundary_tests.rs
+index 4f4a8162d838fc80411f9cb2123f9b50bb0601ed..8f3405e6335dac35e6df87674241ad4d2df2dc07 100644
+--- a/source/host/app/src/tests/config_secret_boundary_tests.rs
++++ b/source/host/app/src/tests/config_secret_boundary_tests.rs
+@@ -779,12 +779,24 @@ fn fresh_bearer_http_config_mutation_requires_current_approval() {
+         tokens["operator"]["scopes"] = json!(scopes);
+         let mut approved = scopes.clone();
+         approved.push("node.invoke".into());
++        let mut roles: Vec<String> = (0..20_000).map(|index| format!("observer{index:05}")).collect();
++        roles.extend([" operator ".into(), "operator".into(), "node".into(), "\t".into()]);
+         let conn = fixture.writer();
+-        assert_eq!(conn.execute("UPDATE device_pairing_paired SET approved_scopes_json = ?1, tokens_json = ?2 WHERE device_id = 'dfa-writer'",
+-            params![json!(approved).to_string(), tokens.to_string()]).unwrap(), 1);
++        assert_eq!(conn.execute("UPDATE device_pairing_paired SET approved_scopes_json = ?1, tokens_json = ?2, roles_json = ?3 WHERE device_id = 'dfa-writer'",
++            params![json!(approved).to_string(), tokens.to_string(), json!(roles).to_string()]).unwrap(), 1);
+         conn.close().unwrap();
+         fixture.committed(Some(&bearer), true, "Asia/Tokyo");
+ 
++        let mut malformed_roles = json!(roles);
++        malformed_roles.as_array_mut().unwrap().push(json!(7));
++        let conn = fixture.writer();
++        assert_eq!(conn.execute("UPDATE device_pairing_paired SET roles_json = ?1 WHERE device_id = 'dfa-writer'", [malformed_roles.to_string()]).unwrap(), 1);
++        conn.close().unwrap();
++        fixture.refused(&bearer, 500, false);
++        let conn = fixture.writer();
++        assert_eq!(conn.execute("UPDATE device_pairing_paired SET roles_json = ?1 WHERE device_id = 'dfa-writer'", [json!(roles).to_string()]).unwrap(), 1);
++        conn.close().unwrap();
++
+         tokens["operator"]["scopes"].as_array_mut().unwrap().push(json!("operator.zz-unapproved-tail"));
+         let conn = fixture.writer();
+         assert_eq!(conn.execute("UPDATE device_pairing_paired SET tokens_json = ?1 WHERE device_id = 'dfa-writer'", [tokens.to_string()]).unwrap(), 1);
+diff --git a/source/host/src/device_pairing_owner.rs b/source/host/src/device_pairing_owner.rs
+index 22ef5673ee42bed751a66ac1cf30e6a2e9ab79ad..9825003cf1f7047027aa1b8e496c40f0c1693a23 100644
+--- a/source/host/src/device_pairing_owner.rs
++++ b/source/host/src/device_pairing_owner.rs
+@@ -74,9 +74,10 @@ fn token_entry_is_active(entry: &Value) -> bool {
+ fn normalized_authority_strings(value: &Value) -> Option<Vec<String>> {
+     let values = value.as_array()?;
+     let mut normalized = Vec::new();
++    let mut seen = BTreeSet::new();
+     for value in values {
+         let value = value.as_str()?.trim();
+-        if !value.is_empty() && !normalized.iter().any(|known| known == value) {
++        if !value.is_empty() && seen.insert(value) {
+             normalized.push(value.to_owned());
+         }
+     }
+diff --git a/source/host/tests/device_pairing_revocation_authority_contract.rs b/source/host/tests/device_pairing_revocation_authority_contract.rs
+index 6c6e64cca6041fda69a22b7d327838ebafa4eb40..212b1067c4ffed3523aec5ebb2c3104eafe4c86f 100644
+--- a/source/host/tests/device_pairing_revocation_authority_contract.rs
++++ b/source/host/tests/device_pairing_revocation_authority_contract.rs
+@@ -1186,6 +1186,9 @@ fn fresh_authorization_requires_approved_role_and_entire_canonical_grant() {
+     let scope_refs: Vec<&str> = scopes.iter().map(String::as_str).collect();
+     fixture.baseline(CALLER, &scope_refs);
+     fixture.grant(CALLER, "node", &scope_refs);
++    let mut roles: Vec<String> = (0..20_000).map(|index| format!("observer{index:05}")).collect();
++    roles.extend([" node ".into(), "node".into(), "\t".into()]);
++    fixture.write_column(CALLER, "roles_json", &SqlValue::Text(json!(roles).to_string()));
+     let before = fixture.observe();
+     let bearer = before.token(CALLER, "node");
+     let proof = fixture.authenticate(&bearer);
+@@ -1194,6 +1197,19 @@ fn fresh_authorization_requires_approved_role_and_entire_canonical_grant() {
+     fixture.current(&fixture.proof(BYSTANDER, "node"));
+     assert!(fixture.observe() == before);
+ 
++    let mut malformed_roles = json!(roles);
++    malformed_roles.as_array_mut().unwrap().push(json!(7));
++    fixture.write_column(CALLER, "roles_json", &SqlValue::Text(malformed_roles.to_string()));
++    let malformed = fixture.observe();
++    let error = fixture.error(fixture.owner().authenticate_device_token(&bearer), 500, &malformed);
++    assert_eq!(error.to_string(), "stored pairing authority is invalid");
++    fixture.stale(&proof, 500);
++    fixture.current(&fixture.proof(BYSTANDER, "node"));
++    assert!(fixture.observe() == malformed, "a matching role cannot hide malformed trailing authority");
++    fixture.write_column(CALLER, "roles_json", &SqlValue::Text(json!(roles).to_string()));
++    assert!(fixture.observe() == before, "role repair restores exact bytes and valid admission");
++    fixture.current(&fixture.authenticate(&bearer));
++
+     let mut overgrant = scope_refs.clone();
+     overgrant.push("node.zz-unapproved-tail");
+     fixture.grant(CALLER, "node", &overgrant);

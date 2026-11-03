@@ -1,0 +1,118 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 3,
+  "scope": "Original complete twelve-path frozen DFA scope; focused DFA-09 local membership lookup and large-grant behavior controls; incoming cron/LFA/evidence preserved",
+  "base": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+  "startingHead": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+  "tree": "0c2fcb5d8c8d6c7d6d348543eed955541ca2cd2b",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "preImplementationSpecBlob": "90729eb0e49af3f0a08d9ce6b81f7d8dc498c4c4",
+  "appPrerequisiteSpecBlob": "f0d8a608d1556ff2dd71bc9829df478af3c01116",
+  "members": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+      "blob": "49ead89ce610835037bc67085dd1b44fe8f8503e",
+      "bytes": 11632,
+      "sha256": "a1617ca47a761330ccd381f74d9b5208077dac53d4512c75296c360c38ccd9bb"
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "blob": "22ef5673ee42bed751a66ac1cf30e6a2e9ab79ad",
+      "bytes": 103147,
+      "sha256": "41928b823c55eb0b47d0cbb6b6b5ec21a371371ffa013480066b6b418a254db1"
+    },
+    {
+      "path": "source/host/tests/device_pairing_rotation_authority_contract.rs",
+      "blob": "a06e0593cf3be3673e91706e1636399dab90d0a8",
+      "bytes": 53748,
+      "sha256": "c274e92f0cdc112115b30a61c6c51ce07ea994f1b3f71c0dc112e6c481a66bf0"
+    },
+    {
+      "path": "source/host/tests/device_pairing_revocation_authority_contract.rs",
+      "blob": "6c6e64cca6041fda69a22b7d327838ebafa4eb40",
+      "bytes": 76040,
+      "sha256": "bc846d9613a72833024329e151ea7fa119fd31b674ad5c6220b5feb6bc64163e"
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+      "blob": "7c37e8093b8b7f2975eb031d76dae1b1419ed13c",
+      "bytes": 100799,
+      "sha256": "5b8777a7959a283c682287def308f92d41fe3e9f03023da9a3aa87195d0f7396"
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+      "blob": "e7c42f88067d8d4695ff7ee356987e493b1f4224",
+      "bytes": 73706,
+      "sha256": "913542fe4597457c96500843f057c1b5952d27ec22956ad3b32a77bd2dcdb736"
+    },
+    {
+      "path": "source/host/app/src/tests/config_secret_boundary_tests.rs",
+      "blob": "4f4a8162d838fc80411f9cb2123f9b50bb0601ed",
+      "bytes": 46434,
+      "sha256": "a8f56d578a5ad8450e633c126261602c4cff679b1220804ee265721ec1a2b64f"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "bytes": 36330,
+      "sha256": "a310f803114b6e3274ea6b8256a09ee2b5f590ef614508f22f8b8947e4126944"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "ede3b6b9586383a2d0245de933d6ff4417e6ff10",
+      "bytes": 454492,
+      "sha256": "58debcccf46f9c1cc1cab4bfd61c8a5fce0e7addcdcc1194a6cbe9ca4a5cc01e"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae",
+      "bytes": 105974,
+      "sha256": "e101cf22f5dbda30f2a024010bff64e13d0ed4bee7b6dbac89afee4c629d8b2e"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "2914b1a9aa1e07dac123af7fbcb10f88b1dee93c",
+      "bytes": 1457592,
+      "sha256": "f1dd90785b1cdb1058fe7eb3ffc5f0d70c8569e5429de1a6bc661bdee27ce9fe"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "58a6a94c9cb19b67199b628561d4345a26656410",
+      "bytes": 161582,
+      "sha256": "10e54802dce33d20ad7e9822aa5caa642cf4859379a1cbbc7a4862502b5dfa79"
+    }
+  ],
+  "patchBytes": 94110,
+  "patchSha256": "5b39b47b0d09fe197179de7afb7bda2717493f5a15e4b23e4c4b23dd87afc684",
+  "excluded": "All foreign work and all evidence carriers; preceding plugin recovery is immutable base, independently reviewed separately",
+  "execution": "not-run; Git identity snapshot only; GitHub Actions required",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "integrationHead": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "publicationBase": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "publicationBaseTree": "cbc9418ee7572f44d59e067e450a67f6c0bc22a0",
+  "previousTree": "b415b8a429b3e0ffe7a2f2ba0e86b2c67f62eab0",
+  "publicationPaths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+    "projects/openclaw-rust/parity-ledger.json",
+    "projects/openclaw-rust/requirements-traceability-matrix.json",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "source/host/app/src/tests/config_secret_boundary_tests.rs",
+    "source/host/src/device_pairing_owner.rs",
+    "source/host/tests/device_pairing_revocation_authority_contract.rs",
+    "source/host/tests/device_pairing_rotation_authority_contract.rs",
+    "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+    "source/host/tests/device_token_rotation_wire_gateway_contract.rs"
+  ],
+  "publicationPatchBytes": 87686,
+  "publicationPatchSha256": "518c0526bb15a006c327e28e5b913f35b04a3b93655847e6cb3044e9c64c821a",
+  "incomingMainBlob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+  "incomingMainPatchSha256": "be22ba5017dae1cdc86b95ff1118b15682963981ba8fbf2bd595cacd345329f5",
+  "incomingPreservation": "Incoming74 source preserved. From74 through4f only evidence carrier paths changed; no additional adjacent production drift. Original12scope and startingHead/base remain frozen.",
+  "focusedDeltaBytes": 10259,
+  "focusedDeltaSha256": "4d15729b783c84da476e730290515c9b32e6c0f161a610b09be2622d963ccd79",
+  "reviewExecution": "not-run; immutable Git identity snapshot only, not project validation"
+}

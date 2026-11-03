@@ -1,0 +1,108 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "sha": "9059d0c4493505851339ab228ec0d58a6023c904",
+  "commitUrl": "https://github.com/bhrumom/fabushi-desktop/commit/9059d0c4493505851339ab228ec0d58a6023c904",
+  "tree": "63385ed61d0ef7074dab86baea7fab548224416d",
+  "parent": "f41a6d3c00150ba59453d14887b5b4914801d4f4",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "verified": true,
+  "verification": "GitHub API complete commit/ref/tree/parent and every selected full file byte, Git blob, size and SHA256; identity only, not executable verification",
+  "files": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-bearer-approval-admission.md",
+      "blob": "f99fe2e81da2822ef7dd871bceba1215d3b0229e",
+      "bytes": 12414,
+      "sha256": "b1a4ad977cedcf99535994b4173e5a21e40ec51bb124c6570ccf10f2ecd04437",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+      "bytes": 103155,
+      "sha256": "719a84fe502691e1a14008167f3652174b9a7fe7bd3975ed34067b5351885073",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "source/host/tests/device_pairing_rotation_authority_contract.rs",
+      "blob": "a06e0593cf3be3673e91706e1636399dab90d0a8",
+      "bytes": 53748,
+      "sha256": "c274e92f0cdc112115b30a61c6c51ce07ea994f1b3f71c0dc112e6c481a66bf0",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "source/host/tests/device_pairing_revocation_authority_contract.rs",
+      "blob": "212b1067c4ffed3523aec5ebb2c3104eafe4c86f",
+      "bytes": 77142,
+      "sha256": "3b47cfc16cf3d26cd0c34443c5d3d356bddf06ef7568c10bfbc6895014ecc7e3",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+      "blob": "7c37e8093b8b7f2975eb031d76dae1b1419ed13c",
+      "bytes": 100799,
+      "sha256": "5b8777a7959a283c682287def308f92d41fe3e9f03023da9a3aa87195d0f7396",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+      "blob": "e7c42f88067d8d4695ff7ee356987e493b1f4224",
+      "bytes": 73706,
+      "sha256": "913542fe4597457c96500843f057c1b5952d27ec22956ad3b32a77bd2dcdb736",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "source/host/app/src/tests/config_secret_boundary_tests.rs",
+      "blob": "8f3405e6335dac35e6df87674241ad4d2df2dc07",
+      "bytes": 47284,
+      "sha256": "1ce6049924c9f1bcfbe305a1a94994232bffe6c29bc8848b688623c1c83f52e0",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "25e80da72d20d4dbfed8ab6f2a50a3eff62b53af",
+      "bytes": 456079,
+      "sha256": "68f0f49cc3d6d5f1c96156a4a96e862555accdcc6fe015a36ed5195f2e524803",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae",
+      "bytes": 105974,
+      "sha256": "e101cf22f5dbda30f2a024010bff64e13d0ed4bee7b6dbac89afee4c629d8b2e",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "285f9ca672947d9ad054832557c0b4abf38a0d68",
+      "bytes": 1457556,
+      "sha256": "d8b197d9e9bf18b5a7f1515116ef524bcf20d518382618cab1f9446c3ae70c8b",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "1bdbd1ca17b2ff334f365183c51bcd15c7ca0871",
+      "bytes": 161514,
+      "sha256": "e724440db1cb0391d4512c03f8fab5f7e3a08f5762e35c42c82b41f3fa271961",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "blob": "8aee21c69bab72824025e4304eec38388ba1e9f8",
+      "bytes": 15620,
+      "sha256": "80a797304c932120d19dc077c4828caf2e2b83d68e7e1296a313c37eb7b16927",
+      "exactCommitPathAndFullBytesApiReadback": true
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "blob": "88a80214aa08a1d61b3bd290063069d5aa4d417e",
+      "bytes": 168267,
+      "sha256": "d93a5301f5cfac83d647a759785c259d9b78e87e7e2e4038e8aca7dbaac38121",
+      "exactCommitPathAndFullBytesApiReadback": true
+    }
+  ],
+  "execution": "not-run; Git-only immutable source snapshot; Actions execution required",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "observedAt": "2026-11-03T05:37:24.182039+00:00"
+}
