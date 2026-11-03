@@ -215,8 +215,10 @@
       "source_authority_run": 41661449626,
       "source_authority_result": "success",
       "assessment": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-45847-terminal-assessment.json",
-      "next": "Independent causal/exhaustion assessment; no unchanged rerun.",
-      "carrier_not_subject": true
+      "next": "DEFER unresolved required8s observation per fresh independent causal assessment; preserve original instrument/assertions and do not rerun unchanged.",
+      "carrier_not_subject": true,
+      "causal_classification": "UNRESOLVED",
+      "finding_id": "DJC-READER-CALL-INTERVAL-UNRESOLVED-001"
     },
     "campaign_budget": "One changed-instrument focused campaign after fresh source review and retained independent assessments. A further failure is assessed causally before any new action; no unchanged rerun."
   },
@@ -261,6 +263,6 @@
     "Actual new three-case source/compile/runtime results.",
     "Resolution of retained lock observation if new direct instrument still fails.",
     "Full source closure and actual setup issuer/UI/schema/companion-node behavior, unknown commit/crash handling, all supported platforms/packages and final G01-G12/AC01-AC24/independent ACCEPT.",
-    "H45847 new observation clarifies that the recorded adjacent public-call return follows the macOS wait timeout; cause/oracle classification remains independently assessed. Raw failure traces are not accepted positives."
+    "H45847 recorded adjacent public-call return follows macOS wait timeout. Fresh independent assessment found no supported production/oracle correction under currentcontract. Mandatory observation remainsopen/DEFER; neitherproductiondefect norenvironmentcause/unreachablecapability isproved."
   ]
 }

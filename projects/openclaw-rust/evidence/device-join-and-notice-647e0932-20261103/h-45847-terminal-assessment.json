@@ -1089,7 +1089,7 @@
     }
   ],
   "adjudication": {
-    "state": "failed-retained-owner-observation; independent-causal-assessment-pending",
+    "state": "UNRESOLVED; mandatory observation failed; DEFER",
     "macos_failure": "Owner command101/0; exact original8s assertion remains. Two observation controls0/0. One failed selected owner case appears in nested child/outer summaries; not two independent failed cases.",
     "decisive_failure_assertion": "DJC original observation failed despite later diagnostics: [\"bounded actual commit refusal: original 8s observation timed out\"]",
     "causal_observation": "Same-child adjacent return boundary9985267750ns follows wait timeout8107774625ns by1877493125ns; completion send and diagnostics follow that return boundary. Post-result diagnostics do not account for this late return boundary. Adjacent timestamps include descheduling and cannot locate private SQL duration or prove an environment cause.",
@@ -1117,7 +1117,7 @@
         "result": "historical8s observation failure retained"
       }
     ],
-    "next_action": "Fresh read-only independent causal/exhaustion assessment of exact owner transaction/drop/busy semantics and scoped oracle authority; no unchanged rerun or timeout/assertion weakening."
+    "next_action": "Preserve the unresolved gate and existing instrument/assertions without another unchanged campaign. A later executable action requires a separately justified causal question/instrument or an explicit reviewed contract decision. Continue independent existing-owner implementation batches."
   },
   "independent_observer": {
     "agent": "/root/djc_observation_actions_observer",
@@ -1133,5 +1133,67 @@
     "all_eight_global_flags": false,
     "final_acceptance": false
   },
-  "carrier": "This document is an evidence carrier for H45847; its later commit is not an executed subject."
+  "carrier": "This document is an evidence carrier for H45847; its later commit is not an executed subject.",
+  "independent_causal_assessment": {
+    "agent": "/root/djc_observation_exhaustion_assess",
+    "effort": "xhigh",
+    "activity": "Fresh independent read-only source and actual log assessment; no code/dispatch/rerun/local checks.",
+    "finding_id": "DJC-READER-CALL-INTERVAL-UNRESOLVED-001",
+    "conclusion": "No production defect, proven environment cause, or unreachable external capability established. Late return-adjacent boundary persists after the prior notification-order defect was repaired.",
+    "source_facts": [
+      "Actual owner obtains its existing connection mutex, begins IMMEDIATE, selects raw row values, executes one guarded UPDATE, consumes tx.commit(), releases mutex, then validates expiry/payload. No inspected eight-second operation deadline or retry loop.",
+      "Rusqlite0.39 default connection busy setting5000ms; consuming failed commit drops Transaction with defaultRollback before returning. This does not prove two5000ms waits.",
+      "Matching SQLite3.51.3 default busy handler budgets requested sleep amounts by callback count, not an operation-wide monotonic deadline; defaultUnixsleep usesnanosleep andreturnsrequestedtime. This permits elapsedtime beyondnominalbusybudget butdoesnotidentifytheobservedcause.",
+      "DJC07/08/09 separately retain mandatory8s observation and120s child/5s cleanup while explicitly disclaiming a product8s responseguarantee. Neither can be silently rewritten by a failed test result.",
+      "Nonemptyjournal andfixedredactedstorageerror cannotidentifythedecisiveprivateSQLstatement orits duration."
+    ],
+    "dependency_read": {
+      "rusqlite_commit": "2a1790a69107cd03dae85d501dcbdb11c5b32ef3",
+      "version": "0.39.0",
+      "sqlite_sys_version": "0.37.0",
+      "sqlite_version": "3.51.3",
+      "sqlite_source_id": "737ae4a34738ffa0c3ff7f9bb18df914dd1cad163f28fd6b6e114a344fe6d618",
+      "sqlite_mirror_commit": "a5333afb9ad1aa473f8963b92caeaa955f47dc74",
+      "sources": [
+        "rusqlite/src/inner_connection.rs",
+        "rusqlite/src/transaction.rs",
+        "rusqlite/src/busy.rs",
+        "sqlite/src/main.c",
+        "sqlite/src/os_unix.c",
+        "sqlite/src/pager.c",
+        "sqlite/src/vdbe.c"
+      ],
+      "limitation": "Independent assessor matched bundledheader/generatedbindings sourceID toSQLite manifest.uuid. Largeamalgamation fetchreturnedempty/transportclosure; no wholeamalgamationhash orbuild claimed."
+    },
+    "recommendation": "DEFER unresolved mandatory observation; no supportedFIX ornewcampaignunder currentcontract. Do not changebusytimeout,transactionmode,rollback,8sassertion ortraceacceptance to obtain green."
+  },
+  "decisions": [
+    {
+      "finding_id": "DJC-READER-CALL-INTERVAL-UNRESOLVED-001",
+      "decision": "DEFER",
+      "state": "open",
+      "decided_by": "root integrator",
+      "rationale": "Accept the independent causal assessment. Actual new instrument controls/source identity are valid, but the original required observation still fails and no causally supported product or oracle correction is established. Preserve failure and all positive scopes. This is not APPROVED, IMPL_BUG, proven environment failure, or BLOCKED/UNRECOVERABLE.",
+      "supersedes": null,
+      "unblock_condition": "Concrete new causal evidence supporting a necessary correction, or an explicit reviewed decision changing the retained timing requirement; no unchanged rerun is authorized by this disposition."
+    }
+  ],
+  "durable_raw_job_logs": [
+    {
+      "platform": "linux",
+      "path": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-45847-linux.job.log",
+      "blob": "9a61b1186d7534b6a1c96e3582b5792fb36365d4",
+      "bytes": 659388,
+      "sha256": "cce6d56316cdee487fc619c825c6dfa2b7da0f1c1afeec3f5f78845e7792ecdf",
+      "encoding": "Exact connector-decoded UTF-8, with returnedBOM/lineendings retained; not a re-encoded ZIP member."
+    },
+    {
+      "platform": "macos",
+      "path": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-45847-macos.job.log",
+      "blob": "ab8d182a943ceede9a997560390021e6531550d1",
+      "bytes": 632042,
+      "sha256": "24b527002c9e941f9bcad9aac8c43b650485ad10bb7f0c2684c9d7a22fdec765",
+      "encoding": "Exact connector-decoded UTF-8, with returnedBOM/lineendings retained; not a re-encoded ZIP member."
+    }
+  ]
 }
