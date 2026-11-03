@@ -1,0 +1,71 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 1,
+  "kind": "continuation_checkpoint",
+  "observed_at": "2026-11-03",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+  "observed_branch_head_before_checkpoint": "0381cc707ea28e7733397384bbbf2c3a88e58421",
+  "main_head_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
+  "pr": {
+    "number": 189,
+    "state": "open",
+    "draft": true,
+    "head_sha": "0381cc707ea28e7733397384bbbf2c3a88e58421",
+    "base": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "mergeable": false,
+    "body_claimed_h": "7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18",
+    "body_is_stale": true
+  },
+  "fixed_upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6"
+  },
+  "authorities": {
+    "root_agents": "read on live main and migration branch",
+    "FBCP_SOURCE_OF_TRUTH": "projects/fabushi-communication-platform/SOURCE_OF_TRUTH.md revision 8, read on migration branch",
+    "TDRP_SOURCE_OF_TRUTH": "projects/telegram-desktop-rust/SOURCE_OF_TRUTH.md revision 10, read on migration branch",
+    "FMEP": "docs/specs/fabushi-deferred-ci-migration.md revision 2, including FMEP-SOURCE-01, read on main and branch",
+    "P0_task": "projects/fabushi-communication-platform/management/tasks/P0-product-domain-and-telegram-absorption.md, read on migration branch"
+  },
+  "source_review_contract": {
+    "schema": "projects/telegram-desktop-rust/contracts/parity-ledger.schema.json",
+    "validator": "scripts/tdrp-source-review.mjs",
+    "acceptance_validator": "scripts/validate-tdrp-revision9-authority.mjs",
+    "evidence_from_prior_checkpoint": "FMEP-SOURCE-01 source_reviews contract exists in schema and validator; exact-U inventory-to-review closure is not established"
+  },
+  "actions": {
+    "commit_8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6": {
+      "run_ids": [41609548121, 41609548094],
+      "rust_desktop_runtime": "success",
+      "native_service_contracts": "success",
+      "selected_native_jobs": "native-message-reconciliation, native-message-electron, native-message-shipping-compile, retained-direct-ffi-compatibility, windows-update-publisher, native-message-ui, desktop-social-owner-behaviors succeeded; native-auth-and-journal was skipped",
+      "selected_renderer_steps": "Coordinator admission, renderer compile, Chromium Forward/Settings, ProductionRenderer history/cache/continuation all succeeded",
+      "scope_limit": "These results are exact-H for 8fd9dc8 only, not evidence for a later SHA or full acceptance"
+    },
+    "commit_0381cc707ea28e7733397384bbbf2c3a88e58421": {
+      "run_id": 41570660833,
+      "workflow": "Rust desktop runtime",
+      "conclusion": "success",
+      "other_exact_head_runs_returned": 0,
+      "combined_statuses_returned": 0
+    }
+  },
+  "verified_gaps": [
+    "PR #189 description is stale relative to its live API head; do not treat its old H claim as current evidence.",
+    "A previous task receipt explicitly leaves HRR-01..06 fresh-nonce/reply/restaging and persisted-error projection open.",
+    "The current branch renderer and native source were inspected; no independently verified full Human Retry command-to-Host durable lifecycle implementation was established from these reads.",
+    "The branch's latest exact-head evidence does not establish all required workflow gates; one runtime workflow succeeded at 0381, while the focused native/renderer gates succeeded at 8fd9.",
+    "Full source/legal/generated/dependency disposition, deployed service, signed supported packages, visual/accessibility/temporal/security/performance/soak/upgrade/rollback/Bot regression and independent ACCEPT remain open."
+  ],
+  "this_round_changes": [
+    "Added this recovery receipt only; no product code, canonical ledger or acceptance state was changed."
+  ],
+  "validation": {
+    "local_or_htch_runtime": "not used",
+    "new_receipt_execution": "not run; documentation/evidence-only",
+    "acceptance": false
+  },
+  "handoff": "Next inspect the live PR #189 full commit ancestry and exact Human retry entry/owner paths; reconcile the PR description with the actual head only after all current evidence is re-read. Implement HRR-01..06 through existing Session/Transcript/Native Messaging owners, then run exact-H Actions gates. Do not claim complete or reuse predecessor Actions as current-head evidence."
+}
