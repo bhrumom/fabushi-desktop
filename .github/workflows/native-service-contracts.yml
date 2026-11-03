@@ -304,7 +304,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 81 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 82 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api ... ok' artifacts/native-message/session-gateway.log
@@ -323,7 +323,8 @@ jobs:
             shipping_human_reaction_rejection_preserves_intent_while_history_progresses_after_restart \
             shipping_human_roster_reaction_rejection_does_not_starve_other_conversations_or_calls \
             shipping_human_reaction_rejection_continuation_refuses_changed_credentials_before_downstream_work \
-            shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_closed; do
+            shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_closed \
+            shipping_human_history_coverage_incomplete_signal_is_exposed_until_sync_reaches_end; do
             grep -Fx "test $case_name ... ok" artifacts/native-message/session-gateway.log
           done
       - name: Human resource upload size and bounded-read contracts
@@ -1020,8 +1021,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# tests 13' artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# pass 13' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 14' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 14' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
@@ -1031,7 +1032,8 @@ jobs:
             'human_entry_refresh_retires_action_menus_without_hook_order_errors' \
             'human_entry_refresh_retires_removed_pdf_and_late_resource_reads' \
             'human_entry_refresh_retires_spreadsheet_mount_when_source_changes' \
-            'command_palette_searches_human_conversations_messages_and_files_and_paginates_older_targets'; do
+            'command_palette_searches_human_conversations_messages_and_files_and_paginates_older_targets' \
+            'human_history_coverage_continuation_advances_multi_window_sync_and_fences_account_switches'; do
             grep -Eq "^ok [0-9]+ - ${entry_case}$" artifacts/native-message-ui/production-transcript.log
           done
       - name: Actual ProductionRenderer author and draft recovery behaviors

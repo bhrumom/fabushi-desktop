@@ -10705,3 +10705,97 @@ fn shipping_human_reaction_rejection_keeps_admission_and_protocol_failures_fail_
         fs::remove_dir_all(root).expect("remove strict Calls fixture");
     }
 }
+
+#[test]
+fn shipping_human_history_coverage_incomplete_signal_is_exposed_until_sync_reaches_end() {
+    let root = temp_root("human-history-coverage-incomplete-signal");
+    let (url, server) = spawn_human_message_fixture(vec![
+        human_history_reply(vec![human_history_message(6_401)]),
+        human_history_reply(vec![human_history_message(6_401)]),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let id = runtime
+        .create_human_conversation("2", "Peer")
+        .expect("conversation")["id"]
+        .as_str()
+        .expect("id")
+        .to_owned();
+    let owner = runtime
+        .open_human_conversation_db_owner(&id)
+        .expect("owner");
+    assert!(owner
+        .append_transcript_entry(&human_local_history_message(6_400))
+        .expect("seed 6400th row"));
+    assert!(owner
+        .set_metadata(
+            "humanHistoryCoverage",
+            json!({"version": 1, "afterId": 6_400, "complete": false}),
+        )
+        .expect("seed nonterminal coverage checkpoint"));
+
+    let roster_incomplete = runtime
+        .list_human_conversations()
+        .expect("list incomplete roster");
+    assert_eq!(roster_incomplete.len(), 1);
+    assert_eq!(
+        roster_incomplete[0].get("historyCoverageComplete"),
+        Some(&json!(false)),
+        "listHumanConversations must expose historyCoverageComplete: false when humanHistoryCoverage.complete is false"
+    );
+    let tail_incomplete = dispatch(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        json!({"conversationId": id, "limit": 200}),
+    );
+    assert_eq!(
+        tail_incomplete.get("historyCoverageComplete"),
+        Some(&json!(false)),
+        "getHumanConversationTranscriptTail must expose historyCoverageComplete: false when humanHistoryCoverage.complete is false"
+    );
+
+    let synced = runtime
+        .sync_human_conversation(&id)
+        .expect("resume remaining history window");
+    assert_eq!(
+        human_row_ids(&synced),
+        vec![
+            "human-server-message:6400".to_string(),
+            "human-server-message:6401".to_string()
+        ]
+    );
+    assert_eq!(
+        owner
+            .get_metadata("humanHistoryCoverage")
+            .expect("completed coverage checkpoint"),
+        Some(json!({"version": 1, "afterId": 6_401, "complete": true}))
+    );
+
+    let roster_complete = runtime
+        .list_human_conversations()
+        .expect("list completed roster");
+    assert_eq!(roster_complete.len(), 1);
+    assert_eq!(
+        roster_complete[0].get("historyCoverageComplete"),
+        None,
+        "completed coverage omits historyCoverageComplete to preserve backwards-compatible summary shape"
+    );
+    let tail_complete = dispatch(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        json!({"conversationId": id, "limit": 200}),
+    );
+    assert_eq!(
+        tail_complete.get("historyCoverageComplete"),
+        None,
+        "completed coverage omits historyCoverageComplete on tail responses"
+    );
+
+    let requests = server.join().expect("coverage continuation fixture");
+    assert_eq!(requests.len(), 2);
+    assert!(requests[0].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=6400 "));
+    assert!(requests[1].starts_with("GET /api/social/messages?contactId=2&limit=200 "));
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}

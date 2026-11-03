@@ -263,7 +263,7 @@ Object.assign(window, {
     event: emit,
     // Opt-in controls keep the original eight cases' RPC allowlist unchanged.
     holdActionRpc: (method: string) => {
-      if (!["reactHumanMessage", "searchHumanRecipients", "searchAgents", "searchMedia"].includes(method)) throw new Error("Unsupported action RPC control");
+      if (!["reactHumanMessage", "searchHumanRecipients", "searchAgents", "searchMedia", "syncHumanConversation", "listHumanConversations"].includes(method)) throw new Error("Unsupported action RPC control");
       controlled.add(method);
     },
     declareResource,

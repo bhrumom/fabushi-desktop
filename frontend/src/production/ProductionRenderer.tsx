@@ -1051,6 +1051,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const transcriptHistoryCursorsRef = useRef(new Map<string, { accountSlot: string; nextBeforeSeq?: number; nextBeforeCursor?: string }>());
   const pendingTranscriptReadsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
   const pendingTranscriptReceiptsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
+  const humanCoverageContinuationInFlightRef = useRef(new Set<string>());
   const transcriptConversationGenerationsRef = useRef(new Map<string, number>());
   const submissionScopesRef = useRef(new Map<string, TranscriptSubmissionScope>());
   // Transport callbacks own synchronous admission; render only projects state.
@@ -1204,6 +1205,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const invalidateTranscriptConversation = useCallback((agentId: string) => {
     const operation = captureTranscriptScope(agentId);
     if (operation != null) composerDraftStore.forgetHumanSubmissions({ accountSlot: operation.accountSlot, agentId });
+    humanCoverageContinuationInFlightRef.current.delete(agentId);
     transcriptConversationGenerationsRef.current.set(agentId, (transcriptConversationGenerationsRef.current.get(agentId) ?? 0) + 1);
     for (const [nonce, scope] of submissionScopesRef.current) {
       if (scope.agentId !== agentId) continue;
@@ -2979,6 +2981,107 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     else if (!computerInfoOpen) setComputerViewerRetained(false);
   }, [computer.isOpen, computerInfoOpen]);
 
+  const continueHumanHistoryCoverage = useCallback((conversationId: string) => {
+    if (client == null || transportRef.current !== "connected" || accountRef.current?.kind !== "logged-in") return;
+    if (selectionStore.get().currentAgentId !== conversationId) return;
+    if (humanCoverageContinuationInFlightRef.current.has(conversationId)) return;
+    const accountScopeGeneration = accountScopeGenerationRef.current;
+    const transportScopeGeneration = transportScopeGenerationRef.current;
+    const conversationGeneration = transcriptConversationGenerationsRef.current.get(conversationId) ?? 0;
+    const isCurrent = () => accountScopeGenerationRef.current === accountScopeGeneration
+      && transportScopeGenerationRef.current === transportScopeGeneration
+      && transportRef.current === "connected"
+      && accountRef.current?.kind === "logged-in"
+      && selectionStore.get().currentAgentId === conversationId
+      && (transcriptConversationGenerationsRef.current.get(conversationId) ?? 0) === conversationGeneration;
+    humanCoverageContinuationInFlightRef.current.add(conversationId);
+    void (async () => {
+      try {
+        const MAX_CONTINUATION_WINDOWS = 16;
+        for (let windowIndex = 0; windowIndex < MAX_CONTINUATION_WINDOWS; windowIndex += 1) {
+          if (!isCurrent()) return;
+          const currentConversation = humanConversationsRef.current.find((candidate) => candidate.id === conversationId);
+          if (currentConversation == null || currentConversation.raw.historyCoverageComplete !== false) return;
+          try {
+            await client.call("syncHumanConversation", { conversationId });
+          } catch (error) {
+            if (isCurrent()) {
+              setNotice(error instanceof Error
+                ? `Human sync unavailable: ${error.message}`
+                : `Human sync unavailable: ${String(error)}`);
+            }
+            return;
+          }
+          if (!isCurrent()) return;
+          let refreshedRosterValue: unknown;
+          try {
+            refreshedRosterValue = await client.call("listHumanConversations");
+          } catch {
+            return;
+          }
+          if (!isCurrent()) return;
+          const refreshedHumans = projectHumanConversations(refreshedRosterValue);
+          humanConversationsRef.current = refreshedHumans;
+          setHumanConversations(refreshedHumans);
+          const refreshedConversation = refreshedHumans.find((candidate) => candidate.id === conversationId);
+          if (refreshedConversation == null) return;
+          if (entriesByAgentRef.current[conversationId] != null) {
+            const accountNow = accountRef.current;
+            const requestGeneration = openAgentRequestGenerationRef.current;
+            const pendingRead: TranscriptReadUpdateBuffer = {
+              accountSlot: accountNow?.kind === "logged-in" ? accountNow.authId ?? accountNow.email ?? "account" : null,
+              agentId: conversationId,
+              isCurrent: () => isCurrent() && openAgentRequestGenerationRef.current === requestGeneration,
+              updates: new Map(),
+            };
+            pendingTranscriptReadsRef.current.add(pendingRead);
+            try {
+              const entriesAtRequest = entriesByAgentRef.current[conversationId] ?? [];
+              const transcriptValue = await client.call("getHumanConversationTranscript", { conversationId });
+              if (pendingRead.isCurrent()) {
+                const projectedEntries = projectHumanConversationTranscript(
+                  transcriptValue,
+                  refreshedConversation.name,
+                  conversationId
+                );
+                for (const entry of projectedEntries) observeTranscriptSettlement(conversationId, entry);
+                setEntriesByAgent((current) => !pendingRead.isCurrent() ? current : ({
+                  ...current,
+                  [conversationId]: applyTranscriptReadUpdates(reconcileTranscriptRefresh(
+                    current[conversationId] ?? [],
+                    projectedEntries,
+                    entriesAtRequest,
+                  ), pendingRead.updates)
+                }));
+                const latestAccount = accountRef.current;
+                if (latestAccount?.kind === "logged-in") {
+                  transcriptHistoryCursorsRef.current.set(conversationId, {
+                    accountSlot: latestAccount.authId ?? latestAccount.email ?? "account",
+                  });
+                }
+                openAgentRequestGenerationRef.current += 1;
+                pendingTranscriptReadsRef.current.clear();
+                transcriptPaginationController.installInitialPage({ entries: [] });
+              }
+            } catch (error) {
+              if (pendingRead.isCurrent()) {
+                setNotice(error instanceof Error
+                  ? `Human transcript refresh unavailable: ${error.message}`
+                  : `Human transcript refresh unavailable: ${String(error)}`);
+              }
+              return;
+            } finally {
+              pendingTranscriptReadsRef.current.delete(pendingRead);
+            }
+          }
+          if (refreshedConversation.raw.historyCoverageComplete !== false) return;
+        }
+      } finally {
+        humanCoverageContinuationInFlightRef.current.delete(conversationId);
+      }
+    })();
+  }, [client, observeTranscriptSettlement, selectionStore, transcriptPaginationController]);
+
   const refreshRoster = useCallback(async () => {
     if (client == null) return;
     const accountScopeGeneration = accountScopeGenerationRef.current;
@@ -3099,6 +3202,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               openAgentRequestGenerationRef.current += 1;
               pendingTranscriptReadsRef.current.clear();
               transcriptPaginationController.installInitialPage({ entries: [] });
+              if (activeHuman.raw.historyCoverageComplete === false) {
+                continueHumanHistoryCoverage(activeHumanId);
+              }
             }
           } catch (error) {
             if (pendingRead.isCurrent()) {
@@ -3122,7 +3228,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     } finally {
       if (isCurrent()) setIsRosterRetrying(false);
     }
-  }, [client, observeTranscriptSettlement, reconcileCompleteRosterSelection, selectionStore, transcriptPaginationController]);
+  }, [client, continueHumanHistoryCoverage, observeTranscriptSettlement, reconcileCompleteRosterSelection, selectionStore, transcriptPaginationController]);
 
   const [connectionController] = useState(() => client == null
     ? null
@@ -3197,6 +3303,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       setOverlay(null);
       setWorkspaceRoute(null);
       setCommandPaletteOpen(false);
+      if (isHumanTranscript
+        && humanConversationsRef.current.find((conversation) => conversation.id === agentId)?.raw.historyCoverageComplete === false) {
+        continueHumanHistoryCoverage(agentId);
+      }
       return;
     }
     const requestGeneration = ++openAgentRequestGenerationRef.current;
@@ -3218,6 +3328,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     }
     if (hasLoadedEntries || client == null) {
       if (client == null) selectionStore.settle(agentId);
+      else if (isHumanTranscript
+        && humanConversationsRef.current.find((conversation) => conversation.id === agentId)?.raw.historyCoverageComplete === false) {
+        continueHumanHistoryCoverage(agentId);
+      }
       return;
     }
     const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
@@ -3282,6 +3396,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       selectionStore.settle(agentId);
       selectionStore.reconcile({ agentIds: completeRosterAgentIdsRef.current, isRosterComplete: hasLoadedAgentsRef.current });
       setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
+      if (humanConversation != null) {
+        const tailCoverageIncomplete = typeof page === "object" && page != null
+          && (page as { historyCoverageComplete?: unknown }).historyCoverageComplete === false;
+        const previousIncomplete = humanConversationsRef.current.find((candidate) => candidate.id === agentId)?.raw.historyCoverageComplete === false;
+        if (tailCoverageIncomplete !== previousIncomplete) {
+          const updatedHumans = humanConversationsRef.current.map((candidate) => {
+            if (candidate.id !== agentId) return candidate;
+            const nextRaw = { ...candidate.raw };
+            if (tailCoverageIncomplete) nextRaw.historyCoverageComplete = false;
+            else delete nextRaw.historyCoverageComplete;
+            return { ...candidate, raw: nextRaw };
+          });
+          humanConversationsRef.current = updatedHumans;
+          setHumanConversations(updatedHumans);
+        }
+        if (tailCoverageIncomplete) {
+          continueHumanHistoryCoverage(agentId);
+        }
+      }
     } catch {
       if (!pendingRead.isCurrent()) return;
       selectionStore.settle(agentId);
@@ -3291,7 +3424,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       pendingTranscriptReadsRef.current.delete(pendingRead);
       if (initialTranscriptRequestRef.current?.requestGeneration === requestGeneration) initialTranscriptRequestRef.current = null;
     }
-  }, [client, observeTranscriptSettlement, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
+  }, [client, continueHumanHistoryCoverage, observeTranscriptSettlement, selectionStore, transcriptAccountSlot, transcriptPaginationController]);
 
   const openGroupMemberChat = useCallback((agentId: string) => {
     setGroupInfoPaneOpen(false);
@@ -3901,6 +4034,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         for (const scope of submissionScopesRef.current.values()) scope.invalidate();
         submissionScopesRef.current.clear();
         pendingTranscriptReceiptsRef.current.clear();
+        humanCoverageContinuationInFlightRef.current.clear();
         transcriptConversationGenerationsRef.current.clear();
         setPendingSendScopes(new Map());
         // Invalidate approval cleanup before completing abandoned queue work.

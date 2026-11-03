@@ -459,12 +459,20 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             };
             session
                 .read_human_conversation_transcript_tail(conversation_id, query)
-                .map(|page| {
-                    json!({
+                .and_then(|page| {
+                    let coverage_incomplete =
+                        session.human_conversation_coverage_incomplete(conversation_id)?;
+                    let mut response = json!({
                         "entries": page.entries,
                         "nextBeforeSeq": page.next_before_seq,
                         "nextBeforeCursor": page.next_before_cursor,
-                    })
+                    });
+                    if coverage_incomplete {
+                        if let Some(object) = response.as_object_mut() {
+                            object.insert("historyCoverageComplete".into(), json!(false));
+                        }
+                    }
+                    Ok(response)
                 })
                 .map_err(SessionGatewayError::internal)
         }),

@@ -1189,3 +1189,63 @@ test("command_palette_searches_human_conversations_messages_and_files_and_pagina
   await f.frames();
   assert.equal(await f.page.getByText("STALE_ACCOUNT_A_SEARCH_NAVIGATION", { exact: false }).count(), 0);
 });
+
+test("human_history_coverage_continuation_advances_multi_window_sync_and_fences_account_switches", { timeout: 60_000 }, async (t) => {
+  const f = await fixture(t);
+  const initialTail = await f.request(TAIL, { conversationId: A, beforeSeq: null });
+  await f.call("holdActionRpc", "syncHumanConversation");
+  await f.call("holdActionRpc", "listHumanConversations");
+  await f.resolveRequest(initialTail, {
+    ...historyPage(messages(1, 2)),
+    historyCoverageComplete: false,
+  });
+  await f.expectRows(["m1", "m2"]);
+
+  // Window 1 continuation: syncHumanConversation -> listHumanConversations (still incomplete) -> getHumanConversationTranscript
+  const syncWindow1 = await f.request("syncHumanConversation", { conversationId: A }, initialTail.id);
+  await f.resolveRequest(syncWindow1, messages(1, 3));
+  const listWindow1 = await f.request("listHumanConversations", {}, syncWindow1.id);
+  await f.resolveRequest(listWindow1, [
+    { kind: "human", id: A, title: "Alpha", participantIds: ["peer-alpha"], updatedAt: 3, historyCoverageComplete: false },
+    { kind: "human", id: B, title: "Beta", participantIds: ["peer-beta"], updatedAt: 1 },
+  ]);
+  const fullWindow1 = await f.request(FULL, { conversationId: A }, listWindow1.id);
+  await f.resolveRequest(fullWindow1, messages(1, 3));
+  await f.expectRows(["m1", "m2", "m3"]);
+
+  // Window 2 continuation: syncHumanConversation -> listHumanConversations (now complete) -> getHumanConversationTranscript -> stops
+  const syncWindow2 = await f.request("syncHumanConversation", { conversationId: A }, fullWindow1.id);
+  await f.resolveRequest(syncWindow2, messages(1, 4));
+  const listWindow2 = await f.request("listHumanConversations", {}, syncWindow2.id);
+  await f.resolveRequest(listWindow2, [
+    { kind: "human", id: A, title: "Alpha", participantIds: ["peer-alpha"], updatedAt: 4 },
+    { kind: "human", id: B, title: "Beta", participantIds: ["peer-beta"], updatedAt: 1 },
+  ]);
+  const fullWindow2 = await f.request(FULL, { conversationId: A }, listWindow2.id);
+  await f.resolveRequest(fullWindow2, messages(1, 4));
+  await f.expectRows(["m1", "m2", "m3", "m4"]);
+  await f.frames();
+  assert.equal(await f.count("syncHumanConversation", { conversationId: A }), 3);
+
+  // Switch to Beta with incomplete coverage, then switch accounts while continuation sync is in flight
+  await f.page.getByRole("button", { name: "Beta", exact: true }).click();
+  const betaInitialSync = await f.request("syncHumanConversation", { conversationId: B }, fullWindow2.id);
+  await f.resolveRequest(betaInitialSync, messages(10, 11, "b"));
+  const betaInitialTail = await f.request(TAIL, { conversationId: B, beforeSeq: null }, betaInitialSync.id);
+  await f.resolveRequest(betaInitialTail, {
+    ...historyPage(messages(10, 11, "b")),
+    historyCoverageComplete: false,
+  });
+  await f.expectRows(["b10", "b11"]);
+
+  const betaContinuationSync = await f.request("syncHumanConversation", { conversationId: B }, betaInitialTail.id);
+  await f.call("switchAccount", "fixture-b");
+  const accountBSync = await f.request("syncHumanConversation", { conversationId: A, account: "fixture-b" }, betaContinuationSync.id);
+  await f.rejectRequest(betaContinuationSync, "STALE_ACCOUNT_A_COVERAGE_SYNC");
+  await f.resolveRequest(accountBSync, messages(201, 202, "acctb-"));
+  const accountBTail = await f.request(TAIL, { conversationId: A, beforeSeq: null, account: "fixture-b" }, accountBSync.id);
+  await f.resolveRequest(accountBTail, historyPage(messages(201, 202, "acctb-")));
+  await f.expectRows(["acctb-201", "acctb-202"]);
+  await f.frames();
+  assert.equal(await f.page.getByText("STALE_ACCOUNT_A_COVERAGE_SYNC", { exact: false }).count(), 0);
+});

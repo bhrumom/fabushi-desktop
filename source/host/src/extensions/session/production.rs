@@ -3319,6 +3319,26 @@ impl ProductionSessionWorkers {
         Ok(owner)
     }
 
+    pub(crate) fn metadata_history_coverage_incomplete(metadata: &serde_json::Value) -> bool {
+        metadata
+            .get("humanHistoryCoverage")
+            .and_then(|coverage| coverage.get("complete"))
+            .and_then(serde_json::Value::as_bool)
+            == Some(false)
+    }
+
+    pub fn human_conversation_coverage_incomplete(
+        &self,
+        conversation_id: &str,
+    ) -> Result<bool, String> {
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        Ok(Self::metadata_history_coverage_incomplete(&metadata))
+    }
+
     pub fn list_human_conversations(&self) -> Result<Vec<serde_json::Value>, String> {
         let root = get_native_conversations_root(&self.agents_root);
         let entries = match fs::read_dir(&root) {
@@ -3351,13 +3371,19 @@ impl ProductionSessionWorkers {
                 .get("lastActivityAt")
                 .and_then(serde_json::Value::as_f64)
                 .unwrap_or_default();
-            conversations.push(serde_json::json!({
+            let mut conversation = serde_json::json!({
                 "id": id,
                 "kind": "human",
                 "title": title,
                 "participantIds": participant_ids,
                 "updatedAt": updated_at,
-            }));
+            });
+            if Self::metadata_history_coverage_incomplete(&metadata) {
+                if let Some(object) = conversation.as_object_mut() {
+                    object.insert("historyCoverageComplete".into(), serde_json::json!(false));
+                }
+            }
+            conversations.push(conversation);
         }
         conversations.sort_by(|left, right| {
             left.get("id")
