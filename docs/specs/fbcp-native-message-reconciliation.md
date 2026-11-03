@@ -2870,3 +2870,37 @@ intents, transcripts, cursors and old stores. Full fixed-U source/legal,
 active service, installed/signed supported platforms, complete Bot/UI/
 accessibility/security/performance/soak/upgrade/rollback and independent
 acceptance requirements remain unchanged.
+
+## NMR-UI-EVIDENCE-ISOLATION-01 — Keep owned browser evidence outside source watching
+
+Exact UI inputs at `1de845141d5e30ae9ff4965caf2915f68df2f650` executed
+205 cases with204 passed and the final author recovery case failing during
+context teardown (run41559676882/job125666991740). Retained artifact13197690404
+has SHA256 `e06334d026a6086c574fd3f884e465d60d166e4d88de4754d7ec7d24beb0f575`.
+The read-only Actions inspection binds that artifact and shows the case's
+business assertions and afterEach completed before an approximately88-second
+context fixture teardown and a subsequent tracing-already-stopping error.
+The identical UI inputs at `e8ee557383661694c44a590950f2fdc8631c39a9`
+passed205 without retry; this does not erase the earlier teardown failure or
+establish stability.
+
+The author fixture's Vite root is desktop and its Playwright output is the
+custom `author-recovery-results` directory. Locked Vite6.4.3 excludes the
+default test-results path, but this custom output currently remains watched.
+The observed artifact HTML watch event is from the first case, not evidence of
+a last-case navigation. It is an isolation defect; it is not by itself proof
+of the slow tracing queue's cause.
+
+In existing `desktop/e2e/native-message-author-recovery.spec.ts`, explicitly
+ignore only its own author-recovery-results directory in Vite's watcher.
+Keep actual application source watching, all23 original behavior cases and
+oracles,90-second case budget, zero retries, trace/video capture, screenshots,
+diagnostics and fixture teardown. Do not change global Playwright defaults,
+hide uncaught browser errors, skip cases, reload to recover or reinterpret a
+failed teardown as passed. No product/runtime or persistence behavior changes.
+
+The same containing-H UI205 gate must still complete successfully. Preserve
+the earlier failure and the exact artifact/read-only diagnostic evidence;
+if nondeterminism remains, inspect the next concrete failure boundary instead
+of repeating unchanged inputs to select a green result. This fixture repair
+does not grant visual/accessibility, performance/soak or independent ACCEPT.

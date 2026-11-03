@@ -92,6 +92,36 @@ jobs:
                     completed.append({**prior,"end":end,"duration":end-start if isinstance(start,(int,float)) and isinstance(end,(int,float)) else None,"error":e.get("error")})
                 sequences.append({"file":name,"event_types":dict(types),"open_calls":list(before.values())[-25:],"last_completed_calls":completed[-25:],"slow_calls":[c for c in completed if (c.get("duration") or 0)>=2000]})
               summary["trace_calls"]=sequences
+          with zipfile.ZipFile(io.BytesIO(source)) as archive:
+            case_traces=[]
+            for trace_path in [n for n in archive.namelist() if n.startswith("desktop/author-recovery-results/") and n.endswith("/trace.zip")]:
+              directory=trace_path.rsplit("/",1)[0]+"/"
+              files=[n for n in archive.namelist() if n.startswith(directory) and not n.endswith("/")]
+              detail={"case_directory":directory,"trace_zip_bytes":archive.getinfo(trace_path).file_size,
+                "videos":[{"name":n.rsplit("/",1)[-1],"bytes":archive.getinfo(n).file_size} for n in files if n.endswith(".webm")],
+                "png_count":sum(n.endswith(".png") for n in files),"artifact_bytes":sum(archive.getinfo(n).file_size for n in files)}
+              with zipfile.ZipFile(io.BytesIO(archive.read(trace_path))) as trace:
+                detail["trace_members"]=[{"name":n,"bytes":trace.getinfo(n).file_size} for n in trace.namelist() if not n.startswith("resources/")]
+                if "test.trace" in trace.namelist():
+                  starts={};spans=[];event_errors=[]
+                  for line in trace.read("test.trace").splitlines():
+                    try:e=json.loads(line)
+                    except ValueError:continue
+                    if e.get("type")=="before":
+                      starts[e.get("callId")]={"callId":e.get("callId"),"parentId":e.get("parentId"),"title":e.get("title"),"method":e.get("method"),"start":e.get("startTime")}
+                    elif e.get("type")=="after":
+                      b=starts.pop(e.get("callId"),{})
+                      a=b.get("start");z=e.get("endTime")
+                      spans.append({**b,"end":z,"duration":z-a if isinstance(a,(int,float)) and isinstance(z,(int,float)) else None,"error":e.get("error")})
+                    elif e.get("type")=="error":event_errors.append(e.get("error"))
+                  detail["fixture_and_hook_spans"]=[s for s in spans if s.get("method") in ["fixture","hook"]]
+                  detail["slow_other_spans"]=[s for s in spans if (s.get("duration") or 0)>=2000 and s.get("method") not in ["fixture","hook"]]
+                  detail["last_calls"]=spans[-12:]
+                  detail["open_calls"]=list(starts.values())
+                  detail["errors"]=event_errors
+              case_traces.append(detail)
+            summary["all_case_trace_costs"]=case_traces
+
           output=json.dumps(summary,ensure_ascii=False,indent=2)+"\n"
           pathlib.Path("evidence-summary/summary.json").write_text(output)
           print(output)
