@@ -1,4 +1,3 @@
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -154,17 +153,6 @@ pub(super) fn probe_human_conversation_store(
     if main_len == 0 && !has_retained_sidecar {
         return Ok(());
     }
-    if main_len >= 100 {
-        // A WAL or rollback journal can restore pages of an existing SQLite
-        // database, but it cannot make a non-SQLite main file a valid database.
-        // Reject that identity before the writable opener can discard orphaned
-        // sidecars while attempting journal-mode/schema initialization.
-        let mut header = [0_u8; 16];
-        std::fs::File::open(db_path)?.read_exact(&mut header)?;
-        if &header != b"SQLite format 3\0" {
-            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
-        }
-    }
     if main_len < 100 {
         // Missing/empty mains with retained sidecars need dedicated recovery.
         // SQLite may otherwise delete those files while opening a new store.
@@ -181,12 +169,11 @@ pub(super) fn probe_human_conversation_store(
             | OpenFlags::SQLITE_OPEN_PRIVATE_CACHE,
     )?;
     db.busy_timeout(Duration::from_millis(busy_timeout_ms))?;
-    // This read invokes SQLite's page-one format checks without loading the
-    // schema. Its value is not the current WAL snapshot or a migration version.
-    let _: i64 = db.query_row("PRAGMA schema_version", [], |row| row.get(0))?;
-    if has_snapshot_sidecar {
-        return Ok(());
-    }
+    // Exercise SQLite's page and b-tree validation before any writable
+    // journal-mode/schema initialization. This also rejects full-length
+    // non-SQLite files that PRAGMA schema_version alone can treat as version 0.
+    // The probe uses SQLite's own handle throughout: opening/closing a raw file
+    // descriptor here can release another connection's POSIX record locks.
     let status = db.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
     if status != "ok" {
         return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
