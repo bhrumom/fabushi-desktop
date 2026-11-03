@@ -1,0 +1,231 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "evidence_kind": "readback-of-GitHub-Actions-output-and-source-byte-identities-only",
+  "local_product_execution": false,
+  "subject_commit": "23c2a567d874509f56353b8cae737cdf1437309d",
+  "subject_tree": "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "repository": "openclaw/openclaw",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": 41576693105,
+  "run_attempt": 1,
+  "job_id": 125721731215,
+  "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41576693105/job/125721731215",
+  "artifact_id": 13204645887,
+  "artifact_name": "ocrm-plugin-edge-23c2a567d874509f56353b8cae737cdf1437309d",
+  "artifact_bytes": 9983,
+  "artifact_expected_sha256": "c3a0b4e32bf27eebf9d3f16f22124a2f8dcf56213db98ce02905dac2b4f19655",
+  "artifact_actual_sha256": "c3a0b4e32bf27eebf9d3f16f22124a2f8dcf56213db98ce02905dac2b4f19655",
+  "receipt_sha256": "bd1aea5a4749cc8fc69cc71527f640e169c67ae2e6a0a5a0bd0696c2eb9dd6bd",
+  "raw_tap_expected_sha256": "ca6a6bb228e910946995b1162db1c0d48975ff11e1316f45dfa4706f7da68a5f",
+  "raw_tap_actual_sha256": "ca6a6bb228e910946995b1162db1c0d48975ff11e1316f45dfa4706f7da68a5f",
+  "raw_tap_counts": {
+    "tests": [
+      133
+    ],
+    "pass": [
+      133
+    ],
+    "fail": [
+      0
+    ],
+    "cancelled": [
+      0
+    ],
+    "skipped": [
+      0
+    ],
+    "todo": [
+      0
+    ]
+  },
+  "raw_required_positive_occurrences": {
+    "SDK late failed materialization preserves the completed winner and a fresh cache hit": 1,
+    "SDK concurrent successful materializations reuse the first completed directory": 1,
+    "SDK incomplete and non-directory cache targets are preserved without installation": 1,
+    "SDK a target appearing during materialization is preserved without publication": 1,
+    "SDK a failed materialization removes only its owned staging directory": 1,
+    "SDK marker and publication failures do not report a successful materialization": 1,
+    "SDK cleanup I/O failures preserve the primary load category and raw causes": 1,
+    "Host late failed materialization preserves a zero-skill winner and a fresh cache hit": 1,
+    "Host staging cleanup failure preserves the canonical authorization denial": 1,
+    "Host cleanup I/O failures preserve canonical remote denial and recovery": 1,
+    "Host cache-owned materialization failures cannot create authorization denials": 1
+  },
+  "receipt_counts": {
+    "cancelled": 0,
+    "fail": 0,
+    "pass": 133,
+    "skipped": 0,
+    "tests": 133,
+    "todo": 0
+  },
+  "inputs": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob_sha": "b97a3a2622620078b7654862c0b33ac47230cca6",
+      "expected_sha256": "5203014831b6aa5f6108b1d8b8dcd87407e52c5ef389e6445558fa54aaef95e5",
+      "actual_sha256": "5203014831b6aa5f6108b1d8b8dcd87407e52c5ef389e6445558fa54aaef95e5",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "desktop/scripts/build-electron-runtime.mjs",
+      "blob_sha": "8c5e5f1e35a3388a9032cbc72ef8ee6370119e1b",
+      "expected_sha256": "04008955615fb4dbc62cb67b126c839376fefbb22d39ddd9b2ff899995246c11",
+      "actual_sha256": "04008955615fb4dbc62cb67b126c839376fefbb22d39ddd9b2ff899995246c11",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "frontend/src/recovered/contracts/desktop-bridge.ts",
+      "blob_sha": "9b634d8d8e3d51a4e60424ebb55a17cb89432ca4",
+      "expected_sha256": "41af68792eb28735150987159f76449e7f2c60716f44b2db34bd49e9d0ff0dee",
+      "actual_sha256": "41af68792eb28735150987159f76449e7f2c60716f44b2db34bd49e9d0ff0dee",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+      "blob_sha": "f2daef120c2e0b8b02d0419e9c003913d5cd6df9",
+      "expected_sha256": "ef57f3e973584ab1135e3be96f01f7b79738417eeffa2479d5232f6294bc3ade",
+      "actual_sha256": "ef57f3e973584ab1135e3be96f01f7b79738417eeffa2479d5232f6294bc3ade",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+      "blob_sha": "6252635f8a7d1abeae26bc4913e3e4fb134d9e89",
+      "expected_sha256": "fe741f8bb7de19e4e0f07d3826a36183a7ce0c368fc1d309c22ac41dde54e956",
+      "actual_sha256": "fe741f8bb7de19e4e0f07d3826a36183a7ce0c368fc1d309c22ac41dde54e956",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "blob_sha": "cfd735257b6ba538312dbd408c1133da24d800ed",
+      "expected_sha256": "75484e2d48e6067702df36c0768d2de27503d8bdb07ff63115ee2048e5d8fde5",
+      "actual_sha256": "75484e2d48e6067702df36c0768d2de27503d8bdb07ff63115ee2048e5d8fde5",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+      "blob_sha": "a50e82588d796974b19d8253c5b74351c35a44bf",
+      "expected_sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e",
+      "actual_sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "blob_sha": "6653252d5f12ad3e345ee9104dd58c93734594df",
+      "expected_sha256": "ecf5366089ba8177514fac6ce6da38cafcf7f9f794f3cb80184be9a3d0bf7f37",
+      "actual_sha256": "ecf5366089ba8177514fac6ce6da38cafcf7f9f794f3cb80184be9a3d0bf7f37",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/electron-main/main-edge-model.contract.test.ts",
+      "blob_sha": "f42091c0f3f7e4bcead071f1a5f722f426efb582",
+      "expected_sha256": "a7f363d839450f5ebe920e98258651b3fe7a2e50f0824bd03b5d32718908a957",
+      "actual_sha256": "a7f363d839450f5ebe920e98258651b3fe7a2e50f0824bd03b5d32718908a957",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/electron-main/main-edge.ts",
+      "blob_sha": "9519bda4455c09343f8f868449a9afd6f9fd2498",
+      "expected_sha256": "7094d4eb76a3bfc58a205ba228a69cfc0a2b666209b9ff5e1b292a090aaeac8d",
+      "actual_sha256": "7094d4eb76a3bfc58a205ba228a69cfc0a2b666209b9ff5e1b292a090aaeac8d",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+      "blob_sha": "b8ff7fbdf1c8ff540fa4eaf1b9e798d12077d722",
+      "expected_sha256": "6c992ca58be3569c3da5cc34c20c2b06ed905fb411b921a647dc45c5784ee0a2",
+      "actual_sha256": "6c992ca58be3569c3da5cc34c20c2b06ed905fb411b921a647dc45c5784ee0a2",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.ts",
+      "blob_sha": "d81e1da13c9b39f4e2943ab48e8b9073bb8dc987",
+      "expected_sha256": "159abbd621508f406a9eeb3044fb1b1627304914d4adbd4169348e24d1fb5279",
+      "actual_sha256": "159abbd621508f406a9eeb3044fb1b1627304914d4adbd4169348e24d1fb5279",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-desktop.ts",
+      "blob_sha": "98d57679b13b215fafe02fa61860edb95c660197",
+      "expected_sha256": "c604a675c5bb1bd6cd196e3f8fecc123090da487accecb1d11c6e4a4b0343f43",
+      "actual_sha256": "c604a675c5bb1bd6cd196e3f8fecc123090da487accecb1d11c6e4a4b0343f43",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "blob_sha": "c611c057f0dc57c35805adae759350d84c420ebe",
+      "expected_sha256": "fa31ca8ae82054d63443cc4c5083a71d53886ebb0ca10e48032a40c6a83f75c9",
+      "actual_sha256": "fa31ca8ae82054d63443cc4c5083a71d53886ebb0ca10e48032a40c6a83f75c9",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/cursor-marketplace.ts",
+      "blob_sha": "6a2433588b5f17f3609e6ca85e4aa0f2a8612e21",
+      "expected_sha256": "42649f4923d61e15918902261a08366a5413f1ce078e9cb8892527d85cd571b1",
+      "actual_sha256": "42649f4923d61e15918902261a08366a5413f1ce078e9cb8892527d85cd571b1",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.contract.test.ts",
+      "blob_sha": "fa41d87a2e9f8b03ca7d8125309a96673d57482e",
+      "expected_sha256": "8c890da0e880969dde45729f188290c374f313047328a49c6db0e580db38ed22",
+      "actual_sha256": "8c890da0e880969dde45729f188290c374f313047328a49c6db0e580db38ed22",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.ts",
+      "blob_sha": "f0028c8fbecc602828fb6ed48dce9fd77855102c",
+      "expected_sha256": "81dd7008e559587d5ce140918e585e7769fe7efb131214b51ec52451b6b4c0f6",
+      "actual_sha256": "81dd7008e559587d5ce140918e585e7769fe7efb131214b51ec52451b6b4c0f6",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/shared/agents/sand-agent-model.ts",
+      "blob_sha": "884157ba4f04ae3c126fad9c3a6b317acc0d9452",
+      "expected_sha256": "16e2a76f850140ca3ebd61c4ba82b91dea964b472bfc96b5dfa1ef1777cdc571",
+      "actual_sha256": "16e2a76f850140ca3ebd61c4ba82b91dea964b472bfc96b5dfa1ef1777cdc571",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/shared/node/settings/sand-settings-store.ts",
+      "blob_sha": "f45786daa8f7851bf967877e86e04d0d76e6d166",
+      "expected_sha256": "3ac393ed1562585ca14ce296b71345db226036a768516a6b69c679791760308a",
+      "actual_sha256": "3ac393ed1562585ca14ce296b71345db226036a768516a6b69c679791760308a",
+      "matches": true,
+      "available": true
+    },
+    {
+      "path": "source/shared/rpc/coordinator-main.ts",
+      "blob_sha": "c82ace78bc4c1b264aa3d2818944f83ed4919cfe",
+      "expected_sha256": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+      "actual_sha256": "0515d265b4db324c42755f6d3f031b83bffe10a3c793770a716b9587e42b0b08",
+      "matches": true,
+      "available": true
+    }
+  ],
+  "scope": "Actual SDK cache publisher and Host loader with deterministic held installation I/O, real directories, sentinel bytes and subsequent cache consumers. A failed attempt removes only its own staging directory; completed winners, incomplete and non-directory collisions are retained. Controlled exact-stage cleanup ETIMEDOUT/EACCES failures preserve the primary SDK category, canonical Host denial or ordinary non-auth result, full raw causes, visible residue and later successful loads; the native ENOTDIR residue control remains. This Linux Node receipt does not establish Rust admission, remote cancellation, process-crash cleanup, cross-account authorization, real marketplace or macOS/Windows package acceptance.",
+  "independent_acceptance": "pending",
+  "later_subjects_inherit_acceptance": false
+}

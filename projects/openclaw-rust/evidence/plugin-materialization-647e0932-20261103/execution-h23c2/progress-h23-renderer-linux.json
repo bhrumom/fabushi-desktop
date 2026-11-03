@@ -1,0 +1,78 @@
+{
+  "schema": "ocrm-execution-readback-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "observed_at_utc": "2026-11-03 04:32:29 UTC",
+  "subject_commit": "23c2a567d874509f56353b8cae737cdf1437309d",
+  "subject_tree": "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "evidence_carrier_is_not_tested_subject": true,
+  "runtime": {
+    "run_id": 41576693105,
+    "run_attempt": 1,
+    "renderer": {
+      "job_id": 125721731215,
+      "status": "completed",
+      "conclusion": "success",
+      "artifact_id": 13204645887,
+      "artifact_sha256": "c3a0b4e32bf27eebf9d3f16f22124a2f8dcf56213db98ce02905dac2b4f19655",
+      "shipping_electron_bundle": "passed",
+      "node_counts": {
+        "pass": 133,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "materialization_cases": 11,
+      "each_materialization_case_positive_once": true,
+      "input_hashes_matched": 20,
+      "scope": "Actual SDK/Host materialization and adjacent declared Node contracts; not real marketplace/account or Rust process-loss recovery."
+    },
+    "linux_media": {
+      "job_id": 125721731498,
+      "step_only": true,
+      "artifact_id": 13204156561,
+      "artifact_sha256": "5733daf75ee8a5940b058117ea1e6d89c6c5c6617579cafff7aa9fc995ca1f5b",
+      "commands": 16,
+      "pass": 163,
+      "fail": 0,
+      "ignored": 0,
+      "input_identities_matched": 46,
+      "raw_logs_matched": 16,
+      "scope": "Actual native media owner, service/Channel and selected facade controls; private App/Session custody uses a separate App receipt."
+    },
+    "retained_windows_media": {
+      "job_id": 125721731609,
+      "artifact_id": 13203789210,
+      "commands": 16,
+      "pass": 158,
+      "fail": 0,
+      "ignored": 0,
+      "artifact_sha256": "d086d1ff201c6d7824e98005eda0359310970ba5e9539f8a09a736fa27fbc256"
+    },
+    "pending_at_observation": [
+      "sqlite-native-path App and whole-job terminal evidence",
+      "macOS rust-host job125721731668 remains queued",
+      "plugin Rust exact-H output evidence collection"
+    ]
+  },
+  "source_authority": {
+    "run_id": 41576692891,
+    "job_id": 125721730402,
+    "status": "completed",
+    "conclusion": "success",
+    "source_review_controls": 33,
+    "materialization_tests": 21,
+    "tracked_paths": 62130,
+    "g02_mode": "structural",
+    "dependency_lfs_and_final_closure": "open"
+  },
+  "preserved_limits": [
+    "All eight global flags remain false",
+    "No full unit verified or independent ACCEPT",
+    "H23 does not test bb5 auth-recovery or later production candidates",
+    "Real providers/channels/plugins/nodes/devices, UI/timing, packages, upgrades and final G01-G12/AC01-AC24 remain open"
+  ],
+  "local_product_execution": false
+}

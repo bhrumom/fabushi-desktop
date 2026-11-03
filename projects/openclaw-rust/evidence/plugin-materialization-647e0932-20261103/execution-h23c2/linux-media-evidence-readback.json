@@ -1,0 +1,1148 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "evidence_kind": "readback-of-GitHub-Actions-output-and-source-byte-identities-only",
+  "local_product_execution": false,
+  "subject_commit": "23c2a567d874509f56353b8cae737cdf1437309d",
+  "subject_tree": "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run_id": 41576693105,
+  "run_attempt": 1,
+  "job_id": 125721731498,
+  "job_scope": "media step only; remaining job steps retain their own status",
+  "artifact_id": 13204156561,
+  "artifact_expected_sha256": "5733daf75ee8a5940b058117ea1e6d89c6c5c6617579cafff7aa9fc995ca1f5b",
+  "artifact_actual_sha256": "5733daf75ee8a5940b058117ea1e6d89c6c5c6617579cafff7aa9fc995ca1f5b",
+  "artifact_bytes": 117704,
+  "receipt_sha256": "b67df74df5b2cb62d45adf0413414fb0591c883b2989af087a10803a2ff0a011",
+  "inputs": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected_git_blob": "b97a3a2622620078b7654862c0b33ac47230cca6",
+      "git_blob": "b97a3a2622620078b7654862c0b33ac47230cca6",
+      "normalized_checkout_blob": "b97a3a2622620078b7654862c0b33ac47230cca6",
+      "git_blob_matches": true,
+      "working_tree_sha256": "5203014831b6aa5f6108b1d8b8dcd87407e52c5ef389e6445558fa54aaef95e5",
+      "source_sha256": "5203014831b6aa5f6108b1d8b8dcd87407e52c5ef389e6445558fa54aaef95e5",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "expected_git_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "git_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "normalized_checkout_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "git_blob_matches": true,
+      "working_tree_sha256": "f08df363a4ba718cb3ffa0b3fa0cb6f50d61ac6a214a4cf66f8da8306525df2e",
+      "source_sha256": "f08df363a4ba718cb3ffa0b3fa0cb6f50d61ac6a214a4cf66f8da8306525df2e",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+      "expected_git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "git_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "normalized_checkout_blob": "62c61025c47b12ddb3782cc3f1db32e51cb5e205",
+      "git_blob_matches": true,
+      "working_tree_sha256": "078041ad0e2a35f1395de1713a1bd501474fc183b09a75f0852743dea823c083",
+      "source_sha256": "078041ad0e2a35f1395de1713a1bd501474fc183b09a75f0852743dea823c083",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "expected_git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "normalized_checkout_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "git_blob_matches": true,
+      "working_tree_sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "source_sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "expected_git_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "git_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "normalized_checkout_blob": "9b477d438dd0a9325cbe52b670c2ada774f352e8",
+      "git_blob_matches": true,
+      "working_tree_sha256": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+      "source_sha256": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/Cargo.lock",
+      "expected_git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "normalized_checkout_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+      "git_blob_matches": true,
+      "working_tree_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+      "source_sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/build.rs",
+      "expected_git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "git_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "normalized_checkout_blob": "64e0666f1fa9773181344abd8ca817996cd652a8",
+      "git_blob_matches": true,
+      "working_tree_sha256": "567fcd892c384c06b14f2494df146475d4cf8ada3db243b5468c31d5ae89f750",
+      "source_sha256": "567fcd892c384c06b14f2494df146475d4cf8ada3db243b5468c31d5ae89f750",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/lib.rs",
+      "expected_git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "normalized_checkout_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+      "git_blob_matches": true,
+      "working_tree_sha256": "5634ab8eaafe9f88a75a855c74ef1d98def6050314aaf2ec966e283f202e8798",
+      "source_sha256": "5634ab8eaafe9f88a75a855c74ef1d98def6050314aaf2ec966e283f202e8798",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_store.rs",
+      "expected_git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "git_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "normalized_checkout_blob": "8ebfaf9056b9d8c516cc794faacaf6351ed7dfd1",
+      "git_blob_matches": true,
+      "working_tree_sha256": "8cf2757ba7ff661b99d6e091ee602fac97d21b9b3747f275362112743b422687",
+      "source_sha256": "8cf2757ba7ff661b99d6e091ee602fac97d21b9b3747f275362112743b422687",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_store_shared.rs",
+      "expected_git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "git_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "normalized_checkout_blob": "20561901efe9dc99a4fa92469d6e3a1684439d0f",
+      "git_blob_matches": true,
+      "working_tree_sha256": "0e844d09cbdc44bd9497b957eafa1e82679e0c615178a42846d6d11c73c35890",
+      "source_sha256": "0e844d09cbdc44bd9497b957eafa1e82679e0c615178a42846d6d11c73c35890",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/attachments_service.rs",
+      "expected_git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "git_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "normalized_checkout_blob": "75a49490ee80e7416df66df2431d2f3013f1b17c",
+      "git_blob_matches": true,
+      "working_tree_sha256": "416e8af1d383433e37809244c4bc538c36d945f0a2d13229225b2f5c46e1a508",
+      "source_sha256": "416e8af1d383433e37809244c4bc538c36d945f0a2d13229225b2f5c46e1a508",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/extension.rs",
+      "expected_git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "git_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "normalized_checkout_blob": "1662b752a4a0366d11079c25d424ba121a5a3eee",
+      "git_blob_matches": true,
+      "working_tree_sha256": "0dc756671a349ce936284848a05dd5a6a9afb31a2d7b31f0349f3afe56bb0015",
+      "source_sha256": "0dc756671a349ce936284848a05dd5a6a9afb31a2d7b31f0349f3afe56bb0015",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/host_production_extensions.rs",
+      "expected_git_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+      "git_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+      "normalized_checkout_blob": "08bf6b21cd9962dfee141ebee1ae61236cd5a7e7",
+      "git_blob_matches": true,
+      "working_tree_sha256": "2cda71354abe6bd92ef86e870275a94f0d68c67db7068d89386e4226045667c6",
+      "source_sha256": "2cda71354abe6bd92ef86e870275a94f0d68c67db7068d89386e4226045667c6",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "expected_git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "git_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "normalized_checkout_blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "git_blob_matches": true,
+      "working_tree_sha256": "244eb53368362b10734203354b30bb899f9298c440008a93f9b4c128cfef6329",
+      "source_sha256": "244eb53368362b10734203354b30bb899f9298c440008a93f9b4c128cfef6329",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "expected_git_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "git_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "normalized_checkout_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "git_blob_matches": true,
+      "working_tree_sha256": "36605022e09e91269ee17770a48fa9897e5ba4adcf5bbc7b21b6f382e3cdd4fa",
+      "source_sha256": "36605022e09e91269ee17770a48fa9897e5ba4adcf5bbc7b21b6f382e3cdd4fa",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_store_contract.rs",
+      "expected_git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "git_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "normalized_checkout_blob": "9c83d581fc0f8ce7f56c9e524ebe170f6c5969bc",
+      "git_blob_matches": true,
+      "working_tree_sha256": "5dea2784cc6fee31cee4dd266c9f8355a52b9bbccb99c3c47615db9302d1e704",
+      "source_sha256": "5dea2784cc6fee31cee4dd266c9f8355a52b9bbccb99c3c47615db9302d1e704",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+      "expected_git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "git_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "normalized_checkout_blob": "f0892088bfa3448441f7b92df6344692ac535932",
+      "git_blob_matches": true,
+      "working_tree_sha256": "294aa876496bb5e0efe2d59d29bfb21bc25fbdb4a4a9c6d0b723a8718d01af61",
+      "source_sha256": "294aa876496bb5e0efe2d59d29bfb21bc25fbdb4a4a9c6d0b723a8718d01af61",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
+      "expected_git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "git_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "normalized_checkout_blob": "9087b941ce253ac261a453df3d8b0054e64804e2",
+      "git_blob_matches": true,
+      "working_tree_sha256": "d45556ae26bbd0bc6fcb86440619b063b3455286c442bd722d9c9d6dfc2d4256",
+      "source_sha256": "d45556ae26bbd0bc6fcb86440619b063b3455286c442bd722d9c9d6dfc2d4256",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "expected_git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "normalized_checkout_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "git_blob_matches": true,
+      "working_tree_sha256": "bcd7bf57f01a4f5996a04bd7d9c937436bbfcb45ac86048b12c3877ca905cedc",
+      "source_sha256": "bcd7bf57f01a4f5996a04bd7d9c937436bbfcb45ac86048b12c3877ca905cedc",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "expected_git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "normalized_checkout_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "git_blob_matches": true,
+      "working_tree_sha256": "33eb05fd603a4c032918ef61e0b1c0d451ea25fa24f82fa42f4e99323d6bc738",
+      "source_sha256": "33eb05fd603a4c032918ef61e0b1c0d451ea25fa24f82fa42f4e99323d6bc738",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/tests/openclaw_html_provenance_contract.rs",
+      "expected_git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "git_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "normalized_checkout_blob": "64f7c72e44d904a4ba84c524577c24688c80c278",
+      "git_blob_matches": true,
+      "working_tree_sha256": "09d388e2ead4e0c7a4d78d2f4c0037bbfd60acdf20ff1c1b74159ee1db018586",
+      "source_sha256": "09d388e2ead4e0c7a4d78d2f4c0037bbfd60acdf20ff1c1b74159ee1db018586",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/tests/openclaw_channel_and_local_roots_contract.rs",
+      "expected_git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "git_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "normalized_checkout_blob": "47161efa7f1fb526c517de4394c739cfe3734623",
+      "git_blob_matches": true,
+      "working_tree_sha256": "07edb09bb8dfcc4c806d9c41dd8fb7b1b08291d344667f19d3c25e38e25264b6",
+      "source_sha256": "07edb09bb8dfcc4c806d9c41dd8fb7b1b08291d344667f19d3c25e38e25264b6",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "expected_git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "normalized_checkout_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "git_blob_matches": true,
+      "working_tree_sha256": "e1072ab95a02e4da8ad7925d22a84fe0e25d9ae802b4f97e717cc06b0238093d",
+      "source_sha256": "e1072ab95a02e4da8ad7925d22a84fe0e25d9ae802b4f97e717cc06b0238093d",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
+      "expected_git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "git_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "normalized_checkout_blob": "c9a1c59e8c2b812f7601335acc7bb762b2b1b698",
+      "git_blob_matches": true,
+      "working_tree_sha256": "ded8ac231c4c5727fe66c69b8c41aec3fdf4213abe65d62c6f1e1da50fdd429b",
+      "source_sha256": "ded8ac231c4c5727fe66c69b8c41aec3fdf4213abe65d62c6f1e1da50fdd429b",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/image_ops.rs",
+      "expected_git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "git_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "normalized_checkout_blob": "bcbb2f0d96ddb00dc9f10297ecdf9281171f856d",
+      "git_blob_matches": true,
+      "working_tree_sha256": "91c345a94037a0ef218f9d8c64ba64d53762b57d4ec533fe3a06bc53e1450fee",
+      "source_sha256": "91c345a94037a0ef218f9d8c64ba64d53762b57d4ec533fe3a06bc53e1450fee",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/media_mime.rs",
+      "expected_git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "git_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "normalized_checkout_blob": "b380ea8446d859a03b594aa93040d1425d4f0662",
+      "git_blob_matches": true,
+      "working_tree_sha256": "524302269a83413e2ad87212c3b72819fecc8bdc644be1b910f508c0aa1c7217",
+      "source_sha256": "524302269a83413e2ad87212c3b72819fecc8bdc644be1b910f508c0aa1c7217",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/tests/openclaw_image_ops_contract.rs",
+      "expected_git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "git_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "normalized_checkout_blob": "f7230c34879341a9126e52b38bc1e2621db3b083",
+      "git_blob_matches": true,
+      "working_tree_sha256": "7821f5ce3646864a50446ee823e5fc600176a503326450449052f12794c7de65",
+      "source_sha256": "7821f5ce3646864a50446ee823e5fc600176a503326450449052f12794c7de65",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "expected_git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "normalized_checkout_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "git_blob_matches": true,
+      "working_tree_sha256": "2ceaf7878a603c77d438e6dd4d68ac9366eb0216976e02100f5c1c6039b14f7c",
+      "source_sha256": "2ceaf7878a603c77d438e6dd4d68ac9366eb0216976e02100f5c1c6039b14f7c",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/src/gateway_protocol.rs",
+      "expected_git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "git_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "normalized_checkout_blob": "9eba2275f97ebaa9b30ac057f76dc610e862d5e7",
+      "git_blob_matches": true,
+      "working_tree_sha256": "25c05412af9366eec45a0fcf4ce22b810a3b7fd368b6c98e3faf836df4bff7db",
+      "source_sha256": "25c05412af9366eec45a0fcf4ce22b810a3b7fd368b6c98e3faf836df4bff7db",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/host_gateway_api.rs",
+      "expected_git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "normalized_checkout_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "git_blob_matches": true,
+      "working_tree_sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+      "source_sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+      "expected_git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "git_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "normalized_checkout_blob": "f08949e5d478bbb04060f186e37b52c7fdeb3a5e",
+      "git_blob_matches": true,
+      "working_tree_sha256": "a5f186611afdac8e1197f9912e0d67705ef21001654ee7ac1899ba4d9a5e47ad",
+      "source_sha256": "a5f186611afdac8e1197f9912e0d67705ef21001654ee7ac1899ba4d9a5e47ad",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/tests/openclaw_media_reference_contract.rs",
+      "expected_git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "git_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "normalized_checkout_blob": "df52afa0b1c727b2236dc2d96328047e10daab85",
+      "git_blob_matches": true,
+      "working_tree_sha256": "c64b47b827f0b674a3fa58080d51c7196655574d65e8c70365bf3d9c9aca309d",
+      "source_sha256": "c64b47b827f0b674a3fa58080d51c7196655574d65e8c70365bf3d9c9aca309d",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/tests/attachments_service_contract.rs",
+      "expected_git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "git_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "normalized_checkout_blob": "b4dc7511a2e9e6ffefff5c269c945787feba95a9",
+      "git_blob_matches": true,
+      "working_tree_sha256": "e71bcbe332ec8c4012d39e8db5ba541611ab38491bceeddb7beb928cf879a838",
+      "source_sha256": "e71bcbe332ec8c4012d39e8db5ba541611ab38491bceeddb7beb928cf879a838",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/box_staging.rs",
+      "expected_git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "git_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "normalized_checkout_blob": "6339dd944730c07e880883c61b97a6778fc25ead",
+      "git_blob_matches": true,
+      "working_tree_sha256": "ec3b4fc5ad79d7d39e6a19b9cfca44292ab7dd0a0ea484502886d04f1b2e7e6c",
+      "source_sha256": "ec3b4fc5ad79d7d39e6a19b9cfca44292ab7dd0a0ea484502886d04f1b2e7e6c",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+      "expected_git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "git_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "normalized_checkout_blob": "b7d1d911c1c269cd0e2171e80991b76ca4bdb048",
+      "git_blob_matches": true,
+      "working_tree_sha256": "37342663507ff20524afdd1b7f30a745c96e7d00b3dda6c4ad83ca71828c1ea2",
+      "source_sha256": "37342663507ff20524afdd1b7f30a745c96e7d00b3dda6c4ad83ca71828c1ea2",
+      "bytes_match": true,
+      "before_after_equal": true
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "expected_git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "normalized_checkout_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "git_blob_matches": true,
+      "working_tree_sha256": "7cff2caf2a4ae941f00b5c41d4134aa333f4657077a9146313398556ad0d85e9",
+      "source_sha256": "7cff2caf2a4ae941f00b5c41d4134aa333f4657077a9146313398556ad0d85e9",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "expected_git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "normalized_checkout_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "git_blob_matches": true,
+      "working_tree_sha256": "712a51c8240dd0e612eb52644f715f53d56773e59d162d5a87bcaa74239b1a6d",
+      "source_sha256": "712a51c8240dd0e612eb52644f715f53d56773e59d162d5a87bcaa74239b1a6d",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "expected_git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "normalized_checkout_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "git_blob_matches": true,
+      "working_tree_sha256": "146dadba7911290f7f78a4b6e436e02b1b0332754e7b219b62aba39690f65526",
+      "source_sha256": "146dadba7911290f7f78a4b6e436e02b1b0332754e7b219b62aba39690f65526",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "expected_git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "normalized_checkout_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "git_blob_matches": true,
+      "working_tree_sha256": "041e8addb24aa00ae8f86df7a458315d44e4f2ae678a079a8fbed9c37e9a2080",
+      "source_sha256": "041e8addb24aa00ae8f86df7a458315d44e4f2ae678a079a8fbed9c37e9a2080",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "expected_git_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "git_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "normalized_checkout_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "git_blob_matches": true,
+      "working_tree_sha256": "9fcb3f301ebf9f0191fa019e606f6cf9123ff13268c02eee1f182a91caa04f35",
+      "source_sha256": "9fcb3f301ebf9f0191fa019e606f6cf9123ff13268c02eee1f182a91caa04f35",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "expected_git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "normalized_checkout_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "git_blob_matches": true,
+      "working_tree_sha256": "1969ea135cf99c0f30fae7c08f715f034eea4f5ec11fc85e3807af7b983be85a",
+      "source_sha256": "1969ea135cf99c0f30fae7c08f715f034eea4f5ec11fc85e3807af7b983be85a",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "expected_git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "normalized_checkout_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "git_blob_matches": true,
+      "working_tree_sha256": "22a62e8c3e1cf2945da22fa93b53d983cbba7a9e65584d2b8f06a3de50bf9c45",
+      "source_sha256": "22a62e8c3e1cf2945da22fa93b53d983cbba7a9e65584d2b8f06a3de50bf9c45",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "expected_git_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "git_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "normalized_checkout_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "git_blob_matches": true,
+      "working_tree_sha256": "bf20eb522055db43112c01d09fcf039b6104b2f5dbb9dddda76172ede3f4540c",
+      "source_sha256": "bf20eb522055db43112c01d09fcf039b6104b2f5dbb9dddda76172ede3f4540c",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "expected_git_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "git_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "normalized_checkout_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "git_blob_matches": true,
+      "working_tree_sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80",
+      "source_sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "expected_git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "normalized_checkout_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "git_blob_matches": true,
+      "working_tree_sha256": "469a181b842c1a276ba5fdf83cb4cf6a19e437e3441a4e0e592acc503363cb3b",
+      "source_sha256": "469a181b842c1a276ba5fdf83cb4cf6a19e437e3441a4e0e592acc503363cb3b",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    },
+    {
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "expected_git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "normalized_checkout_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "git_blob_matches": true,
+      "working_tree_sha256": "e04282673878faea7837a446e3d8aae2d44ced129bd4cfcf645afe728373e25c",
+      "source_sha256": "e04282673878faea7837a446e3d8aae2d44ced129bd4cfcf645afe728373e25c",
+      "bytes_match": true,
+      "before_after_equal": true,
+      "source_retrieval": "GitHub exact blob API; imported byte-identical Git object only"
+    }
+  ],
+  "logs": [
+    {
+      "case": "cleanup-owner",
+      "log": "cleanup-owner.log",
+      "expected_sha256": "96ec847cc75d1db14c636aec33907df24f0b2ef316d9adfb10321c782f542f9c",
+      "actual_sha256": "96ec847cc75d1db14c636aec33907df24f0b2ef316d9adfb10321c782f542f9c",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          7,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          7,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "extensions::attachments::media_store::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary": 1,
+        "extensions::attachments::media_store::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink": 1,
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_leaf": 1,
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_ancestor": 1,
+        "extensions::attachments::media_store::cleanup::tests::cleanup_refuses_replaced_root": 1,
+        "extensions::attachments::media_store::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch": 1,
+        "extensions::attachments::media_store::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "cleanup-consumers",
+      "log": "cleanup-consumers.log",
+      "expected_sha256": "5fd496a23336a848d4eb5782019559dbe586e8c249d8155caf5493847f8f1c15",
+      "actual_sha256": "5fd496a23336a848d4eb5782019559dbe586e8c249d8155caf5493847f8f1c15",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          17,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          17,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers": 1,
+        "remote_media_download_is_bounded_before_payload_acceptance": 1,
+        "test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning": 1,
+        "test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors": 1,
+        "test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets": 1,
+        "test_ocrm_media_store_save_and_read_buffer": 1,
+        "test_ocrm_media_store_size_limit_rejection": 1,
+        "test_ocrm_media_store_filename_sanitization_and_truncation": 1,
+        "test_ocrm_media_store_subdir_traversal_protection": 1,
+        "test_ocrm_media_store_local_file_source_boundaries": 1,
+        "test_ocrm_media_store_delete_and_lifecycle": 1,
+        "test_ocrm_media_store_playback_cache_and_clean_old_media": 1,
+        "test_ocrm_media_store_gateway_service_dispatch": 1,
+        "test_ocrm_device_pairing_qr_wiring": 1,
+        "test_ocrm_media_store_remote_fixture_scope_and_filename_support": 1,
+        "test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries": 1,
+        "test_ocrm_media_store_recursive_cleanup_preserves_raw_names": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "html-policy",
+      "log": "html-policy.log",
+      "expected_sha256": "03146b23bab88bdbc6a9debda52041a615aa1737766e35ed2fb33760ea0ee871",
+      "actual_sha256": "03146b23bab88bdbc6a9debda52041a615aa1737766e35ed2fb33760ea0ee871",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          12,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          12,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "test_html_provenance_marker_validation": 1,
+        "test_html_provenance_filter_stale_rows": 1,
+        "test_html_provenance_host_read_admission": 1,
+        "test_html_shape_ecmascript_whitespace": 1,
+        "test_html_shape_header_word_boundaries": 1,
+        "test_html_shape_utf16_window_boundaries": 1,
+        "test_html_policy_public_assertion_trust_mime_and_byte_identity": 1,
+        "test_html_policy_public_assertion_unicode_and_malformed_shape": 1,
+        "test_html_provenance_stale_snapshot_order_and_missing_kinds": 1,
+        "test_html_provenance_stale_link_kinds_and_recovery": 1,
+        "test_html_provenance_permission_denied_retained_and_recovered": 1,
+        "test_html_provenance_symlink_loop_retained_and_recovered": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "host-read-format",
+      "log": "host-read-format.log",
+      "expected_sha256": "cda78e11ef199417816d2eea2246c3044cd86d73d1caa7381987de3baeaf0489",
+      "actual_sha256": "cda78e11ef199417816d2eea2246c3044cd86d73d1caa7381987de3baeaf0489",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "test_ocrm_host_read_media_policy_format_admission": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "file-url-admission",
+      "log": "file-url-admission.log",
+      "expected_sha256": "83f92f25a0392ba4b05d31273dd757fce5898a95473587c184f279c01dc708c7",
+      "actual_sha256": "83f92f25a0392ba4b05d31273dd757fce5898a95473587c184f279c01dc708c7",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          5,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          5,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "extensions::attachments::web_media::file_url_admission_tests::remote_file_authorities_never_enter_local_reader": 1,
+        "extensions::attachments::web_media::file_url_admission_tests::invalid_file_urls_never_enter_local_reader": 1,
+        "extensions::attachments::web_media::file_url_admission_tests::network_paths_never_enter_local_reader": 1,
+        "extensions::attachments::web_media::file_url_admission_tests::local_path_enters_reader_once_with_original_options": 1,
+        "extensions::attachments::web_media::file_url_admission_tests::local_reader_error_is_returned_without_retry": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "explicit-html-consumers",
+      "log": "explicit-html-consumers.log",
+      "expected_sha256": "6a4ec9bac173ec377791a833c8b217aacada975d6c38c9a077c00ebcc4a73152",
+      "actual_sha256": "6a4ec9bac173ec377791a833c8b217aacada975d6c38c9a077c00ebcc4a73152",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          28,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          28,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "test_ocrm_anthropic_inline_content_blocks_normalization": 1,
+        "test_ocrm_web_media_animated_webp_preservation": 1,
+        "test_ocrm_web_media_file_url_and_traversal_guards": 1,
+        "test_ocrm_web_media_local_loading_and_roots_boundary": 1,
+        "web_media_local_reads_are_bounded_before_buffer_acceptance": 1,
+        "test_ocrm_remote_workspace_file_transfer": 1,
+        "test_ocrm_web_media_gateway_service_dispatch": 1,
+        "test_ocrm_web_media_explicit_html_loader_and_service_preserve_bytes": 1,
+        "test_ocrm_web_media_explicit_html_unicode_byte_boundary": 1,
+        "test_ocrm_web_media_explicit_html_utf16_shape_window": 1,
+        "test_ocrm_web_media_explicit_html_rejects_malformed_and_nontext": 1,
+        "test_ocrm_web_media_explicit_html_rejects_binary_signature_conflicts": 1,
+        "test_ocrm_web_media_html_publication_requires_exact_mode": 1,
+        "test_ocrm_web_media_explicit_mode_preserves_non_html_loading": 1,
+        "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary": 1,
+        "test_ocrm_web_media_explicit_html_keeps_local_access_guards": 1,
+        "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes": 1,
+        "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references": 1,
+        "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery": 1,
+        "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed": 1,
+        "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes": 1,
+        "test_ocrm_web_media_service_reader_zero_exact_and_default_caps": 1,
+        "test_ocrm_web_media_service_reader_failures_and_fresh_retry": 1,
+        "lfa_web_media_uses_shared_invalid_file_url_boundary": 1,
+        "lfa_web_media_normalized_file_urls_reach_loader_and_service": 1,
+        "lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry": 1,
+        "test_ocrm_web_media_file_url_authority_alias_is_not_read": 1,
+        "test_ocrm_web_media_reader_aliases_keep_actual_root_checks": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "image-probe-consumers",
+      "log": "image-probe-consumers.log",
+      "expected_sha256": "51d1bd085d11589cda1605e8d2f9b2ed5ab335d67d75c4919d8e14151fe0f853",
+      "actual_sha256": "51d1bd085d11589cda1605e8d2f9b2ed5ab335d67d75c4919d8e14151fe0f853",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          16,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          16,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "test_ocrm_image_ops_build_resize_side_grid": 1,
+        "test_ocrm_image_ops_quality_steps_ladder": 1,
+        "test_ocrm_image_ops_animated_webp_detection": 1,
+        "test_ocrm_image_ops_still_png_and_apng_detection": 1,
+        "test_ocrm_image_ops_display_metadata_orientation_swap": 1,
+        "test_ocrm_image_ops_bmp_to_png_conversion_and_pixel_limit": 1,
+        "test_ocrm_image_ops_prepare_attachment": 1,
+        "test_ocrm_image_ops_normalize_anthropic_inline_image": 1,
+        "test_ocrm_image_ops_gateway_dispatch": 1,
+        "test_ocrm_image_ops_png_probe_rejects_every_prefix_before_color_type": 1,
+        "test_ocrm_image_ops_png_probe_preserves_required_header_metadata": 1,
+        "test_ocrm_image_ops_png_probe_rejects_zero_dimensions": 1,
+        "test_ocrm_image_ops_png_prefix_prepare_attachment_and_retry": 1,
+        "test_ocrm_image_ops_png_prefix_file_loader_and_retry": 1,
+        "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries": 1,
+        "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "bounded-reader-owner",
+      "log": "bounded-reader-owner.log",
+      "expected_sha256": "5488c7883c12bb376f9ec022abe8c2ef526b7a6490e051cb67a22feedb4aea51",
+      "actual_sha256": "5488c7883c12bb376f9ec022abe8c2ef526b7a6490e051cb67a22feedb4aea51",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          11,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          11,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_short_reads_and_interrupted_preserve_bytes": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_zero_and_one_over_probe_without_allocating_extra_bytes": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_late_read_error_discards_prefix": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_allocation_failure_discards_prefix": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_loop_growth_is_bounded_and_amortized": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_initial_allocation_ignores_large_metadata_hint": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_opened_admission_rechecks_size_after_preflight": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_opened_file_growth_is_not_successful_prefix": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_unix_opened_admission_rejects_directory_replacement": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_unix_open_owns_nonblocking_descriptor": 1,
+        "extensions::attachments::media_reference::bounded_read_tests::br_unix_fifo_replacement_after_preflight_does_not_block": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "bounded-reader-public",
+      "log": "bounded-reader-public.log",
+      "expected_sha256": "ce8c8d875abad5dd2f553895893da27e26a9645906bda3142e3cf47dbe570f24",
+      "actual_sha256": "ce8c8d875abad5dd2f553895893da27e26a9645906bda3142e3cf47dbe570f24",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          17,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          17,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "test_ocrm_media_ref_01_inbound_uri_parsing_and_validation": 1,
+        "test_ocrm_media_ref_02_classify_media_reference_source": 1,
+        "test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite": 1,
+        "test_ocrm_media_ref_04_bounded_read_file": 1,
+        "test_ocrm_media_ref_05_playback_codec_policy_resolution": 1,
+        "test_ocrm_media_ref_06_native_codec_compatibility_rules": 1,
+        "test_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation": 1,
+        "test_ocrm_media_ref_08_canonicalize_persisted_user_message_media": 1,
+        "mru_unicode_non_media_references_preserve_normalization_and_local_projection": 1,
+        "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy": 1,
+        "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals": 1,
+        "br_public_empty_zero_exact_and_over_limits": 1,
+        "br_public_usize_max_returns_original_bytes": 1,
+        "br_public_missing_and_directory_preserve_not_found": 1,
+        "br_public_retry_observes_replaced_file": 1,
+        "br_public_hard_links_preserve_bytes": 1,
+        "br_public_symbolic_links_preserve_bytes": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "bounded-reader-box-consumer",
+      "log": "bounded-reader-box-consumer.log",
+      "expected_sha256": "af877358381c1ec9a904600f291bae1602b9465d008721417e5bf97b0a6b6ca6",
+      "actual_sha256": "af877358381c1ec9a904600f291bae1602b9465d008721417e5bf97b0a6b6ca6",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "bounded-reader-image-consumer",
+      "log": "bounded-reader-image-consumer.log",
+      "expected_sha256": "ceece070da70e73b49bc92b26aeb5b7445f2436655223023c5ed8647080a1e5a",
+      "actual_sha256": "ceece070da70e73b49bc92b26aeb5b7445f2436655223023c5ed8647080a1e5a",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          1,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "image_reads_and_persistence_preserve_content_addressed_dimensions": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "bounded-reader-channel-consumers",
+      "log": "bounded-reader-channel-consumers.log",
+      "expected_sha256": "fd617e6ed481606d533feb45f75c889f914363afe4ec4be8aef10557fdf20df1",
+      "actual_sha256": "fd617e6ed481606d533feb45f75c889f914363afe4ec4be8aef10557fdf20df1",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          7,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          7,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "remote_urls_are_forwarded_without_host_fetching": 1,
+        "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules": 1,
+        "empty_directory_zero_and_oversize_local_inputs_fail_closed": 1,
+        "frozen_shared_media_inventory_drives_channel_classification": 1,
+        "lfa_channel_native_url_variants_preserve_bytes_and_metadata": 1,
+        "lfa_channel_invalid_file_urls_never_become_local_paths": 1,
+        "lfa_channel_invalid_encoding_preserves_source_and_valid_retry": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "local-file-url-owner",
+      "log": "local-file-url-owner.log",
+      "expected_sha256": "fadfaa652a9b2965ea37634f247f9653252d6acec48207cfa99e76fb006758d4",
+      "actual_sha256": "fadfaa652a9b2965ea37634f247f9653252d6acec48207cfa99e76fb006758d4",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          10,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          10,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "lfa_shared_owner_distinguishes_non_file_sources": 1,
+        "lfa_shared_owner_preserves_native_file_url_variants": 1,
+        "lfa_shared_owner_rejects_all_remote_authorities": 1,
+        "lfa_shared_owner_rejects_malformed_file_urls_after_normalization": 1,
+        "lfa_shared_owner_rejects_bad_path_escapes_without_fallback": 1,
+        "lfa_shared_owner_decodes_path_once_and_ignores_url_metadata": 1,
+        "lfa_shared_owner_keeps_refusal_stateless": 1,
+        "lfa_path_guard_rejects_nul_on_every_platform": 1,
+        "lfa_unix_path_guard_preserves_colon_and_double_slash_paths": 1,
+        "lfa_unix_file_url_preserves_posix_control": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "file-context-consumers",
+      "log": "file-context-consumers.log",
+      "expected_sha256": "f7e49fb71cd736158b9f833a55997456765dd3ef71b7472862abb184331f9185",
+      "actual_sha256": "f7e49fb71cd736158b9f833a55997456765dd3ef71b7472862abb184331f9185",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          10,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          10,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization": 1,
+        "test_ocrm_file_ctx_02_render_file_context_block_escaping": 1,
+        "test_ocrm_file_ctx_03_resolve_local_media_path": 1,
+        "test_ocrm_file_ctx_04_unlink_if_exists": 1,
+        "test_ocrm_file_ctx_05_document_truncation_notice": 1,
+        "test_ocrm_file_ctx_06_runtime_prompt_image_provenance": 1,
+        "test_ocrm_file_ctx_07_image_processor_contracts": 1,
+        "test_ocrm_file_ctx_08_gateway_service_dispatch": 1,
+        "lfa_file_context_uses_shared_admission_without_lossy_fallback": 1,
+        "lfa_unix_file_context_preserves_colon_file_names": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "send-message-consumers",
+      "log": "send-message-consumers.log",
+      "expected_sha256": "037b52c1c80304e728c44251c5b8a12cd7efe0d4f6f071dd3b89bc86abcf3443",
+      "actual_sha256": "037b52c1c80304e728c44251c5b8a12cd7efe0d4f6f071dd3b89bc86abcf3443",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          17,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          17,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "send_message_guard_rejects_when_shipping_state_is_waiting_on_user": 1,
+        "schema_matches_frozen_type_fences_and_attachment_schemes": 1,
+        "widget_schema_matches_frozen_choice_contract_and_normalization": 1,
+        "generated_send_message_schema_exposes_frozen_widget_constraints": 1,
+        "encoding_preserves_frozen_text_markdown_and_summary_projection": 1,
+        "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag": 1,
+        "send_message_bridge_is_first_party_and_delegates_other_tools": 1,
+        "cursor_agent_message_resolves_shipping_title_fail_soft": 1,
+        "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire": 1,
+        "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting": 1,
+        "box_media_resolution_matches_frozen_root_desktop_and_image_fences": 1,
+        "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting": 1,
+        "agent_media_persistence_is_atomic_and_separates_images_from_attachments": 1,
+        "delivery_counter_tracks_only_successful_shipping_send_side_effects": 1,
+        "shipping_send_message_composes_cloud_title_and_generated_interaction_observation": 1,
+        "lfa_send_message_file_url_facade_preserves_admitted_metadata": 1,
+        "lfa_send_message_file_url_facade_refuses_unsafe_local_sources": 1
+      },
+      "raw_positives_match_receipt": true
+    },
+    {
+      "case": "agent-management-consumers",
+      "log": "agent-management-consumers.log",
+      "expected_sha256": "50c3a87ff48cded8c7962d4c4d04fe9aac4122ae6faf4563fb4d783c01fa3c07",
+      "actual_sha256": "50c3a87ff48cded8c7962d4c4d04fe9aac4122ae6faf4563fb4d783c01fa3c07",
+      "hash_matches": true,
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "raw_counts": [
+        [
+          3,
+          0,
+          0
+        ]
+      ],
+      "receipt_counts": [
+        [
+          3,
+          0,
+          0
+        ]
+      ],
+      "counts_match": true,
+      "required_positive_occurrences": {
+        "runner_management_tools_are_first_party_and_validate_send_inputs": 1,
+        "create_and_update_tools_delegate_with_merge_semantics": 1,
+        "lfa_agent_management_batch_admits_all_urls_before_resolving": 1
+      },
+      "raw_positives_match_receipt": true
+    }
+  ],
+  "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance.",
+  "result": "passed",
+  "later_subjects_inherit_acceptance": false,
+  "whole_media_acceptance": false,
+  "collection_note": "The partial local Git object cache lacked 16 source blob bodies; they were read from the exact GitHub blob API and their full Git blob identities and SHA256 bytes matched. No source, fixture, assertion or test was changed or executed."
+}

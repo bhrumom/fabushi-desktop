@@ -1,0 +1,2550 @@
+﻿2026-11-03T04:19:02.2540709Z Current runner version: '2.338.2'
+2026-11-03T04:19:02.2567680Z ##[group]Runner Image Provisioner
+2026-11-03T04:19:02.2568665Z Hosted Compute Agent
+2026-11-03T04:19:02.2569276Z Version: 20261021.618
+2026-11-03T04:19:02.2570020Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-11-03T04:19:02.2570855Z Build Date: 2026-10-21T00:45:21Z
+2026-11-03T04:19:02.2571592Z Worker ID: {028552fc-7f8a-48bf-83d3-edb069e152bd}
+2026-11-03T04:19:02.2572340Z Region: eastus
+2026-11-03T04:19:02.2572902Z Cloud: Azure
+2026-11-03T04:19:02.2573498Z ##[endgroup]
+2026-11-03T04:19:02.2575028Z ##[group]Operating System
+2026-11-03T04:19:02.2575746Z Ubuntu
+2026-11-03T04:19:02.2576533Z 24.04.5
+2026-11-03T04:19:02.2577063Z LTS
+2026-11-03T04:19:02.2577654Z ##[endgroup]
+2026-11-03T04:19:02.2578245Z ##[group]Runner Image
+2026-11-03T04:19:02.2578929Z Image: ubuntu-24.04
+2026-11-03T04:19:02.2579521Z Version: 20261025.353.1
+2026-11-03T04:19:02.2580849Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-11-03T04:19:02.2582605Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-11-03T04:19:02.2583668Z ##[endgroup]
+2026-11-03T04:19:02.2584806Z ##[group]GITHUB_TOKEN Permissions
+2026-11-03T04:19:02.2587233Z Contents: read
+2026-11-03T04:19:02.2587910Z Metadata: read
+2026-11-03T04:19:02.2588548Z ##[endgroup]
+2026-11-03T04:19:02.2591229Z Secret source: Actions
+2026-11-03T04:19:02.2592288Z Cache mode: write
+2026-11-03T04:19:02.2593079Z Prepare workflow directory
+2026-11-03T04:19:02.3162615Z Prepare all required actions
+2026-11-03T04:19:02.3214134Z Getting action download info
+2026-11-03T04:19:02.5092311Z Download action repository 'actions/checkout@v6' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+2026-11-03T04:19:02.6885331Z Download action repository 'actions/setup-node@v6' (SHA:249970729cb0ef3589644e2896645e5dc5ba9c38)
+2026-11-03T04:19:02.8581466Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-11-03T04:19:03.1520540Z Complete job name: renderer
+2026-11-03T04:19:03.2622231Z ##[group]Run actions/checkout@v6
+2026-11-03T04:19:03.2623265Z with:
+2026-11-03T04:19:03.2623776Z   ref: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:03.2624417Z   fetch-depth: 1
+2026-11-03T04:19:03.2624914Z   repository: bhrumom/fabushi-desktop
+2026-11-03T04:19:03.2629557Z   token: ***
+2026-11-03T04:19:03.2630038Z   ssh-strict: true
+2026-11-03T04:19:03.2630508Z   ssh-user: git
+2026-11-03T04:19:03.2630995Z   persist-credentials: true
+2026-11-03T04:19:03.2631514Z   clean: true
+2026-11-03T04:19:03.2631987Z   sparse-checkout-cone-mode: true
+2026-11-03T04:19:03.2632584Z   fetch-tags: false
+2026-11-03T04:19:03.2633066Z   show-progress: true
+2026-11-03T04:19:03.2633550Z   lfs: false
+2026-11-03T04:19:03.2634000Z   submodules: false
+2026-11-03T04:19:03.2634495Z   set-safe-directory: true
+2026-11-03T04:19:03.2635043Z   allow-unsafe-pr-checkout: false
+2026-11-03T04:19:03.2636422Z env:
+2026-11-03T04:19:03.2637084Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:03.2637873Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:03.2638404Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:03.2638920Z ##[endgroup]
+2026-11-03T04:19:04.0003364Z Syncing repository: bhrumom/fabushi-desktop
+2026-11-03T04:19:04.0007139Z ##[group]Getting Git version info
+2026-11-03T04:19:04.0009202Z Working directory is '/home/runner/work/fabushi-desktop/fabushi-desktop'
+2026-11-03T04:19:04.0012232Z [command]/usr/bin/git version
+2026-11-03T04:19:04.0090609Z git version 2.56.0
+2026-11-03T04:19:04.0117571Z ##[endgroup]
+2026-11-03T04:19:04.0133958Z Temporarily overriding HOME='/home/runner/work/_temp/0ba5d6ab-395d-4b8c-ae2a-bdff8ee0a252' before making global git config changes
+2026-11-03T04:19:04.0138536Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-03T04:19:04.0142221Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T04:19:04.0379561Z Deleting the contents of '/home/runner/work/fabushi-desktop/fabushi-desktop'
+2026-11-03T04:19:04.0383841Z ##[group]Determining repository object format
+2026-11-03T04:19:04.0387211Z ##[endgroup]
+2026-11-03T04:19:04.0389684Z ##[group]Initializing the repository
+2026-11-03T04:19:04.0392447Z [command]/usr/bin/git init /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T04:19:04.0542410Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-03T04:19:04.0548621Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-03T04:19:04.0552558Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-03T04:19:04.0555687Z hint: call:
+2026-11-03T04:19:04.0557598Z hint:
+2026-11-03T04:19:04.0559664Z hint: 	git config --global init.defaultBranch <name>
+2026-11-03T04:19:04.0561914Z hint:
+2026-11-03T04:19:04.0563995Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-03T04:19:04.0567761Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-03T04:19:04.0570481Z hint:
+2026-11-03T04:19:04.0571856Z hint: 	git branch -m <name>
+2026-11-03T04:19:04.0573459Z hint:
+2026-11-03T04:19:04.0575677Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-03T04:19:04.0583277Z Initialized empty Git repository in /home/runner/work/fabushi-desktop/fabushi-desktop/.git/
+2026-11-03T04:19:04.0595499Z [command]/usr/bin/git remote add origin https://github.com/bhrumom/fabushi-desktop
+2026-11-03T04:19:04.0842064Z ##[endgroup]
+2026-11-03T04:19:04.0845989Z ##[group]Disabling automatic garbage collection
+2026-11-03T04:19:04.0849633Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-03T04:19:04.0898503Z ##[endgroup]
+2026-11-03T04:19:04.0901830Z ##[group]Setting up auth
+2026-11-03T04:19:04.0904059Z Removing SSH command configuration
+2026-11-03T04:19:04.0907623Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-03T04:19:04.0965875Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-03T04:19:04.1578178Z Removing HTTP extra header
+2026-11-03T04:19:04.1588210Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-03T04:19:04.1640914Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-03T04:19:04.1887377Z Removing includeIf entries pointing to credentials config files
+2026-11-03T04:19:04.1894602Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-03T04:19:04.1948583Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-03T04:19:04.2210939Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-03T04:19:04.2266538Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path /home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:04.2313992Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:04.2368071Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:04.2411380Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:04.2450271Z ##[endgroup]
+2026-11-03T04:19:04.2452043Z ##[group]Fetching the repository
+2026-11-03T04:19:04.2460234Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:07.8720458Z From https://github.com/bhrumom/fabushi-desktop
+2026-11-03T04:19:07.8722264Z  * branch            23c2a567d874509f56353b8cae737cdf1437309d -> FETCH_HEAD
+2026-11-03T04:19:07.8731850Z [command]/usr/bin/git rev-parse --verify --quiet 23c2a567d874509f56353b8cae737cdf1437309d^{object}
+2026-11-03T04:19:07.8768601Z 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:07.8773973Z ##[endgroup]
+2026-11-03T04:19:07.8774724Z ##[group]Determining the checkout info
+2026-11-03T04:19:07.8775952Z ##[endgroup]
+2026-11-03T04:19:07.8780340Z [command]/usr/bin/git sparse-checkout disable
+2026-11-03T04:19:07.8860729Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-03T04:19:07.8906848Z ##[group]Checking out the ref
+2026-11-03T04:19:07.8907698Z [command]/usr/bin/git checkout --progress --force 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:08.6375653Z Note: switching to '23c2a567d874509f56353b8cae737cdf1437309d'.
+2026-11-03T04:19:08.6377511Z 
+2026-11-03T04:19:08.6378203Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-11-03T04:19:08.6379669Z changes and commit them, and you can discard any commits you make in this
+2026-11-03T04:19:08.6381245Z state without impacting any branches by switching back to a branch.
+2026-11-03T04:19:08.6382198Z 
+2026-11-03T04:19:08.6382793Z If you want to create a new branch to retain commits you create, you may
+2026-11-03T04:19:08.6384096Z do so (now or later) by using -c with the switch command. Example:
+2026-11-03T04:19:08.6384917Z 
+2026-11-03T04:19:08.6385212Z   git switch -c <new-branch-name>
+2026-11-03T04:19:08.6385730Z 
+2026-11-03T04:19:08.6386025Z Or undo this operation with:
+2026-11-03T04:19:08.6386824Z 
+2026-11-03T04:19:08.6387533Z   git switch -
+2026-11-03T04:19:08.6387904Z 
+2026-11-03T04:19:08.6388528Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-11-03T04:19:08.6389503Z 
+2026-11-03T04:19:08.6390300Z HEAD is now at 23c2a56 fix(plugins): preserve installed winners and primary denial during cleanup
+2026-11-03T04:19:08.6428167Z ##[endgroup]
+2026-11-03T04:19:08.6484998Z [command]/usr/bin/git log -1 --format=%H
+2026-11-03T04:19:08.6522965Z 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:08.6777303Z ##[group]Run set -euo pipefail
+2026-11-03T04:19:08.6777789Z [36;1mset -euo pipefail[0m
+2026-11-03T04:19:08.6778109Z [36;1mactual="$(git rev-parse HEAD)"[0m
+2026-11-03T04:19:08.6778462Z [36;1mif [ "push" = "pull_request" ]; then[0m
+2026-11-03T04:19:08.6778799Z [36;1m  expected=""[0m
+2026-11-03T04:19:08.6779085Z [36;1melse[0m
+2026-11-03T04:19:08.6779399Z [36;1m  expected="23c2a567d874509f56353b8cae737cdf1437309d"[0m
+2026-11-03T04:19:08.6779801Z [36;1mfi[0m
+2026-11-03T04:19:08.6780026Z [36;1mtest "$actual" = "$expected"[0m
+2026-11-03T04:19:08.6780362Z [36;1mif [ -n "$EXPECTED_DISPATCH_SHA" ]; then[0m
+2026-11-03T04:19:08.6780752Z [36;1m  [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]][0m
+2026-11-03T04:19:08.6781365Z [36;1m  test "$actual" = "$EXPECTED_DISPATCH_SHA" || { echo "Dispatch ref moved away from frozen subject"; exit 1; }[0m
+2026-11-03T04:19:08.6781924Z [36;1mfi[0m
+2026-11-03T04:19:08.6782276Z [36;1mecho "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"[0m
+2026-11-03T04:19:08.6807688Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:19:08.6808112Z env:
+2026-11-03T04:19:08.6808429Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:08.6808845Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:08.6809133Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:08.6809400Z ##[endgroup]
+2026-11-03T04:19:08.6992023Z ##[group]Run actions/setup-node@v6
+2026-11-03T04:19:08.6992366Z with:
+2026-11-03T04:19:08.6992785Z   node-version: 24
+2026-11-03T04:19:08.6993023Z   cache: npm
+2026-11-03T04:19:08.6993303Z   cache-dependency-path: desktop/package-lock.json
+2026-11-03T04:19:08.6993664Z   check-latest: false
+2026-11-03T04:19:08.6996267Z   token: ***
+2026-11-03T04:19:08.6996516Z   package-manager-cache: true
+2026-11-03T04:19:08.6996781Z env:
+2026-11-03T04:19:08.6997059Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:08.6997435Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:08.6997684Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:08.6997916Z ##[endgroup]
+2026-11-03T04:19:08.8592928Z Found in cache @ /opt/hostedtoolcache/node/24.22.1/x64
+2026-11-03T04:19:08.8593901Z ##[group]Environment details
+2026-11-03T04:19:09.3278059Z node: v24.22.1
+2026-11-03T04:19:09.3278579Z npm: 11.19.1
+2026-11-03T04:19:09.3278906Z yarn: 1.22.22
+2026-11-03T04:19:09.3280046Z ##[endgroup]
+2026-11-03T04:19:09.3303179Z [command]/opt/hostedtoolcache/node/24.22.1/x64/bin/npm config get cache
+2026-11-03T04:19:09.4491537Z /home/runner/.npm
+2026-11-03T04:19:09.5430589Z Cache hit for: node-cache-Linux-x64-npm-263e0a049fc59710708a67151aa2e19265177fe47a9689716f8abad9467d7eda
+2026-11-03T04:19:10.0751420Z Received 62221635 of 62221635 (100.0%), 129.0 MBs/sec
+2026-11-03T04:19:10.0752261Z Cache Size: ~59 MB (62221635 B)
+2026-11-03T04:19:10.0777315Z [command]/usr/bin/tar -xf /home/runner/work/_temp/7c0bf8be-f2c5-40ed-9064-926bc92e1e28/cache.tzst -P -C /home/runner/work/fabushi-desktop/fabushi-desktop --use-compress-program unzstd
+2026-11-03T04:19:10.2594875Z Cache restored successfully
+2026-11-03T04:19:10.2626657Z Cache restored from key: node-cache-Linux-x64-npm-263e0a049fc59710708a67151aa2e19265177fe47a9689716f8abad9467d7eda
+2026-11-03T04:19:10.2901762Z ##[group]Run set -euo pipefail
+2026-11-03T04:19:10.2902210Z [36;1mset -euo pipefail[0m
+2026-11-03T04:19:10.2902494Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T04:19:10.2902811Z [36;1mimport hashlib, json, os, re, subprocess[0m
+2026-11-03T04:19:10.2903189Z [36;1mfrom pathlib import Path[0m
+2026-11-03T04:19:10.2903555Z [36;1mroot = Path(".evidence/openclaw-notice")[0m
+2026-11-03T04:19:10.2903933Z [36;1mroot.mkdir(parents=True, exist_ok=True)[0m
+2026-11-03T04:19:10.2904428Z [36;1mhead = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()[0m
+2026-11-03T04:19:10.2904933Z [36;1mif head != os.environ["NOTICE_EXPECTED_SHA"]:[0m
+2026-11-03T04:19:10.2905351Z [36;1m    raise SystemExit("Notice execution subject mismatch")[0m
+2026-11-03T04:19:10.2905896Z [36;1mlock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())[0m
+2026-11-03T04:19:10.2906704Z [36;1minputs = [[0m
+2026-11-03T04:19:10.2907215Z [36;1m    ".github/workflows/rust-desktop-runtime.yml", ".github/workflows/release-macos-main.yml",[0m
+2026-11-03T04:19:10.2907793Z [36;1m    "projects/openclaw-rust/upstream.lock.json",[0m
+2026-11-03T04:19:10.2908254Z [36;1m    "projects/openclaw-rust/docs/specs/desktop-openclaw-notice.md",[0m
+2026-11-03T04:19:10.2908822Z [36;1m    "desktop/resources/licenses/openclaw/LICENSE", "desktop/package.json",[0m
+2026-11-03T04:19:10.2909334Z [36;1m    "desktop/resources/licenses/openclaw/.gitattributes",[0m
+2026-11-03T04:19:10.2909771Z [36;1m    "desktop/scripts/check-electron-runtime-bundle.mjs",[0m
+2026-11-03T04:19:10.2910225Z [36;1m    "desktop/scripts/openclaw-notice.contract.test.mjs",[0m
+2026-11-03T04:19:10.2910584Z [36;1m][0m
+2026-11-03T04:19:10.2910790Z [36;1mrequired = [[0m
+2026-11-03T04:19:10.2911125Z [36;1m    'onp_real_notice_only_uses_locked_source_and_common_mapping',[0m
+2026-11-03T04:19:10.2911647Z [36;1m    'onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts',[0m
+2026-11-03T04:19:10.2912176Z [36;1m    'onp_default_mode_retains_all_required_runtime_artifacts',[0m
+2026-11-03T04:19:10.2912671Z [36;1m    'onp_default_mode_accepts_complete_controlled_runtime_and_notice',[0m
+2026-11-03T04:19:10.2913163Z [36;1m    'onp_missing_source_notice_is_refused_without_repair',[0m
+2026-11-03T04:19:10.2913814Z [36;1m    'onp_changed_source_bytes_are_refused_without_normalization',[0m
+2026-11-03T04:19:10.2914219Z [36;1m    'onp_non_file_source_notice_is_refused',[0m
+2026-11-03T04:19:10.2914611Z [36;1m    'onp_missing_malformed_and_invalid_lock_identity_are_refused',[0m
+2026-11-03T04:19:10.2915066Z [36;1m    'onp_root_license_identity_cannot_follow_discovery_candidate',[0m
+2026-11-03T04:19:10.2915585Z [36;1m    'onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused',[0m
+2026-11-03T04:19:10.2916325Z [36;1m    'onp_platform_only_mapping_cannot_replace_the_common_mapping',[0m
+2026-11-03T04:19:10.2916858Z [36;1m    'onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination',[0m
+2026-11-03T04:19:10.2917436Z [36;1m    'onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused',[0m
+2026-11-03T04:19:10.2917944Z [36;1m    'onp_packaged_resources_requires_an_existing_directory',[0m
+2026-11-03T04:19:10.2918403Z [36;1m    'onp_unknown_conflicting_and_incomplete_cli_options_are_refused',[0m
+2026-11-03T04:19:10.2918869Z [36;1m    'onp_default_mode_retains_preload_and_coordinator_contracts',[0m
+2026-11-03T04:19:10.2919335Z [36;1m    'onp_default_mode_retains_forbidden_product_code_and_resources',[0m
+2026-11-03T04:19:10.2919815Z [36;1m    'onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs',[0m
+2026-11-03T04:19:10.2920340Z [36;1m    'onp_competing_resource_writers_are_refused_across_common_and_platform_sets',[0m
+2026-11-03T04:19:10.2920839Z [36;1m    'onp_disjoint_resource_mappings_preserve_all_platforms',[0m
+2026-11-03T04:19:10.2921281Z [36;1m    'onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf',[0m
+2026-11-03T04:19:10.2921809Z [36;1m][0m
+2026-11-03T04:19:10.2922002Z [36;1mcases = [[0m
+2026-11-03T04:19:10.2922442Z [36;1m    ("source-notice", ["node", "desktop/scripts/check-electron-runtime-bundle.mjs", "--notice-only"]),[0m
+2026-11-03T04:19:10.2923200Z [36;1m    ("notice-contract", ["node", "--test", "--test-reporter=tap", "desktop/scripts/openclaw-notice.contract.test.mjs"]),[0m
+2026-11-03T04:19:10.2923724Z [36;1m][0m
+2026-11-03T04:19:10.2923992Z [36;1mreceipt = {"contract": "ONP-v1", "subject_commit": head,[0m
+2026-11-03T04:19:10.2924534Z [36;1m    "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),[0m
+2026-11-03T04:19:10.2925160Z [36;1m    "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},[0m
+2026-11-03T04:19:10.2925737Z [36;1m    "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],[0m
+2026-11-03T04:19:10.2926515Z [36;1m    "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],[0m
+2026-11-03T04:19:10.2927039Z [36;1m    "node": subprocess.check_output(["node", "--version"], text=True).strip(),[0m
+2026-11-03T04:19:10.2927638Z [36;1m    "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in inputs},[0m
+2026-11-03T04:19:10.2928273Z [36;1m    "planned_commands": [{"case": label, "command": command} for label, command in cases],[0m
+2026-11-03T04:19:10.2928847Z [36;1m    "required_tests": required, "executions": [], "result": "failed-or-incomplete",[0m
+2026-11-03T04:19:10.2931399Z [36;1m    "scope": "Actual locked source notice and common electron-builder mapping plus the real checker CLI over owned byte-preserved fixtures. Negative controls cover source/lock/mapping/options, competing common/platform resource writers and packaged-resource validation; default runtime assertions are retained. Actual isolated Git autocrlf checkout consumes the tracked narrow attribute, with an independent no-attribute byte-conversion refusal control. Fixture Resources are not a signed installer or actual packaged artifact. Actual macOS/Windows/Linux packages, signing, complete recursive legal provenance and full migration acceptance remain open."}[0m
+2026-11-03T04:19:10.2933922Z [36;1m(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")[0m
+2026-11-03T04:19:10.2934461Z [36;1mfor label, command in cases:[0m
+2026-11-03T04:19:10.2934756Z [36;1m    log_path = root / (label + ".log")[0m
+2026-11-03T04:19:10.2935150Z [36;1m    command_exit, capture_exit, execution_error, raw = None, 0, None, b""[0m
+2026-11-03T04:19:10.2935528Z [36;1m    try:[0m
+2026-11-03T04:19:10.2935764Z [36;1m        with log_path.open("wb") as output:[0m
+2026-11-03T04:19:10.2936572Z [36;1m            completed = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT, check=False)[0m
+2026-11-03T04:19:10.2937153Z [36;1m        command_exit = completed.returncode[0m
+2026-11-03T04:19:10.2937481Z [36;1m        raw = log_path.read_bytes()[0m
+2026-11-03T04:19:10.2937778Z [36;1m    except OSError as error:[0m
+2026-11-03T04:19:10.2938101Z [36;1m        capture_exit, execution_error = 1, str(error)[0m
+2026-11-03T04:19:10.2938470Z [36;1m    text = raw.decode("utf-8", errors="replace")[0m
+2026-11-03T04:19:10.2938793Z [36;1m    print(text, flush=True)[0m
+2026-11-03T04:19:10.2939120Z [36;1m    accepted = command_exit == 0 and capture_exit == 0[0m
+2026-11-03T04:19:10.2939566Z [36;1m    result = {"case": label, "command": command, "command_exit": command_exit,[0m
+2026-11-03T04:19:10.2940064Z [36;1m        "capture_exit": capture_exit, "execution_error": execution_error,[0m
+2026-11-03T04:19:10.2940549Z [36;1m        "log": log_path.name, "log_sha256": hashlib.sha256(raw).hexdigest()}[0m
+2026-11-03T04:19:10.2940943Z [36;1m    if label == "notice-contract":[0m
+2026-11-03T04:19:10.2941323Z [36;1m        passed = re.findall(r"^ok [0-9]+ - (.+)$", text, re.MULTILINE)[0m
+2026-11-03T04:19:10.2941941Z [36;1m        missing = [name for name in required if passed.count(name) != 1][0m
+2026-11-03T04:19:10.2942446Z [36;1m        counts = {key: re.findall(r"^# " + key + r" ([0-9]+)$", text, re.MULTILINE)[0m
+2026-11-03T04:19:10.2969034Z [36;1m            for key in ("tests", "pass", "fail", "cancelled", "skipped", "todo")}[0m
+2026-11-03T04:19:10.2969645Z [36;1m        expected = {"tests": [str(len(required))], "pass": [str(len(required))],[0m
+2026-11-03T04:19:10.2970168Z [36;1m            "fail": ["0"], "cancelled": ["0"], "skipped": ["0"], "todo": ["0"]}[0m
+2026-11-03T04:19:10.2970741Z [36;1m        accepted = accepted and not missing and counts == expected and len(passed) == len(required)[0m
+2026-11-03T04:19:10.2971290Z [36;1m        result.update({"observed_passed_test_names": passed,[0m
+2026-11-03T04:19:10.2971785Z [36;1m            "missing_or_nonunique_positive_results": missing, "tap_counts": counts})[0m
+2026-11-03T04:19:10.2972228Z [36;1m    result["oracle_accepted"] = accepted[0m
+2026-11-03T04:19:10.2972562Z [36;1m    receipt["executions"].append(result)[0m
+2026-11-03T04:19:10.2972984Z [36;1m    (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")[0m
+2026-11-03T04:19:10.2973656Z [36;1maccepted = len(receipt["executions"]) == len(cases) and all(item["oracle_accepted"] for item in receipt["executions"])[0m
+2026-11-03T04:19:10.2974324Z [36;1mreceipt["result"] = "passed" if accepted else "failed-or-incomplete"[0m
+2026-11-03T04:19:10.2974838Z [36;1m(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")[0m
+2026-11-03T04:19:10.2975274Z [36;1mprint(json.dumps(receipt, indent=2), flush=True)[0m
+2026-11-03T04:19:10.2975625Z [36;1mraise SystemExit(0 if accepted else 1)[0m
+2026-11-03T04:19:10.2975924Z [36;1mPY[0m
+2026-11-03T04:19:10.3006421Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:19:10.3006792Z env:
+2026-11-03T04:19:10.3007071Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:10.3007431Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:10.3007683Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:10.3007989Z   NOTICE_EXPECTED_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:10.3008331Z ##[endgroup]
+2026-11-03T04:19:10.3860377Z {"check":"ONP-v1","mode":"notice-only","scope":"OpenClaw root notice inputs and common resource mapping only","source_repository":"openclaw/openclaw","source_commit":"1440bb1771372334bea23d7642bb52deb7db1845","source_tree":"90c8aab39972da11cfad220361781d49e1bc6700","source_blob":"ed064819ab537575d0cad902f7e5af4a3488b1d0","source_bytes":1076,"resource_from":"resources/licenses/openclaw/LICENSE","resource_to":"licenses/openclaw/LICENSE"}
+2026-11-03T04:19:10.3862853Z 
+2026-11-03T04:19:18.2457087Z TAP version 13
+2026-11-03T04:19:18.2458699Z # Subtest: onp_real_notice_only_uses_locked_source_and_common_mapping
+2026-11-03T04:19:18.2460715Z ok 1 - onp_real_notice_only_uses_locked_source_and_common_mapping
+2026-11-03T04:19:18.2462094Z   ---
+2026-11-03T04:19:18.2462800Z   duration_ms: 46.066121
+2026-11-03T04:19:18.2463652Z   type: 'test'
+2026-11-03T04:19:18.2464420Z   ...
+2026-11-03T04:19:18.2465978Z # Subtest: onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts
+2026-11-03T04:19:18.2468476Z ok 2 - onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts
+2026-11-03T04:19:18.2469880Z   ---
+2026-11-03T04:19:18.2470651Z   duration_ms: 53.22959
+2026-11-03T04:19:18.2471474Z   type: 'test'
+2026-11-03T04:19:18.2472141Z   ...
+2026-11-03T04:19:18.2472925Z # Subtest: onp_default_mode_retains_all_required_runtime_artifacts
+2026-11-03T04:19:18.2474243Z ok 3 - onp_default_mode_retains_all_required_runtime_artifacts
+2026-11-03T04:19:18.2474989Z   ---
+2026-11-03T04:19:18.2475378Z   duration_ms: 316.120533
+2026-11-03T04:19:18.2475788Z   type: 'test'
+2026-11-03T04:19:18.2476373Z   ...
+2026-11-03T04:19:18.2477175Z # Subtest: onp_default_mode_accepts_complete_controlled_runtime_and_notice
+2026-11-03T04:19:18.2478379Z ok 4 - onp_default_mode_accepts_complete_controlled_runtime_and_notice
+2026-11-03T04:19:18.2479370Z   ---
+2026-11-03T04:19:18.2480182Z   duration_ms: 46.333278
+2026-11-03T04:19:18.2480749Z   type: 'test'
+2026-11-03T04:19:18.2481152Z   ...
+2026-11-03T04:19:18.2481925Z # Subtest: onp_missing_source_notice_is_refused_without_repair
+2026-11-03T04:19:18.2482954Z ok 5 - onp_missing_source_notice_is_refused_without_repair
+2026-11-03T04:19:18.2483703Z   ---
+2026-11-03T04:19:18.2484134Z   duration_ms: 49.371337
+2026-11-03T04:19:18.2484608Z   type: 'test'
+2026-11-03T04:19:18.2484947Z   ...
+2026-11-03T04:19:18.2485638Z # Subtest: onp_changed_source_bytes_are_refused_without_normalization
+2026-11-03T04:19:18.2486775Z ok 6 - onp_changed_source_bytes_are_refused_without_normalization
+2026-11-03T04:19:18.2487342Z   ---
+2026-11-03T04:19:18.2487649Z   duration_ms: 175.68127
+2026-11-03T04:19:18.2488002Z   type: 'test'
+2026-11-03T04:19:18.2488292Z   ...
+2026-11-03T04:19:18.2488736Z # Subtest: onp_non_file_source_notice_is_refused
+2026-11-03T04:19:18.2489392Z ok 7 - onp_non_file_source_notice_is_refused
+2026-11-03T04:19:18.2489868Z   ---
+2026-11-03T04:19:18.2490206Z   duration_ms: 87.503052
+2026-11-03T04:19:18.2490551Z   type: 'test'
+2026-11-03T04:19:18.2490846Z   ...
+2026-11-03T04:19:18.2491447Z # Subtest: onp_missing_malformed_and_invalid_lock_identity_are_refused
+2026-11-03T04:19:18.2492277Z ok 8 - onp_missing_malformed_and_invalid_lock_identity_are_refused
+2026-11-03T04:19:18.2492823Z   ---
+2026-11-03T04:19:18.2493120Z   duration_ms: 593.086348
+2026-11-03T04:19:18.2493470Z   type: 'test'
+2026-11-03T04:19:18.2493774Z   ...
+2026-11-03T04:19:18.2494349Z # Subtest: onp_root_license_identity_cannot_follow_discovery_candidate
+2026-11-03T04:19:18.2495170Z ok 9 - onp_root_license_identity_cannot_follow_discovery_candidate
+2026-11-03T04:19:18.2495704Z   ---
+2026-11-03T04:19:18.2495983Z   duration_ms: 90.924826
+2026-11-03T04:19:18.2496937Z   type: 'test'
+2026-11-03T04:19:18.2497341Z   ...
+2026-11-03T04:19:18.2498096Z # Subtest: onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused
+2026-11-03T04:19:18.2499240Z ok 10 - onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused
+2026-11-03T04:19:18.2499965Z   ---
+2026-11-03T04:19:18.2500326Z   duration_ms: 487.304476
+2026-11-03T04:19:18.2500770Z   type: 'test'
+2026-11-03T04:19:18.2501233Z   ...
+2026-11-03T04:19:18.2501871Z # Subtest: onp_platform_only_mapping_cannot_replace_the_common_mapping
+2026-11-03T04:19:18.2503048Z ok 11 - onp_platform_only_mapping_cannot_replace_the_common_mapping
+2026-11-03T04:19:18.2503602Z   ---
+2026-11-03T04:19:18.2503924Z   duration_ms: 43.655019
+2026-11-03T04:19:18.2504308Z   type: 'test'
+2026-11-03T04:19:18.2504694Z   ...
+2026-11-03T04:19:18.2505457Z # Subtest: onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination
+2026-11-03T04:19:18.2507124Z ok 12 - onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination
+2026-11-03T04:19:18.2507850Z   ---
+2026-11-03T04:19:18.2508204Z   duration_ms: 85.620437
+2026-11-03T04:19:18.2508625Z   type: 'test'
+2026-11-03T04:19:18.2508995Z   ...
+2026-11-03T04:19:18.2509838Z # Subtest: onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused
+2026-11-03T04:19:18.2511103Z ok 13 - onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused
+2026-11-03T04:19:18.2511860Z   ---
+2026-11-03T04:19:18.2512210Z   duration_ms: 224.228478
+2026-11-03T04:19:18.2512592Z   type: 'test'
+2026-11-03T04:19:18.2512895Z   ...
+2026-11-03T04:19:18.2513498Z # Subtest: onp_packaged_resources_requires_an_existing_directory
+2026-11-03T04:19:18.2514373Z ok 14 - onp_packaged_resources_requires_an_existing_directory
+2026-11-03T04:19:18.2514964Z   ---
+2026-11-03T04:19:18.2515300Z   duration_ms: 85.882698
+2026-11-03T04:19:18.2515704Z   type: 'test'
+2026-11-03T04:19:18.2516004Z   ...
+2026-11-03T04:19:18.2516790Z # Subtest: onp_unknown_conflicting_and_incomplete_cli_options_are_refused
+2026-11-03T04:19:18.2517766Z ok 15 - onp_unknown_conflicting_and_incomplete_cli_options_are_refused
+2026-11-03T04:19:18.2518371Z   ---
+2026-11-03T04:19:18.2518699Z   duration_ms: 538.622232
+2026-11-03T04:19:18.2519290Z   type: 'test'
+2026-11-03T04:19:18.2519650Z   ...
+2026-11-03T04:19:18.2520282Z # Subtest: onp_default_mode_retains_preload_and_coordinator_contracts
+2026-11-03T04:19:18.2521206Z ok 16 - onp_default_mode_retains_preload_and_coordinator_contracts
+2026-11-03T04:19:18.2521794Z   ---
+2026-11-03T04:19:18.2522119Z   duration_ms: 463.188308
+2026-11-03T04:19:18.2522507Z   type: 'test'
+2026-11-03T04:19:18.2522841Z   ...
+2026-11-03T04:19:18.2523482Z # Subtest: onp_default_mode_retains_forbidden_product_code_and_resources
+2026-11-03T04:19:18.2524432Z ok 17 - onp_default_mode_retains_forbidden_product_code_and_resources
+2026-11-03T04:19:18.2525048Z   ---
+2026-11-03T04:19:18.2525364Z   duration_ms: 284.08605
+2026-11-03T04:19:18.2525758Z   type: 'test'
+2026-11-03T04:19:18.2526304Z   ...
+2026-11-03T04:19:18.2527063Z # Subtest: onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs
+2026-11-03T04:19:18.2528133Z ok 18 - onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs
+2026-11-03T04:19:18.2528796Z   ---
+2026-11-03T04:19:18.2529161Z   duration_ms: 140.988192
+2026-11-03T04:19:18.2529564Z   type: 'test'
+2026-11-03T04:19:18.2529886Z   ...
+2026-11-03T04:19:18.2530672Z # Subtest: onp_competing_resource_writers_are_refused_across_common_and_platform_sets
+2026-11-03T04:19:18.2531833Z ok 19 - onp_competing_resource_writers_are_refused_across_common_and_platform_sets
+2026-11-03T04:19:18.2532546Z   ---
+2026-11-03T04:19:18.2532888Z   duration_ms: 3680.955811
+2026-11-03T04:19:18.2533295Z   type: 'test'
+2026-11-03T04:19:18.2533678Z   ...
+2026-11-03T04:19:18.2534310Z # Subtest: onp_disjoint_resource_mappings_preserve_all_platforms
+2026-11-03T04:19:18.2535189Z ok 20 - onp_disjoint_resource_mappings_preserve_all_platforms
+2026-11-03T04:19:18.2535764Z   ---
+2026-11-03T04:19:18.2536335Z   duration_ms: 98.267744
+2026-11-03T04:19:18.2536753Z   type: 'test'
+2026-11-03T04:19:18.2537077Z   ...
+2026-11-03T04:19:18.2537723Z # Subtest: onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf
+2026-11-03T04:19:18.2538638Z ok 21 - onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf
+2026-11-03T04:19:18.2539191Z   ---
+2026-11-03T04:19:18.2539485Z   duration_ms: 148.886121
+2026-11-03T04:19:18.2539846Z   type: 'test'
+2026-11-03T04:19:18.2540159Z   ...
+2026-11-03T04:19:18.2540440Z 1..21
+2026-11-03T04:19:18.2540716Z # tests 21
+2026-11-03T04:19:18.2541287Z # suites 0
+2026-11-03T04:19:18.2541625Z # pass 21
+2026-11-03T04:19:18.2541947Z # fail 0
+2026-11-03T04:19:18.2542269Z # cancelled 0
+2026-11-03T04:19:18.2542556Z # skipped 0
+2026-11-03T04:19:18.2542826Z # todo 0
+2026-11-03T04:19:18.2543134Z # duration_ms 7818.904017
+2026-11-03T04:19:18.2543364Z 
+2026-11-03T04:19:18.2543565Z {
+2026-11-03T04:19:18.2543892Z   "contract": "ONP-v1",
+2026-11-03T04:19:18.2544492Z   "subject_commit": "23c2a567d874509f56353b8cae737cdf1437309d",
+2026-11-03T04:19:18.2545202Z   "subject_tree": "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+2026-11-03T04:19:18.2545766Z   "upstream": {
+2026-11-03T04:19:18.2546415Z     "repository": "openclaw/openclaw",
+2026-11-03T04:19:18.2547019Z     "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+2026-11-03T04:19:18.2547644Z     "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+2026-11-03T04:19:18.2548117Z   },
+2026-11-03T04:19:18.2548431Z   "run_id": "41576693105",
+2026-11-03T04:19:18.2548809Z   "run_attempt": "1",
+2026-11-03T04:19:18.2549161Z   "job": "renderer",
+2026-11-03T04:19:18.2549497Z   "runner_os": "Linux",
+2026-11-03T04:19:18.2549848Z   "node": "v24.22.1",
+2026-11-03T04:19:18.2550183Z   "inputs_sha256": {
+2026-11-03T04:19:18.2551066Z     ".github/workflows/rust-desktop-runtime.yml": "5203014831b6aa5f6108b1d8b8dcd87407e52c5ef389e6445558fa54aaef95e5",
+2026-11-03T04:19:18.2552546Z     ".github/workflows/release-macos-main.yml": "255354819897d57d4e75a871373bfd51c3a39c7991bc16cec9e2590e87e6f89b",
+2026-11-03T04:19:18.2553931Z     "projects/openclaw-rust/upstream.lock.json": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+2026-11-03T04:19:18.2555791Z     "projects/openclaw-rust/docs/specs/desktop-openclaw-notice.md": "44987d7643d7343fc4b1e2f4f5987da54386e30f6e4079a8151102bef44be56d",
+2026-11-03T04:19:18.2557747Z     "desktop/resources/licenses/openclaw/LICENSE": "9efd316ecf1c4c60f6fd5d26433142fff2b6794d7d328e9bc6179b29bf9c82a4",
+2026-11-03T04:19:18.2559147Z     "desktop/package.json": "942aa4db49e1ddc1825df616510da868385a1b5d0126cca97e6c3516629b82b4",
+2026-11-03T04:19:18.2560525Z     "desktop/resources/licenses/openclaw/.gitattributes": "c33e569edc1001d82ffbb5276646d85439c308f14b1b10c21b4c8a35b7d2fe82",
+2026-11-03T04:19:18.2561493Z     "desktop/scripts/check-electron-runtime-bundle.mjs": "38b4c700448f8a7dff225071033e8ce877a121fc9c549269c1bb697af9e0c75e",
+2026-11-03T04:19:18.2562435Z     "desktop/scripts/openclaw-notice.contract.test.mjs": "e41bd31afcd236a57dcf9cf1c6a6ee7146a43d6a123acad33bd63c4f77807641"
+2026-11-03T04:19:18.2562995Z   },
+2026-11-03T04:19:18.2563196Z   "planned_commands": [
+2026-11-03T04:19:18.2563528Z     {
+2026-11-03T04:19:18.2563941Z       "case": "source-notice",
+2026-11-03T04:19:18.2564381Z       "command": [
+2026-11-03T04:19:18.2564739Z         "node",
+2026-11-03T04:19:18.2565160Z         "desktop/scripts/check-electron-runtime-bundle.mjs",
+2026-11-03T04:19:18.2565513Z         "--notice-only"
+2026-11-03T04:19:18.2565772Z       ]
+2026-11-03T04:19:18.2565964Z     },
+2026-11-03T04:19:18.2566747Z     {
+2026-11-03T04:19:18.2567173Z       "case": "notice-contract",
+2026-11-03T04:19:18.2567627Z       "command": [
+2026-11-03T04:19:18.2567927Z         "node",
+2026-11-03T04:19:18.2568158Z         "--test",
+2026-11-03T04:19:18.2568417Z         "--test-reporter=tap",
+2026-11-03T04:19:18.2568792Z         "desktop/scripts/openclaw-notice.contract.test.mjs"
+2026-11-03T04:19:18.2569133Z       ]
+2026-11-03T04:19:18.2569325Z     }
+2026-11-03T04:19:18.2569521Z   ],
+2026-11-03T04:19:18.2569723Z   "required_tests": [
+2026-11-03T04:19:18.2570084Z     "onp_real_notice_only_uses_locked_source_and_common_mapping",
+2026-11-03T04:19:18.2570661Z     "onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts",
+2026-11-03T04:19:18.2571255Z     "onp_default_mode_retains_all_required_runtime_artifacts",
+2026-11-03T04:19:18.2571739Z     "onp_default_mode_accepts_complete_controlled_runtime_and_notice",
+2026-11-03T04:19:18.2572197Z     "onp_missing_source_notice_is_refused_without_repair",
+2026-11-03T04:19:18.2572837Z     "onp_changed_source_bytes_are_refused_without_normalization",
+2026-11-03T04:19:18.2573237Z     "onp_non_file_source_notice_is_refused",
+2026-11-03T04:19:18.2573649Z     "onp_missing_malformed_and_invalid_lock_identity_are_refused",
+2026-11-03T04:19:18.2574106Z     "onp_root_license_identity_cannot_follow_discovery_candidate",
+2026-11-03T04:19:18.2574587Z     "onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused",
+2026-11-03T04:19:18.2575088Z     "onp_platform_only_mapping_cannot_replace_the_common_mapping",
+2026-11-03T04:19:18.2575628Z     "onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination",
+2026-11-03T04:19:18.2576563Z     "onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused",
+2026-11-03T04:19:18.2577107Z     "onp_packaged_resources_requires_an_existing_directory",
+2026-11-03T04:19:18.2577564Z     "onp_unknown_conflicting_and_incomplete_cli_options_are_refused",
+2026-11-03T04:19:18.2578038Z     "onp_default_mode_retains_preload_and_coordinator_contracts",
+2026-11-03T04:19:18.2578508Z     "onp_default_mode_retains_forbidden_product_code_and_resources",
+2026-11-03T04:19:18.2578999Z     "onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs",
+2026-11-03T04:19:18.2579554Z     "onp_competing_resource_writers_are_refused_across_common_and_platform_sets",
+2026-11-03T04:19:18.2580052Z     "onp_disjoint_resource_mappings_preserve_all_platforms",
+2026-11-03T04:19:18.2580492Z     "onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf"
+2026-11-03T04:19:18.2580834Z   ],
+2026-11-03T04:19:18.2581025Z   "executions": [
+2026-11-03T04:19:18.2581231Z     {
+2026-11-03T04:19:18.2581455Z       "case": "source-notice",
+2026-11-03T04:19:18.2581854Z       "command": [
+2026-11-03T04:19:18.2582077Z         "node",
+2026-11-03T04:19:18.2582400Z         "desktop/scripts/check-electron-runtime-bundle.mjs",
+2026-11-03T04:19:18.2582746Z         "--notice-only"
+2026-11-03T04:19:18.2582966Z       ],
+2026-11-03T04:19:18.2583169Z       "command_exit": 0,
+2026-11-03T04:19:18.2583418Z       "capture_exit": 0,
+2026-11-03T04:19:18.2583673Z       "execution_error": null,
+2026-11-03T04:19:18.2583954Z       "log": "source-notice.log",
+2026-11-03T04:19:18.2584406Z       "log_sha256": "4da2c122733058bc013660d36ec4ae41a29f651da970884f382ed63f4e7a731f",
+2026-11-03T04:19:18.2584837Z       "oracle_accepted": true
+2026-11-03T04:19:18.2585076Z     },
+2026-11-03T04:19:18.2585254Z     {
+2026-11-03T04:19:18.2585496Z       "case": "notice-contract",
+2026-11-03T04:19:18.2585749Z       "command": [
+2026-11-03T04:19:18.2585956Z         "node",
+2026-11-03T04:19:18.2586349Z         "--test",
+2026-11-03T04:19:18.2586595Z         "--test-reporter=tap",
+2026-11-03T04:19:18.2586949Z         "desktop/scripts/openclaw-notice.contract.test.mjs"
+2026-11-03T04:19:18.2587287Z       ],
+2026-11-03T04:19:18.2587495Z       "command_exit": 0,
+2026-11-03T04:19:18.2587728Z       "capture_exit": 0,
+2026-11-03T04:19:18.2587978Z       "execution_error": null,
+2026-11-03T04:19:18.2588258Z       "log": "notice-contract.log",
+2026-11-03T04:19:18.2588717Z       "log_sha256": "7de184a9e123406612940ab3d27a4da0dca66b5e037f0f49cbc4b7df480aa58b",
+2026-11-03T04:19:18.2589170Z       "observed_passed_test_names": [
+2026-11-03T04:19:18.2589569Z         "onp_real_notice_only_uses_locked_source_and_common_mapping",
+2026-11-03T04:19:18.2590086Z         "onp_notice_only_accepts_controlled_inputs_without_runtime_artifacts",
+2026-11-03T04:19:18.2590572Z         "onp_default_mode_retains_all_required_runtime_artifacts",
+2026-11-03T04:19:18.2591050Z         "onp_default_mode_accepts_complete_controlled_runtime_and_notice",
+2026-11-03T04:19:18.2591507Z         "onp_missing_source_notice_is_refused_without_repair",
+2026-11-03T04:19:18.2591962Z         "onp_changed_source_bytes_are_refused_without_normalization",
+2026-11-03T04:19:18.2592369Z         "onp_non_file_source_notice_is_refused",
+2026-11-03T04:19:18.2592778Z         "onp_missing_malformed_and_invalid_lock_identity_are_refused",
+2026-11-03T04:19:18.2593249Z         "onp_root_license_identity_cannot_follow_discovery_candidate",
+2026-11-03T04:19:18.2593883Z         "onp_missing_duplicate_wrong_and_broad_common_mappings_are_refused",
+2026-11-03T04:19:18.2594378Z         "onp_platform_only_mapping_cannot_replace_the_common_mapping",
+2026-11-03T04:19:18.2594899Z         "onp_packaged_resources_consumes_exact_bytes_at_the_declared_destination",
+2026-11-03T04:19:18.2595497Z         "onp_missing_changed_non_file_and_wrong_destination_packaged_notices_are_refused",
+2026-11-03T04:19:18.2596147Z         "onp_packaged_resources_requires_an_existing_directory",
+2026-11-03T04:19:18.2596674Z         "onp_unknown_conflicting_and_incomplete_cli_options_are_refused",
+2026-11-03T04:19:18.2597160Z         "onp_default_mode_retains_preload_and_coordinator_contracts",
+2026-11-03T04:19:18.2597634Z         "onp_default_mode_retains_forbidden_product_code_and_resources",
+2026-11-03T04:19:18.2598146Z         "onp_default_mode_cannot_accept_runtime_without_valid_notice_inputs",
+2026-11-03T04:19:18.2598699Z         "onp_competing_resource_writers_are_refused_across_common_and_platform_sets",
+2026-11-03T04:19:18.2599211Z         "onp_disjoint_resource_mappings_preserve_all_platforms",
+2026-11-03T04:19:18.2599668Z         "onp_git_checkout_preserves_locked_notice_bytes_with_autocrlf"
+2026-11-03T04:19:18.2600009Z       ],
+2026-11-03T04:19:18.2600267Z       "missing_or_nonunique_positive_results": [],
+2026-11-03T04:19:18.2600574Z       "tap_counts": {
+2026-11-03T04:19:18.2600794Z         "tests": [
+2026-11-03T04:19:18.2601000Z           "21"
+2026-11-03T04:19:18.2601210Z         ],
+2026-11-03T04:19:18.2601410Z         "pass": [
+2026-11-03T04:19:18.2601618Z           "21"
+2026-11-03T04:19:18.2601807Z         ],
+2026-11-03T04:19:18.2602176Z         "fail": [
+2026-11-03T04:19:18.2602427Z           "0"
+2026-11-03T04:19:18.2602620Z         ],
+2026-11-03T04:19:18.2602820Z         "cancelled": [
+2026-11-03T04:19:18.2603039Z           "0"
+2026-11-03T04:19:18.2603223Z         ],
+2026-11-03T04:19:18.2603418Z         "skipped": [
+2026-11-03T04:19:18.2603637Z           "0"
+2026-11-03T04:19:18.2603822Z         ],
+2026-11-03T04:19:18.2604004Z         "todo": [
+2026-11-03T04:19:18.2604204Z           "0"
+2026-11-03T04:19:18.2604388Z         ]
+2026-11-03T04:19:18.2604568Z       },
+2026-11-03T04:19:18.2604780Z       "oracle_accepted": true
+2026-11-03T04:19:18.2605018Z     }
+2026-11-03T04:19:18.2605201Z   ],
+2026-11-03T04:19:18.2605396Z   "result": "passed",
+2026-11-03T04:19:18.2608234Z   "scope": "Actual locked source notice and common electron-builder mapping plus the real checker CLI over owned byte-preserved fixtures. Negative controls cover source/lock/mapping/options, competing common/platform resource writers and packaged-resource validation; default runtime assertions are retained. Actual isolated Git autocrlf checkout consumes the tracked narrow attribute, with an independent no-attribute byte-conversion refusal control. Fixture Resources are not a signed installer or actual packaged artifact. Actual macOS/Windows/Linux packages, signing, complete recursive legal provenance and full migration acceptance remain open."
+2026-11-03T04:19:18.2610654Z }
+2026-11-03T04:19:18.2682322Z ##[group]Run actions/upload-artifact@v4
+2026-11-03T04:19:18.2682662Z with:
+2026-11-03T04:19:18.2683048Z   name: ocrm-openclaw-notice-23c2a567d874509f56353b8cae737cdf1437309d-41576693105-1
+2026-11-03T04:19:18.2683515Z   path: .evidence/openclaw-notice
+2026-11-03T04:19:18.2683792Z   if-no-files-found: error
+2026-11-03T04:19:18.2684026Z   retention-days: 90
+2026-11-03T04:19:18.2684248Z   compression-level: 6
+2026-11-03T04:19:18.2684463Z   overwrite: false
+2026-11-03T04:19:18.2684698Z   include-hidden-files: false
+2026-11-03T04:19:18.2684944Z env:
+2026-11-03T04:19:18.2685208Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:18.2685575Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:18.2685820Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:18.2686261Z ##[endgroup]
+2026-11-03T04:19:18.4497963Z (node:3636) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-03T04:19:18.4499882Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-03T04:19:18.4567625Z With the provided path, there will be 3 files uploaded
+2026-11-03T04:19:18.4581849Z Artifact name is valid!
+2026-11-03T04:19:18.4582891Z Root directory input is valid!
+2026-11-03T04:19:18.6987404Z Beginning upload of artifact content to blob storage
+2026-11-03T04:19:18.7256840Z (node:3636) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-03T04:19:18.7544540Z Uploaded bytes 3840
+2026-11-03T04:19:18.7714244Z Finished uploading artifact content to blob storage!
+2026-11-03T04:19:18.7716483Z SHA256 digest of uploaded artifact zip is 3886c79a3add5198e3b042e8c6e81a2cbec57b9c33505091437c9fa6e220b778
+2026-11-03T04:19:18.7721361Z Finalizing artifact upload
+2026-11-03T04:19:19.2245167Z Artifact ocrm-openclaw-notice-23c2a567d874509f56353b8cae737cdf1437309d-41576693105-1.zip successfully finalized. Artifact ID 13204546048
+2026-11-03T04:19:19.2247753Z Artifact ocrm-openclaw-notice-23c2a567d874509f56353b8cae737cdf1437309d-41576693105-1 has been successfully uploaded! Final size is 3840 bytes. Artifact ID is 13204546048
+2026-11-03T04:19:19.2252332Z Artifact download URL: https://github.com/bhrumom/fabushi-desktop/actions/runs/41576693105/artifacts/13204546048
+2026-11-03T04:19:19.2412527Z ##[group]Run npm --prefix desktop ci --prefer-offline --no-audit --no-fund
+2026-11-03T04:19:19.2413194Z [36;1mnpm --prefix desktop ci --prefer-offline --no-audit --no-fund[0m
+2026-11-03T04:19:19.2434368Z shell: /usr/bin/bash -e {0}
+2026-11-03T04:19:19.2434668Z env:
+2026-11-03T04:19:19.2435001Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:19.2435437Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:19.2435731Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:19.2436305Z ##[endgroup]
+2026-11-03T04:19:21.9238720Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-11-03T04:19:21.9681180Z npm warn deprecated rimraf@2.6.3: Rimraf versions prior to v4 are no longer supported
+2026-11-03T04:19:21.9935269Z npm warn deprecated lodash.isequal@4.5.0: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
+2026-11-03T04:19:22.0666878Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-11-03T04:19:22.4231433Z npm warn deprecated boolean@3.2.0: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+2026-11-03T04:19:27.0514207Z 
+2026-11-03T04:19:27.0515051Z added 516 packages in 8s
+2026-11-03T04:19:27.0530582Z npm warn install-scripts 3 packages have install scripts not yet covered by allowScripts:
+2026-11-03T04:19:27.0532166Z npm warn install-scripts   electron-winstaller@5.4.0 (install: node ./script/select-7z-arch.js)
+2026-11-03T04:19:27.0533671Z npm warn install-scripts   esbuild@0.25.12 (postinstall: node install.js)
+2026-11-03T04:19:27.0535007Z npm warn install-scripts   protobufjs@7.6.5 (postinstall: node scripts/postinstall)
+2026-11-03T04:19:27.0535965Z npm warn install-scripts
+2026-11-03T04:19:27.0538466Z npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+2026-11-03T04:19:27.1486899Z ##[group]Run npm --prefix desktop run build:electron -- --plugin-skills-contracts
+2026-11-03T04:19:27.1488015Z [36;1mnpm --prefix desktop run build:electron -- --plugin-skills-contracts[0m
+2026-11-03T04:19:27.1520158Z shell: /usr/bin/bash -e {0}
+2026-11-03T04:19:27.1521039Z env:
+2026-11-03T04:19:27.1521575Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:27.1522267Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:27.1522729Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:27.1523170Z ##[endgroup]
+2026-11-03T04:19:27.2536674Z 
+2026-11-03T04:19:27.2537633Z > @fabushi/desktop@1.2.78 build:electron
+2026-11-03T04:19:27.2538659Z > node scripts/build-electron-runtime.mjs --plugin-skills-contracts
+2026-11-03T04:19:27.2539247Z 
+2026-11-03T04:19:27.4028502Z ▲ [WARNING] Using direct eval with a bundler is not recommended and may cause problems [direct-eval]
+2026-11-03T04:19:27.4046574Z 
+2026-11-03T04:19:27.4076891Z     ../source/electron-main/vnc/vnc-trust.ts:52:22:
+2026-11-03T04:19:27.4104957Z       52 │     requireElectron = eval("require") as NodeRequire;
+2026-11-03T04:19:27.4106284Z          ╵                       ~~~~
+2026-11-03T04:19:27.4133479Z 
+2026-11-03T04:19:27.4134143Z   You can read more about direct eval and bundling here: https://esbuild.github.io/link/direct-eval
+2026-11-03T04:19:27.4134761Z 
+2026-11-03T04:19:27.4136358Z ▲ [WARNING] Using direct eval with a bundler is not recommended and may cause problems [direct-eval]
+2026-11-03T04:19:27.4166444Z 
+2026-11-03T04:19:27.4167285Z     ../source/electron-main/telemetry/telemetry-report-sinks.ts:5:20:
+2026-11-03T04:19:27.4168418Z       5 │   requireElectron = eval("require") as NodeRequire;
+2026-11-03T04:19:27.4169212Z         ╵                     ~~~~
+2026-11-03T04:19:27.4169535Z 
+2026-11-03T04:19:27.4170151Z   You can read more about direct eval and bundling here: https://esbuild.github.io/link/direct-eval
+2026-11-03T04:19:27.4170843Z 
+2026-11-03T04:19:28.4567370Z 2 warnings
+2026-11-03T04:19:28.4568279Z 
+2026-11-03T04:19:28.4569141Z   dist/electron-main/main.cjs      12.6mb ⚠️
+2026-11-03T04:19:28.4569858Z   dist/electron-main/main.cjs.map  26.8mb
+2026-11-03T04:19:28.4570346Z 
+2026-11-03T04:19:28.4570650Z ⚡ Done in 1147ms
+2026-11-03T04:19:28.4731865Z 
+2026-11-03T04:19:28.4757154Z   dist/electron-preload/preload.cjs      26.4kb
+2026-11-03T04:19:28.4775876Z   dist/electron-preload/preload.cjs.map  53.2kb
+2026-11-03T04:19:28.4776954Z 
+2026-11-03T04:19:28.4777595Z ⚡ Done in 11ms
+2026-11-03T04:19:28.4946986Z 
+2026-11-03T04:19:28.4977425Z   dist/electron-preload/preload-sand-dev.cjs      26.4kb
+2026-11-03T04:19:28.5007138Z   dist/electron-preload/preload-sand-dev.cjs.map  53.2kb
+2026-11-03T04:19:28.5036470Z 
+2026-11-03T04:19:28.5037290Z ⚡ Done in 11ms
+2026-11-03T04:19:28.5046713Z 
+2026-11-03T04:19:28.5047309Z   dist/electron-preload/preload-dev-controls.cjs       4.9kb
+2026-11-03T04:19:28.5048348Z   dist/electron-preload/preload-dev-controls.cjs.map  11.2kb
+2026-11-03T04:19:28.5048916Z 
+2026-11-03T04:19:28.5049316Z ⚡ Done in 5ms
+2026-11-03T04:19:28.5211529Z 
+2026-11-03T04:19:28.5262082Z   dist/electron-preload/preload-vnc.cjs      33.4kb
+2026-11-03T04:19:28.5286940Z   dist/electron-preload/preload-vnc.cjs.map  74.7kb
+2026-11-03T04:19:28.5306626Z 
+2026-11-03T04:19:28.5307423Z ⚡ Done in 14ms
+2026-11-03T04:19:28.5362249Z 
+2026-11-03T04:19:28.5362954Z   dist/electron-preload/preload-webview.cjs      10.4kb
+2026-11-03T04:19:28.5363967Z   dist/electron-preload/preload-webview.cjs.map  30.6kb
+2026-11-03T04:19:28.5364571Z 
+2026-11-03T04:19:28.5365065Z ⚡ Done in 5ms
+2026-11-03T04:19:28.5396646Z 
+2026-11-03T04:19:28.5397166Z   dist/node-agent-coordinator/main.cjs      5.1kb
+2026-11-03T04:19:28.5398035Z   dist/node-agent-coordinator/main.cjs.map  9.5kb
+2026-11-03T04:19:28.5398531Z 
+2026-11-03T04:19:28.5398903Z ⚡ Done in 2ms
+2026-11-03T04:19:28.5402405Z built Fabushi product main/preload and Rust Coordinator carrier
+2026-11-03T04:19:28.5429220Z 
+2026-11-03T04:19:28.5429790Z   dist/electron-main/miniapp-native-carrier.cjs      1.9kb
+2026-11-03T04:19:28.5431066Z   dist/electron-main/miniapp-native-carrier.cjs.map  3.2kb
+2026-11-03T04:19:28.5431462Z 
+2026-11-03T04:19:28.5431711Z ⚡ Done in 2ms
+2026-11-03T04:19:28.5455729Z 
+2026-11-03T04:19:28.5456555Z   dist/electron-preload/preload-miniapp-tools.cjs      1.6kb
+2026-11-03T04:19:28.5457646Z   dist/electron-preload/preload-miniapp-tools.cjs.map  1.3kb
+2026-11-03T04:19:28.5458023Z 
+2026-11-03T04:19:28.5458232Z ⚡ Done in 2ms
+2026-11-03T04:19:29.1716030Z 
+2026-11-03T04:19:29.1718537Z   ...lectron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs   8.2mb ⚠️
+2026-11-03T04:19:29.1719964Z   ...ron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs.map  18.3mb
+2026-11-03T04:19:29.1720609Z 
+2026-11-03T04:19:29.1720933Z ⚡ Done in 625ms
+2026-11-03T04:19:29.2245586Z 
+2026-11-03T04:19:29.2247008Z   .tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs      602.5kb
+2026-11-03T04:19:29.2247986Z   .tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs.map    1.3mb
+2026-11-03T04:19:29.2248360Z 
+2026-11-03T04:19:29.2248769Z ⚡ Done in 52ms
+2026-11-03T04:19:29.2497210Z 
+2026-11-03T04:19:29.2498509Z   ...lectron/ocrm-plugin/coordinator-control-server.contract.test.cjs  156.3kb
+2026-11-03T04:19:29.2499716Z   ...ron/ocrm-plugin/coordinator-control-server.contract.test.cjs.map  378.3kb
+2026-11-03T04:19:29.2500244Z 
+2026-11-03T04:19:29.2500603Z ⚡ Done in 24ms
+2026-11-03T04:19:29.9522086Z 
+2026-11-03T04:19:29.9524874Z   .tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs       8.3mb ⚠️
+2026-11-03T04:19:29.9527307Z   .tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs.map  17.4mb
+2026-11-03T04:19:29.9528358Z 
+2026-11-03T04:19:29.9528827Z ⚡ Done in 701ms
+2026-11-03T04:19:29.9637578Z 
+2026-11-03T04:19:29.9639202Z   .tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs     110.3kb
+2026-11-03T04:19:29.9640687Z   ...-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs.map  204.2kb
+2026-11-03T04:19:29.9641417Z 
+2026-11-03T04:19:29.9641791Z ⚡ Done in 10ms
+2026-11-03T04:19:29.9690485Z 
+2026-11-03T04:19:29.9691338Z   ...lectron/ocrm-plugin/coordinator-account-runtime.contract.test.cjs  39.6kb
+2026-11-03T04:19:29.9692305Z   ...ron/ocrm-plugin/coordinator-account-runtime.contract.test.cjs.map  70.6kb
+2026-11-03T04:19:29.9692833Z 
+2026-11-03T04:19:29.9693142Z ⚡ Done in 4ms
+2026-11-03T04:19:29.9748592Z 
+2026-11-03T04:19:29.9749265Z   ...ectron/ocrm-plugin/coordinator-main-port-client.contract.test.cjs  45.5kb
+2026-11-03T04:19:29.9750122Z   ...on/ocrm-plugin/coordinator-main-port-client.contract.test.cjs.map  78.6kb
+2026-11-03T04:19:29.9750566Z 
+2026-11-03T04:19:29.9750884Z ⚡ Done in 5ms
+2026-11-03T04:19:29.9805496Z 
+2026-11-03T04:19:29.9806246Z   .tmp-grok-electron/ocrm-plugin/coordinator-runtime.test.cjs      20.1kb
+2026-11-03T04:19:29.9807316Z   .tmp-grok-electron/ocrm-plugin/coordinator-runtime.test.cjs.map  45.6kb
+2026-11-03T04:19:29.9807836Z 
+2026-11-03T04:19:29.9808128Z ⚡ Done in 5ms
+2026-11-03T04:19:29.9981134Z 
+2026-11-03T04:19:29.9982117Z   .tmp-grok-electron/ocrm-plugin/attachment-gateway.contract.test.cjs  202.2kb
+2026-11-03T04:19:29.9983296Z   ...ok-electron/ocrm-plugin/attachment-gateway.contract.test.cjs.map  420.0kb
+2026-11-03T04:19:29.9983895Z 
+2026-11-03T04:19:29.9984276Z ⚡ Done in 17ms
+2026-11-03T04:19:30.0569424Z ##[group]Run set -euo pipefail
+2026-11-03T04:19:30.0569876Z [36;1mset -euo pipefail[0m
+2026-11-03T04:19:30.0570214Z [36;1mmkdir -p .evidence[0m
+2026-11-03T04:19:30.0570584Z [36;1mnode --test --test-reporter=tap \[0m
+2026-11-03T04:19:30.0571254Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs \[0m
+2026-11-03T04:19:30.0572088Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs \[0m
+2026-11-03T04:19:30.0572902Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs \[0m
+2026-11-03T04:19:30.0573738Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs \[0m
+2026-11-03T04:19:30.0574533Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs \[0m
+2026-11-03T04:19:30.0575191Z [36;1m  2>&1 | tee .evidence/ocrm-plugin-edge.tap[0m
+2026-11-03T04:19:30.0596007Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:19:30.0596946Z env:
+2026-11-03T04:19:30.0597696Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:30.0598195Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:30.0598509Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:30.0599277Z   FABUSHI_COORDINATOR_CARRIER_ARTIFACT: /home/runner/work/fabushi-desktop/fabushi-desktop/desktop/dist/node-agent-coordinator/main.cjs
+2026-11-03T04:19:30.0600096Z ##[endgroup]
+2026-11-03T04:19:30.1237702Z TAP version 13
+2026-11-03T04:19:30.1810856Z # Subtest: a throwing problem reporter cannot prevent protocol settlement
+2026-11-03T04:19:30.1841590Z ok 1 - a throwing problem reporter cannot prevent protocol settlement
+2026-11-03T04:19:30.1842506Z   ---
+2026-11-03T04:19:30.1843020Z   duration_ms: 2.27442
+2026-11-03T04:19:30.1845257Z   type: 'test'
+2026-11-03T04:19:30.1845808Z   ...
+2026-11-03T04:19:30.2895412Z # [mahayana-coordinator-carrier] coordinator exited by signal SIGTERM
+2026-11-03T04:19:30.2952758Z # Subtest: MCP results retain their discriminants through native ports and the shipping Rust carrier
+2026-11-03T04:19:30.2957428Z ok 2 - MCP results retain their discriminants through native ports and the shipping Rust carrier
+2026-11-03T04:19:30.2958614Z   ---
+2026-11-03T04:19:30.2959234Z   duration_ms: 123.983344
+2026-11-03T04:19:30.2959904Z   type: 'test'
+2026-11-03T04:19:30.2960546Z   ...
+2026-11-03T04:19:30.7288481Z # Subtest: Host rejects an unavailable SDK source but returns an authoritative empty snapshot
+2026-11-03T04:19:30.7306620Z ok 3 - Host rejects an unavailable SDK source but returns an authoritative empty snapshot
+2026-11-03T04:19:30.7307594Z   ---
+2026-11-03T04:19:30.7308124Z   duration_ms: 32.595677
+2026-11-03T04:19:30.7308651Z   type: 'test'
+2026-11-03T04:19:30.7309106Z   ...
+2026-11-03T04:19:30.7489125Z # Subtest: Host rejects malformed raw listing shapes before materializing any entry
+2026-11-03T04:19:30.7497588Z ok 4 - Host rejects malformed raw listing shapes before materializing any entry
+2026-11-03T04:19:30.7533334Z   ---
+2026-11-03T04:19:30.7548184Z   duration_ms: 18.028232
+2026-11-03T04:19:30.7576661Z   type: 'test'
+2026-11-03T04:19:30.7606729Z   ...
+2026-11-03T04:19:30.7618761Z # Subtest: Host rejects malformed or duplicate enabled IDs before SDK filtering
+2026-11-03T04:19:30.7637424Z ok 5 - Host rejects malformed or duplicate enabled IDs before SDK filtering
+2026-11-03T04:19:30.7638490Z   ---
+2026-11-03T04:19:30.7639196Z   duration_ms: 7.152453
+2026-11-03T04:19:30.7639940Z   type: 'test'
+2026-11-03T04:19:30.7640550Z   ...
+2026-11-03T04:19:30.7694589Z # Subtest: Host captures enabled IDs before the real SDK omits inline content or nameless entries
+2026-11-03T04:19:30.7697107Z ok 6 - Host captures enabled IDs before the real SDK omits inline content or nameless entries
+2026-11-03T04:19:30.7697971Z   ---
+2026-11-03T04:19:30.7773263Z   duration_ms: 15.127407
+2026-11-03T04:19:30.7775757Z   type: 'test'
+2026-11-03T04:19:30.7777003Z   ...
+2026-11-03T04:19:30.7897985Z # Subtest: Host returns the actual SDK install path for a zero-skill plugin with dotted cache keys
+2026-11-03T04:19:30.7910653Z ok 7 - Host returns the actual SDK install path for a zero-skill plugin with dotted cache keys
+2026-11-03T04:19:30.7921944Z   ---
+2026-11-03T04:19:30.7940816Z   duration_ms: 20.206734
+2026-11-03T04:19:30.7945580Z   type: 'test'
+2026-11-03T04:19:30.7979658Z   ...
+2026-11-03T04:19:30.8278317Z # Subtest: Host late failed materialization preserves a zero-skill winner and a fresh cache hit
+2026-11-03T04:19:30.8290642Z ok 8 - Host late failed materialization preserves a zero-skill winner and a fresh cache hit
+2026-11-03T04:19:30.8312784Z   ---
+2026-11-03T04:19:30.8331045Z   duration_ms: 37.843257
+2026-11-03T04:19:30.8356860Z   type: 'test'
+2026-11-03T04:19:30.8358580Z   ...
+2026-11-03T04:19:30.8363285Z # Subtest: Host preserves opaque strings and bigint IDs above the safe-number range exactly
+2026-11-03T04:19:30.8406461Z ok 9 - Host preserves opaque strings and bigint IDs above the safe-number range exactly
+2026-11-03T04:19:30.8448916Z   ---
+2026-11-03T04:19:30.8462521Z   duration_ms: 3.529485
+2026-11-03T04:19:30.8465109Z   type: 'test'
+2026-11-03T04:19:30.8466021Z   ...
+2026-11-03T04:19:30.8476388Z # Subtest: local install permission failures never become remote authorization blocks
+2026-11-03T04:19:30.8477980Z ok 10 - local install permission failures never become remote authorization blocks
+2026-11-03T04:19:30.8478943Z   ---
+2026-11-03T04:19:30.8479494Z   duration_ms: 13.8551
+2026-11-03T04:19:30.8480089Z   type: 'test'
+2026-11-03T04:19:30.8480636Z   ...
+2026-11-03T04:19:30.8768378Z # Subtest: Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID
+2026-11-03T04:19:30.8770549Z ok 11 - Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID
+2026-11-03T04:19:30.8771441Z   ---
+2026-11-03T04:19:30.8782191Z   duration_ms: 29.54328
+2026-11-03T04:19:30.8783282Z   type: 'test'
+2026-11-03T04:19:30.8783930Z   ...
+2026-11-03T04:19:30.9084430Z # Subtest: Host staging cleanup failure preserves the canonical authorization denial
+2026-11-03T04:19:30.9085699Z ok 12 - Host staging cleanup failure preserves the canonical authorization denial
+2026-11-03T04:19:30.9086957Z   ---
+2026-11-03T04:19:30.9087492Z   duration_ms: 32.80192
+2026-11-03T04:19:30.9087914Z   type: 'test'
+2026-11-03T04:19:30.9088268Z   ...
+2026-11-03T04:19:30.9627838Z # Subtest: Host cleanup I/O failures preserve canonical remote denial and recovery
+2026-11-03T04:19:30.9629906Z ok 13 - Host cleanup I/O failures preserve canonical remote denial and recovery
+2026-11-03T04:19:30.9630940Z   ---
+2026-11-03T04:19:30.9631653Z   duration_ms: 55.008472
+2026-11-03T04:19:30.9632494Z   type: 'test'
+2026-11-03T04:19:30.9632926Z   ...
+2026-11-03T04:19:30.9958264Z # Subtest: Host cache-owned materialization failures cannot create authorization denials
+2026-11-03T04:19:30.9967687Z ok 14 - Host cache-owned materialization failures cannot create authorization denials
+2026-11-03T04:19:30.9972741Z   ---
+2026-11-03T04:19:30.9974589Z   duration_ms: 32.573389
+2026-11-03T04:19:31.0002176Z   type: 'test'
+2026-11-03T04:19:31.0006765Z   ...
+2026-11-03T04:19:31.0037141Z # Subtest: Host refuses an SDK auth denial without canonical identity instead of guessing from a slug or name
+2026-11-03T04:19:31.0060502Z ok 15 - Host refuses an SDK auth denial without canonical identity instead of guessing from a slug or name
+2026-11-03T04:19:31.0066972Z   ---
+2026-11-03T04:19:31.0067734Z   duration_ms: 3.668584
+2026-11-03T04:19:31.0068498Z   type: 'test'
+2026-11-03T04:19:31.0069110Z   ...
+2026-11-03T04:19:31.0070260Z # Subtest: remote Git clone authorization denial retains its canonical ID as an auth block
+2026-11-03T04:19:31.0071833Z ok 16 - remote Git clone authorization denial retains its canonical ID as an auth block
+2026-11-03T04:19:31.0072905Z   ---
+2026-11-03T04:19:31.0073541Z   duration_ms: 4.37643
+2026-11-03T04:19:31.0074225Z   type: 'test'
+2026-11-03T04:19:31.0074831Z   ...
+2026-11-03T04:19:31.0128098Z # Subtest: Host defers SDK pruning even after a complete successful materialization
+2026-11-03T04:19:31.0141441Z ok 17 - Host defers SDK pruning even after a complete successful materialization
+2026-11-03T04:19:31.0149409Z   ---
+2026-11-03T04:19:31.0149958Z   duration_ms: 9.324583
+2026-11-03T04:19:31.0150513Z   type: 'test'
+2026-11-03T04:19:31.0151007Z   ...
+2026-11-03T04:19:31.0243553Z # Subtest: one Host loader refreshes publisher identity for consecutive accounts
+2026-11-03T04:19:31.0245638Z ok 18 - one Host loader refreshes publisher identity for consecutive accounts
+2026-11-03T04:19:31.0246951Z   ---
+2026-11-03T04:19:31.0248740Z   duration_ms: 11.023501
+2026-11-03T04:19:31.0249606Z   type: 'test'
+2026-11-03T04:19:31.0250279Z   ...
+2026-11-03T04:19:31.0498279Z # Subtest: Host refuses an actual Sand account read superseded by logout and login
+2026-11-03T04:19:31.0499669Z     # Subtest: peek-before-logout-login
+2026-11-03T04:19:31.0500746Z     ok 1 - peek-before-logout-login
+2026-11-03T04:19:31.0501271Z       ---
+2026-11-03T04:19:31.0501647Z       duration_ms: 24.416145
+2026-11-03T04:19:31.0502139Z       type: 'test'
+2026-11-03T04:19:31.0502857Z       ...
+2026-11-03T04:19:31.0672763Z     # Subtest: login-before-peek
+2026-11-03T04:19:31.0679110Z     ok 2 - login-before-peek
+2026-11-03T04:19:31.0691301Z       ---
+2026-11-03T04:19:31.0692212Z       duration_ms: 18.319413
+2026-11-03T04:19:31.0693109Z       type: 'test'
+2026-11-03T04:19:31.0693926Z       ...
+2026-11-03T04:19:31.0694680Z     1..2
+2026-11-03T04:19:31.0695971Z ok 19 - Host refuses an actual Sand account read superseded by logout and login
+2026-11-03T04:19:31.0697487Z   ---
+2026-11-03T04:19:31.0698212Z   duration_ms: 43.744346
+2026-11-03T04:19:31.0698950Z   type: 'test'
+2026-11-03T04:19:31.0699869Z   ...
+2026-11-03T04:19:31.1471296Z # Subtest: a Host identity lookup failure or invalid ID cannot reuse a prior successful identity
+2026-11-03T04:19:31.1509952Z ok 20 - a Host identity lookup failure or invalid ID cannot reuse a prior successful identity
+2026-11-03T04:19:31.1516798Z   ---
+2026-11-03T04:19:31.1517563Z   duration_ms: 79.129149
+2026-11-03T04:19:31.1518017Z   type: 'test'
+2026-11-03T04:19:31.1518414Z   ...
+2026-11-03T04:19:31.1570265Z # Subtest: Host pins listing identity and Git credentials then refuses an account change during the pass
+2026-11-03T04:19:31.1572890Z ok 21 - Host pins listing identity and Git credentials then refuses an account change during the pass
+2026-11-03T04:19:31.1574236Z   ---
+2026-11-03T04:19:31.1574712Z   duration_ms: 10.071513
+2026-11-03T04:19:31.1575240Z   type: 'test'
+2026-11-03T04:19:31.1575704Z   ...
+2026-11-03T04:19:31.1662967Z # Subtest: Host rejects account departure and unreadable current account after materialization
+2026-11-03T04:19:31.1682781Z     # Subtest: departed
+2026-11-03T04:19:31.1683337Z     ok 1 - departed
+2026-11-03T04:19:31.1683748Z       ---
+2026-11-03T04:19:31.1684092Z       duration_ms: 7.047941
+2026-11-03T04:19:31.1684357Z       type: 'test'
+2026-11-03T04:19:31.1684578Z       ...
+2026-11-03T04:19:31.1730896Z     # Subtest: unreadable
+2026-11-03T04:19:31.1731806Z     ok 2 - unreadable
+2026-11-03T04:19:31.1732420Z       ---
+2026-11-03T04:19:31.1732912Z       duration_ms: 6.778698
+2026-11-03T04:19:31.1733271Z       type: 'test'
+2026-11-03T04:19:31.1733508Z       ...
+2026-11-03T04:19:31.1733705Z     1..2
+2026-11-03T04:19:31.1734254Z ok 22 - Host rejects account departure and unreadable current account after materialization
+2026-11-03T04:19:31.1734754Z   ---
+2026-11-03T04:19:31.1735831Z   duration_ms: 14.377855
+2026-11-03T04:19:31.1737025Z   type: 'test'
+2026-11-03T04:19:31.1737611Z   ...
+2026-11-03T04:19:31.1738535Z # Subtest: Host accepts same-account renewal without reusing or mixing the pass credential
+2026-11-03T04:19:31.1739848Z ok 23 - Host accepts same-account renewal without reusing or mixing the pass credential
+2026-11-03T04:19:31.1740466Z   ---
+2026-11-03T04:19:31.1740689Z   duration_ms: 1.63468
+2026-11-03T04:19:31.1740932Z   type: 'test'
+2026-11-03T04:19:31.1741141Z   ...
+2026-11-03T04:19:31.1827700Z # Subtest: Host does not equate different tokens with empty missing or ambiguous account subjects
+2026-11-03T04:19:31.1830170Z ok 24 - Host does not equate different tokens with empty missing or ambiguous account subjects
+2026-11-03T04:19:31.1831377Z   ---
+2026-11-03T04:19:31.1832198Z   duration_ms: 9.466317
+2026-11-03T04:19:31.1833176Z   type: 'test'
+2026-11-03T04:19:31.1833919Z   ...
+2026-11-03T04:19:31.2032292Z # Subtest: Host refuses a backend-context change before SDK credentials are consumed or after materialization
+2026-11-03T04:19:31.2062243Z ok 25 - Host refuses a backend-context change before SDK credentials are consumed or after materialization
+2026-11-03T04:19:31.2063697Z   ---
+2026-11-03T04:19:31.2064236Z   duration_ms: 16.817154
+2026-11-03T04:19:31.2064841Z   type: 'test'
+2026-11-03T04:19:31.2065377Z   ...
+2026-11-03T04:19:31.3133425Z # Subtest: Host refuses the previous Fabushi account while public browser login is pending
+2026-11-03T04:19:31.3134825Z ok 26 - Host refuses the previous Fabushi account while public browser login is pending
+2026-11-03T04:19:31.3135453Z   ---
+2026-11-03T04:19:31.3135724Z   duration_ms: 112.666137
+2026-11-03T04:19:31.3136621Z   type: 'test'
+2026-11-03T04:19:31.3136882Z   ...
+2026-11-03T04:19:31.3520837Z # Subtest: SDK distinguishes an unavailable source from an authoritative empty listing
+2026-11-03T04:19:31.3524850Z ok 27 - SDK distinguishes an unavailable source from an authoritative empty listing
+2026-11-03T04:19:31.3526475Z   ---
+2026-11-03T04:19:31.3527023Z   duration_ms: 27.05974
+2026-11-03T04:19:31.3527536Z   type: 'test'
+2026-11-03T04:19:31.3527989Z   ...
+2026-11-03T04:19:31.3528648Z # Subtest: SDK explicit false defers both pruning sites
+2026-11-03T04:19:31.3529606Z ok 28 - SDK explicit false defers both pruning sites
+2026-11-03T04:19:31.3530300Z   ---
+2026-11-03T04:19:31.3530744Z   duration_ms: 23.514437
+2026-11-03T04:19:31.3531186Z   type: 'test'
+2026-11-03T04:19:31.3531580Z   ...
+2026-11-03T04:19:31.3532308Z # Subtest: SDK omitted option preserves the default per-plugin prune
+2026-11-03T04:19:31.3533363Z ok 29 - SDK omitted option preserves the default per-plugin prune
+2026-11-03T04:19:31.3534076Z   ---
+2026-11-03T04:19:31.3534452Z   duration_ms: 13.68808
+2026-11-03T04:19:31.3534898Z   type: 'test'
+2026-11-03T04:19:31.3535275Z   ...
+2026-11-03T04:19:31.3535897Z # Subtest: SDK explicit true preserves both pruning sites
+2026-11-03T04:19:31.3537478Z ok 30 - SDK explicit true preserves both pruning sites
+2026-11-03T04:19:31.3538104Z   ---
+2026-11-03T04:19:31.3538485Z   duration_ms: 14.656811
+2026-11-03T04:19:31.3538937Z   type: 'test'
+2026-11-03T04:19:31.3539324Z   ...
+2026-11-03T04:19:31.3540147Z # Subtest: SDK missing-marketplace failures preserve the supplied canonical DB ID
+2026-11-03T04:19:31.3541392Z ok 31 - SDK missing-marketplace failures preserve the supplied canonical DB ID
+2026-11-03T04:19:31.3542155Z   ---
+2026-11-03T04:19:31.3542535Z   duration_ms: 3.704248
+2026-11-03T04:19:31.3542934Z   type: 'test'
+2026-11-03T04:19:31.3543265Z   ...
+2026-11-03T04:19:31.3544158Z # Subtest: SDK installation failure retains canonical identity and old files during a partial pass
+2026-11-03T04:19:31.3545407Z ok 32 - SDK installation failure retains canonical identity and old files during a partial pass
+2026-11-03T04:19:31.3546638Z   ---
+2026-11-03T04:19:31.3546994Z   duration_ms: 14.038932
+2026-11-03T04:19:31.3547385Z   type: 'test'
+2026-11-03T04:19:31.3547679Z   ...
+2026-11-03T04:19:31.3548284Z # Subtest: failed cache publication removes only its staging directory
+2026-11-03T04:19:31.3549125Z ok 33 - failed cache publication removes only its staging directory
+2026-11-03T04:19:31.3549719Z   ---
+2026-11-03T04:19:31.3550032Z   duration_ms: 6.269191
+2026-11-03T04:19:31.3550403Z   type: 'test'
+2026-11-03T04:19:31.3550723Z   ...
+2026-11-03T04:19:31.3551622Z # Subtest: filesystem EACCES during cache installation is an install failure, not clone authentication
+2026-11-03T04:19:31.3553111Z ok 34 - filesystem EACCES during cache installation is an install failure, not clone authentication
+2026-11-03T04:19:31.3554026Z   ---
+2026-11-03T04:19:31.3554775Z   duration_ms: 2.021049
+2026-11-03T04:19:31.3555266Z   type: 'test'
+2026-11-03T04:19:31.3555652Z   ...
+2026-11-03T04:19:31.3556892Z # Subtest: filesystem EPERM during cache installation is an install failure, not clone authentication
+2026-11-03T04:19:31.3558432Z ok 35 - filesystem EPERM during cache installation is an install failure, not clone authentication
+2026-11-03T04:19:31.3559316Z   ---
+2026-11-03T04:19:31.3559710Z   duration_ms: 2.847056
+2026-11-03T04:19:31.3560159Z   type: 'test'
+2026-11-03T04:19:31.3560555Z   ...
+2026-11-03T04:19:31.3561539Z # Subtest: filesystem EROFS during cache installation is an install failure, not clone authentication
+2026-11-03T04:19:31.3563037Z ok 36 - filesystem EROFS during cache installation is an install failure, not clone authentication
+2026-11-03T04:19:31.3563923Z   ---
+2026-11-03T04:19:31.3564302Z   duration_ms: 1.985023
+2026-11-03T04:19:31.3564749Z   type: 'test'
+2026-11-03T04:19:31.3565127Z   ...
+2026-11-03T04:19:31.3565980Z # Subtest: SDK cleanup I/O failures preserve the primary load category and raw causes
+2026-11-03T04:19:31.3567772Z ok 37 - SDK cleanup I/O failures preserve the primary load category and raw causes
+2026-11-03T04:19:31.3568563Z   ---
+2026-11-03T04:19:31.3568953Z   duration_ms: 117.585337
+2026-11-03T04:19:31.3569415Z   type: 'test'
+2026-11-03T04:19:31.3569801Z   ...
+2026-11-03T04:19:31.3570624Z # Subtest: an older failed install cannot remove a successor published cache directory
+2026-11-03T04:19:31.3571864Z ok 38 - an older failed install cannot remove a successor published cache directory
+2026-11-03T04:19:31.3572624Z   ---
+2026-11-03T04:19:31.3573011Z   duration_ms: 10.281193
+2026-11-03T04:19:31.3573449Z   type: 'test'
+2026-11-03T04:19:31.3573831Z   ...
+2026-11-03T04:19:31.3574658Z # Subtest: SDK version-resolution failures reach the Host with their canonical DB ID
+2026-11-03T04:19:31.3575908Z ok 39 - SDK version-resolution failures reach the Host with their canonical DB ID
+2026-11-03T04:19:31.3576918Z   ---
+2026-11-03T04:19:31.3577319Z   duration_ms: 2.28505
+2026-11-03T04:19:31.3577758Z   type: 'test'
+2026-11-03T04:19:31.3578140Z   ...
+2026-11-03T04:19:31.3579069Z # Subtest: SDK late failed materialization preserves the completed winner and a fresh cache hit
+2026-11-03T04:19:31.3580485Z ok 40 - SDK late failed materialization preserves the completed winner and a fresh cache hit
+2026-11-03T04:19:31.3581334Z   ---
+2026-11-03T04:19:31.3581714Z   duration_ms: 25.928516
+2026-11-03T04:19:31.3582157Z   type: 'test'
+2026-11-03T04:19:31.3582524Z   ...
+2026-11-03T04:19:31.3583404Z # Subtest: SDK concurrent successful materializations reuse the first completed directory
+2026-11-03T04:19:31.3584726Z ok 41 - SDK concurrent successful materializations reuse the first completed directory
+2026-11-03T04:19:31.3585526Z   ---
+2026-11-03T04:19:31.3585904Z   duration_ms: 14.988989
+2026-11-03T04:19:31.3586665Z   type: 'test'
+2026-11-03T04:19:31.3587059Z   ...
+2026-11-03T04:19:31.3587966Z # Subtest: SDK incomplete and non-directory cache targets are preserved without installation
+2026-11-03T04:19:31.3589325Z ok 42 - SDK incomplete and non-directory cache targets are preserved without installation
+2026-11-03T04:19:31.3590145Z   ---
+2026-11-03T04:19:31.3590532Z   duration_ms: 23.492155
+2026-11-03T04:19:31.3590964Z   type: 'test'
+2026-11-03T04:19:31.3591331Z   ...
+2026-11-03T04:19:31.3592199Z # Subtest: SDK a target appearing during materialization is preserved without publication
+2026-11-03T04:19:31.3593497Z ok 43 - SDK a target appearing during materialization is preserved without publication
+2026-11-03T04:19:31.3594293Z   ---
+2026-11-03T04:19:31.3594660Z   duration_ms: 6.990141
+2026-11-03T04:19:31.3595095Z   type: 'test'
+2026-11-03T04:19:31.3595466Z   ...
+2026-11-03T04:19:31.3596472Z # Subtest: SDK a failed materialization removes only its owned staging directory
+2026-11-03T04:19:31.3597654Z ok 44 - SDK a failed materialization removes only its owned staging directory
+2026-11-03T04:19:31.3598386Z   ---
+2026-11-03T04:19:31.3598755Z   duration_ms: 9.010269
+2026-11-03T04:19:31.3599457Z   type: 'test'
+2026-11-03T04:19:31.3599868Z   ...
+2026-11-03T04:19:31.3600736Z # Subtest: SDK marker and publication failures do not report a successful materialization
+2026-11-03T04:19:31.3602031Z ok 45 - SDK marker and publication failures do not report a successful materialization
+2026-11-03T04:19:31.3602808Z   ---
+2026-11-03T04:19:31.3603193Z   duration_ms: 14.945028
+2026-11-03T04:19:31.3603631Z   type: 'test'
+2026-11-03T04:19:31.3604002Z   ...
+2026-11-03T04:19:31.3604862Z # Subtest: default-model RPC retains provider and mirrors only the acknowledged Host model
+2026-11-03T04:19:31.3606383Z ok 46 - default-model RPC retains provider and mirrors only the acknowledged Host model
+2026-11-03T04:19:31.3607212Z   ---
+2026-11-03T04:19:31.3607651Z   duration_ms: 9.5218
+2026-11-03T04:19:31.3608084Z   type: 'test'
+2026-11-03T04:19:31.3608453Z   ...
+2026-11-03T04:19:31.3609383Z # Subtest: invalid provider bindings reach the Host unchanged and refusal preserves mirror bytes
+2026-11-03T04:19:31.3610798Z ok 47 - invalid provider bindings reach the Host unchanged and refusal preserves mirror bytes
+2026-11-03T04:19:31.3611868Z   ---
+2026-11-03T04:19:31.3612233Z   duration_ms: 3.519726
+2026-11-03T04:19:31.3612638Z   type: 'test'
+2026-11-03T04:19:31.3613005Z   ...
+2026-11-03T04:19:31.3613899Z # Subtest: explicit undefined provider is refused before JSON can turn it into a legacy default
+2026-11-03T04:19:31.3615259Z ok 48 - explicit undefined provider is refused before JSON can turn it into a legacy default
+2026-11-03T04:19:31.3616377Z   ---
+2026-11-03T04:19:31.3616781Z   duration_ms: 1.984581
+2026-11-03T04:19:31.3617219Z   type: 'test'
+2026-11-03T04:19:31.3617588Z   ...
+2026-11-03T04:19:31.3618403Z # Subtest: unavailable Host write or read leaves the last acknowledged default intact
+2026-11-03T04:19:31.3619589Z ok 49 - unavailable Host write or read leaves the last acknowledged default intact
+2026-11-03T04:19:31.3620339Z   ---
+2026-11-03T04:19:31.3620718Z   duration_ms: 6.566323
+2026-11-03T04:19:31.3621160Z   type: 'test'
+2026-11-03T04:19:31.3621527Z   ...
+2026-11-03T04:19:31.3622471Z # Subtest: Host reads preserve metadata and acknowledged absent or null defaults clear the mirror
+2026-11-03T04:19:31.3623855Z ok 50 - Host reads preserve metadata and acknowledged absent or null defaults clear the mirror
+2026-11-03T04:19:31.3624702Z   ---
+2026-11-03T04:19:31.3625088Z   duration_ms: 6.113491
+2026-11-03T04:19:31.3625511Z   type: 'test'
+2026-11-03T04:19:31.3625849Z   ...
+2026-11-03T04:19:31.3626868Z # Subtest: legacy unbound defaults and malformed base-shape behavior stay compatible
+2026-11-03T04:19:31.3627998Z ok 51 - legacy unbound defaults and malformed base-shape behavior stay compatible
+2026-11-03T04:19:31.3653268Z   ---
+2026-11-03T04:19:31.3653750Z   duration_ms: 7.288507
+2026-11-03T04:19:31.3654140Z   type: 'test'
+2026-11-03T04:19:31.3654509Z   ...
+2026-11-03T04:19:31.3655225Z # Subtest: existing fast migration retains provider and model metadata through reopening
+2026-11-03T04:19:31.3656613Z ok 52 - existing fast migration retains provider and model metadata through reopening
+2026-11-03T04:19:31.3657344Z   ---
+2026-11-03T04:19:31.3657694Z   duration_ms: 5.710651
+2026-11-03T04:19:31.3658110Z   type: 'test'
+2026-11-03T04:19:31.3658462Z   ...
+2026-11-03T04:19:31.3659289Z # Subtest: account transitions clear bound model mirrors without changing legacy retention
+2026-11-03T04:19:31.3660570Z ok 53 - account transitions clear bound model mirrors without changing legacy retention
+2026-11-03T04:19:31.3661356Z   ---
+2026-11-03T04:19:31.3661706Z   duration_ms: 7.201454
+2026-11-03T04:19:31.3662150Z   type: 'test'
+2026-11-03T04:19:31.3662504Z   ...
+2026-11-03T04:19:31.3663324Z # Subtest: Computer Use keeps its existing parser, override and clear behavior
+2026-11-03T04:19:31.3664417Z ok 54 - Computer Use keeps its existing parser, override and clear behavior
+2026-11-03T04:19:31.3665014Z   ---
+2026-11-03T04:19:31.3665328Z   duration_ms: 4.179955
+2026-11-03T04:19:31.3665673Z   type: 'test'
+2026-11-03T04:19:31.3665985Z   ...
+2026-11-03T04:19:31.3667351Z # Subtest: real appWindow transport and served trust refuse foreign or nested-frame model requests
+2026-11-03T04:19:31.3668630Z ok 55 - real appWindow transport and served trust refuse foreign or nested-frame model requests
+2026-11-03T04:19:31.3669378Z   ---
+2026-11-03T04:19:31.3669677Z   duration_ms: 2.026158
+2026-11-03T04:19:31.3670038Z   type: 'test'
+2026-11-03T04:19:31.3670356Z   ...
+2026-11-03T04:19:31.3671070Z # Subtest: router set waits for Host acknowledgement and mirrors its canonical provider
+2026-11-03T04:19:31.3672085Z ok 56 - router set waits for Host acknowledgement and mirrors its canonical provider
+2026-11-03T04:19:31.3672730Z   ---
+2026-11-03T04:19:31.3673040Z   duration_ms: 6.393802
+2026-11-03T04:19:31.3673393Z   type: 'test'
+2026-11-03T04:19:31.3673712Z   ...
+2026-11-03T04:19:31.3674599Z # Subtest: router preserves all five configured providers and reconciles reads with diagnostic fallbacks
+2026-11-03T04:19:31.3675995Z ok 57 - router preserves all five configured providers and reconciles reads with diagnostic fallbacks
+2026-11-03T04:19:31.3677278Z   ---
+2026-11-03T04:19:31.3677623Z   duration_ms: 17.210218
+2026-11-03T04:19:31.3678012Z   type: 'test'
+2026-11-03T04:19:31.3678341Z   ...
+2026-11-03T04:19:31.3679086Z # Subtest: router invalid requests and untrusted frames cause no Host or mirror effects
+2026-11-03T04:19:31.3680211Z ok 58 - router invalid requests and untrusted frames cause no Host or mirror effects
+2026-11-03T04:19:31.3680905Z   ---
+2026-11-03T04:19:31.3681239Z   duration_ms: 7.378113
+2026-11-03T04:19:31.3681614Z   type: 'test'
+2026-11-03T04:19:31.3681942Z   ...
+2026-11-03T04:19:31.3682845Z # Subtest: router refuses malformed Host replies without local fallback and permits later reconciliation
+2026-11-03T04:19:31.3684195Z ok 59 - router refuses malformed Host replies without local fallback and permits later reconciliation
+2026-11-03T04:19:31.3684991Z   ---
+2026-11-03T04:19:31.3685317Z   duration_ms: 32.970186
+2026-11-03T04:19:31.3685703Z   type: 'test'
+2026-11-03T04:19:31.3686208Z   ...
+2026-11-03T04:19:31.3687071Z # Subtest: router Host refusal releases a queued read and read rejection does not poison later calls
+2026-11-03T04:19:31.3688362Z ok 60 - router Host refusal releases a queued read and read rejection does not poison later calls
+2026-11-03T04:19:31.3689124Z   ---
+2026-11-03T04:19:31.3689445Z   duration_ms: 3.221031
+2026-11-03T04:19:31.3689813Z   type: 'test'
+2026-11-03T04:19:31.3690140Z   ...
+2026-11-03T04:19:31.3690959Z # Subtest: router unknown transport outcome can follow a Host commit and requires an explicit read
+2026-11-03T04:19:31.3692178Z ok 61 - router unknown transport outcome can follow a Host commit and requires an explicit read
+2026-11-03T04:19:31.3692898Z   ---
+2026-11-03T04:19:31.3693219Z   duration_ms: 4.549853
+2026-11-03T04:19:31.3693582Z   type: 'test'
+2026-11-03T04:19:31.3693944Z   ...
+2026-11-03T04:19:31.3694810Z # Subtest: router local persistence failure leaves the Host commit intact and a later get repairs the mirror
+2026-11-03T04:19:31.3696413Z ok 62 - router local persistence failure leaves the Host commit intact and a later get repairs the mirror
+2026-11-03T04:19:31.3697248Z   ---
+2026-11-03T04:19:31.3697560Z   duration_ms: 3.261106
+2026-11-03T04:19:31.3697928Z   type: 'test'
+2026-11-03T04:19:31.3698245Z   ...
+2026-11-03T04:19:31.3698904Z # Subtest: router orders a held get before set through mirror persistence
+2026-11-03T04:19:31.3699838Z ok 63 - router orders a held get before set through mirror persistence
+2026-11-03T04:19:31.3700425Z   ---
+2026-11-03T04:19:31.3700781Z   duration_ms: 3.093173
+2026-11-03T04:19:31.3701199Z   type: 'test'
+2026-11-03T04:19:31.3701530Z   ...
+2026-11-03T04:19:31.3702151Z # Subtest: router orders a held set before get through mirror persistence
+2026-11-03T04:19:31.3703056Z ok 64 - router orders a held set before get through mirror persistence
+2026-11-03T04:19:31.3703595Z   ---
+2026-11-03T04:19:31.3703810Z   duration_ms: 3.536268
+2026-11-03T04:19:31.3704038Z   type: 'test'
+2026-11-03T04:19:31.3704239Z   ...
+2026-11-03T04:19:31.3704979Z # Subtest: router serializes two sets so a late acknowledgement cannot overwrite the later mirror
+2026-11-03T04:19:31.3705776Z ok 65 - router serializes two sets so a late acknowledgement cannot overwrite the later mirror
+2026-11-03T04:19:31.3706557Z   ---
+2026-11-03T04:19:31.3706774Z   duration_ms: 2.496604
+2026-11-03T04:19:31.3707017Z   type: 'test'
+2026-11-03T04:19:31.3707227Z   ...
+2026-11-03T04:19:31.3707745Z # Subtest: a pending router IPC does not order unrelated methods or another MainEdge instance
+2026-11-03T04:19:31.3708542Z ok 66 - a pending router IPC does not order unrelated methods or another MainEdge instance
+2026-11-03T04:19:31.3709353Z   ---
+2026-11-03T04:19:31.3709697Z   duration_ms: 3.252239
+2026-11-03T04:19:31.3710083Z   type: 'test'
+2026-11-03T04:19:31.3710416Z   ...
+2026-11-03T04:19:31.3711301Z # Subtest: shipping MCP runtime forwards discovery failure through the dedicated callback
+2026-11-03T04:19:31.3712243Z ok 67 - shipping MCP runtime forwards discovery failure through the dedicated callback
+2026-11-03T04:19:31.3712907Z   ---
+2026-11-03T04:19:31.3713113Z   duration_ms: 4.967161
+2026-11-03T04:19:31.3713349Z   type: 'test'
+2026-11-03T04:19:31.3713557Z   ...
+2026-11-03T04:19:31.3714049Z # Subtest: shipping MCP runtime preserves connector-auth reports through the dedicated callback
+2026-11-03T04:19:31.3714818Z ok 68 - shipping MCP runtime preserves connector-auth reports through the dedicated callback
+2026-11-03T04:19:31.3715274Z   ---
+2026-11-03T04:19:31.3715474Z   duration_ms: 0.690675
+2026-11-03T04:19:31.3715708Z   type: 'test'
+2026-11-03T04:19:31.3716020Z   ...
+2026-11-03T04:19:31.3716722Z # Subtest: MC-01 concurrent ensures share the reserved construction and manager
+2026-11-03T04:19:31.3717321Z ok 69 - MC-01 concurrent ensures share the reserved construction and manager
+2026-11-03T04:19:31.3717694Z   ---
+2026-11-03T04:19:31.3717895Z   duration_ms: 1.018444
+2026-11-03T04:19:31.3718119Z   type: 'test'
+2026-11-03T04:19:31.3718320Z   ...
+2026-11-03T04:19:31.3718729Z # Subtest: MC-01 a synchronous factory reentry sees the already reserved promise
+2026-11-03T04:19:31.3719335Z ok 70 - MC-01 a synchronous factory reentry sees the already reserved promise
+2026-11-03T04:19:31.3719707Z   ---
+2026-11-03T04:19:31.3719903Z   duration_ms: 0.474012
+2026-11-03T04:19:31.3720124Z   type: 'test'
+2026-11-03T04:19:31.3720319Z   ...
+2026-11-03T04:19:31.3720669Z # Subtest: MC-01/03 reset before invocation refuses the old factory
+2026-11-03T04:19:31.3721161Z ok 71 - MC-01/03 reset before invocation refuses the old factory
+2026-11-03T04:19:31.3721491Z   ---
+2026-11-03T04:19:31.3721680Z   duration_ms: 1.085009
+2026-11-03T04:19:31.3721905Z   type: 'test'
+2026-11-03T04:19:31.3722102Z   ...
+2026-11-03T04:19:31.3722457Z # Subtest: MC-01/03 dispose before invocation refuses the old factory
+2026-11-03T04:19:31.3722964Z ok 72 - MC-01/03 dispose before invocation refuses the old factory
+2026-11-03T04:19:31.3723294Z   ---
+2026-11-03T04:19:31.3723498Z   duration_ms: 0.357044
+2026-11-03T04:19:31.3723726Z   type: 'test'
+2026-11-03T04:19:31.3723930Z   ...
+2026-11-03T04:19:31.3724290Z # Subtest: MC-02 late old success cannot adopt or erase replacement B
+2026-11-03T04:19:31.3724800Z ok 73 - MC-02 late old success cannot adopt or erase replacement B
+2026-11-03T04:19:31.3725138Z   ---
+2026-11-03T04:19:31.3725337Z   duration_ms: 0.610706
+2026-11-03T04:19:31.3725552Z   type: 'test'
+2026-11-03T04:19:31.3725748Z   ...
+2026-11-03T04:19:31.3726340Z # Subtest: MC-02 late old failure cannot adopt or erase replacement B
+2026-11-03T04:19:31.3727168Z ok 74 - MC-02 late old failure cannot adopt or erase replacement B
+2026-11-03T04:19:31.3727511Z   ---
+2026-11-03T04:19:31.3727700Z   duration_ms: 0.453233
+2026-11-03T04:19:31.3727921Z   type: 'test'
+2026-11-03T04:19:31.3728110Z   ...
+2026-11-03T04:19:31.3728519Z # Subtest: MC-02 current factory throw retires callbacks and allows a fresh retry
+2026-11-03T04:19:31.3729118Z ok 75 - MC-02 current factory throw retires callbacks and allows a fresh retry
+2026-11-03T04:19:31.3729660Z   ---
+2026-11-03T04:19:31.3729877Z   duration_ms: 0.780451
+2026-11-03T04:19:31.3730108Z   type: 'test'
+2026-11-03T04:19:31.3730310Z   ...
+2026-11-03T04:19:31.3730717Z # Subtest: MC-02 current factory reject retires callbacks and allows a fresh retry
+2026-11-03T04:19:31.3731320Z ok 76 - MC-02 current factory reject retires callbacks and allows a fresh retry
+2026-11-03T04:19:31.3731694Z   ---
+2026-11-03T04:19:31.3731900Z   duration_ms: 0.414681
+2026-11-03T04:19:31.3732118Z   type: 'test'
+2026-11-03T04:19:31.3732309Z   ...
+2026-11-03T04:19:31.3732738Z # Subtest: MC-03 disposal returns while a factory is pending and owns its late cleanup
+2026-11-03T04:19:31.3733374Z ok 77 - MC-03 disposal returns while a factory is pending and owns its late cleanup
+2026-11-03T04:19:31.3733769Z   ---
+2026-11-03T04:19:31.3733963Z   duration_ms: 0.341996
+2026-11-03T04:19:31.3734190Z   type: 'test'
+2026-11-03T04:19:31.3734384Z   ...
+2026-11-03T04:19:31.3734788Z # Subtest: MC-03 disposal shares observable cleanup before synchronous reentry
+2026-11-03T04:19:31.3735376Z ok 78 - MC-03 disposal shares observable cleanup before synchronous reentry
+2026-11-03T04:19:31.3735908Z   ---
+2026-11-03T04:19:31.3736411Z   duration_ms: 0.408711
+2026-11-03T04:19:31.3736758Z   type: 'test'
+2026-11-03T04:19:31.3737060Z   ...
+2026-11-03T04:19:31.3737565Z # Subtest: MC-02 reset detaches before a disposer reentrantly creates B
+2026-11-03T04:19:31.3738117Z ok 79 - MC-02 reset detaches before a disposer reentrantly creates B
+2026-11-03T04:19:31.3738470Z   ---
+2026-11-03T04:19:31.3738671Z   duration_ms: 0.321167
+2026-11-03T04:19:31.3738895Z   type: 'test'
+2026-11-03T04:19:31.3739090Z   ...
+2026-11-03T04:19:31.3739661Z # Subtest: MC-02/03 reset observes cleanup throw without erasing B
+2026-11-03T04:19:31.3740155Z ok 80 - MC-02/03 reset observes cleanup throw without erasing B
+2026-11-03T04:19:31.3740490Z   ---
+2026-11-03T04:19:31.3740684Z   duration_ms: 0.535987
+2026-11-03T04:19:31.3740913Z   type: 'test'
+2026-11-03T04:19:31.3741105Z   ...
+2026-11-03T04:19:31.3741457Z # Subtest: MC-02/03 reset observes cleanup reject without erasing B
+2026-11-03T04:19:31.3741956Z ok 81 - MC-02/03 reset observes cleanup reject without erasing B
+2026-11-03T04:19:31.3742293Z   ---
+2026-11-03T04:19:31.3742487Z   duration_ms: 0.270093
+2026-11-03T04:19:31.3742707Z   type: 'test'
+2026-11-03T04:19:31.3742904Z   ...
+2026-11-03T04:19:31.3743323Z # Subtest: MC-02/03 late retired-manager cleanup failure remains in the old rejection
+2026-11-03T04:19:31.3743956Z ok 82 - MC-02/03 late retired-manager cleanup failure remains in the old rejection
+2026-11-03T04:19:31.3744338Z   ---
+2026-11-03T04:19:31.3744535Z   duration_ms: 3.737912
+2026-11-03T04:19:31.3744754Z   type: 'test'
+2026-11-03T04:19:31.3744945Z   ...
+2026-11-03T04:19:31.3745317Z # Subtest: MC-04 reentrant root setup cannot publish a retired manager
+2026-11-03T04:19:31.3745856Z ok 83 - MC-04 reentrant root setup cannot publish a retired manager
+2026-11-03T04:19:31.3746491Z   ---
+2026-11-03T04:19:31.3746696Z   duration_ms: 0.425882
+2026-11-03T04:19:31.3746936Z   type: 'test'
+2026-11-03T04:19:31.3747139Z   ...
+2026-11-03T04:19:31.3747527Z # Subtest: MC-04 reentrant cleanup setup cannot publish a retired manager
+2026-11-03T04:19:31.3748071Z ok 84 - MC-04 reentrant cleanup setup cannot publish a retired manager
+2026-11-03T04:19:31.3748429Z   ---
+2026-11-03T04:19:31.3748621Z   duration_ms: 0.133779
+2026-11-03T04:19:31.3748842Z   type: 'test'
+2026-11-03T04:19:31.3749040Z   ...
+2026-11-03T04:19:31.3749441Z # Subtest: MC-04 reentrant observer setup cannot publish a retired manager
+2026-11-03T04:19:31.3750015Z ok 85 - MC-04 reentrant observer setup cannot publish a retired manager
+2026-11-03T04:19:31.3750370Z   ---
+2026-11-03T04:19:31.3750573Z   duration_ms: 0.279159
+2026-11-03T04:19:31.3750795Z   type: 'test'
+2026-11-03T04:19:31.3750991Z   ...
+2026-11-03T04:19:31.3751432Z # Subtest: MC-02 reset between setup and promise publication rejects the original waiter
+2026-11-03T04:19:31.3752250Z ok 86 - MC-02 reset between setup and promise publication rejects the original waiter
+2026-11-03T04:19:31.3752680Z   ---
+2026-11-03T04:19:31.3752880Z   duration_ms: 0.369397
+2026-11-03T04:19:31.3753107Z   type: 'test'
+2026-11-03T04:19:31.3753298Z   ...
+2026-11-03T04:19:31.3753765Z # Subtest: MC-02/04 setup failure retires callbacks, retains cleanup errors and permits retry
+2026-11-03T04:19:31.3754472Z ok 87 - MC-02/04 setup failure retires callbacks, retains cleanup errors and permits retry
+2026-11-03T04:19:31.3754898Z   ---
+2026-11-03T04:19:31.3755093Z   duration_ms: 0.602641
+2026-11-03T04:19:31.3755313Z   type: 'test'
+2026-11-03T04:19:31.3755519Z   ...
+2026-11-03T04:19:31.3755886Z # Subtest: MC-04 auth broadcast rechecks retirement during installation
+2026-11-03T04:19:31.3756919Z ok 88 - MC-04 auth broadcast rechecks retirement during installation
+2026-11-03T04:19:31.3757281Z   ---
+2026-11-03T04:19:31.3757487Z   duration_ms: 0.516421
+2026-11-03T04:19:31.3757712Z   type: 'test'
+2026-11-03T04:19:31.3757908Z   ...
+2026-11-03T04:19:31.3758279Z # Subtest: MC-04 auth broadcast rechecks retirement during completion
+2026-11-03T04:19:31.3758992Z ok 89 - MC-04 auth broadcast rechecks retirement during completion
+2026-11-03T04:19:31.3759343Z   ---
+2026-11-03T04:19:31.3759547Z   duration_ms: 0.252419
+2026-11-03T04:19:31.3759929Z   type: 'test'
+2026-11-03T04:19:31.3760144Z   ...
+2026-11-03T04:19:31.3760729Z # Subtest: MC-04 callbacks belong to the exact attempt while late scrub failures stay observable
+2026-11-03T04:19:31.3761464Z ok 90 - MC-04 callbacks belong to the exact attempt while late scrub failures stay observable
+2026-11-03T04:19:31.3761955Z   ---
+2026-11-03T04:19:31.3762219Z   duration_ms: 0.664365
+2026-11-03T04:19:31.3762453Z   type: 'test'
+2026-11-03T04:19:31.3762649Z   ...
+2026-11-03T04:19:31.3763007Z # Subtest: MC-05 token port refuses retirement at the entry boundary
+2026-11-03T04:19:31.3763796Z ok 91 - MC-05 token port refuses retirement at the entry boundary
+2026-11-03T04:19:31.3764143Z   ---
+2026-11-03T04:19:31.3764334Z   duration_ms: 0.688971
+2026-11-03T04:19:31.3764562Z   type: 'test'
+2026-11-03T04:19:31.3764763Z   ...
+2026-11-03T04:19:31.3765117Z # Subtest: MC-05 token port refuses retirement at the service boundary
+2026-11-03T04:19:31.3765638Z ok 92 - MC-05 token port refuses retirement at the service boundary
+2026-11-03T04:19:31.3765979Z   ---
+2026-11-03T04:19:31.3766570Z   duration_ms: 0.298285
+2026-11-03T04:19:31.3766843Z   type: 'test'
+2026-11-03T04:19:31.3767045Z   ...
+2026-11-03T04:19:31.3767405Z # Subtest: MC-05 token port refuses retirement at the token boundary
+2026-11-03T04:19:31.3767918Z ok 93 - MC-05 token port refuses retirement at the token boundary
+2026-11-03T04:19:31.3768256Z   ---
+2026-11-03T04:19:31.3768451Z   duration_ms: 0.359659
+2026-11-03T04:19:31.3768676Z   type: 'test'
+2026-11-03T04:19:31.3768871Z   ...
+2026-11-03T04:19:31.3769330Z # Subtest: MC-06 shipping adapter reset rejects pending routed operations before facade I/O
+2026-11-03T04:19:31.3770020Z ok 94 - MC-06 shipping adapter reset rejects pending routed operations before facade I/O
+2026-11-03T04:19:31.3770583Z   ---
+2026-11-03T04:19:31.3770781Z   duration_ms: 1.630552
+2026-11-03T04:19:31.3771001Z   type: 'test'
+2026-11-03T04:19:31.3771209Z   ...
+2026-11-03T04:19:31.3771667Z # Subtest: MC-06 shipping adapter dispose rejects pending routed operations before facade I/O
+2026-11-03T04:19:31.3772368Z ok 95 - MC-06 shipping adapter dispose rejects pending routed operations before facade I/O
+2026-11-03T04:19:31.3772788Z   ---
+2026-11-03T04:19:31.3772987Z   duration_ms: 0.359738
+2026-11-03T04:19:31.3773205Z   type: 'test'
+2026-11-03T04:19:31.3773405Z   ...
+2026-11-03T04:19:31.3773806Z # Subtest: MC-03 shipping adapter awaits and propagates manager teardown failure
+2026-11-03T04:19:31.3774413Z ok 96 - MC-03 shipping adapter awaits and propagates manager teardown failure
+2026-11-03T04:19:31.3774809Z   ---
+2026-11-03T04:19:31.3775009Z   duration_ms: 0.492096
+2026-11-03T04:19:31.3775235Z   type: 'test'
+2026-11-03T04:19:31.3775438Z   ...
+2026-11-03T04:19:31.3776342Z # Subtest: MB-02 current Box bridge ports preserve arguments and actual success or failure
+2026-11-03T04:19:31.3777128Z ok 97 - MB-02 current Box bridge ports preserve arguments and actual success or failure
+2026-11-03T04:19:31.3777558Z   ---
+2026-11-03T04:19:31.3777772Z   duration_ms: 1.009728
+2026-11-03T04:19:31.3778000Z   type: 'test'
+2026-11-03T04:19:31.3778198Z   ...
+2026-11-03T04:19:31.3778530Z # Subtest: MB-01 all captured Box ports refuse after reset
+2026-11-03T04:19:31.3778972Z ok 98 - MB-01 all captured Box ports refuse after reset
+2026-11-03T04:19:31.3779286Z   ---
+2026-11-03T04:19:31.3779485Z   duration_ms: 3.634349
+2026-11-03T04:19:31.3779713Z   type: 'test'
+2026-11-03T04:19:31.3779910Z   ...
+2026-11-03T04:19:31.3780238Z # Subtest: MB-01 all captured Box ports refuse after dispose
+2026-11-03T04:19:31.3780684Z ok 99 - MB-01 all captured Box ports refuse after dispose
+2026-11-03T04:19:31.3780994Z   ---
+2026-11-03T04:19:31.3781194Z   duration_ms: 0.336455
+2026-11-03T04:19:31.3781418Z   type: 'test'
+2026-11-03T04:19:31.3781618Z   ...
+2026-11-03T04:19:31.3781996Z # Subtest: MB-01 all captured Box ports refuse after construction failure
+2026-11-03T04:19:31.3782726Z ok 100 - MB-01 all captured Box ports refuse after construction failure
+2026-11-03T04:19:31.3783096Z   ---
+2026-11-03T04:19:31.3783303Z   duration_ms: 0.445028
+2026-11-03T04:19:31.3783525Z   type: 'test'
+2026-11-03T04:19:31.3783720Z   ...
+2026-11-03T04:19:31.3784128Z # Subtest: MB-03 already admitted Box requests keep their actual late success
+2026-11-03T04:19:31.3784705Z ok 101 - MB-03 already admitted Box requests keep their actual late success
+2026-11-03T04:19:31.3785083Z   ---
+2026-11-03T04:19:31.3785281Z   duration_ms: 0.6985
+2026-11-03T04:19:31.3785641Z   type: 'test'
+2026-11-03T04:19:31.3785861Z   ...
+2026-11-03T04:19:31.3786528Z # Subtest: MB-03 already admitted Box requests keep their actual late failure
+2026-11-03T04:19:31.3787129Z ok 102 - MB-03 already admitted Box requests keep their actual late failure
+2026-11-03T04:19:31.3787521Z   ---
+2026-11-03T04:19:31.3787738Z   duration_ms: 0.345583
+2026-11-03T04:19:31.3787973Z   type: 'test'
+2026-11-03T04:19:31.3788190Z   ...
+2026-11-03T04:19:31.3788630Z # Subtest: MB-04 shipping adapter reset refuses a facade paused before Box dispatch
+2026-11-03T04:19:31.3789280Z ok 103 - MB-04 shipping adapter reset refuses a facade paused before Box dispatch
+2026-11-03T04:19:31.3789825Z   ---
+2026-11-03T04:19:31.3790167Z   duration_ms: 0.685184
+2026-11-03T04:19:31.3790466Z   type: 'test'
+2026-11-03T04:19:31.3790667Z   ...
+2026-11-03T04:19:31.3791098Z # Subtest: MB-04 shipping adapter dispose refuses a facade paused before Box dispatch
+2026-11-03T04:19:31.3791825Z ok 104 - MB-04 shipping adapter dispose refuses a facade paused before Box dispatch
+2026-11-03T04:19:31.3792235Z   ---
+2026-11-03T04:19:31.3792435Z   duration_ms: 0.289418
+2026-11-03T04:19:31.3792670Z   type: 'test'
+2026-11-03T04:19:31.3792869Z   ...
+2026-11-03T04:19:31.3793279Z # Subtest: MCP account retirement preserves B permissions after late A success
+2026-11-03T04:19:31.3793879Z ok 105 - MCP account retirement preserves B permissions after late A success
+2026-11-03T04:19:31.3794267Z   ---
+2026-11-03T04:19:31.3794459Z   duration_ms: 14.76934
+2026-11-03T04:19:31.3794677Z   type: 'test'
+2026-11-03T04:19:31.3794875Z   ...
+2026-11-03T04:19:31.3795291Z # Subtest: MCP account retirement preserves B permissions after late A unavailable
+2026-11-03T04:19:31.3795922Z ok 106 - MCP account retirement preserves B permissions after late A unavailable
+2026-11-03T04:19:31.3796617Z   ---
+2026-11-03T04:19:31.3796828Z   duration_ms: 21.42059
+2026-11-03T04:19:31.3797054Z   type: 'test'
+2026-11-03T04:19:31.3797249Z   ...
+2026-11-03T04:19:31.3797695Z # Subtest: MCP account retirement drops an established cache and a held fresh resolution
+2026-11-03T04:19:31.3798352Z ok 107 - MCP account retirement drops an established cache and a held fresh resolution
+2026-11-03T04:19:31.3798768Z   ---
+2026-11-03T04:19:31.3798960Z   duration_ms: 1.909992
+2026-11-03T04:19:31.3799183Z   type: 'test'
+2026-11-03T04:19:31.3799600Z   ...
+2026-11-03T04:19:31.3800094Z # Subtest: MCP account retirement fences a held backend listing before tool-cache publication
+2026-11-03T04:19:31.3800816Z ok 108 - MCP account retirement fences a held backend listing before tool-cache publication
+2026-11-03T04:19:31.3801254Z   ---
+2026-11-03T04:19:31.3801446Z   duration_ms: 1.055232
+2026-11-03T04:19:31.3801671Z   type: 'test'
+2026-11-03T04:19:31.3801882Z   ...
+2026-11-03T04:19:31.3802599Z # Subtest: MCP account retirement during the scope callback cannot restore account projections
+2026-11-03T04:19:31.3803416Z ok 109 - MCP account retirement during the scope callback cannot restore account projections
+2026-11-03T04:19:31.3803850Z   ---
+2026-11-03T04:19:31.3804048Z   duration_ms: 1.051245
+2026-11-03T04:19:31.3804267Z   type: 'test'
+2026-11-03T04:19:31.3804469Z   ...
+2026-11-03T04:19:31.3805021Z # Subtest: MD-01/03/05 a cold current owner rechecks retained tools against persisted same-account disable
+2026-11-03T04:19:31.3805833Z ok 110 - MD-01/03/05 a cold current owner rechecks retained tools against persisted same-account disable
+2026-11-03T04:19:31.3806770Z   ---
+2026-11-03T04:19:31.3806980Z   duration_ms: 7.223916
+2026-11-03T04:19:31.3807211Z   type: 'test'
+2026-11-03T04:19:31.3807437Z   ...
+2026-11-03T04:19:31.3807912Z # Subtest: MD-02/03/06 Box preparation success preserves a disable committed before execution
+2026-11-03T04:19:31.3808613Z ok 111 - MD-02/03/06 Box preparation success preserves a disable committed before execution
+2026-11-03T04:19:31.3809043Z   ---
+2026-11-03T04:19:31.3809240Z   duration_ms: 3.500832
+2026-11-03T04:19:31.3809467Z   type: 'test'
+2026-11-03T04:19:31.3809667Z   ...
+2026-11-03T04:19:31.3810119Z # Subtest: MD-02/03/06 Box preparation failure preserves a disable committed before execution
+2026-11-03T04:19:31.3810815Z ok 112 - MD-02/03/06 Box preparation failure preserves a disable committed before execution
+2026-11-03T04:19:31.3811243Z   ---
+2026-11-03T04:19:31.3811447Z   duration_ms: 2.069099
+2026-11-03T04:19:31.3811674Z   type: 'test'
+2026-11-03T04:19:31.3811890Z   ...
+2026-11-03T04:19:31.3812501Z # Subtest: MD-03/06 cold missing identity retains unavailable outcome and permissions
+2026-11-03T04:19:31.3813148Z ok 113 - MD-03/06 cold missing identity retains unavailable outcome and permissions
+2026-11-03T04:19:31.3813543Z   ---
+2026-11-03T04:19:31.3813735Z   duration_ms: 2.92485
+2026-11-03T04:19:31.3813964Z   type: 'test'
+2026-11-03T04:19:31.3814162Z   ...
+2026-11-03T04:19:31.3814608Z # Subtest: MD-03/06 cold unavailable identity retains unavailable outcome and permissions
+2026-11-03T04:19:31.3815270Z ok 114 - MD-03/06 cold unavailable identity retains unavailable outcome and permissions
+2026-11-03T04:19:31.3815684Z   ---
+2026-11-03T04:19:31.3815882Z   duration_ms: 24.995382
+2026-11-03T04:19:31.3816363Z   type: 'test'
+2026-11-03T04:19:31.3816643Z   ...
+2026-11-03T04:19:31.3817001Z # Subtest: MD-04/06 admitted http keeps late success after disable
+2026-11-03T04:19:31.3817513Z ok 115 - MD-04/06 admitted http keeps late success after disable
+2026-11-03T04:19:31.3817846Z   ---
+2026-11-03T04:19:31.3818053Z   duration_ms: 3.693099
+2026-11-03T04:19:31.3818277Z   type: 'test'
+2026-11-03T04:19:31.3818484Z   ...
+2026-11-03T04:19:31.3818835Z # Subtest: MD-04/06 admitted http keeps late rejection after disable
+2026-11-03T04:19:31.3819344Z ok 116 - MD-04/06 admitted http keeps late rejection after disable
+2026-11-03T04:19:31.3819681Z   ---
+2026-11-03T04:19:31.3819885Z   duration_ms: 2.673923
+2026-11-03T04:19:31.3820104Z   type: 'test'
+2026-11-03T04:19:31.3820295Z   ...
+2026-11-03T04:19:31.3820635Z # Subtest: MD-04/06 admitted http keeps late success after reset
+2026-11-03T04:19:31.3821169Z ok 117 - MD-04/06 admitted http keeps late success after reset
+2026-11-03T04:19:31.3821558Z   ---
+2026-11-03T04:19:31.3821750Z   duration_ms: 1.811149
+2026-11-03T04:19:31.3821972Z   type: 'test'
+2026-11-03T04:19:31.3822164Z   ...
+2026-11-03T04:19:31.3822500Z # Subtest: MD-04/06 admitted http keeps late rejection after reset
+2026-11-03T04:19:31.3823146Z ok 118 - MD-04/06 admitted http keeps late rejection after reset
+2026-11-03T04:19:31.3823497Z   ---
+2026-11-03T04:19:31.3823693Z   duration_ms: 3.014517
+2026-11-03T04:19:31.3823998Z   type: 'test'
+2026-11-03T04:19:31.3824235Z   ...
+2026-11-03T04:19:31.3824582Z # Subtest: MD-04/06 admitted stdio keeps late success after disable
+2026-11-03T04:19:31.3825079Z ok 119 - MD-04/06 admitted stdio keeps late success after disable
+2026-11-03T04:19:31.3825411Z   ---
+2026-11-03T04:19:31.3825604Z   duration_ms: 1.944526
+2026-11-03T04:19:31.3826191Z   type: 'test'
+2026-11-03T04:19:31.3826546Z   ...
+2026-11-03T04:19:31.3826922Z # Subtest: MD-04/06 admitted stdio keeps late rejection after disable
+2026-11-03T04:19:31.3827438Z ok 120 - MD-04/06 admitted stdio keeps late rejection after disable
+2026-11-03T04:19:31.3827847Z   ---
+2026-11-03T04:19:31.3828082Z   duration_ms: 2.377071
+2026-11-03T04:19:31.3828312Z   type: 'test'
+2026-11-03T04:19:31.3828509Z   ...
+2026-11-03T04:19:31.3828852Z # Subtest: MD-04/06 admitted stdio keeps late success after reset
+2026-11-03T04:19:31.3829343Z ok 121 - MD-04/06 admitted stdio keeps late success after reset
+2026-11-03T04:19:31.3829836Z   ---
+2026-11-03T04:19:31.3830039Z   duration_ms: 1.53181
+2026-11-03T04:19:31.3830264Z   type: 'test'
+2026-11-03T04:19:31.3830473Z   ...
+2026-11-03T04:19:31.3830814Z # Subtest: MD-04/06 admitted stdio keeps late rejection after reset
+2026-11-03T04:19:31.3831317Z ok 122 - MD-04/06 admitted stdio keeps late rejection after reset
+2026-11-03T04:19:31.3831643Z   ---
+2026-11-03T04:19:31.3831832Z   duration_ms: 1.645939
+2026-11-03T04:19:31.3832055Z   type: 'test'
+2026-11-03T04:19:31.3832247Z   ...
+2026-11-03T04:19:31.3832782Z # Subtest: PS-DESKTOP-01/03/04 registered uninstall awaits one Rust intent and preserves its full response
+2026-11-03T04:19:31.3833593Z ok 123 - PS-DESKTOP-01/03/04 registered uninstall awaits one Rust intent and preserves its full response
+2026-11-03T04:19:31.3834066Z   ---
+2026-11-03T04:19:31.3834256Z   duration_ms: 4.327509
+2026-11-03T04:19:31.3834488Z   type: 'test'
+2026-11-03T04:19:31.3834683Z   ...
+2026-11-03T04:19:31.3835197Z # Subtest: PS-DESKTOP-04 settings failure after confirmation does not retry, fall back, or refresh again
+2026-11-03T04:19:31.3835994Z ok 124 - PS-DESKTOP-04 settings failure after confirmation does not retry, fall back, or refresh again
+2026-11-03T04:19:31.3836758Z   ---
+2026-11-03T04:19:31.3836977Z   duration_ms: 0.943485
+2026-11-03T04:19:31.3837202Z   type: 'test'
+2026-11-03T04:19:31.3837404Z   ...
+2026-11-03T04:19:31.3837865Z # Subtest: PS-DESKTOP-02/04 registered uninstall preserves not-removed without local mutation
+2026-11-03T04:19:31.3838575Z ok 125 - PS-DESKTOP-02/04 registered uninstall preserves not-removed without local mutation
+2026-11-03T04:19:31.3839001Z   ---
+2026-11-03T04:19:31.3839196Z   duration_ms: 1.473561
+2026-11-03T04:19:31.3839413Z   type: 'test'
+2026-11-03T04:19:31.3839607Z   ...
+2026-11-03T04:19:31.3840087Z # Subtest: PS-DESKTOP-02/04 registered uninstall preserves unknown-result without local mutation
+2026-11-03T04:19:31.3840824Z ok 126 - PS-DESKTOP-02/04 registered uninstall preserves unknown-result without local mutation
+2026-11-03T04:19:31.3841272Z   ---
+2026-11-03T04:19:31.3841467Z   duration_ms: 0.664356
+2026-11-03T04:19:31.3841695Z   type: 'test'
+2026-11-03T04:19:31.3841890Z   ...
+2026-11-03T04:19:31.3842359Z # Subtest: PS-DESKTOP-02/04 registered uninstall preserves invalid-args without local mutation
+2026-11-03T04:19:31.3843072Z ok 127 - PS-DESKTOP-02/04 registered uninstall preserves invalid-args without local mutation
+2026-11-03T04:19:31.3843511Z   ---
+2026-11-03T04:19:31.3843701Z   duration_ms: 0.613832
+2026-11-03T04:19:31.3843921Z   type: 'test'
+2026-11-03T04:19:31.3844121Z   ...
+2026-11-03T04:19:31.3844575Z # Subtest: PS-DESKTOP-02/04 registered uninstall preserves missing-leg without local mutation
+2026-11-03T04:19:31.3845283Z ok 128 - PS-DESKTOP-02/04 registered uninstall preserves missing-leg without local mutation
+2026-11-03T04:19:31.3845717Z   ---
+2026-11-03T04:19:31.3845914Z   duration_ms: 0.623801
+2026-11-03T04:19:31.3846612Z   type: 'test'
+2026-11-03T04:19:31.3846972Z   ...
+2026-11-03T04:19:31.3847453Z # Subtest: PS-DESKTOP-06 replacement Coordinator leg cannot replay an admitted uninstall
+2026-11-03T04:19:31.3848351Z ok 129 - PS-DESKTOP-06 replacement Coordinator leg cannot replay an admitted uninstall
+2026-11-03T04:19:31.3848794Z   ---
+2026-11-03T04:19:31.3848996Z   duration_ms: 0.9786
+2026-11-03T04:19:31.3849228Z   type: 'test'
+2026-11-03T04:19:31.3849424Z   ...
+2026-11-03T04:19:31.3849606Z 1..129
+2026-11-03T04:19:31.3849790Z # tests 133
+2026-11-03T04:19:31.3849977Z # suites 0
+2026-11-03T04:19:31.3850176Z # pass 133
+2026-11-03T04:19:31.3850360Z # fail 0
+2026-11-03T04:19:31.3850553Z # cancelled 0
+2026-11-03T04:19:31.3850753Z # skipped 0
+2026-11-03T04:19:31.3850945Z # todo 0
+2026-11-03T04:19:31.3851161Z # duration_ms 1254.397643
+2026-11-03T04:19:31.3887531Z ##[group]Run mkdir -p .evidence
+2026-11-03T04:19:31.3888041Z [36;1mmkdir -p .evidence[0m
+2026-11-03T04:19:31.3888311Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T04:19:31.3888603Z [36;1mimport hashlib, json, os, re, subprocess[0m
+2026-11-03T04:19:31.3889134Z [36;1mfrom pathlib import Path[0m
+2026-11-03T04:19:31.3889564Z [36;1mhead=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()[0m
+2026-11-03T04:19:31.3890066Z [36;1massert head == os.environ["PLUGIN_EXPECTED_SHA"][0m
+2026-11-03T04:19:31.3890565Z [36;1mlock=json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())[0m
+2026-11-03T04:19:31.3894276Z [36;1mrouter_cases = ["router set waits for Host acknowledgement and mirrors its canonical provider", "router preserves all five configured providers and reconciles reads with diagnostic fallbacks", "router invalid requests and untrusted frames cause no Host or mirror effects", "router refuses malformed Host replies without local fallback and permits later reconciliation", "router Host refusal releases a queued read and read rejection does not poison later calls", "router unknown transport outcome can follow a Host commit and requires an explicit read", "router local persistence failure leaves the Host commit intact and a later get repairs the mirror", "router orders a held get before set through mirror persistence", "router orders a held set before get through mirror persistence", "router serializes two sets so a late acknowledgement cannot overwrite the later mirror", "a pending router IPC does not order unrelated methods or another MainEdge instance"][0m
+2026-11-03T04:19:31.3898287Z [36;1mtap_path = Path(".evidence/ocrm-plugin-edge.tap")[0m
+2026-11-03T04:19:31.3898641Z [36;1mtap = tap_path.read_text()[0m
+2026-11-03T04:19:31.3898926Z [36;1mfor name in router_cases:[0m
+2026-11-03T04:19:31.3899419Z [36;1m    assert re.search(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap), "Missing successful router control: " + name[0m
+2026-11-03T04:19:31.3899951Z [36;1mmaterialization_cases = [[0m
+2026-11-03T04:19:31.3900419Z [36;1m    "SDK late failed materialization preserves the completed winner and a fresh cache hit",[0m
+2026-11-03T04:19:31.3901084Z [36;1m    "SDK concurrent successful materializations reuse the first completed directory",[0m
+2026-11-03T04:19:31.3901726Z [36;1m    "SDK incomplete and non-directory cache targets are preserved without installation",[0m
+2026-11-03T04:19:31.3902339Z [36;1m    "SDK a target appearing during materialization is preserved without publication",[0m
+2026-11-03T04:19:31.3903027Z [36;1m    "SDK a failed materialization removes only its owned staging directory",[0m
+2026-11-03T04:19:31.3903598Z [36;1m    "SDK marker and publication failures do not report a successful materialization",[0m
+2026-11-03T04:19:31.3904189Z [36;1m    "SDK cleanup I/O failures preserve the primary load category and raw causes",[0m
+2026-11-03T04:19:31.3904808Z [36;1m    "Host late failed materialization preserves a zero-skill winner and a fresh cache hit",[0m
+2026-11-03T04:19:31.3905423Z [36;1m    "Host staging cleanup failure preserves the canonical authorization denial",[0m
+2026-11-03T04:19:31.3905982Z [36;1m    "Host cleanup I/O failures preserve canonical remote denial and recovery",[0m
+2026-11-03T04:19:31.3906846Z [36;1m    "Host cache-owned materialization failures cannot create authorization denials",[0m
+2026-11-03T04:19:31.3907300Z [36;1m][0m
+2026-11-03T04:19:31.3907520Z [36;1mmaterialization_occurrences = {[0m
+2026-11-03T04:19:31.3908051Z [36;1m    name: len(re.findall(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap))[0m
+2026-11-03T04:19:31.3908471Z [36;1m    for name in materialization_cases[0m
+2026-11-03T04:19:31.3908754Z [36;1m}[0m
+2026-11-03T04:19:31.3909281Z [36;1massert all(count == 1 for count in materialization_occurrences.values()), "Missing or duplicate successful materialization control"[0m
+2026-11-03T04:19:31.3909868Z [36;1mcounts = {}[0m
+2026-11-03T04:19:31.3910429Z [36;1mfor label in ("tests", "pass", "fail", "cancelled", "skipped", "todo"):[0m
+2026-11-03T04:19:31.3910916Z [36;1m    matches = re.findall(r"(?m)^# " + label + r" ([0-9]+)$", tap)[0m
+2026-11-03T04:19:31.3911359Z [36;1m    assert matches, "Missing TAP completion count: " + label[0m
+2026-11-03T04:19:31.3911864Z [36;1m    counts[label] = int(matches[-1])[0m
+2026-11-03T04:19:31.3912245Z [36;1massert counts["tests"] > 0 and counts["pass"] == counts["tests"][0m
+2026-11-03T04:19:31.3912895Z [36;1massert all(counts[label] == 0 for label in ("fail", "cancelled", "skipped", "todo"))[0m
+2026-11-03T04:19:31.3913326Z [36;1mevidence={[0m
+2026-11-03T04:19:31.3913631Z [36;1m    "contract": "OCRM-PLUGIN-SNAPSHOT-ADMISSION-v1",[0m
+2026-11-03T04:19:31.3913981Z [36;1m    "subject_commit": head,[0m
+2026-11-03T04:19:31.3914338Z [36;1m    "validation_scope": os.environ["DESKTOP_VALIDATION_SCOPE"],[0m
+2026-11-03T04:19:31.3914949Z [36;1m    "node_tap_counts": counts,[0m
+2026-11-03T04:19:31.3915463Z [36;1m    "node_tap_sha256": hashlib.sha256(tap_path.read_bytes()).hexdigest(),[0m
+2026-11-03T04:19:31.3916328Z [36;1m    "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),[0m
+2026-11-03T04:19:31.3917034Z [36;1m    "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},[0m
+2026-11-03T04:19:31.3917609Z [36;1m    "run_id": os.environ["GITHUB_RUN_ID"],[0m
+2026-11-03T04:19:31.3917972Z [36;1m    "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],[0m
+2026-11-03T04:19:31.3918328Z [36;1m    "shipping_electron_bundle": "passed",[0m
+2026-11-03T04:19:31.3918630Z [36;1m    "inputs_sha256": {[0m
+2026-11-03T04:19:31.3919021Z [36;1m        path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in ([0m
+2026-11-03T04:19:31.3919497Z [36;1m            ".github/workflows/rust-desktop-runtime.yml",[0m
+2026-11-03T04:19:31.3919893Z [36;1m            "desktop/scripts/build-electron-runtime.mjs",[0m
+2026-11-03T04:19:31.3920270Z [36;1m            "source/electron-main/adapters/mcp-oauth.ts",[0m
+2026-11-03T04:19:31.3920642Z [36;1m            "source/electron-main/mcp/mcp-desktop.ts",[0m
+2026-11-03T04:19:31.3921077Z [36;1m            "source/electron-main/mcp/mcp-runtime.contract.test.ts",[0m
+2026-11-03T04:19:31.3921502Z [36;1m            "source/shared/rpc/coordinator-main.ts",[0m
+2026-11-03T04:19:31.3921979Z [36;1m            "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",[0m
+2026-11-03T04:19:31.3922603Z [36;1m            "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",[0m
+2026-11-03T04:19:31.3923166Z [36;1m            "source/packages/cursor-plugins/cursor-marketplace.ts",[0m
+2026-11-03T04:19:31.3923658Z [36;1m            "source/packages/cursor-plugins/loader.ts",[0m
+2026-11-03T04:19:31.3924669Z [36;1m            "source/packages/cursor-plugins/loader.contract.test.ts",[0m
+2026-11-03T04:19:31.3925299Z [36;1m            "source/electron-main/mcp/host-plugin-skills-loader.ts",[0m
+2026-11-03T04:19:31.3925975Z [36;1m            "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",[0m
+2026-11-03T04:19:31.3927108Z [36;1m            "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",[0m
+2026-11-03T04:19:31.3927804Z [36;1m            "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",[0m
+2026-11-03T04:19:31.3928475Z [36;1m            "source/electron-main/main-edge.ts",[0m
+2026-11-03T04:19:31.3948558Z [36;1m            "source/electron-main/main-edge-model.contract.test.ts",[0m
+2026-11-03T04:19:31.3949305Z [36;1m            "source/shared/agents/sand-agent-model.ts",[0m
+2026-11-03T04:19:31.3949778Z [36;1m            "source/shared/node/settings/sand-settings-store.ts",[0m
+2026-11-03T04:19:31.3950277Z [36;1m            "frontend/src/recovered/contracts/desktop-bridge.ts",[0m
+2026-11-03T04:19:31.3950638Z [36;1m        )[0m
+2026-11-03T04:19:31.3950860Z [36;1m    },[0m
+2026-11-03T04:19:31.3951417Z [36;1m    "desktop_mcp_intent_contract": "OCRM-MCP-DESKTOP-INTENT-v1",[0m
+2026-11-03T04:19:31.3951857Z [36;1m    "desktop_mcp_intent_result": "passed",[0m
+2026-11-03T04:19:31.3953764Z [36;1m    "desktop_mcp_intent_scope": "Actual registered IPC, production adapter and lazy Coordinator port under controlled remote I/O: one uninstall request, retained arguments and display result, confirmation before settings, no fallback/retry or extra refresh after false/error/settings failure or replacement leg. Rust confirmation/admission and native ingress require separately bound evidence; this renderer receipt asserts no native-job result. Live accounts and process-loss revocation remain open.",[0m
+2026-11-03T04:19:31.3956398Z [36;1m    "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test", "mcp-runtime.contract.test"],[0m
+2026-11-03T04:19:31.3957136Z [36;1m    "node_contract_result": "passed",[0m
+2026-11-03T04:19:31.3957642Z [36;1m    "materialization_attempt_custody_contract": "OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1",[0m
+2026-11-03T04:19:31.3958194Z [36;1m    "materialization_attempt_custody_result": "passed",[0m
+2026-11-03T04:19:31.3958684Z [36;1m    "materialization_attempt_custody_required_tests": materialization_cases,[0m
+2026-11-03T04:19:31.3959290Z [36;1m    "materialization_attempt_custody_positive_occurrences": materialization_occurrences,[0m
+2026-11-03T04:19:31.3962289Z [36;1m    "materialization_attempt_custody_scope": "Actual SDK cache publisher and Host loader with deterministic held installation I/O, real directories, sentinel bytes and subsequent cache consumers. A failed attempt removes only its own staging directory; completed winners, incomplete and non-directory collisions are retained. Controlled exact-stage cleanup ETIMEDOUT/EACCES failures preserve the primary SDK category, canonical Host denial or ordinary non-auth result, full raw causes, visible residue and later successful loads; the native ENOTDIR residue control remains. This Linux Node receipt does not establish Rust admission, remote cancellation, process-crash cleanup, cross-account authorization, real marketplace or macOS/Windows package acceptance.",[0m
+2026-11-03T04:19:31.3965238Z [36;1m    "runner_mcp_carrier_target": "coordinator-control-server.contract.test",[0m
+2026-11-03T04:19:31.3965700Z [36;1m    "runner_mcp_carrier_result": "passed",[0m
+2026-11-03T04:19:31.3966312Z [36;1m    "model_settings_bridge_contract": "OCRM-MODEL-BRIDGE-v1",[0m
+2026-11-03T04:19:31.3966821Z [36;1m    "model_settings_bridge_target": "main-edge-model.contract.test",[0m
+2026-11-03T04:19:31.3967269Z [36;1m    "model_settings_bridge_result": "passed",[0m
+2026-11-03T04:19:31.3968572Z [36;1m    "model_settings_bridge_scope": "Actual served default-model handler and file-backed display mirror with controlled Host acknowledgment/refusal. Provider field presence and value reach the Rust validation boundary without a desktop policy owner. Real provider, full picker UI and cross-process account acceptance remain open.",[0m
+2026-11-03T04:19:31.3969957Z [36;1m    "router_settings_ack_contract": "OCRM-ROUTER-SETTINGS-ACK-v1",[0m
+2026-11-03T04:19:31.3970441Z [36;1m    "router_settings_ack_target": "main-edge-model.contract.test",[0m
+2026-11-03T04:19:31.3970849Z [36;1m    "router_settings_ack_result": "passed",[0m
+2026-11-03T04:19:31.3971241Z [36;1m    "router_settings_ack_required_positives": router_cases,[0m
+2026-11-03T04:19:31.3973061Z [36;1m    "router_settings_ack_scope": "Actual served router get/set, per-edge IPC ordering and file-backed display mirror with controlled Host replies. Invalid input/replies, queued refusal recovery, unknown Host commit, actual local write refusal and explicit read reconciliation are covered. The returned provider is committed Host configuration, not effective runtime routing. This receipt asserts no Rust execution, real provider, full picker UI or account acceptance.",[0m
+2026-11-03T04:19:31.3974928Z [36;1m    "mcp_account_retirement_contract": "MCP-ACCOUNT-LIST-RETIRE-v1",[0m
+2026-11-03T04:19:31.3975529Z [36;1m    "mcp_account_retirement_result": "passed",[0m
+2026-11-03T04:19:31.3977400Z [36;1m    "mcp_account_retirement_scope": "Real runtime reset, manager publication, captured-account projection, persistent settings and discovery denial under held I/O. Late first-load success/unavailable, established cache, held backend list, reentrant disposal and replacement-manager positives are local lifecycle evidence; live accounts, remote work cancellation and full Rust permission migration remain open.",[0m
+2026-11-03T04:19:31.3979269Z [36;1m    "mcp_runtime_construction_contract": "MCP-RUNTIME-CONSTRUCTION-v1",[0m
+2026-11-03T04:19:31.3979729Z [36;1m    "mcp_runtime_construction_result": "passed",[0m
+2026-11-03T04:19:31.3981677Z [36;1m    "mcp_runtime_construction_scope": "Actual runtime construction, reset, shutdown and callback/token ports under controlled causal factory, auth and cleanup boundaries. Concurrent callers share the current attempt; retired results cannot publish, callback or obtain replacement credentials, and cleanup retains exact-attempt ownership. Factory-internal side effects before settlement, already-returned facades, separate official OAuth changes, real accounts and full Rust permission migration remain open.",[0m
+2026-11-03T04:19:31.3984415Z [36;1m    "runner_mcp_carrier_scope": "Actual generated/backend MCP result producers, control server, native MessageChannel clone and shipping carrier JSON I/O. A bounded local echo peer is not the Rust Coordinator binary, real Electron utilityProcess or external MCP service acceptance.",[0m
+2026-11-03T04:19:31.3985855Z [36;1m    "compiler": "Existing shipping esbuild common options and dependency resolution; not a whole-graph TypeScript strict typecheck",[0m
+2026-11-03T04:19:31.3987755Z [36;1m    "scope": "Actual Host loader and SDK listing/materialization boundaries with controlled transport/cache inputs. Rust admission requires separately bound native evidence; this renderer receipt asserts no native-job result. Real marketplace/accounts, live revocation on persistence failure, all MCP permissions and final acceptance remain pending.",[0m
+2026-11-03T04:19:31.3989148Z [36;1m    "independent_acceptance": "pending",[0m
+2026-11-03T04:19:31.3989445Z [36;1m}[0m
+2026-11-03T04:19:31.3989903Z [36;1mPath(".evidence/ocrm-plugin-edge.json").write_text(json.dumps(evidence, sort_keys=True, indent=2)+"\n")[0m
+2026-11-03T04:19:31.3990405Z [36;1mPY[0m
+2026-11-03T04:19:31.4011557Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:19:31.4011915Z env:
+2026-11-03T04:19:31.4012196Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:31.4012557Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:31.4012801Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:31.4013116Z   PLUGIN_EXPECTED_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:31.4013483Z   DESKTOP_VALIDATION_SCOPE: ocrm-config
+2026-11-03T04:19:31.4013758Z ##[endgroup]
+2026-11-03T04:19:31.4648695Z ##[group]Run actions/upload-artifact@v4
+2026-11-03T04:19:31.4649059Z with:
+2026-11-03T04:19:31.4649407Z   name: ocrm-plugin-edge-23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:31.4649996Z   path: .evidence/ocrm-plugin-edge.json
+.evidence/ocrm-plugin-edge.tap
+
+2026-11-03T04:19:31.4650826Z   if-no-files-found: error
+2026-11-03T04:19:31.4651134Z   retention-days: 90
+2026-11-03T04:19:31.4651403Z   compression-level: 6
+2026-11-03T04:19:31.4651671Z   overwrite: false
+2026-11-03T04:19:31.4651943Z   include-hidden-files: false
+2026-11-03T04:19:31.4652234Z env:
+2026-11-03T04:19:31.4652551Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:31.4652970Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:31.4653239Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:31.4653494Z ##[endgroup]
+2026-11-03T04:19:31.6680504Z (node:3804) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-03T04:19:31.6682302Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-03T04:19:31.6740843Z Multiple search paths detected. Calculating the least common ancestor of all paths
+2026-11-03T04:19:31.6744865Z The least common ancestor is /home/runner/work/fabushi-desktop/fabushi-desktop/.evidence. This will be the root directory of the artifact
+2026-11-03T04:19:31.6747464Z With the provided path, there will be 2 files uploaded
+2026-11-03T04:19:31.6750899Z Artifact name is valid!
+2026-11-03T04:19:31.6763495Z Root directory input is valid!
+2026-11-03T04:19:31.8838837Z Beginning upload of artifact content to blob storage
+2026-11-03T04:19:31.9081817Z (node:3804) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-03T04:19:31.9389803Z Uploaded bytes 9983
+2026-11-03T04:19:31.9559273Z Finished uploading artifact content to blob storage!
+2026-11-03T04:19:31.9561096Z SHA256 digest of uploaded artifact zip is c3a0b4e32bf27eebf9d3f16f22124a2f8dcf56213db98ce02905dac2b4f19655
+2026-11-03T04:19:31.9562274Z Finalizing artifact upload
+2026-11-03T04:19:32.3612062Z Artifact ocrm-plugin-edge-23c2a567d874509f56353b8cae737cdf1437309d.zip successfully finalized. Artifact ID 13204645887
+2026-11-03T04:19:32.3616601Z Artifact ocrm-plugin-edge-23c2a567d874509f56353b8cae737cdf1437309d has been successfully uploaded! Final size is 9983 bytes. Artifact ID is 13204645887
+2026-11-03T04:19:32.3621106Z Artifact download URL: https://github.com/bhrumom/fabushi-desktop/actions/runs/41576693105/artifacts/13204645887
+2026-11-03T04:19:32.3778015Z ##[group]Run set -euo pipefail
+2026-11-03T04:19:32.3778454Z [36;1mset -euo pipefail[0m
+2026-11-03T04:19:32.3778808Z [36;1mmkdir -p .evidence/ocrm-mab[0m
+2026-11-03T04:19:32.3779178Z [36;1mcapture_mab() {[0m
+2026-11-03T04:19:32.3779501Z [36;1m  local evidence_dir="$1"[0m
+2026-11-03T04:19:32.3779844Z [36;1m  shift[0m
+2026-11-03T04:19:32.3780123Z [36;1m  local entry_errexit=0[0m
+2026-11-03T04:19:32.3780445Z [36;1m  local -a result[0m
+2026-11-03T04:19:32.3780778Z [36;1m  case "$-" in *e*) entry_errexit=1 ;; esac[0m
+2026-11-03T04:19:32.3781282Z [36;1m  printf '%s\n' "$entry_errexit" > "$evidence_dir/errexit.entry"[0m
+2026-11-03T04:19:32.3781746Z [36;1m  set +e[0m
+2026-11-03T04:19:32.3782048Z [36;1m  "$@" 2>&1 | tee "$evidence_dir/tests.tap"[0m
+2026-11-03T04:19:32.3782434Z [36;1m  result=("${PIPESTATUS[@]}")[0m
+2026-11-03T04:19:32.3782771Z [36;1m  set -e[0m
+2026-11-03T04:19:32.3783122Z [36;1m  printf '%s\n' "${result[0]}" > "$evidence_dir/node.exit"[0m
+2026-11-03T04:19:32.3783664Z [36;1m  printf '%s\n' "${result[1]}" > "$evidence_dir/capture.exit"[0m
+2026-11-03T04:19:32.3784159Z [36;1m  test "${result[0]}" = 0 && test "${result[1]}" = 0[0m
+2026-11-03T04:19:32.3784550Z [36;1m}[0m
+2026-11-03T04:19:32.3784803Z [36;1mexport -f capture_mab[0m
+2026-11-03T04:19:32.3785447Z [36;1mmkdir -p .evidence/ocrm-mab/controls/node-failure .evidence/ocrm-mab/controls/capture-failure/tests.tap[0m
+2026-11-03T04:19:32.3786592Z [36;1mif bash --noprofile --norc -euo pipefail -c 'capture_mab "$@"' _ \[0m
+2026-11-03T04:19:32.3787251Z [36;1m  .evidence/ocrm-mab/controls/node-failure node -e 'process.exit(7)' \[0m
+2026-11-03T04:19:32.3787893Z [36;1m  > .evidence/ocrm-mab/controls/node-failure/wrapper.log 2>&1; then[0m
+2026-11-03T04:19:32.3788370Z [36;1m  wrapper_status=0[0m
+2026-11-03T04:19:32.3788669Z [36;1melse[0m
+2026-11-03T04:19:32.3788926Z [36;1m  wrapper_status=$?[0m
+2026-11-03T04:19:32.3789219Z [36;1mfi[0m
+2026-11-03T04:19:32.3789686Z [36;1mprintf '%s\n' "$wrapper_status" > .evidence/ocrm-mab/controls/node-failure/wrapper.exit[0m
+2026-11-03T04:19:32.3790340Z [36;1mif bash --noprofile --norc -euo pipefail -c 'capture_mab "$@"' _ \[0m
+2026-11-03T04:19:32.3790896Z [36;1m  .evidence/ocrm-mab/controls/capture-failure node -e 'process.exit(0)' \[0m
+2026-11-03T04:19:32.3791473Z [36;1m  > .evidence/ocrm-mab/controls/capture-failure/wrapper.log 2>&1; then[0m
+2026-11-03T04:19:32.3791901Z [36;1m  wrapper_status=0[0m
+2026-11-03T04:19:32.3792151Z [36;1melse[0m
+2026-11-03T04:19:32.3792378Z [36;1m  wrapper_status=$?[0m
+2026-11-03T04:19:32.3792622Z [36;1mfi[0m
+2026-11-03T04:19:32.3793041Z [36;1mprintf '%s\n' "$wrapper_status" > .evidence/ocrm-mab/controls/capture-failure/wrapper.exit[0m
+2026-11-03T04:19:32.3793880Z [36;1mcapture_mab .evidence/ocrm-mab node --test --test-reporter=tap \[0m
+2026-11-03T04:19:32.3794530Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/coordinator-account-runtime.contract.test.cjs \[0m
+2026-11-03T04:19:32.3795303Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/coordinator-main-port-client.contract.test.cjs \[0m
+2026-11-03T04:19:32.3795975Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/coordinator-runtime.test.cjs \[0m
+2026-11-03T04:19:32.3796840Z [36;1m  desktop/.tmp-grok-electron/ocrm-plugin/attachment-gateway.contract.test.cjs[0m
+2026-11-03T04:19:32.3818323Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:19:32.3818687Z env:
+2026-11-03T04:19:32.3818963Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:32.3819358Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:32.3819616Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:32.3819867Z ##[endgroup]
+2026-11-03T04:19:32.5007243Z TAP version 13
+2026-11-03T04:19:32.6348197Z # Subtest: MAB attachment multichunk read returns actual bytes through one production session
+2026-11-03T04:19:32.6349971Z ok 1 - MAB attachment multichunk read returns actual bytes through one production session
+2026-11-03T04:19:32.6351248Z   ---
+2026-11-03T04:19:32.6352084Z   duration_ms: 76.869809
+2026-11-03T04:19:32.6352667Z   type: 'test'
+2026-11-03T04:19:32.6353187Z   ...
+2026-11-03T04:19:32.6607871Z # Subtest: MAB attachment same account refresh preserves a multichunk read lifetime
+2026-11-03T04:19:32.6627967Z ok 2 - MAB attachment same account refresh preserves a multichunk read lifetime
+2026-11-03T04:19:32.6635718Z   ---
+2026-11-03T04:19:32.6636374Z   duration_ms: 26.311888
+2026-11-03T04:19:32.6636859Z   type: 'test'
+2026-11-03T04:19:32.6637305Z   ...
+2026-11-03T04:19:32.6653956Z # Subtest: MAB attachment switch at probe rejects before the first data chunk
+2026-11-03T04:19:32.6656495Z ok 3 - MAB attachment switch at probe rejects before the first data chunk
+2026-11-03T04:19:32.6658605Z   ---
+2026-11-03T04:19:32.6660212Z   duration_ms: 5.640253
+2026-11-03T04:19:32.6661125Z   type: 'test'
+2026-11-03T04:19:32.6662525Z   ...
+2026-11-03T04:19:32.6902852Z # Subtest: MAB attachment switch at first chunk cannot append successor bytes
+2026-11-03T04:19:32.6904770Z ok 4 - MAB attachment switch at first chunk cannot append successor bytes
+2026-11-03T04:19:32.6905693Z   ---
+2026-11-03T04:19:32.6906424Z   duration_ms: 24.813896
+2026-11-03T04:19:32.6906880Z   type: 'test'
+2026-11-03T04:19:32.6907250Z   ...
+2026-11-03T04:19:32.7011217Z # Subtest: MAB attachment switch at last chunk cannot return a stale completed preview
+2026-11-03T04:19:32.7012412Z ok 5 - MAB attachment switch at last chunk cannot return a stale completed preview
+2026-11-03T04:19:32.7012868Z   ---
+2026-11-03T04:19:32.7013102Z   duration_ms: 10.469069
+2026-11-03T04:19:32.7013369Z   type: 'test'
+2026-11-03T04:19:32.7013581Z   ...
+2026-11-03T04:19:32.7047931Z # Subtest: MAB attachment zero byte probe still checks its captured lifetime
+2026-11-03T04:19:32.7049461Z ok 6 - MAB attachment zero byte probe still checks its captured lifetime
+2026-11-03T04:19:32.7050218Z   ---
+2026-11-03T04:19:32.7050841Z   duration_ms: 3.94799
+2026-11-03T04:19:32.7051322Z   type: 'test'
+2026-11-03T04:19:32.7051734Z   ...
+2026-11-03T04:19:32.7079596Z # Subtest: MAB attachment zero byte positive returns an empty preview without a data request
+2026-11-03T04:19:32.7081217Z ok 7 - MAB attachment zero byte positive returns an empty preview without a data request
+2026-11-03T04:19:32.7082170Z   ---
+2026-11-03T04:19:32.7082689Z   duration_ms: 3.073207
+2026-11-03T04:19:32.7083224Z   type: 'test'
+2026-11-03T04:19:32.7083739Z   ...
+2026-11-03T04:19:32.7117767Z # Subtest: MAB attachment queued before ready is rejected while ordinary Host cleanup flushes
+2026-11-03T04:19:32.7119622Z ok 8 - MAB attachment queued before ready is rejected while ordinary Host cleanup flushes
+2026-11-03T04:19:32.7120408Z   ---
+2026-11-03T04:19:32.7121212Z   duration_ms: 3.690514
+2026-11-03T04:19:32.7121684Z   type: 'test'
+2026-11-03T04:19:32.7122154Z   ...
+2026-11-03T04:19:32.7158199Z # Subtest: MAB attachment late text reply after native retirement is rejected without replay
+2026-11-03T04:19:32.7159737Z ok 9 - MAB attachment late text reply after native retirement is rejected without replay
+2026-11-03T04:19:32.7160606Z   ---
+2026-11-03T04:19:32.7162450Z   duration_ms: 3.911074
+2026-11-03T04:19:32.7163842Z   type: 'test'
+2026-11-03T04:19:32.7164352Z   ...
+2026-11-03T04:19:32.7195037Z # Subtest: MAB attachment text reply continuation cannot escape a just retired session
+2026-11-03T04:19:32.7196445Z ok 10 - MAB attachment text reply continuation cannot escape a just retired session
+2026-11-03T04:19:32.7197163Z   ---
+2026-11-03T04:19:32.7197512Z   duration_ms: 3.343108
+2026-11-03T04:19:32.7197806Z   type: 'test'
+2026-11-03T04:19:32.7198055Z   ...
+2026-11-03T04:19:32.7232985Z # Subtest: MAB attachment image fallback reply continuation rejects stale remote pixels
+2026-11-03T04:19:32.7235533Z ok 11 - MAB attachment image fallback reply continuation rejects stale remote pixels
+2026-11-03T04:19:32.7236955Z   ---
+2026-11-03T04:19:32.7237535Z   duration_ms: 4.092322
+2026-11-03T04:19:32.7238021Z   type: 'test'
+2026-11-03T04:19:32.7238446Z   ...
+2026-11-03T04:19:32.7269660Z # Subtest: MAB attachment link reply continuation rejects metadata from a retired session
+2026-11-03T04:19:32.7271044Z ok 12 - MAB attachment link reply continuation rejects metadata from a retired session
+2026-11-03T04:19:32.7271607Z   ---
+2026-11-03T04:19:32.7271854Z   duration_ms: 3.54334
+2026-11-03T04:19:32.7272140Z   type: 'test'
+2026-11-03T04:19:32.7272388Z   ...
+2026-11-03T04:19:32.7310790Z # Subtest: MAB attachment link image continuation rechecks lifetime after native image work
+2026-11-03T04:19:32.7312321Z ok 13 - MAB attachment link image continuation rechecks lifetime after native image work
+2026-11-03T04:19:32.7313233Z   ---
+2026-11-03T04:19:32.7313644Z   duration_ms: 3.815296
+2026-11-03T04:19:32.7314109Z   type: 'test'
+2026-11-03T04:19:32.7314524Z   ...
+2026-11-03T04:19:32.7345871Z # Subtest: MAB attachment text image and link positive controls use the production session
+2026-11-03T04:19:32.7347590Z ok 14 - MAB attachment text image and link positive controls use the production session
+2026-11-03T04:19:32.7348316Z   ---
+2026-11-03T04:19:32.7348597Z   duration_ms: 3.639489
+2026-11-03T04:19:32.7348869Z   type: 'test'
+2026-11-03T04:19:32.7349105Z   ...
+2026-11-03T04:19:32.7377378Z # Subtest: MAB attachment same account restart waits for exit and never migrates an old operation
+2026-11-03T04:19:32.7381010Z ok 15 - MAB attachment same account restart waits for exit and never migrates an old operation
+2026-11-03T04:19:32.7381896Z   ---
+2026-11-03T04:19:32.7382260Z   duration_ms: 3.176691
+2026-11-03T04:19:32.7382596Z   type: 'test'
+2026-11-03T04:19:32.7382832Z   ...
+2026-11-03T04:19:32.7412513Z # Subtest: MAB attachment renderer replacement waits for exit and never migrates an old operation
+2026-11-03T04:19:32.7413954Z ok 16 - MAB attachment renderer replacement waits for exit and never migrates an old operation
+2026-11-03T04:19:32.7415042Z   ---
+2026-11-03T04:19:32.7415436Z   duration_ms: 3.379666
+2026-11-03T04:19:32.7415855Z   type: 'test'
+2026-11-03T04:19:32.7416493Z   ...
+2026-11-03T04:19:32.7443441Z # Subtest: MAB attachment runtime identity join rejects a foreign current port and disposal preserves it
+2026-11-03T04:19:32.7445171Z ok 17 - MAB attachment runtime identity join rejects a foreign current port and disposal preserves it
+2026-11-03T04:19:32.7446298Z   ---
+2026-11-03T04:19:32.7446675Z   duration_ms: 3.117969
+2026-11-03T04:19:32.7447123Z   type: 'test'
+2026-11-03T04:19:32.7447440Z   ...
+2026-11-03T04:19:32.7474190Z # Subtest: MAB attachment failed production adoption cannot capture or revoke a prior foreign port
+2026-11-03T04:19:32.7475762Z ok 18 - MAB attachment failed production adoption cannot capture or revoke a prior foreign port
+2026-11-03T04:19:32.7476923Z   ---
+2026-11-03T04:19:32.7477568Z   duration_ms: 3.012784
+2026-11-03T04:19:32.7477846Z   type: 'test'
+2026-11-03T04:19:32.7478087Z   ...
+2026-11-03T04:19:32.7504042Z # Subtest: MAB attachment shipping disposal withdraws its own port before actual child exit
+2026-11-03T04:19:32.7505465Z ok 19 - MAB attachment shipping disposal withdraws its own port before actual child exit
+2026-11-03T04:19:32.7506641Z   ---
+2026-11-03T04:19:32.7507030Z   duration_ms: 2.862254
+2026-11-03T04:19:32.7507401Z   type: 'test'
+2026-11-03T04:19:32.7507658Z   ...
+2026-11-03T04:19:32.7717382Z # Subtest: MAB attachment download positive writes real multichunk and zero size files
+2026-11-03T04:19:32.7718882Z ok 20 - MAB attachment download positive writes real multichunk and zero size files
+2026-11-03T04:19:32.7719786Z   ---
+2026-11-03T04:19:32.7720188Z   duration_ms: 20.791855
+2026-11-03T04:19:32.7720706Z   type: 'test'
+2026-11-03T04:19:32.7721072Z   ...
+2026-11-03T04:19:32.7752274Z # Subtest: MAB attachment download account switch during dialog preserves existing destination bytes
+2026-11-03T04:19:32.7754182Z ok 21 - MAB attachment download account switch during dialog preserves existing destination bytes
+2026-11-03T04:19:32.7754892Z   ---
+2026-11-03T04:19:32.7755123Z   duration_ms: 3.776579
+2026-11-03T04:19:32.7755374Z   type: 'test'
+2026-11-03T04:19:32.7755592Z   ...
+2026-11-03T04:19:32.7791175Z # Subtest: MAB attachment download account switch during dialog does not create a destination
+2026-11-03T04:19:32.7792604Z ok 22 - MAB attachment download account switch during dialog does not create a destination
+2026-11-03T04:19:32.7793449Z   ---
+2026-11-03T04:19:32.7793800Z   duration_ms: 3.306595
+2026-11-03T04:19:32.7794197Z   type: 'test'
+2026-11-03T04:19:32.7794424Z   ...
+2026-11-03T04:19:32.7839709Z # Subtest: MAB attachment download switch after real open closes and cleans the destination
+2026-11-03T04:19:32.7880983Z ok 23 - MAB attachment download switch after real open closes and cleans the destination
+2026-11-03T04:19:32.7881772Z   ---
+2026-11-03T04:19:32.7882172Z   duration_ms: 4.72717
+2026-11-03T04:19:32.7882570Z   type: 'test'
+2026-11-03T04:19:32.7882921Z   ...
+2026-11-03T04:19:32.8028748Z # Subtest: MAB attachment download switch between real chunk writes closes and cleans
+2026-11-03T04:19:32.8030094Z ok 24 - MAB attachment download switch between real chunk writes closes and cleans
+2026-11-03T04:19:32.8031166Z   ---
+2026-11-03T04:19:32.8031592Z   duration_ms: 18.675365
+2026-11-03T04:19:32.8032038Z   type: 'test'
+2026-11-03T04:19:32.8032429Z   ...
+2026-11-03T04:19:32.8272456Z # Subtest: MAB attachment download switch after the final real write cannot return success
+2026-11-03T04:19:32.8273313Z ok 25 - MAB attachment download switch after the final real write cannot return success
+2026-11-03T04:19:32.8273850Z   ---
+2026-11-03T04:19:32.8274084Z   duration_ms: 24.234425
+2026-11-03T04:19:32.8274341Z   type: 'test'
+2026-11-03T04:19:32.8274649Z   ...
+2026-11-03T04:19:32.8398150Z # Subtest: MAB attachment download switch during final close cannot return success
+2026-11-03T04:19:32.8399551Z ok 26 - MAB attachment download switch during final close cannot return success
+2026-11-03T04:19:32.8400128Z   ---
+2026-11-03T04:19:32.8400405Z   duration_ms: 13.13985
+2026-11-03T04:19:32.8400722Z   type: 'test'
+2026-11-03T04:19:32.8400985Z   ...
+2026-11-03T04:19:32.8444527Z # Subtest: MAB attachment staged read switch sends no upload and preserves the real original
+2026-11-03T04:19:32.8446017Z ok 27 - MAB attachment staged read switch sends no upload and preserves the real original
+2026-11-03T04:19:32.8447224Z   ---
+2026-11-03T04:19:32.8447702Z   duration_ms: 4.79584
+2026-11-03T04:19:32.8448285Z   type: 'test'
+2026-11-03T04:19:32.8448680Z   ...
+2026-11-03T04:19:32.8501753Z # Subtest: MAB attachment staged positive uploads exact real bytes and retains originals until discard
+2026-11-03T04:19:32.8505535Z ok 28 - MAB attachment staged positive uploads exact real bytes and retains originals until discard
+2026-11-03T04:19:32.8507065Z   ---
+2026-11-03T04:19:32.8507495Z   duration_ms: 5.813593
+2026-11-03T04:19:32.8508239Z   type: 'test'
+2026-11-03T04:19:32.8508626Z   ...
+2026-11-03T04:19:32.8542504Z # Subtest: MAB attachment upload reply continuation rejects stale paths and keeps all staged originals
+2026-11-03T04:19:32.8544102Z ok 29 - MAB attachment upload reply continuation rejects stale paths and keeps all staged originals
+2026-11-03T04:19:32.8544901Z   ---
+2026-11-03T04:19:32.8545161Z   duration_ms: 4.111447
+2026-11-03T04:19:32.8545635Z   type: 'test'
+2026-11-03T04:19:32.8546293Z   ...
+2026-11-03T04:19:32.8581575Z # Subtest: MAB attachment offline local image staging and discard need no account or network
+2026-11-03T04:19:32.8587590Z ok 30 - MAB attachment offline local image staging and discard need no account or network
+2026-11-03T04:19:32.8588427Z   ---
+2026-11-03T04:19:32.8588686Z   duration_ms: 3.805338
+2026-11-03T04:19:32.8588938Z   type: 'test'
+2026-11-03T04:19:32.8589158Z   ...
+2026-11-03T04:19:32.8627128Z # Subtest: MAB attachment failed local read cannot capture an account that appeared during I O
+2026-11-03T04:19:32.8628690Z ok 31 - MAB attachment failed local read cannot capture an account that appeared during I O
+2026-11-03T04:19:32.8629529Z   ---
+2026-11-03T04:19:32.8629940Z   duration_ms: 4.511191
+2026-11-03T04:19:32.8630246Z   type: 'test'
+2026-11-03T04:19:32.8630499Z   ...
+2026-11-03T04:19:32.8659088Z # Subtest: MAB attachment failed local read preserves its original optional fallback identity
+2026-11-03T04:19:32.8663284Z ok 32 - MAB attachment failed local read preserves its original optional fallback identity
+2026-11-03T04:19:32.8664322Z   ---
+2026-11-03T04:19:32.8664899Z   duration_ms: 3.140581
+2026-11-03T04:19:32.8665388Z   type: 'test'
+2026-11-03T04:19:32.8665805Z   ...
+2026-11-03T04:19:32.8688360Z # Subtest: MAB attachment production onLaunched same account refresh publishes only after construction
+2026-11-03T04:19:32.8690096Z ok 33 - MAB attachment production onLaunched same account refresh publishes only after construction
+2026-11-03T04:19:32.8691027Z   ---
+2026-11-03T04:19:32.8691342Z   duration_ms: 2.782475
+2026-11-03T04:19:32.8691635Z   type: 'test'
+2026-11-03T04:19:32.8691882Z   ...
+2026-11-03T04:19:32.8723562Z # Subtest: MAB attachment production onLaunched account switch fences the unpublished child until exit
+2026-11-03T04:19:32.8725144Z ok 34 - MAB attachment production onLaunched account switch fences the unpublished child until exit
+2026-11-03T04:19:32.8726345Z   ---
+2026-11-03T04:19:32.8726667Z   duration_ms: 3.444737
+2026-11-03T04:19:32.8727147Z   type: 'test'
+2026-11-03T04:19:32.8727606Z   ...
+2026-11-03T04:19:32.8750485Z # Subtest: MAB attachment production onLaunched disposal withdraws an unpublished own port and waits for exit
+2026-11-03T04:19:32.8752211Z ok 35 - MAB attachment production onLaunched disposal withdraws an unpublished own port and waits for exit
+2026-11-03T04:19:32.8753254Z   ---
+2026-11-03T04:19:32.8754081Z   duration_ms: 2.775232
+2026-11-03T04:19:32.8774680Z   type: 'test'
+2026-11-03T04:19:32.8775105Z   ...
+2026-11-03T04:19:32.8782432Z # Subtest: MAB attachment production onLaunched foreign adoption never becomes the runtime owned session
+2026-11-03T04:19:32.8784111Z ok 36 - MAB attachment production onLaunched foreign adoption never becomes the runtime owned session
+2026-11-03T04:19:32.8785070Z   ---
+2026-11-03T04:19:32.8785468Z   duration_ms: 2.546274
+2026-11-03T04:19:32.8785930Z   type: 'test'
+2026-11-03T04:19:32.8786641Z   ...
+2026-11-03T04:19:32.8988941Z # Subtest: MAB account capture waits for authorization and identifies the exact active runtime
+2026-11-03T04:19:32.8990075Z ok 37 - MAB account capture waits for authorization and identifies the exact active runtime
+2026-11-03T04:19:32.8999277Z   ---
+2026-11-03T04:19:32.8999734Z   duration_ms: 7.595548
+2026-11-03T04:19:32.9000222Z   type: 'test'
+2026-11-03T04:19:32.9000620Z   ...
+2026-11-03T04:19:32.9001491Z # Subtest: MAB account same-account refresh and restart preserve the captured lifetime
+2026-11-03T04:19:32.9002815Z ok 38 - MAB account same-account refresh and restart preserve the captured lifetime
+2026-11-03T04:19:32.9004035Z   ---
+2026-11-03T04:19:32.9004450Z   duration_ms: 1.712585
+2026-11-03T04:19:32.9004908Z   type: 'test'
+2026-11-03T04:19:32.9005306Z   ...
+2026-11-03T04:19:32.9007525Z # Subtest: MAB account departure retires before callbacks and scopes port revocation after preparation
+2026-11-03T04:19:32.9009145Z ok 39 - MAB account departure retires before callbacks and scopes port revocation after preparation
+2026-11-03T04:19:32.9010068Z   ---
+2026-11-03T04:19:32.9010461Z   duration_ms: 3.625113
+2026-11-03T04:19:32.9010908Z   type: 'test'
+2026-11-03T04:19:32.9011298Z   ...
+2026-11-03T04:19:32.9012163Z # Subtest: MAB account logout retires immediately and settles inactive after preparation
+2026-11-03T04:19:32.9013465Z ok 40 - MAB account logout retires immediately and settles inactive after preparation
+2026-11-03T04:19:32.9014264Z   ---
+2026-11-03T04:19:32.9014658Z   duration_ms: 2.679665
+2026-11-03T04:19:32.9015110Z   type: 'test'
+2026-11-03T04:19:32.9015506Z   ...
+2026-11-03T04:19:32.9016876Z # Subtest: MAB account queued A to B to A never revives the original binding
+2026-11-03T04:19:32.9018018Z ok 41 - MAB account queued A to B to A never revives the original binding
+2026-11-03T04:19:32.9018767Z   ---
+2026-11-03T04:19:32.9019165Z   duration_ms: 1.676107
+2026-11-03T04:19:32.9019618Z   type: 'test'
+2026-11-03T04:19:32.9020531Z   ...
+2026-11-03T04:19:32.9021404Z # Subtest: MAB account completed A to B to A creates distinct permanent lifetimes
+2026-11-03T04:19:32.9022682Z ok 42 - MAB account completed A to B to A creates distinct permanent lifetimes
+2026-11-03T04:19:32.9023445Z   ---
+2026-11-03T04:19:32.9023818Z   duration_ms: 3.296943
+2026-11-03T04:19:32.9024264Z   type: 'test'
+2026-11-03T04:19:32.9024651Z   ...
+2026-11-03T04:19:32.9025601Z # Subtest: MAB account reentrant observation preserves the latest claim after renderer revocation
+2026-11-03T04:19:32.9027510Z ok 43 - MAB account reentrant observation preserves the latest claim after renderer revocation
+2026-11-03T04:19:32.9028421Z   ---
+2026-11-03T04:19:32.9028824Z   duration_ms: 1.211864
+2026-11-03T04:19:32.9029282Z   type: 'test'
+2026-11-03T04:19:32.9029675Z   ...
+2026-11-03T04:19:32.9030466Z # Subtest: MAB account logged-out and refused states cannot furnish a capture
+2026-11-03T04:19:32.9031631Z ok 44 - MAB account logged-out and refused states cannot furnish a capture
+2026-11-03T04:19:32.9032375Z   ---
+2026-11-03T04:19:32.9032773Z   duration_ms: 0.846133
+2026-11-03T04:19:32.9033211Z   type: 'test'
+2026-11-03T04:19:32.9033602Z   ...
+2026-11-03T04:19:32.9034481Z # Subtest: MAB account reentrant start during construction cannot launch a second runtime
+2026-11-03T04:19:32.9035836Z ok 45 - MAB account reentrant start during construction cannot launch a second runtime
+2026-11-03T04:19:32.9036893Z   ---
+2026-11-03T04:19:32.9037284Z   duration_ms: 1.360731
+2026-11-03T04:19:32.9037739Z   type: 'test'
+2026-11-03T04:19:32.9038128Z   ...
+2026-11-03T04:19:32.9039002Z # Subtest: MAB account same-account construction refresh preserves the pending lifetime
+2026-11-03T04:19:32.9040326Z ok 46 - MAB account same-account construction refresh preserves the pending lifetime
+2026-11-03T04:19:32.9041155Z   ---
+2026-11-03T04:19:32.9041548Z   duration_ms: 1.145991
+2026-11-03T04:19:32.9041976Z   type: 'test'
+2026-11-03T04:19:32.9042360Z   ...
+2026-11-03T04:19:32.9043296Z # Subtest: MAB account stale construction waits for exit without invoking departure port revoke
+2026-11-03T04:19:32.9044678Z ok 47 - MAB account stale construction waits for exit without invoking departure port revoke
+2026-11-03T04:19:32.9045533Z   ---
+2026-11-03T04:19:32.9045987Z   duration_ms: 18.449158
+2026-11-03T04:19:32.9046745Z   type: 'test'
+2026-11-03T04:19:32.9047121Z   ...
+2026-11-03T04:19:32.9047969Z # Subtest: MAB account construction A to B to A cannot publish the retired candidate
+2026-11-03T04:19:32.9049197Z ok 48 - MAB account construction A to B to A cannot publish the retired candidate
+2026-11-03T04:19:32.9049969Z   ---
+2026-11-03T04:19:32.9050352Z   duration_ms: 0.725911
+2026-11-03T04:19:32.9051107Z   type: 'test'
+2026-11-03T04:19:32.9051506Z   ...
+2026-11-03T04:19:32.9052443Z # Subtest: MAB account reentrant construction disposal waits for the owned exit and stays terminal
+2026-11-03T04:19:32.9053918Z ok 49 - MAB account reentrant construction disposal waits for the owned exit and stays terminal
+2026-11-03T04:19:32.9054815Z   ---
+2026-11-03T04:19:32.9055204Z   duration_ms: 1.420743
+2026-11-03T04:19:32.9055643Z   type: 'test'
+2026-11-03T04:19:32.9056273Z   ...
+2026-11-03T04:19:32.9057241Z # Subtest: MAB account synchronous stale disposal failure stays blocked even if reporting throws
+2026-11-03T04:19:32.9058641Z ok 50 - MAB account synchronous stale disposal failure stays blocked even if reporting throws
+2026-11-03T04:19:32.9059515Z   ---
+2026-11-03T04:19:32.9059905Z   duration_ms: 0.705382
+2026-11-03T04:19:32.9060352Z   type: 'test'
+2026-11-03T04:19:32.9060738Z   ...
+2026-11-03T04:19:32.9061506Z # Subtest: MAB account rejected stale exit stays blocked across later claims
+2026-11-03T04:19:32.9062651Z ok 51 - MAB account rejected stale exit stays blocked across later claims
+2026-11-03T04:19:32.9063355Z   ---
+2026-11-03T04:19:32.9063743Z   duration_ms: 0.577944
+2026-11-03T04:19:32.9064201Z   type: 'test'
+2026-11-03T04:19:32.9064593Z   ...
+2026-11-03T04:19:32.9065608Z # Subtest: MAB account timed-out stale exit recovers only the latest observed account
+2026-11-03T04:19:32.9067035Z ok 52 - MAB account timed-out stale exit recovers only the latest observed account
+2026-11-03T04:19:32.9067765Z   ---
+2026-11-03T04:19:32.9068121Z   duration_ms: 1.035206
+2026-11-03T04:19:32.9068511Z   type: 'test'
+2026-11-03T04:19:32.9068845Z   ...
+2026-11-03T04:19:32.9069628Z # Subtest: MAB account normal exit timeout retains cleanup ordering and recovers the latest claim
+2026-11-03T04:19:32.9070842Z ok 53 - MAB account normal exit timeout retains cleanup ordering and recovers the latest claim
+2026-11-03T04:19:32.9071638Z   ---
+2026-11-03T04:19:32.9071962Z   duration_ms: 0.627357
+2026-11-03T04:19:32.9072372Z   type: 'test'
+2026-11-03T04:19:32.9072692Z   ...
+2026-11-03T04:19:32.9073480Z # Subtest: MAB account disposal from shared-port revocation cannot restore an active state
+2026-11-03T04:19:32.9074615Z ok 54 - MAB account disposal from shared-port revocation cannot restore an active state
+2026-11-03T04:19:32.9075369Z   ---
+2026-11-03T04:19:32.9075749Z   duration_ms: 0.443925
+2026-11-03T04:19:32.9076402Z   type: 'test'
+2026-11-03T04:19:32.9076748Z   ...
+2026-11-03T04:19:32.9077452Z # Subtest: MAB account timed-out retirement cannot recover after disposal
+2026-11-03T04:19:32.9078546Z ok 55 - MAB account timed-out retirement cannot recover after disposal
+2026-11-03T04:19:32.9079228Z   ---
+2026-11-03T04:19:32.9079585Z   duration_ms: 5.029334
+2026-11-03T04:19:32.9080007Z   type: 'test'
+2026-11-03T04:19:32.9080345Z   ...
+2026-11-03T04:19:32.9081166Z # Subtest: MAB account disposal during authorization prevents later account effects
+2026-11-03T04:19:32.9082378Z ok 56 - MAB account disposal during authorization prevents later account effects
+2026-11-03T04:19:32.9083157Z   ---
+2026-11-03T04:19:32.9083526Z   duration_ms: 0.643867
+2026-11-03T04:19:32.9083933Z   type: 'test'
+2026-11-03T04:19:32.9084294Z   ...
+2026-11-03T04:19:32.9085111Z # Subtest: a request post failure settles the pending call and closes the main-data port
+2026-11-03T04:19:32.9086609Z ok 57 - a request post failure settles the pending call and closes the main-data port
+2026-11-03T04:19:32.9087401Z   ---
+2026-11-03T04:19:32.9087769Z   duration_ms: 4.230569
+2026-11-03T04:19:32.9088188Z   type: 'test'
+2026-11-03T04:19:32.9088556Z   ...
+2026-11-03T04:19:32.9089204Z # Subtest: a request waits for main-data ready before it is posted
+2026-11-03T04:19:32.9090182Z ok 58 - a request waits for main-data ready before it is posted
+2026-11-03T04:19:32.9090788Z   ---
+2026-11-03T04:19:32.9091155Z   duration_ms: 1.891128
+2026-11-03T04:19:32.9091572Z   type: 'test'
+2026-11-03T04:19:32.9091946Z   ...
+2026-11-03T04:19:32.9092742Z # Subtest: a queued request is rejected when the main-data port settles before ready
+2026-11-03T04:19:32.9094289Z ok 59 - a queued request is rejected when the main-data port settles before ready
+2026-11-03T04:19:32.9095066Z   ---
+2026-11-03T04:19:32.9095479Z   duration_ms: 0.716633
+2026-11-03T04:19:32.9095871Z   type: 'test'
+2026-11-03T04:19:32.9096449Z   ...
+2026-11-03T04:19:32.9097230Z # Subtest: a hello post failure does not replace the current main-data generation
+2026-11-03T04:19:32.9098319Z ok 60 - a hello post failure does not replace the current main-data generation
+2026-11-03T04:19:32.9099038Z   ---
+2026-11-03T04:19:32.9099383Z   duration_ms: 1.212064
+2026-11-03T04:19:32.9099843Z   type: 'test'
+2026-11-03T04:19:32.9100291Z   ...
+2026-11-03T04:19:32.9101025Z # Subtest: a protocol breach still settles when the shutdown frame cannot be posted
+2026-11-03T04:19:32.9102314Z ok 61 - a protocol breach still settles when the shutdown frame cannot be posted
+2026-11-03T04:19:32.9102964Z   ---
+2026-11-03T04:19:32.9103276Z   duration_ms: 0.476857
+2026-11-03T04:19:32.9103642Z   type: 'test'
+2026-11-03T04:19:32.9103944Z   ...
+2026-11-03T04:19:32.9104645Z # Subtest: dispose settles pending calls when the shutdown frame cannot be posted
+2026-11-03T04:19:32.9105757Z ok 62 - dispose settles pending calls when the shutdown frame cannot be posted
+2026-11-03T04:19:32.9106626Z   ---
+2026-11-03T04:19:32.9107190Z   duration_ms: 0.585379
+2026-11-03T04:19:32.9107586Z   type: 'test'
+2026-11-03T04:19:32.9107913Z   ...
+2026-11-03T04:19:32.9108436Z # Subtest: settlement survives an endpoint close failure
+2026-11-03T04:19:32.9109159Z ok 63 - settlement survives an endpoint close failure
+2026-11-03T04:19:32.9109657Z   ---
+2026-11-03T04:19:32.9109953Z   duration_ms: 1.504328
+2026-11-03T04:19:32.9110304Z   type: 'test'
+2026-11-03T04:19:32.9110608Z   ...
+2026-11-03T04:19:32.9111353Z # Subtest: MAB transport denied admission stays request-local and uses bounded error text
+2026-11-03T04:19:32.9112595Z ok 64 - MAB transport denied admission stays request-local and uses bounded error text
+2026-11-03T04:19:32.9113337Z   ---
+2026-11-03T04:19:32.9113669Z   duration_ms: 1.003256
+2026-11-03T04:19:32.9114052Z   type: 'test'
+2026-11-03T04:19:32.9114385Z   ...
+2026-11-03T04:19:32.9115191Z # Subtest: MAB transport denied queued work leaves ordinary cleanup in the same ready flush
+2026-11-03T04:19:32.9116613Z ok 65 - MAB transport denied queued work leaves ordinary cleanup in the same ready flush
+2026-11-03T04:19:32.9117333Z   ---
+2026-11-03T04:19:32.9117659Z   duration_ms: 4.504819
+2026-11-03T04:19:32.9118031Z   type: 'test'
+2026-11-03T04:19:32.9118364Z   ...
+2026-11-03T04:19:32.9119121Z # Subtest: MAB transport unchanged guard completes queued work on its captured client
+2026-11-03T04:19:32.9120266Z ok 66 - MAB transport unchanged guard completes queued work on its captured client
+2026-11-03T04:19:32.9120959Z   ---
+2026-11-03T04:19:32.9121276Z   duration_ms: 1.796622
+2026-11-03T04:19:32.9121647Z   type: 'test'
+2026-11-03T04:19:32.9121975Z   ...
+2026-11-03T04:19:32.9122753Z # Subtest: MAB transport ready flush rechecks each call and fences an already posted reply
+2026-11-03T04:19:32.9123955Z ok 67 - MAB transport ready flush rechecks each call and fences an already posted reply
+2026-11-03T04:19:32.9124664Z   ---
+2026-11-03T04:19:32.9124992Z   duration_ms: 1.393391
+2026-11-03T04:19:32.9125373Z   type: 'test'
+2026-11-03T04:19:32.9125702Z   ...
+2026-11-03T04:19:32.9126820Z # Subtest: MAB transport retired pending calls reject both reply outcomes without consuming other replies
+2026-11-03T04:19:32.9128254Z ok 68 - MAB transport retired pending calls reject both reply outcomes without consuming other replies
+2026-11-03T04:19:32.9129061Z   ---
+2026-11-03T04:19:32.9129380Z   duration_ms: 1.568167
+2026-11-03T04:19:32.9129733Z   type: 'test'
+2026-11-03T04:19:32.9130054Z   ...
+2026-11-03T04:19:32.9130796Z # Subtest: MAB transport client live phase is terminal before shutdown and close callbacks
+2026-11-03T04:19:32.9131958Z ok 69 - MAB transport client live phase is terminal before shutdown and close callbacks
+2026-11-03T04:19:32.9132894Z   ---
+2026-11-03T04:19:32.9133197Z   duration_ms: 1.012974
+2026-11-03T04:19:32.9133568Z   type: 'test'
+2026-11-03T04:19:32.9133895Z   ...
+2026-11-03T04:19:32.9134753Z # Subtest: MAB transport captures and ownership fail synchronously at every terminal client phase
+2026-11-03T04:19:32.9136268Z ok 70 - MAB transport captures and ownership fail synchronously at every terminal client phase
+2026-11-03T04:19:32.9137067Z   ---
+2026-11-03T04:19:32.9137388Z   duration_ms: 3.449155
+2026-11-03T04:19:32.9137741Z   type: 'test'
+2026-11-03T04:19:32.9138056Z   ...
+2026-11-03T04:19:32.9138832Z # Subtest: MAB transport same lifetime port replacement never rebinds an old capture
+2026-11-03T04:19:32.9139988Z ok 71 - MAB transport same lifetime port replacement never rebinds an old capture
+2026-11-03T04:19:32.9140668Z   ---
+2026-11-03T04:19:32.9140977Z   duration_ms: 0.584617
+2026-11-03T04:19:32.9141342Z   type: 'test'
+2026-11-03T04:19:32.9141692Z   ...
+2026-11-03T04:19:32.9142118Z # Subtest: MAB transport failed hello preserves a valid previous client
+2026-11-03T04:19:32.9142695Z ok 72 - MAB transport failed hello preserves a valid previous client
+2026-11-03T04:19:32.9143091Z   ---
+2026-11-03T04:19:32.9143294Z   duration_ms: 0.410864
+2026-11-03T04:19:32.9143522Z   type: 'test'
+2026-11-03T04:19:32.9143717Z   ...
+2026-11-03T04:19:32.9144313Z # Subtest: MAB transport hello-time revoke cannot resurrect the outer candidate
+2026-11-03T04:19:32.9144926Z ok 73 - MAB transport hello-time revoke cannot resurrect the outer candidate
+2026-11-03T04:19:32.9145355Z   ---
+2026-11-03T04:19:32.9145557Z   duration_ms: 0.5217
+2026-11-03T04:19:32.9145779Z   type: 'test'
+2026-11-03T04:19:32.9145977Z   ...
+2026-11-03T04:19:32.9146737Z # Subtest: MAB transport hello-time disposal cannot resurrect the outer candidate
+2026-11-03T04:19:32.9147363Z ok 74 - MAB transport hello-time disposal cannot resurrect the outer candidate
+2026-11-03T04:19:32.9147754Z   ---
+2026-11-03T04:19:32.9147958Z   duration_ms: 0.402128
+2026-11-03T04:19:32.9148196Z   type: 'test'
+2026-11-03T04:19:32.9148393Z   ...
+2026-11-03T04:19:32.9149164Z # Subtest: MAB transport hello-time nested adoption keeps only the successor current
+2026-11-03T04:19:32.9150289Z ok 75 - MAB transport hello-time nested adoption keeps only the successor current
+2026-11-03T04:19:32.9150923Z   ---
+2026-11-03T04:19:32.9151147Z   duration_ms: 0.459525
+2026-11-03T04:19:32.9151377Z   type: 'test'
+2026-11-03T04:19:32.9151586Z   ...
+2026-11-03T04:19:32.9152009Z # Subtest: MAB transport previous-close revoke retires the published candidate
+2026-11-03T04:19:32.9152642Z ok 76 - MAB transport previous-close revoke retires the published candidate
+2026-11-03T04:19:32.9153032Z   ---
+2026-11-03T04:19:32.9153229Z   duration_ms: 0.382601
+2026-11-03T04:19:32.9153462Z   type: 'test'
+2026-11-03T04:19:32.9153660Z   ...
+2026-11-03T04:19:32.9154078Z # Subtest: MAB transport previous-close disposal retires the published candidate
+2026-11-03T04:19:32.9154689Z ok 77 - MAB transport previous-close disposal retires the published candidate
+2026-11-03T04:19:32.9155084Z   ---
+2026-11-03T04:19:32.9155283Z   duration_ms: 0.358086
+2026-11-03T04:19:32.9155502Z   type: 'test'
+2026-11-03T04:19:32.9155723Z   ...
+2026-11-03T04:19:32.9156557Z # Subtest: MAB transport previous-close nested adoption cannot be cleared by old settlement
+2026-11-03T04:19:32.9157682Z ok 78 - MAB transport previous-close nested adoption cannot be cleared by old settlement
+2026-11-03T04:19:32.9158136Z   ---
+2026-11-03T04:19:32.9158346Z   duration_ms: 0.626064
+2026-11-03T04:19:32.9158585Z   type: 'test'
+2026-11-03T04:19:32.9158797Z   ...
+2026-11-03T04:19:32.9159260Z # Subtest: MAB transport listener and start reentrancy never publishes a retired candidate
+2026-11-03T04:19:32.9159951Z ok 79 - MAB transport listener and start reentrancy never publishes a retired candidate
+2026-11-03T04:19:32.9160376Z   ---
+2026-11-03T04:19:32.9160573Z   duration_ms: 2.436442
+2026-11-03T04:19:32.9160805Z   type: 'test'
+2026-11-03T04:19:32.9161001Z   ...
+2026-11-03T04:19:32.9161628Z # Subtest: MAB transport listener and start failures close only their owned candidate
+2026-11-03T04:19:32.9162269Z ok 80 - MAB transport listener and start failures close only their owned candidate
+2026-11-03T04:19:32.9162666Z   ---
+2026-11-03T04:19:32.9162867Z   duration_ms: 2.319023
+2026-11-03T04:19:32.9163092Z   type: 'test'
+2026-11-03T04:19:32.9163297Z   ...
+2026-11-03T04:19:32.9163749Z # Subtest: MAB transport exact ownership revoke is idempotent and cannot revoke a successor
+2026-11-03T04:19:32.9164433Z ok 81 - MAB transport exact ownership revoke is idempotent and cannot revoke a successor
+2026-11-03T04:19:32.9164850Z   ---
+2026-11-03T04:19:32.9165048Z   duration_ms: 0.738304
+2026-11-03T04:19:32.9165273Z   type: 'test'
+2026-11-03T04:19:32.9165470Z   ...
+2026-11-03T04:19:32.9165927Z # Subtest: MAB transport an old ownership revoke during hello cannot retire the new candidate
+2026-11-03T04:19:32.9166904Z ok 82 - MAB transport an old ownership revoke during hello cannot retire the new candidate
+2026-11-03T04:19:32.9167338Z   ---
+2026-11-03T04:19:32.9167535Z   duration_ms: 0.433186
+2026-11-03T04:19:32.9167756Z   type: 'test'
+2026-11-03T04:19:32.9167954Z   ...
+2026-11-03T04:19:32.9168369Z # Subtest: MAB transport capture rechecks identity after its opaque guard reenters
+2026-11-03T04:19:32.9169133Z ok 83 - MAB transport capture rechecks identity after its opaque guard reenters
+2026-11-03T04:19:32.9169550Z   ---
+2026-11-03T04:19:32.9169741Z   duration_ms: 0.357796
+2026-11-03T04:19:32.9169966Z   type: 'test'
+2026-11-03T04:19:32.9170157Z   ...
+2026-11-03T04:19:32.9170587Z # Subtest: MAB transport disposed owner closes incoming ports without sending hello
+2026-11-03T04:19:32.9171218Z ok 84 - MAB transport disposed owner closes incoming ports without sending hello
+2026-11-03T04:19:32.9171612Z   ---
+2026-11-03T04:19:32.9171812Z   duration_ms: 0.237923
+2026-11-03T04:19:32.9172033Z   type: 'test'
+2026-11-03T04:19:32.9172231Z   ...
+2026-11-03T04:19:32.9172734Z # Subtest: renderer port replacement and restart retire the old generation before launching the next
+2026-11-03T04:19:32.9173508Z ok 85 - renderer port replacement and restart retire the old generation before launching the next
+2026-11-03T04:19:32.9173958Z   ---
+2026-11-03T04:19:32.9174152Z   duration_ms: 5.624271
+2026-11-03T04:19:32.9174377Z   type: 'test'
+2026-11-03T04:19:32.9174571Z   ...
+2026-11-03T04:19:32.9174756Z 1..85
+2026-11-03T04:19:32.9174942Z # tests 85
+2026-11-03T04:19:32.9175133Z # suites 0
+2026-11-03T04:19:32.9175322Z # pass 85
+2026-11-03T04:19:32.9175504Z # fail 0
+2026-11-03T04:19:32.9175699Z # cancelled 0
+2026-11-03T04:19:32.9175897Z # skipped 0
+2026-11-03T04:19:32.9176357Z # todo 0
+2026-11-03T04:19:32.9176589Z # duration_ms 418.847434
+2026-11-03T04:19:32.9218964Z ##[group]Run python3 - <<'PY'
+2026-11-03T04:19:32.9219879Z [36;1mpython3 - <<'PY'[0m
+2026-11-03T04:19:32.9220178Z [36;1mimport hashlib, json, os, re, subprocess[0m
+2026-11-03T04:19:32.9220517Z [36;1mfrom pathlib import Path[0m
+2026-11-03T04:19:32.9220815Z [36;1mroot = Path('.evidence/ocrm-mab')[0m
+2026-11-03T04:19:32.9221165Z [36;1mroot.mkdir(parents=True, exist_ok=True)[0m
+2026-11-03T04:19:32.9221627Z [36;1mhead = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()[0m
+2026-11-03T04:19:32.9222259Z [36;1mtree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()[0m
+2026-11-03T04:19:32.9222888Z [36;1mlock = json.loads(Path('projects/openclaw-rust/upstream.lock.json').read_text())[0m
+2026-11-03T04:19:32.9223338Z [36;1mrequired = [[0m
+2026-11-03T04:19:32.9223760Z [36;1m    'MAB account capture waits for authorization and identifies the exact active runtime',[0m
+2026-11-03T04:19:32.9224407Z [36;1m    'MAB account same-account refresh and restart preserve the captured lifetime',[0m
+2026-11-03T04:19:32.9225059Z [36;1m    'MAB account departure retires before callbacks and scopes port revocation after preparation',[0m
+2026-11-03T04:19:32.9225715Z [36;1m    'MAB account logout retires immediately and settles inactive after preparation',[0m
+2026-11-03T04:19:32.9226896Z [36;1m    'MAB account queued A to B to A never revives the original binding',[0m
+2026-11-03T04:19:32.9227421Z [36;1m    'MAB account completed A to B to A creates distinct permanent lifetimes',[0m
+2026-11-03T04:19:32.9228024Z [36;1m    'MAB account reentrant observation preserves the latest claim after renderer revocation',[0m
+2026-11-03T04:19:32.9228615Z [36;1m    'MAB account logged-out and refused states cannot furnish a capture',[0m
+2026-11-03T04:19:32.9229172Z [36;1m    'MAB account reentrant start during construction cannot launch a second runtime',[0m
+2026-11-03T04:19:32.9229779Z [36;1m    'MAB account same-account construction refresh preserves the pending lifetime',[0m
+2026-11-03T04:19:32.9230403Z [36;1m    'MAB account stale construction waits for exit without invoking departure port revoke',[0m
+2026-11-03T04:19:32.9231015Z [36;1m    'MAB account construction A to B to A cannot publish the retired candidate',[0m
+2026-11-03T04:19:32.9231643Z [36;1m    'MAB account reentrant construction disposal waits for the owned exit and stays terminal',[0m
+2026-11-03T04:19:32.9232307Z [36;1m    'MAB account synchronous stale disposal failure stays blocked even if reporting throws',[0m
+2026-11-03T04:19:32.9232885Z [36;1m    'MAB account rejected stale exit stays blocked across later claims',[0m
+2026-11-03T04:19:32.9233429Z [36;1m    'MAB account timed-out stale exit recovers only the latest observed account',[0m
+2026-11-03T04:19:32.9234035Z [36;1m    'MAB account normal exit timeout retains cleanup ordering and recovers the latest claim',[0m
+2026-11-03T04:19:32.9234668Z [36;1m    'MAB account disposal from shared-port revocation cannot restore an active state',[0m
+2026-11-03T04:19:32.9235224Z [36;1m    'MAB account timed-out retirement cannot recover after disposal',[0m
+2026-11-03T04:19:32.9235747Z [36;1m    'MAB account disposal during authorization prevents later account effects',[0m
+2026-11-03T04:19:32.9236664Z [36;1m    'MAB transport denied admission stays request-local and uses bounded error text',[0m
+2026-11-03T04:19:32.9237325Z [36;1m    'MAB transport denied queued work leaves ordinary cleanup in the same ready flush',[0m
+2026-11-03T04:19:32.9237938Z [36;1m    'MAB transport unchanged guard completes queued work on its captured client',[0m
+2026-11-03T04:19:32.9238542Z [36;1m    'MAB transport ready flush rechecks each call and fences an already posted reply',[0m
+2026-11-03T04:19:32.9239208Z [36;1m    'MAB transport retired pending calls reject both reply outcomes without consuming other replies',[0m
+2026-11-03T04:19:32.9240077Z [36;1m    'MAB transport client live phase is terminal before shutdown and close callbacks',[0m
+2026-11-03T04:19:32.9240727Z [36;1m    'MAB transport captures and ownership fail synchronously at every terminal client phase',[0m
+2026-11-03T04:19:32.9241341Z [36;1m    'MAB transport same lifetime port replacement never rebinds an old capture',[0m
+2026-11-03T04:19:32.9241884Z [36;1m    'MAB transport failed hello preserves a valid previous client',[0m
+2026-11-03T04:19:32.9242396Z [36;1m    'MAB transport hello-time revoke cannot resurrect the outer candidate',[0m
+2026-11-03T04:19:32.9242935Z [36;1m    'MAB transport hello-time disposal cannot resurrect the outer candidate',[0m
+2026-11-03T04:19:32.9243485Z [36;1m    'MAB transport hello-time nested adoption keeps only the successor current',[0m
+2026-11-03T04:19:32.9244040Z [36;1m    'MAB transport previous-close revoke retires the published candidate',[0m
+2026-11-03T04:19:32.9244591Z [36;1m    'MAB transport previous-close disposal retires the published candidate',[0m
+2026-11-03T04:19:32.9245188Z [36;1m    'MAB transport previous-close nested adoption cannot be cleared by old settlement',[0m
+2026-11-03T04:19:32.9245812Z [36;1m    'MAB transport listener and start reentrancy never publishes a retired candidate',[0m
+2026-11-03T04:19:32.9246543Z [36;1m    'MAB transport listener and start failures close only their owned candidate',[0m
+2026-11-03T04:19:32.9247291Z [36;1m    'MAB transport exact ownership revoke is idempotent and cannot revoke a successor',[0m
+2026-11-03T04:19:32.9247904Z [36;1m    'MAB transport an old ownership revoke during hello cannot retire the new candidate',[0m
+2026-11-03T04:19:32.9248500Z [36;1m    'MAB transport capture rechecks identity after its opaque guard reenters',[0m
+2026-11-03T04:19:32.9249061Z [36;1m    'MAB transport disposed owner closes incoming ports without sending hello',[0m
+2026-11-03T04:19:32.9249643Z [36;1m    'a request post failure settles the pending call and closes the main-data port',[0m
+2026-11-03T04:19:32.9250170Z [36;1m    'a request waits for main-data ready before it is posted',[0m
+2026-11-03T04:19:32.9250662Z [36;1m    'a queued request is rejected when the main-data port settles before ready',[0m
+2026-11-03T04:19:32.9251205Z [36;1m    'a hello post failure does not replace the current main-data generation',[0m
+2026-11-03T04:19:32.9251737Z [36;1m    'a protocol breach still settles when the shutdown frame cannot be posted',[0m
+2026-11-03T04:19:32.9252289Z [36;1m    'dispose settles pending calls when the shutdown frame cannot be posted',[0m
+2026-11-03T04:19:32.9252765Z [36;1m    'settlement survives an endpoint close failure',[0m
+2026-11-03T04:19:32.9253299Z [36;1m    'renderer port replacement and restart retire the old generation before launching the next',[0m
+2026-11-03T04:19:32.9253960Z [36;1m    'MAB attachment multichunk read returns actual bytes through one production session',[0m
+2026-11-03T04:19:32.9254546Z [36;1m    'MAB attachment same account refresh preserves a multichunk read lifetime',[0m
+2026-11-03T04:19:32.9255083Z [36;1m    'MAB attachment switch at probe rejects before the first data chunk',[0m
+2026-11-03T04:19:32.9255627Z [36;1m    'MAB attachment switch at first chunk cannot append successor bytes',[0m
+2026-11-03T04:19:32.9256469Z [36;1m    'MAB attachment switch at last chunk cannot return a stale completed preview',[0m
+2026-11-03T04:19:32.9257040Z [36;1m    'MAB attachment zero byte probe still checks its captured lifetime',[0m
+2026-11-03T04:19:32.9257604Z [36;1m    'MAB attachment zero byte positive returns an empty preview without a data request',[0m
+2026-11-03T04:19:32.9258227Z [36;1m    'MAB attachment queued before ready is rejected while ordinary Host cleanup flushes',[0m
+2026-11-03T04:19:32.9258833Z [36;1m    'MAB attachment late text reply after native retirement is rejected without replay',[0m
+2026-11-03T04:19:32.9259429Z [36;1m    'MAB attachment text reply continuation cannot escape a just retired session',[0m
+2026-11-03T04:19:32.9260186Z [36;1m    'MAB attachment image fallback reply continuation rejects stale remote pixels',[0m
+2026-11-03T04:19:32.9260824Z [36;1m    'MAB attachment link reply continuation rejects metadata from a retired session',[0m
+2026-11-03T04:19:32.9261435Z [36;1m    'MAB attachment link image continuation rechecks lifetime after native image work',[0m
+2026-11-03T04:19:32.9262030Z [36;1m    'MAB attachment text image and link positive controls use the production session',[0m
+2026-11-03T04:19:32.9262661Z [36;1m    'MAB attachment same account restart waits for exit and never migrates an old operation',[0m
+2026-11-03T04:19:32.9263308Z [36;1m    'MAB attachment renderer replacement waits for exit and never migrates an old operation',[0m
+2026-11-03T04:19:32.9263993Z [36;1m    'MAB attachment runtime identity join rejects a foreign current port and disposal preserves it',[0m
+2026-11-03T04:19:32.9264683Z [36;1m    'MAB attachment failed production adoption cannot capture or revoke a prior foreign port',[0m
+2026-11-03T04:19:32.9265321Z [36;1m    'MAB attachment shipping disposal withdraws its own port before actual child exit',[0m
+2026-11-03T04:19:32.9265925Z [36;1m    'MAB attachment download positive writes real multichunk and zero size files',[0m
+2026-11-03T04:19:32.9266880Z [36;1m    'MAB attachment download account switch during dialog preserves existing destination bytes',[0m
+2026-11-03T04:19:32.9267707Z [36;1m    'MAB attachment download account switch during dialog does not create a destination',[0m
+2026-11-03T04:19:32.9268330Z [36;1m    'MAB attachment download switch after real open closes and cleans the destination',[0m
+2026-11-03T04:19:32.9268912Z [36;1m    'MAB attachment download switch between real chunk writes closes and cleans',[0m
+2026-11-03T04:19:32.9269510Z [36;1m    'MAB attachment download switch after the final real write cannot return success',[0m
+2026-11-03T04:19:32.9270081Z [36;1m    'MAB attachment download switch during final close cannot return success',[0m
+2026-11-03T04:19:32.9270676Z [36;1m    'MAB attachment staged read switch sends no upload and preserves the real original',[0m
+2026-11-03T04:19:32.9271328Z [36;1m    'MAB attachment staged positive uploads exact real bytes and retains originals until discard',[0m
+2026-11-03T04:19:32.9272033Z [36;1m    'MAB attachment upload reply continuation rejects stale paths and keeps all staged originals',[0m
+2026-11-03T04:19:32.9272700Z [36;1m    'MAB attachment offline local image staging and discard need no account or network',[0m
+2026-11-03T04:19:32.9273319Z [36;1m    'MAB attachment failed local read cannot capture an account that appeared during I O',[0m
+2026-11-03T04:19:32.9273942Z [36;1m    'MAB attachment failed local read preserves its original optional fallback identity',[0m
+2026-11-03T04:19:32.9274596Z [36;1m    'MAB attachment production onLaunched same account refresh publishes only after construction',[0m
+2026-11-03T04:19:32.9275290Z [36;1m    'MAB attachment production onLaunched account switch fences the unpublished child until exit',[0m
+2026-11-03T04:19:32.9276159Z [36;1m    'MAB attachment production onLaunched disposal withdraws an unpublished own port and waits for exit',[0m
+2026-11-03T04:19:32.9276896Z [36;1m    'MAB attachment production onLaunched foreign adoption never becomes the runtime owned session',[0m
+2026-11-03T04:19:32.9277388Z [36;1m][0m
+2026-11-03T04:19:32.9277594Z [36;1mtargets = [[0m
+2026-11-03T04:19:32.9277908Z [36;1m    'coordinator-account-runtime.contract.test.cjs',[0m
+2026-11-03T04:19:32.9278339Z [36;1m    'coordinator-main-port-client.contract.test.cjs',[0m
+2026-11-03T04:19:32.9278724Z [36;1m    'coordinator-runtime.test.cjs',[0m
+2026-11-03T04:19:32.9279065Z [36;1m    'attachment-gateway.contract.test.cjs',[0m
+2026-11-03T04:19:32.9279378Z [36;1m][0m
+2026-11-03T04:19:32.9279653Z [36;1mcommand = ['node', '--test', '--test-reporter=tap'] + [[0m
+2026-11-03T04:19:32.9280130Z [36;1m    'desktop/.tmp-grok-electron/ocrm-plugin/' + name for name in targets][0m
+2026-11-03T04:19:32.9280558Z [36;1mtap_path = root / 'tests.tap'[0m
+2026-11-03T04:19:32.9281038Z [36;1mtap = tap_path.read_text() if tap_path.is_file() else ''[0m
+2026-11-03T04:19:32.9281426Z [36;1mdef exit_code(name, directory=root):[0m
+2026-11-03T04:19:32.9281732Z [36;1m    path = directory / name[0m
+2026-11-03T04:19:32.9282067Z [36;1m    text = path.read_text() if path.is_file() else ''[0m
+2026-11-03T04:19:32.9282492Z [36;1m    return int(text) if re.fullmatch(r'[0-9]+\n', text) else None[0m
+2026-11-03T04:19:32.9282980Z [36;1mexits = {name: exit_code(name + '.exit') for name in ('node', 'capture')}[0m
+2026-11-03T04:19:32.9283383Z [36;1mcapture_controls = {}[0m
+2026-11-03T04:19:32.9283652Z [36;1mfor name, expected in ([0m
+2026-11-03T04:19:32.9283999Z [36;1m    ('node-failure', {'node': 7, 'capture': 0, 'wrapper': 1}),[0m
+2026-11-03T04:19:32.9284442Z [36;1m    ('capture-failure', {'node': 0, 'capture': 1, 'wrapper': 1}),[0m
+2026-11-03T04:19:32.9284804Z [36;1m):[0m
+2026-11-03T04:19:32.9285042Z [36;1m    directory = root / 'controls' / name[0m
+2026-11-03T04:19:32.9285481Z [36;1m    observed = {key: exit_code(key + '.exit', directory) for key in expected}[0m
+2026-11-03T04:19:32.9285967Z [36;1m    inherited_errexit = exit_code('errexit.entry', directory)[0m
+2026-11-03T04:19:32.9286490Z [36;1m    log = directory / 'wrapper.log'[0m
+2026-11-03T04:19:32.9286794Z [36;1m    capture_controls[name] = {[0m
+2026-11-03T04:19:32.9287285Z [36;1m        'expected_exits': expected, 'observed_exits': observed,[0m
+2026-11-03T04:19:32.9287687Z [36;1m        'inherited_errexit': inherited_errexit,[0m
+2026-11-03T04:19:32.9288213Z [36;1m        'wrapper_log_sha256': hashlib.sha256(log.read_bytes()).hexdigest() if log.is_file() else None,[0m
+2026-11-03T04:19:32.9288843Z [36;1m        'passed': observed == expected and inherited_errexit == 1 and log.is_file(),[0m
+2026-11-03T04:19:32.9289257Z [36;1m    }[0m
+2026-11-03T04:19:32.9289557Z [36;1mproduction_inherited_errexit = exit_code('errexit.entry')[0m
+2026-11-03T04:19:32.9289909Z [36;1mcounts = {}[0m
+2026-11-03T04:19:32.9290255Z [36;1mfor label in ('tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo'):[0m
+2026-11-03T04:19:32.9290720Z [36;1m    values = re.findall(r'(?m)^# ' + label + r' ([0-9]+)$', tap)[0m
+2026-11-03T04:19:32.9291156Z [36;1m    counts[label] = int(values[0]) if len(values) == 1 else None[0m
+2026-11-03T04:19:32.9291591Z [36;1mpositives = re.findall(r'(?m)^ok [0-9]+ - (.+)$', tap)[0m
+2026-11-03T04:19:32.9292125Z [36;1mmissing = [name for name in required if positives.count(name) != 1][0m
+2026-11-03T04:19:32.9292518Z [36;1minput_paths = [[0m
+2026-11-03T04:19:32.9292815Z [36;1m    '.github/workflows/rust-desktop-runtime.yml',[0m
+2026-11-03T04:19:32.9293392Z [36;1m    'desktop/scripts/build-electron-runtime.mjs', 'desktop/package.json', 'desktop/package-lock.json',[0m
+2026-11-03T04:19:32.9293985Z [36;1m    'projects/openclaw-rust/upstream.lock.json',[0m
+2026-11-03T04:19:32.9294542Z [36;1m    'projects/openclaw-rust/docs/specs/attachment-native-transport-binding.md',[0m
+2026-11-03T04:19:32.9295367Z [36;1m    'source/electron-main/coordinator/coordinator-account-runtime.ts',[0m
+2026-11-03T04:19:32.9295972Z [36;1m    'source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts',[0m
+2026-11-03T04:19:32.9296917Z [36;1m    'source/electron-main/coordinator/coordinator-main-legs.ts',[0m
+2026-11-03T04:19:32.9297452Z [36;1m    'source/electron-main/coordinator/coordinator-main-port-client.ts',[0m
+2026-11-03T04:19:32.9298054Z [36;1m    'source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts',[0m
+2026-11-03T04:19:32.9298618Z [36;1m    'source/electron-main/coordinator/coordinator-runtime.ts',[0m
+2026-11-03T04:19:32.9299100Z [36;1m    'source/electron-main/coordinator/coordinator-runtime.test.ts',[0m
+2026-11-03T04:19:32.9299584Z [36;1m    'source/electron-main/coordinator/coordinator-launcher.ts',[0m
+2026-11-03T04:19:32.9300080Z [36;1m    'source/electron-main/coordinator/coordinator-control-server.ts',[0m
+2026-11-03T04:19:32.9300730Z [36;1m    'source/electron-main/coordinator/coordinator-resync.ts',[0m
+2026-11-03T04:19:32.9301201Z [36;1m    'source/electron-main/coordinator/production-provider.ts',[0m
+2026-11-03T04:19:32.9301655Z [36;1m    'source/electron-main/main-production-services.ts',[0m
+2026-11-03T04:19:32.9302083Z [36;1m    'source/electron-main/adapters/attachment-gateway.ts',[0m
+2026-11-03T04:19:32.9302583Z [36;1m    'source/electron-main/adapters/attachment-gateway.contract.test.ts',[0m
+2026-11-03T04:19:32.9303057Z [36;1m    'source/electron-main/attachments/attachments.ts',[0m
+2026-11-03T04:19:32.9303490Z [36;1m    'source/electron-main/attachments/attachment-manager.ts',[0m
+2026-11-03T04:19:32.9304028Z [36;1m    'source/shared/rpc/coordinator-port.ts', 'source/shared/rpc/coordinator-main.ts',[0m
+2026-11-03T04:19:32.9304522Z [36;1m    'source/shared/node/sand-data-root.ts',[0m
+2026-11-03T04:19:32.9304827Z [36;1m][0m
+2026-11-03T04:19:32.9305225Z [36;1minputs = {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in input_paths}[0m
+2026-11-03T04:19:32.9305794Z [36;1minput_drift = [path for path in input_paths if hashlib.sha256([0m
+2026-11-03T04:19:32.9306675Z [36;1m    subprocess.check_output(['git', 'show', head + ':' + path])).hexdigest() != inputs[path]][0m
+2026-11-03T04:19:32.9307377Z [36;1mbundle_paths = ['desktop/dist/electron-main/main.cjs', 'desktop/dist/electron-preload/preload.cjs',[0m
+2026-11-03T04:19:32.9308094Z [36;1m                'desktop/dist/node-agent-coordinator/main.cjs'][0m
+2026-11-03T04:19:32.9308564Z [36;1mbundles = {path: hashlib.sha256(Path(path).read_bytes()).hexdigest()[0m
+2026-11-03T04:19:32.9309032Z [36;1m           for path in bundle_paths if Path(path).is_file()}[0m
+2026-11-03T04:19:32.9309482Z [36;1mpassed = (head == os.environ['FABUSHI_TARGET_SHA'] and not input_drift[0m
+2026-11-03T04:19:32.9310012Z [36;1m          and lock['upstream']['commit'] == '1440bb1771372334bea23d7642bb52deb7db1845'[0m
+2026-11-03T04:19:32.9310557Z [36;1m          and lock['upstream']['tree'] == '90c8aab39972da11cfad220361781d49e1bc6700'[0m
+2026-11-03T04:19:32.9311057Z [36;1m          and lock['upstream']['repository'] == 'openclaw/openclaw'[0m
+2026-11-03T04:19:32.9311473Z [36;1m          and os.environ['MAB_BUILD_OUTCOME'] == 'success'[0m
+2026-11-03T04:19:32.9311868Z [36;1m          and os.environ['MAB_TEST_OUTCOME'] == 'success'[0m
+2026-11-03T04:19:32.9312285Z [36;1m          and exits == {'node': 0, 'capture': 0} and not missing[0m
+2026-11-03T04:19:32.9312684Z [36;1m          and production_inherited_errexit == 1[0m
+2026-11-03T04:19:32.9313125Z [36;1m          and all(control['passed'] for control in capture_controls.values())[0m
+2026-11-03T04:19:32.9313633Z [36;1m          and counts['tests'] is not None and counts['tests'] >= len(required)[0m
+2026-11-03T04:19:32.9314065Z [36;1m          and counts['pass'] == counts['tests'][0m
+2026-11-03T04:19:32.9314520Z [36;1m          and all(counts[label] == 0 for label in ('fail', 'cancelled', 'skipped', 'todo'))[0m
+2026-11-03T04:19:32.9315001Z [36;1m          and len(bundles) == len(bundle_paths))[0m
+2026-11-03T04:19:32.9315313Z [36;1mreceipt = {[0m
+2026-11-03T04:19:32.9315663Z [36;1m    'contract': 'MAB-v1', 'subject_commit': head, 'subject_tree': tree,[0m
+2026-11-03T04:19:32.9316357Z [36;1m    'upstream': {key: lock['upstream'][key] for key in ('repository', 'commit', 'tree')},[0m
+2026-11-03T04:19:32.9316952Z [36;1m    'run_id': os.environ['GITHUB_RUN_ID'], 'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],[0m
+2026-11-03T04:19:32.9317521Z [36;1m    'job': 'renderer', 'runner_os': os.environ['RUNNER_OS'], 'command': command,[0m
+2026-11-03T04:19:32.9318141Z [36;1m    'build_outcome': os.environ['MAB_BUILD_OUTCOME'], 'test_step_outcome': os.environ['MAB_TEST_OUTCOME'],[0m
+2026-11-03T04:19:32.9318762Z [36;1m    'exits': exits, 'tap_counts': counts, 'required_positive_names': required,[0m
+2026-11-03T04:19:32.9319561Z [36;1m    'capture_wrapper': 'capture_mab shared by the production command and both explicit bash -e failure controls',[0m
+2026-11-03T04:19:32.9320353Z [36;1m    'production_inherited_errexit': production_inherited_errexit, 'capture_controls': capture_controls,[0m
+2026-11-03T04:19:32.9321060Z [36;1m    'observed_positive_names': positives, 'missing_or_nonunique_positive_results': missing,[0m
+2026-11-03T04:19:32.9321726Z [36;1m    'tap_sha256': hashlib.sha256(tap_path.read_bytes()).hexdigest() if tap_path.is_file() else None,[0m
+2026-11-03T04:19:32.9322386Z [36;1m    'inputs_sha256': inputs, 'input_drift': input_drift, 'shipping_bundles_sha256': bundles,[0m
+2026-11-03T04:19:32.9322957Z [36;1m    'result': 'passed-scoped' if passed else 'failed-or-incomplete',[0m
+2026-11-03T04:19:32.9325172Z [36;1m    'scope': 'Actual native account owner, MainData client/queue, production Coordinator and attachment binding with controlled Electron process/port/dialog carriers and real temporary-file I/O. Fixed capture guards admission, queued posting, reply acceptance and native continuations; ordinary account cleanup remains possible. Existing shipping esbuild bundles are compiled, not a full TypeScript strict typecheck. Real Electron/account/provider/device/platform, sand-media streaming, composer target admission and complete Rust migration acceptance remain open.',[0m
+2026-11-03T04:19:32.9327448Z [36;1m    'independent_acceptance': 'pending',[0m
+2026-11-03T04:19:32.9327882Z [36;1m}[0m
+2026-11-03T04:19:32.9328253Z [36;1m(root / 'receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')[0m
+2026-11-03T04:19:32.9328703Z [36;1mif not passed:[0m
+2026-11-03T04:19:32.9329038Z [36;1m    raise SystemExit('MAB-v1 evidence is failed or incomplete')[0m
+2026-11-03T04:19:32.9329411Z [36;1mPY[0m
+2026-11-03T04:19:32.9350503Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-11-03T04:19:32.9350867Z env:
+2026-11-03T04:19:32.9351163Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:32.9351519Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:32.9351789Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:32.9352041Z   MAB_BUILD_OUTCOME: success
+2026-11-03T04:19:32.9352301Z   MAB_TEST_OUTCOME: success
+2026-11-03T04:19:32.9352540Z ##[endgroup]
+2026-11-03T04:19:33.0596824Z ##[group]Run actions/upload-artifact@v4
+2026-11-03T04:19:33.0597180Z with:
+2026-11-03T04:19:33.0597498Z   name: ocrm-mab-23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:33.0597873Z   path: .evidence/ocrm-mab
+2026-11-03T04:19:33.0598146Z   if-no-files-found: error
+2026-11-03T04:19:33.0598392Z   retention-days: 90
+2026-11-03T04:19:33.0598636Z   compression-level: 6
+2026-11-03T04:19:33.0598869Z   overwrite: false
+2026-11-03T04:19:33.0599114Z   include-hidden-files: false
+2026-11-03T04:19:33.0599368Z env:
+2026-11-03T04:19:33.0599643Z   FABUSHI_TARGET_SHA: 23c2a567d874509f56353b8cae737cdf1437309d
+2026-11-03T04:19:33.0600011Z   EXPECTED_DISPATCH_SHA: 
+2026-11-03T04:19:33.0600275Z   OCRM_PLUGIN_SCOPE: true
+2026-11-03T04:19:33.0600515Z ##[endgroup]
+2026-11-03T04:19:33.2478431Z (node:3906) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-11-03T04:19:33.2479830Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-11-03T04:19:33.2598247Z With the provided path, there will be 16 files uploaded
+2026-11-03T04:19:33.2599349Z Artifact name is valid!
+2026-11-03T04:19:33.2599992Z Root directory input is valid!
+2026-11-03T04:19:33.4672203Z Beginning upload of artifact content to blob storage
+2026-11-03T04:19:33.5102831Z (node:3906) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-11-03T04:19:33.5359330Z Uploaded bytes 10857
+2026-11-03T04:19:33.5512663Z Finished uploading artifact content to blob storage!
+2026-11-03T04:19:33.5514111Z SHA256 digest of uploaded artifact zip is 3c459e8487441a8e99382ba93dc3b27cc5f33556bf507d43e5bb924f4f20f20d
+2026-11-03T04:19:33.5515538Z Finalizing artifact upload
+2026-11-03T04:19:33.9383681Z Artifact ocrm-mab-23c2a567d874509f56353b8cae737cdf1437309d.zip successfully finalized. Artifact ID 13204770673
+2026-11-03T04:19:33.9386497Z Artifact ocrm-mab-23c2a567d874509f56353b8cae737cdf1437309d has been successfully uploaded! Final size is 10857 bytes. Artifact ID is 13204770673
+2026-11-03T04:19:33.9392437Z Artifact download URL: https://github.com/bhrumom/fabushi-desktop/actions/runs/41576693105/artifacts/13204770673
+2026-11-03T04:19:33.9686778Z Post job cleanup.
+2026-11-03T04:19:34.0963798Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-263e0a049fc59710708a67151aa2e19265177fe47a9689716f8abad9467d7eda, not saving cache.
+2026-11-03T04:19:34.1132256Z Post job cleanup.
+2026-11-03T04:19:34.2051092Z [command]/usr/bin/git version
+2026-11-03T04:19:34.2100193Z git version 2.56.0
+2026-11-03T04:19:34.2143622Z Temporarily overriding HOME='/home/runner/work/_temp/81ba6079-c22f-4355-a31f-19de6a9d0fe3' before making global git config changes
+2026-11-03T04:19:34.2145228Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-03T04:19:34.2149420Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/fabushi-desktop/fabushi-desktop
+2026-11-03T04:19:34.2188190Z Removing SSH command configuration
+2026-11-03T04:19:34.2195794Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-03T04:19:34.2255767Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-03T04:19:34.2550759Z Removing HTTP extra header
+2026-11-03T04:19:34.2552035Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-03T04:19:34.2618771Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-03T04:19:34.3001733Z Removing includeIf entries pointing to credentials config files
+2026-11-03T04:19:34.3011435Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-03T04:19:34.3065214Z includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path
+2026-11-03T04:19:34.3080701Z includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path
+2026-11-03T04:19:34.3087201Z includeif.gitdir:/github/workspace/.git.path
+2026-11-03T04:19:34.3088134Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-03T04:19:34.3090593Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path
+2026-11-03T04:19:34.3134036Z /home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3167336Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git.path /home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3206888Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path
+2026-11-03T04:19:34.3243930Z /home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3259386Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/fabushi-desktop/fabushi-desktop/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3308968Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-03T04:19:34.3345172Z /github/runner_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3357972Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3408223Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-03T04:19:34.3444841Z /github/runner_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3455801Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config
+2026-11-03T04:19:34.3505736Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-03T04:19:34.3767544Z Removing credentials config '/home/runner/work/_temp/git-credentials-8ce981a1-0f68-4ccd-b449-9d4b3de88c28.config'
+2026-11-03T04:19:34.3942174Z Cleaning up orphan processes
+2026-11-03T04:19:34.4450145Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
