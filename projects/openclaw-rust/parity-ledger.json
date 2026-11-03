@@ -17406,7 +17406,23 @@
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
         "source/host/tests/session_conversation_state_contract.rs",
         "source/host/tests/inference_session_labeling_contract.rs",
-        "projects/openclaw-rust/dossiers/ocrm-closure-state-audit-20261031.md"
+        "projects/openclaw-rust/dossiers/ocrm-closure-state-audit-20261031.md",
+        "projects/openclaw-rust/docs/specs/session-model-default-reset.md",
+        "source/host/src/gateway_server.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/extensions/inference/model_picker_service.rs",
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/recovered/features/agent-info/settings/model.ts",
+        "frontend/src/recovered/features/agent-info/settings/view.tsx",
+        "frontend/src/recovered/features/session-model-settings.contract.test.ts",
+        "source/host/tests/agent_session_contract.rs",
+        "source/host/tests/openclaw_model_picker_contract.rs",
+        "source/host/tests/settings_service_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -17428,9 +17444,9 @@
       "id": "OCRM-RESP-SESSION-MODEL-OVERRIDES-001",
       "integration": {
         "consumer": "runner.startRoutedProvider reads the canonical sessionModelSelection state before turn composition; model/thinking state is projected into SandSessionOptions and consumed by ProductionInferenceExtension::cursor_auth_for_session and HostRunnerComposition; routed-provider selection remains owned by the top-level route",
-        "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection",
+        "entrypoint": "Gateway sessions.get/sessions.patch via Coordinator getSessionModelSelection/resetSessionModelSelection and existing Agent Settings; production Session owner apply_session_model_selection and next admitted Runner consumption.",
         "owner": "source/host/src/extensions/session/agent_session.rs",
-        "producer": "No authenticated production session-model mutation producer identified; SandAgentSessionStore::apply_session_model_selection is the existing policy/storage mutation owner, while runner.startRoutedProvider is the separate production consumer of the persisted state"
+        "producer": "Bounded RMD-v1 native reset producer: authenticated Gateway sessions.patch with context.native_operator_control, checked one-snapshot Settings+Inference route/default, and expected session lifecycle revision; forwards only resetToDefault=true to existing Session SQLite owner. General catalog selection producer, trusted operator/visibility/placement/generation and real provider acceptance remain unimplemented."
       },
       "invariants": [
         "Session model overrides do not alter parent agent profile defaults"
@@ -17439,7 +17455,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O04"
       ],
-      "owner_decision": "Retain SandAgentSessionStore and its agent-scoped SQLite projection as the persistence owner; the inference consumer is now identified, but the real production mutation route still must be connected before this responsibility is fully wired",
+      "owner_decision": "Existing Session SQLite/Inference/Settings owners reused. Bounded native configured-default reset wired at source, full model picker and catalog selection remain not-wired, status verification not-run until exact-H Actions evidence.",
       "postconditions": [
         "Inference queries use session override when specified"
       ],
@@ -17479,7 +17495,12 @@
         "symbol": "agent_session"
       },
       "tests": [
-        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o04_model_overrides"
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o04_model_overrides",
+        "source/host/tests/agent_session_contract.rs::model_selection_requires_caller_observed_session_revision_before_sqlite_mutation",
+        "source/host/tests/openclaw_model_picker_contract.rs::model_picker_display_hint_cannot_clear_override",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::native_session_model_default_reset_uses_one_authenticated_rust_mutation_path",
+        "source/host/tests/settings_service_contract.rs::checked_session_model_source_rejects_invalid_provider_and_never_normalizes_bytes",
+        "frontend/src/recovered/features/session-model-settings.contract.test.ts"
       ],
       "typed_contracts": [
         "Session model override resolver",
@@ -22383,7 +22404,23 @@
         "projects/openclaw-rust/dossiers/model-picker-scoped.md",
         "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
         "source/host/tests/fabushi_model_identity_production_contract.rs",
-        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md"
+        "projects/openclaw-rust/management/tasks/P0-config-settings-authority.md",
+        "projects/openclaw-rust/docs/specs/session-model-default-reset.md",
+        "source/host/src/gateway_server.rs",
+        "source/host/app/src/main.rs",
+        "source/host/src/extensions/settings/settings_service.rs",
+        "source/host/src/extensions/inference/production.rs",
+        "source/host/src/extensions/inference/model_picker_service.rs",
+        "source/host/src/extensions/session/agent_session.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/node-agent-coordinator/src/main.rs",
+        "source/shared/rpc/coordinator.ts",
+        "frontend/src/recovered/features/agent-info/settings/model.ts",
+        "frontend/src/recovered/features/agent-info/settings/view.tsx",
+        "frontend/src/recovered/features/session-model-settings.contract.test.ts",
+        "source/host/tests/agent_session_contract.rs",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs",
+        "source/host/tests/settings_service_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -22432,9 +22469,9 @@
       "id": "OCRM-RESP-MODEL-PICKER-001",
       "integration": {
         "consumer": "start_routed_provider_task reads sessionModelSelection under the accepted turn lease guard; OCRM-MODEL-IDENTITY-v1 carries the validated Fabushi provider/model pair or checked bound default through existing Inference, Runner, actual Responses JSON and accepted retry checkpoint. New exact-H evidence is pending; process restart ingress is absent",
-        "entrypoint": "source/host/src/extensions/session/agent_session.rs::SandAgentSessionStore::apply_session_model_selection -> source/host/src/extensions/inference/model_picker_service.rs::apply_session_model_selection",
+        "entrypoint": "Gateway sessions.get/sessions.patch via Coordinator getSessionModelSelection/resetSessionModelSelection and existing Agent Settings; production Session owner apply_session_model_selection and next admitted Runner consumption.",
         "owner": "source/host/src/extensions/inference/model_picker_service.rs",
-        "producer": "No production session-model mutation producer identified; SandAgentSessionStore exposes the mutation method but current non-test search finds no caller"
+        "producer": "Bounded RMD-v1 native reset producer: authenticated Gateway sessions.patch with context.native_operator_control, checked one-snapshot Settings+Inference route/default, and expected session lifecycle revision; forwards only resetToDefault=true to existing Session SQLite owner. General catalog selection producer, trusted operator/visibility/placement/generation and real provider acceptance remain unimplemented."
       },
       "invariants": [
         "Locked session entries reject all model selections",
@@ -22450,7 +22487,7 @@
         "OCRM-MODEL-PICKER-O03",
         "OCRM-MODEL-PICKER-O04"
       ],
-      "owner_decision": "Native implementation in model_picker_service under inference extension",
+      "owner_decision": "Existing Session SQLite/Inference/Settings owners reused. Bounded native configured-default reset wired at source, full model picker and catalog selection remain not-wired, status verification not-run until exact-H Actions evidence.",
       "postconditions": [
         "Model selection validated against operator authority and placement fences, entry mutated if allowed"
       ],
@@ -22510,7 +22547,12 @@
         "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o01_capability_profile_and_event_formatting",
         "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o02_locked_and_conflict_rejections",
         "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o03_operator_and_visibility_policy",
-        "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o04_placement_fences_and_successful_mutation"
+        "source/host/tests/openclaw_model_picker_contract.rs::test_ocrm_model_picker_o04_placement_fences_and_successful_mutation",
+        "source/host/tests/agent_session_contract.rs::model_selection_requires_caller_observed_session_revision_before_sqlite_mutation",
+        "source/host/tests/openclaw_model_picker_contract.rs::model_picker_display_hint_cannot_clear_override",
+        "source/host/tests/openclaw_sessions_and_config_contract.rs::native_session_model_default_reset_uses_one_authenticated_rust_mutation_path",
+        "source/host/tests/settings_service_contract.rs::checked_session_model_source_rejects_invalid_provider_and_never_normalizes_bytes",
+        "frontend/src/recovered/features/session-model-settings.contract.test.ts"
       ],
       "typed_contracts": [
         "ModelPickerCapabilityProfile",
