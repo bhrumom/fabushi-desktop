@@ -42,6 +42,18 @@ Keep source-only test fault seams separate from production protocol. No environm
 
 LFP-08: Use the real toolCallId and agent as semantic operation identity, retaining the existing resultRef. A transfer UUID is staging/transport identity, not permission to repeat the same invocation. Reserve shared shell/file capacity inside the existing owner transaction before the first upload frame. Full protected capacity, duplicates, agent mismatch and unavailable journal refuse without a new provider frame or mutation of older custody.
 
+The pre-existing unscoped `upload_file` convenience entry preserves its optional
+agent identity, including anonymous calls that the existing permission owner
+allows under `Always`. It may generate a standalone invocation ID and must use
+the same durable owner, shared capacity, uncertainty and recovery rules. It must
+not manufacture an agent or grant permission. Registered/scoped upload continues
+to require the actual nonempty agent and toolCallId without anonymous fallback.
+Version-4 file records carry an explicit `agentId` member: null represents this
+convenience boundary, while present strings must be nonempty. Agent-scoped
+status/history/cancellation never match anonymous records. Include real Always
+success, Never/Ask refusal, missing scoped identity, anonymous protected recovery
+and missing-versus-null journal controls in LFP-T03.
+
 LFP-09: Extend the existing manual operation status/history projection so file custody and its metadata are actually observable without changing shell response semantics. Record typed file metadata: selected computer, target, transfer identity, expected size/digest, current request/phase, possible-publication and observed-publication facts. Add those fields to the existing `host_external_machine_dependencies.rs::operation_json` projection; preserve shell fields and the existing operation-id meaning of `requestId`. Do not hide file semantics in shell stdout/stderr. Phase requests keep one original invocation ticket; updating the active request/cancellation handle must not replace invocation ownership. Persist the publication-capable phase before sending commit. Cancellation during any phase stops further admission for that invocation; after possible commit dispatch it remains unknown without a valid terminal receipt.
 
 LFP-10: Upgrade the private operation journal to version 4 when these file fields become load-bearing. Read existing version-2 and version-3 shell records by explicit migration, preserve all recoverable fields and protected history, and publish migration before new effects. Distinguish old-shape fixtures from the new current record schema; move the current future-version refusal fixture from literal 4 to a genuinely unsupported version without dropping the refusal. Validate version-4 kind/file-field combinations and reject malformed or unsupported records without clearing custody. Older readers must refuse the new version instead of silently discarding file identity. Fresh-owner recovery retains unresolved file custody and metadata and emits no replay. Compatible-reader rollback retains the journal; no downgrade or deletion is allowed.

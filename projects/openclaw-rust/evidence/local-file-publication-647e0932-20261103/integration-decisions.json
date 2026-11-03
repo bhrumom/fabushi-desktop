@@ -1,0 +1,75 @@
+{
+  "schema": "ocrm-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "subject": "abe649234c0f64342a36bedae8d0e8091deb6731",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "authority": "projects/openclaw-rust/docs/specs/local-file-publication-custody.md",
+  "authority_blob": "0153071f8c1ae849210aabf6bd5f494e48b908a9",
+  "phase": {
+    "effort": "xhigh",
+    "model": "inherited configured model",
+    "reason": "Typed file publication, explicit success metadata and downstream recovery form a shared high-risk contract."
+  },
+  "decisions": [
+    {
+      "id": "LFP-INTEGRATION-EXPLICIT-STARTING-VERSION",
+      "classification": "IMPL_BUG",
+      "source": "root exact-source integration review; not an executed runtime failure",
+      "path": "source/host/src/extensions/local_exec/native_file_sandbox.rs",
+      "blob": "db304f3f2849bc809ae7fa4908c2940e02b60b04",
+      "symbol": "NativeFilePublication::validate_success upload-start branch",
+      "decision": "FIX",
+      "failure": "Indexing value[\"startingVersion\"] maps an absent member to Value::Null, so a structurally incomplete success value is accepted as explicit absence of a prior version.",
+      "scope_limit": "The actual native producer already includes startingVersion, and the Gateway/transport contracts require explicit presence. No observed native write, CAS bypass or physical publication failure is asserted.",
+      "rationale": "A shared success validator must preserve the distinction between a present nullable version and missing metadata; later consumers must not infer an acknowledged baseline from omission.",
+      "fix": "Require value.get(\"startingVersion\") to be present and either null or a 64-hex digest. Add explicit-null and valid-digest controls plus missing/malformed negative cases in the existing native receipt contract.",
+      "retained_evidence": "Existing source review and fixed source identities remain historical; no candidate runtime acceptance exists.",
+      "invalidated_evidence": "Any inference that upload-start success validation already rejects absent startingVersion is invalid.",
+      "verification": "Fresh integrated review and exact-H GitHub Actions native receipt contracts, transport contracts and registered Runner production tests; no local/htch execution."
+    },
+    {
+      "id": "LFP-INTEGRATION-ANONYMOUS-CONVENIENCE-COMPATIBILITY",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "source": "owner source investigation and root exact-source confirmation; no runtime execution",
+      "subject": "57dcb8ff89bbefd211ea3c2dc0dc5c83ff189d11",
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "blob": "d359bdc0439318c0f7e30605a33240271ef0a744",
+      "symbols": [
+        "upload_file",
+        "upload_file_with_scope",
+        "validate_operation_record"
+      ],
+      "previous_sources": [
+        {
+          "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+          "blob": "8f99af02826365fb2d12971114ff5bf62551883e"
+        },
+        {
+          "path": "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
+          "blob": "2befb28cc54f7b5d7bce5b2e6fb7298e46bec867"
+        }
+      ],
+      "failure": "The public upload_file(None, ...) route previously delegated optional scope to the existing permission owner. Always permits it; Never and unapproved Ask refuse it. The candidate rejects missing agent before that gate, removing supported convenience behavior.",
+      "rationale": "Retain current capability while keeping real agent/toolCallId mandatory at registered/scoped entry. Optional identity already exists in the operation record; no invented agent or second permission authority is needed.",
+      "fix": "Use one private upload implementation and the same durable owner. Unscoped convenience may generate only a standalone invocation ID and preserve optional agent, including None. Scoped upload still requires real nonempty agent/toolCallId. Preserve current permission, shared capacity, correlation, uncertainty and restart protection. Permit explicit null agentId for durable anonymous records; require v4 file records to carry the agentId member and reject malformed or empty present values. Agent-scoped status/history/cancel must never match anonymous records.",
+      "required_oracles": [
+        "real Always permits anonymous upload and records agentId:null",
+        "Never/Ask refuse anonymous calls before a new frame",
+        "scoped missing agent/toolCallId refuses without fallback",
+        "anonymous unknown custody and metadata survive restart/shared capacity",
+        "agent-scoped status/history/cancel do not expose or mutate anonymous records",
+        "v4 missing agentId rejected; explicit null and nonempty identity remain distinct valid states"
+      ],
+      "scope_limit": "Text lookup is not caller-wide semantic review. No new owner, downgrade, replay or acceptance promotion.",
+      "verification": "Fresh integrated review and exact-H owner/provider/native/registered Runner Actions; pending."
+    }
+  ],
+  "global_flags_promoted": false,
+  "additional_subjects": [
+    {
+      "commit": "57dcb8ff89bbefd211ea3c2dc0dc5c83ff189d11",
+      "tree": "80463d28dc1dfb868614787db7a0480a45af9da4"
+    }
+  ]
+}
