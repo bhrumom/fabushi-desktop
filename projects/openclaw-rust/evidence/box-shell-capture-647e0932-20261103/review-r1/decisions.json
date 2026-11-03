@@ -80,5 +80,25 @@
     }
   ],
   "execution": "not-run",
-  "acceptance": "No runtime, ecosystem, platform package, provenance or OCRM acceptance. Original scope stays fixed; fresh complete-context focused review with proper prior-candidate delta after FIX."
+  "acceptance": "No runtime, ecosystem, platform package, provenance or OCRM acceptance. Original scope stays fixed; fresh complete-context focused review with proper prior-candidate delta after FIX.",
+  "root_integration_decisions": [
+    {
+      "id": "SC-R2-STREAM-STOP-SIGNAL",
+      "classification": "IMPLEMENTATION",
+      "priority": "P2",
+      "decision": "FIX",
+      "subject": "152467880098cd87581ca279be4d2bc872a7620b",
+      "source_blob": "c586ea57bec0bd0513a5f21f4532b98c08fbaf7b",
+      "anchors": [
+        "source/box-exec-daemon/src/server.rs:1123-1128",
+        "source/box-exec-daemon/src/server.rs:1214-1225",
+        "source/box-exec-daemon/src/server.rs:1795-1808",
+        "source/box-exec-daemon/src/server.rs:1825-1827"
+      ],
+      "failure": "The existing stop path snapshots Stream by reusable PID, then signals that number outside actual Child ownership while the request can concurrently reap. The pending check ignores streams. Identity integration must not retain this stale-signal route or report clean while an affected required stream registration remains.",
+      "repair": "Use existing actual request/Child custody and runtime stopping state, with exact invocation registration/removal/handoff and bounded truthful stop. Serialize affected admission/handoff with stop. No new registry, protocol or retry; no general stream-capture rewrite.",
+      "rationale": "Root deeply inspected the four actual source boundaries after author identified the adjacent risk. This decision is saved before the stream signaling correction is applied.",
+      "execution": "not-run"
+    }
+  ]
 }

@@ -250,6 +250,13 @@
       "decisions": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/decisions.json",
       "repair_contract": "docs/specs/g11-box-browser-wire-completion.md#sc02-r2--foreground-registration-outlives-reusable-process-identity",
       "state": "FIX saved before implementation; no test execution or acceptance"
+    },
+    {
+      "id": "SC-R2-STREAM-STOP-SIGNAL",
+      "decision": "FIX",
+      "decisions": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/decisions.json",
+      "requirement": "Stop cannot signal a cached stream PID after concurrent reap; actual Child owner consumes existing stopping state, exact registration/handoff remains tracked, and unresolved foreground completion refuses bounded clean stop.",
+      "execution": "not-run"
     }
   ]
 }

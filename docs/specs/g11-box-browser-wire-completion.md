@@ -464,3 +464,12 @@ shape; it does not establish that the child installed its TERM-ignore trap befor
 the abort. Keep that narrower claim and the separate timeout/escalation control.
 Active nonblocking-reader wakeups remain an unmeasured performance/soak question.
 Neither nonblocking observation independently starts a fix round.
+
+SC02-R2 stream-stop integration: stop must not signal a cached stream PID after
+the request may have reaped its Child. The actual stream request may consume
+the existing runtime stopping flag and signal only while it still owns an
+unreaped Child. Keep its invocation registration through observed completion
+or an admitted background handoff, serialize affected spawn/handoff against
+stop admission, and refuse bounded clean stop while a required foreground
+registration is unresolved. This is the same unique registry and existing
+request owner; no extra process table, public cancellation field or retry.
