@@ -3179,12 +3179,23 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       && initialTranscriptRequestRef.current.requestGeneration === openAgentRequestGenerationRef.current
       && initialTranscriptRequestRef.current.isHuman === isHumanTranscript
       && (isHumanTranscript || initialTranscriptRequestRef.current.transportGeneration === transportScopeGeneration)) return;
-    const requestGeneration = ++openAgentRequestGenerationRef.current;
-    pendingTranscriptReadsRef.current.clear();
-    setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     const cachedCursor = transcriptHistoryCursorsRef.current.get(agentId);
     const hasLoadedEntries = entriesByAgentRef.current[agentId] != null
       && cachedCursor != null && cachedCursor.accountSlot === transcriptAccountSlot;
+    const paginationScope = transcriptPaginationController.getSnapshot();
+    if (activeAgentIdRef.current === agentId && hasLoadedEntries
+      && paginationScope.accountSlot === transcriptAccountSlot && paginationScope.agentId === agentId) {
+      // Reselecting the already-active, loaded conversation is a presentation
+      // no-op. In particular, do not reinstall its cached cursor: doing so
+      // invalidates an older-page request that may already be in flight.
+      setOverlay(null);
+      setWorkspaceRoute(null);
+      setCommandPaletteOpen(false);
+      return;
+    }
+    const requestGeneration = ++openAgentRequestGenerationRef.current;
+    pendingTranscriptReadsRef.current.clear();
+    setTranscriptLoadError((current) => current?.agentId === agentId ? null : current);
     transcriptPaginationController.setScope(transcriptAccountSlot, agentId);
     selectionStore.select(agentId);
     if (hasLoadedEntries) {
