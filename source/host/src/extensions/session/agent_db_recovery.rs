@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::io::Read;\nuse std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -152,6 +152,17 @@ pub(super) fn probe_human_conversation_store(
     }
     if main_len == 0 && !has_retained_sidecar {
         return Ok(());
+    }
+    if main_len >= 100 {
+        // A WAL or rollback journal can restore pages of an existing SQLite
+        // database, but it cannot make a non-SQLite main file a valid database.
+        // Reject that identity before the writable opener can discard orphaned
+        // sidecars while attempting journal-mode/schema initialization.
+        let mut header = [0_u8; 16];
+        std::fs::File::open(db_path)?.read_exact(&mut header)?;
+        if &header != b"SQLite format 3\0" {
+            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+        }
     }
     if main_len < 100 {
         // Missing/empty mains with retained sidecars need dedicated recovery.
