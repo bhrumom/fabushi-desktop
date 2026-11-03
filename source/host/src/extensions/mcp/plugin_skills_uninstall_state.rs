@@ -43,18 +43,31 @@ impl AdmissionFileLock {
         Ok(Self { _file: file })
     }
 
+    /// Observation must not wait behind a paused publisher. A missing lease
+    /// permits only negative information from an unlocked image read.
+    pub(super) fn try_shared(sand_root: &Path) -> Result<Option<Self>, String> {
+        let file = open_lock_file(sand_root, ADMISSION_LOCK_FILE)?;
+        match fs2::FileExt::try_lock_shared(&file) {
+            Ok(()) => Ok(Some(Self { _file: file })),
+            Err(error) if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() => Ok(None),
+            Err(_) => Err(LOCK_UNAVAILABLE.into()),
+        }
+    }
+
     pub(super) fn exclusive(sand_root: &Path) -> Result<Self, String> {
+        ensure_directory_durable(sand_root)?;
         let file = open_lock_file(sand_root, ADMISSION_LOCK_FILE)?;
         fs2::FileExt::lock_exclusive(&file).map_err(|_| LOCK_UNAVAILABLE.to_string())?;
         Ok(Self { _file: file })
     }
 
     pub(super) fn try_refresh(sand_root: &Path) -> Result<Option<Self>, String> {
+        ensure_directory_durable(sand_root)?;
         let file = open_lock_file(sand_root, REFRESH_LOCK_FILE)
             .map_err(|_| REFRESH_LOCK_UNAVAILABLE.to_string())?;
         match fs2::FileExt::try_lock_exclusive(&file) {
             Ok(()) => Ok(Some(Self { _file: file })),
-            Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(None),
+            Err(error) if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() => Ok(None),
             Err(_) => Err(REFRESH_LOCK_UNAVAILABLE.into()),
         }
     }
@@ -360,6 +373,8 @@ pub(super) fn persist_uninstall_image(
     expected: &DurableUninstallImage,
     next: &UninstallState,
 ) -> Result<DurableUninstallImage, String> {
+    // Reject malformed candidates before creating even the writer's lock root.
+    validate_state(next)?;
     let sand_root = cache_dir.parent().ok_or_else(|| LOCK_UNAVAILABLE.to_string())?;
     let _lock = AdmissionFileLock::exclusive(sand_root)?;
     persist_uninstall_image_locked(cache_dir, expected, next)

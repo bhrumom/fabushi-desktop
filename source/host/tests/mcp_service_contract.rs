@@ -1272,6 +1272,8 @@ mod confirmed_uninstall_consumers {
         RecoverAuthRefusal,
         RecoverAuthUnknown,
         RecoverAuthPartial,
+        ProbeActiveRefresh,
+        RecoverAuthRefusalAfterWorker,
     }
 
     impl UninstallChildPhase {
@@ -1284,7 +1286,8 @@ mod confirmed_uninstall_consumers {
                 Self::AuthRefusalAfterRenameFailure => 75,
                 Self::AuthLoaderEntered => 76,
                 Self::RecoverPending | Self::RecoverConfirmed | Self::RecoverAuthRefusal
-                    | Self::RecoverAuthUnknown | Self::RecoverAuthPartial => 0,
+                    | Self::RecoverAuthUnknown | Self::RecoverAuthPartial | Self::ProbeActiveRefresh
+                    | Self::RecoverAuthRefusalAfterWorker => 0,
             }
         }
     }
@@ -1591,8 +1594,9 @@ mod confirmed_uninstall_consumers {
                 let result = mcp.skills.sync("exit-at-actual-loader-entry");
                 panic!("loader-entry process must exit before an aggregate: {result:?}");
             }
-            UninstallChildPhase::RecoverAuthRefusal | UninstallChildPhase::RecoverAuthPartial => {
-                let refused = request.phase == UninstallChildPhase::RecoverAuthRefusal;
+            UninstallChildPhase::RecoverAuthRefusal | UninstallChildPhase::RecoverAuthPartial
+                | UninstallChildPhase::RecoverAuthRefusalAfterWorker => {
+                let refused = request.phase != UninstallChildPhase::RecoverAuthPartial;
                 assert_auth_recovery_state(&request.root, &mcp.skills, refused, false, false);
                 assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), request.expected_status.clone().unwrap());
                 let journal = request.expected_image.as_ref().unwrap();
@@ -1610,6 +1614,51 @@ mod confirmed_uninstall_consumers {
                 assert_eq!(fs::read(&request.manifest.legacy_file).unwrap(), request.manifest.legacy_bytes);
                 assert_eq!(mcp.remote.lock().unwrap().calls.iter()
                     .map(|(method, _)| method.as_str()).collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+                if request.phase == UninstallChildPhase::RecoverAuthRefusalAfterWorker {
+                    let mut partial = request.manifest.loaded.clone();
+                    partial["plugins"].as_array_mut().unwrap()
+                        .retain(|plugin| plugin["identifier"]["pluginDbId"] == "10");
+                    assert_eq!(partial["listedPluginIds"], json!(["9","10"]));
+                    mcp.remote.lock().unwrap().loaded = Ok(partial);
+                    assert_eq!(mcp.skills.sync("fresh-process-partial-after-worker-terminal").unwrap().iter()
+                        .map(|row| row.plugin_id.as_str()).collect::<Vec<_>>(), vec!["10"]);
+                    let published = request.manifest.after_cache_publication(&request.root);
+                    assert_actual_consumers_denied(&workers, &[&retained, &reopened], &published);
+                    assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), json!({
+                        "authBlocked":[auth_refusal()],
+                        "authRecovery":{"refusals":[auth_refusal()],"refreshOutcomeUnknown":false},
+                    }));
+                    mcp.remote.lock().unwrap().loaded = Ok(request.manifest.loaded.clone());
+                    assert_eq!(mcp.skills.sync("fresh-process-exact-nine-restoration").unwrap().iter()
+                        .map(|row| row.plugin_id.as_str()).collect::<Vec<_>>(), vec!["9", "10"]);
+                    assert_auth_recovery_state(&request.root, &mcp.skills, false, false, false);
+                    assert_run_body(&workers, &request.manifest.agent_id, "plugin-9-private", "PRIVATE_RUN_RECIPE");
+                    assert_run_body(&workers, &request.manifest.agent_id, "plugin-10-allowed", "ALLOWED_RUN_RECIPE");
+                    assert!(skill_prompt(&retained).contains("PRIVATE_PROVIDER_DESCRIPTION"));
+                    request.manifest.after_cache_publication(&request.root).assert_preserved();
+                    assert_eq!(mcp.remote.lock().unwrap().calls.iter()
+                        .map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+                        vec![MCP_LOAD_PLUGIN_SKILLS_METHOD; 3]);
+                }
+                mcp.close();
+                workers.shutdown();
+                publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
+            }
+            UninstallChildPhase::ProbeActiveRefresh => {
+                assert_eq!(PluginSkillsPort::status(mcp.skills.as_ref()), request.expected_status.clone().unwrap());
+                let journal = request.expected_image.as_ref().unwrap();
+                assert_eq!(fs::read(uninstall_image_path(&request.root)).unwrap(), *journal);
+                assert_auth_recovery_state(&request.root, &mcp.skills, false, true, true);
+                let reopened = session.workflow_store_for(&request.manifest.agent_id).unwrap();
+                assert_actual_consumers_admission(&workers, &[&retained, &reopened], &request.manifest, true);
+                assert!(mcp.skills.current().is_empty());
+                assert!(mcp.remote.lock().unwrap().calls.is_empty());
+                assert_eq!(mcp.skills.sync("foreign-owner-while-loader-held").unwrap_err(),
+                    "plugin skills refresh is already active in another process");
+                assert!(mcp.remote.lock().unwrap().calls.is_empty(),
+                    "actual foreign owner must refuse before its Coordinator loader enters");
+                assert_eq!(fs::read(uninstall_image_path(&request.root)).unwrap(), *journal);
+                request.manifest.assert_preserved();
                 mcp.close();
                 workers.shutdown();
                 publish_child_receipt(&request_path, &request, &mcp.skills, &mcp.remote);
@@ -1786,6 +1835,265 @@ mod confirmed_uninstall_consumers {
         published.assert_preserved();
         assert_eq!(fs::read(&manifest.legacy_file).unwrap(), manifest.legacy_bytes);
         fs::remove_dir_all(root).unwrap();
+    }
+
+
+    #[test]
+    fn auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker() {
+        let fixture = ConsumerFixture::seed("auth-process-lease-terminal");
+        let manifest = fixture.manifest();
+        let reader = fixture.mcp.skills.admission_reader();
+        let mut denied = fixture.published.clone();
+        denied["plugins"].as_array_mut().unwrap()
+            .retain(|plugin| plugin["identifier"]["pluginDbId"] == "10");
+        denied["authBlocked"] = json!([auth_refusal()]);
+        denied["plugins"][0]["installPath"] = json!("relative/auth-process-lease-stage");
+        let (entered_tx, entered) = mpsc::channel();
+        let (release, release_rx) = mpsc::channel();
+        let release_rx = Arc::new(Mutex::new(release_rx));
+        {
+            let mut io = fixture.mcp.remote.lock().unwrap();
+            io.loaded = Ok(denied);
+            io.before_load_reply = Some(Arc::new(move |event| {
+                assert_eq!(event["payload"]["method"], MCP_LOAD_PLUGIN_SKILLS_METHOD);
+                entered_tx.send(()).unwrap();
+                release_rx.lock().unwrap().recv_timeout(Duration::from_secs(60)).unwrap();
+                true
+            }));
+        }
+        let skills = Arc::clone(&fixture.mcp.skills);
+        let (done_tx, done) = mpsc::channel();
+        let active = std::thread::spawn(move || {
+            done_tx.send(skills.sync("real-loader-held-for-foreign-process")).unwrap();
+        });
+        entered.recv_timeout(Duration::from_secs(10)).expect("actual Coordinator loader entry");
+        let token = assert_auth_recovery_state(&fixture.root, &fixture.mcp.skills, false, false, true).unwrap();
+        let journal = fs::read(uninstall_image_path(&fixture.root)).unwrap();
+        assert!(!reader.is_denied("9"));
+        assert!(!reader.is_denied("10"));
+        assert_eq!(fixture.mcp.skills.current().len(), 2);
+        assert_run_body(&fixture.workers, &fixture.agent_id, "plugin-9-private", "PRIVATE_RUN_RECIPE");
+        assert_run_body(&fixture.workers, &fixture.agent_id, "plugin-10-allowed", "ALLOWED_RUN_RECIPE");
+        manifest.assert_preserved();
+        // The child returns a completed actual sync error with zero loader
+        // calls. A timeout or an empty channel is never the exclusion oracle.
+        let excluded = run_uninstall_child(&fixture.root, &manifest, UninstallChildPhase::ProbeActiveRefresh,
+            Some(journal.clone()), Some(json!({"authBlocked":[],"authRecovery":{
+                "refusals":[],"refreshOutcomeUnknown":true,
+            }})));
+        assert!(excluded.calls.is_empty());
+        assert_eq!(fs::read(uninstall_image_path(&fixture.root)).unwrap(), journal);
+        assert_eq!(assert_auth_recovery_state(&fixture.root, &fixture.mcp.skills, false, false, true), Some(token));
+        release.send(()).unwrap();
+        assert_eq!(done.recv_timeout(Duration::from_secs(10)).expect("failed worker terminal").unwrap_err(),
+            "invalid plugin skills cache snapshot");
+        active.join().unwrap();
+        assert_auth_recovery_state(&fixture.root, &fixture.mcp.skills, true, false, false);
+        assert_fixture_denied(&fixture, &manifest);
+        assert!(reader.is_denied("9"));
+        assert!(!reader.is_denied("10"));
+        manifest.assert_preserved();
+
+        // Both the service and its original Session reader remain alive while
+        // a distinct OS process performs offline, partial, and exact-ID recovery.
+        let recovered = run_uninstall_child(&fixture.root, &manifest,
+            UninstallChildPhase::RecoverAuthRefusalAfterWorker,
+            Some(fs::read(uninstall_image_path(&fixture.root)).unwrap()),
+            Some(PluginSkillsPort::status(fixture.mcp.skills.as_ref())));
+        assert_ne!(excluded.pid, recovered.pid);
+        assert_eq!(recovered.status, json!({"authBlocked":[]}));
+        assert_eq!(recovered.calls.iter().map(|(method, _)| method.as_str()).collect::<Vec<_>>(),
+            vec![MCP_LOAD_PLUGIN_SKILLS_METHOD; 3]);
+        assert!(!reader.is_denied("9"),
+            "proved foreign recovery releases the parent's previously durable refusal");
+        assert_eq!(fixture.retained.get("plugin-9-private").unwrap().body, "PRIVATE_RUN_RECIPE");
+        assert_run_body(&fixture.workers, &fixture.agent_id, "plugin-9-private", "PRIVATE_RUN_RECIPE");
+        let restored_prompt = skill_prompt(&fixture.retained);
+        assert!(restored_prompt.contains("PRIVATE_PROVIDER_DESCRIPTION"));
+        assert!(restored_prompt.contains(manifest.files[0].to_string_lossy().as_ref()));
+        assert!(!reader.is_denied("10"));
+        manifest.after_cache_publication(&fixture.root).assert_preserved();
+        assert_eq!(fs::read(&manifest.legacy_file).unwrap(), manifest.legacy_bytes);
+        fixture.finish();
+    }
+
+
+    #[test]
+    fn skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use mahayana_host_runtime::extensions::mcp::skill_publish::{
+            PublishPluginInput, PublishedSkillResult, SandSkillPublishService, SkillPublishClient,
+            SkillPublishTeam, PUBLISH_SKILL_RPC_TIMEOUT_MS,
+        };
+
+        fn admission_lock(root: &Path) -> fs::File {
+            fs::OpenOptions::new().read(true).write(true)
+                .open(root.join(".plugin-skills-admission.lock")).unwrap()
+        }
+
+        fn assert_shared_lease(root: &Path) {
+            // Probe EX before acquiring any probe-owned SH: otherwise the
+            // probe itself could explain the contention and hide an unbound lease.
+            let exclusive = admission_lock(root);
+            let error = fs2::FileExt::try_lock_exclusive(&exclusive)
+                .expect_err("the actual publishing operation must hold admission through backend entry");
+            assert_eq!(error.raw_os_error(), fs2::lock_contended_error().raw_os_error());
+            let compatible = admission_lock(root);
+            fs2::FileExt::try_lock_shared(&compatible)
+                .expect("the actual mutation lease is shared, not an exclusive writer lock");
+        }
+
+        struct LeaseClient {
+            root: PathBuf,
+            restored_file: PathBuf,
+            original: Vec<u8>,
+            calls: Mutex<Vec<&'static str>>,
+        }
+
+        impl SkillPublishClient for LeaseClient {
+            fn get_teams(&self, _: u64) -> Result<Vec<SkillPublishTeam>, String> {
+                panic!("published-skill operations use their actual cache marketplace identity");
+            }
+
+            fn publish_plugin(&self, request: PublishPluginInput, timeout: u64)
+                -> Result<PublishedSkillResult, String>
+            {
+                assert_shared_lease(&self.root);
+                assert_eq!(timeout, PUBLISH_SKILL_RPC_TIMEOUT_MS);
+                assert_eq!(request.team_id, 42);
+                assert_eq!(request.name, "p9");
+                assert_eq!(request.display_name, "Private");
+                assert_eq!(request.description, "PRIVATE_PROVIDER_DESCRIPTION");
+                assert!(request.plugin_tar_gz.starts_with(&[0x1f, 0x8b]));
+                assert!(!self.restored_file.exists(), "resync must not restore a library copy");
+                self.calls.lock().unwrap().push("resync");
+                Ok(PublishedSkillResult { plugin_id: "9".into(), commit_sha: "v1".into() })
+            }
+
+            fn unpublish_plugin(&self, plugin_id: &str, team_id: i32, timeout: u64) -> Result<(), String> {
+                assert_shared_lease(&self.root);
+                assert_eq!(plugin_id, "9");
+                assert_eq!(team_id, 42);
+                assert_eq!(timeout, PUBLISH_SKILL_RPC_TIMEOUT_MS);
+                assert_eq!(fs::read(&self.restored_file).unwrap(), self.original,
+                    "the actual local restore precedes the backend while its lease remains held");
+                self.calls.lock().unwrap().push("unpublish");
+                Ok(())
+            }
+        }
+
+        for unpublish in [false, true] {
+            let fixture = ConsumerFixture::seed("actual-publish-mutation-lease");
+            let install = fixture.files[0].parent().unwrap().parent().unwrap().parent().unwrap();
+            fs::write(install.join("plugin.json"), br#"{"name":"p9"}"#).unwrap();
+            let client = Arc::new(LeaseClient {
+                root: fixture.root.clone(),
+                restored_file: fixture.root.join("workflows/private/SKILL.md"),
+                original: fs::read(&fixture.files[0]).unwrap(),
+                calls: Mutex::new(Vec::new()),
+            });
+            // The concrete production Skills owner supplies acquire_admission;
+            // no fake/default-unbound publishing port participates.
+            let publisher = Arc::new(SandSkillPublishService::new(
+                &fixture.root, client.clone(), fixture.mcp.skills.clone(),
+            ));
+            let invoke = || {
+                let service = Arc::clone(&publisher);
+                let unpublish = unpublish;
+                let (send, receive) = mpsc::channel();
+                let worker = std::thread::spawn(move || {
+                    let result = if unpublish {
+                        service.unpublish("plugin-9-private").map(|value| value.restored_workflow_id)
+                    } else {
+                        service.resync("plugin-9-private").map(|value| {
+                            assert_eq!(value.published.plugin_id, "9");
+                            assert_eq!(value.promoted_workflow_id, None);
+                            None
+                        })
+                    };
+                    let _ = send.send(result);
+                });
+                let result = receive.recv_timeout(Duration::from_secs(10))
+                    .expect("publishing must settle; a retained lease across sync is a failure");
+                worker.join().unwrap();
+                result
+            };
+            let assert_rejected = |expected: &str| {
+                let manifest = fixture.manifest();
+                let journal = fs::read(uninstall_image_path(&fixture.root)).unwrap();
+                let mut library_ids = publisher.library().list_ids();
+                library_ids.sort();
+                fixture.mcp.remote.lock().unwrap().calls.clear();
+                assert_eq!(invoke().unwrap_err(), expected);
+                assert!(client.calls.lock().unwrap().is_empty(), "rejection must precede the publishing backend");
+                assert!(fixture.mcp.remote.lock().unwrap().calls.is_empty(), "rejection must not refresh");
+                let mut after_ids = publisher.library().list_ids();
+                after_ids.sort();
+                assert_eq!(after_ids, library_ids);
+                assert!(!client.restored_file.exists(), "rejection must precede any local restore");
+                assert_eq!(fs::read(uninstall_image_path(&fixture.root)).unwrap(), journal);
+                manifest.assert_preserved();
+            };
+
+            let mut loaded = fixture.published.clone();
+            loaded["publisherFacts"]["9"] = json!({"publisherUserId":99,"marketplaceTeamId":42});
+            fixture.mcp.remote.lock().unwrap().loaded = Ok(loaded.clone());
+            fixture.mcp.skills.sync("foreign-publisher-control").unwrap();
+            assert_rejected("\"Private\" belongs to a plugin you did not publish.");
+
+            loaded["publisherFacts"]["9"] = json!({"publisherUserId":12});
+            fixture.mcp.remote.lock().unwrap().loaded = Ok(loaded.clone());
+            fixture.mcp.skills.sync("missing-team-control").unwrap();
+            assert_rejected("\"Private\" is not in a team marketplace, so there is nothing to sync it back to.");
+
+            loaded["publisherFacts"]["9"] = json!({"publisherUserId":12,"marketplaceTeamId":42});
+            fixture.mcp.remote.lock().unwrap().loaded = Ok(loaded);
+            fixture.mcp.skills.sync("valid-publisher-and-team").unwrap();
+            let intent = fixture.mcp.skills.begin_uninstall("9").unwrap();
+            assert_rejected("That skill is no longer installed or its plugin access was revoked.");
+            fixture.mcp.skills.settle_uninstall(&intent, PluginUninstallSettlement::NotRemoved).unwrap();
+
+            let sync_entries = Arc::new(AtomicUsize::new(0));
+            let counted = Arc::clone(&sync_entries);
+            let root = fixture.root.clone();
+            {
+                let mut io = fixture.mcp.remote.lock().unwrap();
+                io.calls.clear();
+                io.before_load_reply = Some(Arc::new(move |event| {
+                    assert_eq!(event["payload"]["method"], MCP_LOAD_PLUGIN_SKILLS_METHOD);
+                    // This is the real post-operation sync, after its durable
+                    // reservation. It must run with the publishing lease released.
+                    let exclusive = admission_lock(&root);
+                    fs2::FileExt::try_lock_exclusive(&exclusive)
+                        .expect("publishing lease must be released before the actual refresh");
+                    counted.fetch_add(1, Ordering::SeqCst);
+                    true
+                }));
+            }
+            let manifest = fixture.manifest();
+            let result = invoke().unwrap();
+            assert_eq!(result.as_deref(), unpublish.then_some("private"));
+            assert_eq!(client.calls.lock().unwrap().as_slice(),
+                &[if unpublish { "unpublish" } else { "resync" }]);
+            assert_eq!(sync_entries.load(Ordering::SeqCst), 1,
+                "best-effort sync cannot hide a lock error or skipped real loader");
+            assert_eq!(fixture.mcp.remote.lock().unwrap().calls.iter()
+                .map(|(method, _)| method.as_str()).collect::<Vec<_>>(), vec![MCP_LOAD_PLUGIN_SKILLS_METHOD]);
+            let exclusive = admission_lock(&fixture.root);
+            fs2::FileExt::try_lock_exclusive(&exclusive).unwrap();
+            drop(exclusive);
+            if unpublish {
+                assert_eq!(fs::read(&client.restored_file).unwrap(), client.original);
+                assert_eq!(publisher.library().get("private").unwrap().body, "PRIVATE_RUN_RECIPE");
+            } else {
+                assert!(!client.restored_file.exists());
+            }
+            manifest.after_cache_publication(&fixture.root).assert_preserved();
+            assert_eq!(fs::read(&manifest.legacy_file).unwrap(), manifest.legacy_bytes);
+            assert_run_body(&fixture.workers, &fixture.agent_id, "plugin-10-allowed", "ALLOWED_RUN_RECIPE");
+            drop(publisher);
+            fixture.finish();
+        }
     }
 
     #[test]

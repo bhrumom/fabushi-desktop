@@ -606,6 +606,7 @@ fn auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token() {
         assert!(successor.publication.try_lock().is_ok());
         assert!(successor.state.try_lock().is_ok());
         assert!(successor.admission.state.try_lock().is_ok());
+        assert!(AdmissionFileLock::try_refresh(&h.root.0).unwrap().is_none());
         if old_panics {
             h.release.send(LoadStep::Panicked).unwrap();
             assert!(old.outcome().is_err());
@@ -617,6 +618,8 @@ fn auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token() {
         }
         assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), successor_journal);
         assert_eq!(refresh_operation_id(&h.root), next_token);
+        assert!(AdmissionFileLock::try_refresh(&h.root.0).unwrap().is_none(),
+            "completion of the old guard cannot release the successor process lease");
         assert_auth_recovery(&successor, &[], false);
         for _ in 0..2 {
             h.service.dispose();
@@ -645,6 +648,8 @@ fn auth_old_loader_guard_and_repeated_dispose_cannot_alter_successor_token() {
         assert_skill_file_bytes(&files);
         assert_eq!(h.events.lock().unwrap().len(), 1, "retired pass never reports success");
         h.assert_calls(3);
+        assert!(AdmissionFileLock::try_refresh(&h.root.0).unwrap().is_some(),
+            "the successor releases exclusion only after its own work completes");
     }
 }
 
@@ -815,4 +820,341 @@ fn auth_clean_dispose_does_no_io_but_fresh_construction_cannot_assume_the_outcom
     assert_eq!(h.events.lock().unwrap().len(), 1);
     assert_skill_file_bytes(&files);
     h.assert_calls(2);
+}
+
+fn recovery_workflow_store(root: &TempRoot, service: &SandPluginSkillsService) -> crate::workflows::workflow_store::FileWorkflowStore {
+    crate::workflows::workflow_store::FileWorkflowStore::new(
+        root.0.join("agents/auth-lock-regression"), root.0.join("workflows"),
+    ).with_plugin_skills_admission(service.admission_reader())
+}
+
+#[test]
+fn auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh() {
+    let root = TempRoot::new();
+    let mut loaded = two_plugins(&root, "retained");
+    for id in ["9", "10"] {
+        loaded.publisher_facts.insert(id.into(), PublisherFacts {
+            publisher_user_id: Some(12), ..PublisherFacts::default()
+        });
+    }
+    let (service, loader) = inline_service(&root, Ok(loaded.clone()));
+    let records = service.sync("seed").unwrap();
+    let files = skill_file_bytes(&records);
+    let cache = fs::read(root.cache_path()).unwrap();
+    let sentinel = root.sentinel();
+    let reader = service.admission_reader();
+    let retained = recovery_workflow_store(&root, &service);
+    let nine = records.iter().find(|record| record.plugin_id == "9").unwrap();
+    let ten = records.iter().find(|record| record.plugin_id == "10").unwrap();
+    assert!(retained.get(&nine.id).is_some());
+    assert!(retained.get(&ten.id).is_some());
+    assert_eq!(retained.list().iter().filter(|record| record.source == "plugin").count(), 2);
+
+    let events = Arc::new(Mutex::new(Vec::<PluginSkillsSyncEvent>::new()));
+    let captured = Arc::clone(&events);
+    let service = service.with_reporter(Arc::new(move |event| captured.lock().unwrap().push(event)));
+    let mut denied = loaded.clone();
+    denied.auth_blocked.push(auth_block("9"));
+    *loader.result.lock().unwrap() = Ok(denied);
+    assert_eq!(with_image_publish_failure(2, ImagePublishFailure::BeforeRename, || {
+        service.sync("accepted-negative-before-rename")
+    }).unwrap_err(), AUTH_ERROR);
+    let operation_id = refresh_operation_id(&root);
+    assert_image(&root, &[], Some(&operation_id));
+    let journal = fs::read(root.uninstall_state_path()).unwrap();
+    let reopened = recovery_workflow_store(&root, &service);
+    let forbidden = crate::workflows::workflow_library::WorkflowSpec {
+        name: "Forbidden".into(), description: String::new(), body: "MUST_NOT_WRITE".into(),
+        trigger: None, source_ref: None,
+    };
+    // These ordinary admission calls precede the next refresh. In particular,
+    // a missing disk refusal must not erase the accepted live fact and make
+    // the later partial pass eligible to copy the old 9 record.
+    for store in [&retained, &reopened] {
+        assert!(reader.is_denied("9"));
+        assert!(!reader.is_denied("10"));
+        assert!(reader.acquire("9").unwrap().is_none());
+        assert!(reader.acquire("10").unwrap().is_some());
+        assert_eq!(record_ids(&service.current()), vec!["10"]);
+        assert!(store.get(&nine.id).is_none());
+        assert!(!store.list().iter().any(|record| record.plugin_id.as_deref() == Some("9")));
+        assert!(store.update(&nine.id, &forbidden).unwrap().is_none());
+        assert!(store.get(&ten.id).is_some());
+        assert_auth_recovery(&service, &[auth_block("9")], false);
+    }
+    assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), journal);
+    assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
+    assert_skill_file_bytes(&files);
+    assert!(sentinel.exists());
+    assert!(events.lock().unwrap().is_empty());
+
+    let mut partial = loaded.clone();
+    partial.plugins.retain(|plugin| plugin.identifier.plugin_db_id.as_deref() == Some("10"));
+    partial.plugins[0].identifier.version = Some("fresh-ten".into());
+    assert_eq!(partial.listed_plugin_ids, vec!["9", "10"]);
+    *loader.result.lock().unwrap() = Ok(partial);
+    assert_eq!(record_ids(&service.sync("fresh-ten-after-ordinary-reads").unwrap()), vec!["10"]);
+    assert_eq!(record_ids(&service.current_index().unwrap().skills), vec!["10"]);
+    assert_image(&root, &[auth_block("9")], None);
+    assert_auth_recovery(&service, &[auth_block("9")], false);
+    assert!(reader.is_denied("9"));
+    assert!(!reader.is_denied("10"));
+    for store in [&retained, &reopened] {
+        assert!(store.get(&nine.id).is_none());
+        assert!(store.get(&ten.id).is_some());
+    }
+    assert_skill_file_bytes(&files);
+    assert!(sentinel.exists(), "unresolved 9 still prevents pruning");
+
+    for plugin in &mut loaded.plugins {
+        plugin.identifier.version = Some("fresh-restored".into());
+    }
+    *loader.result.lock().unwrap() = Ok(loaded);
+    assert_eq!(record_ids(&service.sync("fresh-exact-nine-restoration").unwrap()), vec!["10", "9"]);
+    assert!(!reader.is_denied("9"));
+    assert!(retained.get(&nine.id).is_some());
+    assert_image(&root, &[], None);
+    assert_auth_recovery(&service, &[], false);
+    assert_eq!(record_ids(&service.sync("identical-after-restoration").unwrap()), vec!["10", "9"]);
+    let events = events.lock().unwrap();
+    assert_eq!(events.len(), 3);
+    assert!(events[0].changed);
+    assert!(events[1].changed);
+    assert!(!events[2].changed, "ordinary refresh custody is not another admission change");
+    assert_eq!(loader.calls.load(Ordering::SeqCst), 5);
+    assert_skill_file_bytes(&files);
+    assert!(!sentinel.exists());
+}
+
+#[test]
+fn auth_unknown_ordinary_reads_cannot_restore_partial_fallback() {
+    for inherited in [false, true] {
+        let h = Harness::new();
+        let records = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+        let files = skill_file_bytes(&records);
+        let cache = fs::read(h.root.cache_path()).unwrap();
+        let sentinel = h.root.sentinel();
+        let retained = recovery_workflow_store(&h.root, &h.service);
+        assert!(retained.get("plugin-9-test").is_some());
+        assert!(retained.get("plugin-10-test").is_some());
+        let active = h.call("panic-with-unsettled-custody");
+        h.enter(2);
+        let token = refresh_operation_id(&h.root);
+        h.release.send(LoadStep::Panicked).unwrap();
+        assert!(active.outcome().is_err());
+        let fresh = inherited.then(|| inline_service(&h.root, Err("unused offline loader".into())));
+        let service = fresh.as_ref().map(|(service, _)| service).unwrap_or(&h.service);
+        let reopened = recovery_workflow_store(&h.root, service);
+        let journal = fs::read(h.root.uninstall_state_path()).unwrap();
+        for _ in 0..2 {
+            assert!(service.admission_reader().is_denied("9"));
+            assert!(service.admission_reader().is_denied("10"));
+            assert!(service.current().is_empty());
+            assert!(reopened.get("plugin-9-test").is_none());
+            assert!(reopened.get("plugin-10-test").is_none());
+            assert!(reopened.list().iter().all(|record| record.source != "plugin"));
+            assert_auth_recovery(service, &[], true);
+        }
+        assert!(retained.get("plugin-9-test").is_none());
+        assert!(retained.get("plugin-10-test").is_none());
+        assert_image(&h.root, &[], Some(&token));
+        assert_eq!(fs::read(h.root.uninstall_state_path()).unwrap(), journal);
+        assert_eq!(fs::read(h.root.cache_path()).unwrap(), cache);
+        assert_skill_file_bytes(&files);
+
+        let mut partial = two_plugins(&h.root, "fresh-ten");
+        partial.plugins.remove(0);
+        assert_eq!(partial.listed_plugin_ids, vec!["9", "10"]);
+        let recovered = if let Some((service, loader)) = &fresh {
+            assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
+            *loader.result.lock().unwrap() = Ok(partial);
+            service.sync("inherited-partial-after-reads").unwrap()
+        } else {
+            h.step("panic-partial-after-reads", LoadStep::Loaded(partial)).unwrap()
+        };
+        assert_eq!(record_ids(&recovered), vec!["10"]);
+        assert_eq!(record_ids(&service.current_index().unwrap().skills), vec!["10"]);
+        assert!(reopened.get("plugin-9-test").is_none(), "old fallback must be absent from the committed cache");
+        assert!(reopened.get("plugin-10-test").is_some());
+        assert_auth_recovery(service, &[], false);
+        assert_image(&h.root, &[], None);
+        assert_skill_file_bytes(&files);
+        assert!(sentinel.exists(), "a partial recovery retains materialized files");
+        h.assert_calls(if inherited { 2 } else { 3 });
+    }
+}
+
+#[test]
+fn auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal() {
+    for in_prune in [false, true] {
+        let gate = BoundaryGate::at_visit(2);
+        let hooks = if in_prune {
+            ServiceTestHooks { prune_locked: Some(Arc::clone(&gate.pause)), ..ServiceTestHooks::default() }
+        } else {
+            ServiceTestHooks { after_commit: Some(Arc::clone(&gate.pause)), ..ServiceTestHooks::default() }
+        };
+        let h = Harness::with_hooks(Arc::new(|| 1_000), hooks);
+        let records = h.step("seed", LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+        let reader = h.service.admission_reader();
+        let sentinel = h.root.sentinel();
+        let active = h.call("committed-cleanup-held");
+        h.enter(2);
+        h.release.send(LoadStep::Loaded(two_plugins(&h.root, "retained"))).unwrap();
+        gate.wait();
+        assert_image(&h.root, &[], None);
+        assert!(sentinel.exists(), "the actual cleanup has not completed");
+        assert!(h.service.state.try_lock().is_ok());
+        assert!(h.service.admission.state.try_lock().is_ok());
+        assert!(AdmissionFileLock::try_refresh(&h.root.0).unwrap().is_none(),
+            "the OS refresh lease covers committed work through cleanup");
+        let (other, loader) = inline_service(&h.root, Err("explicit offline refresh".into()));
+        assert_eq!(other.sync("must-not-overlap-cleanup").unwrap_err(),
+            "plugin skills refresh is already active in another process");
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
+        gate.release.send(()).unwrap();
+        assert_eq!(active.finish().unwrap(), records);
+        assert!(!sentinel.exists(), "the real pruner removed the unlisted control");
+        let available = AdmissionFileLock::try_refresh(&h.root.0).unwrap()
+            .expect("completed worker must release exclusion while its reader is retained");
+        drop(available);
+        assert_eq!(other.sync("offline-after-terminal").unwrap_err(), "explicit offline refresh");
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+        assert!(!reader.is_denied("9"));
+        assert!(!reader.is_denied("10"));
+        assert_eq!(h.service.current(), records);
+        let events = h.events.lock().unwrap();
+        assert_eq!(events.len(), 2);
+        assert!(!events[1].changed);
+        h.assert_calls(2);
+    }
+}
+
+#[test]
+fn auth_observed_state_loss_latches_fault_across_reads_and_restoration() {
+    const LOSS_ERROR: &str = "plugin uninstall recovery state is unavailable";
+    for confirmed in [false, true] {
+        for first_observer in ["workflow", "lease", "sync", "uninstall"] {
+            let root = TempRoot::new();
+            let (service, loader, records) = seed(&root);
+            let files = skill_file_bytes(&records);
+            let cache = fs::read(root.cache_path()).unwrap();
+            let sentinel = root.sentinel();
+            let reader = service.admission_reader();
+            let retained = recovery_workflow_store(&root, &service);
+            assert!(retained.get("plugin-9-test").is_some());
+            assert!(retained.get("plugin-10-test").is_some());
+            let user = retained.create(&crate::workflows::workflow_library::WorkflowSpec {
+                name: "State loss user control".into(), description: String::new(),
+                body: "USER_STATE_LOSS_CONTROL".into(), trigger: None, source_ref: None,
+            }).unwrap().unwrap();
+            let user_bytes = fs::read(&user.file_path).unwrap();
+            let intent = service.begin_uninstall("9").unwrap();
+            if confirmed {
+                service.settle_uninstall(&intent, PluginUninstallSettlement::Removed).unwrap();
+            }
+            assert!(reader.is_denied("9"));
+            assert!(!reader.is_denied("10"));
+            assert_eq!(record_ids(&service.current()), vec!["10"]);
+            assert!(retained.get("plugin-9-test").is_none());
+            assert!(retained.get("plugin-10-test").is_some());
+            let journal = fs::read(root.uninstall_state_path()).unwrap();
+            let marker = fs::read(root.uninstall_version_path()).unwrap();
+            let confirmed_ids = if confirmed { vec!["9"] } else { vec![] };
+            let pending = if confirmed { vec![] } else {
+                vec![json!({"pluginId":"9","operationId":intent.operation_id})]
+            };
+            let healthy_status = json!({
+                "authBlocked":[],
+                "uninstallRecovery":{"confirmedPluginIds":confirmed_ids,"pending":pending},
+            });
+            assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), healthy_status);
+            fs::remove_file(root.uninstall_state_path()).unwrap();
+            fs::remove_file(root.uninstall_version_path()).unwrap();
+            // Each entrypoint must discover loss itself. In the writer cases
+            // no earlier reader has already latched the recovery fault.
+            match first_observer {
+                "workflow" => assert!(retained.get("plugin-9-test").is_none()),
+                "lease" => assert!(reader.acquire("9").unwrap().is_none()),
+                "sync" => assert_eq!(service.sync("first-observer-state-loss").unwrap_err(),
+                    LOSS_ERROR),
+                "uninstall" => assert_eq!(service.begin_uninstall("10").unwrap_err(),
+                    LOSS_ERROR),
+                _ => unreachable!(),
+            }
+            let fault_status = json!({
+                "authBlocked":[],
+                "uninstallRecovery":{
+                    "confirmedPluginIds":confirmed_ids,"pending":pending,
+                    "fault":"uninstall-state-unavailable",
+                },
+                "authRecovery":{
+                    "refusals":[],"refreshOutcomeUnknown":false,
+                    "fault":"admission-state-unavailable",
+                },
+            });
+            assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), fault_status);
+            let reopened = recovery_workflow_store(&root, &service);
+            for store in [&retained, &reopened] {
+                assert!(store.get("plugin-9-test").is_none());
+                assert!(store.get("plugin-10-test").is_none());
+                assert!(store.list().iter().all(|record| record.source != "plugin"));
+                assert_eq!(store.get(&user.id).unwrap().body, "USER_STATE_LOSS_CONTROL");
+            }
+            assert!(reader.is_denied("9"));
+            assert!(reader.is_denied("10"));
+            assert!(reader.acquire("9").unwrap().is_none());
+            assert!(reader.acquire("10").unwrap().is_none());
+            assert!(service.current().is_empty());
+            assert_eq!(service.sync("state-loss-must-not-reinitialize").unwrap_err(),
+                LOSS_ERROR);
+            assert_eq!(service.begin_uninstall("10").unwrap_err(), LOSS_ERROR);
+            assert_eq!(loader.calls.load(Ordering::SeqCst), 1, "loss refuses before any new loader call");
+            assert!(!root.uninstall_state_path().exists());
+            assert!(!root.uninstall_version_path().exists());
+            assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
+            assert_eq!(fs::read(&user.file_path).unwrap(), user_bytes);
+            assert_skill_file_bytes(&files);
+            assert!(sentinel.exists());
+            assert!(root.staged_files().is_empty());
+
+            // Explicit fixture repair restores the exact accepted bytes. It
+            // cannot heal a retained owner's already latched integrity fault.
+            fs::write(root.uninstall_state_path(), &journal).unwrap();
+            fs::write(root.uninstall_version_path(), &marker).unwrap();
+            assert!(reader.is_denied("9"));
+            assert!(reader.is_denied("10"));
+            assert!(reader.acquire("9").unwrap().is_none());
+            assert!(reader.acquire("10").unwrap().is_none());
+            assert!(service.current().is_empty());
+            assert!(retained.get("plugin-9-test").is_none());
+            assert!(reopened.get("plugin-10-test").is_none());
+            assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), fault_status);
+            assert_eq!(service.sync("old-owner-after-explicit-repair").unwrap_err(),
+                LOSS_ERROR);
+            assert_eq!(service.begin_uninstall("10").unwrap_err(), LOSS_ERROR);
+            assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+
+            let (fresh, offline) = inline_service(&root, Err("must-not-replay-restored-custody".into()));
+            assert!(!Arc::ptr_eq(&reader, &fresh.admission_reader()));
+            assert_eq!(offline.calls.load(Ordering::SeqCst), 0);
+            assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&fresh), healthy_status);
+            assert!(fresh.admission_reader().is_denied("9"));
+            assert!(!fresh.admission_reader().is_denied("10"));
+            assert!(fresh.admission_reader().acquire("9").unwrap().is_none());
+            assert!(fresh.admission_reader().acquire("10").unwrap().is_some());
+            assert_eq!(record_ids(&fresh.current()), vec!["10"]);
+            let fresh_store = recovery_workflow_store(&root, &fresh);
+            assert!(fresh_store.get("plugin-9-test").is_none());
+            assert!(fresh_store.get("plugin-10-test").is_some());
+            assert_eq!(fresh_store.get(&user.id).unwrap().body, "USER_STATE_LOSS_CONTROL");
+            assert_eq!(offline.calls.load(Ordering::SeqCst), 0, "restored-state reads never replay a load");
+            assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), journal);
+            assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), marker);
+            assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
+            assert_eq!(fs::read(&user.file_path).unwrap(), user_bytes);
+            assert_skill_file_bytes(&files);
+            assert!(sentinel.exists());
+            assert!(root.staged_files().is_empty());
+        }
+    }
 }

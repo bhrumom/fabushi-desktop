@@ -33086,7 +33086,11 @@
         "source/host/tests/host_runner_composition_production_wiring_contract.rs",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
         "source/node-agent-coordinator/tests/production_protocol.rs",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+        "projects/openclaw-rust/scripts/capture_portable_contracts.py"
       ],
       "existing_owner_candidates": [
         {
@@ -33215,7 +33219,13 @@
         "source/host/tests/host_runner_composition_production_wiring_contract.rs::shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
         "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs::desktop_uninstall_requires_main_data_without_expanding_the_reverse_allowlist",
         "source/node-agent-coordinator/tests/production_protocol.rs",
-        "source/electron-main/mcp/mcp-runtime.contract.test.ts"
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_unknown_ordinary_reads_cannot_restore_partial_fallback",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal",
+        "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker",
+        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_observed_state_loss_latches_fault_across_reads_and_restoration",
+        "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish"
       ],
       "typed_contracts": [
         "SkillDefinition",

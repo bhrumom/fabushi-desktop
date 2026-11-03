@@ -1,0 +1,118 @@
+{
+  "contract": "PS-LOCK-RECONCILE-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "original_scope_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "incoming_subject": "550909022eba44eb9326d760f8c33d613b40a7bb",
+  "implementation_base": "a3030b8593f157efc5c5859e1a41b138475e438d",
+  "spec": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md#ar-lock-r1--preserve-admission-semantics-under-process-exclusion",
+  "responsibility_id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
+  "unit_id": "OCRM-UNIT-SKILLS-001",
+  "owner_chain": [
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "role": "Existing Rust lifecycle, live refusal, refresh custody, cache publication and cleanup owner."
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+      "role": "Existing strict durable image and advisory file-lock primitives; no second permission store."
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "role": "Existing Session admission forwarding releases its binding slot before consulting the owner."
+    },
+    {
+      "path": "source/host/src/workflows/workflow_store.rs",
+      "role": "Actual Session/Runner read and file mutation consumer; held mutation lease covers existing file replacement."
+    },
+    {
+      "path": "source/host/src/extensions/mcp/skill_publish.rs",
+      "role": "Existing publish/resync/unpublish consumer holds the owner's mutation lease through existing backend calls."
+    }
+  ],
+  "required_behaviors": {
+    "PSL01": "Accepted unpersisted negative facts survive ordinary reads and partial refresh; only exact fresh materialization and successful release can restore the affected plugin.",
+    "PSL02": "Panic/inherited unknown remains fail closed through ordinary reads and forbids prior-record fallback on recovery.",
+    "PSL03": "Healthy local refresh, clean fenced/disposed work and known failed reservation preserve existing cached availability; ordinary readers do not wait on a paused exclusive writer.",
+    "PSL04": "Actual refresh work owns the process lease through loader, publication and cleanup. Terminal work releases it while readers remain; obsolete guards cannot unlock a successor.",
+    "PSL05": "Known healthy negative outcomes settle their intent; identical refresh token churn is not reported as another change. Existing durable error categories and cache-before-release barriers remain.",
+    "PSL06": "Explicit writers may durably create their permitted missing directory chain; constructors and pure image loads remain side-effect-free. Contention uses the pinned fs2 platform sentinel.",
+    "PSL07": "A retained initialized owner never treats total custody-file loss as legacy absence. It retains confirmed/pending/auth facts, latches recovery fault, refuses read/mutation/refresh before remote work or state reinitialization, and stays faulted after explicit restoration; a fresh owner may inspect the restored image."
+  },
+  "source_authority": {
+    "fixed_u_observations": "Retain exact source identities and recorded historical read facts in dossiers/snapshot-skills-scoped.md §8 and evidence/plugin-materialization-647e0932-20261103/source-contract.json. This target admission repair does not upgrade canonical source-review rows or claim recursive full-source closure.",
+    "target_review": "Actual permission state machine, mutation/observation paths, service successor/guard/cleanup ordering and Session/Workflow/publish consumers are the high-risk deep review scope. Exact frozen source tree and complete original five-path plus repair diff are required before candidate review.",
+    "necessary_dependency": {
+      "name": "fs2",
+      "version": "0.4.3",
+      "registry": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "9564fc758e15025b46aa6643b1b77d047d1a56a1aea6e01002ac0c7026876213",
+      "source_repository": "danburkert/fs2-rs",
+      "source_commit": "e1d4843b7c19e3ce1ecbae92255223de31b36d3b",
+      "source_tree": "e7ae2dbf59d3c400a598cff4b0e9025d715b89ca",
+      "review_depth": "Actual-use/platform-lock contract and legal identity review; not full dependency reading.",
+      "source_blobs": {
+        "manifest": "2fac260ff011b0f05bc18531d1bb11c6e739e6f0",
+        "portable_api": "51b22db6acd0e964adf224e6a155b45660f7abf8",
+        "unix": "91867f7e3f3b91c4edd24b3353464158cdc1fd8a",
+        "windows": "0e37c66579c0ca7eb4c8138f65d309285e438b4a"
+      },
+      "legal": {
+        "declared_license": "MIT/Apache-2.0",
+        "mit_blob": "e69282e381bc07152cc7598f21f3162e4bbb1f22",
+        "apache_blob": "16fe87b06e802f094b3fbb0894b137bca2b16ef1",
+        "mit_copyright": "2015 The Rust Project Developers",
+        "readme_attribution": "2015 Dan Burkert"
+      },
+      "constraints": [
+        "File locks are advisory and require cooperating users of the same underlying file.",
+        "One acquisition belongs to one File; shared Arc ownership does not reacquire or explicitly unlock the same lease.",
+        "Use raw platform contention sentinel for both try-lock modes; other failures confer no positive authority."
+      ],
+      "limits": [
+        "Registry archive bytes were not acquired or compared with the exact source tag.",
+        "Actual compiler, supported-platform runtime behavior, complete recursive dependency closure and package notices remain separate acceptance obligations."
+      ]
+    }
+  },
+  "validation": {
+    "environment": "GitHub Actions only",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "required_compile": "cargo check --locked --manifest-path source/host/Cargo.toml --tests",
+    "reuse_cases": [
+      "plugin-uninstall-service",
+      "plugin-uninstall-state",
+      "plugin-uninstall-binding",
+      "plugin-uninstall-relay-handoff",
+      "plugin-cache-publication",
+      "plugin-session-consumer"
+    ],
+    "new_required_names": [
+      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh",
+      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback",
+      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal",
+      "confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker",
+      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration",
+      "confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish"
+    ],
+    "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance.",
+    "prior_failure": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+    "exact_candidate_execution": "pending source convergence and frozen H",
+    "reuse_note": "The existing skill_publish_contract target is also selected in the Linux plugin-uninstall-service command; its four retained public publish/restore oracles run alongside the actual-owner lease regression. No second capture owner.",
+    "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh."
+  },
+  "acceptance": {
+    "scoped_authority": "source contract and pending independent candidate review only",
+    "full_unit_verified": false,
+    "canonical_source_review_changed": false,
+    "global_flags_changed": false,
+    "real_ecosystem_accepted": false,
+    "shipping_accepted": false
+  }
+}

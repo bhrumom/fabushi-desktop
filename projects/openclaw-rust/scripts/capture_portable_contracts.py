@@ -323,7 +323,30 @@ local_exec_outcome_inputs = [
     "projects/openclaw-rust/scripts/capture_portable_contracts.py",
     "projects/openclaw-rust/scripts/capture_media_cleanup.py"
 ]
-inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs))
+plugin_admission_lock_inputs = [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+    "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+    "source/host/Cargo.toml",
+    "source/host/Cargo.lock",
+    "source/host/src/extensions/mcp/plugin_skills.rs",
+    "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+    "source/host/src/extensions/mcp/plugin_skills_cache.rs",
+    "source/host/src/extensions/mcp/skill_publish.rs",
+    "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+    "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+    "source/host/src/extensions/session/production.rs",
+    "source/host/src/workflows/workflow_store.rs",
+    "source/host/tests/mcp_service_contract.rs",
+    "source/host/tests/plugin_skills_contract.rs",
+    "source/host/tests/workflow_store_contract.rs",
+    "source/host/tests/workflow_commands_contract.rs",
+    "source/host/tests/mcp_coordinator_relay_contract.rs",
+    "source/host/tests/legacy_live_references_contract.rs",
+    "source/host/tests/skill_publish_contract.rs"
+]
+inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs))
 base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
 integration = base + ["--no-fail-fast"]
 for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
@@ -989,7 +1012,11 @@ cases = [
         "test_channel_router_preserves_attachment_and_absent_operation_identity",
         "test_ocrm_channel_o06_message_chunking_code_fence_preservation",
     ]),
-    ("plugin-uninstall-service", base + ["--no-fail-fast", "--test", "mcp_service_contract", "--test", "plugin_skills_contract", "--test", "host_bundle_and_plugin_cache_contract", "--test", "workflow_store_contract", "--test", "workflow_commands_contract", "--test", "legacy_live_references_contract", "--test", "mcp_coordinator_relay_contract", "--test", "mcp_extension_contract", "--test", "mcp_production_contract", "--test", "host_production_extensions_contract", "--", "--test-threads=1"], [
+    ("plugin-uninstall-service", base + ["--no-fail-fast", "--test", "mcp_service_contract", "--test", "plugin_skills_contract", "--test", "host_bundle_and_plugin_cache_contract", "--test", "workflow_store_contract", "--test", "workflow_commands_contract", "--test", "skill_publish_contract", "--test", "legacy_live_references_contract", "--test", "mcp_coordinator_relay_contract", "--test", "mcp_extension_contract", "--test", "mcp_production_contract", "--test", "host_production_extensions_contract", "--", "--test-threads=1"], [
+        "helpers_preserve_frozen_staging_and_plugin_shape",
+        "publish_removes_library_copy_only_after_matching_install_is_confirmed",
+        "unconfirmed_publish_keeps_library_copy_and_retries_sync_five_times",
+        "list_targets_and_unpublish_restore_follow_reference_fences",
         "uninstall_reservation_failure_prevents_backend_mutation",
         "uninstall_close_after_reservation_settles_only_not_dispatched",
         "confirmed_uninstall_consumers::desktop_unknown_uninstall_retains_pending_and_denies_actual_consumers",
@@ -998,6 +1025,8 @@ cases = [
         "confirmed_uninstall_consumers::uninstall_custody_survives_owned_process_exit_and_fresh_process_consumers",
         "confirmed_uninstall_consumers::auth_refusal_survives_failed_publication_and_fresh_process_consumers",
         "confirmed_uninstall_consumers::auth_refresh_unknown_survives_owned_process_exit_and_recovers_without_fallback",
+        "confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker",
+        "confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish",
         "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
         "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
         "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
@@ -1048,6 +1077,10 @@ cases = [
         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_reporter_panic_after_settled_publication_does_not_recreate_unknown",
         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_pending_uninstall_survives_unknown_recovery_and_exact_refusal_release",
         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_clean_dispose_does_no_io_but_fresh_construction_cannot_assume_the_outcome",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal",
+        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration",
     ]),
     ("plugin-uninstall-binding", base + ["--lib", "host_production_extensions::plugin_skills_binding_tests::", "--", "--test-threads=1"], [
         "host_production_extensions::plugin_skills_binding_tests::fresh_host_binding_recovers_uninstall_custody_before_either_startup_order",
@@ -1331,6 +1364,8 @@ def source_bindings(paths):
         }
     return bindings
 
+plugin_admission_lock_inputs_before = source_bindings(plugin_admission_lock_inputs)
+assert all(item["matches_head_bytes"] for item in plugin_admission_lock_inputs_before.values()), "Plugin admission lock source input differs from exact H"
 local_exec_outcome_inputs_before = source_bindings(local_exec_outcome_inputs)
 assert all(item["matches_head_bytes"] for item in local_exec_outcome_inputs_before.values()), "LXO source input differs from exact H"
 box_response_inputs_before = source_bindings(box_response_inputs)
@@ -1338,6 +1373,10 @@ assert all(item["matches_head_bytes"] for item in box_response_inputs_before.val
 
 
 receipt = {
+    "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v1",
+    "plugin_admission_lock_inputs_before": plugin_admission_lock_inputs_before,
+    "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish"],
+    "plugin_admission_lock_scope": "Existing Rust Skills admission and durable image owner preserves live denials and unknown recovery through ordinary Session/Workflow reads; healthy polling and known-fenced disposal retain cached availability. The actual OS refresh lease covers owned loader/publication/cleanup and ends with terminal work while retained readers remain. Unit cleanup gates probe the real file lock; a separate owned-process harness proves foreign-process exclusion and later recovery during held loader/failure. These are distinct controls, not a claim of a cross-process cleanup-window pause. All retained assertions remain required; real account/ecosystem, hostile directory replacement, power-loss and supported-platform package acceptance remain open.",
     "local_exec_outcome_contract": "LXO-v1",
     "local_exec_outcome_inputs_before": local_exec_outcome_inputs_before,
     "local_exec_outcome_required_runner_names": ["production_generated_runner_retains_unknown_external_shell_effects","production_generated_runner_preserves_known_external_shell_outcomes","production_external_shell_adapter_types_uncertain_results_and_errors"],
@@ -1515,6 +1554,11 @@ palette_exported = palette_fixture.is_file()
 receipt["palette_export"] = {"path": str(palette_fixture),
     "sha256": hashlib.sha256(palette_fixture.read_bytes()).hexdigest() if palette_exported else None,
     "produced_by": "palette_message_gateway_exports_persisted_rust_search_results"}
+plugin_admission_lock_inputs_after = source_bindings(plugin_admission_lock_inputs)
+receipt["plugin_admission_lock_inputs_after"] = plugin_admission_lock_inputs_after
+plugin_admission_lock_sources_unchanged = (plugin_admission_lock_inputs_after == plugin_admission_lock_inputs_before
+    and all(item["matches_head_bytes"] for item in plugin_admission_lock_inputs_after.values()))
+receipt["plugin_admission_lock_sources_unchanged"] = plugin_admission_lock_sources_unchanged
 local_exec_outcome_inputs_after = source_bindings(local_exec_outcome_inputs)
 receipt["local_exec_outcome_inputs_after"] = local_exec_outcome_inputs_after
 local_exec_outcome_sources_unchanged = (local_exec_outcome_inputs_after == local_exec_outcome_inputs_before
@@ -1536,7 +1580,8 @@ daemon_unchanged = (daemon_passed
 receipt["box_response_producer_unchanged"] = daemon_unchanged
 accepted = (palette_exported and len(receipt["executions"]) == len(cases)
     and all(case["oracle_accepted"] for case in receipt["executions"])
-    and box_response_sources_unchanged and daemon_unchanged and local_exec_outcome_sources_unchanged)
+    and box_response_sources_unchanged and daemon_unchanged and local_exec_outcome_sources_unchanged
+    and plugin_admission_lock_sources_unchanged)
 receipt["result"] = "passed" if accepted else "failed-or-incomplete"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(json.dumps(receipt, indent=2), flush=True)
