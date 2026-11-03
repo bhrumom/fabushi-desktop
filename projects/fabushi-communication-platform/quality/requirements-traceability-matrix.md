@@ -920,3 +920,10 @@ full source/product/independent acceptance.
 | NMR-CONVERSATION-IDENTITY-01c | Existing owner reopens only after the original participant pair is restored; no automatic repair or migration. | Existing retry admission matrix and pure reopen path preserve the original conversation identity. |
 | NMR-AC-CONVERSATION-IDENTITY-01 | Existing `shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation` Host test and `native-message-reconciliation` Actions job. | Test is authored and pushed at `bbcee06bc82333e10b8fbea331fbd0f31453b32c`; run41564603392 is nonterminal at this receipt. No pass is claimed. |
 
+
+Oracle and invariants for FBCP-NMR-001:
+
+- ORA-NMR-CONVERSATION-CANONICAL-PAIR-001: a Human conversation owner is admitted only when the exact persisted participant pair deterministically derives the requested canonical conversation ID.
+- INV-NMR-HUMAN-PAIR-MATCHES-DIRECTORY-ID-001: changing either participant without changing the canonical directory identity is rejected before the owner is returned to an ordinary consumer.
+- INV-NMR-HUMAN-PAIR-ORDER-INDEPENDENT-001: the sorted participant pair produces the same canonical ID regardless of stored participant order; display title is not part of identity.
+
