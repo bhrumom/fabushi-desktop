@@ -291,6 +291,7 @@ export const COORDINATOR_METHOD_TABLE = {
   getAgentThread: { args: "object", reply: "agent-thread" },
   getAgentTranscriptTail: { args: "object", reply: "transcript-page" },
   getHumanConversationTranscriptTail: { args: "object", reply: "human-transcript-page" },
+  retryHumanMessage: { args: "object", reply: "record" },
   openAgentTail: { args: "object", reply: "transcript-page" },
   sendPrompt: { args: "object", reply: "send-result" },
   interruptAgent: { args: "object", reply: "interrupt-result" },

@@ -3494,6 +3494,86 @@ impl ProductionSessionWorkers {
         )
     }
 
+    /// Retry only the durable local-Human outbox intent. The caller supplies
+    /// identities, never message content, reply metadata or resource paths.
+    pub fn retry_human_message(
+        &self,
+        conversation_id: &str,
+        client_nonce: &str,
+    ) -> Result<serde_json::Value, String> {
+        if conversation_id.is_empty() || conversation_id.trim() != conversation_id
+            || client_nonce.is_empty() || client_nonce.trim() != client_nonce
+            || client_nonce.len() > 200
+        {
+            return Err("retryHumanMessage requires nonempty unpadded identities and a nonce of at most 200 UTF-8 bytes".into());
+        }
+        let sender_id = self.local_human_id()?;
+        let serial = self.human_message_lock(conversation_id)?;
+        let guard = serial.lock()
+            .map_err(|_| "Human conversation serial lock poisoned".to_string())?;
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        let is_participant = metadata.get("participantIds")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|ids| ids.iter().any(|id| id.as_str() == Some(sender_id)));
+        if !is_participant {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let entries = owner.get_transcript_entries().map_err(|error| error.to_string())?;
+        let mut matches = entries.iter().filter(|entry| {
+            entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
+        });
+        let entry = matches.next()
+            .ok_or_else(|| "retryHumanMessage durable local Human intent was not found".to_string())?;
+        if matches.next().is_some() {
+            return Err("retryHumanMessage nonce has ambiguous durable identities".into());
+        }
+        if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || entry.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+            || entry.get("authorId").and_then(serde_json::Value::as_str) != Some(sender_id)
+            || entry.get("id").and_then(serde_json::Value::as_str)
+                != Some(format!("human-message:{client_nonce}").as_str())
+        {
+            return Err("retryHumanMessage identity is not the authenticated local Human outbox row".into());
+        }
+        if self.pending_human_forward_is_batch_owned(conversation_id, entry)? {
+            return Err("retryHumanMessage refuses source-owned forwarding intent".into());
+        }
+        if entry.get("remoteMessageId").is_some()
+            || entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
+        {
+            if entry.get("id").and_then(serde_json::Value::as_str)
+                .is_some_and(|id| id.starts_with("human-server-message:"))
+                && entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent")
+            {
+                return Ok(entry.clone());
+            }
+            return Err("retryHumanMessage settled identity is not canonical".into());
+        }
+        if !matches!(entry.get("delivery").and_then(serde_json::Value::as_str), Some("pending" | "dispatching")) {
+            return Err("retryHumanMessage durable intent is not retryable".into());
+        }
+        let text = entry.get("content").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "retryHumanMessage durable content is invalid".to_string())?.to_string();
+        let composed_at_ms = entry.get("composedAtMs").and_then(serde_json::Value::as_f64);
+        let reply_to_id = entry.get("replyToId").and_then(serde_json::Value::as_str).map(str::to_string);
+        let attachments = entry.get("attachments").and_then(serde_json::Value::as_array)
+            .cloned().unwrap_or_default();
+        // The existing append/settlement owner revalidates the same durable
+        // row under this already-held mutation lane, reuses remoteDispatchAttachments,
+        // and releases the lane before HTTP. No renderer paths are restaged.
+        self.append_human_message_with_context(
+            conversation_id,
+            &text,
+            client_nonce,
+            composed_at_ms,
+            reply_to_id.as_deref(),
+            &attachments,
+            None,
+            Some(&guard),
+        )
+    }
+
     fn append_human_message_with_context(
         &self,
         conversation_id: &str,
