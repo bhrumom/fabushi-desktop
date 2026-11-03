@@ -939,57 +939,943 @@ pub fn clean_old_media(
     let media_root = base_dir
         .map(|p| p.to_path_buf())
         .unwrap_or_else(get_media_dir);
-    if !media_root.exists() {
-        return Ok(());
+    cleanup::run(
+        &media_root,
+        Duration::from_millis(ttl_ms),
+        options,
+        SystemTime::now(),
+        &mut |_| Ok(()),
+    )
+}
+
+/// Private mechanics of the existing TTL owner, not a second filesystem authority.
+/// All traversal and mutation below the admitted root use retained handles. The
+/// Unix final stat/unlinkat pair is not an atomic conditional unlink: a replacement
+/// in that last kernel-call interval can still change which same-parent name is
+/// unlinked. Likewise, ancestry checks cannot freeze concurrent directory moves.
+/// These controls do not establish the separate media read/publication contract.
+mod cleanup {
+    use super::{CleanOldMediaOptions, MANAGED_OUTGOING_SUBDIR, PLAYBACK_TRANSCODE_SUBDIR};
+    use std::collections::HashSet;
+    use std::ffi::{OsStr, OsString};
+    use std::fs::File;
+    use std::io;
+    use std::path::{Path, PathBuf};
+    use std::time::{Duration, SystemTime};
+
+    struct Directory {
+        path: PathBuf,
+        name: OsString,
+        handle: File,
+        identity: platform::Identity,
+        entries: platform::Entries,
+        seen: HashSet<OsString>,
+        retain: bool,
     }
 
-    let now = SystemTime::now();
-    let ttl = Duration::from_millis(ttl_ms);
+    fn expired(modified: Option<SystemTime>, now: SystemTime, ttl: Duration) -> bool {
+        modified
+            .and_then(|mtime| now.duration_since(mtime).ok())
+            .is_some_and(|age| age > ttl)
+    }
 
-    let entries = fs::read_dir(&media_root).map_err(|e| format!("Failed to read media root: {e}"))?;
-    for entry in entries.flatten() {
-        let name = entry.file_name().to_string_lossy().to_string();
-        // Never clean playback transcode cache or sqlite-managed outgoing directory with mtime sweep
-        if name == PLAYBACK_TRANSCODE_SUBDIR || name == MANAGED_OUTGOING_SUBDIR {
-            continue;
+    fn protected(name: &OsStr) -> bool {
+        #[cfg(windows)]
+        {
+            name.to_str().is_some_and(|name| {
+                name.eq_ignore_ascii_case(PLAYBACK_TRANSCODE_SUBDIR)
+                    || name.eq_ignore_ascii_case(MANAGED_OUTGOING_SUBDIR)
+            })
+        }
+        #[cfg(not(windows))]
+        {
+            name == PLAYBACK_TRANSCODE_SUBDIR || name == MANAGED_OUTGOING_SUBDIR
+        }
+    }
+
+    // A missing/replaced root is an error after admission. A changed child
+    // invalidates only its retained branch; its successor is never adopted.
+    fn current(stack: &[Directory]) -> Result<Option<usize>, String> {
+        let root = &stack[0];
+        let current = platform::open_root(&root.path)
+            .and_then(|file| platform::identity(&file))
+            .map_err(|error| format!("Media root identity could not be rechecked: {error}"))?;
+        if current != root.identity {
+            return Err("Media root identity changed during cleanup".into());
+        }
+        for index in 1..stack.len() {
+            let reopened = platform::open_directory(
+                &stack[index - 1].handle,
+                &stack[index].name,
+            )
+            .and_then(|file| platform::identity(&file));
+            if !reopened.is_ok_and(|identity| identity == stack[index].identity) {
+                return Ok(Some(index));
+            }
+        }
+        Ok(None)
+    }
+
+    fn retain_changed_branch(stack: &mut Vec<Directory>) -> Result<bool, String> {
+        if let Some(index) = current(stack)? {
+            stack.truncate(index);
+            stack[index - 1].retain = true;
+            return Ok(true);
+        }
+        Ok(false)
+    }
+
+    // The callback is a private deterministic seam at the actual removal
+    // boundary. Production supplies a no-op; a refusal takes the same recovery
+    // path as a native unlink error. Reobservation always follows the callback.
+    pub(super) fn run(
+        root: &Path,
+        ttl: Duration,
+        options: &CleanOldMediaOptions,
+        now: SystemTime,
+        before_remove: &mut impl FnMut(&Path) -> io::Result<()>,
+    ) -> Result<(), String> {
+        let root: PathBuf = std::path::absolute(root)
+            .map_err(|error| format!("Failed to resolve media root: {error}"))?
+            .components()
+            .collect();
+        let handle = match platform::open_root(&root) {
+            Ok(handle) => handle,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
+            Err(error) => return Err(format!("Failed to admit media root: {error}")),
+        };
+        let identity = platform::identity(&handle)
+            .map_err(|error| format!("Failed to admit media root identity: {error}"))?;
+        let entries = platform::Entries::new(&handle)
+            .map_err(|error| format!("Failed to read media root: {error}"))?;
+        let mut stack = vec![Directory {
+            path: root,
+            name: OsString::new(),
+            handle,
+            identity,
+            entries,
+            seen: HashSet::new(),
+            retain: false,
+        }];
+
+        loop {
+            if retain_changed_branch(&mut stack)? {
+                continue;
+            }
+            let index = stack.len() - 1;
+            let next = stack[index].entries.next();
+            let name = match next {
+                Some(Ok(name)) => name,
+                Some(Err(error)) => {
+                    if index == 0 {
+                        return Err(format!("Failed to read media root: {error}"));
+                    }
+                    stack.pop();
+                    stack[index - 1].retain = true;
+                    continue;
+                }
+                None => {
+                    if index == 0 {
+                        current(&stack)?;
+                        return Ok(());
+                    }
+                    let mut removed = false;
+                    if options.prune_empty_dirs == Some(true) && !stack[index].retain {
+                        let admission = before_remove(&stack[index].path);
+                        if retain_changed_branch(&mut stack)? {
+                            continue;
+                        }
+                        // Re-enumeration must succeed and be genuinely empty.
+                        let empty = platform::Entries::new(&stack[index].handle)
+                            .map(|mut entries| matches!(entries.next(), None))
+                            .unwrap_or(false);
+                        if empty {
+                            if retain_changed_branch(&mut stack)? {
+                                continue;
+                            }
+                            let parent = &stack[index - 1].handle;
+                            let directory = &stack[index];
+                            let result = (|| -> io::Result<bool> {
+                                let fresh = platform::observe(parent, &directory.name, true)?;
+                                if !fresh.is_dir() || fresh.identity() != directory.identity {
+                                    return Ok(false);
+                                }
+                                admission?;
+                                platform::remove(parent, &directory.name, &fresh, true)?;
+                                Ok(true)
+                            })();
+                            removed = match result {
+                                Ok(removed) => removed,
+                                Err(error) if index == 1 && !matches!(
+                                    error.kind(),
+                                    io::ErrorKind::NotFound
+                                        | io::ErrorKind::DirectoryNotEmpty
+                                        | io::ErrorKind::AlreadyExists
+                                ) => {
+                                    return Err(format!(
+                                        "Failed to remove top-level media directory {}: {error}",
+                                        directory.path.display(),
+                                    ));
+                                }
+                                Err(_) => false,
+                            };
+                        }
+                    }
+                    stack.pop();
+                    stack[index - 1].retain |= !removed;
+                    continue;
+                }
+            };
+
+            // Directory enumeration under concurrent rename is not a snapshot.
+            // Never readmit an already processed name as a successor this pass.
+            if !stack[index].seen.insert(name.clone()) {
+                stack[index].retain = true;
+                continue;
+            }
+            let mut components = Path::new(&name).components();
+            if !matches!(components.next(), Some(std::path::Component::Normal(_)))
+                || components.next().is_some()
+            {
+                stack[index].retain = true;
+                continue;
+            }
+            if index == 0 && protected(&name) {
+                stack[index].retain = true;
+                continue;
+            }
+            let parent = &stack[index].handle;
+            let observed = match platform::observe(parent, &name, false) {
+                Ok(observed) => observed,
+                Err(error) => {
+                    stack[index].retain |= error.kind() != io::ErrorKind::NotFound;
+                    continue;
+                }
+            };
+            let path = stack[index].path.join(&name);
+            if observed.is_dir() {
+                let descend = match options.recursive {
+                    Some(true) => true,
+                    Some(false) => false,
+                    None => index == 0,
+                };
+                if descend {
+                    let child = (|| -> io::Result<Directory> {
+                        let handle = platform::open_directory(parent, &name)?;
+                        let identity = platform::identity(&handle)?;
+                        if observed.identity() != identity {
+                            return Err(io::Error::other("media directory identity changed"));
+                        }
+                        let entries = platform::Entries::new(&handle)?;
+                        Ok(Directory { path, name, handle, identity, entries, seen: HashSet::new(), retain: false })
+                    })();
+                    if let Ok(child) = child {
+                        stack.push(child);
+                        continue;
+                    }
+                }
+                stack[index].retain = true;
+            } else if observed.is_file() && expired(observed.modified(), now, ttl) {
+                let admission = before_remove(&path);
+                if retain_changed_branch(&mut stack)? {
+                    continue;
+                }
+                let parent = &stack[index].handle;
+                let removed = (|| -> io::Result<bool> {
+                    let fresh = platform::observe(parent, &name, true)?;
+                    if !fresh.is_file()
+                        || observed.identity() != fresh.identity()
+                        || !expired(fresh.modified(), now, ttl)
+                    {
+                        return Ok(false);
+                    }
+                    admission?;
+                    platform::remove(parent, &name, &fresh, false)?;
+                    Ok(true)
+                })()
+                .unwrap_or(false);
+                stack[index].retain |= !removed;
+            } else {
+                // Live/unknown times, links and special entries all survive.
+                stack[index].retain = true;
+            }
+        }
+    }
+
+    #[cfg(unix)]
+    mod platform {
+        use std::ffi::{CStr, CString, OsStr, OsString};
+        use std::fs::File;
+        use std::io;
+        use std::os::fd::{AsRawFd, FromRawFd};
+        use std::os::unix::ffi::{OsStrExt, OsStringExt};
+        use std::os::unix::fs::MetadataExt;
+        use std::path::Path;
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+        fn name(value: &OsStr) -> io::Result<CString> {
+            CString::new(value.as_bytes())
+                .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "NUL in media path"))
         }
 
-        if let Ok(meta) = entry.metadata() {
-            if meta.is_file() {
-                if let Ok(mtime) = meta.modified() {
-                    if let Ok(age) = now.duration_since(mtime) {
-                        if age > ttl {
-                            let _ = fs::remove_file(entry.path());
-                        }
+        fn open_at(parent: libc::c_int, path: &OsStr) -> io::Result<File> {
+            let path = name(path)?;
+            let fd = unsafe {
+                libc::openat(
+                    parent,
+                    path.as_ptr(),
+                    libc::O_RDONLY | libc::O_DIRECTORY | libc::O_NOFOLLOW | libc::O_CLOEXEC,
+                )
+            };
+            if fd < 0 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(unsafe { File::from_raw_fd(fd) })
+            }
+        }
+
+        pub(super) fn open_root(path: &Path) -> io::Result<File> {
+            open_at(libc::AT_FDCWD, path.as_os_str())
+        }
+
+        pub(super) fn open_directory(parent: &File, name: &OsStr) -> io::Result<File> {
+            open_at(parent.as_raw_fd(), name)
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub(super) struct Identity { device: u64, inode: u64 }
+
+        pub(super) fn identity(file: &File) -> io::Result<Identity> {
+            let metadata = file.metadata()?;
+            Ok(Identity { device: metadata.dev(), inode: metadata.ino() })
+        }
+
+        pub(super) struct Entry(libc::stat);
+
+        impl Entry {
+            pub(super) fn is_dir(&self) -> bool {
+                self.0.st_mode & libc::S_IFMT == libc::S_IFDIR
+            }
+            pub(super) fn is_file(&self) -> bool {
+                self.0.st_mode & libc::S_IFMT == libc::S_IFREG
+            }
+            pub(super) fn identity(&self) -> Identity {
+                Identity { device: self.0.st_dev as u64, inode: self.0.st_ino as u64 }
+            }
+            pub(super) fn modified(&self) -> Option<SystemTime> {
+                let nanos = self.0.st_mtime_nsec as i128;
+                if !(0..1_000_000_000).contains(&nanos) {
+                    return None;
+                }
+                let total = self.0.st_mtime as i128 * 1_000_000_000 + nanos;
+                let absolute = total.unsigned_abs();
+                let duration = Duration::new(
+                    (absolute / 1_000_000_000).try_into().ok()?,
+                    (absolute % 1_000_000_000) as u32,
+                );
+                if total < 0 {
+                    UNIX_EPOCH.checked_sub(duration)
+                } else {
+                    UNIX_EPOCH.checked_add(duration)
+                }
+            }
+        }
+
+        pub(super) fn observe(parent: &File, leaf: &OsStr, _deleting: bool) -> io::Result<Entry> {
+            let leaf = name(leaf)?;
+            let mut metadata = std::mem::MaybeUninit::<libc::stat>::uninit();
+            let result = unsafe {
+                libc::fstatat(parent.as_raw_fd(), leaf.as_ptr(), metadata.as_mut_ptr(), libc::AT_SYMLINK_NOFOLLOW)
+            };
+            if result < 0 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(Entry(unsafe { metadata.assume_init() }))
+            }
+        }
+
+        pub(super) fn remove(parent: &File, leaf: &OsStr, _entry: &Entry, directory: bool) -> io::Result<()> {
+            let leaf = name(leaf)?;
+            let flags = if directory { libc::AT_REMOVEDIR } else { 0 };
+            if unsafe { libc::unlinkat(parent.as_raw_fd(), leaf.as_ptr(), flags) } < 0 {
+                Err(io::Error::last_os_error())
+            } else {
+                Ok(())
+            }
+        }
+
+        fn errno() -> io::Result<*mut libc::c_int> {
+            #[cfg(any(target_os = "linux", target_os = "hurd"))]
+            return Ok(unsafe { libc::__errno_location() });
+            #[cfg(any(target_vendor = "apple", target_os = "freebsd", target_os = "dragonfly"))]
+            return Ok(unsafe { libc::__error() });
+            #[cfg(any(target_os = "android", target_os = "netbsd", target_os = "openbsd"))]
+            return Ok(unsafe { libc::__errno() });
+            #[cfg(any(target_os = "solaris", target_os = "illumos"))]
+            return Ok(unsafe { libc::___errno() });
+            #[cfg(not(any(
+                target_os = "linux", target_os = "hurd", target_vendor = "apple",
+                target_os = "freebsd", target_os = "dragonfly", target_os = "android",
+                target_os = "netbsd", target_os = "openbsd", target_os = "solaris",
+                target_os = "illumos",
+            )))]
+            Err(io::Error::new(io::ErrorKind::Unsupported, "media directory enumeration is unavailable"))
+        }
+
+        pub(super) struct Entries(*mut libc::DIR);
+
+        impl Entries {
+            pub(super) fn new(directory: &File) -> io::Result<Self> {
+                use std::os::fd::IntoRawFd;
+                errno()?;
+                // A new open description avoids sharing a readdir cursor with
+                // the fresh emptiness check performed during postorder pruning.
+                let fd = open_directory(directory, OsStr::new("."))?.into_raw_fd();
+                let stream = unsafe { libc::fdopendir(fd) };
+                if stream.is_null() {
+                    let error = io::Error::last_os_error();
+                    unsafe { libc::close(fd) };
+                    Err(error)
+                } else {
+                    Ok(Self(stream))
+                }
+            }
+        }
+
+        impl Iterator for Entries {
+            type Item = io::Result<OsString>;
+            fn next(&mut self) -> Option<Self::Item> {
+                let errno = match errno() {
+                    Ok(errno) => errno,
+                    Err(error) => return Some(Err(error)),
+                };
+                loop {
+                    unsafe { *errno = 0 };
+                    let entry = unsafe { libc::readdir(self.0) };
+                    if entry.is_null() {
+                        let code = unsafe { *errno };
+                        return (code != 0).then(|| Err(io::Error::from_raw_os_error(code)));
+                    }
+                    let bytes = unsafe { CStr::from_ptr((*entry).d_name.as_ptr()) }.to_bytes();
+                    if bytes != b"." && bytes != b".." {
+                        return Some(Ok(OsString::from_vec(bytes.to_vec())));
                     }
                 }
-            } else if meta.is_dir() && options.recursive.unwrap_or(true) {
-                let sub_entries = fs::read_dir(entry.path()).ok();
-                let mut empty = true;
-                if let Some(sub) = sub_entries {
-                    for s in sub.flatten() {
-                        if let Ok(sm) = s.metadata() {
-                            if sm.is_file() {
-                                if let Ok(mtime) = sm.modified() {
-                                    if let Ok(age) = now.duration_since(mtime) {
-                                        if age > ttl {
-                                            let _ = fs::remove_file(s.path());
-                                        } else {
-                                            empty = false;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+            }
+        }
+
+        impl Drop for Entries {
+            fn drop(&mut self) {
+                unsafe { libc::closedir(self.0) };
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    mod platform {
+        use std::ffi::{OsStr, OsString, c_void};
+        use std::fs::{File, Metadata, OpenOptions};
+        use std::io;
+        use std::os::windows::ffi::{OsStrExt, OsStringExt};
+        use std::os::windows::fs::{MetadataExt, OpenOptionsExt};
+        use std::os::windows::io::{AsRawHandle, FromRawHandle};
+        use std::path::Path;
+        use std::ptr::null_mut;
+        use std::time::SystemTime;
+
+        type NativeHandle = *mut c_void;
+        const READ_ATTRIBUTES: u32 = 0x80;
+        const LIST_DIRECTORY: u32 = 0x1;
+        const DELETE: u32 = 0x0001_0000;
+        const SYNCHRONIZE: u32 = 0x0010_0000;
+        const SHARE_ALL: u32 = 0x7;
+        const DIRECTORY_FILE: u32 = 0x1;
+        const OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+        const REPARSE_ATTRIBUTE: u32 = 0x400;
+
+        // FILE_ID_INFO retains all 128 bits, including on ReFS. The existing
+        // same-file 1.0.6 Windows equality uses a truncated 64-bit index.
+        #[repr(C)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub(super) struct Identity {
+            pub(super) volume: u64,
+            pub(super) id: [u8; 16],
+        }
+
+        impl Identity {
+            pub(super) fn admit(self) -> io::Result<Self> {
+                // A successful query may still report an unavailable or
+                // nonunique ID. Never compare two unknown objects as equal.
+                if self.id == [0; 16] || self.id == [0xff; 16] {
+                    return Err(io::Error::new(
+                        io::ErrorKind::Unsupported,
+                        "media file identity is unavailable or nonunique",
+                    ));
                 }
-                if empty && options.prune_empty_dirs.unwrap_or(false) {
-                    let _ = fs::remove_dir(entry.path());
+                Ok(self)
+            }
+        }
+
+        // Same relative-handle ABI used by native_file_sandbox's private
+        // Windows mechanism. That owner's JSON request API is not a TTL API.
+        #[repr(C)]
+        struct UnicodeString { length: u16, maximum_length: u16, buffer: *mut u16 }
+        #[repr(C)]
+        struct ObjectAttributes {
+            length: u32,
+            root_directory: NativeHandle,
+            object_name: *mut UnicodeString,
+            attributes: u32,
+            security_descriptor: *mut c_void,
+            security_quality_of_service: *mut c_void,
+        }
+        #[repr(C)]
+        union IoStatusValue { status: i32, pointer: *mut c_void }
+        #[repr(C)]
+        struct IoStatusBlock { value: IoStatusValue, information: usize }
+
+        #[link(name = "ntdll")]
+        unsafe extern "system" {
+            fn NtCreateFile(
+                handle: *mut NativeHandle, access: u32, attributes: *mut ObjectAttributes,
+                status: *mut IoStatusBlock, allocation: *mut i64, file_attributes: u32,
+                sharing: u32, disposition: u32, options: u32, ea: *mut c_void, ea_length: u32,
+            ) -> i32;
+            fn NtQueryDirectoryFile(
+                handle: NativeHandle, event: NativeHandle, apc: *mut c_void,
+                context: *mut c_void, status: *mut IoStatusBlock, information: *mut c_void,
+                length: u32, information_class: u32, single_entry: u8,
+                name: *mut UnicodeString, restart: u8,
+            ) -> i32;
+            fn RtlNtStatusToDosError(status: i32) -> u32;
+        }
+        #[link(name = "kernel32")]
+        unsafe extern "system" {
+            fn GetFileInformationByHandleEx(
+                handle: NativeHandle, information_class: u32,
+                information: *mut c_void, size: u32,
+            ) -> i32;
+            fn SetFileInformationByHandle(
+                handle: NativeHandle, information_class: u32,
+                information: *const c_void, size: u32,
+            ) -> i32;
+        }
+
+        fn status_error(status: i32) -> io::Error {
+            io::Error::from_raw_os_error(unsafe { RtlNtStatusToDosError(status) } as i32)
+        }
+
+        pub(super) fn identity(file: &File) -> io::Result<Identity> {
+            let mut identity = Identity { volume: 0, id: [0; 16] };
+            let result = unsafe {
+                GetFileInformationByHandleEx(
+                    file.as_raw_handle(), 18, // FileIdInfo
+                    &mut identity as *mut Identity as *mut c_void,
+                    std::mem::size_of::<Identity>() as u32,
+                )
+            };
+            if result == 0 { Err(io::Error::last_os_error()) } else { identity.admit() }
+        }
+
+        fn metadata(file: &File) -> io::Result<Metadata> {
+            let metadata = file.metadata()?;
+            if metadata.file_attributes() & REPARSE_ATTRIBUTE != 0 {
+                return Err(io::Error::new(io::ErrorKind::PermissionDenied, "media reparse point refused"));
+            }
+            Ok(metadata)
+        }
+
+        fn open_at(parent: &File, name: &OsStr, access: u32, directory: bool) -> io::Result<File> {
+            let mut wide: Vec<u16> = name.encode_wide().collect();
+            let length = wide.len().checked_mul(2).and_then(|n| u16::try_from(n).ok())
+                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "media name is too long"))?;
+            if wide.contains(&0) {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "NUL in media name"));
+            }
+            let mut name = UnicodeString { length, maximum_length: length, buffer: wide.as_mut_ptr() };
+            let mut attributes = ObjectAttributes {
+                length: std::mem::size_of::<ObjectAttributes>() as u32,
+                root_directory: parent.as_raw_handle(),
+                object_name: &mut name,
+                attributes: 0, // Preserve the exact enumerated spelling, including case-sensitive directories.
+                security_descriptor: null_mut(),
+                security_quality_of_service: null_mut(),
+            };
+            let mut status = IoStatusBlock { value: IoStatusValue { status: 0 }, information: 0 };
+            let mut handle = null_mut();
+            let result = unsafe {
+                NtCreateFile(
+                    &mut handle, access | SYNCHRONIZE, &mut attributes, &mut status,
+                    null_mut(), 0, if access & DELETE != 0 { 0x3 } else { SHARE_ALL },
+                    1, OPEN_REPARSE_POINT | 0x20 | if directory { DIRECTORY_FILE } else { 0 },
+                    null_mut(), 0,
+                )
+            };
+            if result < 0 {
+                return Err(status_error(result));
+            }
+            let file = unsafe { File::from_raw_handle(handle) };
+            metadata(&file)?;
+            Ok(file)
+        }
+
+        pub(super) fn open_root(path: &Path) -> io::Result<File> {
+            let file = OpenOptions::new().read(true).share_mode(SHARE_ALL)
+                .custom_flags(0x0200_0000 | OPEN_REPARSE_POINT).open(path)?;
+            if !metadata(&file)?.is_dir() {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "media root is not a directory"));
+            }
+            Ok(file)
+        }
+
+        pub(super) fn open_directory(parent: &File, name: &OsStr) -> io::Result<File> {
+            open_at(parent, name, LIST_DIRECTORY | READ_ATTRIBUTES, true)
+        }
+
+        pub(super) struct Entry { handle: File, identity: Identity, metadata: Metadata }
+        impl Entry {
+            pub(super) fn is_dir(&self) -> bool { self.metadata.is_dir() }
+            pub(super) fn is_file(&self) -> bool { self.metadata.is_file() }
+            pub(super) fn modified(&self) -> Option<SystemTime> { self.metadata.modified().ok() }
+            pub(super) fn identity(&self) -> Identity { self.identity }
+        }
+
+        pub(super) fn observe(parent: &File, name: &OsStr, deleting: bool) -> io::Result<Entry> {
+            let file = open_at(parent, name, READ_ATTRIBUTES | if deleting { DELETE } else { 0 }, false)?;
+            let metadata = metadata(&file)?;
+            let identity = identity(&file)?;
+            Ok(Entry { handle: file, identity, metadata })
+        }
+
+        pub(super) fn remove(_parent: &File, _name: &OsStr, entry: &Entry, _directory: bool) -> io::Result<()> {
+            // FileDispositionInfoEx: DELETE | POSIX_SEMANTICS. The fresh handle
+            // denies delete-sharing until it closes, and targets this identity,
+            // never a pathname successor. Nonempty directories are refused.
+            let flags: u32 = 0x1 | 0x2;
+            let result = unsafe {
+                SetFileInformationByHandle(
+                    entry.handle.as_raw_handle(), 21,
+                    &flags as *const u32 as *const c_void, std::mem::size_of::<u32>() as u32,
+                )
+            };
+            if result == 0 { Err(io::Error::last_os_error()) } else { Ok(()) }
+        }
+
+        pub(super) struct Entries { file: File, restart: bool, finished: bool }
+        impl Entries {
+            pub(super) fn new(directory: &File) -> io::Result<Self> {
+                // Only one scan of a directory is active at once. The postorder
+                // scan explicitly restarts after the original scan has ended.
+                Ok(Self { file: directory.try_clone()?, restart: true, finished: false })
+            }
+        }
+        impl Iterator for Entries {
+            type Item = io::Result<OsString>;
+            fn next(&mut self) -> Option<Self::Item> {
+                if self.finished { return None; }
+                loop {
+                    // FILE_NAMES_INFORMATION is aligned and length-delimited.
+                    // Request one entry so no untrusted offset chain is needed.
+                    let mut buffer = [0u32; 16_384];
+                    let mut status = IoStatusBlock { value: IoStatusValue { status: 0 }, information: 0 };
+                    let result = unsafe {
+                        NtQueryDirectoryFile(
+                            self.file.as_raw_handle(), null_mut(), null_mut(), null_mut(),
+                            &mut status, buffer.as_mut_ptr() as *mut c_void,
+                            std::mem::size_of_val(&buffer) as u32, 12, 1, null_mut(),
+                            u8::from(self.restart),
+                        )
+                    };
+                    self.restart = false;
+                    if result == 0x80000006u32 as i32 { // STATUS_NO_MORE_FILES
+                        self.finished = true;
+                        return None;
+                    }
+                    if result < 0 {
+                        self.finished = true;
+                        return Some(Err(status_error(result)));
+                    }
+                    let length = buffer[2] as usize;
+                    if status.information < 12 || status.information > std::mem::size_of_val(&buffer)
+                        || buffer[0] != 0 || length == 0 || length % 2 != 0
+                        || length > status.information - 12
+                    {
+                        self.finished = true;
+                        return Some(Err(io::Error::new(io::ErrorKind::InvalidData, "incomplete media directory entry")));
+                    }
+                    let wide = unsafe {
+                        std::slice::from_raw_parts(buffer.as_ptr().cast::<u16>().add(6), length / 2)
+                    };
+                    let name = OsString::from_wide(wide);
+                    if name != "." && name != ".." { return Some(Ok(name)); }
                 }
             }
         }
     }
-    Ok(())
+    #[cfg(test)]
+    mod tests {
+        use super::run;
+        use super::super::{CleanOldMediaOptions, MEDIA_MAX_BYTES, clean_old_media, save_media_buffer};
+        use std::fs::{self, FileTimes};
+        use std::io;
+        use std::path::{Path, PathBuf};
+        use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+        struct Fixture(PathBuf);
+        impl Fixture {
+            fn new() -> Self {
+                let path = std::env::temp_dir().join(format!("media-cleanup-{}", uuid::Uuid::new_v4()));
+                fs::create_dir(&path).unwrap();
+                // A fixture normalization only, so hooks and SavedMedia use the
+                // same spelling on macOS /tmp aliases and Windows verbatim paths.
+                Self(path.canonicalize().unwrap())
+            }
+            fn root(&self) -> PathBuf { self.0.join("media") }
+            fn save(&self, subdir: &str, name: &str, modified: SystemTime) -> PathBuf {
+                let saved = save_media_buffer(
+                    b"original media", Some("text/plain"), subdir, MEDIA_MAX_BYTES,
+                    Some(name), None, Some(&self.root()),
+                ).unwrap();
+                let path = PathBuf::from(saved.path);
+                set_modified(&path, modified);
+                path
+            }
+        }
+        impl Drop for Fixture {
+            fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); }
+        }
+        fn set_modified(path: &Path, modified: SystemTime) {
+            fs::OpenOptions::new().write(true).open(path).unwrap()
+                .set_times(FileTimes::new().set_modified(modified)).unwrap();
+        }
+        fn options() -> CleanOldMediaOptions {
+            CleanOldMediaOptions { recursive: Some(true), prune_empty_dirs: Some(true) }
+        }
+
+        #[cfg(windows)]
+        #[test]
+        fn cleanup_windows_identity_compares_full_file_id() {
+            use super::platform::Identity;
+            let first = Identity { volume: 42, id: [7; 16] };
+            assert_eq!(first.admit().unwrap(), first);
+            let mut different_high_half = first;
+            different_high_half.id[15] ^= 1;
+            assert_eq!(&first.id[..8], &different_high_half.id[..8]);
+            assert_ne!(first, different_high_half, "matching low halves do not establish identity");
+            assert_ne!(first, Identity { volume: 43, ..first }, "the volume is part of identity");
+            assert_eq!(first, Identity { volume: 42, id: [7; 16] });
+
+            for id in [[0; 16], [0xff; 16]] {
+                assert_eq!(
+                    Identity { volume: 42, id }.admit().unwrap_err().kind(),
+                    io::ErrorKind::Unsupported,
+                    "API success cannot admit an unavailable or nonunique file ID",
+                );
+            }
+            let mut full_width = Identity { volume: 42, id: [0; 16] };
+            full_width.id[8] = 1;
+            assert_eq!(full_width.admit().unwrap(), full_width,
+                "a zero low half does not make a valid full-width ID unavailable");
+        }
+
+        #[test]
+        fn cleanup_uses_one_clock_and_strict_ttl_boundary() {
+            let fixture = Fixture::new();
+            let boundary = UNIX_EPOCH + Duration::from_secs(1_600_000_000);
+            let ttl = Duration::from_secs(60);
+            let now = boundary + ttl;
+            let equal = fixture.save("cache/session", "equal.txt", boundary);
+            let expired = fixture.save("cache/session", "expired.txt", boundary - Duration::from_secs(1));
+            let future = fixture.save("cache/session", "future.txt", now + Duration::from_secs(1));
+
+            run(&fixture.root(), ttl, &options(), now, &mut |_| Ok(())).unwrap();
+
+            assert!(equal.exists(), "an age equal to TTL is retained");
+            assert!(!expired.exists());
+            assert!(future.exists(), "the pass must not sample a later wall clock");
+        }
+
+        #[test]
+        fn cleanup_rechecks_refreshed_mtime_before_unlink() {
+            let fixture = Fixture::new();
+            let now = SystemTime::now();
+            let old = now - Duration::from_secs(3_600);
+            let target = fixture.save("cache/session/images", "refresh.txt", old);
+            let mut refreshed = false;
+            run(&fixture.root(), Duration::from_secs(60), &options(), now, &mut |path| {
+                if path == target.as_path() {
+                    set_modified(path, now + Duration::from_secs(3_600));
+                    refreshed = true;
+                }
+                Ok(())
+            }).unwrap();
+
+            assert!(refreshed, "the real owner reached its removal boundary");
+            assert_eq!(fs::read(&target).unwrap(), b"original media");
+            assert!(target.parent().unwrap().is_dir());
+        }
+
+        #[test]
+        fn cleanup_refuses_replaced_leaf() {
+            let fixture = Fixture::new();
+            let now = SystemTime::now();
+            let old = now - Duration::from_secs(3_600);
+            let target = fixture.save("cache/session/images", "replace.txt", old);
+            let retired = fixture.0.join("retired.txt");
+            let mut replaced = false;
+            run(&fixture.root(), Duration::from_secs(60), &options(), now, &mut |path| {
+                if path == target.as_path() && !replaced {
+                    fs::rename(path, &retired).unwrap();
+                    fs::write(path, b"successor media").unwrap();
+                    set_modified(path, old);
+                    replaced = true;
+                }
+                Ok(())
+            }).unwrap();
+
+            assert!(replaced);
+            assert_eq!(fs::read(&target).unwrap(), b"successor media");
+            assert_eq!(fs::read(&retired).unwrap(), b"original media");
+        }
+
+        #[test]
+        fn cleanup_refuses_replaced_ancestor() {
+            for symlink in [false, true] {
+                let fixture = Fixture::new();
+                let now = SystemTime::now();
+                let old = now - Duration::from_secs(3_600);
+                let root = fixture.root();
+                let target = fixture.save("cache/session/images", "replace.txt", old);
+                let other = fixture.save("other", "expired.txt", old);
+                let relative = target.strip_prefix(root.join("cache")).unwrap().to_path_buf();
+                let retired = fixture.0.join("retired-cache");
+                let replacement = if symlink { fixture.0.join("outside") } else { root.join("cache") };
+                let successor = replacement.join(&relative);
+                let mut replaced = false;
+
+                run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
+                    if path == target.as_path() && !replaced {
+                        fs::rename(root.join("cache"), &retired).unwrap();
+                        fs::create_dir_all(successor.parent().unwrap()).unwrap();
+                        fs::write(&successor, b"successor media").unwrap();
+                        set_modified(&successor, old);
+                        if symlink {
+                            #[cfg(unix)]
+                            std::os::unix::fs::symlink(&replacement, root.join("cache")).unwrap();
+                            #[cfg(windows)]
+                            std::os::windows::fs::symlink_dir(&replacement, root.join("cache")).unwrap();
+                        }
+                        replaced = true;
+                    }
+                    Ok(())
+                }).unwrap();
+
+                assert!(replaced);
+                assert_eq!(fs::read(retired.join(&relative)).unwrap(), b"original media");
+                assert_eq!(fs::read(&successor).unwrap(), b"successor media");
+                assert!(!other.exists(), "unaffected branches still make progress");
+                assert!(root.is_dir());
+            }
+        }
+
+        #[test]
+        fn cleanup_refuses_replaced_root() {
+            let fixture = Fixture::new();
+            let now = SystemTime::now();
+            let old = now - Duration::from_secs(3_600);
+            let root = fixture.root();
+            let target = fixture.save("cache/session/images", "replace.txt", old);
+            let relative = target.strip_prefix(&root).unwrap().to_path_buf();
+            let retired = fixture.0.join("retired-media");
+            let mut replaced = false;
+
+            let result = run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
+                if path == target.as_path() && !replaced {
+                    fs::rename(&root, &retired).unwrap();
+                    fs::create_dir_all(target.parent().unwrap()).unwrap();
+                    fs::write(&target, b"successor media").unwrap();
+                    set_modified(&target, old);
+                    replaced = true;
+                }
+                Ok(())
+            });
+
+            assert!(replaced);
+            assert!(result.unwrap_err().contains("Media root identity"));
+            assert_eq!(fs::read(retired.join(relative)).unwrap(), b"original media");
+            assert_eq!(fs::read(&target).unwrap(), b"successor media");
+        }
+
+        #[test]
+        fn cleanup_retries_failed_unlink_without_pruning_branch() {
+            let fixture = Fixture::new();
+            let now = SystemTime::now();
+            let old = now - Duration::from_secs(3_600);
+            let retained = fixture.save("cache/session/images", "refused.txt", old);
+            let other = fixture.save("independent/deep", "expired.txt", old);
+            let mut refused = false;
+
+            run(&fixture.root(), Duration::from_secs(60), &options(), now, &mut |path| {
+                if path == retained.as_path() {
+                    refused = true;
+                    return Err(io::Error::new(io::ErrorKind::PermissionDenied, "controlled unlink refusal"));
+                }
+                Ok(())
+            }).unwrap();
+
+            assert!(refused);
+            assert!(retained.exists());
+            assert!(retained.parent().unwrap().is_dir());
+            assert!(!other.exists());
+            assert!(!fixture.root().join("independent").exists());
+            clean_old_media(60_000, &options(), Some(&fixture.root())).unwrap();
+            assert!(!retained.exists(), "a normal later call retries the unchanged expired file");
+            assert!(!fixture.root().join("cache").exists());
+            assert!(fixture.root().is_dir());
+        }
+
+        #[test]
+        fn cleanup_top_level_prune_errors_propagate_with_partial_progress() {
+            let fixture = Fixture::new();
+            let now = SystemTime::now();
+            let old = now - Duration::from_secs(3_600);
+            let root = fixture.root();
+            let file = fixture.save("cache/session/images", "expired.txt", old);
+            let nested = file.parent().unwrap().to_path_buf();
+            let top = root.join("cache");
+            let mut refused_nested = false;
+            run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
+                if path == nested.as_path() {
+                    refused_nested = true;
+                    return Err(io::Error::new(io::ErrorKind::PermissionDenied, "controlled nested prune refusal"));
+                }
+                Ok(())
+            }).unwrap();
+            assert!(refused_nested, "nested directory refusal must remain best effort");
+            assert!(!file.exists());
+            assert!(nested.is_dir());
+
+            let partial = fixture.save("cache", "partial.txt", old);
+            let mut refused_top = false;
+            let result = run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
+                if path == top.as_path() {
+                    refused_top = true;
+                    return Err(io::Error::new(io::ErrorKind::PermissionDenied, "controlled top-level prune refusal"));
+                }
+                Ok(())
+            });
+            assert!(refused_top);
+            assert!(result.unwrap_err().contains("controlled top-level prune refusal"));
+            assert!(!partial.exists(), "earlier file removal is honest partial progress");
+            assert!(!nested.exists(), "earlier nested pruning also remains committed");
+            assert!(top.is_dir());
+            assert!(fs::read_dir(&top).unwrap().next().is_none());
+
+            clean_old_media(60_000, &options(), Some(&root)).unwrap();
+            assert!(!top.exists(), "a normal later call retries the refused top-level prune");
+            assert!(root.is_dir());
+        }
+    }
 }
 
 use std::sync::atomic::{AtomicUsize, Ordering};

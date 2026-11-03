@@ -1382,7 +1382,10 @@
         "frontend/src/production/command-palette-message-search.contract.test.ts",
         "source/host/src/runner/turn_memory.rs",
         "source/host/tests/turn_memory_contract.rs",
-        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+        "source/host/tests/openclaw_media_store_contract.rs",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2726,7 +2729,10 @@
         "source/host/tests/device_pairing_revocation_authority_contract.rs",
         "source/host/tests/device_pairing_revocation_gateway_contract.rs",
         "source/host/tests/device_pairing_retained_stream_contract.rs",
-        "source/host/app/src/tests/device_pairing_revocation_tests.rs"
+        "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+        "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+        "source/host/tests/openclaw_media_store_contract.rs",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

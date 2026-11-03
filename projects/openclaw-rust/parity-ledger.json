@@ -14209,7 +14209,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Manage media lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history.",
+      "behavior": "Manage media lifecycle retention policies: playback transcode cache capped at 512MB disk budget with oldest-first LRU eviction and 7-day TTL; outbound staging with 24-hour TTL; cleanOldMedia routine with explicit exclusion of playback-transcode and SQLite-managed outgoing chat history. Existing cleanOldMedia now distinguishes omitted (root plus one level), false (root only), and true (all eligible descendants) recursion, with optional postorder empty-directory pruning and strict TTL retention.",
       "blocker_ids": [],
       "capability_ids": [
         "media.store_lifecycle"
@@ -14218,7 +14218,9 @@
         "source/host/src/extensions/attachments/media_store.rs"
       ],
       "evidence_refs": [
-        "source/host/tests/openclaw_media_store_contract.rs"
+        "source/host/tests/openclaw_media_store_contract.rs",
+        "projects/openclaw-rust/docs/specs/media-store-lifecycle.md",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py"
       ],
       "existing_owner_candidates": [
         {
@@ -14249,13 +14251,17 @@
       "id": "OCRM-RESP-MEDIA-STORE-LIFECYCLE-001",
       "integration": {
         "consumer": "HostAttachmentsExtension lifecycle worker -> media_store::{clean_old_media, prune_playback_transcode_cache, prune_outbound_media}; manual dispatch remains available",
-        "entrypoint": "start_production_host_box_extensions -> start_attachments_extension -> MediaStoreLifecycleWorker",
+        "entrypoint": "start_production_host_box_extensions -> start_attachments_extension -> MediaStoreLifecycleWorker; AttachmentsService::dispatch_gateway(\"cleanOldMedia\") for explicit depth options",
         "owner": "source/host/src/extensions/attachments/media_store.rs",
         "producer": "source/host/src/extensions/attachments/extension.rs::HostAttachmentsExtension::start_lifecycle_worker"
       },
       "invariants": [
         "cleanOldMedia mtime sweep must never delete playback-transcode or outgoing history media",
-        "Playback transcode cache must evict oldest mtime files first when exceeding 512MB capacity"
+        "Playback transcode cache must evict oldest mtime files first when exceeding 512MB capacity",
+        "Default periodic cleanup remains root plus one level; explicit false remains root-only and true reaches eligible nested saves.",
+        "Top-level protected stores, live/future/unknown mtime files, links and uncertain child branches survive; only strict age > TTL is eligible.",
+        "Retained directory handles and full platform identities reject observed replacements; fresh leaf identity and expiry are rechecked before mutation.",
+        "Empty-directory removal is nonrecursive and never targets the root. Non-benign root-child prune errors propagate; leaf/nested refusal retains the branch for an ordinary later call."
       ],
       "migration_rollback": "Disable automatic periodic pruning",
       "oracle_ids": [
@@ -14265,7 +14271,8 @@
       ],
       "owner_decision": "Keep retention logic in media_store.rs and add the single periodic producer to the existing Attachments extension",
       "postconditions": [
-        "Expired or excess media pruned according to subtree retention rules"
+        "Only eligible expired or excess media is selected according to each existing subtree retention rule; best-effort removals do not prove all requested media is gone.",
+        "Explicit recursive cleanup reaches deep media saved through the existing service; partial progress and top-level directory errors retain their documented retry/refusal semantics."
       ],
       "preconditions": [
         "Valid media store root"
@@ -14284,7 +14291,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "None; protected subtrees prevent accidental deletion of persisted assets",
+      "risk": "High: destructive filesystem traversal, stale or replaced path identity, refreshed mtime, protected asset ownership, partial progress and platform-specific deletion. MSL-RECURSIVE-01 source/negative controls are required; Unix final observation/unlink and concurrent ancestry movement are not atomic. Exact-H platform execution, scoped source authority/coverage and full media acceptance remain open.",
       "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
       "source_refs": [
         {
@@ -14312,7 +14319,20 @@
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_playback_cache_and_clean_old_media",
-        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers"
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_lifecycle_has_one_production_worker_and_all_consumers",
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning",
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors",
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets",
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_recursive_cleanup_preserves_raw_names_and_special_entries",
+        "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_gateway_service_dispatch",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_uses_one_clock_and_strict_ttl_boundary",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_rechecks_refreshed_mtime_before_unlink",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_refuses_replaced_leaf",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_refuses_replaced_ancestor",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_refuses_replaced_root",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_retries_failed_unlink_without_pruning_branch",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_top_level_prune_errors_propagate_with_partial_progress",
+        "source/host/src/extensions/attachments/media_store.rs::cleanup::tests::cleanup_windows_identity_compares_full_file_id"
       ],
       "typed_contracts": [
         "write_playback_transcode_cache(file_name: &str, buffer: &[u8], max_bytes: u64, base_dir: Option<&Path>) -> Result<PathBuf, String>",

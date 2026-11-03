@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
 use mahayana_host_runtime::device_pairing_owner::DevicePairingOwner;
 use mahayana_host_runtime::extensions::attachments::attachments_service::AttachmentsService;
@@ -83,6 +84,151 @@ impl Drop for TempTestDir {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.path);
     }
+}
+
+fn set_media_modified(path: &Path, modified: SystemTime) {
+    fs::OpenOptions::new()
+        .write(true)
+        .open(path)
+        .unwrap()
+        .set_times(fs::FileTimes::new().set_modified(modified))
+        .unwrap();
+}
+
+fn save_aged_media(root: &Path, subdir: &str, name: &str, modified: SystemTime) -> PathBuf {
+    let saved = save_media_buffer(
+        b"media retention fixture",
+        Some("text/plain"),
+        subdir,
+        MEDIA_MAX_BYTES,
+        Some(name),
+        None,
+        Some(root),
+    ).unwrap();
+    let path = PathBuf::from(saved.path);
+    set_media_modified(&path, modified);
+    path
+}
+
+#[test]
+fn test_ocrm_media_store_cleanup_depth_modes_and_postorder_pruning() {
+    for recursive in [Some(false), None, Some(true)] {
+        for prune in [false, true] {
+            let temp = TempTestDir::new("cleanup-depth");
+            let now = SystemTime::now();
+            let old = now - Duration::from_secs(3_600);
+            let future = now + Duration::from_secs(86_400);
+            let root_file = save_aged_media(&temp.path, "", "root.txt", old);
+            let inbound_file = save_aged_media(&temp.path, "inbound", "inbound.txt", old);
+            let deep_file = save_aged_media(&temp.path, "cache/session/images", "old.txt", old);
+            let live_file = save_aged_media(&temp.path, "cache/session/images", "live.txt", now);
+            let future_file = save_aged_media(&temp.path, "cache/session/docs", "future.txt", future);
+            let expired_branch = save_aged_media(&temp.path, "expired/a/b", "old.txt", old);
+            let nested_outgoing = save_aged_media(&temp.path, "cache/outgoing/deep", "old.txt", old);
+            let nested_playback = save_aged_media(&temp.path, "cache/playback-transcode/deep", "old.txt", old);
+            let outgoing = save_aged_media(&temp.path, "outgoing/deep/tree", "owned.txt", old);
+            let playback = save_aged_media(&temp.path, "playback-transcode/deep/tree", "owned.txt", old);
+            let options = CleanOldMediaOptions { recursive, prune_empty_dirs: Some(prune) };
+
+            clean_old_media(60_000, &options, Some(&temp.path)).unwrap();
+
+            assert!(!root_file.exists(), "root sweep: {recursive:?}, prune={prune}");
+            assert_eq!(inbound_file.exists(), recursive == Some(false));
+            for file in [&deep_file, &expired_branch, &nested_outgoing, &nested_playback] {
+                assert_eq!(file.exists(), recursive != Some(true), "{}: {recursive:?}", file.display());
+            }
+            for file in [&live_file, &future_file, &outgoing, &playback] {
+                assert!(file.exists(), "retained media: {}", file.display());
+            }
+            assert_eq!(temp.path.join("inbound").exists(), !(prune && recursive != Some(false)));
+            assert_eq!(temp.path.join("expired").exists(), !(prune && recursive == Some(true)));
+            assert!(temp.path.join("cache/session/images").is_dir());
+            assert!(temp.path.join("cache/session/docs").is_dir());
+            assert!(temp.path.is_dir(), "the media root is never pruned");
+        }
+    }
+}
+
+#[test]
+fn test_ocrm_media_store_cleanup_missing_root_and_root_admission_errors() {
+    let temp = TempTestDir::new("cleanup-root");
+    let missing = temp.path.join("missing");
+    clean_old_media(0, &CleanOldMediaOptions::default(), Some(&missing)).unwrap();
+    assert!(!missing.exists());
+    let file = temp.path.join("file");
+    fs::write(&file, b"not a directory").unwrap();
+    assert!(clean_old_media(0, &CleanOldMediaOptions::default(), Some(&file)).is_err());
+    assert_eq!(fs::read(file).unwrap(), b"not a directory");
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn test_ocrm_media_store_recursive_cleanup_retains_links_and_outside_targets() {
+    let temp = TempTestDir::new("cleanup-links");
+    let root = temp.path.join("media");
+    let outside = temp.path.join("outside");
+    let old = SystemTime::now() - Duration::from_secs(3_600);
+    let outside_file = save_aged_media(&outside, "deep", "outside.txt", old);
+    let expired = save_aged_media(&root, "ordinary/deep", "expired.txt", old);
+    let links = root.join("links/deep");
+    fs::create_dir_all(&links).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::symlink;
+        symlink(&outside, root.join("outside-link")).unwrap();
+        symlink(&outside, links.join("directory-link")).unwrap();
+        symlink(&outside_file, links.join("file-link")).unwrap();
+        symlink(&root, links.join("cycle")).unwrap();
+        symlink(&root, temp.path.join("root-link")).unwrap();
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::{symlink_dir, symlink_file};
+        // Lack of symlink capability is an explicit platform fixture failure.
+        symlink_dir(&outside, root.join("outside-link")).unwrap();
+        symlink_dir(&outside, links.join("directory-link")).unwrap();
+        symlink_file(&outside_file, links.join("file-link")).unwrap();
+        symlink_dir(&root, links.join("cycle")).unwrap();
+        symlink_dir(&root, temp.path.join("root-link")).unwrap();
+    }
+    let options = CleanOldMediaOptions { recursive: Some(true), prune_empty_dirs: Some(true) };
+    clean_old_media(60_000, &options, Some(&root)).unwrap();
+    assert!(!expired.exists());
+    assert!(!root.join("ordinary").exists());
+    assert_eq!(fs::read(&outside_file).unwrap(), b"media retention fixture");
+    for link in [root.join("outside-link"), links.join("directory-link"), links.join("file-link"), links.join("cycle")] {
+        assert!(fs::symlink_metadata(link).unwrap().file_type().is_symlink());
+    }
+    assert!(links.is_dir(), "links keep their ancestors nonempty");
+    assert!(clean_old_media(60_000, &options, Some(&temp.path.join("root-link"))).is_err());
+    assert!(outside_file.exists());
+}
+
+#[cfg(unix)]
+#[test]
+fn test_ocrm_media_store_recursive_cleanup_preserves_raw_names_and_special_entries() {
+    use std::ffi::{CString, OsString};
+    use std::os::unix::ffi::{OsStrExt, OsStringExt};
+    let temp = TempTestDir::new("cleanup-raw-names");
+    let raw_dir = temp.path.join(OsString::from_vec(b"raw-\xff".to_vec())).join("deep");
+    fs::create_dir_all(&raw_dir).unwrap();
+    let raw_file = raw_dir.join(OsString::from_vec(b"expired-\xfe.bin".to_vec()));
+    fs::write(&raw_file, b"expired raw name").unwrap();
+    set_media_modified(&raw_file, SystemTime::now() - Duration::from_secs(3_600));
+    let special_dir = temp.path.join("special/deep");
+    fs::create_dir_all(&special_dir).unwrap();
+    let fifo = special_dir.join("retained.fifo");
+    let c_path = CString::new(fifo.as_os_str().as_bytes()).unwrap();
+    assert_eq!(unsafe { libc::mkfifo(c_path.as_ptr(), 0o600) }, 0);
+    let options = CleanOldMediaOptions { recursive: Some(true), prune_empty_dirs: Some(true) };
+
+    clean_old_media(60_000, &options, Some(&temp.path)).unwrap();
+
+    assert!(!raw_file.exists());
+    assert!(!raw_dir.parent().unwrap().exists());
+    assert!(fs::symlink_metadata(&fifo).is_ok());
+    assert!(special_dir.is_dir());
+    assert!(temp.path.is_dir());
 }
 
 #[test]
@@ -181,14 +327,17 @@ fn test_ocrm_media_store_subdir_traversal_protection() {
 
     #[cfg(unix)]
     {
-        let outside = temp.path.join("outside");
-        fs::create_dir_all(&outside).unwrap();
+        let outside = TempTestDir::new("traversal-outside");
+        let sentinel = outside.path.join("retained.txt");
+        fs::write(&sentinel, b"outside media root").unwrap();
         let linked = temp.path.join("linked");
-        std::os::unix::fs::symlink(&outside, &linked).unwrap();
+        std::os::unix::fs::symlink(&outside.path, &linked).unwrap();
         assert!(
             resolve_media_scoped_dir(&temp.path, "linked/new", "test").is_err(),
             "an existing symlinked ancestor must not escape the media root"
         );
+        assert!(!outside.path.join("new").exists());
+        assert_eq!(fs::read(&sentinel).unwrap(), b"outside media root");
     }
 
     let escaped_file = temp.path.join("escaped.txt");
@@ -399,6 +548,19 @@ impl mahayana_host_runtime::extensions::attachments::attachments_service::Attach
 fn test_ocrm_media_store_gateway_service_dispatch() {
     use std::sync::Arc;
     let temp = TempTestDir::new("service-dispatch");
+    struct RestoreDataRoot(Option<std::ffi::OsString>);
+    impl Drop for RestoreDataRoot {
+        fn drop(&mut self) {
+            unsafe {
+                match &self.0 {
+                    Some(value) => std::env::set_var("SAND_DATA_ROOT", value),
+                    None => std::env::remove_var("SAND_DATA_ROOT"),
+                }
+            }
+        }
+    }
+    // This existing environment-dependent service fixture runs serially.
+    let _restore_data_root = RestoreDataRoot(std::env::var_os("SAND_DATA_ROOT"));
     unsafe {
         std::env::set_var("SAND_DATA_ROOT", &temp.path);
     }
@@ -457,6 +619,35 @@ fn test_ocrm_media_store_gateway_service_dispatch() {
         .expect("Dispatch deleteMediaBuffer")
         .expect("Result should be Ok");
     assert_eq!(del_val, serde_json::Value::Bool(true));
+
+    // 5. The real service consumer preserves the omitted/explicit depth modes.
+    let nested = service.dispatch_gateway("saveMediaBuffer", &json!({
+        "bufferBase64": b64,
+        "contentType": "text/plain",
+        "subdir": "cache/session/images",
+        "originalFilename": "deep.txt"
+    })).unwrap().unwrap();
+    let nested_path = PathBuf::from(nested["path"].as_str().unwrap());
+    let media_root = temp.path.join("media").canonicalize().unwrap();
+    assert!(nested_path.starts_with(&media_root));
+    set_media_modified(&nested_path, SystemTime::now() - Duration::from_secs(3_600));
+
+    let shallow = service.dispatch_gateway("cleanOldMedia", &json!({
+        "ttlMs": 60_000,
+        "pruneEmptyDirs": true
+    })).unwrap().unwrap();
+    assert_eq!(shallow, serde_json::Value::Bool(true));
+    assert!(nested_path.exists(), "omitted recursive stays one level deep");
+
+    let recursive = service.dispatch_gateway("cleanOldMedia", &json!({
+        "ttlMs": 60_000,
+        "recursive": true,
+        "pruneEmptyDirs": true
+    })).unwrap().unwrap();
+    assert_eq!(recursive, serde_json::Value::Bool(true));
+    assert!(!nested_path.exists(), "Gateway explicit recursion reaches the real nested save");
+    assert!(!media_root.join("cache").exists(), "expired branches are pruned in postorder");
+    assert!(media_root.is_dir());
 }
 
 #[test]

@@ -148,6 +148,21 @@ jobs:
       - name: Check Grok-aligned shipping Mahayana Host
         shell: bash
         run: cargo check --locked --profile ci --bin mahayana-app-host --manifest-path source/host/app/Cargo.toml
+      - name: Execute media cleanup owner and real service contracts
+        id: media_store_cleanup
+        env:
+          CARGO_TERM_COLOR: never
+          PYTHONUTF8: '1'
+        shell: bash
+        run: python3 projects/openclaw-rust/scripts/capture_media_cleanup.py
+      - name: Upload exact-subject media cleanup evidence
+        if: ${{ always() && steps.media_store_cleanup.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-media-cleanup-${{ runner.os }}-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/media-store-cleanup/
+          if-no-files-found: error
+          retention-days: 90
       - name: Test independent Mahayana Coordinator contract
         id: coordinator_full
         if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
@@ -2980,6 +2995,21 @@ jobs:
           if [ -d source/host/target ]; then
             du -sk source/host/target >> .evidence/sqlite-native-path/storage-before.txt
           fi
+      - name: Execute media cleanup owner and real service contracts
+        id: media_store_cleanup
+        env:
+          CARGO_TERM_COLOR: never
+          PYTHONUTF8: '1'
+        shell: bash
+        run: python3 projects/openclaw-rust/scripts/capture_media_cleanup.py
+      - name: Upload exact-subject media cleanup evidence
+        if: ${{ always() && steps.media_store_cleanup.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-media-cleanup-${{ runner.os }}-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/media-store-cleanup/
+          if-no-files-found: error
+          retention-days: 90
       - name: Test native SQLite paths and affected recovery owners
         id: native_paths
         env:
@@ -4662,6 +4692,52 @@ jobs:
         with:
           name: ocrm-sqlite-native-path-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: .evidence/sqlite-native-path/
+          if-no-files-found: error
+          retention-days: 90
+
+  media-store-windows:
+    name: OCRM media cleanup / Windows
+    runs-on: windows-2025
+    timeout-minutes: 45
+    env:
+      CARGO_TERM_COLOR: never
+      CARGO_BUILD_JOBS: '2'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$FABUSHI_TARGET_SHA"
+          if [ -n "$EXPECTED_DISPATCH_SHA" ]; then
+            [[ "$EXPECTED_DISPATCH_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test "$actual" = "$EXPECTED_DISPATCH_SHA"
+          fi
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: pressure-profiler-windows-2025-1.97.1
+      - name: Execute media cleanup owner and real service contracts
+        id: media_store_cleanup
+        run: python projects/openclaw-rust/scripts/capture_media_cleanup.py
+      - name: Upload exact-subject media cleanup evidence
+        if: ${{ always() && steps.media_store_cleanup.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-media-cleanup-${{ runner.os }}-${{ env.FABUSHI_TARGET_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/media-store-cleanup/
           if-no-files-found: error
           retention-days: 90
 

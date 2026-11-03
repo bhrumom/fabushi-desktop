@@ -130,3 +130,187 @@ production/device acceptance is claimed here.
 - `source/host/src/extensions/attachments/media_store.rs`
 - `source/host/src/extensions/attachments/extension.rs`
 - `source/host/app/src/main.rs`
+
+## Explicit recursive cleanup — MSL-RECURSIVE-01
+
+### Current defect and fixed source
+
+At target `84120837330f88d9a7b21e9a5bc75daaa728de82`, the production
+`AttachmentsService::dispatch_gateway("cleanOldMedia")` passes the optional
+recursive flag to `media_store::clean_old_media`. Nested saves such as
+`cache/session/images` are already supported, but the cleanup owner visits
+only root files and files in immediate subdirectories. An explicit recursive
+call can consequently return success while expired deeper files remain on
+every repeated call. Repair this existing consumer; retain its owner and API.
+
+Source authority is fixed U `1440bb1771372334bea23d7642bb52deb7db1845`:
+`src/media/store.ts` blob `d4342f8f5a4de1834346f131db70d2c6b6e80426`,
+`src/media/store.test.ts` blob `490817f902a0ef9b8832cd1249fa6559c3ede492`,
+and `src/media/store.cleanup.test.ts` blob
+`e872a1de80427849f9d65679844ee75dede10929`. Historical dossier identities
+remain historical and are not relabeled as these fixed-U reads.
+
+The necessary mature dependency boundary is the declared
+`@openclaw/fs-safe@0.27.0`: fixed-U package blob
+`6989c0618742d3c2b93cc336cbe1d9c3c4f0a657` and lock blob
+`83b4975eb96942ec007a2eb9847ccfe98d380bda`. Its official tag resolves to
+`67dee5ef4c03655a2aa98893539475ad041cb61b`; pruning source blob
+`d2c790ca760a953a9129862666b898159ea32aee` and removal sources
+`c5e93f7ffe1d6b4a6b8bc653ec1d452b4029a5b6` /
+`78bda7cfa3c6833f2ce677a7354dc5ae262ffbfe` establish depth, no-follow,
+identity, last-observation and best-effort removal contracts. Official-tag
+source review alone does not establish npm archive SRI identity or full
+recursive dependency/legal closure.
+
+Subsequent source acquisition read the actual registry archive
+`https://registry.npmjs.org/@openclaw/fs-safe/-/fs-safe-0.27.0.tgz`:
+1,101,331 bytes, SHA-256
+`02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c`.
+Its computed SHA-512 SRI equals both the fixed-U lock and registry integrity:
+`sha512-v9RWszhsnswr7kAg/6ZM1fUxtyY1PItj7uBarnQ2UdeTPgDdUZFS5hXIGUdLtNvSty/JEPJvjE3MWqbKbx9dng==`.
+All 711 archive file identities were captured; the actual distributed prune
+and removal consumers and MIT license were read. This is acquisition and
+contract-review evidence, not execution, full archive reading, optional native
+package closure or final legal acceptance. No archive code was executed.
+
+The distributed dependency captures its clock per prune invocation; fixed-U
+`cleanOldMedia` makes separate root/subdirectory invocations. MSL-R02's single
+timestamp for the whole target pass is an explicit safety strengthening.
+Default upstream removal can use guarded JavaScript fallback; native removal
+is selected when native mode is required. This batch does not describe the
+upstream cleanup as an atomic transaction or claim that native custody removes
+every filesystem race.
+
+Fixed-U `src/media/store.ts:298–307` also calls generated-HTML provenance
+pruning. That neighboring scope already belongs to
+`OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001` and
+`host_read_media_policy::{validate_provenance_row,filter_stale_provenance_rows}`;
+its ledger records `BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001`, not-wired,
+not-run and pending. Recursive file cleanup does not close that responsibility,
+prove its current error disposition, or supply its missing database consumer.
+
+### Behavioral and safety requirements
+
+- **MSL-R01 — Three depth modes.** Omitted `recursive` retains root plus
+  immediate-subdirectory cleanup; `false` cleans root files only; `true`
+  visits all eligible descendants. The periodic worker continues to pass
+  default options and must not become fully recursive. Preserve API fields,
+  the single Attachments worker, and the manual service projection.
+- **MSL-R02 — Retention and ownership.** Capture one time per pass and remove
+  only regular files whose last known mtime is strictly older than the TTL.
+  Future/unknown times survive. Recheck expiration before deletion. Exclude
+  the top-level `playback-transcode` and SQLite-managed `outgoing` trees before
+  descending. Protected resources, playback quota logic, outbound policy,
+  committed agent assets and Session fences remain owned by their existing
+  consumers. Nested ordinary directories with those names are not additional
+  top-level stores.
+- **MSL-R03 — Confined traversal.** Keep operational names as `OsString` /
+  `PathBuf`, including non-UTF-8 names. Do not follow symlink/reparse entries
+  at any depth. Retain the selected root and ancestor directory identities;
+  refuse an observed root/ancestor replacement and never adopt its successor.
+  Deletion must operate through the retained parent or equivalent platform
+  custody, using already available filesystem primitives. A canonical path
+  prefix alone is insufficient. Explicitly document remaining platform or
+  filesystem race limits; do not promote separate MSRS capability/publication
+  acceptance from these cleanup controls.
+- **MSL-R04 — Honest postorder pruning.** When `pruneEmptyDirs` is true,
+  remove only actually empty descendants after processing their children,
+  using nonrecursive removal. Never remove the media root. A surviving live
+  file, symlink, special entry, failed unlink or uncertain directory read does
+  not prove emptiness. Default and root-only modes retain their depth limits.
+- **MSL-R05 — Failure and recovery.** Missing roots/entries retain the existing
+  Fabushi no-op policy; upstream can create a missing store root. Keep failed
+  leaf and nested-directory removals best effort; do not falsely infer that
+  every requested file was deleted from an overall successful pass. For a
+  requested empty-directory removal immediately below the media root, retain
+  upstream's explicit refusal for errors other than missing, still-nonempty or
+  already-existing entries. In particular, permission denial must reach the
+  existing service/worker error path, with earlier file deletions left as
+  honest partial progress. Fixed-U `store.ts:236–246` and
+  `store.test.ts:408–443` establish this distinction from the dependency's
+  best-effort nested removal.
+  Retain MSL-R04's successful emptiness and retained-branch admission before
+  attempting removal. Unlike upstream's unconditional top-level `rmdir`
+  probe, a known populated or uncertain target branch is not probed for delete
+  permission. This preserves the existing Fabushi empty-directory admission
+  policy and is an explicit error-observation difference, not evidence that
+  the complete upstream failure contract has passed compatibility acceptance.
+  Root admission/enumeration or detected root identity errors remain explicit
+  errors; uncertain child subtrees are retained. No global transaction,
+  journal, retry queue or new scheduler is introduced. Interruption can leave
+  partial progress; a later ordinary call safely processes the remainder.
+
+### Implementation and verification contract
+
+Extend the owner-private cleanup mechanics in `media_store.rs` and the
+existing `openclaw_media_store_contract` target. Keep the service and worker
+call sites unchanged. Inspect existing no-follow/native-handle precedents
+before adding a primitive; do not route cleanup through the unrelated
+local-exec JSON request surface or introduce another permission owner.
+
+The primary real-filesystem oracle is a three-mode matrix using actual
+`save_media_buffer` calls under root, `inbound`, `cache/session/images`,
+`cache/session/docs` and a fully expiring branch. Use deterministic old and
+future mtimes, without sleeps. The old implementation must fail the explicit
+deep-deletion postcondition. Preserve live nested siblings, protected deep
+trees and the root; prove optional empty-directory postorder cleanup.
+
+Required negatives cover static symlink/reparse and leaf links, raw non-UTF-8
+paths where supported, future and refreshed mtime, a real or controlled
+failed unlink, and deterministic ancestor substitution before mutation. A
+controlled seam must exercise the actual production traversal/deletion
+decision; it cannot replace that owner with a mock. Extend the existing
+service-dispatch case to save nested media and invoke explicit recursive
+cleanup, using its existing serial fixture scope. Preserve all old tests.
+
+Freeze the complete candidate and obtain independent general/security and
+reuse/structure/performance reviews. Execute only the affected owner and
+real service contracts in GitHub Actions on the published exact H, binding
+actual positive names, commands, exits, input/log hashes and artifacts.
+Platform-specific controls require real platform execution; skipped Windows
+or macOS controls are not passes. Full MSRS read-authority/publication,
+unknown filesystem effects, package, performance/soak and final OCRM
+acceptance remain open. No unit/global verified flag is advanced by source
+review, a local fixture or a partial green result.
+
+Windows identity admission must not silently use a truncated identifier on a
+filesystem that requires 128-bit file IDs. Compare the full volume/file identity
+from the retained handle and each reobservation; if that identity cannot be
+obtained, fail closed at root admission or retain the uncertain child. Existing
+`same-file` handles may retain custody, but their 64-bit Windows equality alone
+cannot prove the MSL-R03 successor-refusal contract. A controlled equality test
+must distinguish IDs with equal low halves and different high halves; real
+filesystem coverage remains a separate platform acceptance requirement.
+
+MSL-R1 review correction: a successful Windows query does not by itself prove
+a usable identity. Reject all-zero and all-ones 128-bit IDs at the production
+admission helper, while admitting a valid ID whose low half is zero and high
+half is nonzero. Keep the full volume/ID equality and existing failure paths.
+The Windows private control must exercise that same admission helper.
+Primary contract: [MS-FSCC 2.1.10][MSL-WINDOWS-FILE-ID] and the
+[`FILE_ID_INFORMATION` structure][MSL-WINDOWS-FILE-ID-INFO]. These controls do
+not substitute for native execution on the affected filesystem/provider.
+
+The inherited traversal negative must construct its symlink target outside
+the actual admitted base. Its old `base/outside` fixture was still contained;
+repair only that fixture, preserve escape refusal and all other assertions,
+and retain the complete integration target and strict positive-name selection.
+
+[MSL-WINDOWS-FILE-ID]: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/98860416-1caf-4c80-a9ab-8d61e1ccf5a5
+[MSL-WINDOWS-FILE-ID-INFO]: https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-file_id_information
+
+The affected Actions selection is the complete existing
+`openclaw_media_store_contract` integration target and the owner-private
+`extensions::attachments::media_store::cleanup::tests::` group. Reuse the
+existing macOS and Linux Host caches/lanes, and add a Windows selection inside
+the existing Runtime workflow using its existing Host cache convention. Bind
+one strict receipt per platform to H/tree/U, exact commands, toolchain, all
+required positive names, zero failed/ignored tests, complete raw logs and input
+hashes before and after execution. Windows symlink controls must execute or
+report a concrete non-passing capability failure; they cannot silently skip.
+The shared, owner-scoped capture script must qualify its strict result oracle
+with missing, duplicate, unexpected, failed, ignored, zero-test, partial-log,
+nonzero-command and capture-error controls before accepting either real command.
+Those synthetic oracle controls are explicitly distinct from product execution.
+Record raw working-copy hashes and their Git-normalized blob identities so a
+Windows checkout's line endings cannot silently break exact-H input binding.
