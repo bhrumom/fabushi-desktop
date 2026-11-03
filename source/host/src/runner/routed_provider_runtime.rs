@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::{
@@ -323,19 +323,18 @@ impl ProductionRoutedProviderCheckpointStore {
     pub fn directory(&self) -> &Path {
         &self.directory
     }
-}
 
-impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
-    fn persist(
+    fn persist_with_publication(
         &self,
         checkpoint: &RoutedProviderCheckpoint,
+        checkpoint_id: Uuid,
+        mut sync_directory: impl FnMut(&Path) -> io::Result<()>,
     ) -> Result<String, ProviderSessionError> {
-        fs::create_dir_all(&self.directory).map_err(|error| {
+        ensure_checkpoint_directory(&self.directory, &mut sync_directory).map_err(|error| {
             ProviderSessionError::Transport(format!(
-                "could not create Runner checkpoint directory: {error}"
+                "could not prepare Runner checkpoint directory: {error}"
             ))
         })?;
-        let checkpoint_id = Uuid::new_v4().to_string();
         let temporary_path = self.directory.join(format!("{checkpoint_id}.tmp"));
         let final_path = self.directory.join(format!("{checkpoint_id}.json"));
         let payload = serde_json::to_vec(checkpoint).map_err(|error| {
@@ -343,27 +342,137 @@ impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
                 "could not encode Runner provider checkpoint: {error}"
             ))
         })?;
-        let write_result = (|| -> std::io::Result<()> {
-            let mut file = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(&temporary_path)?;
-            file.write_all(&payload)?;
-            file.sync_all()
-        })();
-        if let Err(error) = write_result {
-            let _ = fs::remove_file(&temporary_path);
-            return Err(ProviderSessionError::Transport(format!(
+        let mut options = OpenOptions::new();
+        options.create_new(true).write(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            options.mode(0o600);
+        }
+        let file = options.open(&temporary_path).map_err(|error| {
+            ProviderSessionError::Transport(format!(
                 "could not persist Runner provider checkpoint: {error}"
-            )));
-        }
-        if let Err(error) = fs::rename(&temporary_path, &final_path) {
-            let _ = fs::remove_file(&temporary_path);
-            return Err(ProviderSessionError::Transport(format!(
+            ))
+        })?;
+        // Ownership starts only after create_new succeeds. A collision must
+        // never give this operation permission to clean somebody else's entry.
+        let mut staged = StagedProviderCheckpoint {
+            path: temporary_path,
+            file: Some(file),
+        };
+        let write_result = {
+            let file = staged.file.as_mut().expect("staged checkpoint owns its file");
+            file.write_all(&payload).and_then(|()| file.sync_all())
+        };
+        drop(staged.file.take());
+        write_result.map_err(|error| {
+            ProviderSessionError::Transport(format!(
+                "could not persist Runner provider checkpoint: {error}"
+            ))
+        })?;
+        // Both names are in the same directory. Unlike rename, hard_link
+        // publishes the complete synced payload without replacing a collision.
+        fs::hard_link(&staged.path, &final_path).map_err(|error| {
+            ProviderSessionError::Transport(format!(
                 "could not commit Runner provider checkpoint: {error}"
-            )));
-        }
+            ))
+        })?;
+        // A failed barrier leaves the visible final file intact but cannot
+        // grant checkpoint acceptance. The guard cleans only our staging name.
+        sync_directory(&self.directory).map_err(|error| {
+            ProviderSessionError::Transport(format!(
+                "could not synchronize Runner provider checkpoint directory: {error}"
+            ))
+        })?;
         Ok(final_path.to_string_lossy().into_owned())
+    }
+}
+
+impl RoutedProviderCheckpointStore for ProductionRoutedProviderCheckpointStore {
+    fn persist(
+        &self,
+        checkpoint: &RoutedProviderCheckpoint,
+    ) -> Result<String, ProviderSessionError> {
+        self.persist_with_publication(checkpoint, Uuid::new_v4(), sync_checkpoint_directory)
+    }
+}
+
+struct StagedProviderCheckpoint {
+    path: PathBuf,
+    file: Option<fs::File>,
+}
+
+impl Drop for StagedProviderCheckpoint {
+    fn drop(&mut self) {
+        drop(self.file.take());
+        // Final publication, if any, is a separate link and is never removed.
+        let _ = fs::remove_file(&self.path);
+    }
+}
+
+fn ensure_checkpoint_directory(
+    directory: &Path,
+    sync_directory: &mut impl FnMut(&Path) -> io::Result<()>,
+) -> io::Result<()> {
+    let mut missing = Vec::new();
+    let mut existing = directory;
+    loop {
+        if existing.as_os_str().is_empty() {
+            existing = Path::new(".");
+        }
+        match fs::metadata(existing) {
+            Ok(metadata) if metadata.is_dir() => break,
+            Ok(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::AlreadyExists,
+                    "Runner checkpoint path is not a directory",
+                ));
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                missing.push(existing);
+                existing = existing.parent().ok_or(error)?;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    // Creation may have succeeded during an earlier refused write whose parent
+    // barrier failed. Reestablish that entry before creating any descendants.
+    if let Some(parent) = existing.parent() {
+        let parent = if parent.as_os_str().is_empty() { Path::new(".") } else { parent };
+        sync_directory(parent)?;
+    }
+    for directory in missing.into_iter().rev() {
+        let mut builder = fs::DirBuilder::new();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::DirBuilderExt;
+            builder.mode(0o700);
+        }
+        match builder.create(directory) {
+            Ok(()) => {}
+            // Another creator may have won. Keep its mode and synchronize the
+            // same parent entry instead of assuming the winner's barrier ran.
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists && directory.is_dir() => {}
+            Err(error) => return Err(error),
+        }
+        let parent = directory.parent().filter(|parent| !parent.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        sync_directory(parent)?;
+    }
+    Ok(())
+}
+
+fn sync_checkpoint_directory(directory: &Path) -> io::Result<()> {
+    #[cfg(unix)]
+    {
+        fs::File::open(directory)?.sync_all()
+    }
+    #[cfg(not(unix))]
+    {
+        // File sync and no-clobber hard-link publication still apply. std does
+        // not provide a portable non-Unix directory durability barrier.
+        let _ = directory;
+        Ok(())
     }
 }
 
@@ -952,4 +1061,343 @@ fn write_response(
     write!(stream, "\r\n")?;
     stream.write_all(&body)?;
     stream.flush()
+}
+
+#[cfg(test)]
+mod checkpoint_publication_tests {
+    use super::*;
+    use crate::extensions::inference::codex_direct_responses::{
+        CodexDirectCheckpoint, CodexDirectUsage,
+    };
+
+    struct PrivateRoot(PathBuf);
+
+    impl PrivateRoot {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(format!(
+                "fabushi-checkpoint-publication-{}", Uuid::new_v4().simple()
+            ));
+            let mut builder = fs::DirBuilder::new();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::DirBuilderExt;
+                builder.mode(0o700);
+            }
+            builder.create(&path).expect("create owned checkpoint fixture");
+            Self(path)
+        }
+    }
+
+    impl Drop for PrivateRoot {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    fn checkpoint() -> RoutedProviderCheckpoint {
+        RoutedProviderCheckpoint::Fabushi(CodexDirectCheckpoint {
+            model: Some("Provider/Case-Sensitive@Model".into()),
+            input: vec![
+                json!({"role": "user", "content": "private prompt λ"}),
+                json!({"type": "function_call_output", "call_id": "call-1", "output": "private tool result"}),
+            ],
+            text: "Checking ".into(),
+            response_id: "response-1".into(),
+            usage: CodexDirectUsage {
+                input_tokens: 17,
+                output_tokens: 9,
+                cache_read_tokens: 4,
+                cache_write_tokens: 2,
+            },
+            completed_steps: 1,
+            tool_calls_completed: 1,
+        })
+    }
+
+    fn assert_checkpoint(path: &Path, expected: &RoutedProviderCheckpoint) {
+        let bytes = fs::read(path).expect("read complete checkpoint payload");
+        assert_eq!(bytes, serde_json::to_vec(expected).expect("encode expected checkpoint"));
+        let decoded: RoutedProviderCheckpoint =
+            serde_json::from_slice(&bytes).expect("decode published checkpoint");
+        assert_eq!(&decoded, expected);
+        let document: Value = serde_json::from_slice(&bytes).expect("read checkpoint wire shape");
+        assert_eq!(document["provider"], "fabushi");
+        assert_eq!(document["checkpoint"]["model"], "Provider/Case-Sensitive@Model");
+        assert_eq!(document["checkpoint"]["input"][1]["output"], "private tool result");
+    }
+
+    fn entries(directory: &Path) -> Vec<PathBuf> {
+        let mut paths = fs::read_dir(directory).expect("list checkpoint entries")
+            .map(|entry| entry.expect("read checkpoint entry").path())
+            .collect::<Vec<_>>();
+        paths.sort();
+        paths
+    }
+
+    #[test]
+    fn production_checkpoint_round_trip_preserves_payload_and_hashed_isolation() {
+        let root = PrivateRoot::new();
+        let stores = [
+            ProductionRoutedProviderCheckpointStore::new(&root.0, "agent/../private-a", "stream/../private-a"),
+            ProductionRoutedProviderCheckpointStore::new(&root.0, "agent/../private-b", "stream/../private-a"),
+            ProductionRoutedProviderCheckpointStore::new(&root.0, "agent/../private-a", "stream/../private-b"),
+        ];
+        assert_eq!(stores[0].directory().parent(), stores[2].directory().parent());
+        assert_ne!(stores[0].directory().parent(), stores[1].directory().parent());
+        assert_ne!(stores[0].directory(), stores[2].directory());
+        let checkpoint = checkpoint();
+        let mut published = Vec::new();
+        for store in &stores {
+            let relative = store.directory().strip_prefix(&root.0).expect("agent cannot escape data root");
+            let names = relative.iter().map(|name| name.to_str().expect("ASCII path")).collect::<Vec<_>>();
+            assert_eq!(names.len(), 3);
+            assert_eq!(names[0], "runner-provider-checkpoints");
+            for name in &names[1..] {
+                assert_eq!(name.len(), 64);
+                assert!(name.bytes().all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
+            }
+            let path = PathBuf::from(store.persist(&checkpoint).expect("publish actual checkpoint"));
+            assert_eq!(path.parent(), Some(store.directory()));
+            assert_eq!(path.extension().and_then(|extension| extension.to_str()), Some("json"));
+            assert!(Uuid::parse_str(path.file_stem().and_then(|name| name.to_str()).expect("UUID name")).is_ok());
+            assert_checkpoint(&path, &checkpoint);
+            assert_eq!(entries(store.directory()), vec![path.clone()]);
+            published.push(path);
+        }
+        let reopened = ProductionRoutedProviderCheckpointStore::new(
+            &root.0, "agent/../private-a", "stream/../private-a",
+        );
+        assert_eq!(reopened.directory(), stores[0].directory());
+        let later = PathBuf::from(reopened.persist(&checkpoint).expect("publish distinct checkpoint"));
+        assert_ne!(later, published[0]);
+        assert_checkpoint(&published[0], &checkpoint);
+        assert_checkpoint(&later, &checkpoint);
+        let mut expected = vec![published[0].clone(), later];
+        expected.sort();
+        assert_eq!(entries(reopened.directory()), expected);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn private_checkpoint_staging_and_published_file_have_owner_only_permissions() {
+        use std::os::unix::fs::{MetadataExt, PermissionsExt};
+
+        let root = PrivateRoot::new();
+        let store = ProductionRoutedProviderCheckpointStore::new(&root.0, "agent", "stream");
+        let checkpoint = checkpoint();
+        let id = Uuid::from_u128(1);
+        let temporary = store.directory().join(format!("{id}.tmp"));
+        let final_path = store.directory().join(format!("{id}.json"));
+        let mut observed_publication = false;
+        let cursor = store.persist_with_publication(&checkpoint, id, |directory| {
+            if directory == store.directory() {
+                assert!(!observed_publication);
+                observed_publication = true;
+                let staged = fs::metadata(&temporary).expect("owned staging file before cleanup");
+                let published = fs::metadata(&final_path).expect("visible complete checkpoint");
+                assert_eq!(staged.permissions().mode() & 0o777, 0o600);
+                assert_eq!(published.permissions().mode() & 0o777, 0o600);
+                assert_eq!((staged.dev(), staged.ino()), (published.dev(), published.ino()));
+                assert_eq!(published.nlink(), 2);
+                assert_checkpoint(&temporary, &checkpoint);
+                assert_checkpoint(&final_path, &checkpoint);
+            }
+            sync_checkpoint_directory(directory)
+        }).expect("publish private checkpoint");
+        assert!(observed_publication, "final directory barrier must run before success");
+        assert_eq!(PathBuf::from(cursor), final_path);
+        assert!(!temporary.exists());
+        assert_eq!(fs::metadata(&final_path).expect("retained final file").nlink(), 1);
+        assert_eq!(entries(store.directory()), vec![final_path]);
+    }
+
+    #[test]
+    fn occupied_checkpoint_temporary_preserves_original_and_unrelated_entries() {
+        let root = PrivateRoot::new();
+        let store = ProductionRoutedProviderCheckpointStore::new(&root.0, "agent", "stream");
+        fs::create_dir_all(store.directory()).expect("prepare occupied fixture directory");
+        let id = Uuid::from_u128(2);
+        let temporary = store.directory().join(format!("{id}.tmp"));
+        let final_path = store.directory().join(format!("{id}.json"));
+        let unrelated = store.directory().join("other-operation.tmp");
+        let unrelated_directory = store.directory().join("other-directory");
+        fs::write(&temporary, b"original staging owner").expect("seed occupied staging file");
+        fs::write(&unrelated, b"unrelated staging owner").expect("seed unrelated staging file");
+        fs::create_dir(&unrelated_directory).expect("seed unrelated directory");
+        let marker = unrelated_directory.join("marker");
+        fs::write(&marker, b"unrelated child").expect("seed unrelated child");
+        let before = entries(store.directory());
+
+        let result = store.persist_with_publication(&checkpoint(), id, sync_checkpoint_directory);
+        assert!(matches!(result, Err(ProviderSessionError::Transport(message))
+            if message.starts_with("could not persist Runner provider checkpoint:")));
+        assert_eq!(fs::read(&temporary).expect("original staging entry retained"), b"original staging owner");
+        assert_eq!(fs::read(&unrelated).expect("unrelated staging entry retained"), b"unrelated staging owner");
+        assert_eq!(fs::read(&marker).expect("unrelated child retained"), b"unrelated child");
+        assert!(!final_path.exists(), "temporary collision cannot publish a checkpoint");
+        assert_eq!(entries(store.directory()), before);
+    }
+
+    #[test]
+    fn occupied_checkpoint_final_preserves_original_and_cleans_only_owned_temporary() {
+        let root = PrivateRoot::new();
+        let store = ProductionRoutedProviderCheckpointStore::new(&root.0, "agent", "stream");
+        fs::create_dir_all(store.directory()).expect("prepare occupied fixture directory");
+        let id = Uuid::from_u128(3);
+        let temporary = store.directory().join(format!("{id}.tmp"));
+        let final_path = store.directory().join(format!("{id}.json"));
+        let unrelated = store.directory().join("other-operation.tmp");
+        fs::write(&final_path, b"original final owner, even if not valid JSON").expect("seed occupied final file");
+        fs::write(&unrelated, b"other operation").expect("seed unrelated entry");
+        let mut expected = entries(store.directory());
+        let checkpoint = checkpoint();
+
+        let result = store.persist_with_publication(&checkpoint, id, sync_checkpoint_directory);
+        assert!(matches!(result, Err(ProviderSessionError::Transport(message))
+            if message.starts_with("could not commit Runner provider checkpoint:")));
+        assert_eq!(fs::read(&final_path).expect("original final entry retained"), b"original final owner, even if not valid JSON");
+        assert_eq!(fs::read(&unrelated).expect("other operation retained"), b"other operation");
+        assert!(!temporary.exists(), "failed no-clobber publication must clean its own staging file");
+        assert_eq!(entries(store.directory()), expected);
+
+        let later = PathBuf::from(store.persist(&checkpoint).expect("ordinary write after collision refusal"));
+        assert_ne!(later, final_path);
+        assert_checkpoint(&later, &checkpoint);
+        assert_eq!(fs::read(&final_path).expect("collision still preserved"), b"original final owner, even if not valid JSON");
+        expected.push(later);
+        expected.sort();
+        assert_eq!(entries(store.directory()), expected);
+    }
+
+    #[test]
+    fn checkpoint_nested_directories_publish_in_order_and_preserve_existing_modes() {
+        let root = PrivateRoot::new();
+        let existing = root.0.join("existing");
+        fs::create_dir(&existing).expect("seed existing ancestor");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&existing, fs::Permissions::from_mode(0o750)).expect("set existing ancestor mode");
+        }
+        let first_new = existing.join("new");
+        let data_dir = first_new.join("nested");
+        let store = ProductionRoutedProviderCheckpointStore::new(&data_dir, "agent", "stream");
+        let agent_directory = store.directory().parent().expect("agent directory").to_path_buf();
+        let checkpoint_root = agent_directory.parent().expect("checkpoint root").to_path_buf();
+        let id = Uuid::from_u128(4);
+        let final_path = store.directory().join(format!("{id}.json"));
+        let mut barriers = Vec::new();
+        let checkpoint = checkpoint();
+        let cursor = store.persist_with_publication(&checkpoint, id, |directory| {
+            barriers.push(directory.to_path_buf());
+            assert_eq!(final_path.exists(), directory == store.directory());
+            sync_checkpoint_directory(directory)
+        }).expect("publish complete nested directory chain");
+        assert_eq!(PathBuf::from(cursor), final_path);
+        assert_eq!(barriers, vec![
+            root.0.clone(), existing.clone(), first_new.clone(), data_dir.clone(),
+            checkpoint_root.clone(), agent_directory.clone(), store.directory().to_path_buf(),
+        ]);
+        assert_checkpoint(&final_path, &checkpoint);
+        assert_eq!(entries(store.directory()), vec![final_path]);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(fs::metadata(&existing).expect("existing ancestor").permissions().mode() & 0o777, 0o750);
+            for directory in [
+                first_new.as_path(), data_dir.as_path(), checkpoint_root.as_path(),
+                agent_directory.as_path(), store.directory(),
+            ] {
+                assert_eq!(fs::metadata(directory).expect("new private directory").permissions().mode() & 0o777, 0o700);
+            }
+            fs::set_permissions(store.directory(), fs::Permissions::from_mode(0o750)).expect("set existing stream mode");
+            store.persist(&checkpoint).expect("write through existing checkpoint directory");
+            assert_eq!(fs::metadata(store.directory()).expect("existing stream directory").permissions().mode() & 0o777, 0o750);
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn checkpoint_directory_barrier_failure_is_retried_before_descendants() {
+        let root = PrivateRoot::new();
+        let retained = root.0.join("new-data");
+        let data_dir = retained.join("nested-data");
+        let store = ProductionRoutedProviderCheckpointStore::new(&data_dir, "agent", "stream");
+        let unrelated = root.0.join("unrelated");
+        fs::write(&unrelated, b"preserved ancestor entry").expect("seed unrelated entry");
+        let checkpoint = checkpoint();
+        for attempt in 0..2 {
+            let mut barriers = Vec::new();
+            let result = store.persist_with_publication(&checkpoint, Uuid::from_u128(5), |directory| {
+                barriers.push(directory.to_path_buf());
+                if directory == root.0.as_path() {
+                    assert!(retained.is_dir(), "new entry precedes its parent barrier");
+                    assert!(!data_dir.exists(), "failed barrier must stop descendant creation");
+                    return Err(io::Error::other("injected parent directory barrier failure"));
+                }
+                sync_checkpoint_directory(directory)
+            });
+            assert!(matches!(result, Err(ProviderSessionError::Transport(_))));
+            let expected = if attempt == 0 {
+                vec![root.0.parent().expect("fixture parent").to_path_buf(), root.0.clone()]
+            } else {
+                vec![root.0.clone()]
+            };
+            assert_eq!(barriers, expected, "retained directory must retry its failed entry barrier");
+            assert!(retained.is_dir());
+            assert!(!data_dir.exists());
+            assert!(!store.directory().exists());
+            assert_eq!(fs::read(&unrelated).expect("unrelated entry retained"), b"preserved ancestor entry");
+        }
+
+        let later = PathBuf::from(store.persist(&checkpoint).expect("ordinary publication after barrier repair"));
+        assert_checkpoint(&later, &checkpoint);
+        assert_eq!(entries(store.directory()), vec![later]);
+        assert_eq!(fs::read(&unrelated).expect("unrelated entry still retained"), b"preserved ancestor entry");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn checkpoint_final_barrier_failure_retains_visible_payload_without_success() {
+        let root = PrivateRoot::new();
+        let store = ProductionRoutedProviderCheckpointStore::new(&root.0, "agent", "stream");
+        fs::create_dir_all(store.directory()).expect("prepare existing checkpoint directory");
+        let checkpoint = checkpoint();
+        let id = Uuid::from_u128(6);
+        let temporary = store.directory().join(format!("{id}.tmp"));
+        let final_path = store.directory().join(format!("{id}.json"));
+        let unrelated = store.directory().join("other-operation.tmp");
+        fs::write(&unrelated, b"other operation").expect("seed unrelated staging entry");
+        let mut barriers = Vec::new();
+        let result = store.persist_with_publication(&checkpoint, id, |directory| {
+            barriers.push(directory.to_path_buf());
+            if directory == store.directory() {
+                assert_checkpoint(&temporary, &checkpoint);
+                assert_checkpoint(&final_path, &checkpoint);
+                return Err(io::Error::other("injected final directory barrier failure"));
+            }
+            assert!(!final_path.exists());
+            sync_checkpoint_directory(directory)
+        });
+        assert!(matches!(result, Err(ProviderSessionError::Transport(_))));
+        assert_eq!(barriers, vec![
+            store.directory().parent().expect("agent directory").to_path_buf(),
+            store.directory().to_path_buf(),
+        ]);
+        assert_checkpoint(&final_path, &checkpoint);
+        assert!(!temporary.exists(), "uncertain publication cleans only its owned staging name");
+        assert_eq!(fs::read(&unrelated).expect("other staging owner retained"), b"other operation");
+        let mut expected = vec![final_path.clone(), unrelated.clone()];
+        expected.sort();
+        assert_eq!(entries(store.directory()), expected);
+
+        let later = PathBuf::from(store.persist(&checkpoint).expect("ordinary write after uncertain publication"));
+        assert_ne!(later, final_path);
+        assert_checkpoint(&later, &checkpoint);
+        assert_checkpoint(&final_path, &checkpoint);
+        assert_eq!(fs::read(&unrelated).expect("other operation still retained"), b"other operation");
+        expected.push(later);
+        expected.sort();
+        assert_eq!(entries(store.directory()), expected);
+    }
 }

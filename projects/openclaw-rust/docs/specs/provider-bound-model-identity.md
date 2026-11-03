@@ -963,8 +963,8 @@ dependency closure or semantic coverage of all responsibilities in these files.
 | `run/attempt-transcript-lifecycle.ts` | `99daab9dec252a1826c09813e357704c66b3cea1` | 1–199 |
 | `run/attempt-subscription-cleanup.ts` | `c90c99156ecf10812708c221b014df9900a8ffe0` | 1–89 |
 | `wait-for-idle-before-flush.ts` | `9fa2d2954c1d3c9421a94ef5cdc22ad75b3cc3cb` | 1–40 |
-| `src/gateway/server-methods/chat-abort-handler.ts` | `5c24cf496ed11cea105887d1176f23468e461ec8` | 1–722 |
-| `src/gateway/server-methods/chat.ts` (navigation only) | `990a1bcba90efe1a66eed638dc3fac16fff4df83` | 1–81 |
+| `src/gateway/server-methods/chat-abort-handler.ts` | `5c24cf496ed11cea105887d1176f23468e461ec8` | 1–721 |
+| `src/gateway/server-methods/chat.ts` (navigation only) | `990a1bcba90efe1a66eed638dc3fac16fff4df83` | 1–80 |
 
 The four preparation/runtime/settlement/recovery sources above were read
 through lines 759/530/224/280 respectively. The abort handler captures the
@@ -1064,3 +1064,110 @@ effects, all provider/channel compatibility and final OCRM gates remain open.
 The protected existing `routed_send_acceptance_contract.rs` draft is not part of
 this implementation. No global completion or scoped verified flag is promoted
 by authored code, source review or an unrelated passing H.
+
+### Provider checkpoint publication — OCRM-PROVIDER-CHECKPOINT-WRITE-v1
+
+Decision **CPW-DEFECT-01 — FIX / IMPL_BUG**. At source base
+`60631925e24b6d9ee7114d97b9974e51a913684e`, the existing
+`ProductionRoutedProviderCheckpointStore::persist` creates its payload with
+ambient file permissions, deletes the temporary path even if `create_new`
+failed before ownership, replaces a colliding final path through `rename`,
+and returns before synchronizing the directory entry. Provider input and tool
+results can be private; a successful file write alone cannot establish the
+publication boundary on which REC-04 relies. This is a target owner defect,
+not a new upstream runtime or an extension of restart eligibility.
+
+The producer remains the existing provider checkpoint callback; the sole
+writer remains `runner/routed_provider_runtime.rs`; the consumer remains
+`ProductionTurnRunShellAdapter` and its existing effect-revision acceptance.
+The JSON provider/model/input payload, hashed agent/stream directory, unique
+UUID filename and public `RoutedProviderCheckpointStore` contract stay intact.
+The private installation-key publisher in `host_secret_store.rs` is the local
+precedent for exclusive private staging and no-clobber hard-link publication;
+its key-specific API is not a reusable checkpoint owner.
+
+- **CPW-01 — private, owned staging.** Create each new temporary file with
+  `create_new`; on Unix request mode `0600` at creation, never after exposing a
+  public file. Acquire cleanup ownership only after successful creation, close
+  its file before publication/cleanup, and clean only that owned temporary
+  path. Existing temporary files, final files and unrelated entries must keep
+  their exact bytes on collision or refusal. Do not retry a collision by
+  deleting or taking over its entry.
+- **CPW-02 — complete no-clobber publication.** Serialize the same typed
+  checkpoint, write all bytes and synchronize the file before making its final
+  name visible. Use the existing same-directory hard-link publication
+  precedent, which fails if the final entry exists; never replace an existing
+  final entry. The returned identifier names that complete JSON payload.
+- **CPW-03 — directory barriers.** Newly created checkpoint directory segments
+  are private on Unix (`0700`) and their parent entries are synchronized in
+  creation order. After final publication, synchronize the containing
+  directory before returning success. Preserve existing directory modes.
+  If a creation succeeds before its parent barrier fails, a later attempt
+  must reestablish that barrier; the leftover directory's existence is not
+  evidence that the failed publication succeeded.
+  Non-Unix keeps the established file-sync/no-clobber behavior without claiming
+  a portable directory-sync guarantee; filesystem rejection is an error, not
+  a fallback to replacement. This contract is not hardware power-loss proof.
+- **CPW-04 — uncertain publication.** A post-publication synchronization error
+  returns failure and preserves the visible final payload. Best-effort cleanup
+  of this operation's owned temporary entry cannot remove that final name or
+  alter another operation. A raw or leftover file never proves REC-04
+  acceptance, an original-turn claim, or permission to replay an effect.
+- **CPW-05 — unchanged custody consumer.** The actual shell adapter must not
+  accept or resume from a failed production-store write. Preserve its existing
+  effect revision, cancellation, unknown-result and later-output fences, all
+  valid assertions, typed provider/model checks and same-context retry rules.
+  No credentials, durable execution grants, new Session state or second
+  scheduler are introduced by this publication repair.
+- **CPW-06 — decisive oracles and execution.** On the frozen published H,
+  GitHub Actions must exercise the actual writer's JSON round trip and Unix
+  privacy, occupied temporary and final entries with exact byte preservation,
+  new-directory creation, controlled directory-barrier failure before and
+  after publication, and ordinary successful writes after an unrelated
+  refusal. Use deterministic private helper inputs only to select a collision
+  or a barrier failure; do not replace the public store with a fake for its
+  file-publication claim. Exercise a real production-store error through the
+  existing adapter, asserting no accepted checkpoint, retry or resume and
+  preserved original filesystem bytes. Retain the existing real Fabushi
+  checkpoint-before-follow-up and model/account retry controls. Named positives
+  and command/capture success are required; no local/htch validation.
+
+The implementation batch is limited to this specification, the existing
+writer and its private tests, the existing adapter contract target, and the
+shared workflow. Existing payloads need no migration and are neither rewritten
+nor reclassified. Rollback preserves the on-disk format; it does not erase
+failed or unaccepted files. Exact-H compilation and the scoped publication,
+adapter and existing model/custody checks decide this increment. Full durable
+original-turn eligibility, nonsecret Native identity revalidation, generated
+tool-history retention, atomic recovery claims and actual startup continuation
+remain separate unfinished production work under the same owners.
+
+
+### PRC source-observation bounds recovery — PRC-SOURCE-01
+
+Decision **PRC-SOURCE-01 — FIX / IMPL_BUG (source metadata)**, recorded before
+repair: source run `41550052051`, attempt 1, job `125635116113`, for H
+`6273f9252f308355526c68e833da8dea194bb6cf` failed during inventory expansion
+because the new `chat-abort-handler.ts` observation ended at line 722 while
+its exact-U blob `5c24cf496ed11cea105887d1176f23468e461ec8` has 721 lines.
+The adjacent `chat.ts` observation ended at 81 while exact-U blob
+`990a1bcba90efe1a66eed638dc3fac16fff4df83` has 80 lines. Both files have a
+terminal LF; its empty split element is not another source line.
+
+Repair only those two literal range endpoints and their table above. Preserve
+the existing reader's literal history, exact blobs, read status, dependencies,
+responsibility mappings and all completion flags. This correction does not
+add a new reading claim or declare either file's semantic responsibilities
+verified. The original invalid values and failed subject remain recorded here
+and in their original commit. Keep `source_review.py`'s acquired-content bound
+and complete-range checks, including the existing out-of-content negative;
+no validator, generator or gate is relaxed.
+
+The failed job had already passed the 33 source-review tests, 21 inventory
+materialization tests and pre-expansion integrity check. They remain evidence
+for that historical H only. The complete decoded job log SHA-256 is
+`9e46c3986db11a93673f06298bc58330af376d3239401ac6b4b67167c920e005`.
+The repaired subject requires its own Actions materialization and structural
+source receipt; any resulting generated-evidence commit requires its own
+exact-H affected runtime evidence. Source/dependency closure, scoped semantic
+acceptance and final OCRM acceptance remain open. No local/htch validation.

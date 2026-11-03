@@ -15,7 +15,7 @@ use mahayana_host_runtime::runner::production_turn_run_shell_adapter::{
     first_output_timeout_for_attempt, run_production_turn_shell_lifecycle,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
-    RoutedProviderCancellation,
+    ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation,
 };
 use mahayana_host_runtime::runner::{StreamAttemptPolicy, StreamAttemptRuntime};
 use serde_json::json;
@@ -568,6 +568,101 @@ fn production_turn_adapter_does_not_accept_an_unpersisted_checkpoint() {
 
     assert!(error.to_string().contains("checkpoint persistence failed"));
     assert_eq!(executor.attempts, 1);
+}
+
+#[test]
+fn production_turn_adapter_real_store_refusal_retains_uncheckpointed_effect_and_never_retries() {
+    struct CompletedEffectExecutor {
+        effect_path: std::path::PathBuf,
+        attempts: usize,
+        resumes: Vec<Option<RoutedProviderCheckpoint>>,
+    }
+
+    impl RoutedProviderAttemptExecutor for CompletedEffectExecutor {
+        fn run_attempt(
+            &mut self,
+            attempt: &RoutedProviderAttemptControl,
+            resume_from: Option<&RoutedProviderCheckpoint>,
+            on_text_delta: &mut dyn FnMut(&str, &str),
+            on_checkpoint: &mut dyn FnMut(&RoutedProviderCheckpoint) -> Result<(), ProviderSessionError>,
+            should_cancel: &dyn Fn() -> bool,
+        ) -> Result<String, ProviderSessionError> {
+            use std::io::Write;
+            self.attempts += 1;
+            self.resumes.push(resume_from.cloned());
+            assert!(!should_cancel());
+            let receipt = attempt.admit_tool().expect("admit one real file effect");
+            let mut effect = std::fs::OpenOptions::new()
+                .create(true).append(true).open(&self.effect_path).expect("effect file");
+            effect.write_all(b"x").expect("count the actual effect");
+            effect.sync_all().expect("persist effect receipt");
+            drop(effect);
+            receipt.complete();
+            on_text_delta("Checking ", "Checking ");
+            on_checkpoint(&checkpoint())?;
+            Err(ProviderSessionError::Transport("connection reset after checkpoint callback".into()))
+        }
+    }
+
+    let root = std::env::temp_dir().join(format!(
+        "fabushi-checkpoint-store-adapter-{}-{}", std::process::id(), uuid::Uuid::new_v4(),
+    ));
+    std::fs::create_dir(&root).expect("exclusive fixture root");
+    let store = ProductionRoutedProviderCheckpointStore::new(&root, "agent-a", "original-stream");
+    std::fs::create_dir_all(store.directory().parent().expect("checkpoint parent"))
+        .expect("fixture parent");
+    let original_bytes = b"existing non-directory checkpoint entry";
+    std::fs::write(store.directory(), original_bytes).expect("refusing real store entry");
+    let effect_path = root.join("effect-count");
+    let mut executor = CompletedEffectExecutor { effect_path: effect_path.clone(), attempts: 0, resumes: Vec::new() };
+    let adapter = ProductionTurnRunShellAdapter {
+        policy: StreamAttemptPolicy { first_output_timeout: Duration::from_secs(5), ..policy(3) },
+        watchdog_poll_interval: Duration::from_millis(1),
+    };
+    let runtime = Arc::new(StreamAttemptRuntime::new(adapter.policy.clone()));
+    let cancellation = RoutedProviderCancellation::default();
+    let mut retries = Vec::new();
+    let mut reports = Vec::new();
+    let mut deltas = Vec::new();
+    adapter.run_with_attempt_runtime_reporting(
+        Arc::clone(&runtime), &cancellation, &store, &mut executor,
+        &mut |delta, _| deltas.push(delta.to_string()),
+        &mut |event| retries.push(event.clone()),
+        &mut |report| reports.push(report.clone()),
+    ).expect_err("a real publication refusal cannot cover the completed effect");
+
+    assert_eq!(executor.attempts, 1);
+    assert_eq!(executor.resumes, vec![None]);
+    assert_eq!(std::fs::read(&effect_path).expect("actual effect count"), b"x");
+    assert_eq!(std::fs::read(store.directory()).expect("preserved refusing entry"), original_bytes);
+    assert!(retries.is_empty());
+    assert_eq!(deltas, vec!["Checking "]);
+    assert_eq!(reports.len(), 1);
+    assert_eq!(reports[0].outcome, ProviderRetryOutcome::GaveUpIneligible);
+    assert!(!reports[0].resume_from_checkpoint);
+    let custody = runtime.effect_custody();
+    assert_eq!(custody.started_revision, 1);
+    assert_eq!(custody.checkpoint_revision, 0);
+    assert_eq!(custody.pending_effects, 0);
+    assert_eq!(custody.unknown_result, None);
+    assert!(custody.retry_block_reason().is_some());
+
+    // Explicitly repair only this fixture's path. Repairing storage must not
+    // erase the original invocation's uncheckpointed effect or restart it.
+    std::fs::remove_file(store.directory()).expect("explicit fixture repair");
+    std::fs::create_dir(store.directory()).expect("repaired checkpoint directory");
+    adapter.run_with_attempt_runtime_reporting(
+        Arc::clone(&runtime), &cancellation, &store, &mut executor,
+        &mut |_, _| panic!("repaired storage cannot reopen original output"),
+        &mut |_| panic!("repaired storage cannot authorize replay"),
+        &mut |_| panic!("repaired storage cannot start another attempt"),
+    ).expect_err("the same custody remains ineligible after repair");
+    assert_eq!(runtime.effect_custody(), custody);
+    assert_eq!(executor.attempts, 1);
+    assert_eq!(executor.resumes, vec![None]);
+    assert_eq!(std::fs::read(effect_path).expect("no repeated effect"), b"x");
+    assert_eq!(std::fs::read_dir(store.directory()).expect("no accepted payload").count(), 0);
+    std::fs::remove_dir_all(root).expect("remove only successful owned fixture");
 }
 
 #[test]

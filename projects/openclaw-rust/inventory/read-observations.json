@@ -815,7 +815,7 @@
       "read_ranges": [
         {
           "start_line": 1,
-          "end_line": 722
+          "end_line": 721
         }
       ],
       "language_kind": "typescript",
@@ -829,7 +829,7 @@
       "read_ranges": [
         {
           "start_line": 1,
-          "end_line": 81
+          "end_line": 80
         }
       ],
       "language_kind": "typescript",

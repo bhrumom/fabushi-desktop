@@ -428,6 +428,7 @@ jobs:
               "source/host/src/runner/production_turn_input_projection.rs",
               "source/host/src/runner/production_turn_run_shell_adapter.rs",
               "source/host/src/runner/routed_provider_runtime.rs",
+              "source/host/tests/production_turn_run_shell_adapter_contract.rs",
               "source/host/src/runner/tools/turn_toolset.rs",
               "source/host/src/runner/turn_agent_composition.rs",
               "source/host/src/connectors/channel_delivery.rs",
@@ -1394,6 +1395,7 @@ jobs:
               extensions::inference::typed_replay_serialization::tests \
               runner::compaction_planning::tests \
               runner::production_turn_run_shell_adapter::tests \
+              runner::routed_provider_runtime::checkpoint_publication_tests \
               runner::tools::mcp_meta_tools::tests \
               runner::turn_shape::tests \
               extensions::inference::production::tests \
@@ -1409,6 +1411,68 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
+      - name: Require provider checkpoint publication positives from existing macOS commands
+        if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, runpy, subprocess
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          read_command_evidence = runpy.run_path(str(root / "command-evidence.py"))["read_command_evidence"]
+          required_by_command = {
+              "integration-contracts": [
+                  "production_turn_adapter_real_store_refusal_retains_uncheckpointed_effect_and_never_retries",
+                  "production_turn_adapter_persists_checkpoint_before_resuming",
+                  "production_turn_adapter_does_not_accept_an_unpersisted_checkpoint",
+                  "production_turn_adapter_tool_only_checkpoint_rearms_watchdog_and_resumes",
+              ],
+              "lib-runner_routed_provider_runtime_checkpoint_publication_tests": [
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::production_checkpoint_round_trip_preserves_payload_and_hashed_isolation",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::private_checkpoint_staging_and_published_file_have_owner_only_permissions",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::occupied_checkpoint_temporary_preserves_original_and_unrelated_entries",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::occupied_checkpoint_final_preserves_original_and_cleans_only_owned_temporary",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_nested_directories_publish_in_order_and_preserve_existing_modes",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_directory_barrier_failure_is_retried_before_descendants",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_final_barrier_failure_retains_visible_payload_without_success",
+              ],
+          }
+          executions = []
+          for label, required in required_by_command.items():
+              path, command_path = root / (label + ".log"), root / (label + ".command.txt")
+              raw = path.read_bytes() if path.is_file() else b""
+              command = command_path.read_text().strip() if command_path.is_file() else ""
+              output = raw.decode("utf-8", errors="replace")
+              names = re.findall(r"^test (\S+) \.\.\. ok$", output, re.MULTILINE)
+              missing = [name for name in required if names.count(name) != 1]
+              counts = [tuple(map(int, row)) for row in re.findall(
+                  r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", output)]
+              evidence = read_command_evidence(root, label)
+              accepted = (bool(command) and evidence["accepted"] and not missing
+                  and bool(counts) and any(row[0] > 0 for row in counts) and all(row[1] == 0 for row in counts))
+              executions.append({"case": label, "command": command,
+                  "command_exit_records": evidence["command_exit_records"],
+                  "capture_exit_records": evidence["capture_exit_records"],
+                  "required_positive_names": required, "missing_or_nonunique_positive_results": missing,
+                  "summaries_passed_failed_ignored": counts, "log_sha256": hashlib.sha256(raw).hexdigest(),
+                  "oracle_accepted": accepted})
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and tree == subject["subject_tree"] and str(subject["run_id"]) == os.environ["GITHUB_RUN_ID"]
+              and str(subject["run_attempt"]) == os.environ["GITHUB_RUN_ATTEMPT"]
+              and all(case["oracle_accepted"] for case in executions))
+          receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+          receipt.update({"contract": "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "executions": executions,
+              "result": "passed" if accepted else "failed",
+              "scope": "Actual provider checkpoint writer and shell-adapter custody: private owned staging, no-clobber publication, directory-entry barriers and retry after failed creation, exact preserved payloads, controlled final-barrier refusal, and no replay of a completed file effect after real store refusal or explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance."})
+          (root / "provider-checkpoint-publication.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          raise SystemExit(0 if accepted else 1)
+          PY
       - name: Require durable plugin uninstall positives from existing macOS commands
         if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
         shell: bash
@@ -2218,7 +2282,7 @@ jobs:
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
               "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "openclaw_chat_cron_node_contract", "group_member_runner_deletion_production_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "connector_secret_store_contract", "widget_responses_full_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
-              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills::uninstall_state::tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
+              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::routed_provider_runtime::checkpoint_publication_tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills::uninstall_state::tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
               "plugin_uninstall_recovery_contract": "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1",
               "plugin_uninstall_recovery_receipt": str(Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"], "plugin-uninstall-recovery.receipt.json")),
@@ -2933,6 +2997,7 @@ jobs:
               "source/host/src/runner/production_turn_input_projection.rs",
               "source/host/src/runner/production_turn_run_shell_adapter.rs",
               "source/host/src/runner/routed_provider_runtime.rs",
+              "source/host/tests/production_turn_run_shell_adapter_contract.rs",
               "source/host/src/runner/tools/turn_toolset.rs",
               "source/host/src/runner/turn_agent_composition.rs",
               "source/host/src/connectors/channel_delivery.rs",
@@ -3250,11 +3315,27 @@ jobs:
               ]),
               ("plugin-cache-publication", base + ["--lib", "extensions::mcp::plugin_skills_cache::tests::", "--", "--test-threads=1"], []),
               ("plugin-session-consumer", base + ["--lib", "extensions::session::production::plugin_skills_admission_tests::", "--", "--test-threads=1"], []),
+              ("provider-checkpoint-publication", base + ["--lib", "runner::routed_provider_runtime::checkpoint_publication_tests::", "--", "--test-threads=1"], [
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::production_checkpoint_round_trip_preserves_payload_and_hashed_isolation",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::private_checkpoint_staging_and_published_file_have_owner_only_permissions",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::occupied_checkpoint_temporary_preserves_original_and_unrelated_entries",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::occupied_checkpoint_final_preserves_original_and_cleans_only_owned_temporary",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_nested_directories_publish_in_order_and_preserve_existing_modes",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_directory_barrier_failure_is_retried_before_descendants",
+                  "runner::routed_provider_runtime::checkpoint_publication_tests::checkpoint_final_barrier_failure_retains_visible_payload_without_success",
+              ]),
+              ("provider-checkpoint-custody", base + ["--test", "production_turn_run_shell_adapter_contract", "--", "--test-threads=1"], [
+                  "production_turn_adapter_real_store_refusal_retains_uncheckpointed_effect_and_never_retries",
+                  "production_turn_adapter_persists_checkpoint_before_resuming",
+                  "production_turn_adapter_does_not_accept_an_unpersisted_checkpoint",
+                  "production_turn_adapter_tool_only_checkpoint_rearms_watchdog_and_resumes",
+              ]),
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1"],
               "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
+              "checkpoint_publication_scope": "Actual provider checkpoint writer: private owned staging, exact payload preservation, no-clobber final publication, directory-entry barriers including retry after a failed creation barrier, and retained visible payload after a controlled final barrier failure. Actual shell adapter retains a completed file effect as uncheckpointed after real store refusal and explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance.",
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -3616,6 +3697,7 @@ jobs:
               "source/host/src/extensions/inference/provider_session.rs",
               "source/host/src/runner/coordinator_tool_relay.rs",
               "source/host/src/runner/routed_provider_runtime.rs",
+              "source/host/tests/production_turn_run_shell_adapter_contract.rs",
           ]
           receipt = {
               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1",
