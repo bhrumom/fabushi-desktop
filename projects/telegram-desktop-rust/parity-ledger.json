@@ -50388,7 +50388,8 @@
         "Backend52fb/PR137 tests29 handler+10 realSQLite+24 injected readiness pass, but readiness jobs are skipped; canonical main6877 rejects explicit afterId0/no historyCursor. Current active Worker and real authenticated production multi-page/empty-page/denial/restart evidence remain unverified. Historical source33a26692/version3ad1a889 is not current deployment proof.",
         "HRR-08/09 current branch stage-A receipt/history and forward-source reauthorization are authored on existing Session gateway, coordinator and renderer owner paths, pending exact containing-H Actions. Historical batch review/Actions evidence is not a substitute. Preserve original intent, no source or release acceptance promoted.",
         "826e Native stage-A 68/80 failure repaired in new source/test blob; next exact-H execution remains pending, do not promote earlier source/UI success.",
-        "79/80 Host in 1f3ff; unversioned pre-journal legacy must be authorized by exact nonce hash and readable source, not require v1 journal; next H required."
+        "79/80 Host in 1f3ff; unversioned pre-journal legacy must be authorized by exact nonce hash and readable source, not require v1 journal; next H required.",
+        "HRR-12 exact8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6 UI/Coordinator and Rust renderer results are scoped. Same-H Host real HTTP/SQLite, shipping AppHost and full source/legal/platform/service/Bot/security/a11y/soak/rollback/independent ACCEPT remain separate; no accepted/complete promotion."
       ],
       "production_entrypoints": [
         "frontend/src/production/ProductionRenderer.tsx#sendComposerPrompt -> source/host/src/extensions/session/gateway.rs#sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> FabushiNativeMessagingClient::send_direct_message -> /api/social/messages -> validate_remote_human_message/materialize_remote_human_message -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation/renderer projection.",
@@ -50443,7 +50444,8 @@
         "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@976339e378f234fa349491d62a20d7342e779039#AppHost::new_with_feature_mode_and_storage_passphrase",
         "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@976339e378f234fa349491d62a20d7342e779039#create_feature_host",
         "task20bf NMR-50a/b/c: existing ProductionSessionWorkers automatic recovery uses nonblocking batch admission with one held guard; explicit delivery remains serialized. Roster scans recovery once, direct conversation sync once, then existing history owner. Native list_friends_for_user binds local Human before HTTP and fences all six credential fields after the body; list_friends remains compatible. Source/target authorization, immutable attachments, journal CAS and canonical Transcript owner are retained. Authored at the repair of7f8; containing-H execution required.",
-        "authored-unexecuted-20261103:source/host/src/extensions/session/production.rs@e460cfb3a9cec39f56164800a7512ee0f14c3bac#reauthorize_human_history_forward_settlement-and-qualified_pending_human_upload_receipts"
+        "authored-unexecuted-20261103:source/host/src/extensions/session/production.rs@e460cfb3a9cec39f56164800a7512ee0f14c3bac#reauthorize_human_history_forward_settlement-and-qualified_pending_human_upload_receipts",
+        "exact8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6: frontend/src/production/coordinator-client.ts#createCoordinatorClient.call exact-ready-port fence after caller scope; frontend/src/production/ProductionRenderer.tsx#resendFailedSend retry notice owned by account/selection generation and attempt token; no second owner or durable state change."
       ],
       "test_evidence": [
         "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50540,7 +50542,8 @@
         "authored-unexecuted-20261103:source/host/tests/session_gateway_contract.rs@4b67de8519c2c9f9274a7a813d50fe2b6bb5763b#shipping_human_malformed_complete_upload_history_receipts_preserve_intent_and_coverage",
         "authored-unexecuted-20261103:source/host/tests/session_gateway_contract.rs@4b67de8519c2c9f9274a7a813d50fe2b6bb5763b#shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_settlement",
         "test-failure-real-826e3f3cde7a450eab23a98cc0751f9326ce141a:Native job125790380486:68/80, 12 failed; journal extra fields and unrelated reply-context rejection are implementation regressions; resource-ID precedence and new closed-owner restoration are test-oracle/fixture corrections; exact next-H rerun required",
-        "real-1f3ff21c8e1f6dfaa0582bf5da9d997b4636b00e:Native job125792629742:79/80; only genuine pre-journal legacy forward settlement remained pending. HRR09 legacy repair authored, exact containing H pending."
+        "real-1f3ff21c8e1f6dfaa0582bf5da9d997b4636b00e:Native job125792629742:79/80; only genuine pre-journal legacy forward settlement remained pending. HRR09 legacy repair authored, exact containing H pending.",
+        "authored-exact-8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6: Coordinator 20 controlled-port cases (new ready-port replacement), actual Chromium Renderer 28 (two HRR-12 notice/selection cases); retained Session/Transcript and all original Human retry tests; fixed source f985723b552b30fe1c17d377d57f44e61a15a8c4; source review not promoted."
       ],
       "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
       "workflow_run": 41508537631,
@@ -50719,7 +50722,8 @@
         "HRR-08",
         "HRR-09",
         "HRR-AC-05",
-        "HRR-AC-06"
+        "HRR-AC-06",
+        "HRR-12"
       ],
       "oracle_ids": [
         "NMR-AC-01",
@@ -50827,7 +50831,8 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair",
         "source/host/tests/session_gateway_contract.rs#shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post",
         "source/host/tests/session_gateway_contract.rs#shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes",
-        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy"
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy",
+        "frontend/src/production/coordinator-client.contract.test.ts#Coordinator rejects a request whose admission predicate replaces an already-ready port"
       ],
       "integration_case_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50893,7 +50898,10 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_settlement",
         "source/host/tests/session_gateway_contract.rs#shipping_human_malformed_complete_upload_history_receipts_preserve_intent_and_coverage"
       ],
-      "functional_e2e_case_ids": [],
+      "functional_e2e_case_ids": [
+        "desktop/e2e/native-message-projection.spec.ts#HRR-12 a displayed Human retry failure retires after conversation A-B-A without altering drafts or durable messages",
+        "desktop/e2e/native-message-projection.spec.ts#HRR-12 a second same-intent retry clears the visible failure before its new Host receipt"
+      ],
       "temporal_case_ids": [
         "source/host/tests/session_gateway_contract.rs#shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload",
         "source/host/tests/session_gateway_contract.rs#shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart",
@@ -51148,7 +51156,8 @@
         "exactafb34b49c5964524a887088f1095070b75cfdf8b:run41522324008:reconciliation125541192099 failed Rust E0382 at tests/session_gateway_contract.rs6889, reusing runtime dropped at6878. Human62 and later resource/journal/Agent/credentials/HTTP did not execute. TEST_FLAW; actual UI125541191705 success Transcript29/cursor17/settlement5/Chromium16, Electron125541192169 and Windows125541192065 success; shipping125541192009 still queued at20:50:32Z.",
         "exact106bb95ba97ef7722e9523285783824393039bc0:run41523018920:reconciliation125543545349 completed success Human62/resource3/sharebox1/journal12/Agent4/credential3/HTTP1; mixed stale,26-case corruption and beafc strengthened concurrent CAS all named ok. Full log SHA256 c10ca945da98d697a489463898f1f20fe522982bf25a1a32fe6c9c76e2715435, artifact13178302134 digest sha256:02acce01cf84e609998936473557833958237099b6b1b395402966e2cbe377d6. UI125543545453, Electron125543544935 and Windows125543545542 success; shipping125543545357 queued at2026-11-02T20:54Z, overall run not terminal/pass.",
         "exact:9329aced33343e8e356ba34dfd0f474f3e767914:run41523624057:attempt1:job125545613103:retained-direct-ffi-compatibility:completed/success. Actual runtime_ffi target15 passed/0 failed/1 ignored, all five exported_c_* cases passed; existing live Telegram DC case remains explicitly ignored. Locked input and original11 cases preserved. Artifact13179096257 sha256:c8c6b02c917d25541fe859bea1ff93d1a0be1414430e28ae3cd58486a17ce661; full log sha256:d2a1f7a539ef6319e50840f945b77a2eb2392f86b1805a7133ae3d397eed2233. Source gate41523623907 success Node157/Schema37/errors0, unaccepted candidate remains unaccepted. See projects/telegram-desktop-rust/evidence/round16-retained-ffi-execution.json. These in-process C-wrapper/synthetic-store results do not qualify AppHost C ABI7, final shared/static library, installed external consumer, real user migration, live service, other pending native jobs or full ACCEPT.",
-        "exact7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18 run41529811801: reconciliation125566772865 Transcript3 pass, Human65 did not execute because the new test incorrectly used SessionGatewayError Display (E0599/E0277, cargo101). Social125566773268 Feature10 actual pass but expected caught-panic output split a named grep line; Runtime9/HTTP6 did not execute. UI125566773513 first six groups114 pass, actual Renderer11 had1 pass/10 initial-older-request timeouts, Transcript8 did not execute. Preserve failed artifacts and repair causal defects; no rerun-until-green or combined success claim."
+        "exact7f8abefc6020d5fc16d7d34cfd0dc0f3b6ec2b18 run41529811801: reconciliation125566772865 Transcript3 pass, Human65 did not execute because the new test incorrectly used SessionGatewayError Display (E0599/E0277, cargo101). Social125566773268 Feature10 actual pass but expected caught-panic output split a named grep line; Runtime9/HTTP6 did not execute. UI125566773513 first six groups114 pass, actual Renderer11 had1 pass/10 initial-older-request timeouts, Transcript8 did not execute. Preserve failed artifacts and repair causal defects; no rerun-until-green or combined success claim.",
+        "exact8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6:run41609548094:job125827687971 native-message-ui completed success, Coordinator20 pass/0 fail and actual Chromium Renderer28 pass/0 failed/0 skipped/0 retries including two HRR-12 controls; run41609548121:renderer125827688036 completed success; Rust actual Host and same-H shipping must retain their independent outcomes."
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",

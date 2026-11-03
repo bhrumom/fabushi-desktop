@@ -464,5 +464,92 @@
       "legacy_rule": "Exact legacy digest+readable original source policy admitted only if existing ownership resolver returned false; v1 marker/versioned/malformed/unresolvable journal remains fail closed",
       "execution": "not run on next containing H at authoring"
     }
+  },
+  "round1_hrr12_20261103": {
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "parent": "c2ce434b259ad3529dc19f0ba1ae1af7c0cb4f65",
+    "production_h": "8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6",
+    "production_tree": "ba50dd52caa76ab9fd8d5cefff37b19b594446f7",
+    "branch": "checkpoint/tdrp-human-retry-bfafe567-r1",
+    "scope": [
+      "Coordinator readiness generation and actual transferred-port recheck after scope predicate",
+      "Human Resend notice bound to account, selected conversation and attempt, without new owner",
+      "Real controlled-port and Chromium Renderer recovery tests, preserved existing Session and Bot"
+    ],
+    "blobs": {
+      "frontend/src/production/coordinator-client.ts": "adc129f43059c4e5ee0979e40b04891b2450ece0",
+      "frontend/src/production/coordinator-client.contract.test.ts": "e9fc18e956febbfc1c0a32282d6c2c4aa927ade1",
+      "frontend/src/production/ProductionRenderer.tsx": "2392b47a4e64e3f0c0c74be6398552c945919bf9",
+      "desktop/e2e/native-message-projection.spec.ts": "4db2f400a62e92bcdb27b8bac86e4a4955cbc553",
+      ".github/workflows/native-service-contracts.yml": "223f70171cd7af42d77b12b7db39b9b50a60ef40",
+      "projects/grok-fabu-parity/architecture-semantic-adaptations.json": "0d2b406ebf3d067c62956572878cf1d02d4ac400"
+    },
+    "verification": {
+      "native_ui": {
+        "run": 41609548094,
+        "job": 125827687971,
+        "head": "8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6",
+        "status": "completed",
+        "conclusion": "success",
+        "coordinator": "20 passed",
+        "chromium": "28 passed/0 failed/0 skipped/0 retries",
+        "transcript": "retained checks passed"
+      },
+      "rust_renderer": {
+        "run": 41609548121,
+        "job": 125827688036,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "electron": {
+        "run": 41609548094,
+        "job": 125827687637,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "windows_update": {
+        "run": 41609548094,
+        "job": 125827687877,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "retained_ffi": {
+        "run": 41609548094,
+        "job": 125827687820,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "social_owner": {
+        "run": 41609548094,
+        "job": 125827688001,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "host_http_sqlite": {
+        "run": 41609548094,
+        "job": 125827687332,
+        "status": "completed",
+        "conclusion": "success",
+        "scope": "Actual real Host HTTP/SQLite: Human81, Transcript3, raw Human retry1, resource upload3, Human creation14 + storage3, forwarding Sharebox2/journal13, Agent4, credential3, forward/retry HTTP1 each and Coordinator protocol1; no failures in focused steps"
+      },
+      "shipping_apphost": {
+        "run": 41609548094,
+        "job": 125827687686,
+        "status": "in_progress at receipt publication",
+        "conclusion": null,
+        "scope": "Requires exact-H final job conclusion and logs; no success inferred"
+      }
+    },
+    "source_accounting": {
+      "recursive_git_identities": 16381,
+      "source_reviews": 6,
+      "complete_reviews": 2,
+      "unknown": null,
+      "unread": null,
+      "accepted": false
+    },
+    "independent_acceptance": false,
+    "full_migration_complete": false,
+    "note": "Queued/in-progress results are not passes. Existing current owner and unified UI/Agent/Host capabilities remain; this checkpoint neither deletes Telegram legacy data nor asserts release ACCEPT. Actual later job conclusions must be re-read from GitHub."
   }
 }
