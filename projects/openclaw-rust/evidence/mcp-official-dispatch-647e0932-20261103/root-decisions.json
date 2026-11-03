@@ -1,0 +1,160 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "MCP-OFFICIAL-DISPATCH-v1",
+  "frozenScope": {
+    "base": "9eb2d5ef6f28116a2f6c4933e75794f94c2b991d",
+    "baseTree": "8a3f669a5d8d1d1d1d2faee834e8844c2c7cfce7",
+    "startingHead": "9eb2d5ef6f28116a2f6c4933e75794f94c2b991d",
+    "paths": [
+      "source/electron-main/mcp/official-mcp-service.ts",
+      "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "desktop/scripts/build-electron-runtime.mjs",
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/parity-ledger.json",
+      "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json"
+    ]
+  },
+  "r1": {
+    "reviewCommit": "25571de153be131d54a141f6fc5cb7009c19364a",
+    "tree": "ce81d0dcf4029834adef955af41422d4259aaa2f",
+    "manifestBlob": "e96e7bd94412c4a4db57963c62c37d2362da943d",
+    "completePatchBlob": "78179016c4d8dfc3a79cf9ec17be1c67b5c0febb",
+    "sourceSnapshotFullReadback": [
+      {
+        "path": "source/electron-main/mcp/official-mcp-service.ts",
+        "blob": "45fab10964d9429e689a1a133445773bc576d03a",
+        "bytes": 24740,
+        "sha256": "95bf08403e3e96155f66ac5dbcdb3b382c23e53826e28089b0419adeb82c3167",
+        "fullReadback": true
+      },
+      {
+        "path": "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "blob": "01cc975d6eb6e2df5d4b93c5a829e02264fe0b7f",
+        "bytes": 15160,
+        "sha256": "224d3faa8c06e94db9377835c445eb1e6c21369d08d352084784f70339f8cfa8",
+        "fullReadback": true
+      },
+      {
+        "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        "blob": "0c57e123a56c96150ffe168fa8384cd848a8c082",
+        "bytes": 146419,
+        "sha256": "086346777a8920deb47a80f978d7adf2c05c9bc519f6080394b21e3eb51f11e0",
+        "fullReadback": true
+      },
+      {
+        "path": "desktop/scripts/build-electron-runtime.mjs",
+        "blob": "4dafbbf040c4b18d30bc5d8143a2be550ac2f8ef",
+        "bytes": 4501,
+        "sha256": "26776c62605b321383787d1da283c0d0593f349e2b79a4d2dba06e315edcdac4",
+        "fullReadback": true
+      },
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "blob": "70d0736f56e93d25d869e8411c471d2218f3218b",
+        "bytes": 471961,
+        "sha256": "fad5fc1950cb79536e001a421782d639736e1a0188ac951e9db2db9d78dd0dac",
+        "fullReadback": true
+      },
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "blob": "7d612adc87af6066d4dd8e70526ba56aedea1bf5",
+        "bytes": 1458324,
+        "sha256": "030eac616a31af6c9ad126c68be352d64c016f1375c9cccc0b34155723732c04",
+        "fullReadback": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "blob": "01b5a253d532d612b81e8c06e25c54c28a95dd3e",
+        "bytes": 163481,
+        "sha256": "b21b6cac07c60f918353ce1a7b034636a1ed020a673f9aa8e0909db9d60a1606",
+        "fullReadback": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+        "blob": "25424b20fa7060ca0bc19eec40c2f65e63bf8056",
+        "bytes": 11870,
+        "sha256": "9500f00a5a3d5691b00bb68b8ff61a883f7774b8f1ced0884ee3d60c6b77dd07",
+        "fullReadback": true
+      }
+    ],
+    "reviews": [
+      {
+        "task": "/root/mcp_official_r1_security",
+        "lens": "general/security/lifetime",
+        "acceptedLaunch": {
+          "model": "gpt-6-astra",
+          "effort": "xhigh",
+          "fork_turns": "none"
+        },
+        "verdict": "REQUEST_CHANGES_SOURCE_ONLY",
+        "rootRead": "Complete terminal report read in conversation. This record is the root synthesis/decision, not a claimed byte-identical archive of that report.",
+        "findings": [
+          "R1-SEC-01"
+        ]
+      },
+      {
+        "task": "/root/mcp_official_r1_structure",
+        "lens": "structure/reuse/performance",
+        "acceptedLaunch": {
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "fork_turns": "none"
+        },
+        "verdict": "pending"
+      }
+    ]
+  },
+  "decisions": [
+    {
+      "id": "OF-R1-001",
+      "sourceFinding": "R1-SEC-01",
+      "decision": "FIX",
+      "classification": "IMPL_BUG_PREEXISTING_IN_TOUCHED_OUTPUT_BOUNDARY",
+      "severity": "P2",
+      "provenance": "Frozen base already lacks the final post-await service lifetime check. This is not a regression introduced by the new pre-send assertion/witness.",
+      "path": "source/electron-main/mcp/official-mcp-service.ts",
+      "symbols": [
+        "OfficialMcpService.fence",
+        "OfficialMcpService.execute"
+      ],
+      "requirement": "OF-06 retains service-disposal private-output suppression; OF-T5 must constrain the last output boundary.",
+      "sourceProof": [
+        "fence awaits scope() (which checks disposed), then state()/ports.read; no disposed check after that second await",
+        "execute awaits its final fence after request has returned and removed the controller from pending, then constructs success synchronously",
+        "adapter intentionally preserves admitted outcomes and cannot substitute a source-currentness check for the Official service output fence"
+      ],
+      "failingSchedule": [
+        "tools/call enters and returns private success",
+        "request parsing/post-response fence/redaction complete",
+        "execute final fence passes scope(), then its native vault read is held",
+        "actual adapter reset/dispose retires the Official service",
+        "old vault text with matching revision returns; original code publishes native success"
+      ],
+      "rootDecision": "Repair the existing service own publication check synchronously after execute's last await; do not recheck source or return MCP_ORIGIN_RETIRED after entry. Preserve late source-only success and current generic unknown/disposal error.",
+      "authorizedFixPaths": [
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+        ".github/workflows/rust-desktop-runtime.yml",
+        "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json"
+      ],
+      "requiredOracle": [
+        "Actual default production chain: hold final output vault read, reset original service, release old revision, require generic error/no private output/one tools-call/no replay, then fresh replacement success",
+        "Actual service: dispose between final fence fulfillment and execute continuation using owned promise-reaction ordering, proving only a post-await publication check suffices",
+        "Retain all23 existingOF,19standaloneOfficial,28origin/carrier and3account required positives"
+      ],
+      "execution": "Source-proven defect; not an observed Actions failure. No local executable validation."
+    }
+  ],
+  "campaign": {
+    "current": "Not dispatched; R1 source finding must be fixed and freshly re-reviewed first.",
+    "next": "One exact published-H native campaign combining initial Official coverage with the existing two strict R3 rejection-oracle corrections; no oldH pass relabeling."
+  },
+  "all8GlobalFlagsRemainFalse": true,
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "launchVisibility": "Explicit model/effort/fork arguments accepted by host; hidden applied-runtime metadata not exposed.",
+  "recordedAt": "2026-11-03 07:12:01 UTC"
+}
