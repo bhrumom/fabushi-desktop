@@ -1,0 +1,770 @@
+diff --git a/projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md b/projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md
+--- a/projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md
++++ b/projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md
+@@ -1353,3 +1353,24 @@ Freeze a fresh complete-scope candidate against the same original base, include
+ the actual R1->R2 fix delta, obtain new blind GENERAL and STRUCTURE reviews,
+ then execute affected locked build/contracts/wiring/negative cases only in
+ GitHub Actions. Unit source readiness is not full migration acceptance.
++
++## AR-LOCK-R3 — constructor observations under writer contention
++
++This corrects LR2-03 within PS-LOCK-RECONCILE-v2, before implementing the fix
++against frozen R2 subject ca32f83f13a8aed439e9e3341d175405b1d1a655.
++A fresh constructor's try_shared(None) is an unlocked observation, including its
++error. It cannot certify a two-file image as corrupt: a legitimate initializer
++may publish image and marker between the reader's two reads. Do not latch a
++permanent integrity fault from this unowned view. Construct with recovery-required
++unknown admission and no positive grant; deferring this read entirely is allowed.
++After the writer releases EX, an ordinary serialized read may observe facts but
++cannot clear unknown recovery. Only the existing explicit fresh successful sync
++may recover. An actual image error observed with SH remains a sticky fault and
++exact file restoration cannot heal that retained owner. Genuinely absent-root
++construction remains side-effect-free; same-root handoff retains its reader.
++
++Required controls use actual EX contention and the real constructor/reader/sync:
++adverse unlocked images remain refused yet explicitly recoverable after repair,
++healthy writer completion is observed without positive fallback, and a genuinely
++authoritative constructor error remains faulted after the same repair. Retain all
++prior fault, causal identity, Workflow, publisher and process assertions.
+diff --git a/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json
+--- a/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json
+@@ -9,7 +9,7 @@
+   },
+   "original_scope_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+   "incoming_subject": "550909022eba44eb9326d760f8c33d613b40a7bb",
+-  "implementation_base": "a8dc16661f272a122940efec1d7b7f6822a900e9",
++  "implementation_base": "c06900dfa561c8c20f7eef244c70877e3bb91566",
+   "spec": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md#ar-lock-r2--causal-cross-process-observations-and-mutation-currentness",
+   "responsibility_id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
+   "unit_id": "OCRM-UNIT-SKILLS-001",
+@@ -45,7 +45,7 @@
+     "PSL07": "A retained initialized owner never treats total custody-file loss as legacy absence. It retains confirmed/pending/auth facts, latches recovery fault, refuses read/mutation/refresh before remote work or state reinitialization, and stays faulted after explicit restoration; a fresh owner may inspect the restored image.",
+     "PSL08": "Every actual uninstall reservation, exact settlement and confirmed-fact release rotates required nullable canonical v3 uninstallObservation. Auth/refresh-only transitions preserve it. A foreign complete cycle cannot republish a pre-cycle result even if all semantic sets return identical; pruning binds the successful pass's post-commit identity.",
+     "PSL09": "Workflow mutation selects a canonical plugin, acquires its actual SH lease, then re-reads the committed record and current publisher authority. Changed, removed or remapped records and unknown/different publishers refuse before touching either prior or current file; an unchanged current publisher can edit.",
+-    "PSL10": "An image integrity error observed under authoritative SH latches owner-local recovery, preserves known facts and advances local observation. Restoration cannot heal that retained owner. Unlocked contended reads may deny only the current observation; a fresh owner may inspect explicit repair.",
++    "PSL10": "An image integrity error observed under authoritative SH latches owner-local recovery, preserves known facts and advances local observation. Restoration cannot heal that retained owner. Unlocked contended reads may deny only the current observation; a fresh owner may inspect explicit repair. A fresh constructor under writer contention has unknown recovery, not authoritative corruption; it must not promote an unlocked two-file read error to permanent fault. Explicit successful fresh recovery is required after a later serialized observation.",
+     "PSL11": "The actual upload mutation lease covers backend and cleanup I/O, then ends before either cleanup log or edge diagnostic callback. Reentrant callbacks can acquire actual EX and sync the real owner; original backend success/error and diagnostic emission remain."
+   },
+   "source_authority": {
+@@ -115,11 +115,15 @@
+       "confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication",
+       "live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease",
+       "live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication",
+-      "extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"
++      "extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error",
++      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery",
++      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_recovers_after_actual_first_image_publication",
++      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_constructor_corruption_remains_faulted_after_restore",
++      "extensions::mcp::plugin_skills::auth_recovery_tests::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes"
+     ],
+-    "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance. R2 adds a complete foreign-process uninstall cycle while the paused owner performs no intermediate read, authoritative corruption/restoration controls, actual workflow publication interleavings and actual cleanup-I/O fault with reentrant owner callbacks. These are source-authored until exact-H Actions returns evidence.",
++    "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance. R2 adds a complete foreign-process uninstall cycle while the paused owner performs no intermediate read, authoritative corruption/restoration controls, actual workflow publication interleavings and actual cleanup-I/O fault with reentrant owner callbacks. These are source-authored until exact-H Actions returns evidence. Constructor controls now use actual EX and real I/O faults to distinguish an unowned observation from authoritative corruption, plus the actual first image/marker publisher under EX and a genuinely absent root with no constructor writes. Ordinary repaired reads retain unknown until explicit successful sync; no claim to execute every OS scheduling interleaving.",
+     "prior_failure": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-    "exact_candidate_execution": "pending R2 integrated source convergence and frozen H",
++    "exact_candidate_execution": "pending R3 complete-scope source review and frozen exact-H Actions",
+     "reuse_note": "The existing skill_publish_contract target is also selected in the Linux plugin-uninstall-service command; its four retained public publish/restore oracles run alongside the actual-owner lease regression. No second capture owner.",
+     "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh."
+   },
+@@ -138,6 +142,13 @@
+       "source_contract_blob": "19ea28aefe8f64b62a433e06e30c65a80917c3b0",
+       "disposition": "R1 source reviewed; four root FIX decisions require R2. Prior behavior and read facts retained; no execution acceptance.",
+       "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++    },
++    {
++      "contract": "PS-LOCK-RECONCILE-v2",
++      "source_subject": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
++      "source_contract_blob": "155f4dff0f6fe7c7f9f1f3210296beac7bf81a6a",
++      "disposition": "R2 complete source review identifies an unlocked constructor observation promoted to permanent fault. Root confirms the actual source path and records FIX before correction; no executable verification.",
++      "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+     }
+   ],
+   "private_image_migration": {
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -19594,7 +19594,7 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning. HHP-v2 corrects the existing read-only stale-row selector: confirmed missing or invalid entries are selected, while permission/transient/other uninspectable failures retain the full row. Durable origin publication, persistence and production consumers remain required under the existing wiring blocker. BXR-v1.3 implements a necessary existing Box/Runner prerequisite: match response identity, require complete transport and RPC termination, and preserve unknown mutation outcomes through real ForeverBox and MCP spill consumers. It does not produce raw HTML bytes, a private generated-origin grant or durable provenance; the existing wiring blocker and all acceptance states remain open.",
++      "behavior": "Outbound generated HTML document provenance tracking, trusted marker verification, and stale marker pruning. HHP-v2 corrects the existing read-only stale-row selector: confirmed missing or invalid entries are selected, while permission/transient/other uninspectable failures retain the full row. Durable origin publication, persistence and production consumers remain required under the existing wiring blocker. BXR-v1.3 implements a necessary existing Box/Runner prerequisite: match response identity, require complete transport and RPC termination, and preserve unknown mutation outcomes through real ForeverBox and MCP spill consumers. It does not produce raw HTML bytes, a private generated-origin grant or durable provenance; the existing wiring blocker and all acceptance states remain open. BXR-SHELL-CAPTURE-v1 preserves entered foreground read/wait/worker uncertainty through the existing daemon/Host/ForeverBox/Runner custody chain and retains owned cleanup state; no raw-byte trust grant or provenance persistence is introduced.",
+       "blocker_ids": [
+         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001"
+       ],
+@@ -19605,7 +19605,8 @@
+         "mahayana_host_runtime::extensions::attachments::host_read_media_policy",
+         "mahayana_host_runtime::box::box_remote_accessor::BoxRemoteExecManager (BXR-v1.3 response identity and completion prerequisite only)",
+         "mahayana_host_runtime::box::generated_production::ProductionBoxResourceAccessor (BXR-v1.3 typed post-write outcome prerequisite only)",
+-        "mahayana_host_runtime::runner::box_tool_access::RunnerBoxToolBridge (BXR-v1.3 unknown spill outcome preservation)"
++        "mahayana_host_runtime::runner::box_tool_access::RunnerBoxToolBridge (BXR-v1.3 unknown spill outcome preservation)",
++        "fabushi_box_exec_daemon::server::BoxExecRuntime (SC01-SC07 foreground outcome/capture custody prerequisite only)"
+       ],
+       "evidence_refs": [
+         "source/host/tests/openclaw_html_provenance_contract.rs",
+@@ -19616,7 +19617,10 @@
+         "docs/specs/g11-box-browser-wire-completion.md",
+         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+-        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json"
++        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
++        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
++        "source/box-exec-daemon/src/server.rs",
++        "source/host/tests/box_exec_daemon_process_contract.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -19645,7 +19649,14 @@
+         "BXR03",
+         "BXR04",
+         "BXR05",
+-        "BXR06"
++        "BXR06",
++        "SC01",
++        "SC02",
++        "SC03",
++        "SC04",
++        "SC05",
++        "SC06",
++        "SC07"
+       ],
+       "owner_decision": "Incorporate outbound HTML provenance types and validation into host_read_media_policy module",
+       "postconditions": [
+@@ -19733,7 +19744,16 @@
+         "source/host/tests/box_remote_accessor_contract.rs::box_remote_exec_manager_requires_matching_data_and_control_identity",
+         "source/host/tests/box_generated_production_contract.rs::production_exec_service_requires_one_legal_final_connect_end",
+         "source/host/tests/runner_box_tool_composition_contract.rs::runner_box_bridge_preserves_unknown_mcp_spill_write_without_replay",
+-        "source/host/tests/box_exec_daemon_process_contract.rs::box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
++        "source/host/tests/box_exec_daemon_process_contract.rs::box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_interrupted_read_retries_without_losing_bytes",
++        "source/box-exec-daemon/src/server.rs::tests::disconnect_aborts_foreground_shell_process_group",
++        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
++        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"
+       ],
+       "typed_contracts": [
+         "validate_provenance_row",
+@@ -33103,7 +33123,8 @@
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+         "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -33250,7 +33271,11 @@
+         "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication",
+         "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease",
+         "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication",
+-        "source/host/src/extensions/mcp/skill_publish.rs::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"
++        "source/host/src/extensions/mcp/skill_publish.rs::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_contended_constructor_recovers_after_actual_first_image_publication",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_authoritative_constructor_corruption_remains_faulted_after_restore",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes"
+       ],
+       "typed_contracts": [
+         "SkillDefinition",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -181,7 +181,8 @@
+         "source/host/app/src/tests/cron_job_identity_tests.rs",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R04",
+@@ -488,7 +489,8 @@
+         "source/host/tests/memory_synthesis_service_contract.rs",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R08",
+@@ -675,7 +677,8 @@
+         "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/execution-r1/assessment.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R09",
+@@ -1329,7 +1332,8 @@
+         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R21",
+@@ -1436,7 +1440,8 @@
+         "docs/specs/g11-box-browser-wire-completion.md",
+         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+-        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json"
++        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
++        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R23",
+@@ -1479,7 +1484,14 @@
+         "BXR03",
+         "BXR04",
+         "BXR05",
+-        "BXR06"
++        "BXR06",
++        "SC01",
++        "SC02",
++        "SC03",
++        "SC04",
++        "SC05",
++        "SC06",
++        "SC07"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -1602,7 +1614,8 @@
+         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R24",
+@@ -2072,7 +2085,8 @@
+         "source/host/tests/memory_synthesis_service_contract.rs",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC08",
+@@ -2894,7 +2908,8 @@
+         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC21",
+@@ -3008,7 +3023,8 @@
+         "docs/specs/g11-box-browser-wire-completion.md",
+         "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+-        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json"
++        "projects/openclaw-rust/evidence/box-response-completion-647e0932-20261103/execution-r1/assessment.json",
++        "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC23",
+@@ -3051,7 +3067,14 @@
+         "BXR03",
+         "BXR04",
+         "BXR05",
+-        "BXR06"
++        "BXR06",
++        "SC01",
++        "SC02",
++        "SC03",
++        "SC04",
++        "SC05",
++        "SC06",
++        "SC07"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -3197,7 +3220,8 @@
+         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -236,6 +236,13 @@
+ # BXR-v1.3 binds the actual Box owner, all changed consumers and the existing
+ # daemon producer separately from unrelated portable-source coverage.
+ box_response_inputs = [
++    "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
++    "source/host/src/extensions/forever_box/host_box.rs",
++    "source/host/src/extensions/forever_box/forever_box_service.rs",
++    "source/host/src/extensions/inference/codex_direct_responses.rs",
++    "source/host/src/runner/stream_attempt.rs",
++    "source/host/src/runner/production_turn_run_shell_adapter.rs",
++    "source/host/src/runner/routed_provider_runtime.rs",
+     ".github/workflows/rust-desktop-runtime.yml",
+     "docs/specs/g11-box-browser-wire-completion.md",
+     "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+@@ -1091,6 +1098,10 @@
+         "extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery",
+         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction",
+         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_recovers_after_actual_first_image_publication",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_constructor_corruption_remains_faulted_after_restore",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes",
+     ]),
+     ("plugin-uninstall-binding", base + ["--lib", "host_production_extensions::plugin_skills_binding_tests::", "--", "--test-threads=1"], [
+         "host_production_extensions::plugin_skills_binding_tests::fresh_host_binding_recovers_uninstall_custody_before_either_startup_order",
+@@ -1259,6 +1270,9 @@
+     ("box-response-real-daemon", base + ["--test","box_exec_daemon_process_contract","box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion","--","--exact","--ignored","--test-threads=1"], [
+         "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+ ]),
++    ("box-response-shell-capture-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::foreground_capture_", "--", "--test-threads=1"], ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes"]),
++    ("box-response-shell-capture-consumer", base + ["--test", "box_exec_daemon_process_contract", "box_foreground_capture_", "--", "--ignored", "--test-threads=1"], ["foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"]),
++    ("box-response-shell-capture-disconnect", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::disconnect_aborts_foreground_shell_process_group", "--", "--exact", "--test-threads=1"], ["server::tests::disconnect_aborts_foreground_shell_process_group"]),
+ ]
+ def successful_test_names(output):
+     # libtest decorates an expected-panic success without changing its name.
+@@ -1308,7 +1322,7 @@ def canonical_contract_results_accepted(cargo_exit, capture_exit, required, outp
+ # keyword module. Both legal libtest spellings map to one exact required name;
+ # duplicate aliases, foreign owners and additional positives are rejected.
+ box_response_exhaustion_name = "box::box_remote_accessor::response_identity_tests::box_exec_request_identity_exhaustion_refuses_before_serialization_or_transport"
+-box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon"}
++box_response_filtered_cases = {"box-response-manager-exhaustion", "box-response-forever-box", "box-response-real-daemon", "box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect"}
+ 
+ def box_response_observed_names(output):
+     names = successful_test_names(output.replace("\r\n", "\n"))
+@@ -1388,12 +1402,15 @@ def source_bindings(paths):
+ receipt = {
+     "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v2",
+     "plugin_admission_lock_inputs_before": plugin_admission_lock_inputs_before,
+-    "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish","extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition","extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes","extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault","confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication","live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease","live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication","extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"],
+-    "plugin_admission_lock_scope": "Existing Rust Skills admission and durable image owner preserves live denial and unknown recovery. Strict v3 uninstallObservation fences a foreign reserve/settle ABA across loader, publication and prune; legacy v1/v2 read facts remain. Authoritative SH image faults latch retained recovery; contended reads remain observation-only. Workflow mutation re-reads canonical current record, publisher and path under the actual lease. Actual publisher cleanup releases its lease before reentrant diagnostics. All retained assertions and OS/process controls remain required. Real accounts/ecosystem, hostile directory replacement, power loss, performance and supported-platform package acceptance remain open.",
++    "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish","extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition","extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes","extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault","confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication","live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease","live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication","extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_recovers_after_actual_first_image_publication","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_constructor_corruption_remains_faulted_after_restore","extensions::mcp::plugin_skills::auth_recovery_tests::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes"],
++    "plugin_admission_lock_scope": "Existing Rust Skills admission and durable image owner preserves live denial and unknown recovery. Strict v3 uninstallObservation fences a foreign reserve/settle ABA across loader, publication and prune; legacy v1/v2 read facts remain. Authoritative SH image faults latch retained recovery; contended reads and constructors remain observation-only, with explicit fresh recovery required. Workflow mutation re-reads canonical current record, publisher and path under the actual lease. Actual publisher cleanup releases its lease before reentrant diagnostics. All retained assertions and OS/process controls remain required. Real accounts/ecosystem, hostile directory replacement, power loss, performance and supported-platform package acceptance remain open.",
+     "local_exec_outcome_contract": "LXO-v1",
+     "local_exec_outcome_inputs_before": local_exec_outcome_inputs_before,
+     "local_exec_outcome_required_runner_names": ["production_generated_runner_retains_unknown_external_shell_effects","production_generated_runner_preserves_known_external_shell_outcomes","production_external_shell_adapter_types_uncertain_results_and_errors"],
+     "local_exec_outcome_scope": "Actual registered generated Runner, production ExternalShell adapter, shared Host LocalExec and permission owner through real bridge delivery. Counted external effects, unknown post-entry outcomes, sticky custody, no uncertain checkpoint/replay, known refusal/Exit and fresh-owner journal controls use fixture-owned peers. Separate native three-platform and actual App/protocol receipts remain required; no physical device, external account, full process-tree, package or global acceptance.",
++    "box_shell_capture_contract": "BXR-SHELL-CAPTURE-v1",
++    "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
++    "box_shell_capture_scope": "Actual daemon foreground capture distinguishes pre-spawn known refusal from entered read/wait/worker uncertainty for ordinary Shell and MiniSwe. Owned children remain in the existing registry through bounded observed cleanup; actual Throw/Close reaches Host, ForeverBox, Runner sticky custody, no replay and checkpoint refusal. Private cfg(test) operation faults are bound to a separately identified library test artifact; normal shipping daemon controls remain independent. Descendant-process closure, hostile ownership changes, raw HTML provenance, power loss, platform packages and real services remain unaccepted.",
+     "box_response_contract": "BXR-v1.3",
+     "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
+     "box_response_inputs_before": box_response_inputs_before,
+@@ -1495,6 +1512,127 @@ def source_bindings(paths):
+ print(daemon_raw.decode("utf-8", errors="replace"), flush=True)
+ print(json.dumps({"box_response_daemon_build": daemon_build}), flush=True)
+ 
++
++# SC uses a separately identified cfg(test) library executable solely for the
++# real operation-fault child. The ordinary shipping daemon above remains bound
++# and exercised independently. A stale or unrelated test executable is refused.
++capture_manifest = pathlib.Path("source/box-exec-daemon/Cargo.toml").resolve()
++capture_source = pathlib.Path("source/box-exec-daemon/src/lib.rs").resolve()
++capture_target = pathlib.Path("source/box-exec-daemon/target").resolve()
++
++def select_shell_capture_test_artifact(raw):
++    artifacts, finished = [], []
++    for line in raw.decode("utf-8").splitlines():
++        try:
++            message = json.loads(line)
++        except json.JSONDecodeError:
++            continue
++        if not isinstance(message, dict):
++            continue
++        if message.get("reason") == "build-finished":
++            finished.append(message.get("success"))
++        if message.get("reason") != "compiler-artifact":
++            continue
++        target, profile = message.get("target", {}), message.get("profile", {})
++        executable = message.get("executable")
++        if (not isinstance(target, dict) or not isinstance(profile, dict)
++            or profile.get("test") is not True
++            or target.get("name") != "fabushi_box_exec_daemon"
++            or target.get("kind") != ["lib"]
++            or not isinstance(target.get("src_path"), str)
++            or pathlib.Path(target["src_path"]).resolve() != capture_source
++            or not isinstance(executable, str) or not executable):
++            continue
++        path = pathlib.Path(executable).resolve()
++        if not path.is_relative_to(capture_target):
++            raise ValueError("daemon library test artifact is outside its declared target directory")
++        artifacts.append((path, message))
++    if finished != [True] or len(artifacts) != 1:
++        raise ValueError("current Cargo build lacks one unambiguous successful daemon library test artifact")
++    return artifacts[0]
++
++capture_artifact_sample = {
++    "reason": "compiler-artifact", "package_id": "owned-oracle-only",
++    "target": {"name": "fabushi_box_exec_daemon", "kind": ["lib"], "src_path": str(capture_source)},
++    "profile": {"test": True}, "executable": str(capture_target / "debug/deps/owned-oracle-only"),
++}
++capture_artifact_finish = {"reason": "build-finished", "success": True}
++def capture_artifact_variant(field, value):
++    changed = json.loads(json.dumps(capture_artifact_sample))
++    if "." in field:
++        parent, child = field.split(".", 1)
++        changed[parent][child] = value
++    else:
++        changed[field] = value
++    return changed
++capture_artifact_controls = []
++for control, messages, expected in [
++    ("current-library-test", [capture_artifact_sample, capture_artifact_finish], True),
++    ("missing-artifact", [capture_artifact_finish], False),
++    ("duplicate-artifact", [capture_artifact_sample, capture_artifact_sample, capture_artifact_finish], False),
++    ("foreign-source", [capture_artifact_variant("target.src_path", str(capture_source.parent / "other.rs")), capture_artifact_finish], False),
++    ("foreign-target", [capture_artifact_variant("target.name", "other"), capture_artifact_finish], False),
++    ("ordinary-library", [capture_artifact_variant("profile.test", False), capture_artifact_finish], False),
++    ("binary-test", [capture_artifact_variant("target.kind", ["bin"]), capture_artifact_finish], False),
++    ("missing-executable", [capture_artifact_variant("executable", None), capture_artifact_finish], False),
++    ("foreign-executable", [capture_artifact_variant("executable", str(capture_target.parent / "foreign")), capture_artifact_finish], False),
++    ("missing-build-terminal", [capture_artifact_sample], False),
++    ("failed-build-terminal", [capture_artifact_sample, {"reason":"build-finished","success":False}], False),
++    ("duplicate-build-terminal", [capture_artifact_sample, capture_artifact_finish, capture_artifact_finish], False),
++]:
++    try:
++        select_shell_capture_test_artifact(("\n".join(json.dumps(item) for item in messages) + "\n").encode("utf-8"))
++        actual = True
++    except (ValueError, OSError):
++        actual = False
++    capture_artifact_controls.append({"case": control, "expected": expected, "actual": actual})
++    assert actual == expected, f"SC artifact selection oracle failed: {control}"
++
++capture_command = ["cargo", "test", "--locked", "--manifest-path", str(capture_manifest),
++    "--lib", "--no-run", "--message-format=json", "--target-dir", str(capture_target)]
++capture_log = root / "box-response-shell-capture-build.log"
++capture_build = {
++    "command": capture_command, "cargo_exit": None, "capture_exit": 0,
++    "log": capture_log.name, "execution_error": None, "result": "failed-or-incomplete",
++    "role": "cfg(test) operation-fault producer; separate from the ordinary daemon binary",
++    "lock_was_exact_h_source_input": box_daemon_lock_tracked,
++    "binary": None, "binary_sha256_before_cases": None,
++    "artifact_selection_oracle_controls": capture_artifact_controls,
++}
++receipt["box_shell_capture_test_build"] = capture_build
++(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
++capture_raw, capture_binary, capture_passed = b"", None, False
++try:
++    if not box_daemon_lock_tracked:
++        raise ValueError("SC producer requires a tracked exact-H Cargo.lock")
++    capture_build["lock_sha256_before_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
++    with capture_log.open("wb") as output:
++        capture_build["cargo_exit"] = subprocess.run(capture_command,
++            stdout=output, stderr=subprocess.STDOUT, check=False).returncode
++    capture_raw = capture_log.read_bytes()
++    capture_build["lock_sha256_after_build"] = hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest()
++    if capture_build["cargo_exit"] != 0:
++        raise ValueError("SC library test build failed")
++    if capture_build["lock_sha256_after_build"] != capture_build["lock_sha256_before_build"]:
++        raise ValueError("SC library test build changed its frozen Cargo.lock")
++    capture_binary, artifact = select_shell_capture_test_artifact(capture_raw)
++    if not capture_binary.is_file() or not os.access(capture_binary, os.X_OK):
++        raise ValueError("SC library test artifact is missing or not executable")
++    capture_bytes = capture_binary.read_bytes()
++    capture_build.update({
++        "binary": str(capture_binary), "binary_bytes": len(capture_bytes),
++        "binary_sha256_before_cases": hashlib.sha256(capture_bytes).hexdigest(),
++        "compiler_artifact": artifact, "result": "compiled-and-bound",
++    })
++    capture_passed = True
++except (OSError, ValueError) as error:
++    capture_build["capture_exit"] = 1
++    capture_build["execution_error"] = str(error)
++capture_build["log_sha256"] = hashlib.sha256(capture_raw).hexdigest()
++(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
++print(capture_raw.decode("utf-8", errors="replace"), flush=True)
++print(json.dumps({"box_shell_capture_test_build": capture_build}), flush=True)
++
+ for label, command, required in cases:
+     receipt["active_case"] = label
+     (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+@@ -1506,13 +1644,20 @@ def source_bindings(paths):
+         child_environment_overrides["SAND_DISABLE_LARGE_OUTPUT_SPILL"] = "0"
+     if label == "box-response-real-daemon" and daemon_passed:
+         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_TEST_BIN"] = str(daemon_binary)
++    if label == "box-response-shell-capture-consumer" and capture_passed:
++        child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN"] = str(capture_binary)
+     child_environment = dict(os.environ, **child_environment_overrides) if child_environment_overrides else None
+     try:
+         if label == "box-response-real-daemon" and not daemon_passed:
+             capture_exit = 1
+             execution_error = "BXR real daemon control blocked: the current build did not produce a bound executable"
+             raw = (execution_error + "\n").encode("utf-8")
+             log_path.write_bytes(raw)
++        elif label in ("box-response-shell-capture-unit", "box-response-shell-capture-consumer", "box-response-shell-capture-disconnect") and not capture_passed:
++            capture_exit = 1
++            execution_error = "SC control blocked: the current library test build did not produce a bound executable"
++            raw = (execution_error + "\n").encode("utf-8")
++            log_path.write_bytes(raw)
+         else:
+             with log_path.open("wb") as output:
+                 completed = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT,
+@@ -1591,9 +1736,18 @@ def source_bindings(paths):
+     and daemon_build["binary_sha256_after_cases"] == daemon_build["binary_sha256_before_cases"]
+     and daemon_build["lock_sha256_after_cases"] == daemon_build["resolved_lock"]["sha256"])
+ receipt["box_response_producer_unchanged"] = daemon_unchanged
++capture_build["binary_sha256_after_cases"] = (
++    hashlib.sha256(capture_binary.read_bytes()).hexdigest()
++    if capture_passed and capture_binary is not None and capture_binary.is_file() else None)
++capture_build["lock_sha256_after_cases"] = (
++    hashlib.sha256(box_daemon_lock.read_bytes()).hexdigest() if box_daemon_lock.is_file() else None)
++capture_unchanged = (capture_passed
++    and capture_build["binary_sha256_after_cases"] == capture_build["binary_sha256_before_cases"]
++    and capture_build["lock_sha256_after_cases"] == capture_build["lock_sha256_before_build"])
++receipt["box_shell_capture_test_producer_unchanged"] = capture_unchanged
+ accepted = (palette_exported and len(receipt["executions"]) == len(cases)
+     and all(case["oracle_accepted"] for case in receipt["executions"])
+-    and box_response_sources_unchanged and daemon_unchanged and local_exec_outcome_sources_unchanged
++    and box_response_sources_unchanged and daemon_unchanged and capture_unchanged and local_exec_outcome_sources_unchanged
+     and plugin_admission_lock_sources_unchanged)
+ receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+ (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+diff --git a/source/host/src/extensions/mcp/plugin_skills.rs b/source/host/src/extensions/mcp/plugin_skills.rs
+--- a/source/host/src/extensions/mcp/plugin_skills.rs
++++ b/source/host/src/extensions/mcp/plugin_skills.rs
+@@ -641,27 +641,35 @@ impl SandPluginSkillsService {
+         // this fresh candidate outside its binding lock and rechecks the owner
+         // before installation; same-root successors preserve the live reader.
+         let observed = match AdmissionFileLock::try_shared(&sand_root_dir) {
+-            Ok(lock) => load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir))
+-                .map(|durable| (durable, lock.is_none())),
++            Ok(Some(_lock)) => load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir))
++                .map(Some),
++            // A contended constructor has no accepted image to reconcile. An
++            // unlocked image/marker pair may straddle a legitimate publication;
++            // neither its success nor its error is authoritative. Defer the
++            // read and retain unknown admission until explicit fresh recovery.
++            Ok(None) => Ok(None),
+             // A genuinely absent root has no old cache or custody to admit.
+             // Construction must not create its directory chain.
+             Err(_) if matches!(fs::symlink_metadata(&sand_root_dir),
+                 Err(error) if error.kind() == std::io::ErrorKind::NotFound) =>
+             {
+-                load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir))
+-                    .map(|durable| (durable, false))
++                // Do not follow this absence check with an unlocked two-file
++                // read that could race the root's first creation/publication.
++                Ok(Some(DurableUninstallImage::default()))
+             }
+             Err(error) => Err(error),
+         };
+         let state = match observed {
+-            Ok((durable, writer_active)) => PluginSkillsAdmissionState {
++            Ok(Some(durable)) => PluginSkillsAdmissionState {
+                 denied: durable.state.auth_refusals.clone(),
+-                // Without SH, a fresh owner cannot know whether a positive
+-                // image is only partially published. Preserve that unknown.
+-                recovery_required: writer_active || durable.state.refresh_intent.is_some(),
++                recovery_required: durable.state.refresh_intent.is_some(),
+                 durable,
+                 ..PluginSkillsAdmissionState::default()
+             },
++            Ok(None) => PluginSkillsAdmissionState {
++                recovery_required: true,
++                ..PluginSkillsAdmissionState::default()
++            },
+             Err(_) => PluginSkillsAdmissionState {
+                 recovery_fault: true,
+                 ..PluginSkillsAdmissionState::default()
+diff --git a/source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs b/source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs
+--- a/source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs
++++ b/source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs
+@@ -1360,3 +1360,177 @@ fn auth_contended_unlocked_image_error_does_not_latch_recovery_fault() {
+     assert_skill_file_bytes(&files);
+     h.assert_calls(3);
+ }
++
++
++#[test]
++fn auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery() {
++    for corruption in ["malformed-image", "marker-only-view", "directory-image"] {
++        for confirmed in [false, true] {
++            let root = TempRoot::new();
++            let (prior, loader, records) = seed(&root);
++            let files = skill_file_bytes(&records);
++            let cache = fs::read(root.cache_path()).unwrap();
++            let intent = prior.begin_uninstall("9").unwrap();
++            if confirmed {
++                prior.settle_uninstall(&intent, PluginUninstallSettlement::Removed).unwrap();
++            }
++            let journal = fs::read(root.uninstall_state_path()).unwrap();
++            let marker = fs::read(root.uninstall_version_path()).unwrap();
++            let writer = AdmissionFileLock::exclusive(&root.0).unwrap();
++            assert!(AdmissionFileLock::try_shared(&root.0).unwrap().is_none());
++            // These actual file faults model an unowned image observation, not
++            // a claim that the ordinary writer publishes a malformed image.
++            match corruption {
++                "malformed-image" => fs::write(root.uninstall_state_path(), b"{unserialized-constructor-view").unwrap(),
++                "marker-only-view" => fs::remove_file(root.uninstall_state_path()).unwrap(),
++                "directory-image" => {
++                    fs::remove_file(root.uninstall_state_path()).unwrap();
++                    fs::create_dir(root.uninstall_state_path()).unwrap();
++                }
++                _ => unreachable!(),
++            }
++            let corrupt_image = fs::read(root.uninstall_state_path()).ok();
++            let service = SandPluginSkillsService::new(&root.0, loader.clone())
++                .with_now(Arc::new(|| 1_000));
++            let reader = service.admission_reader();
++            {
++                let live = service.admission.state.lock().unwrap();
++                assert!(live.recovery_required, "{corruption}");
++                assert!(!live.recovery_fault, "contention is not an authoritative image fault");
++            }
++            assert!(reader.is_denied("9"));
++            assert!(reader.is_denied("10"));
++            assert!(service.current().is_empty());
++            assert_auth_recovery(&service, &[], true);
++            assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
++            assert_eq!(fs::read(root.uninstall_state_path()).ok(), corrupt_image);
++            assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), marker);
++            assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
++            assert_skill_file_bytes(&files);
++
++            if corruption == "directory-image" {
++                fs::remove_dir(root.uninstall_state_path()).unwrap();
++            }
++            fs::write(root.uninstall_state_path(), &journal).unwrap();
++            drop(writer);
++            // A complete SH observation imports adverse facts but cannot turn
++            // unknown startup custody into positive cached admission.
++            assert!(reader.is_denied("9"));
++            assert!(reader.is_denied("10"));
++            assert!(reader.acquire("10").unwrap().is_none());
++            assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), journal);
++            assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
++            let status = <SandPluginSkillsService as PluginSkillsPort>::status(&service);
++            assert!(status["authRecovery"].get("fault").is_none());
++            assert!(status["uninstallRecovery"].get("fault").is_none());
++            assert_eq!(status["authRecovery"]["refreshOutcomeUnknown"], true);
++            if confirmed {
++                assert_eq!(status["uninstallRecovery"]["confirmedPluginIds"], json!(["9"]));
++            } else {
++                assert_eq!(status["uninstallRecovery"]["pending"],
++                    json!([{"pluginId":"9","operationId":intent.operation_id}]));
++            }
++
++            let recovered = service.sync("explicit-after-contended-construction").unwrap();
++            assert_eq!(record_ids(&recovered), if confirmed { vec!["10", "9"] } else { vec!["10"] });
++            assert_eq!(loader.calls.load(Ordering::SeqCst), 2);
++            assert!(!reader.is_denied("10"));
++            assert_eq!(reader.is_denied("9"), !confirmed);
++            assert!(reader.acquire("10").unwrap().is_some());
++            assert_auth_recovery(&service, &[], false);
++            assert_skill_file_bytes(&files);
++        }
++    }
++}
++
++#[test]
++fn auth_contended_constructor_recovers_after_actual_first_image_publication() {
++    let root = TempRoot::new();
++    let loader = Arc::new(InlineLoader {
++        result: Mutex::new(Ok(two_plugins(&root, "first"))),
++        calls: AtomicUsize::new(0),
++    });
++    let writer = AdmissionFileLock::exclusive(&root.0).unwrap();
++    assert!(!root.uninstall_state_path().exists());
++    assert!(!root.uninstall_version_path().exists());
++    let service = SandPluginSkillsService::new(&root.0, loader.clone())
++        .with_now(Arc::new(|| 1_000));
++    assert_auth_recovery(&service, &[], true);
++    assert!(!service.admission.state.lock().unwrap().recovery_fault);
++    assert!(!root.uninstall_state_path().exists());
++    assert!(!root.uninstall_version_path().exists());
++    assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
++
++    // The actual existing publisher performs its real image/marker barriers
++    // while the same EX lease remains held; construction creates no state.
++    super::uninstall_state::persist_uninstall_image_locked(
++        &get_plugin_skills_dir(&root.0),
++        &DurableUninstallImage::default(),
++        &UninstallState::default(),
++    ).unwrap();
++    let published = fs::read(root.uninstall_state_path()).unwrap();
++    assert_eq!(fs::read(root.uninstall_version_path()).unwrap(), b"1\n");
++    drop(writer);
++    let reader = service.admission_reader();
++    assert!(reader.is_denied("10"));
++    assert_auth_recovery(&service, &[], true);
++    assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), published);
++    assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
++    assert_eq!(record_ids(&service.sync("explicit-after-first-writer").unwrap()), vec!["10", "9"]);
++    assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
++    assert!(!reader.is_denied("9"));
++    assert!(!reader.is_denied("10"));
++    assert_auth_recovery(&service, &[], false);
++}
++
++#[test]
++fn auth_authoritative_constructor_corruption_remains_faulted_after_restore() {
++    const LOSS_ERROR: &str = "plugin uninstall recovery state is unavailable";
++    let root = TempRoot::new();
++    let (_prior, loader, records) = seed(&root);
++    let journal = fs::read(root.uninstall_state_path()).unwrap();
++    let cache = fs::read(root.cache_path()).unwrap();
++    let files = skill_file_bytes(&records);
++    fs::write(root.uninstall_state_path(), b"{authoritative-constructor-fault").unwrap();
++    let service = SandPluginSkillsService::new(&root.0, loader.clone());
++    assert!(service.admission.state.lock().unwrap().recovery_fault);
++    fs::write(root.uninstall_state_path(), &journal).unwrap();
++    let reader = service.admission_reader();
++    assert!(reader.is_denied("9"));
++    assert!(reader.is_denied("10"));
++    assert!(reader.acquire("10").unwrap().is_none());
++    assert_eq!(service.sync("must-not-heal-authoritative-constructor-fault").unwrap_err(), LOSS_ERROR);
++    assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
++    assert_eq!(fs::read(root.uninstall_state_path()).unwrap(), journal);
++    assert_eq!(fs::read(root.cache_path()).unwrap(), cache);
++    assert_skill_file_bytes(&files);
++    let fresh = SandPluginSkillsService::new(&root.0, loader.clone());
++    assert!(!fresh.admission_reader().is_denied("9"));
++    assert!(!fresh.admission_reader().is_denied("10"));
++    assert_eq!(fresh.current(), records);
++    assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
++}
++
++
++#[test]
++fn auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes() {
++    let parent = TempRoot::new();
++    let absent = parent.0.join("not-created").join("sand");
++    let loader = Arc::new(InlineLoader {
++        result: Mutex::new(Err("constructor must not call loader".into())),
++        calls: AtomicUsize::new(0),
++    });
++    let service = SandPluginSkillsService::new(&absent, loader.clone());
++    {
++        let live = service.admission.state.lock().unwrap();
++        assert!(!live.recovery_fault);
++        assert!(!live.recovery_required);
++        assert!(live.durable == DurableUninstallImage::default());
++    }
++    assert!(service.current().is_empty());
++    assert_eq!(<SandPluginSkillsService as PluginSkillsPort>::status(&service), json!({"authBlocked":[]}));
++    assert!(service.admission_reader().is_denied("9"), "absence grants no existing plugin");
++    assert_eq!(loader.calls.load(Ordering::SeqCst), 0);
++    assert_eq!(fs::symlink_metadata(parent.0.join("not-created")).unwrap_err().kind(),
++        std::io::ErrorKind::NotFound);
++}

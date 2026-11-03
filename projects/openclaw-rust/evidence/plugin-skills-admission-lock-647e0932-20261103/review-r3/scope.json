@@ -1,0 +1,113 @@
+{
+  "schema": "ocrm-candidate-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 3,
+  "contract": "PS-LOCK-RECONCILE-v2",
+  "subject": {
+    "commit": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+    "tree": "a81ada24a6aa47714af36250b43f62d44d49d54c",
+    "role": "actual integrated immutable source candidate; no execution yet"
+  },
+  "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "previous_source_candidate": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "sha": "77a99b596b43333e2f9ef5bff5b1395025032247"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+      "sha": "ce649cd09cefb4c2bec99f8c2d0b94a266645e7a"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "d0ddf13556345df0ea1d2a7f2d496016f46c82d7"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "34e6053174b198921ed4fbea3a1f8307aa8dabd0"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "94020e6d2ff811d3fd897f312e3f545b0863e5d3"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "sha": "5abfe49ac6f73e0dec5988a7c90359d35bb2118d"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+      "sha": "8b8a03ccde91dfbf5a20ca141d84a073ab9c19b5"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+      "sha": "683dea3a140a1b5a9b266ca3e3500d49e1905f35"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/skill_publish.rs",
+      "sha": "d93b54fb169ae09dd6db809dd125f665be5f3545"
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "sha": "4c88b00b2dfe563ba957bd0669f177a422a330a7"
+    },
+    {
+      "path": "source/host/src/workflows/workflow_store.rs",
+      "sha": "dd3945c0b454eea446397e033632fac93e60a17d"
+    },
+    {
+      "path": "source/host/tests/mcp_service_contract.rs",
+      "sha": "2fa0aba1e0fa7ac3c3e67c8b392fe43197f0a14a"
+    },
+    {
+      "path": "source/host/tests/workflow_store_contract.rs",
+      "sha": "7d927e0dc69d9183d84dcdec7a31469ae062f74e"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+      "sha": "80807849a210630af4617ac5db6ab41b0b134230"
+    }
+  ],
+  "diffs": [
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/full.diff",
+      "blob": "90da47f3910061885378588cd3aa0d47877eeed1",
+      "bytes": 290475,
+      "sha256": "3a341752dd604dbd85e84226e2be99b99462129f2a0be8f6196fc0a72909ee3a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/fix-delta.diff",
+      "blob": "471b50503be2936ed14105749609eb803a45e9df",
+      "bytes": 64738,
+      "sha256": "e5f154f37d13a7990ea6c2e14b6344bb97d3e665f2f558f7685d2f1bfb61a23d"
+    }
+  ],
+  "diff_carriers": {
+    "full": {
+      "sha": "ad2b5f1dcfb7045a1de029497125c5214f55be0a",
+      "tree": "2e8570771f1287b79ecb7ec25271fad5d4d85bf1",
+      "parent": "9864d1c02e7e67881d644800963abc807b3abaab",
+      "sourceSubject": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+      "role": "diff only; not execution or shipping subject"
+    },
+    "fix_delta": {
+      "sha": "fe95bad2b3d708af0d022ebea5a4e67e12a06665",
+      "tree": "2e65442f0c926429f05e9039fe461c37d2eec8dd",
+      "parent": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+      "sourceSubject": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+      "role": "diff only; not execution or shipping subject"
+    }
+  },
+  "scope_note": "Complete original fourteen-path scope remains available. Focused R3 review includes the entire proper ca32-to-R3 delta, changed functions and adjacent consumers/oracles, with complete original scope as context. Shared capture/ledger retain incoming SC additions; those are not omitted hunks or treated as full SC acceptance. Isolated exact-path carriers only make complete API patches available and are not runnable/shipping subjects; all addition/deletion counts matched.",
+  "requirements": [
+    "Read current AGENTS and canonical feature Spec, actual source and complete appropriate diff context; be blind to other/prior reports and runner decisions.",
+    "Review constructor absence/contention/authoritative observation, unknown admission and explicit recovery through existing owners, including genuine absence and existing corruption behavior.",
+    "Retain full original scope context and verify meaningful tests and exact-H capture; no local/htch executable validation or source mutation.",
+    "Source verdict does not grant runtime, platform, ecosystem, full unit or shipping acceptance."
+  ]
+}
