@@ -1247,3 +1247,107 @@ runtime pass. Existing historical runs/results remain bound to their subjects;
 no cancellation, replay, weakened gate or promotion of platform acceptance is
 part of this repair. The macOS queue and all unexecuted checks retain their
 actual non-passing state. No local/htch executable validation.
+
+### Interrupted generated tool history — OCRM-GENERATED-HISTORY-v1
+
+Decision **GTH-DEFECT-01 — FIX / IMPL_BUG**, recorded before implementation.
+At base `f64479b089184d5e48c12b2d0792a8c0bd52c695`, the actual generated
+stream returns a provider error before draining completed tool observations or
+staging its canonical checkpoint. A completed tool followed by a failed or
+cancelled continuation therefore has no generated tool history in AgentStore
+or the Journal, although its effect already occurred. The inactive stream's
+error cleanup does not persist final state. Preserve that failed terminal;
+repair history custody through the existing owners without replaying the tool.
+
+The entry remains `create_production_runner` and the generated Agent stream;
+the producer remains `CheckpointRecordingRoutedToolBridge`; the unique state
+owners remain `ProductionAgentStateCheckpointSink`, the checked AgentStore
+root transaction and the existing Transcript mirror. Use the supplied outer
+checkpoint sink before returning the original provider failure. No alternate
+log, scheduler, loop, restore grant or persisted schema is introduced.
+
+- **GTH-01:** When generation fails, invalidate this sink's original-turn
+  completion observations, including earlier invocations. A persisted failed
+  invocation must never create a completed-original-turn capability or allow
+  an upgrade marker to be acknowledged. Keep actual Failed/Cancelled terminal
+  projection and the existing model, account and cancellation identities.
+- **GTH-02:** The bounded history path requires a nonempty, checked drain of
+  actual ordered tool observations, each with an observed successful result,
+  and the same composition runtime's custody with zero pending workers, no
+  unknown result and a started revision equal to the observation count.
+  Poisoned observations refuse persistence. Unknown, outstanding, incomplete
+  or absent observations do not become invented successful tool results.
+  Accepted provider-checkpoint revision is not advanced by history persistence.
+- **GTH-03:** Stage those exact generated steps with the original accepted user
+  identity and no final assistant text. Persist through the existing outer
+  checkpoint and checked-root/Journal transaction; then return the original
+  failure. Do not call successful stream hooks or final-state persistence.
+  Root drift or write/mirror refusal remains an error, preserves unrelated
+  committed state, and cannot create a completion receipt or automatic retry.
+  Report a secondary history failure without replacing the original typed
+  provider failure or its cancellation identity.
+- **GTH-04:** No-effect errors leave canonical bytes unchanged. Successful
+  generation keeps its existing final checkpoint and completion observations.
+  Transient turns without a checkpoint sink retain their existing error path.
+  A fresh consumer reads the committed tool/user history without executing a
+  provider/tool, duplicating entries, sealing an original turn or releasing its
+  marker. Existing stored formats require no migration; rollback does not
+  delete committed history or reinterpret it as permission to resume.
+- **GTH-05:** Extend the existing real generated-Runner/process-reopen harness.
+  Actions must cover permanent provider failure after one real file effect,
+  cancellation after that effect, real provider-checkpoint-store refusal,
+  unknown outcome and zero-effect refusal, concurrent canonical-root drift,
+  repeated fresh consumers, and a successful control. Assert actual terminal,
+  tool/HTTP counts, exact user/tool/result order in canonical state and Journal,
+  missing completion authority and retained marker where applicable. Keep
+  existing root, model/account, retry, cancellation and ORT controls. Reuse the
+  existing Linux/macOS workflow with exact named positives and command/capture
+  evidence; no local/htch execution.
+
+Decision **GTH-SOURCE-01 — FIX / IMPL_BUG** (independent source assessment,
+before correction): propagating a history encoding/staging/persistence error
+with `?` would replace the original `ProviderRefusal` with `Protocol`. The
+shipping Host's existing Codex review/continuation consumer matches the original
+typed refusal. Keep that error authoritative, emit a content-free secondary
+history diagnostic, and never retry the write. A Journal failure may follow a
+durable canonical commit; refusal does not imply the prior root is unchanged.
+
+This reuses the prior deep review at fixed U `1440bb1771372334bea23d7642bb52deb7db1845`:
+`attempt-subscription-cleanup.ts` blob `c90c99156ecf10812708c221b014df9900a8ffe0`,
+`attempt-session-settle.ts` blob `e5735df007a1a469257c8797e6b2a2ce12e3ff0f`,
+`wait-for-idle-before-flush.ts` blob `9fa2d2954c1d3c9421a94ef5cdc22ad75b3cc3cb`
+under `src/agents/embedded-agent-runner/`, and
+`packages/agent-core/src/agent-loop-tool-recovery.ts` blob
+`bc558648d2dbd88b153630edbea1b3772c58d993`. The cleanup contract retains required
+transcript persistence after cancellation; recovery must preserve actual result
+provenance. This is no new literal-read credit or source-authority promotion.
+Unknown/pending-effect history, complete typed replay/UI consumption, durable
+original-turn eligibility/claim/startup continuation and real-provider/platform
+acceptance remain unfinished; this bounded increment does not exempt them.
+
+The retained representation is the existing generated checkpoint format, not a
+claim that every provider JSON payload round-trips losslessly. Source inspection
+of the ordinary-history consumer also found pre-existing direct SendMessage
+argument/result schema mismatches and lossy rich MCP normalization. Their
+canonical encoding and ordinary replay consumer must be repaired before
+claiming full provider-history equivalence; SQL tool cards or empty generated
+objects cannot substitute for the original paired provider data.
+
+Decision **GTH-REVIEW-R1-F1 — FIX / IMPL_BUG (P2)**, before correction.
+The independent GENERAL/security/lifetime review of candidate
+`4dcdf02a6d6c6cce528de6a28ec35c344a6487c9` / tree
+`571817ed6697757df9ff34a30f04b212b835f542` found that successful generation
+and staging can be followed by a failed final outer persistence. The source's
+local error guard does not see that later error; precommit blob, Journal-prepare
+or guarded-root refusals can leave an earlier successful observation readable
+and appendable. Existing Host finalization separately refuses the returned
+error, so this is not evidence of a false-completion or marker-release exploit.
+Retain the same checkpoint sink through the actual lifecycle result and
+invalidate it on every returned error, while preserving invalidation before
+failed-provider history publication. Extend the existing process oracle with
+prior success, successful provider generation plus a real final-write refusal,
+and a later successful write after repair. The original error must remain,
+completion observations must stay unavailable, and no completion receipt or
+marker acknowledgement may be produced. GENERAL uses the configured model at
+xhigh; the independent structure/reuse/performance lens uses gpt-6.1-sol at
+xhigh. Authored tests and static review do not establish execution acceptance.

@@ -5,6 +5,8 @@
 //! generated Native owner against bounded loopback Responses, then reconcile
 //! and acknowledge its actual upgrade marker in the shipping App after that
 //! process and all of its Session owners have closed.
+//! GTH-v1 cases retain known completed tool history after an actual generated
+//! failure, then open it in fresh Host processes without a completion grant.
 
 use std::collections::BTreeMap;
 use std::fs::{self, File};
@@ -18,7 +20,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedToolDefinition,
+    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::SandLocalToolPermissionController;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
@@ -46,6 +48,10 @@ use mahayana_host_runtime::extensions::transcript::turn_runtime::{
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::host_runner_composition::HostRunnerComposition;
+use mahayana_host_runtime::gateway_server::GatewayEventHub;
+use mahayana_host_runtime::runner::coordinator_tool_relay::{
+    CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
+};
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
     original_turn_result_digest, persist_completed_original_turn,
     prove_completed_original_turn, reconcile_completed_original_turn,
@@ -56,14 +62,26 @@ use mahayana_host_runtime::runner::production_turn_agent_owner::{
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge,
-    RunnerRequestContextSnapshot,
+    RunnerRequestContextSnapshot, coordinator_tool_execution_error,
 };
+use mahayana_host_runtime::runner::production_turn_run_shell_adapter::ProviderRetryOutcome;
 use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
 use mahayana_host_runtime::runner::turn_agent_composition::{SAND_AGENT_TOKEN_LIMIT, TurnAgentComposition};
 use mahayana_host_runtime::runner::{
-    ToolEffectCustodyObservation, ToolEffectCustodyReport, ToolEffectUnknownResult, TurnRunOptions,
+    TerminalOutcome, ToolEffectCustodyObservation, ToolEffectCustodyReport,
+    ToolEffectCustodySnapshot, ToolEffectUnknownResult, TurnRunOptions,
 };
 use mahayana_host_runtime::runner_production_bridge::create_production_runner;
+use mahayana_host_runtime::transcript_mirror::conversation_state_binary::{
+    ConversationTurnStructureFields, decode_conversation_state_recovery_fields,
+    decode_conversation_turn_structure_fields, decode_user_message_identity_fields,
+};
+use mahayana_host_runtime::transcript_mirror::generated_occurrence_codec::{
+    CanonicalGeneratedToolJsonProjection, GeneratedTranscriptOccurrenceCodec,
+};
+use mahayana_host_runtime::transcript_mirror::transcript_occurrence_deriver::{
+    DecodedTranscriptStep, TranscriptOccurrenceCodec,
+};
 use rusqlite::{Connection, OpenFlags, params};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -81,6 +99,14 @@ const LEGACY_FIXED_ROOT_ID: &[u8] = b"old";
 const ORIGINAL_STREAM: &str = "original-native-stream";
 const ORIGINAL_MODEL: &str = "Vendor/Nested/CaseSensitive@OriginalTurn";
 const ORIGINAL_TERMINAL_KEY: &str = "original-routed-terminal:current";
+const GENERATED_PROVIDER_FAILURE: &str = "generated history permanent provider failure";
+const GENERATED_PARTIAL_TEXT: &str = "partial failed continuation must not become a final assistant";
+const GENERATED_CANCEL_REASON: &str = "cancel the admitted generated turn after its real effect";
+const GENERATED_PRIOR_TEXT: &str = "completed earlier generated invocation";
+const GENERATED_STORE_OBSTRUCTION: &[u8] = b"unrelated occupied provider checkpoint entry";
+const GENERATED_REFUSED_WRITE_TEXT: &str = "completed generation whose final write must be refused";
+const GENERATED_REPAIRED_WRITE_TEXT: &str = "completed generated invocation after explicit storage repair";
+const GENERATED_FINAL_WRITE_REFUSAL: &str = "generated history fixture final-write refusal";
 // self_summary_count (field 17) = 3, followed by unknown field 99 = "keep".
 const PRIOR_STATE: &[u8] = &[0x88, 0x01, 0x03, 0x9a, 0x06, 0x04, b'k', b'e', b'e', b'p'];
 
@@ -124,7 +150,7 @@ fn composition(root: &Path, sessions: &Arc<ProductionSessionWorkers>) -> HostRun
     )
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 struct ExpectedCheckpoint {
     root_blob_id: Vec<u8>,
     state_bytes: Option<Vec<u8>>,
@@ -147,6 +173,7 @@ struct Fixture {
     original_invocations: usize,
     original_marker: Option<UpgradeResumeMarker>,
     original_compaction: bool,
+    generated_scenario: Option<GeneratedHistoryScenario>,
 }
 
 impl Fixture {
@@ -232,6 +259,7 @@ impl Fixture {
         Self {
             root, agent_id, expected, original: None, original_invocations: 1,
             original_marker: None, original_compaction: false,
+            generated_scenario: None,
         }
     }
 
@@ -299,6 +327,7 @@ impl Fixture {
             original_invocations: self.original_invocations,
             original_marker: self.original_marker.clone(),
             original_compaction: self.original_compaction,
+            generated_scenario: self.generated_scenario,
         };
         fs::write(&request_path, serde_json::to_vec(&request).expect("serialize child request"))
             .expect("write private child request");
@@ -466,6 +495,44 @@ enum ReopenExpectation {
     OriginalMarkerNoop,
     OriginalMarkerPendingAck,
     OriginalMarkerCorruptAck,
+    ProduceGeneratedFailure,
+    GeneratedHistoryReady,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum GeneratedHistoryScenario {
+    ProviderFailure,
+    OrderedProviderFailure,
+    Cancellation,
+    ProviderStoreRefusal,
+    UnknownDownstream,
+    ZeroEffectFailure,
+    RootDrift,
+    LaterFailure,
+    FinalPersistenceRefusal,
+}
+
+impl GeneratedHistoryScenario {
+    fn tool_count(self) -> usize {
+        match self {
+            Self::ZeroEffectFailure => 0,
+            Self::OrderedProviderFailure => 2,
+            _ => 1,
+        }
+    }
+
+    fn request_count(self) -> usize {
+        match self {
+            Self::ProviderStoreRefusal | Self::UnknownDownstream | Self::ZeroEffectFailure => 1,
+            Self::LaterFailure => 3,
+            Self::FinalPersistenceRefusal => 4,
+            _ => 2,
+        }
+    }
+
+    fn retains_history(self) -> bool {
+        !matches!(self, Self::UnknownDownstream | Self::ZeroEffectFailure | Self::RootDrift)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -480,6 +547,8 @@ struct ChildRequest {
     original_invocations: usize,
     original_marker: Option<UpgradeResumeMarker>,
     original_compaction: bool,
+    #[serde(default)]
+    generated_scenario: Option<GeneratedHistoryScenario>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -623,9 +692,14 @@ struct DurableState {
 }
 
 fn durable_state(fixture: &Fixture) -> DurableState {
+    durable_state_for(&fixture.root, &fixture.agent_id)
+}
+
+fn durable_state_for(root: &Path, agent_id: &str) -> DurableState {
     // Compare stored row/payload bytes, not SQLite page/WAL layout. Read-only
     // observations cannot repair, normalize or create the subject databases.
-    let db = open_existing(&fixture.db_path(), true);
+    let directory = root.join("agents").join(agent_id);
+    let db = open_existing(&directory.join(STORE_FILENAME), true);
     let kv = db.prepare("SELECT key,CAST(value AS BLOB) FROM kv ORDER BY key")
         .expect("kv query")
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?))).expect("kv rows")
@@ -634,12 +708,12 @@ fn durable_state(fixture: &Fixture) -> DurableState {
         .expect("transcript query")
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?))).expect("transcript rows")
         .collect::<Result<Vec<_>, _>>().expect("transcript bytes");
-    let blob_db = open_existing(&fixture.blob_path(), true);
+    let blob_db = open_existing(&directory.join(CONVERSATION_BLOBS_FILENAME), true);
     let blobs = blob_db.prepare("SELECT id,typeof(data),CAST(data AS BLOB) FROM blobs ORDER BY id")
         .expect("blob query")
         .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?))).expect("blob rows")
         .collect::<Result<Vec<_>, _>>().expect("all critical and remaining blob bytes");
-    DurableState { kv, transcript, blobs, mirror: mirror_files(&fixture.root.join("transcripts")) }
+    DurableState { kv, transcript, blobs, mirror: mirror_files(&root.join("transcripts")) }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -807,6 +881,19 @@ fn original_wire_request(
 
 impl OriginalTurnWireServer {
     fn new(root: &Path, invocations: usize, empty_final: bool) -> Self {
+        Self::with_generated_scenario(root, invocations, empty_final, None)
+    }
+
+    fn generated(root: &Path, scenario: GeneratedHistoryScenario) -> Self {
+        Self::with_generated_scenario(root, 1, false, Some(scenario))
+    }
+
+    fn with_generated_scenario(
+        root: &Path,
+        invocations: usize,
+        empty_final: bool,
+        generated_scenario: Option<GeneratedHistoryScenario>,
+    ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("private original turn Responses listener");
         listener.set_nonblocking(true).expect("bounded original turn accept");
         let origin = format!("http://{}", listener.local_addr().expect("fixture listener address"));
@@ -847,7 +934,9 @@ impl OriginalTurnWireServer {
                 let request = original_wire_request(&mut stream, ordinal, &worker_stages)?;
                 captured.lock().map_err(|_| "request capture poisoned")?.push(request);
                 original_wire_stage(&worker_stages, ordinal, "request-parsed");
-                let events = if ordinal == 0 {
+                let events = if let Some(scenario) = generated_scenario {
+                    generated_history_wire_events(scenario, ordinal)?
+                } else if ordinal == 0 {
                     vec![json!({"type":"response.completed", "response":{
                         "id":"original-tool-response", "output":[{
                             "type":"function_call", "name":"b", "call_id":"original-terminal-effect", "arguments":"{}"
@@ -971,6 +1060,224 @@ fn original_turn_wire_worker_retains_request_error_without_header_contents() {
     assert!(server.worker.is_none(), "repeated finish cannot invent another worker");
 }
 
+fn generated_history_call_id(ordinal: usize) -> String {
+    format!("generated-history-effect-{ordinal}")
+}
+
+fn generated_history_wire_events(
+    scenario: GeneratedHistoryScenario,
+    ordinal: usize,
+) -> Result<Vec<Value>, String> {
+    if ordinal >= scenario.request_count() {
+        return Err(format!("unexpected generated history provider request {ordinal}"));
+    }
+    if ordinal == 0 && scenario.tool_count() != 0 {
+        let calls = (0..scenario.tool_count()).map(|index| json!({
+            "type":"function_call", "name":"b", "call_id":generated_history_call_id(index),
+            "arguments":json!({"ordinal":index.to_string()}).to_string(),
+        })).collect::<Vec<_>>();
+        return Ok(vec![json!({"type":"response.completed", "response":{
+            "id":"generated-history-tools", "output":calls,
+        }})]);
+    }
+    if matches!(scenario, GeneratedHistoryScenario::LaterFailure | GeneratedHistoryScenario::FinalPersistenceRefusal)
+        && ordinal == 1
+    {
+        return Ok(vec![
+            json!({"type":"response.output_text.delta", "delta":GENERATED_PRIOR_TEXT}),
+            json!({"type":"response.completed", "response":{"id":"prior-generated-success", "output":[]}}),
+        ]);
+    }
+    if scenario == GeneratedHistoryScenario::FinalPersistenceRefusal {
+        let text = if ordinal == 2 { GENERATED_REFUSED_WRITE_TEXT } else { GENERATED_REPAIRED_WRITE_TEXT };
+        return Ok(vec![
+            json!({"type":"response.output_text.delta", "delta":text}),
+            json!({"type":"response.completed", "response":{"id":format!("generated-write-{ordinal}"), "output":[]}}),
+        ]);
+    }
+    let failure = if scenario == GeneratedHistoryScenario::RootDrift {
+        json!({"code":"misalignment_policy_violation", "misalignment":{
+            "detailed_explanation":GENERATED_PROVIDER_FAILURE,
+            "steer":{"message":"preserve the original typed refusal"},
+        }})
+    } else {
+        json!({"message":GENERATED_PROVIDER_FAILURE})
+    };
+    let mut events = Vec::new();
+    if !matches!(scenario, GeneratedHistoryScenario::ZeroEffectFailure | GeneratedHistoryScenario::LaterFailure) {
+        events.push(json!({"type":"response.output_text.delta", "delta":GENERATED_PARTIAL_TEXT}));
+    }
+    events.push(json!({"type":"response.failed", "response":{"error":failure}}));
+    Ok(events)
+}
+
+fn write_generated_history_effect(root: &Path, ordinal: usize) -> Result<Value, ProviderSessionError> {
+    let call_id = generated_history_call_id(ordinal);
+    let path = root.join("generated-effects").join(format!("{ordinal}.txt"));
+    let mut file = fs::OpenOptions::new().write(true).create_new(true).open(path)
+        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+    file.write_all(call_id.as_bytes()).and_then(|()| file.sync_all())
+        .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+    Ok(json!({"receipt":"committed", "ordinal":ordinal.to_string()}))
+}
+
+struct GeneratedHistoryBridge {
+    root: PathBuf,
+    scenario: GeneratedHistoryScenario,
+    calls: Arc<AtomicUsize>,
+    relay: Option<Arc<CoordinatorToolRelay>>,
+}
+
+impl RoutedToolBridge for GeneratedHistoryBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        Ok(vec![RoutedToolDefinition {
+            name: "b".into(), provider_identifier: "generated-history-contract".into(),
+            tool_name: "b".into(), description: None, input_schema: json!({"type":"object"}),
+        }])
+    }
+
+    fn call_tool(&self, tool: &RoutedToolDefinition, args: Value, call_id: &str) -> Result<Value, ProviderSessionError> {
+        let ordinal = self.calls.fetch_add(1, Ordering::AcqRel);
+        assert!(ordinal < self.scenario.tool_count(), "a failed turn must never replay an effect");
+        assert_eq!(tool.name, "b");
+        assert_eq!(call_id, generated_history_call_id(ordinal));
+        assert_eq!(args, json!({"ordinal":ordinal.to_string()}));
+        match &self.relay {
+            Some(relay) => relay.request_tool_execution(json!({
+                "providerIdentifier":tool.provider_identifier, "toolName":tool.tool_name,
+                "name":tool.name, "args":args, "toolCallId":call_id,
+            })).map_err(coordinator_tool_execution_error),
+            None => write_generated_history_effect(&self.root, ordinal),
+        }
+    }
+}
+
+fn inspect_generated_history_checkpoint(
+    root: &Path,
+    agent_id: &str,
+    original: &OriginalTurnReference,
+    scenario: GeneratedHistoryScenario,
+    sessions: &Arc<ProductionSessionWorkers>,
+) -> ExpectedCheckpoint {
+    let store = sessions.open_agent_store_owner(agent_id).expect("actual generated canonical owner");
+    let snapshot = store.checkpoint_snapshot_checked().expect("checked generated history root")
+        .expect("present-empty baseline or actual committed generated checkpoint");
+    assert_eq!(snapshot.root_blob_id, Sha256::digest(&snapshot.checkpoint_bytes).to_vec());
+    let fields = decode_conversation_state_recovery_fields(&snapshot.checkpoint_bytes)
+        .expect("actual generated canonical protobuf");
+    let repaired_write = scenario == GeneratedHistoryScenario::FinalPersistenceRefusal;
+    assert_eq!(fields.turns.len(), usize::from(scenario.retains_history()) + usize::from(repaired_write));
+    let mut critical_blobs = vec![(snapshot.root_blob_id.clone(), snapshot.checkpoint_bytes.clone())];
+    let mut journal = Vec::new();
+    if scenario.retains_history() {
+        let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+        let turn_id = &fields.turns[0];
+        let turn_bytes = store.get_blob(turn_id).expect("actual generated turn blob read").expect("turn exists");
+        assert_eq!(*turn_id, Sha256::digest(&turn_bytes).to_vec());
+        let Some(ConversationTurnStructureFields::Agent { user_message, steps, request_id }) =
+            decode_conversation_turn_structure_fields(&turn_bytes).expect("canonical Agent turn")
+        else { panic!("generated history must retain an Agent turn"); };
+        assert_eq!(request_id.as_deref(), Some(ORIGINAL_STREAM));
+        let user_bytes = store.get_blob(&user_message).expect("actual user blob read").expect("user exists");
+        assert_eq!(user_message, Sha256::digest(&user_bytes).to_vec());
+        let user = decode_user_message_identity_fields(&user_bytes).expect("actual user identity");
+        assert_eq!(user.message_id, original.user_message_id);
+        assert_eq!(user.text, USER_TEXT);
+        critical_blobs.push((turn_id.clone(), turn_bytes));
+        critical_blobs.push((user_message, user_bytes));
+        journal.push(json!({"role":"user", "message":{"content":[{"type":"text", "text":USER_TEXT}]}}));
+        let prior_success = matches!(scenario,
+            GeneratedHistoryScenario::LaterFailure | GeneratedHistoryScenario::FinalPersistenceRefusal);
+        assert_eq!(steps.len(), scenario.tool_count() + usize::from(prior_success));
+        for (ordinal, step_id) in steps.iter().enumerate() {
+            let bytes = store.get_blob(step_id).expect("actual generated step read").expect("step exists");
+            assert_eq!(*step_id, Sha256::digest(&bytes).to_vec());
+            let expected_step = if ordinal < scenario.tool_count() {
+                let input = json!({
+                    "name":"b", "args":{"ordinal":ordinal.to_string()},
+                    "toolCallId":generated_history_call_id(ordinal),
+                    "providerIdentifier":"generated-history-contract", "toolName":"b",
+                    "serverIdentifier":"generated-history-contract",
+                });
+                let result = json!({"success":{"isError":false, "structuredContent":{
+                    "receipt":"committed", "ordinal":ordinal.to_string(),
+                }}});
+                journal.push(json!({"role":"assistant", "message":{"content":[{
+                    "type":"tool_use", "name":"b", "input":input,
+                }]}}));
+                journal.push(json!({"role":"tool", "message":{"content":[{
+                    "type":"tool_result", "name":"b", "result":result,
+                }]}}));
+                DecodedTranscriptStep::Tool { name: "b".into(), input, result: Some(result) }
+            } else {
+                assert!(prior_success, "a failed invocation cannot invent a final Assistant step");
+                journal.push(json!({"role":"assistant", "message":{"content":[{
+                    "type":"text", "text":GENERATED_PRIOR_TEXT,
+                }]}}));
+                DecodedTranscriptStep::Assistant { text: GENERATED_PRIOR_TEXT.into() }
+            };
+            assert_eq!(codec.decode_step(&bytes).expect("actual generated step projection"), expected_step);
+            critical_blobs.push((step_id.clone(), bytes));
+        }
+        if repaired_write {
+            let turn_id = &fields.turns[1];
+            let turn_bytes = store.get_blob(turn_id).expect("repaired turn blob read").expect("repaired turn exists");
+            assert_eq!(*turn_id, Sha256::digest(&turn_bytes).to_vec());
+            let Some(ConversationTurnStructureFields::Agent { user_message, steps, request_id }) =
+                decode_conversation_turn_structure_fields(&turn_bytes).expect("repaired canonical Agent turn")
+            else { panic!("the repaired generated write must retain an Agent turn"); };
+            assert_eq!(request_id.as_deref(), Some(ORIGINAL_STREAM));
+            assert_eq!(steps.len(), 1, "repair cannot restore refused text or replay the earlier tool");
+            let user_bytes = store.get_blob(&user_message).expect("repaired user blob read").expect("repaired user exists");
+            assert_eq!(user_message, Sha256::digest(&user_bytes).to_vec());
+            let user = decode_user_message_identity_fields(&user_bytes).expect("repaired user identity");
+            let messages = vec![ProviderMessage { role: "user".into(), content: USER_TEXT.into() }];
+            let nudge = shape_reply_nudge_turn_input(&messages, &messages, &TurnRunOptions::default());
+            assert_eq!(user.message_id, ORIGINAL_STREAM, "the actual hidden nudge keeps its request identity");
+            assert_eq!(user.text, nudge.options.recent_message_text.expect("actual shaped nudge text"));
+            journal.push(json!({"role":"user", "message":{"content":[{"type":"text", "text":user.text}]}}));
+            let step_bytes = store.get_blob(&steps[0]).expect("repaired Assistant step read").expect("repaired step exists");
+            assert_eq!(steps[0], Sha256::digest(&step_bytes).to_vec());
+            assert_eq!(codec.decode_step(&step_bytes).expect("repaired generated step projection"),
+                DecodedTranscriptStep::Assistant { text: GENERATED_REPAIRED_WRITE_TEXT.into() });
+            journal.push(json!({"role":"assistant", "message":{"content":[{
+                "type":"text", "text":GENERATED_REPAIRED_WRITE_TEXT,
+            }]}}));
+            critical_blobs.push((turn_id.clone(), turn_bytes));
+            critical_blobs.push((user_message, user_bytes));
+            critical_blobs.push((steps[0].clone(), step_bytes));
+        }
+    } else if scenario == GeneratedHistoryScenario::RootDrift {
+        assert_eq!(snapshot.checkpoint_bytes, PRIOR_STATE, "preserve the competing owner's exact state");
+    } else {
+        assert!(snapshot.checkpoint_bytes.is_empty(), "unknown or absent observations cannot create canonical history");
+    }
+    let journal_path = root.join("transcripts").join(agent_id).join(format!("{agent_id}.jsonl"));
+    let actual_journal = match fs::read_to_string(&journal_path) {
+        Ok(text) => text.lines().map(|line| serde_json::from_str::<Value>(line)
+            .expect("actual Journal occurrence JSON")).collect::<Vec<_>>(),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+        Err(error) => panic!("read generated Journal {}: {error}", journal_path.display()),
+    };
+    assert_eq!(actual_journal, journal, "exact canonical user/tool/result order, with no fabricated final text");
+    let db = sessions.open_agent_db_owner(agent_id).expect("actual accepted user owner");
+    let user = db.get_transcript_entry_by_id(&original.user_message_id)
+        .expect("accepted original user read").expect("accepted original user remains present");
+    assert_eq!(user["content"], USER_TEXT);
+    assert_eq!(user.get("confirmed").and_then(Value::as_bool), scenario.retains_history().then_some(true),
+        "the existing accepted-user writer leaves confirmation absent until a canonical commit");
+    assert!(reconcile_completed_original_turn(sessions, original)
+        .expect("strict failed original-turn lookup").is_none());
+    ExpectedCheckpoint {
+        root_blob_id: snapshot.root_blob_id,
+        state_bytes: Some(snapshot.checkpoint_bytes),
+        last_user_message_id: if repaired_write { Some(ORIGINAL_STREAM.into()) }
+            else { scenario.retains_history().then(|| original.user_message_id.clone()) },
+        compaction_epoch: if scenario == GeneratedHistoryScenario::RootDrift { 3 } else { 0 },
+        critical_blobs,
+    }
+}
+
 struct OriginalEffectBridge {
     receipt: PathBuf,
     calls: Arc<AtomicUsize>,
@@ -996,6 +1303,310 @@ impl RoutedToolBridge for OriginalEffectBridge {
         original_process_stage(&self.token, "effect-committed");
         Ok(json!({"receipt":"committed"}))
     }
+}
+
+fn produce_generated_failure(request: &ChildRequest, sessions: &Arc<ProductionSessionWorkers>) -> ProducedOriginal {
+    let scenario = request.generated_scenario.expect("typed generated failure scenario");
+    let prior_success = matches!(scenario,
+        GeneratedHistoryScenario::LaterFailure | GeneratedHistoryScenario::FinalPersistenceRefusal);
+    let root = &request.fixture_root;
+    original_process_stage(&request.token, &format!("generated-{scenario:?}-admission"));
+    let runtime = ProductionTranscriptRuntime::new(Some(root));
+    let args = json!({
+        "agentId":request.agent_id, "streamId":ORIGINAL_STREAM, "prompt":USER_TEXT,
+        "sessionKey":format!("agent:{}:main", request.agent_id), "clientNonce":"generated-history-user-nonce",
+    });
+    let accepted = runtime.accept_routed_send(&args, |accepted| {
+        persist_accepted_send_prompt_context(sessions, &args, accepted)
+            .map_err(|error| ProductionSendError::Internal(format!("{error:?}")))
+    }).expect("actual generated routed admission");
+    assert!(!accepted.duplicate);
+    let control = runtime.capture_routed_turn_start(&request.agent_id, ORIGINAL_STREAM)
+        .expect("capture the actual accepted lease cancellation and retirement identity");
+    let cancellation = control.cancellation();
+    let admission = sessions.read_session_work_admission(&request.agent_id)
+        .expect("generated Session admission").expect("main admission");
+    let original = runtime.bind_original_turn_model(&request.agent_id, ORIGINAL_STREAM, &admission, ORIGINAL_MODEL)
+        .expect("bind the admitted generated model").expect("ordinary Native original user");
+    assert_eq!(accepted.context.user_message_id.as_deref(), Some(original.user_message_id.as_str()));
+    let host = composition(root, sessions);
+    let sink = host.compose_production_checkpoint_sink(
+        sessions, root, &request.agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
+    ).expect("real generated checkpoint composition").expect("canonical main sink");
+    assert!(sink.committed_original_turn_observations().expect("initial Journal observations").is_empty());
+    fs::create_dir(root.join("generated-effects")).expect("private counted effect directory");
+    let events = GatewayEventHub::default();
+    let relay = Arc::new(CoordinatorToolRelay::with_timeout(events.clone(), Duration::from_secs(3)));
+    let downstream_calls = Arc::new(AtomicUsize::new(0));
+    let downstream_count = Arc::clone(&downstream_calls);
+    let downstream_root = root.clone();
+    let weak_relay = Arc::downgrade(&relay);
+    let subscription = events.subscribe_listener(move |event| {
+        if event["channel"] != RUNNER_TOOL_REQUEST_EVENT_CHANNEL { return; }
+        assert_eq!(event["payload"]["method"], ROUTED_TOOL_EXECUTE_METHOD);
+        assert_eq!(event["payload"]["args"]["toolName"], "b");
+        assert_eq!(event["payload"]["args"]["toolCallId"], generated_history_call_id(0));
+        assert_eq!(downstream_count.fetch_add(1, Ordering::AcqRel), 0);
+        write_generated_history_effect(&downstream_root, 0).expect("actual published downstream file effect");
+        weak_relay.upgrade().expect("live downstream relay").resolve(&json!({
+            "requestId":event["payload"]["requestId"], "ok":false,
+            "error":"downstream control returned without a definitive execution result",
+        })).expect("actual relay remote failure after publication");
+    });
+    let calls = Arc::new(AtomicUsize::new(0));
+    let retries = Arc::new(AtomicUsize::new(0));
+    let retry_count = Arc::clone(&retries);
+    let reports = Arc::new(Mutex::new(Vec::new()));
+    let retry_reports = Arc::clone(&reports);
+    let provider_store = Arc::new(ProductionRoutedProviderCheckpointStore::new(root, &request.agent_id, ORIGINAL_STREAM));
+    if scenario == GeneratedHistoryScenario::ProviderStoreRefusal {
+        fs::create_dir_all(provider_store.directory().parent().expect("provider directory parent"))
+            .expect("prepare the actual store's parent");
+        fs::write(provider_store.directory(), GENERATED_STORE_OBSTRUCTION).expect("occupy the real provider directory");
+    }
+    let turn_composition = TurnAgentComposition::new(
+        RoutedProvider::Fabushi,
+        Arc::new(GeneratedHistoryBridge {
+            root: root.clone(), scenario, calls: Arc::clone(&calls),
+            relay: (scenario == GeneratedHistoryScenario::UnknownDownstream).then(|| Arc::clone(&relay)),
+        }),
+        RunnerRequestContextSnapshot {
+            context: HostRequestContext {
+                os_version: "generated-history-contract".into(), shell: None, time_zone: Some("UTC".into()),
+                transcripts_folder: root.join("transcripts").to_string_lossy().into_owned(), user_full_name: None,
+            }, rules: None,
+        },
+        cancellation.clone(), provider_store.clone(),
+    ).with_fabushi_model(ORIGINAL_MODEL)
+        .with_retry_sink(Arc::new(move |_| { retry_count.fetch_add(1, Ordering::AcqRel); }))
+        .with_retry_report_sink(Arc::new(move |report| { retry_reports.lock().expect("retry report capture").push(report.clone()); }));
+    let successes = Arc::new(AtomicUsize::new(0));
+    let success_count = Arc::clone(&successes);
+    let mut runner = create_production_runner(
+        turn_composition,
+        ProductionTurnAgentBuildBindings::new(
+            ProductionTurnAgentStaticConfig {
+                model_id: ORIGINAL_MODEL.into(), agent_token_limit: SAND_AGENT_TOKEN_LIMIT,
+                conversation_id: request.agent_id.clone(), is_box_scoped_subagent: false,
+                is_subagent_runner: false, is_shared_room_runner: false,
+                sand_send_message_delivery_owed: false, transcripts_folder_available: true,
+            },
+            Arc::new(|| None), Arc::new(|_, _, _| panic!("bounded generated history must not summarize")),
+        ),
+        ProductionTurnAgentLifecycleBindings::new(&request.agent_id, ORIGINAL_STREAM)
+            .with_profile_announcement_commit(Some(Arc::new(move || { success_count.fetch_add(1, Ordering::AcqRel); }))),
+        Some(sink.clone()), Arc::new(AtomicBool::new(false)),
+        Arc::new(Mutex::new(SubagentRuntime::default())), None, None, None, None,
+    );
+    let messages = vec![ProviderMessage { role: "user".into(), content: USER_TEXT.into() }];
+    let options = TurnRunOptions {
+        inference_request_id: Some(ORIGINAL_STREAM.into()), message_id: Some(original.user_message_id.clone()),
+        recent_message_text: Some(USER_TEXT.into()), turn_started_at_ms: Some(1), ..TurnRunOptions::default()
+    };
+    let mut custody = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+    let (failed_messages, failed_options) = if prior_success {
+        assert_eq!(runner.run_routed_provider_with_options(root, &messages, options.clone(), &mut |_, _| {})
+            .expect("actual earlier generated invocation succeeds"), GENERATED_PRIOR_TEXT);
+        assert_eq!(runner.last_finished().expect("earlier shell terminal").outcome, TerminalOutcome::Completed);
+        custody.record(runner.last_tool_effect_custody());
+        let observations = sink.committed_original_turn_observations().expect("earlier successful Journal authority");
+        assert_eq!(observations.len(), 1);
+        prove_completed_original_turn(&original, project_turn_terminal(false, false, true, 0, false),
+            original_turn_result_digest(GENERATED_PRIOR_TEXT), 0, false, &custody, &observations)
+            .expect("the earlier actual success is eligible before the failed invocation");
+        let shaped = shape_reply_nudge_turn_input(&messages, &messages, &options);
+        (shaped.provider_messages, shaped.options)
+    } else { (messages.clone(), options.clone()) };
+    let before = durable_state_for(root, &request.agent_id);
+    let provider_before = (scenario == GeneratedHistoryScenario::FinalPersistenceRefusal)
+        .then(|| mirror_files(&root.join("runner-provider-checkpoints")));
+    let store = sessions.open_agent_store_owner(&request.agent_id).expect("actual competing-root owner");
+    let blob_path = root.join("agents").join(&request.agent_id).join(CONVERSATION_BLOBS_FILENAME);
+    let mut competing_state = None;
+    let mut final_write_refusal_injected = false;
+    let expected_delta = if scenario == GeneratedHistoryScenario::FinalPersistenceRefusal {
+        GENERATED_REFUSED_WRITE_TEXT
+    } else { GENERATED_PARTIAL_TEXT };
+    let mut deltas = Vec::new();
+    let error = runner.run_routed_provider_with_options(root, &failed_messages, failed_options, &mut |delta, _| {
+        deltas.push(delta.to_string());
+        assert_eq!(delta, expected_delta);
+        assert_eq!(calls.load(Ordering::Acquire), scenario.tool_count(), "cancellation/drift follows actual returned effects");
+        if scenario == GeneratedHistoryScenario::Cancellation {
+            assert!(runtime.cancel_routed_turn_lease(ORIGINAL_STREAM, Some(&request.agent_id), GENERATED_CANCEL_REASON));
+        } else if scenario == GeneratedHistoryScenario::RootDrift {
+            assert!(competing_state.is_none());
+            store.handle_checkpoint_bytes_blocking(PRIOR_STATE).expect("real competing canonical commit");
+            competing_state = Some(durable_state_for(root, &request.agent_id));
+        } else if scenario == GeneratedHistoryScenario::FinalPersistenceRefusal {
+            assert!(!final_write_refusal_injected);
+            // The real stream can finish and stage from readable blobs. Its
+            // first final WorkerBlobStore INSERT then refuses before any
+            // canonical, confirmation or Journal mutation.
+            open_existing(&blob_path, false).execute_batch(&format!(
+                "CREATE TRIGGER generated_history_final_write_refusal BEFORE INSERT ON blobs \
+                 BEGIN SELECT RAISE(ABORT, '{GENERATED_FINAL_WRITE_REFUSAL}'); END;",
+            )).expect("install the uniquely owned final-write fault");
+            final_write_refusal_injected = true;
+        }
+    }).expect_err("the actual generated invocation failure must remain a failure");
+    original_process_stage(&request.token, &format!("generated-{scenario:?}-returned"));
+    let has_partial_output = matches!(scenario, GeneratedHistoryScenario::ProviderFailure
+        | GeneratedHistoryScenario::OrderedProviderFailure | GeneratedHistoryScenario::Cancellation
+        | GeneratedHistoryScenario::RootDrift | GeneratedHistoryScenario::FinalPersistenceRefusal);
+    assert_eq!(deltas, if has_partial_output { vec![expected_delta.to_string()] } else { Vec::new() });
+    assert_eq!(calls.load(Ordering::Acquire), scenario.tool_count());
+    assert_eq!(retries.load(Ordering::Acquire), 0, "history persistence grants neither retry nor replay");
+    assert_eq!(successes.load(Ordering::Acquire), usize::from(prior_success),
+        "failed history must not invoke successful lifecycle hooks");
+    let finished = runner.last_finished().expect("actual failed generated shell terminal");
+    assert_eq!(finished.owner.request_id, ORIGINAL_STREAM);
+    assert!(finished.owner.generation > 0);
+    let failed_generation = finished.owner.generation;
+    // RoutedProviderCancellation::check currently preserves its reason as
+    // Transport. Pin that real shell outcome separately from Host's cancelled
+    // terminal projection; do not invent a Cancelled provider-error variant.
+    assert_eq!(finished.outcome, TerminalOutcome::Failed {
+        retryable: matches!(&error, ProviderSessionError::Transport(_)), message: error.to_string(),
+    });
+    assert_eq!(cancellation.is_cancelled(), scenario == GeneratedHistoryScenario::Cancellation);
+    let terminal = project_turn_terminal(false, cancellation.is_cancelled(), false, 0, false);
+    assert_eq!(terminal.kind, if scenario == GeneratedHistoryScenario::Cancellation {
+        TurnTerminalKind::Cancelled
+    } else { TurnTerminalKind::Failed });
+    match scenario {
+        GeneratedHistoryScenario::Cancellation => {
+            assert_eq!(cancellation.reason().as_deref(), Some(GENERATED_CANCEL_REASON));
+            assert!(matches!(&error, ProviderSessionError::Transport(reason) if reason == GENERATED_CANCEL_REASON));
+        }
+        GeneratedHistoryScenario::RootDrift => {
+            let ProviderSessionError::ProviderRefusal(refusal) = &error else {
+                panic!("history staging cannot replace the original typed provider refusal: {error:?}");
+            };
+            assert_eq!(refusal.category, "misalignment");
+            assert_eq!(refusal.explanation.as_deref(), Some(GENERATED_PROVIDER_FAILURE));
+            assert_eq!(durable_state_for(root, &request.agent_id), competing_state.expect("actual competing commit was observed"));
+        }
+        GeneratedHistoryScenario::ProviderStoreRefusal => {
+            assert!(matches!(&error, ProviderSessionError::Tool(message)
+                if message.contains("could not prepare Runner checkpoint directory")));
+            assert_eq!(fs::read(provider_store.directory()).expect("original refusing entry"), GENERATED_STORE_OBSTRUCTION);
+        }
+        GeneratedHistoryScenario::UnknownDownstream => {
+            assert!(matches!(&error, ProviderSessionError::Tool(_)));
+            assert_eq!(downstream_calls.load(Ordering::Acquire), 1);
+            assert_eq!(relay.pending_count(), 0);
+        }
+        GeneratedHistoryScenario::FinalPersistenceRefusal => {
+            assert!(final_write_refusal_injected);
+            let expected = format!(
+                "generated Agent stream persistence failed: Runner Agent checkpoint blob write failed: \
+                 conversation blob sqlite operation failed: {GENERATED_FINAL_WRITE_REFUSAL}",
+            );
+            assert!(matches!(&error, ProviderSessionError::Protocol(message) if message == &expected),
+                "the actual final-persistence error must retain its complete provenance: {error:?}");
+        }
+        _ => assert!(matches!(&error, ProviderSessionError::Protocol(message) if message.contains(GENERATED_PROVIDER_FAILURE))),
+    }
+    let (started_revision, checkpoint_revision) = match scenario {
+        GeneratedHistoryScenario::ZeroEffectFailure | GeneratedHistoryScenario::LaterFailure
+            | GeneratedHistoryScenario::FinalPersistenceRefusal => (0, 0),
+        GeneratedHistoryScenario::ProviderStoreRefusal | GeneratedHistoryScenario::UnknownDownstream => (1, 0),
+        _ => (scenario.tool_count() as u64, scenario.tool_count() as u64),
+    };
+    assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::Known {
+        run_generation: finished.owner.generation,
+        snapshot: ToolEffectCustodySnapshot {
+            started_revision, checkpoint_revision, pending_effects: 0,
+            unknown_result: (scenario == GeneratedHistoryScenario::UnknownDownstream)
+                .then_some(ToolEffectUnknownResult::DownstreamOutcomeUnknown),
+        },
+    }), "canonical history persistence must not advance accepted provider-checkpoint custody");
+    custody.record(runner.last_tool_effect_custody());
+    assert!(sink.committed_original_turn_observations().is_err(), "any failure permanently invalidates this sink's completion authority");
+    assert!(prove_completed_original_turn(&original, terminal, original_turn_result_digest(""), 0, false, &custody, &[]).is_err());
+    if matches!(scenario, GeneratedHistoryScenario::UnknownDownstream | GeneratedHistoryScenario::ZeroEffectFailure
+        | GeneratedHistoryScenario::LaterFailure | GeneratedHistoryScenario::FinalPersistenceRefusal)
+    {
+        assert_eq!(durable_state_for(root, &request.agent_id), before, "ineligible or empty history leaves every canonical and Journal byte unchanged");
+    }
+    if matches!(scenario, GeneratedHistoryScenario::UnknownDownstream | GeneratedHistoryScenario::ZeroEffectFailure) {
+        assert!(!provider_store.directory().exists(), "no accepted provider checkpoint may be fabricated");
+    }
+    if matches!(scenario, GeneratedHistoryScenario::ProviderStoreRefusal | GeneratedHistoryScenario::UnknownDownstream) {
+        let reports = reports.lock().expect("actual retry reports");
+        assert_eq!(reports.len(), 1);
+        assert_eq!(reports[0].outcome, ProviderRetryOutcome::GaveUpIneligible);
+        assert_eq!(reports[0].error_code, "SAND-E0407");
+        assert!(!reports[0].resume_from_checkpoint);
+    }
+    if scenario == GeneratedHistoryScenario::FinalPersistenceRefusal {
+        let prior_checkpoint = inspect_generated_history_checkpoint(
+            root, &request.agent_id, &original, GeneratedHistoryScenario::LaterFailure, sessions,
+        );
+        assert_eq!(sink.base_state_bytes().expect("failed write retains the readable sink base"),
+            prior_checkpoint.state_bytes.clone().unwrap());
+        let provider_before = provider_before.expect("actual prior successful provider checkpoint");
+        assert_eq!(mirror_files(&root.join("runner-provider-checkpoints")), provider_before);
+        let fault = open_existing(&blob_path, false);
+        let trigger_count: i64 = fault.query_row(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='trigger' AND name='generated_history_final_write_refusal'",
+            [], |row| row.get(0),
+        ).expect("the actual refusing trigger remains installed");
+        assert_eq!(trigger_count, 1);
+        fault.execute_batch("DROP TRIGGER generated_history_final_write_refusal;")
+            .expect("explicitly repair only the owned final-write obstacle");
+        drop(fault);
+        assert_eq!(durable_state_for(root, &request.agent_id), before,
+            "removing the fault cannot mutate canonical rows or Journal history");
+        assert!(sink.committed_original_turn_observations().is_err(),
+            "repair alone cannot restore earlier completion observations");
+
+        let repaired_input = shape_reply_nudge_turn_input(&messages, &messages, &options);
+        let mut repaired_deltas = Vec::new();
+        let repaired_result = runner.run_routed_provider_with_options(
+            root, &repaired_input.provider_messages, repaired_input.options, &mut |delta, _| {
+                assert_eq!(delta, GENERATED_REPAIRED_WRITE_TEXT);
+                assert_eq!(calls.load(Ordering::Acquire), 1);
+                repaired_deltas.push(delta.to_string());
+            },
+        ).expect("an explicitly requested later generated invocation can commit after storage repair");
+        assert_eq!(repaired_result, GENERATED_REPAIRED_WRITE_TEXT);
+        assert_eq!(repaired_deltas, vec![GENERATED_REPAIRED_WRITE_TEXT.to_string()]);
+        let repaired_finished = runner.last_finished().expect("actual repaired invocation shell terminal");
+        assert_eq!(repaired_finished.owner.request_id, ORIGINAL_STREAM);
+        assert!(repaired_finished.owner.generation > failed_generation);
+        assert_eq!(repaired_finished.outcome, TerminalOutcome::Completed);
+        assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::Known {
+            run_generation: repaired_finished.owner.generation,
+            snapshot: ToolEffectCustodySnapshot {
+                started_revision: 0, checkpoint_revision: 0, pending_effects: 0, unknown_result: None,
+            },
+        }), "the later write has no new or replayed tool effects");
+        custody.record(runner.last_tool_effect_custody());
+        assert_eq!(calls.load(Ordering::Acquire), 1);
+        assert_eq!(retries.load(Ordering::Acquire), 0, "the explicit later invocation is not an automatic retry");
+        assert!(reports.lock().expect("actual final-write retry reports").is_empty());
+        assert_eq!(successes.load(Ordering::Acquire), 1, "the already committed profile hook stays idempotent");
+        assert_eq!(mirror_files(&root.join("runner-provider-checkpoints")), provider_before);
+        assert_ne!(store.checkpoint_snapshot_checked().expect("actual repaired canonical root")
+            .expect("the repaired write committed").root_blob_id, prior_checkpoint.root_blob_id);
+        assert!(sink.committed_original_turn_observations().is_err(),
+            "a successful later commit through this same sink cannot revive failed original-turn authority");
+        assert!(prove_completed_original_turn(&original, project_turn_terminal(false, false, true, 0, false),
+            original_turn_result_digest(&repaired_result), 0, false, &custody, &[]).is_err());
+    }
+    sessions.prepare_existing_agent(&request.agent_id).expect("finish existing outline maintenance before closure")
+        .expect("actual generated Session remains present");
+    let checkpoint = inspect_generated_history_checkpoint(root, &request.agent_id, &original, scenario, sessions);
+    assert!(runtime.quiesce_for_upgrade().expect("actual failed original upgrade marker").quiescing);
+    let markers = runtime.upgrade_resume_store().expect("actual generated marker owner")
+        .list_pending_checked().expect("strict failed original marker image");
+    assert_eq!(markers.len(), 1);
+    assert_eq!(markers[0].original_work.as_ref(), Some(&original));
+    assert!(runtime.settle_routed_turn_control(&control, 10).expect("retire only the captured failed lease").is_some());
+    drop((runner, sink, host, store, subscription, relay, runtime));
+    ProducedOriginal { original, checkpoint }
 }
 
 fn produce_original_turn(request: &ChildRequest, sessions: &Arc<ProductionSessionWorkers>) -> ProducedOriginal {
@@ -1234,6 +1845,42 @@ fn assert_original_reopen(request: &ChildRequest, sessions: &Arc<ProductionSessi
     assert_eq!(fs::read(request.fixture_root.join("original-effect.txt")).expect("original effect receipt"), b"original-terminal-effect");
 }
 
+fn assert_generated_history_reopen(request: &ChildRequest, sessions: &Arc<ProductionSessionWorkers>) {
+    let original = request.original.as_ref().expect("actual failed producer original identity");
+    let scenario = request.generated_scenario.expect("typed failed producer scenario");
+    let prepared = sessions.prepare_existing_agent(&request.agent_id)
+        .expect("fresh consumer accepts intact generated history").expect("existing Session");
+    assert_eq!(prepared.persisted_root_blob_id, request.expected.root_blob_id);
+    let checkpoint = inspect_generated_history_checkpoint(
+        &request.fixture_root, &request.agent_id, original, scenario, sessions,
+    );
+    assert_eq!(checkpoint, request.expected, "fresh process reads the exact root/user/tool/result blobs");
+    let host = composition(&request.fixture_root, sessions);
+    let watermark = host.confirmed_user_turn_watermark(sessions, &request.agent_id)
+        .expect("fresh failed-history watermark");
+    assert_eq!(watermark.has_user_turn, scenario.retains_history());
+    assert_eq!(watermark.last_user_message_id, request.expected.last_user_message_id);
+    assert_eq!(host.prompt_compaction_epoch(sessions, &request.agent_id)
+        .expect("fresh failed-history epoch"), request.expected.compaction_epoch);
+    let sink = host.compose_production_checkpoint_sink(
+        sessions, &request.fixture_root, &request.agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
+    ).expect("fresh actual history consumer").expect("main checkpoint sink");
+    assert_eq!(sink.base_state_bytes().expect("fresh sink exact history"), request.expected.state_bytes.clone().unwrap());
+    assert!(sink.committed_original_turn_observations().expect("fresh empty completion log").is_empty(),
+        "reading persisted failed history must not manufacture completion observations");
+    let markers = SandUpgradeResumeStore::new(&request.fixture_root).list_pending_checked()
+        .expect("fresh strict original marker read");
+    assert_eq!(markers, vec![request.original_marker.clone().expect("actual failed producer marker")]);
+    assert_eq!(markers[0].original_work.as_ref(), Some(original));
+    assert!(!request.fixture_root.join("original-turn-credential.json").exists());
+    let effects = mirror_files(&request.fixture_root.join("generated-effects"));
+    assert_eq!(effects.len(), scenario.tool_count());
+    for ordinal in 0..scenario.tool_count() {
+        assert_eq!(effects.get(&PathBuf::from(format!("{ordinal}.txt"))).map(Vec::as_slice),
+            Some(generated_history_call_id(ordinal).as_bytes()));
+    }
+}
+
 #[test]
 #[ignore = "private child entrypoint; launched with --exact and a per-run request by the parent tests"]
 fn production_checkpoint_restart_child() {
@@ -1249,6 +1896,10 @@ fn production_checkpoint_restart_child() {
         ReopenExpectation::Ready => { assert_ready(&request, &owners.sessions); None }
         ReopenExpectation::Refuse => { assert_refused(&request, &owners.sessions); None }
         ReopenExpectation::ProduceOriginal => Some(produce_original_turn(&request, &owners.sessions)),
+        ReopenExpectation::ProduceGeneratedFailure => Some(produce_generated_failure(&request, &owners.sessions)),
+        ReopenExpectation::GeneratedHistoryReady => {
+            assert_generated_history_reopen(&request, &owners.sessions); None
+        }
         ReopenExpectation::OriginalReady | ReopenExpectation::OriginalAbsent | ReopenExpectation::OriginalRefuse => {
             assert_original_reopen(&request, &owners.sessions); None
         }
@@ -1718,4 +2369,152 @@ fn original_turn_restart_refuses_recovery_unavailability_before_complete_or_abse
         assert_eq!(durable_state(&fixture), healthy);
     }
     fixture.reopen("recovery-explicitly-restored", ReopenExpectation::OriginalReady).assert_completed();
+}
+
+fn produced_generated_failure_fixture(label: &str, scenario: GeneratedHistoryScenario) -> Fixture {
+    let mut fixture = Fixture::new(label, InitialState::EmptyCheckpoint);
+    fixture.generated_scenario = Some(scenario);
+    let mut server = OriginalTurnWireServer::generated(&fixture.root, scenario);
+    let child = fixture.run_child("produce-generated-failure", ReopenExpectation::ProduceGeneratedFailure, Some(&server));
+    let server_result = server.finish();
+    eprintln!("generated history scenario={scenario:?} producer_pid={} outcome={server_result:?} {}",
+        child.child_pid, server.diagnostics());
+    assert!(server_result.is_ok() && child.result.as_ref().is_ok_and(|status| status.success()),
+        "generated history producer failed: child={:?}; Responses worker={server_result:?}\n{}", child.result, child.logs);
+    if scenario == GeneratedHistoryScenario::RootDrift {
+        assert!(child.logs.contains("interrupted_generated_history_not_committed phase=observation-or-staging"),
+            "the original typed refusal must retain a separate fixed history-failure diagnostic");
+    }
+    let receipt = child.assert_completed();
+    let requests = server.requests.lock().expect("actual generated provider capture");
+    assert_eq!(requests.len(), scenario.request_count(), "no new provider attempt or effect replay");
+    assert!(requests.iter().all(|request| request["model"] == ORIGINAL_MODEL));
+    if scenario.request_count() > 1 {
+        let input = requests[1]["input"].as_array().expect("actual post-tool continuation input");
+        let tool_items = input.iter().filter(|item| matches!(item["type"].as_str(),
+            Some("function_call" | "function_call_output"))).collect::<Vec<_>>();
+        assert_eq!(tool_items.len(), scenario.tool_count() * 2);
+        for ordinal in 0..scenario.tool_count() {
+            assert_eq!(tool_items[ordinal * 2]["type"], "function_call");
+            assert_eq!(tool_items[ordinal * 2]["call_id"], generated_history_call_id(ordinal));
+            assert_eq!(tool_items[ordinal * 2 + 1]["type"], "function_call_output");
+            assert_eq!(tool_items[ordinal * 2 + 1]["call_id"], generated_history_call_id(ordinal));
+            let result: Value = serde_json::from_str(tool_items[ordinal * 2 + 1]["output"].as_str()
+                .expect("actual serialized tool result")).expect("actual returned tool result JSON");
+            assert_eq!(result, json!({"receipt":"committed", "ordinal":ordinal.to_string()}));
+        }
+    }
+    drop(requests);
+    fs::remove_file(&server.credential).expect("remove actual producer credential before all fresh consumers");
+    let produced = receipt.produced.expect("failed producer's actual reference and persisted-state observation");
+    fixture.original = Some(produced.original);
+    fixture.expected = produced.checkpoint;
+    let markers = SandUpgradeResumeStore::new(&fixture.root).list_pending_checked()
+        .expect("actual failed producer's durable marker");
+    assert_eq!(markers.len(), 1);
+    assert_eq!(markers[0].agent_id, fixture.agent_id);
+    assert_eq!(markers[0].source.as_deref(), Some("turn"));
+    assert_eq!(markers[0].original_work, fixture.original);
+    fixture.original_marker = Some(markers[0].clone());
+    let terminal_count: i64 = open_existing(&fixture.db_path(), true).query_row(
+        "SELECT COUNT(*) FROM kv WHERE key=?1", params![ORIGINAL_TERMINAL_KEY], |row| row.get(0),
+    ).expect("read actual completion-authority absence");
+    assert_eq!(terminal_count, 0, "neither failed history nor an earlier invocation can seal the original turn");
+    let provider_files = mirror_files(&fixture.root.join("runner-provider-checkpoints"));
+    if matches!(scenario, GeneratedHistoryScenario::UnknownDownstream | GeneratedHistoryScenario::ZeroEffectFailure) {
+        assert!(provider_files.is_empty());
+    } else if scenario == GeneratedHistoryScenario::ProviderStoreRefusal {
+        assert_eq!(provider_files.len(), 1);
+        assert_eq!(provider_files.values().next().unwrap(), GENERATED_STORE_OBSTRUCTION);
+    } else {
+        assert_eq!(provider_files.len(), 1, "one real provider boundary covers the returned tool batch");
+        let (path, bytes) = provider_files.iter().next().unwrap();
+        assert_eq!(path.extension().and_then(|value| value.to_str()), Some("json"));
+        let checkpoint: RoutedProviderCheckpoint = serde_json::from_slice(bytes).expect("actual durable provider checkpoint JSON");
+        let RoutedProviderCheckpoint::Fabushi(checkpoint) = checkpoint else {
+            panic!("the actual generated Native boundary must retain its provider identity");
+        };
+        assert_eq!(checkpoint.model.as_deref(), Some(ORIGINAL_MODEL));
+        assert_eq!(checkpoint.tool_calls_completed, scenario.tool_count());
+    }
+    fixture
+}
+
+fn assert_generated_failure_reopens(label: &str, scenario: GeneratedHistoryScenario) {
+    let fixture = produced_generated_failure_fixture(label, scenario);
+    let before = durable_state(&fixture);
+    let provider_before = mirror_files(&fixture.root.join("runner-provider-checkpoints"));
+    let effect_before = mirror_files(&fixture.root.join("generated-effects"));
+    assert_eq!(effect_before.len(), scenario.tool_count());
+    let marker_path = SandUpgradeResumeStore::new(&fixture.root).file_path().to_path_buf();
+    let marker_before = fs::read(&marker_path).expect("actual failed original marker bytes");
+    for attempt in 1..=2 {
+        let receipt = fixture.reopen(&format!("generated-fresh-consumer-{attempt}"), ReopenExpectation::GeneratedHistoryReady)
+            .assert_completed();
+        assert!(receipt.produced.is_none(), "a fresh consumer may not produce another invocation");
+        assert_eq!(durable_state(&fixture), before, "fresh read cannot append, normalize or duplicate generated history");
+        assert_eq!(mirror_files(&fixture.root.join("runner-provider-checkpoints")), provider_before,
+            "fresh read cannot dispatch or accept another provider checkpoint");
+        assert_eq!(mirror_files(&fixture.root.join("generated-effects")), effect_before, "fresh read cannot replay a tool");
+        assert_eq!(fs::read(&marker_path).unwrap(), marker_before, "failed original marker must remain byte-exact and pending");
+    }
+}
+
+#[test]
+fn generated_failure_history_provider_failure_survives_repeated_fresh_consumers() {
+    for scenario in [GeneratedHistoryScenario::ProviderFailure, GeneratedHistoryScenario::OrderedProviderFailure] {
+        assert_generated_failure_reopens("generated-provider-failure", scenario);
+    }
+}
+
+#[test]
+fn generated_failure_history_cancellation_survives_repeated_fresh_consumers() {
+    assert_generated_failure_reopens("generated-cancellation", GeneratedHistoryScenario::Cancellation);
+}
+
+#[test]
+fn generated_failure_history_provider_store_refusal_preserves_unaccepted_effect() {
+    assert_generated_failure_reopens("generated-provider-store-refusal", GeneratedHistoryScenario::ProviderStoreRefusal);
+}
+
+#[test]
+fn generated_failure_history_unknown_downstream_outcome_preserves_canonical_bytes() {
+    assert_generated_failure_reopens("generated-downstream-unknown", GeneratedHistoryScenario::UnknownDownstream);
+}
+
+#[test]
+fn generated_failure_history_zero_effect_refusal_preserves_canonical_bytes() {
+    assert_generated_failure_reopens("generated-zero-effect", GeneratedHistoryScenario::ZeroEffectFailure);
+}
+
+#[test]
+fn generated_failure_history_root_drift_preserves_competing_checkpoint() {
+    assert_generated_failure_reopens("generated-root-drift", GeneratedHistoryScenario::RootDrift);
+}
+
+#[test]
+fn generated_failure_history_later_failure_invalidates_prior_completion() {
+    assert_generated_failure_reopens("generated-later-failure", GeneratedHistoryScenario::LaterFailure);
+}
+
+#[test]
+fn generated_failure_history_final_persistence_refusal_stays_ineligible_after_repair() {
+    assert_generated_failure_reopens("generated-final-persistence-refusal", GeneratedHistoryScenario::FinalPersistenceRefusal);
+}
+
+#[test]
+fn generated_failure_history_successful_control_preserves_original_completion() {
+    let fixture = produced_original_fixture("generated-success-control", InitialState::EmptyCheckpoint, false, 1, false, false);
+    let before = durable_state(&fixture);
+    let provider_before = mirror_files(&fixture.root.join("runner-provider-checkpoints"));
+    let effect_before = fs::read(fixture.root.join("original-effect.txt")).expect("successful actual effect");
+    let marker_path = SandUpgradeResumeStore::new(&fixture.root).file_path().to_path_buf();
+    let marker_before = fs::read(&marker_path).expect("successful original marker");
+    for attempt in 1..=2 {
+        fixture.reopen(&format!("generated-success-fresh-{attempt}"), ReopenExpectation::OriginalReady).assert_completed();
+        assert_eq!(durable_state(&fixture), before);
+        assert_eq!(mirror_files(&fixture.root.join("runner-provider-checkpoints")), provider_before);
+        assert_eq!(fs::read(fixture.root.join("original-effect.txt")).unwrap(), effect_before);
+        assert_eq!(fs::read(&marker_path).unwrap(), marker_before);
+    }
 }

@@ -83,6 +83,11 @@ pub fn original_turn_result_digest(content: &str) -> [u8; 32] {
 }
 
 pub trait AgentStateCheckpointSink: Send + Sync {
+    /// Failed generation may retain truthful history, but cannot contribute a
+    /// completed-original-turn capability. Sinks without that capability have
+    /// no observations to revoke; their default reader already refuses it.
+    fn invalidate_original_turn_completion(&self) {}
+
     fn committed_original_turn_observations(
         &self,
     ) -> Result<Vec<CommittedOriginalTurnObservation>, ProviderSessionError> {
@@ -391,6 +396,13 @@ impl ProductionAgentStateCheckpointSink {
 }
 
 impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
+    fn invalidate_original_turn_completion(&self) {
+        if let Ok(mut observations) = self.original_turn_observations.lock() {
+            *observations = None;
+        }
+        // A poisoned log also refuses every completion-observation read.
+    }
+
     fn committed_original_turn_observations(
         &self,
     ) -> Result<Vec<CommittedOriginalTurnObservation>, ProviderSessionError> {

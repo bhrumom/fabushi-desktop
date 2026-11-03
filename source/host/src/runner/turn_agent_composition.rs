@@ -985,6 +985,20 @@ impl TurnAgentComposition {
         calls
     }
 
+    pub(crate) fn take_completed_tool_calls_checked(
+        &self,
+    ) -> Result<Vec<CompletedRoutedToolCall>, ProviderSessionError> {
+        let mut calls = std::mem::take(
+            &mut *self.completed_tool_calls.lock().map_err(|_| {
+                ProviderSessionError::Protocol(
+                    "Runner completed tool observations are poisoned".into(),
+                )
+            })?,
+        );
+        calls.sort_by_key(|call| call.sequence);
+        Ok(calls)
+    }
+
     pub fn run(
         &self,
         data_dir: &Path,
