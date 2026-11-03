@@ -388,7 +388,8 @@ jobs:
           grep -Fx 'test search::recipient_policy_tests::forward_origin_visibility_and_multi_term_field_matching_enforce_domain_policy ... ok' artifacts/native-message/messaging-core-search.log
           grep -Fx 'test search::recipient_policy_tests::search_index_supports_scoped_media_files_links_collections_and_filename_matching ... ok' artifacts/native-message/messaging-core-search.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --lib child_destination_tests -- --nocapture 2>&1 | tee artifacts/native-message/child-destination-tests.log
-          grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored;' artifacts/native-message/child-destination-tests.log
+          grep -Eq 'test result: ok\. 7 passed; 0 failed; 0 ignored;' artifacts/native-message/child-destination-tests.log
+          grep -Fx 'test conversation::child_destination_tests::child_runtime_removes_deleted_messages_and_clears_matching_draft_reply_without_losing_text ... ok' artifacts/native-message/child-destination-tests.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test m5_contacts_groups_contract -- --nocapture 2>&1 | tee artifacts/native-message/m5-contacts-groups.log
           grep -Eq 'test result: ok\. 6 passed; 0 failed; 0 ignored;' artifacts/native-message/m5-contacts-groups.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test messaging_contract -- --nocapture 2>&1 | tee artifacts/native-message/messaging-contract.log
@@ -396,7 +397,8 @@ jobs:
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test service_contract -- --nocapture 2>&1 | tee artifacts/native-message/service-contract.log
           grep -Eq 'test result: ok\. 10 passed; 0 failed; 0 ignored;' artifacts/native-message/service-contract.log
           cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --test m6_channels_topics_contract -- --nocapture 2>&1 | tee artifacts/native-message/m6-channels-topics.log
-          grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/m6-channels-topics.log
+          grep -Eq 'test result: ok\. 5 passed; 0 failed; 0 ignored;' artifacts/native-message/m6-channels-topics.log
+          grep -Fx 'test deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_child_windows ... ok' artifacts/native-message/m6-channels-topics.log
           grep -Fx 'test share_recipient_search_uses_canonical_typed_permission_axes_before_exposure ... ok' artifacts/native-message/m5-contacts-groups.log
           grep -Fx 'test typed_share_permission_fields_keep_legacy_persistence_fail_closed ... ok' artifacts/native-message/m5-contacts-groups.log
           cargo test --locked --manifest-path source/host/Cargo.toml --test roster_search_contract -- --nocapture 2>&1 | tee artifacts/native-message/roster-search.log
@@ -983,8 +985,9 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/forward-settlement.contract.test.ts 2>&1 | tee artifacts/native-message-ui/forward-settlement.log
-          grep -Fx '# tests 9' artifacts/native-message-ui/forward-settlement.log
-          grep -Fx '# pass 9' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# tests 10' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# pass 10' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx 'ok 10 - single self/Saved Messages destination uses Saved Messages default, custom self label, or optional notice suppression' artifacts/native-message-ui/forward-settlement.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log
       - name: Install locked Chromium for actual forward dialog

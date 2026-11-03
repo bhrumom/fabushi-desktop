@@ -569,11 +569,14 @@
         "native/mahayana-messaging/src/protocol.rs",
         "native/mahayana-messaging/src/service.rs",
         "native/mahayana-messaging/src/engine.rs",
-        "native/mahayana-messaging/src/message.rs"
+        "native/mahayana-messaging/src/message.rs",
+        "frontend/src/production/forward-settlement.ts",
+        "frontend/src/production/forward-settlement.contract.test.ts"
       ],
       "fabushi_target_symbols": [
         "scheduled_at_ms",
-        "silent"
+        "silent",
+        "settleForwardProjection"
       ],
       "target_language": "Rust",
       "language_rationale": "This is non-UI message state and delivery semantics already owned by the canonical Rust messaging domain.",
@@ -598,15 +601,19 @@
         "Reminder/schedule-until-online and exact UI menu eligibility remain separate open ShareBox responsibilities"
       ],
       "production_entrypoints": [
-        "Fabushi messaging client -> ClientCommand::ForwardMessage -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> canonical Message"
+        "Fabushi messaging client -> ClientCommand::ForwardMessage -> MessagingService::project_command -> MessagingEngine::ForwardMessage -> canonical Message",
+        "ProductionRenderer::settleForward -> settleForwardProjection(selfConversationId) -> Saved Messages / custom self notice or optional suppression"
       ],
       "production_evidence": [
         "commit:824daf3aefe47c747d8abe648108265b17d8255f",
         "path:native/mahayana-messaging/src/protocol.rs#ForwardMessage",
-        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage"
+        "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage",
+        "path:frontend/src/production/forward-settlement.ts#settleForwardProjection",
+        "path:frontend/src/production/ProductionRenderer.tsx#settleForward"
       ],
       "test_evidence": [
-        "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content"
+        "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
+        "frontend/src/production/forward-settlement.contract.test.ts#single self/Saved Messages destination uses Saved Messages default, custom self label, or optional notice suppression"
       ],
       "target_commit": "824daf3aefe47c747d8abe648108265b17d8255f",
       "workflow_run": null,
@@ -728,7 +735,10 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "test_execution_evidence": [],
+      "test_execution_evidence": [
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41719169070@6a7a730ea2bb77bb5d2587332584e8b8f44cb5a2:attempt1:job126207063253:completed/success:messaging_contract 8/8, service_contract 10/10; artifact13270999524 sha256:962f25a85abe81a71bec1ba21a5917fa70ef262bc747e145763dc1815b3b0430; bounded component proof, no formal release ACCEPT",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41719169070@6a7a730ea2bb77bb5d2587332584e8b8f44cb5a2:attempt1:job126207063156:completed/success:forward-settlement.contract.test.ts 9/9; artifact13271148419 sha256:aa08aad10fe8b4bb5e343ef9204ec8ad04f9212660df0185ed49a4207a5ad122; bounded component proof, no formal release ACCEPT"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from the accepted ShareBox source authority; no Telegram runtime or product-branded owner is retained. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
@@ -1279,12 +1289,16 @@
         "native/mahayana-messaging/src/protocol.rs",
         "native/mahayana-messaging/src/service.rs",
         "native/mahayana-messaging/src/engine.rs",
-        "native/mahayana-messaging/src/message.rs"
+        "native/mahayana-messaging/src/message.rs",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs"
       ],
       "fabushi_target_symbols": [
         "ConversationChildIdentity",
         "ConversationDestination",
         "ConversationDestinationSelection",
+        "ConversationChildPaginationState::remove_messages",
+        "ConversationChildRuntimeState::clear_draft_reply_to",
+        "ConversationChildRuntimeState::remove_deleted_messages",
         "pub fn can_toggle_unread(",
         "thread_root_message_id"
       ],
@@ -1307,8 +1321,6 @@
       "coverage_disposition": "rewritten",
       "blockers": [
         "Current-head Rust GitHub Actions evidence is pending",
-        "Child-scoped pagination, skipped-gap/retry/cancellation and client-side merge are not yet keyed by ConversationChildIdentity",
-        "Existing topic read/draft state has not yet been generalized to SavedSublist/nested child identity",
         "Pin/list restoration, active-child continuity, notification/unread reconciliation and child-level no-paid-messages exception remain open",
         "Shipping nested picker UI has not yet composed the typed child identity/destruction contract"
       ],
@@ -1321,13 +1333,17 @@
         "path:native/mahayana-messaging/src/engine.rs#Command::ForwardMessage",
         "commit:bc3252c40684f4420ee0f2f51dc7b9237cc58038",
         "path:native/mahayana-messaging/src/conversation.rs#ConversationChildIdentity",
-        "path:native/mahayana-messaging/src/conversation.rs#ConversationDestinationSelection"
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationDestinationSelection",
+        "path:native/mahayana-messaging/src/conversation.rs#ConversationChildRuntimeState::remove_deleted_messages",
+        "path:native/mahayana-messaging/src/engine.rs#Event::MessagesDeleted"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#forwarding_preserves_origin_and_rejects_protected_content",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::topic_saved_sublist_and_nested_conversation_keep_distinct_identity",
         "native/mahayana-messaging/src/conversation.rs#child_destination_tests::destroying_exact_child_clears_selection_without_parent_fallback",
-        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::unread_toggle_policy_preserves_topic_community_and_saved_sublist_rules"
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::unread_toggle_policy_preserves_topic_community_and_saved_sublist_rules",
+        "native/mahayana-messaging/src/conversation.rs#child_destination_tests::child_runtime_removes_deleted_messages_and_clears_matching_draft_reply_without_losing_text",
+        "native/mahayana-messaging/tests/m6_channels_topics_contract.rs#deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_child_windows"
       ],
       "target_commit": "bc3252c40684f4420ee0f2f51dc7b9237cc58038",
       "workflow_run": null,
@@ -1461,7 +1477,9 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "test_execution_evidence": [],
+      "test_execution_evidence": [
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41719169070@6a7a730ea2bb77bb5d2587332584e8b8f44cb5a2:attempt1:job126207063253:completed/success:child_destination_tests 6/6, m6_channels_topics_contract 4/4, messaging_contract 8/8; artifact13270999524 sha256:962f25a85abe81a71bec1ba21a5917fa70ef262bc747e145763dc1815b3b0430; bounded component proof, no formal release ACCEPT"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-thread selection semantics using canonical Fabushi Conversation/Topic/Message owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
@@ -1723,7 +1741,9 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "test_execution_evidence": [],
+      "test_execution_evidence": [
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41719169070@6a7a730ea2bb77bb5d2587332584e8b8f44cb5a2:attempt1:job126207063253:completed/success:m6_channels_topics_contract 4/4, messaging_contract 8/8; artifact13270999524 sha256:962f25a85abe81a71bec1ba21a5917fa70ef262bc747e145763dc1815b3b0430; bounded component proof, no formal release ACCEPT"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox typed-topic destination semantics using canonical Fabushi Conversation/Community/Topic owners. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",

@@ -392,6 +392,26 @@ impl ConversationChildPaginationState {
     pub fn has_gap_after(&self) -> bool {
         self.skipped_after.is_none_or(|count| count > 0)
     }
+
+    pub fn remove_messages(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> usize {
+        if deleted_message_ids.is_empty() || self.message_ids.is_empty() {
+            return 0;
+        }
+        let before_len = self.message_ids.len();
+        self.message_ids
+            .retain(|message_id| !deleted_message_ids.contains(message_id));
+        let removed = before_len.saturating_sub(self.message_ids.len());
+        if removed > 0 {
+            let removed_u32 = u32::try_from(removed).unwrap_or(u32::MAX);
+            self.full_count = self
+                .full_count
+                .map(|full_count| full_count.saturating_sub(removed_u32));
+        }
+        removed
+    }
 }
 
 /// Account-scoped state for a typed child inside the canonical Conversation owner.
@@ -491,6 +511,41 @@ impl ConversationChildRuntimeState {
         self.draft_text.clear();
         self.draft_reply_to_message_id = None;
         self.draft_updated_at_ms = None;
+    }
+
+    /// Clears `draft_reply_to_message_id` when the referenced reply target is
+    /// deleted, while preserving non-empty composer draft text (`ClearDraftReplyTo`).
+    pub fn clear_draft_reply_to(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> bool {
+        if !self
+            .draft_reply_to_message_id
+            .as_ref()
+            .is_some_and(|reply_id| deleted_message_ids.contains(reply_id))
+        {
+            return false;
+        }
+        if self.draft_text.trim().is_empty() {
+            self.clear_draft();
+        } else {
+            self.draft_reply_to_message_id = None;
+        }
+        true
+    }
+
+    /// Reconciles child draft reply targets and pagination window accounting when
+    /// messages in the child's backing conversation are deleted.
+    pub fn remove_deleted_messages(
+        &mut self,
+        deleted_message_ids: &std::collections::BTreeSet<String>,
+    ) -> bool {
+        let cleared_reply = self.clear_draft_reply_to(deleted_message_ids);
+        let removed = self.pagination.remove_messages(deleted_message_ids);
+        if removed > 0 && self.pagination.message_ids.is_empty() {
+            self.note_locally_empty();
+        }
+        cleared_reply || removed > 0
     }
 
     pub fn set_active(&mut self, active: bool) {
@@ -772,6 +827,45 @@ mod child_destination_tests {
         assert!(!state.no_paid_messages);
         assert!(state.draft_text.is_empty());
         assert!(state.pagination.message_ids.is_empty());
+    }
+
+    #[test]
+    fn child_runtime_removes_deleted_messages_and_clears_matching_draft_reply_without_losing_text() {
+        let destination = ConversationDestination::topic(
+            ConversationId::new("conversation:parent"),
+            "topic:42",
+        );
+        let mut state =
+            ConversationChildRuntimeState::new(destination, ActorId::new("human:self"))
+                .expect("valid child state");
+        state.pinned = true;
+        state.set_draft("surviving draft text", Some("message:reply".into()), 99);
+        assert!(state.pagination.replace_window(
+            vec!["message:reply".into(), "message:keep".into()],
+            Some(1),
+            Some(0),
+            Some(3),
+        ));
+
+        let deleted = std::collections::BTreeSet::from(["message:reply".to_string()]);
+        assert!(state.remove_deleted_messages(&deleted));
+        assert_eq!(state.draft_text, "surviving draft text");
+        assert_eq!(state.draft_reply_to_message_id, None);
+        assert_eq!(state.draft_updated_at_ms, Some(99));
+        assert_eq!(state.pagination.message_ids, vec!["message:keep".to_string()]);
+        assert_eq!(state.pagination.full_count, Some(2));
+        assert!(state.pinned);
+
+        state.set_draft("   ", Some("message:keep".into()), 100);
+        let deleted_last = std::collections::BTreeSet::from(["message:keep".to_string()]);
+        assert!(state.remove_deleted_messages(&deleted_last));
+        assert!(state.draft_text.is_empty());
+        assert_eq!(state.draft_reply_to_message_id, None);
+        assert_eq!(state.draft_updated_at_ms, None);
+        assert!(state.pagination.message_ids.is_empty());
+        assert_eq!(state.pagination.full_count, Some(1));
+        assert!(!state.pinned);
+        assert!(state.restore_pinned_when_non_empty);
     }
 
 }

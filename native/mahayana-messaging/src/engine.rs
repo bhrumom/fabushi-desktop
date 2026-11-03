@@ -3415,11 +3415,57 @@ impl MessagingEngine {
                 conversation_id,
                 message_ids,
             } => {
+                let deleted_ids = message_ids
+                    .iter()
+                    .map(|id| id.0.clone())
+                    .collect::<BTreeSet<_>>();
                 if let Some(messages) = self.state.messages.get_mut(&conversation_id) {
                     for id in message_ids {
                         if let Some(message) = messages.get_mut(&id) {
                             message.deleted = true;
                         }
+                    }
+                }
+                if let Some(by_actor) = self.state.drafts.get_mut(&conversation_id) {
+                    for draft in by_actor.values_mut() {
+                        if draft
+                            .reply_to_message_id
+                            .as_ref()
+                            .is_some_and(|reply_id| deleted_ids.contains(&reply_id.0))
+                        {
+                            draft.reply_to_message_id = None;
+                        }
+                    }
+                    by_actor.retain(|_, draft| {
+                        !draft.text.trim().is_empty() || draft.reply_to_message_id.is_some()
+                    });
+                    if by_actor.is_empty() {
+                        self.state.drafts.remove(&conversation_id);
+                    }
+                }
+                if let Some(by_actor) = self.state.topic_drafts.get_mut(&conversation_id) {
+                    for by_topic in by_actor.values_mut() {
+                        for draft in by_topic.values_mut() {
+                            if draft
+                                .reply_to_message_id
+                                .as_ref()
+                                .is_some_and(|reply_id| deleted_ids.contains(&reply_id.0))
+                            {
+                                draft.reply_to_message_id = None;
+                            }
+                        }
+                        by_topic.retain(|_, draft| {
+                            !draft.text.trim().is_empty() || draft.reply_to_message_id.is_some()
+                        });
+                    }
+                    by_actor.retain(|_, by_topic| !by_topic.is_empty());
+                    if by_actor.is_empty() {
+                        self.state.topic_drafts.remove(&conversation_id);
+                    }
+                }
+                for child in &mut self.state.conversation_child_states {
+                    if destination_message_conversation_id(&child.destination) == &conversation_id {
+                        child.remove_deleted_messages(&deleted_ids);
                     }
                 }
             }

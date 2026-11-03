@@ -1439,3 +1439,160 @@ fn slow_mode_and_moderation_are_enforced_by_the_rust_state_machine() {
         .iter()
         .any(|entry| entry.action == CommunityAuditAction::MemberChanged));
 }
+
+#[test]
+fn deleting_messages_clears_reply_drafts_without_losing_text_and_reconciles_child_windows() {
+    let mut engine = MessagingEngine::new();
+    for actor_id in ["human:owner", "human:admin"] {
+        engine
+            .execute(Command::UpsertActor {
+                actor: Actor::human(actor_id, actor_id),
+            })
+            .unwrap();
+    }
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: channel_conversation(),
+        })
+        .unwrap();
+    engine
+        .execute(Command::UpdateCommunity {
+            actor_id: ActorId::new("human:owner"),
+            community: channel_community(),
+        })
+        .unwrap();
+    engine
+        .execute(Command::UpsertForumTopic {
+            actor_id: ActorId::new("human:owner"),
+            topic: ForumTopicState {
+                id: "study".into(),
+                conversation_id: ConversationId::new("channel:m6"),
+                title: "Study".into(),
+                icon: None,
+                creator_id: ActorId::new("human:owner"),
+                created_at_ms: 10,
+                pinned: false,
+                closed: false,
+                hidden: false,
+                unread_count: 0,
+                last_message_id: None,
+            },
+        })
+        .unwrap();
+
+    let conversation_id = ConversationId::new("channel:m6");
+    let first_message_id = MessageId::new("message:m6:1");
+    let second_message_id = MessageId::new("message:m6:2");
+    for (idx, message_id) in [first_message_id.clone(), second_message_id.clone()]
+        .into_iter()
+        .enumerate()
+    {
+        engine
+            .execute(Command::QueueMessage {
+                conversation_id: conversation_id.clone(),
+                local_message_id: message_id,
+                client_message_id: ClientMessageId(format!("client:m6:{idx}")),
+                sender_id: ActorId::new("human:owner"),
+                content: text_message("topic post"),
+                reply_to_message_id: None,
+                thread_root_message_id: Some(MessageId::new("topic:study")),
+                created_at_ms: 20 + i64::try_from(idx).unwrap_or(0),
+                scheduled_at_ms: None,
+                silent: false,
+                protected_content: false,
+            })
+            .unwrap();
+    }
+
+    // Root draft with text + reply to first_message_id (text should survive deletion)
+    engine
+        .execute(Command::SetDraft {
+            draft: ConversationDraft {
+                conversation_id: conversation_id.clone(),
+                actor_id: ActorId::new("human:owner"),
+                text: "keep root text".into(),
+                reply_to_message_id: Some(first_message_id.clone()),
+                updated_at_ms: 30,
+            },
+        })
+        .unwrap();
+    // Root draft with empty text + reply to first_message_id (should be removed when reply target is deleted)
+    engine
+        .execute(Command::SetDraft {
+            draft: ConversationDraft {
+                conversation_id: conversation_id.clone(),
+                actor_id: ActorId::new("human:admin"),
+                text: String::new(),
+                reply_to_message_id: Some(first_message_id.clone()),
+                updated_at_ms: 31,
+            },
+        })
+        .unwrap();
+    // Topic draft with text + reply to first_message_id (text should survive deletion)
+    engine
+        .execute(Command::SetTopicDraft {
+            draft: TopicDraft {
+                conversation_id: conversation_id.clone(),
+                topic_id: "study".into(),
+                actor_id: ActorId::new("human:owner"),
+                text: "keep topic text".into(),
+                reply_to_message_id: Some(first_message_id.clone()),
+                updated_at_ms: 32,
+            },
+        })
+        .unwrap();
+
+    let topic_destination = ConversationDestination::topic(conversation_id.clone(), "topic:study");
+    engine
+        .execute(Command::SetConversationChildPinned {
+            destination: topic_destination.clone(),
+            actor_id: ActorId::new("human:owner"),
+            pinned: true,
+        })
+        .unwrap();
+    engine
+        .execute(Command::ReplaceConversationChildWindow {
+            destination: topic_destination.clone(),
+            actor_id: ActorId::new("human:owner"),
+            message_ids: vec![first_message_id.clone()],
+            skipped_before: Some(0),
+            skipped_after: Some(0),
+            full_count: Some(1),
+        })
+        .unwrap();
+
+    engine
+        .execute(Command::DeleteMessages {
+            conversation_id: conversation_id.clone(),
+            message_ids: vec![first_message_id.clone()],
+        })
+        .unwrap();
+
+    let state = engine.state();
+    let owner_draft = state.drafts[&conversation_id]
+        .get(&ActorId::new("human:owner"))
+        .expect("owner root draft text survives");
+    assert_eq!(owner_draft.text, "keep root text");
+    assert_eq!(owner_draft.reply_to_message_id, None);
+    assert!(!state.drafts[&conversation_id].contains_key(&ActorId::new("human:admin")));
+
+    let owner_topic_draft = state.topic_drafts[&conversation_id][&ActorId::new("human:owner")]
+        .get("study")
+        .expect("owner topic draft text survives");
+    assert_eq!(owner_topic_draft.text, "keep topic text");
+    assert_eq!(owner_topic_draft.reply_to_message_id, None);
+
+    let child_state = state
+        .conversation_child_states
+        .iter()
+        .find(|child| {
+            child.destination == topic_destination && child.actor_id == ActorId::new("human:owner")
+        })
+        .expect("topic child state");
+    assert_eq!(child_state.draft_text, "keep topic text");
+    assert_eq!(child_state.draft_reply_to_message_id, None);
+    assert!(child_state.pagination.message_ids.is_empty());
+    assert_eq!(child_state.pagination.full_count, Some(0));
+    assert!(!child_state.pinned);
+    assert!(child_state.restore_pinned_when_non_empty);
+}

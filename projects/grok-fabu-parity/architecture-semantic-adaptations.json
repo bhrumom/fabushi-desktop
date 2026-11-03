@@ -22,7 +22,7 @@
       "referencePath": "frontend/src/production/ProductionRenderer.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "26dcb2aad353551e6e8f8468f7ce3a63335730ce",
+      "targetBlobSha": "c777b2c1538d495c5a1f92b4bfd1d49a32afc8cd",
       "behavioralEvidence": [
         "frontend/src/production/ProductionRenderer.tsx",
         "frontend/src/recovered/features/account/session/sign-in-status.tsx",
@@ -48,7 +48,7 @@
       "referencePath": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "5cf2f33c394f885a37709a01361dc516b0fb4240",
+      "targetBlobSha": "8f6a59173d4022c0c3016d3849d39292fadff8c5",
       "behavioralEvidence": [
         "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
         "frontend/src/production/ProductionRenderer.tsx",
@@ -66,7 +66,7 @@
       "referencePath": "frontend/src/production/model.ts",
       "expectedBaseParityMode": "reference-copy",
       "parityMode": "typescript-port",
-      "targetBlobSha": "a8607a383ec32f6fba7142bd7ce8ae93f6af7dc5",
+      "targetBlobSha": "9b4b3f0ea4704eaaa640eb7ddbdcc98f5a82dd88",
       "behavioralEvidence": [
         "frontend/src/production/model.ts",
         "frontend/src/production/coordinator-client.ts"
@@ -78,6 +78,39 @@
         ".github/workflows/pr20-verify-once.yml"
       ],
       "rationale": "Keeps Grok 0.18 Agent projection/filter/sort semantics while accepting the shipping Mahayana Coordinator agents event envelope { agents: [...] } in addition to the frozen direct array form. The adaptation is limited to transport normalization at the renderer projection boundary; Agent identity, hidden state, activity and ordering continue through the frozen Grok projection logic. It also normalizes authoritative Mahayana transcript echoes that carry Grok attachment contexts on user messages, preserving committed path/name/MIME/size metadata for mixed and attachment-only sends without relying on optimistic renderer state. Phase 1 extends this same projection boundary with Human-conversation and Human-transcript normalization while preserving the RendererAgent/ConversationTranscriptEntry contracts, including canonical attachment metadata, reply relation fields and trusted Agent author names. The renderer also maps legacy Grok/Grok Bot default profile names to the Fabushi product label while preserving all other configured Agent names."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/model.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "0bb580b735b8fdd04a8d64ba951c56e676410dcc",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/model.ts",
+        "frontend/src/production/model.ts",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/production/transcript-projection.contract.test.ts",
+        "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        ".github/workflows/native-service-contracts.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 ConversationTranscriptEntry and TranscriptMessage contracts while adding optional Human-message projection fields (`readAt`, `forwardedFromConversationId`, `forwardedFromMessageId`, `forwardedFromAuthorName`, `forcedForwardInfo`, and `protectedContent`) used by the canonical ConversationTranscript and ForwardMessageDialog owners without creating a second transcript model."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "daff11acf54e6b9906ac62bcaeced0245789cb8d",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "frontend/src/recovered/features/conversation/workspace/reply-thread-controller.contract.test.ts",
+        "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+        ".github/workflows/native-service-contracts.yml"
+      ],
+      "rationale": "Preserves the frozen Grok 0.18 ReplyThreadController ownership, scope fencing, and unloaded-target continuity while retiring active reply selections when a loaded message entry's content is cleared in-place (`isActionableReplyTargetEntry`, `ClearDraftReplyTo`) without losing the composer draft text."
     },
     {
       "referencePath": "frontend/src/recovered/features/conversation/workspace/draft-state.ts",

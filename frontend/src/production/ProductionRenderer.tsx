@@ -1349,8 +1349,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [client]);
 
   const settleForward = useCallback((settlement: readonly ForwardSettlement[], accountScopeGeneration: number, recipientNames: ReadonlyMap<string, string>) => {
+    const currentAccount = accountRef.current;
+    const selfAuthorId = currentAccount?.kind === "logged-in" && typeof currentAccount.authId === "string" && currentAccount.authId.trim().length > 0
+      ? currentAccount.authId.trim()
+      : null;
     void settleForwardProjection({
-      settlement, recipientNames, accountScopeGeneration, isAccountScopeCurrent: isForwardAccountScopeCurrent, setNotice,
+      settlement, recipientNames,
+      selfConversationId: selfAuthorId == null ? null : `human:${selfAuthorId}`,
+      accountScopeGeneration, isAccountScopeCurrent: isForwardAccountScopeCurrent, setNotice,
       readRoster: client == null ? null : () => client.call("listHumanConversations"),
       applyRoster: (value) => {
         const projected = projectHumanConversations(value);

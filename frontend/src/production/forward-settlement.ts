@@ -6,6 +6,9 @@ import type { ForwardSettlement } from "./ForwardMessageDialog";
 export async function settleForwardProjection(input: {
   readonly settlement: readonly ForwardSettlement[];
   readonly recipientNames?: ReadonlyMap<string, string>;
+  readonly selfConversationId?: string | null;
+  readonly suppressSelfNotice?: boolean;
+  readonly onSelfForwarded?: (conversationId: string) => void;
   readonly accountScopeGeneration: number;
   readonly isAccountScopeCurrent: (generation: number) => boolean;
   readonly setNotice: (notice: string | null) => void;
@@ -17,12 +20,21 @@ export async function settleForwardProjection(input: {
   const sent = settlement.filter((item) => item.status === "sent");
   const failed = settlement.length - sent.length;
   const attention = `${failed} destination${failed === 1 ? "" : "s"} still need${failed === 1 ? "s" : ""} attention.`;
+  const normalizedSelfId = typeof input.selfConversationId === "string" && input.selfConversationId.trim().length > 0
+    ? input.selfConversationId.trim()
+    : null;
   if (settlement.length === 0) {
     setNotice("No forwarding destinations were confirmed.");
   } else if (sent.length === 0) {
     setNotice(`No deliveries confirmed; ${attention}`);
   } else if (failed > 0) {
     setNotice(`Forwarded to ${sent.length}; ${attention}`);
+  } else if (sent.length === 1 && normalizedSelfId != null && sent[0].conversationId === normalizedSelfId) {
+    input.onSelfForwarded?.(sent[0].conversationId);
+    if (input.suppressSelfNotice !== true) {
+      const selfLabel = input.recipientNames?.get(sent[0].conversationId)?.trim();
+      setNotice(`Forwarded to ${selfLabel && selfLabel.length > 0 ? selfLabel : "Saved Messages"}.`);
+    }
   } else {
     // Names explain this accepted settlement; they never choose or authorize
     // destinations. Missing labels retain the truthful count projection.

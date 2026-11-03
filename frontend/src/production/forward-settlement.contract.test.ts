@@ -164,3 +164,54 @@ test("returning to the same account cannot revive a named settlement from its ol
   assert.deepEqual(h.notices, []);
   assert.deepEqual(h.rosters, []);
 });
+
+test("single self/Saved Messages destination uses Saved Messages default, custom self label, or optional notice suppression", async () => {
+  const selfNotifications: string[] = [];
+  const defaultSelf = harness();
+  await settleForwardProjection({
+    settlement: [{ conversationId: "human:self", status: "sent" }],
+    selfConversationId: "human:self",
+    onSelfForwarded: (id) => selfNotifications.push(`default:${id}`),
+    accountScopeGeneration: 3,
+    isAccountScopeCurrent: defaultSelf.isCurrent,
+    setNotice: defaultSelf.notice,
+    readRoster: async () => ["human:self"],
+    applyRoster: defaultSelf.apply,
+  });
+  assert.deepEqual(defaultSelf.notices, ["Forwarded to Saved Messages."]);
+  assert.deepEqual(defaultSelf.rosters, [["human:self"]]);
+
+  const customSelf = harness();
+  await settleForwardProjection({
+    settlement: [{ conversationId: "human:self", status: "sent" }],
+    recipientNames: new Map([["human:self", "Personal Vault"]]),
+    selfConversationId: "human:self",
+    onSelfForwarded: (id) => selfNotifications.push(`custom:${id}`),
+    accountScopeGeneration: 3,
+    isAccountScopeCurrent: customSelf.isCurrent,
+    setNotice: customSelf.notice,
+    readRoster: null,
+    applyRoster: customSelf.apply,
+  });
+  assert.deepEqual(customSelf.notices, ["Forwarded to Personal Vault."]);
+
+  const suppressedSelf = harness();
+  await settleForwardProjection({
+    settlement: [{ conversationId: "human:self", status: "sent" }],
+    selfConversationId: "human:self",
+    suppressSelfNotice: true,
+    onSelfForwarded: (id) => selfNotifications.push(`suppressed:${id}`),
+    accountScopeGeneration: 3,
+    isAccountScopeCurrent: suppressedSelf.isCurrent,
+    setNotice: suppressedSelf.notice,
+    readRoster: async () => ["human:self"],
+    applyRoster: suppressedSelf.apply,
+  });
+  assert.deepEqual(suppressedSelf.notices, []);
+  assert.deepEqual(suppressedSelf.rosters, [["human:self"]]);
+  assert.deepEqual(selfNotifications, [
+    "default:human:self",
+    "custom:human:self",
+    "suppressed:human:self",
+  ]);
+});
