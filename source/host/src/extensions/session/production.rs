@@ -587,7 +587,7 @@ impl ProductionSessionWorkers {
 
         let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
             let owner = self.open_human_conversation_db_owner(&local.scope_id)?;
-            let metadata = Self::read_human_conversation_metadata(&owner, &local.scope_id)?;
+            let metadata = Self::read_human_conversation_metadata(&owner, &local.scope_id, true)?;
             if self.peer_human_id_from_metadata(&metadata)? != self.local_call_peer(&local.participant_ids)? {
                 return Err("remote Human call participants do not match CallSession owner".into());
             }
@@ -748,7 +748,7 @@ impl ProductionSessionWorkers {
                 .ok_or_else(|| "Human call discovery could not resolve canonical conversation scope".to_string())?;
             let continuation_owner = if recovery.is_some_and(HumanSyncRecoveryContext::is_continuing) {
                 let owner = self.open_human_conversation_db_owner(scope_id)?;
-                let metadata = Self::read_human_conversation_metadata(&owner, scope_id)?;
+                let metadata = Self::read_human_conversation_metadata(&owner, scope_id, true)?;
                 if self.peer_human_id_from_metadata(&metadata)? != peer {
                     return Err("remote Human call participants do not match CallSession owner".into());
                 }
@@ -2753,7 +2753,7 @@ impl ProductionSessionWorkers {
         if current.is_closed() {
             return Err("Human conversation owner is closed".into());
         }
-        let metadata = Self::read_human_conversation_metadata(&current, conversation_id)?;
+        let metadata = Self::read_human_conversation_metadata(&current, conversation_id, true)?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
@@ -3227,6 +3227,7 @@ impl ProductionSessionWorkers {
     fn read_human_conversation_metadata(
         owner: &SandAgentDb,
         conversation_id: &str,
+        require_canonical_pair: bool,
     ) -> Result<serde_json::Value, String> {
         let raw = owner.read_kv("metadata").map_err(|error| error.to_string())?
             .ok_or_else(|| "existing Human conversation metadata is missing".to_string())?;
@@ -3252,7 +3253,7 @@ impl ProductionSessionWorkers {
         }
         let first = participants[0].as_str().expect("validated Human participant");
         let second = participants[1].as_str().expect("validated Human participant");
-        if Self::human_direct_conversation_id(first, second) != conversation_id {
+        if require_canonical_pair && Self::human_direct_conversation_id(first, second) != conversation_id {
             return Err("existing Human conversation participants conflict with the canonical identity".into());
         }
         Ok(metadata)
@@ -3261,6 +3262,24 @@ impl ProductionSessionWorkers {
     pub fn open_human_conversation_db_owner(
         &self,
         conversation_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        self.open_human_conversation_db_owner_with_pair_policy(conversation_id, true)
+    }
+
+    // This private opener is reserved for retained forwarding-journal discovery
+    // and denial settlement. It grants no ordinary transcript/resource authority:
+    // authorize_forward_source rechecks the canonical pair before reading a row.
+    fn open_human_forward_recovery_owner(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Arc<SandAgentDb>, String> {
+        self.open_human_conversation_db_owner_with_pair_policy(conversation_id, false)
+    }
+
+    fn open_human_conversation_db_owner_with_pair_policy(
+        &self,
+        conversation_id: &str,
+        require_canonical_pair: bool,
     ) -> Result<Arc<SandAgentDb>, String> {
         let db_path = get_native_conversation_db_path(&self.agents_root, conversation_id)
             .map_err(|error| error.to_string())?;
@@ -3284,14 +3303,14 @@ impl ProductionSessionWorkers {
             // the owner was cached. Cached handles cannot bypass the same
             // conversation identity check as a freshly opened source.
             drop(owners);
-            Self::read_human_conversation_metadata(&owner, conversation_id)?;
+            Self::read_human_conversation_metadata(&owner, conversation_id, require_canonical_pair)?;
             return Ok(owner);
         }
         let owner = Arc::new(
             SandAgentDb::open_human_conversation_store(&db_path, self.busy_timeout_ms)
                 .map_err(|error| error.to_string())?,
         );
-        if let Err(error) = Self::read_human_conversation_metadata(&owner, conversation_id) {
+        if let Err(error) = Self::read_human_conversation_metadata(&owner, conversation_id, require_canonical_pair) {
             owner.close(false);
             return Err(error);
         }
@@ -3493,7 +3512,7 @@ impl ProductionSessionWorkers {
             // A retained directory with unavailable storage may own this
             // request identity. Never free it for another source by skipping
             // a failed stat/open; retry only after storage recovers.
-            let owner = self.open_human_conversation_db_owner(&id)?;
+            let owner = self.open_human_forward_recovery_owner(&id)?;
             for batch in load_forward_batches(&owner, &id)? {
                 if batch.account_id == account && batch.issuer == issuer && batch.request_id == request_id {
                     if matched.is_some() {
@@ -3509,10 +3528,18 @@ impl ProductionSessionWorkers {
     fn authorize_forward_source(
         &self, source_id: &str, source_entry_id: &str,
     ) -> Result<serde_json::Value, ForwardSourceFailure> {
-        let owner = self.open_human_conversation_db_owner(source_id)
+        let owner = self.open_human_forward_recovery_owner(source_id)
             .map_err(ForwardSourceFailure::Storage)?;
-        let metadata = owner.read_metadata().map_err(|error|
-            ForwardSourceFailure::Storage(error.to_string()))?;
+        let metadata = Self::read_human_conversation_metadata(&owner, source_id, false)
+            .map_err(ForwardSourceFailure::Storage)?;
+        let participants = metadata.get("participantIds").and_then(serde_json::Value::as_array)
+            .ok_or_else(|| ForwardSourceFailure::Storage("existing Human conversation participants are invalid".into()))?;
+        let first = participants[0].as_str().expect("structurally validated Human participant");
+        let second = participants[1].as_str().expect("structurally validated Human participant");
+        if Self::human_direct_conversation_id(first, second) != source_id {
+            return Err(ForwardSourceFailure::Policy(
+                "forwardHumanMessage source participant pair no longer matches its canonical identity".into()));
+        }
         if !self.metadata_has_local_human(&metadata).map_err(ForwardSourceFailure::Storage)? {
             return Err(ForwardSourceFailure::Policy(
                 "local Human identity is not a participant in the source conversation".into()));
@@ -3563,10 +3590,16 @@ impl ProductionSessionWorkers {
         &self, source_id: &str, request_id: &str, requested: Option<&[String]>, require_existing: bool,
         account: &str, issuer: &str, _exclusive: &std::sync::MutexGuard<'_, ()>,
     ) -> Result<HumanForwardBatch, String> {
-        let owner = self.open_human_conversation_db_owner(source_id)?;
+        let owner = if require_existing {
+            self.open_human_forward_recovery_owner(source_id)?
+        } else {
+            self.open_human_conversation_db_owner(source_id)?
+        };
         if require_existing {
-            let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            Self::validate_human_retry_conversation(&metadata, source_id, account)?;
+            // Structural validity is enough to recover the journal. The
+            // per-target authorize_forward_source call below is the policy
+            // boundary and durably records a canonical-pair denial.
+            Self::read_human_conversation_metadata(&owner, source_id, false)?;
         }
         let mut batch = load_forward_batches(&owner, source_id)?.into_iter().find(|item|
             item.account_id == account && item.issuer == issuer && item.request_id == request_id
@@ -3668,7 +3701,7 @@ impl ProductionSessionWorkers {
             }
             if !kind.is_dir() { continue; }
             let id = entry.file_name().to_string_lossy().into_owned();
-            let owner = self.open_human_conversation_db_owner(&id)?;
+            let owner = self.open_human_forward_recovery_owner(&id)?;
             // An account-owned intent remains discoverable after source
             // membership is revoked. Delivery persists its policy denial;
             // other accounts' valid batches are filtered below and untouched.
@@ -5000,7 +5033,7 @@ impl ProductionSessionWorkers {
         {
             return Err("Human transcript mutation belongs to a different database".into());
         }
-        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id)?;
+        let metadata = Self::read_human_conversation_metadata(&owner, conversation_id, true)?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
