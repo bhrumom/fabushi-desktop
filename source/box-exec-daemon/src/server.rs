@@ -664,11 +664,44 @@ struct CapturedChild {
     status: Option<ExitStatus>,
     cleanup_unknown: bool,
     capture_complete: bool,
+    stream_recovery: Option<StreamRecovery>,
     #[cfg(test)]
     signals_sent: usize,
 }
 
 impl CapturedChild {
+    fn new(child: Child) -> Self {
+        Self {
+            child, status: None, cleanup_unknown: false, capture_complete: false,
+            stream_recovery: None,
+            #[cfg(test)]
+            signals_sent: 0,
+        }
+    }
+
+    fn observe_stream_recovery(&mut self) {
+        let Some(recovery) = self.stream_recovery.as_mut() else { return; };
+        for worker in [&mut recovery.stdout_worker, &mut recovery.stderr_worker] {
+            if worker.as_ref().is_some_and(|handle| handle.is_finished()) {
+                // A panic is still an observed worker termination. This path
+                // certifies cleanup only; the request already returned unknown.
+                let _ = worker.take().expect("finished stream worker").join();
+            }
+        }
+        if self.status.is_some()
+            && recovery.stdout_worker.is_none() && recovery.stderr_worker.is_none()
+        {
+            for path in &recovery.cleanup_paths {
+                let _ = fs::remove_file(path);
+            }
+            drop(self.child.stdin.take());
+            drop(self.child.stdout.take());
+            drop(self.child.stderr.take());
+            self.capture_complete = true;
+            self.stream_recovery = None;
+        }
+    }
+
     fn poll(&mut self) -> Result<Option<ExitStatus>, ShellExecutionUnknown> {
         if self.status.is_none() {
             self.status = self.child.try_wait()
@@ -678,7 +711,7 @@ impl CapturedChild {
     }
 
     fn signal(&mut self, force: bool) -> Result<(), ShellExecutionUnknown> {
-        // Poll and signal under the same ownership mutex. An unreaped child
+        // Poll and signal through the same owned state. An unreaped child
         // reserves its PID; after observing reap we never signal that number.
         if self.poll()?.is_some() {
             return Ok(());
@@ -703,6 +736,78 @@ impl CapturedChild {
         #[cfg(test)]
         { self.signals_sent += 1; }
         Ok(())
+    }
+}
+
+struct StreamRecovery {
+    stdout_worker: Option<JoinHandle<()>>,
+    stderr_worker: Option<JoinHandle<()>>,
+    cleanup_paths: Vec<PathBuf>,
+}
+
+struct StreamResources {
+    state: CapturedChild,
+    recovery: StreamRecovery,
+}
+
+// The active request retains its actual resources from spawn onward. Any
+// exceptional return or unwind transfers them to the same invocation's
+// captured-child recovery, which request admission or stop can observe without
+// blocking on a pipe held open by a descendant.
+struct StreamRequest<'a> {
+    runtime: &'a BoxExecRuntime,
+    registration_id: ForegroundId,
+    resources: Option<StreamResources>,
+}
+
+impl StreamRequest<'_> {
+    fn resources(&mut self) -> &mut StreamResources {
+        self.resources.as_mut().expect("owned stream resources")
+    }
+
+    fn complete(&mut self) -> Result<(), String> {
+        let resources = self.resources();
+        if resources.state.status.is_none()
+            || resources.recovery.stdout_worker.is_some()
+            || resources.recovery.stderr_worker.is_some()
+        {
+            return Err("stream cleanup was not fully observed".into());
+        }
+        self.resources.take();
+        self.runtime.foreground_processes.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&self.registration_id);
+        Ok(())
+    }
+}
+
+impl Drop for StreamRequest<'_> {
+    fn drop(&mut self) {
+        let Some(mut resources) = self.resources.take() else { return; };
+        resources.state.capture_complete = false;
+        resources.state.stream_recovery = Some(resources.recovery);
+        let pid = resources.state.child.id();
+        let owner = Arc::new(Mutex::new(resources.state));
+        {
+            let mut processes = self.runtime.foreground_processes.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if let Some((_, process)) = processes.get_mut(&self.registration_id) {
+                *process = ForegroundProcess::Capture(Arc::clone(&owner));
+            } else {
+                processes.insert(self.registration_id,
+                    (pid, ForegroundProcess::Capture(Arc::clone(&owner))));
+            }
+        }
+        // This observes only the direct Child and is bounded. Reader handles
+        // remain in recovery even if a descendant prevents EOF indefinitely.
+        let _ = cleanup_captured_child(&owner);
+        self.runtime.observe_retained_stream_recovery(self.registration_id, &owner);
+        #[cfg(test)]
+        if let Some(observer) = self.runtime.stream_recovery_observer.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()).as_ref()
+        {
+            let _ = observer.send((self.registration_id, Arc::clone(&owner)));
+        }
     }
 }
 
@@ -795,6 +900,13 @@ pub struct BoxExecRuntime {
     #[cfg(test)]
     capture_observation_gate: Mutex<Option<mpsc::Receiver<()>>>,
     #[cfg(test)]
+    stream_setup_gate: Mutex<Option<mpsc::Receiver<()>>>,
+    #[cfg(test)]
+    stream_panic_after_reap: AtomicBool,
+    #[cfg(test)]
+    stream_recovery_observer:
+        Mutex<Option<mpsc::Sender<(ForegroundId, Arc<Mutex<CapturedChild>>)>>>,
+    #[cfg(test)]
     capture_probe: Mutex<Option<Arc<CaptureProbe>>>,
     background: Arc<Mutex<HashMap<u32, BackgroundProcess>>>,
     next_shell_id: AtomicU32,
@@ -817,6 +929,12 @@ impl BoxExecRuntime {
             foreground_pid_alias: Mutex::new(None),
             #[cfg(test)]
             capture_observation_gate: Mutex::new(None),
+            #[cfg(test)]
+            stream_setup_gate: Mutex::new(None),
+            #[cfg(test)]
+            stream_panic_after_reap: AtomicBool::new(false),
+            #[cfg(test)]
+            stream_recovery_observer: Mutex::new(None),
             #[cfg(test)]
             capture_probe: Mutex::new(None),
             background: Arc::new(Mutex::new(HashMap::new())),
@@ -1124,6 +1242,7 @@ impl BoxExecRuntime {
     where
         F: FnMut(ExecStreamElement) -> Result<(), String>,
     {
+        self.observe_retained_stream_recoveries();
         let cwd = self.resolve_path(&args.working_directory)?;
         emit(client_message(
             id,
@@ -1134,9 +1253,12 @@ impl BoxExecRuntime {
             None,
         ))?;
 
+        #[cfg(test)]
+        let stream_setup_gate = self.stream_setup_gate.lock()
+            .expect("stream setup gate").take();
         let started_at = Utc::now();
         let started = Instant::now();
-        let (registration_id, mut child) = {
+        let mut request = {
             let mut processes = self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
             if self.stopping.load(Ordering::Acquire) {
@@ -1144,31 +1266,39 @@ impl BoxExecRuntime {
             }
             let registration_id = self.allocate_foreground_id()?;
             let child = self.spawn_shell(&args.command, &cwd)?;
-            processes.insert(registration_id, self.foreground_registration(
-                child.id(), ForegroundProcess::Stream,
-            ));
-            (registration_id, Some(child))
+            let pid = child.id();
+            let request = StreamRequest {
+                runtime: self, registration_id,
+                resources: Some(StreamResources {
+                    state: CapturedChild::new(child),
+                    recovery: StreamRecovery {
+                        stdout_worker: None, stderr_worker: None, cleanup_paths: Vec::new(),
+                    },
+                }),
+            };
+            processes.insert(registration_id,
+                self.foreground_registration(pid, ForegroundProcess::Stream));
+            request
         };
+        #[cfg(test)]
+        if let Some(gate) = stream_setup_gate {
+            gate.recv_timeout(Duration::from_secs(10))
+                .map_err(|_| "test stream setup gate not released".to_string())?;
+        }
         // Only this request owns/reaps this Child. Registry PID data is never
         // signal authority, including when a test presents a reused number.
-        let pid = child.as_ref().expect("stream child").id();
-        let stdout = child
-            .as_mut()
-            .expect("stream child")
-            .stdout
+        let stdout = request.resources().state.child.stdout
             .take()
             .ok_or_else(|| "shell stream stdout was unavailable".to_string())?;
-        let stderr = child
-            .as_mut()
-            .expect("stream child")
-            .stderr
+        let stderr = request.resources().state.child.stderr
             .take()
             .ok_or_else(|| "shell stream stderr was unavailable".to_string())?;
 
         fs::create_dir_all(&self.terminals_directory).map_err(|error| error.to_string())?;
         let stream_spool_path = self
             .terminals_directory
-            .join(format!(".shell-stream-{}.tmp", registration_id.0));
+            .join(format!(".shell-stream-{}.tmp", request.registration_id.0));
+        request.resources().recovery.cleanup_paths.push(stream_spool_path.clone());
         let stream_spool_writer = Arc::new(Mutex::new(
             OpenOptions::new()
                 .create(true)
@@ -1179,13 +1309,13 @@ impl BoxExecRuntime {
         ));
 
         let (events_tx, events_rx) = mpsc::channel::<ShellPipeEvent>();
-        let mut stdout_worker = Some(spawn_stream_pipe(
+        request.resources().recovery.stdout_worker = Some(spawn_stream_pipe(
             stdout,
             events_tx.clone(),
             false,
             Arc::clone(&stream_spool_writer),
         ));
-        let mut stderr_worker = Some(spawn_stream_pipe(
+        request.resources().recovery.stderr_worker = Some(spawn_stream_pipe(
             stderr,
             events_tx.clone(),
             true,
@@ -1224,26 +1354,20 @@ impl BoxExecRuntime {
                 )) {
                     abort.store(true, Ordering::Release);
                     stream_error = Some(error);
-                    kill_process_group(pid);
-                    kill_requested = true;
                     break;
                 }
             }
-            if stream_error.is_some() {
-                status = child
-                    .as_mut()
-                    .expect("stream child")
-                    .wait()
-                    .ok();
-                break;
+            if let Some(error) = stream_error.take() {
+                return Err(error);
             }
-            match child
-                .as_mut()
-                .expect("stream child")
-                .try_wait()
+            match request.resources().state.poll()
                 .map_err(|error| error.to_string())?
             {
                 Some(done) => {
+                    #[cfg(test)]
+                    if self.stream_panic_after_reap.swap(false, Ordering::AcqRel) {
+                        panic!("controlled stream unwind after actual child reap");
+                    }
                     status = Some(done);
                     break;
                 }
@@ -1263,14 +1387,10 @@ impl BoxExecRuntime {
                 && args.timeout_behavior == TIMEOUT_BEHAVIOR_BACKGROUND
             {
                 let backgrounded = self.handoff_shell_stream_to_background(
-                    child.take().expect("stream child"),
+                    &mut request,
                     args,
-                    pid,
-                    registration_id,
                     started,
                     started_at,
-                    stdout_worker.take().expect("stdout worker"),
-                    stderr_worker.take().expect("stderr worker"),
                     Arc::clone(&stream_spool_writer),
                     stream_spool_path.clone(),
                 )?;
@@ -1292,7 +1412,8 @@ impl BoxExecRuntime {
                     || (block_timeout_elapsed
                         && args.timeout_behavior != TIMEOUT_BEHAVIOR_BACKGROUND))
             {
-                kill_process_group(pid);
+                request.resources().state.signal(false)
+                    .map_err(|error| error.to_string())?;
                 kill_requested = true;
             }
             match events_rx.recv_timeout(Duration::from_millis(10)) {
@@ -1316,9 +1437,7 @@ impl BoxExecRuntime {
                         None,
                     )) {
                         abort.store(true, Ordering::Release);
-                        stream_error = Some(error);
-                        kill_process_group(pid);
-                        kill_requested = true;
+                        return Err(error);
                     }
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
@@ -1326,10 +1445,10 @@ impl BoxExecRuntime {
             }
         }
 
-        if let Some(worker) = stdout_worker.take() {
+        if let Some(worker) = request.resources().recovery.stdout_worker.take() {
             let _ = worker.join();
         }
-        if let Some(worker) = stderr_worker.take() {
+        if let Some(worker) = request.resources().recovery.stderr_worker.take() {
             let _ = worker.join();
         }
         while let Ok(event) = events_rx.try_recv() {
@@ -1358,28 +1477,14 @@ impl BoxExecRuntime {
                 stream_error = Some(error);
             }
         }
-        let status = match status {
-            Some(status) => Ok(status),
-            None => child
-                .as_mut()
-                .expect("stream child")
-                .wait()
-                .map_err(|error| error.to_string()),
-        };
-        if status.is_ok() {
-            self.foreground_processes
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .remove(&registration_id);
-        }
-
         drop(stream_spool_writer);
         let _ = fs::remove_file(&stream_spool_path);
 
         if let Some(error) = stream_error {
             return Err(error);
         }
-        let status = status?;
+        let status = status.ok_or_else(|| "stream child reap was not observed".to_string())?;
+        request.complete()?;
         emit(client_message(
             id,
             exec_id,
@@ -1397,56 +1502,24 @@ impl BoxExecRuntime {
         ))
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn handoff_shell_stream_to_background(
         &self,
-        mut child: Child,
+        request: &mut StreamRequest<'_>,
         args: &ShellArgs,
-        pid: u32,
-        registration_id: ForegroundId,
         started: Instant,
         started_at: chrono::DateTime<Utc>,
-        stdout_worker: JoinHandle<()>,
-        stderr_worker: JoinHandle<()>,
         stream_spool_writer: Arc<Mutex<File>>,
         stream_spool_path: PathBuf,
     ) -> Result<ShellStreamBackgrounded, String> {
         let shell_id = self.next_shell_id.fetch_add(1, Ordering::Relaxed);
         if shell_id == 0 {
-            kill_process_group(pid);
-            let reaped = child.wait().is_ok();
-            let _ = stdout_worker.join();
-            let _ = stderr_worker.join();
-            if reaped {
-                self.foreground_processes
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .remove(&registration_id);
-            }
-            let _ = fs::remove_file(&stream_spool_path);
             return Err("background shell id space exhausted".into());
         }
-
-        let stdin = match child.stdin.take() {
-            Some(stdin) => stdin,
-            None => {
-                kill_process_group(pid);
-                let reaped = child.wait().is_ok();
-                let _ = stdout_worker.join();
-                let _ = stderr_worker.join();
-                if reaped {
-                    self.foreground_processes
-                        .lock()
-                        .unwrap_or_else(|poisoned| poisoned.into_inner())
-                        .remove(&registration_id);
-                }
-                let _ = fs::remove_file(&stream_spool_path);
-                return Err("shell stream stdin was unavailable during background handoff".into());
-            }
-        };
-        let terminal_path = self
-            .terminals_directory
-            .join(format!("{shell_id}.txt"));
+        let pid = request.resources().state.child.id();
+        let stdin = request.resources().state.child.stdin.take()
+            .ok_or_else(|| "shell stream stdin was unavailable during background handoff".to_string())?;
+        let terminal_path = self.terminals_directory.join(format!("{shell_id}.txt"));
+        request.resources().recovery.cleanup_paths.push(terminal_path.clone());
         let background_args = BackgroundShellSpawnArgs {
             command: args.command.clone(),
             working_directory: args.working_directory.clone(),
@@ -1454,7 +1527,7 @@ impl BoxExecRuntime {
         };
         let started_at_ms = started_at.timestamp_millis();
 
-        let setup = (|| -> Result<(), String> {
+        {
             let mut current_writer = stream_spool_writer
                 .lock()
                 .map_err(|_| "shell stream output writer is poisoned".to_string())?;
@@ -1466,115 +1539,87 @@ impl BoxExecRuntime {
                 .write(true)
                 .open(&terminal_path)
                 .map_err(|error| error.to_string())?;
-            terminal
-                .write_all(
-                    terminal_frontmatter(&background_args, Some(pid), started_at.clone()).as_bytes(),
-                )
-                .map_err(|error| error.to_string())?;
-            terminal
-                .write_all(&spooled)
-                .map_err(|error| error.to_string())?;
+            terminal.write_all(
+                terminal_frontmatter(&background_args, Some(pid), started_at).as_bytes(),
+            ).map_err(|error| error.to_string())?;
+            terminal.write_all(&spooled).map_err(|error| error.to_string())?;
             terminal.flush().map_err(|error| error.to_string())?;
-            *current_writer = OpenOptions::new()
-                .append(true)
-                .open(&terminal_path)
+            *current_writer = OpenOptions::new().append(true).open(&terminal_path)
                 .map_err(|error| error.to_string())?;
-            Ok(())
-        })();
-
-        if let Err(error) = setup {
-            kill_process_group(pid);
-            let reaped = child.wait().is_ok();
-            let _ = stdout_worker.join();
-            let _ = stderr_worker.join();
-            if reaped {
-                self.foreground_processes
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .remove(&registration_id);
-            }
-            let _ = fs::remove_file(&stream_spool_path);
-            let _ = fs::remove_file(&terminal_path);
-            return Err(error);
         }
         let _ = fs::remove_file(&stream_spool_path);
 
-        let inserted = {
-            // Stop's foreground snapshot and this transfer share admission.
-            // Either stop sees the foreground invocation, or its later
-            // background snapshot sees the admitted handoff.
-            let mut foreground = self.foreground_processes.lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            let mut processes = self.background.lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            if self.stopping.load(Ordering::Acquire) {
-                Err("box exec daemon is stopping".to_string())
-            } else if processes.contains_key(&shell_id) {
-                Err(format!("background shell id {shell_id} is already registered"))
-            } else {
-                processes.insert(
-                    shell_id,
-                    BackgroundProcess {
-                        stdin: Arc::new(Mutex::new(stdin)),
-                        terminal_path: terminal_path.clone(),
-                        pid,
-                    },
-                );
-                foreground.remove(&registration_id);
-                Ok(())
-            }
-        };
-        if let Err(error) = inserted {
-            kill_process_group(pid);
-            let reaped = child.wait().is_ok();
-            let _ = stdout_worker.join();
-            let _ = stderr_worker.join();
-            if reaped {
-                self.foreground_processes
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .remove(&registration_id);
-            }
-            let _ = fs::remove_file(&terminal_path);
-            return Err(error);
-        }
-
+        // Keep the request guard armed until the background receiver exists
+        // and the exact registry transition can commit. A thread creation
+        // failure must not drop a closure containing the only Child/readers.
         let processes = Arc::clone(&self.background);
         let footer_writer = Arc::clone(&stream_spool_writer);
-        let hard_timeout_ms = args
-            .hard_timeout
-            .filter(|timeout| *timeout > 0)
+        let hard_timeout_ms = args.hard_timeout.filter(|timeout| *timeout > 0)
             .map(|timeout| timeout as u64);
-        thread::spawn(move || {
-            let status = if let Some(hard_timeout_ms) = hard_timeout_ms {
-                loop {
-                    match child.try_wait() {
-                        Ok(Some(status)) => break Some(status),
-                        Ok(None) => {}
-                        Err(_) => break child.wait().ok(),
+        let (handoff_tx, handoff_rx) = mpsc::channel::<StreamResources>();
+        let mut foreground = self.foreground_processes.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut background = self.background.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if self.stopping.load(Ordering::Acquire) {
+            return Err("box exec daemon is stopping".into());
+        }
+        if background.contains_key(&shell_id) {
+            return Err(format!("background shell id {shell_id} is already registered"));
+        }
+        let background_worker = thread::Builder::new().name("box-stream-background".into())
+            .spawn(move || {
+                let Ok(mut resources) = handoff_rx.recv() else { return; };
+                // Admission holds this mutex until both registry changes are
+                // committed. Do not reap/remove before the entry is visible.
+                drop(processes.lock().unwrap_or_else(|poisoned| poisoned.into_inner()));
+                let child = &mut resources.state.child;
+                let status = if let Some(hard_timeout_ms) = hard_timeout_ms {
+                    loop {
+                        match child.try_wait() {
+                            Ok(Some(status)) => break Some(status),
+                            Ok(None) => {}
+                            Err(_) => break child.wait().ok(),
+                        }
+                        if started.elapsed() >= Duration::from_millis(hard_timeout_ms) {
+                            kill_process_group(pid);
+                            break child.wait().ok();
+                        }
+                        thread::sleep(Duration::from_millis(10));
                     }
-                    if started.elapsed() >= Duration::from_millis(hard_timeout_ms) {
-                        kill_process_group(pid);
-                        break child.wait().ok();
-                    }
-                    thread::sleep(Duration::from_millis(10));
+                } else {
+                    child.wait().ok()
+                };
+                if let Some(worker) = resources.recovery.stdout_worker.take() {
+                    let _ = worker.join();
                 }
-            } else {
-                child.wait().ok()
-            };
-            let _ = stdout_worker.join();
-            let _ = stderr_worker.join();
-            let code = status
-                .and_then(|status| status.code())
-                .unwrap_or(1);
-            if let Ok(mut writer) = footer_writer.lock() {
-                let _ = writer.write_all(terminal_footer(code, started_at_ms).as_bytes());
-                let _ = writer.flush();
-            }
-            if let Ok(mut processes) = processes.lock() {
-                processes.remove(&shell_id);
-            }
+                if let Some(worker) = resources.recovery.stderr_worker.take() {
+                    let _ = worker.join();
+                }
+                let code = status.and_then(|status| status.code()).unwrap_or(1);
+                if let Ok(mut writer) = footer_writer.lock() {
+                    let _ = writer.write_all(terminal_footer(code, started_at_ms).as_bytes());
+                    let _ = writer.flush();
+                }
+                if let Ok(mut processes) = processes.lock() {
+                    processes.remove(&shell_id);
+                }
+            }).map_err(|_| "background stream worker creation failed".to_string())?;
+        let resources = request.resources.take().expect("owned handoff resources");
+        if let Err(mpsc::SendError(resources)) = handoff_tx.send(resources) {
+            request.resources = Some(resources);
+            drop(background);
+            drop(foreground);
+            let _ = background_worker.join();
+            return Err("background stream handoff was not received".into());
+        }
+        background.insert(shell_id, BackgroundProcess {
+            stdin: Arc::new(Mutex::new(stdin)), terminal_path: terminal_path.clone(), pid,
         });
+        foreground.remove(&request.registration_id);
+        drop(background);
+        drop(foreground);
+        drop(background_worker);
 
         Ok(ShellStreamBackgrounded {
             shell_id,
@@ -1835,22 +1880,6 @@ impl BoxExecRuntime {
 
     pub fn stop(&self) -> Result<(), String> {
         self.stopping.store(true, Ordering::Release);
-        let foreground = self.foreground_processes
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .iter().map(|(id, (_, process))| (*id, process.clone())).collect::<Vec<_>>();
-        let mut unresolved = false;
-        for (registration_id, process) in foreground {
-            match process {
-                // The stream request observes stopping and signals its own
-                // unreaped Child. A snapshot's PID may already be recycled.
-                ForegroundProcess::Stream => {},
-                ForegroundProcess::Capture(owner) => {
-                    unresolved |= cleanup_captured_child(&owner).is_err();
-                    self.remove_completed_capture(registration_id, &owner);
-                }
-            }
-        }
         let background = self
             .background
             .lock()
@@ -1861,10 +1890,31 @@ impl BoxExecRuntime {
         for pid in background {
             kill_process_group(pid);
         }
-        // Requests still own their workers, including streamed output. Reaping
-        // alone is not permission to report that cleanup has finished.
+        let mut unresolved = false;
+        let mut attempted = Vec::new();
         let deadline = Instant::now() + FOREGROUND_CLEANUP_LIMIT;
         loop {
+            let foreground = self.foreground_processes.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .iter().map(|(id, (_, process))| (*id, process.clone())).collect::<Vec<_>>();
+            for (registration_id, process) in foreground {
+                if let ForegroundProcess::Capture(owner) = process {
+                    if !attempted.contains(&registration_id) {
+                        unresolved |= cleanup_captured_child(&owner).is_err();
+                        attempted.push(registration_id);
+                    }
+                    {
+                        let mut state = owner.lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        unresolved |= state.poll().is_err();
+                        state.observe_stream_recovery();
+                    }
+                    self.remove_completed_capture(registration_id, &owner);
+                }
+                // Active streams consume stopping in their actual Child owner.
+                // If one returns/unwinds, its guard transfers real resources
+                // into Capture; the next iteration observes that transition.
+            }
             let pending = !self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                 .is_empty();
@@ -1880,6 +1930,37 @@ impl BoxExecRuntime {
             }
             thread::sleep(FOREGROUND_POLL_INTERVAL);
         }
+    }
+
+    fn observe_retained_stream_recoveries(&self) {
+        // Snapshot first: never acquire a Child mutex while holding the map.
+        let recoveries = self.foreground_processes.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .iter().filter_map(|(id, (_, process))| match process {
+                ForegroundProcess::Capture(owner) => Some((*id, Arc::clone(owner))),
+                ForegroundProcess::Stream => None,
+            }).collect::<Vec<_>>();
+        for (registration_id, owner) in recoveries {
+            self.observe_retained_stream_recovery(registration_id, &owner);
+        }
+    }
+
+    fn observe_retained_stream_recovery(
+        &self,
+        registration_id: ForegroundId,
+        owner: &Arc<Mutex<CapturedChild>>,
+    ) {
+        {
+            let mut state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+            // Ordinary capture readers still belong to their active caller.
+            // Only the transferred stream recovery may be observed here.
+            if state.stream_recovery.is_none() || state.poll().is_err() {
+                return;
+            }
+            state.observe_stream_recovery();
+        }
+        // Release the Child mutex before exact identity/Arc-checked removal.
+        self.remove_completed_capture(registration_id, owner);
     }
 
     fn allocate_foreground_id(&self) -> Result<ForegroundId, String> {
@@ -1952,6 +2033,7 @@ impl BoxExecRuntime {
         timeout_ms: Option<u64>,
         abort: &AtomicBool,
     ) -> Result<ProcessOutcome, ProcessFailure> {
+        self.observe_retained_stream_recoveries();
         #[cfg(test)]
         let capture_observation_gate = self.capture_observation_gate.lock()
             .expect("capture observation gate").take();
@@ -1966,11 +2048,7 @@ impl BoxExecRuntime {
             let registration_id = self.allocate_foreground_id().map_err(ProcessFailure::Spawn)?;
             let child = self.spawn_shell(command, cwd).map_err(ProcessFailure::Spawn)?;
             let pid = child.id();
-            let owner = Arc::new(Mutex::new(CapturedChild {
-                child, status: None, cleanup_unknown: false, capture_complete: false,
-                #[cfg(test)]
-                signals_sent: 0,
-            }));
+            let owner = Arc::new(Mutex::new(CapturedChild::new(child)));
             processes.insert(registration_id, self.foreground_registration(
                 pid, ForegroundProcess::Capture(Arc::clone(&owner)),
             ));
@@ -3391,7 +3469,8 @@ mod tests {
         }
         let sentinel = Sentinel(Arc::new(Mutex::new(CapturedChild {
             child: runtime.spawn_shell("sleep 30", &runtime.workspace_root).unwrap(),
-            status: None, cleanup_unknown: false, capture_complete: true, signals_sent: 0,
+            status: None, cleanup_unknown: false, capture_complete: true,
+            stream_recovery: None, signals_sent: 0,
         })));
         let sentinel_pid = {
             let mut state = sentinel.0.lock().unwrap();
@@ -3452,13 +3531,52 @@ mod tests {
         let mut older = RetainedCaptureFixture::new(&runtime);
         let old_pid = older.owner.lock().unwrap().child.id();
         *runtime.foreground_pid_alias.lock().unwrap() = Some(old_pid);
-        let mut args = foreground_args("printf handoff-prefix; sleep 1; printf handoff-tail");
+        struct HandoffRelease {
+            runtime: Arc<BoxExecRuntime>,
+            shell_id: Option<u32>,
+        }
+        impl Drop for HandoffRelease {
+            fn drop(&mut self) {
+                if let Some(shell_id) = self.shell_id {
+                    let _ = self.runtime.write_stdin(&WriteShellStdinArgs {
+                        shell_id, chars: "finish\n".into(),
+                    });
+                    let deadline = Instant::now() + Duration::from_secs(3);
+                    while self.runtime.background.lock().unwrap().contains_key(&shell_id)
+                        && Instant::now() < deadline
+                    {
+                        thread::sleep(FOREGROUND_POLL_INTERVAL);
+                    }
+                }
+                let background_empty = self.runtime.background.lock().unwrap().is_empty();
+                if background_empty {
+                    let _ = self.runtime.stop();
+                }
+            }
+        }
+        let mut release = HandoffRelease { runtime: Arc::clone(&runtime), shell_id: None };
+        // The actual Child cannot exit independently before Backgrounded:
+        // its stdin remains owned until this fixture explicitly releases it.
+        let mut args = foreground_args(
+            "printf handoff-prefix; IFS= read -r release; \
+             [ \"$release\" = finish ] || exit 91; printf handoff-tail",
+        );
         args.timeout = 20;
         args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
         let mut events = Vec::new();
         runtime.shell_stream_live(
             77, "identity-handoff", &args, &AtomicBool::new(false),
-            &mut |event| { events.push(event); Ok(()) },
+            &mut |event| {
+                if let Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                    message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                        event: Some(shell_stream::Event::Backgrounded(backgrounded)),
+                    })), ..
+                })) = &event.element {
+                    release.shell_id = Some(backgrounded.shell_id);
+                }
+                events.push(event);
+                Ok(())
+            },
         ).expect("actual timed handoff");
         let backgrounded = events.iter().find_map(|event| match &event.element {
             Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
@@ -3477,6 +3595,10 @@ mod tests {
         let terminal = runtime.terminals_directory.join(format!("{}.txt", backgrounded.shell_id));
         older.complete(&runtime);
         assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        let released = runtime.write_stdin(&WriteShellStdinArgs {
+            shell_id: backgrounded.shell_id, chars: "finish\n".into(),
+        });
+        assert!(matches!(released.result, Some(write_shell_stdin_result::Result::Success(_))));
         let deadline = Instant::now() + Duration::from_secs(4);
         while runtime.background.lock().unwrap().contains_key(&backgrounded.shell_id) {
             assert!(Instant::now() < deadline, "bounded background fixture did not settle");
@@ -3488,6 +3610,265 @@ mod tests {
         assert!(output.contains("exit_code: 0"));
         assert_eq!(older.owner.lock().unwrap().signals_sent, 0);
         runtime.stop().expect("completed handoff and capture");
+    }
+
+
+    #[test]
+    fn foreground_capture_stream_setup_error_retains_owned_child_for_cleanup() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let (observed_tx, observed_rx) = mpsc::channel();
+        *runtime.stream_recovery_observer.lock().unwrap() = Some(observed_tx);
+        for attempt in 0..3 {
+            let (release, gate) = mpsc::channel();
+            *runtime.stream_setup_gate.lock().unwrap() = Some(gate);
+            let worker_runtime = Arc::clone(&runtime);
+            let worker = thread::spawn(move || {
+                let mut events = Vec::new();
+                let result = worker_runtime.shell_stream_live(
+                    78, "setup-error",
+                    &foreground_args(
+                        "trap '' TERM; printf 'effect\\n' >> setup-effect; \
+                         while :; do sleep 1; done",
+                    ),
+                    &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
+                );
+                (result, events)
+            });
+            let expected_effects = "effect\n".repeat(attempt + 1);
+            let deadline = Instant::now() + Duration::from_secs(3);
+            while fs::read_to_string(runtime.workspace_root.join("setup-effect"))
+                .unwrap_or_default() != expected_effects
+            {
+                assert!(Instant::now() < deadline, "real post-spawn effect was not observed");
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+            let registration_id = {
+                let processes = runtime.foreground_processes.lock().unwrap();
+                assert_eq!(processes.len(), 1, "previous completed errors must not accumulate");
+                let (id, (_, process)) = processes.iter().next().unwrap();
+                assert!(matches!(process, ForegroundProcess::Stream));
+                *id
+            };
+            // A real filesystem failure, after successful spawn and a real effect.
+            // The private gate controls ordering, not the I/O result.
+            fs::remove_dir(&runtime.terminals_directory).expect("empty fixture terminals");
+            fs::write(&runtime.terminals_directory, b"not a directory").unwrap();
+            release.send(()).unwrap();
+            let started = Instant::now();
+            let (result, events) = worker.join().expect("stream request returned");
+            assert!(result.is_err(), "actual spool setup failure remains unknown");
+            assert!(started.elapsed() < Duration::from_secs(4), "bounded direct-child cleanup");
+            assert_eq!(events.len(), 1, "only Start, no definitive Exit after setup failure");
+
+            // Observe the actual state retained by the guard, even though its
+            // completed registration has already been removed without stop.
+            let (observed_id, owner) = observed_rx.recv_timeout(Duration::from_secs(1))
+                .expect("actual cleanup owner observation");
+            assert_eq!(observed_id, registration_id);
+            assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+            assert!(!runtime.stopping.load(Ordering::Acquire), "cleanup must not require shutdown");
+            assert_eq!(Arc::strong_count(&owner), 1, "only this observation retains the owner");
+            {
+                let mut state = owner.lock().unwrap();
+                assert!(state.poll().unwrap().is_some(), "guard observed actual reap");
+                assert!(state.signals_sent > 0, "guard terminated its entered Child");
+                assert!(state.capture_complete, "worker-free recovery is observed immediately");
+                assert!(state.stream_recovery.is_none(), "no completed recovery remains owned");
+                assert!(state.child.stdin.is_none());
+                assert!(state.child.stdout.is_none());
+                assert!(state.child.stderr.is_none());
+                let signals = state.signals_sent;
+                state.signal(true).unwrap();
+                assert_eq!(state.signals_sent, signals, "no signal after observed reap");
+            }
+            assert_eq!(fs::read_to_string(runtime.workspace_root.join("setup-effect")).unwrap(),
+                expected_effects, "exactly one effect per failed invocation");
+            fs::remove_file(&runtime.terminals_directory).unwrap();
+            fs::create_dir(&runtime.terminals_directory).unwrap();
+        }
+        *runtime.stream_recovery_observer.lock().unwrap() = None;
+        let result = runtime.shell(&foreground_args("printf still-active")).unwrap();
+        assert!(matches!(result.result,
+            Some(shell_result::Result::Success(result)) if result.stdout == "still-active"));
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        runtime.stop().expect("final fixture shutdown after live-runtime cleanup assertions");
+    }
+
+    #[derive(Clone, Copy)]
+    enum StreamRecoveryBoundary { Stop, Shell, Stream }
+
+    fn assert_stream_unwind_recovery(boundary: StreamRecoveryBoundary) {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        struct PipeRelease {
+            runtime: Arc<BoxExecRuntime>,
+        }
+        impl Drop for PipeRelease {
+            fn drop(&mut self) {
+                let _ = fs::write(self.runtime.workspace_root.join("release-pipe"), b"release");
+                let _ = self.runtime.stop();
+            }
+        }
+        let _release = PipeRelease { runtime: Arc::clone(&runtime) };
+        runtime.stream_panic_after_reap.store(true, Ordering::Release);
+        let mut prefix_observed = false;
+        let mut prefix_bytes = String::new();
+        let mut events = Vec::new();
+        // The direct Child exits only after its actual prefix reaches the
+        // emitter. Its descendant retains both pipes until the owned explicit
+        // release; the failure guard releases it before bounded cleanup.
+        let args = foreground_args(
+            "(trap '' TERM; while [ ! -f release-pipe ]; do sleep 0.01; done; \
+             printf later-tail) & \
+             printf 'effect\\n' > unwind-effect; printf unwind-prefix; \
+             while [ ! -f prefix-observed ]; do sleep 0.01; done; exit 0",
+        );
+        // This is a controlled unwind at the real successful wait boundary,
+        // not a claim to reproduce an operating-system wait failure.
+        let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            runtime.shell_stream_live(
+                79, "worker-unwind", &args, &AtomicBool::new(false), &mut |event| {
+                    if let Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                        message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                            event: Some(shell_stream::Event::Stdout(stdout)),
+                        })), ..
+                    })) = &event.element {
+                        prefix_bytes.push_str(&stdout.data);
+                        if prefix_bytes.contains("unwind-prefix") {
+                            prefix_observed = true;
+                            fs::write(runtime.workspace_root.join("prefix-observed"), b"observed")
+                                .map_err(|error| error.to_string())?;
+                        }
+                    }
+                    events.push(event);
+                    Ok(())
+                },
+            )
+        }));
+        assert!(unwound.is_err());
+        assert!(prefix_observed, "real pipe bytes precede the controlled unwind");
+        assert_eq!(fs::read_to_string(runtime.workspace_root.join("unwind-effect")).unwrap(), "effect\n");
+        assert!(!events.iter().any(|event| matches!(&event.element,
+            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                    event: Some(shell_stream::Event::Exit(_)),
+                })), ..
+            })))));
+        let (registration_id, owner) = {
+            let processes = runtime.foreground_processes.lock().unwrap();
+            assert_eq!(processes.len(), 1);
+            let (id, (_, process)) = processes.iter().next().unwrap();
+            let ForegroundProcess::Capture(owner) = process else {
+                panic!("unwind retains real Child and readers");
+            };
+            (*id, Arc::clone(owner))
+        };
+        let spool = {
+            let state = owner.lock().unwrap();
+            assert!(state.status.is_some(), "real direct-child reap preceded unwind");
+            assert_eq!(state.signals_sent, 0, "never signal the reaped direct child");
+            assert!(!state.capture_complete);
+            let recovery = state.stream_recovery.as_ref().expect("retained reader handles");
+            assert!(recovery.stdout_worker.is_some());
+            assert!(recovery.stderr_worker.is_some());
+            recovery.cleanup_paths[0].clone()
+        };
+        match boundary {
+            StreamRecoveryBoundary::Stop => {
+                let started = Instant::now();
+                assert!(runtime.stop().is_err(), "inherited pipes keep cleanup unresolved");
+                assert!(started.elapsed() < Duration::from_secs(4));
+            }
+            StreamRecoveryBoundary::Shell | StreamRecoveryBoundary::Stream => {
+                // A normal request before release must not complete the older
+                // reaped invocation while either real reader still awaits EOF.
+                let result = runtime.shell(&foreground_args("printf before-release")).unwrap();
+                assert!(matches!(result.result,
+                    Some(shell_result::Result::Success(result)) if result.stdout == "before-release"));
+                assert!(!runtime.stopping.load(Ordering::Acquire));
+                assert!(!owner.lock().unwrap().capture_complete);
+            }
+        }
+        assert!(runtime.foreground_processes.lock().unwrap().contains_key(&registration_id));
+        assert!(spool.exists(), "retain owned output until reader observation");
+        assert_eq!(owner.lock().unwrap().signals_sent, 0);
+        fs::write(runtime.workspace_root.join("release-pipe"), b"release").unwrap();
+        match boundary {
+            StreamRecoveryBoundary::Stop => {
+                runtime.stop().expect("later actual EOF permits retained reader joins");
+            }
+            StreamRecoveryBoundary::Shell | StreamRecoveryBoundary::Stream => {
+                let deadline = Instant::now() + Duration::from_secs(3);
+                loop {
+                    let finished = {
+                        let state = owner.lock().unwrap();
+                        let recovery = state.stream_recovery.as_ref().expect("retained recovery");
+                        recovery.stdout_worker.as_ref().unwrap().is_finished()
+                            && recovery.stderr_worker.as_ref().unwrap().is_finished()
+                    };
+                    if finished { break; }
+                    assert!(Instant::now() < deadline, "released readers did not reach real EOF");
+                    thread::sleep(FOREGROUND_POLL_INTERVAL);
+                }
+                // is_finished joins no JoinHandle and removes no registry
+                // entry. The actual normal admission below must do that work.
+                assert!(!owner.lock().unwrap().capture_complete);
+                assert!(runtime.foreground_processes.lock().unwrap().contains_key(&registration_id));
+                assert!(fs::read_to_string(&spool).unwrap().contains("later-tail"));
+                match boundary {
+                    StreamRecoveryBoundary::Shell => {
+                        let result = runtime.shell(&foreground_args("printf normal-admission")).unwrap();
+                        assert!(matches!(result.result,
+                            Some(shell_result::Result::Success(result))
+                                if result.stdout == "normal-admission"));
+                    }
+                    StreamRecoveryBoundary::Stream => {
+                        let mut events = Vec::new();
+                        runtime.shell_stream_live(
+                            80, "normal-admission", &foreground_args("printf normal-admission"),
+                            &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
+                        ).expect("actual normal stream admission");
+                        let stdout = events.iter().filter_map(|event| match &event.element {
+                            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                                    event: Some(shell_stream::Event::Stdout(stdout)),
+                                })), ..
+                            })) => Some(stdout.data.as_str()),
+                            _ => None,
+                        }).collect::<String>();
+                        assert_eq!(stdout, "normal-admission");
+                        assert!(events.iter().any(|event| matches!(&event.element,
+                            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                                    event: Some(shell_stream::Event::Exit(_)),
+                                })), ..
+                            })))));
+                    }
+                    StreamRecoveryBoundary::Stop => unreachable!(),
+                }
+                assert!(!runtime.stopping.load(Ordering::Acquire),
+                    "normal admission, not shutdown, must observe late completion");
+            }
+        }
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        assert!(!spool.exists(), "observed recovery removes its own spool");
+        let mut state = owner.lock().unwrap();
+        assert!(state.capture_complete);
+        assert!(state.stream_recovery.is_none(), "both JoinHandles were observed");
+        state.signal(true).unwrap();
+        assert_eq!(state.signals_sent, 0, "late cleanup never re-signals a reaped PID");
+    }
+
+    #[test]
+    fn foreground_capture_stream_unwind_retains_readers_until_later_eof() {
+        assert_stream_unwind_recovery(StreamRecoveryBoundary::Stop);
+    }
+
+    #[test]
+    fn foreground_capture_stream_late_eof_is_observed_by_normal_admission() {
+        assert_stream_unwind_recovery(StreamRecoveryBoundary::Shell);
+        assert_stream_unwind_recovery(StreamRecoveryBoundary::Stream);
     }
 
     #[test]

@@ -19644,7 +19644,8 @@
         "Host read media admission validates exact SHA256 and byte size against recorded provenance",
         "Pruning filters rows referencing missing files, symbolic links, or hardlinks (nlink != 1)",
         "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority",
-        "SC02 foreground invocation identities never reuse a live or retired registration; a reaped Child with unobserved workers cannot be replaced or erased by a later Capture/Stream sharing numeric PID data. Bounded stop retains unresolved foreground identity; this is not background-controller acceptance."
+        "SC02 foreground invocation identities never reuse a live or retired registration; a reaped Child with unobserved workers cannot be replaced or erased by a later Capture/Stream sharing numeric PID data. Bounded stop retains unresolved foreground identity; this is not background-controller acceptance.",
+        "SC02 exceptional streamed exits retain actual Child and started reader handles under the same invocation. Completed resources are observed after bounded cleanup or at existing ordinary/stream request boundaries; recovery never requires shutdown merely to release completed registrations, never removes pending inherited-pipe custody, and never changes an unknown execution outcome into success."
       ],
       "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
       "oracle_ids": [
@@ -19762,7 +19763,10 @@
         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
-        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_handoff_retains_reused_pid_capture"
+        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_handoff_retains_reused_pid_capture",
+        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup",
+        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
+        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
       ],
       "typed_contracts": [
         "validate_provenance_row",
