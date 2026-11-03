@@ -1,0 +1,167 @@
+{
+  "schema": "r6-actual-app-pending-cloud-handoff-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "subject_tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+  "runtime_run_id": 41586608776,
+  "run_attempt": 1,
+  "linux_job_id": 125753467838,
+  "cutoff_utc": "2026-11-03 06:25:20 UTC",
+  "status": "PENDING",
+  "observation_count": 4,
+  "observation_limit": 4,
+  "observations": [
+    {
+      "number": 1,
+      "utc": "2026-11-03 06:21:13 UTC",
+      "source": "exact-attempt jobs API JSON",
+      "run_id": 41586608776,
+      "run_attempt": 1
+    },
+    {
+      "number": 2,
+      "utc": "2026-11-03 06:22:45 UTC",
+      "source": "exact-attempt jobs API JSON",
+      "run_id": 41586608776,
+      "run_attempt": 1
+    },
+    {
+      "number": 3,
+      "utc": "2026-11-03 06:24:18 UTC",
+      "source": "exact-attempt jobs API JSON",
+      "run_id": 41586608776,
+      "run_attempt": 1
+    },
+    {
+      "number": 4,
+      "utc": "2026-11-03 06:25:20 UTC",
+      "source": "exact-attempt jobs API JSON",
+      "run_id": 41586608776,
+      "run_attempt": 1
+    }
+  ],
+  "selected_effort": "xhigh",
+  "model_configuration": "Inherited configured parent model; no override",
+  "assessment_scope": "Job metadata and exact immutable source/name preparation. No terminal job log, actual App receipt, observed feature arrays or raw required-name positives were acquired.",
+  "raw_job_log_requests": 0,
+  "decoded_log_chunks": [],
+  "raw_log_manifest_created": false,
+  "files": [
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/api/jobs-observation-01.json",
+      "blob_sha": "0c04f53c8f68063a7926f762710c82051901e762",
+      "utf8_bytes": 20384,
+      "sha256": "663c2cfcbb3753cb2c9af91eb932a7a974437f00f9637cc2b0472585177803f5",
+      "kind": "Exact-attempt jobs API JSON returned as text by connector",
+      "observation": {
+        "number": 1,
+        "utc": "2026-11-03 06:21:13 UTC",
+        "source": "exact-attempt jobs API JSON",
+        "run_id": 41586608776,
+        "run_attempt": 1
+      },
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/api/jobs-observation-02.json",
+      "blob_sha": "fb7b81303e31d33d104d3dfd9b44d190d561ee08",
+      "utf8_bytes": 20427,
+      "sha256": "5e29ecd7042a535cd4193877984b98fa4e18bd09bccec09dd3c382331ead5f4c",
+      "kind": "Exact-attempt jobs API JSON returned as text by connector",
+      "observation": {
+        "number": 2,
+        "utc": "2026-11-03 06:22:45 UTC",
+        "source": "exact-attempt jobs API JSON",
+        "run_id": 41586608776,
+        "run_attempt": 1
+      },
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/source-input-preparation.json",
+      "blob_sha": "22a22db91ad3696025251f7d2f7ae01e233a9878",
+      "utf8_bytes": 5861,
+      "sha256": "e46ca73ab5d90b505a0487cff58e74742b4dce7f8b5c466c5bb2601d85acded7",
+      "kind": "Derived immutable source identity preparation; not runtime result",
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/expected-name-inventory.json",
+      "blob_sha": "088974ae2e5fd635d7f6a7c75cc5bd6e53d66df6",
+      "utf8_bytes": 33080,
+      "sha256": "33a205f452a1936b51c295c19c1b54ddac9bba5c4ee731a795a8ab3ba4ebb3e8",
+      "kind": "Expected full names and commands read from immutable source; not execution result",
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/api/jobs-observation-03.json",
+      "blob_sha": "fb7b81303e31d33d104d3dfd9b44d190d561ee08",
+      "utf8_bytes": 20427,
+      "sha256": "5e29ecd7042a535cd4193877984b98fa4e18bd09bccec09dd3c382331ead5f4c",
+      "kind": "Exact-attempt jobs API JSON returned as text by connector",
+      "observation": {
+        "number": 3,
+        "utc": "2026-11-03 06:24:18 UTC",
+        "source": "exact-attempt jobs API JSON",
+        "run_id": 41586608776,
+        "run_attempt": 1
+      },
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/api/jobs-observation-04.json",
+      "blob_sha": "fb7b81303e31d33d104d3dfd9b44d190d561ee08",
+      "utf8_bytes": 20427,
+      "sha256": "5e29ecd7042a535cd4193877984b98fa4e18bd09bccec09dd3c382331ead5f4c",
+      "kind": "Exact-attempt jobs API JSON returned as text by connector",
+      "observation": {
+        "number": 4,
+        "utc": "2026-11-03 06:25:20 UTC",
+        "source": "exact-attempt jobs API JSON",
+        "run_id": 41586608776,
+        "run_attempt": 1
+      },
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/pending-phase-summary.json",
+      "blob_sha": "56ddfb6e45e828c6f710cb292361109455e18260",
+      "utf8_bytes": 9810,
+      "sha256": "86d49cade84878622fab67707883267282ba339d825b2dc658c1dbdabe3d9f93",
+      "kind": "Derived bounded pending phase state",
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/pending-assessment.md",
+      "blob_sha": "6fcefc5b133b5ebdd9d676952bc180d90e113ab3",
+      "utf8_bytes": 11561,
+      "sha256": "24fce24b11ad90a1d72a84be4e93af97b682ef377b82df26234559cdef1b4e5a",
+      "kind": "Authored pending evidence assessment",
+      "mode": "100644",
+      "type": "blob",
+      "full_readback_matches": true
+    }
+  ],
+  "identical_snapshot_content": "Observations 2, 3 and 4 returned byte-identical JSON text. Their separate query timestamps are preserved; the shared blob identity does not represent an additional state transition.",
+  "no_branch_update": true,
+  "no_tree_created": true,
+  "no_commit_created": true,
+  "no_ci_started": true,
+  "no_executor_used": true,
+  "next_step": "Await a separately observed terminal transition of the existing same-H job, then collect its full decoded job log once under fresh bounded collection authority; no rerun or new campaign is implied.",
+  "history_preserved": "Earlier native pending/terminal/directness reports and blobs are unchanged; current-H native positives stay scoped to their previously acquired evidence."
+}
