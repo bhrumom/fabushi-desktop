@@ -1,0 +1,240 @@
+{
+  "schema": "ocrm-djc-reader-observation-source-contract-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "DJC-09",
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "authority": {
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+    "modules": [
+      "OCRM-M03",
+      "OCRM-M04",
+      "OCRM-M13"
+    ],
+    "spec": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "spec_blob": "df026c824762d0bb12a8b686ffca40179743937f",
+    "spec_carrier": "22d5b012c853a0d37a64fd1cefc4d4d6f6343612",
+    "rtm_rows": [
+      "OCRM-R03",
+      "OCRM-R04",
+      "OCRM-R13",
+      "OCRM-R14",
+      "OCRM-AC11",
+      "OCRM-AC14",
+      "OCRM-AC17",
+      "OCRM-AC18",
+      "OCRM-AC24"
+    ],
+    "oracle_ids": [
+      "DJC-09"
+    ],
+    "adjacent_responsibility": "OCRM-RESP-DEVICE-PAIRING-JOIN-CODE-001",
+    "responsibility_state_changed": false,
+    "native_preservation": true
+  },
+  "scope": {
+    "type": "causal recovery of actual owner observation; no product implementation change",
+    "production_owner": "source/host/src/device_pairing_owner.rs::DevicePairingOwner::redeem_device_pairing_join_code",
+    "owner_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+    "user_capability": "Existing file-backed join redemption refuses storage failure without publishing payload, preserves the row after known refusal, then supports explicit repair/reopen and single use. This batch preserves those assertions and improves their completion observation.",
+    "entry": "Three exact cases in the existing Host integration target; not a new Gateway/runtime entrypoint.",
+    "producer": "Real public owner invocation plus fixture-only in-memory monotonic observation records; deterministic instrument-order controls are separately labeled.",
+    "state": "Existing device-pairing.db and its real held-reader transaction; no new product data, schema or durable owner.",
+    "consumer": "Owned child supervisor verifies the same nonce/PID/case completion receipt and qualifies two structured records before cleanup; parent --show-output carries records into the same strict Actions capture.",
+    "side_effects": "Only exclusively owned fixture files/processes. No production timeout, retry, private connection accessor or test hook.",
+    "failure_and_retirement": "Original recv_timeout(8s), final observation failure, every row/status/redaction/recovery assertion,120s child supervision and5s owned stop/reap remain. Failure retains raw child diagnostics. Gate release/drop and worker join precede control assertions.",
+    "limits": "Timestamps include descheduling and cannot identify private SQL statement duration or establish an eight-second public guarantee. No new real-device or complete-target acceptance."
+  },
+  "implementation": {
+    "test_path": "source/host/tests/device_pairing_join_admission_contract.rs",
+    "base_blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
+    "candidate_blob": "fdadc78e956ec70a31d09d305fd0d3c77cc58d60",
+    "source_base": "711c1d12267c9962292eada78369c6f0d05849e7",
+    "later_spec_carrier": "22d5b012c853a0d37a64fd1cefc4d4d6f6343612",
+    "changes": [
+      "Observe adjacent public call/send/wait/join and explicit reader release boundaries in the retained case.",
+      "Send completion before post-result diagnostics; same helper drives two bounded handshake controls.",
+      "Qualify and project exactly two typed structured records for these three actual cases before owned successful cleanup; other eight bodies unchanged.",
+      "Preserve full target requirements and add both new controls; scoped capture executes only three exact names."
+    ]
+  },
+  "review": {
+    "kind": "Deep review of changed fixture/observation/lifetime and adjacent real owner contracts; dependency-contract review only.",
+    "sources": [
+      {
+        "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+        "blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
+        "depth": "Complete existing test and affected ownership/observation chain read by author; root read full changed code and adjacent harness/owner contracts."
+      },
+      {
+        "path": "source/host/src/device_pairing_owner.rs",
+        "blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+        "depth": "Actual synchronous transaction/commit/error projection and public caller contract reviewed; no new whole-upstream reading credit."
+      },
+      {
+        "path": "source/host/src/gateway_command_error.rs",
+        "blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
+        "depth": "Existing Internal500/redaction contract retained."
+      }
+    ],
+    "dependency": {
+      "repository": "rusqlite/rusqlite",
+      "commit": "2a1790a69107cd03dae85d501dcbdb11c5b32ef3",
+      "version": "0.39.0",
+      "sqlite_sys": "0.37.0 bundled",
+      "paths": [
+        "src/busy.rs",
+        "src/inner_connection.rs",
+        "src/transaction.rs"
+      ],
+      "review": "Independent source assessor verified default5000ms busy sleep budget and consuming-commit rollback behavior; it is not an operation-wide wall deadline. No dependency changes."
+    },
+    "independent_review": "pending complete immutable candidate GENERAL/STRUCTURE review",
+    "source_read_history_promoted": false
+  },
+  "trace": {
+    "prefix": "DJC_READER_TRACE ",
+    "envelope": [
+      "case",
+      "invocation_nonce",
+      "child_pid",
+      "mode",
+      "instrument_control",
+      "clock",
+      "record"
+    ],
+    "clock": "child-case-start",
+    "unit": "nanoseconds",
+    "record_sequence": {
+      "join_storage_commit_refusal_never_publishes_payload": [
+        "observation",
+        "reader-release"
+      ],
+      "join_reader_observation_notifies_before_diagnostic_release": [
+        "observation",
+        "diagnostic-control"
+      ],
+      "join_reader_observation_cannot_notify_before_operation_return": [
+        "observation",
+        "operation-control"
+      ]
+    },
+    "ordering": "Preserve actual partial order; receive may return before send completion, and operation/diagnostic return may precede releasing sender resumption.",
+    "secrets": "No payload, shortcode, SQL or raw DB error in structured records."
+  },
+  "validation": {
+    "environment": "GitHub Actions only",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "workflow_scope": "ocrm-djc-reader-observation",
+    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "capture_scope": "djc-reader-observation",
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "selected_names": [
+      "join_storage_commit_refusal_never_publishes_payload",
+      "join_reader_observation_notifies_before_diagnostic_release",
+      "join_reader_observation_cannot_notify_before_operation_return"
+    ],
+    "selected_groups": 3,
+    "selected_named_count": 3,
+    "ordinary_target_required_count": 11,
+    "command_pattern": [
+      "cargo",
+      "test",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "device_pairing_join_admission_contract",
+      "EXACT_NAME",
+      "--",
+      "--exact",
+      "--test-threads=1",
+      "--show-output"
+    ],
+    "compile": [
+      "cargo",
+      "check",
+      "--locked",
+      "--manifest-path",
+      "source/host/Cargo.toml",
+      "--test",
+      "device_pairing_join_admission_contract"
+    ],
+    "selection_controls": 26,
+    "trace_transport_controls": 36,
+    "box_selection_controls": 7,
+    "result_oracle": "Each exact command needs exactly its one positive, one summary, zero failed/ignored/measured, both exits0, and two identity-bound typed timing records. Parent-qualified records are rechecked as transport data; missing/duplicate/malformed/mismatched/inconsistent records fail. Synthetic capture controls are not product evidence.",
+    "source_binding": [
+      "projects/openclaw-rust/upstream.lock.json",
+      "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+      "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "source/host/Cargo.toml",
+      "source/host/Cargo.lock",
+      "source/host/src/device_pairing_owner.rs",
+      "source/host/src/gateway_command_error.rs",
+      "source/host/src/gateway_server.rs",
+      "source/host/src/host_gateway_api.rs",
+      "source/host/app/src/main.rs",
+      "source/host/tests/device_pairing_join_admission_contract.rs"
+    ],
+    "shipping_compile": false,
+    "box_producer": false,
+    "execution": "not-run",
+    "campaign_budget": "One changed-instrument focused campaign after fresh source review and retained independent assessments. A further failure is assessed causally before any new action; no unchanged rerun."
+  },
+  "history": {
+    "assessment": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
+    "assessment_blob": "11a7659fe85aa65d44b5b1c169d7ed1b3d572e8d",
+    "original_log": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
+    "log_blob": "dc192acb664886b233e3bb2dbb1ace8fa01a5b69",
+    "log_sha256": "47b78cb8103f0d9d5d25e7d3eed12c65c826138ad5401390e8d4dcf407b55bc8",
+    "log_bytes": 43473,
+    "failed_subjects": [
+      {
+        "commit": "6d8c241b609948c4266e1e40c8f559795b317473",
+        "run": 41618863245,
+        "job": 125859112570
+      },
+      {
+        "commit": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
+        "tree": "4887f541b94d5adcbfddc2dff8a48d8d922a307d",
+        "run": 41642220354,
+        "job": 125938337174,
+        "passed": 8,
+        "failed": 1
+      }
+    ],
+    "transport_carrier": {
+      "commit": "6278f9a4dc85051c9d4b9416ab33f8e525151821",
+      "run": 41654535799,
+      "collector_job": 125981212876,
+      "conclusion": "success",
+      "product_validation": false
+    },
+    "qualification": "Unchanged eight whole-case positives retain their original identities; DJC07 positive and successful transport do not replace the original timed failure."
+  },
+  "acceptance": {
+    "full_unit_verified": false,
+    "real_devices_accepted": false,
+    "shipping_accepted": false,
+    "global_flags_promoted": false
+  },
+  "open_work": [
+    "Actual new three-case source/compile/runtime results.",
+    "Resolution of retained lock observation if new direct instrument still fails.",
+    "Full source closure and actual setup issuer/UI/schema/companion-node behavior, unknown commit/crash handling, all supported platforms/packages and final G01-G12/AC01-AC24/independent ACCEPT."
+  ]
+}

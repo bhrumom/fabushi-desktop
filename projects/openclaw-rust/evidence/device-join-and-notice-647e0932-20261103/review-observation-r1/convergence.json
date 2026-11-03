@@ -1,0 +1,155 @@
+{
+  "schema": "ocrm-independent-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "unit": "DJC-09-reader-observation",
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "review": {
+    "base": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+    "candidate": "e8271d8aedd80803a8f5494c4c653001d57bf1fe",
+    "candidate_tree": "99dd66a409352bad3cfcd18dfffded5c02d55c69",
+    "scope_blob": "6be9f8b6d7f5130b915f89fd229754f80f54b2c6",
+    "complete_patch": {
+      "blob": "274d175058deca6cf9f5d61b54b37978aed59c79",
+      "bytes": 134236,
+      "sha256": "94eefa94f5cea082427443a1210d3aa681e890425dfdf0e8c89c61ac29144774"
+    },
+    "reports": [
+      {
+        "reviewer": "/root/djc_observation_r1_general",
+        "reviewType": "GENERAL",
+        "verdict": "APPROVE",
+        "blockingFindings": [],
+        "base": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "candidate": "e8271d8aedd80803a8f5494c4c653001d57bf1fe",
+        "tree": "99dd66a409352bad3cfcd18dfffded5c02d55c69",
+        "scopeBlob": "6be9f8b6d7f5130b915f89fd229754f80f54b2c6",
+        "patchBlob": "274d175058deca6cf9f5d61b54b37978aed59c79",
+        "patchBytes": 134236,
+        "coverage": [
+          "Complete frozen five-path change and complete Host test source",
+          "Affected capture selection, strict result/trace qualification, producer and receipt consumers",
+          "Workflow selected scope and evidence handling",
+          "New observation source contract and RTM",
+          "AGENTS, full DJC spec, relevant OCRM authority, adjacent actual production redemption and Gateway call chain"
+        ],
+        "conclusions": [
+          "Call return and completion send precede result diagnostics; real boundary timestamps maintain valid partial order.",
+          "Original public owner,8s assertion,120s child/5s cleanup,reader fence,row/status/redaction/reopen/recovery assertions preserved.",
+          "Both same-helper causal controls retire gates and join before assertions; readiness/notification/diagnostic/worker/sentinel failures reject.",
+          "Success projection qualifies exactly two structured records against the same receipt case/nonce/PID/mode before cleanup; failure raw outputs retained.",
+          "Three exact commands, one positive/complete summary each, zero failed/ignored/measured, command/capture exit0, qualified traces and13before/afterbindings required.",
+          "26selection and36trace transport control counts source reviewed but not executed; full target remains11names.",
+          "Ubuntu/macOS selected; target-onlycompile; no shipping App or Box producer; workflow484636bytes.",
+          "Historical failed subjects and8positives remain separately identified, RTM acceptance and all8flags unchanged false."
+        ],
+        "limits": [
+          "No build/test/linters/schema execution",
+          "No edits/dispatch/ref changes",
+          "No other reviewer report or runner decisions consumed",
+          "No claim of historical failure resolution,SQL latency,shipping App,real device or full acceptance"
+        ],
+        "model": "inherited",
+        "reasoningEffort": "xhigh"
+      },
+      {
+        "reviewer": "/root/djc_observation_r1_structure",
+        "reviewType": "STRUCTURE",
+        "model": "gpt-6.1-sol",
+        "reasoningEffort": "xhigh",
+        "verdict": "APPROVE",
+        "blockingFindings": [],
+        "nonblockingFindings": [],
+        "base": "fb1e42d704a8b98b663d70f2b14568485d73a9b6",
+        "baseTree": "695bb9e61cb064f81ac62572d182b51b48e6c5e6",
+        "candidate": "e8271d8aedd80803a8f5494c4c653001d57bf1fe",
+        "tree": "99dd66a409352bad3cfcd18dfffded5c02d55c69",
+        "scopeBlob": "6be9f8b6d7f5130b915f89fd229754f80f54b2c6",
+        "patchBlob": "274d175058deca6cf9f5d61b54b37978aed59c79",
+        "coverage": [
+          "Five-path scope and complete diff",
+          "AGENTS and complete DJC specification including DJC09",
+          "Affected observation helper, original real case, same-helper controls, success projection supervisor",
+          "Capture consumers/build declarations and adjacent public owner/Gateway/App contracts"
+        ],
+        "conclusions": [
+          "Fixture-local observation preserves DevicePairingOwner/Gateway/App production ownership and held-reader public call; no runtime hooks,producttimeout,dependency or executionowner.",
+          "Sharedhelper records adjacent call/send boundaries and sends before diagnostic callback; original8s and all storage/redaction/reopen/recovery/finalassertions stay.",
+          "Rust/Python validators enforce actual partialorders without false interthread send/receive or release/return orders.",
+          "Owned-child success qualification binds actual ready/completionreceipt nonce/PID/case/mode and exactlytwo typed records; failuresretainrawfiles;120s/5s boundsunchanged.",
+          "Three exactcommands, outershow-output/innernocapture,11namefulltarget,target-onlycompile,noBox/App selected, strictresult+trace+unchangedbindings.",
+          "New26selection/36transport controls are source reviewed instrument qualification, not executed product positives.",
+          "Definitions have callers/serialization consumers; transportvalidator doesnotduplicateproductpolicy; existingworkflowselection2OS484636bytes.",
+          "SC/RTM history/pendingexecution/scope limits consistent;8completionflagsfalse andacceptancestatusunchanged."
+        ],
+        "limits": [
+          "Sourceonly; no builds/tests/schema/generator/localexecution/write/dispatch",
+          "No otherreviewreport orrunnerdecision consulted",
+          "No runtime success,historicalfailure resolution,privateSQLduration,product8sguarantee orfullacceptance claim"
+        ]
+      }
+    ],
+    "result": "converged-source-only",
+    "findings": []
+  },
+  "integration": {
+    "parent": "43ef7393378a447eb981dbcd67e66b6ad58fbfbf",
+    "parent_tree": "c56fff59580275478d6699eabc0e8949ee2d0ea8",
+    "files": [
+      {
+        "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+        "old_blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
+        "new_blob": "fdadc78e956ec70a31d09d305fd0d3c77cc58d60"
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "old_blob": "dc247fba2ad33dac654de6205d273f71fe7fd8da",
+        "new_blob": "0a53c7f781189b145e67b2c64b56d8dd9f3ac34a"
+      },
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "old_blob": "7afb89051bed8f84df5465a7771f289510de257a",
+        "new_blob": "d72e5591ecb27a29439e55d778ada74a343279bc"
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
+        "old_blob": null,
+        "new_blob": "a5419de64cde66ed1d948f6f2fa0909f1b284144"
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "old_blob": "cfa7a9da48c4d049af12d21b7eeeb17ab17a86c0",
+        "new_blob": "3422c11400b60393f0f68d9e0e2dfb55715d22d4"
+      }
+    ],
+    "reconciliation": "Fresh GitHub reads match all four declared old blobs; new observation source contract absent. Parent only adds Memory terminal metadata and this review packet after the reviewed base. All five frozen candidate blobs are integrated without alteration.",
+    "independent_evidence_carrier_not_execution_subject": true
+  },
+  "verification": {
+    "state": "pending",
+    "required_scope": "ocrm-djc-reader-observation",
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "exact_names": [
+      "join_storage_commit_refusal_never_publishes_payload",
+      "join_reader_observation_notifies_before_diagnostic_release",
+      "join_reader_observation_cannot_notify_before_operation_return"
+    ],
+    "retained_assertions": "Original 8-second receive and final observation failure assertion, held reader through refusal/join, all storage/redaction/reopen/recovery checks,120-second child and5-second cleanup bounds.",
+    "not_claimed": [
+      "Full eleven-name target execution",
+      "Shipping App compilation",
+      "Real-device compatibility",
+      "Private SQL duration or an eight-second product SLA",
+      "Resolution of historical failed subjects before new evidence",
+      "OCRM full unit or global acceptance"
+    ]
+  }
+}

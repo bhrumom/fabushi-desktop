@@ -505,7 +505,24 @@ fn isolated_join_case(case: &str, body: fn(&Path)) {
         }
         eprintln!("DJC owned-child harness controls passed; these are not SQL refusal evidence");
     }
-    supervise_join_child(case, "actual").accept(JoinChildOutcome::Completed);
+    let report = supervise_join_child(case, "actual");
+    if matches!(case,
+        "join_storage_commit_refusal_never_publishes_payload"
+            | "join_reader_observation_notifies_before_diagnostic_release"
+            | "join_reader_observation_cannot_notify_before_operation_return"
+    ) && report.terminal && report.ready && report.outcome == JoinChildOutcome::Completed
+    {
+        let records = collect_join_reader_records(case, &report).unwrap_or_else(|failure| {
+            panic!("DJC reader records rejected; evidence retained at {}: {failure}\n{}",
+                report.root.display(), report.details);
+        });
+        // Only qualified structured records survive accepted child cleanup.
+        // Nested libtest names/summaries stay in the owned raw output files.
+        for record in records {
+            eprintln!("{record}");
+        }
+    }
+    report.accept(JoinChildOutcome::Completed);
 }
 
 fn join_phase(started: Instant, phase: &str) {
@@ -520,6 +537,318 @@ fn join_result_phase(started: Instant, result: &Result<Option<Value>, GatewayCom
         Err(_) => "other-error",
     };
     eprintln!("DJC phase=owner-returned; elapsed_ms={}; result_class={class}", started.elapsed().as_millis());
+}
+
+// DJC-09 observes only the retained reader case and its two instrument controls.
+// All offsets share this child case's Instant origin; none are SQL durations.
+const JOIN_READER_TRACE_PREFIX: &str = "DJC_READER_TRACE ";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum JoinReaderSendOutcome { Sent, Disconnected }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum JoinReaderReceiveOutcome { Received, Timeout, Disconnected }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum JoinReaderTryOutcome { Empty, Received, Disconnected }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum JoinReaderResultClass { Payload, Miss, InternalError, OtherError }
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JoinReaderCallRecord {
+    entered_ns: Option<u64>,
+    returned_ns: Option<u64>,
+    send_entered_ns: Option<u64>,
+    send_completed_ns: Option<u64>,
+    send_outcome: JoinReaderSendOutcome,
+    diagnostic_entered_ns: Option<u64>,
+    diagnostic_returned_ns: Option<u64>,
+    diagnostic_succeeded: bool,
+    result_class: JoinReaderResultClass,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JoinReaderObservationRecord {
+    call: Option<JoinReaderCallRecord>,
+    wait_entered_ns: Option<u64>,
+    wait_returned_ns: Option<u64>,
+    wait_outcome: JoinReaderReceiveOutcome,
+    join_completed_ns: Option<u64>,
+    worker_returned: bool,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JoinReaderReleaseRecord {
+    entered_ns: Option<u64>,
+    rollback_returned_ns: Option<u64>,
+    rollback_succeeded: bool,
+    close_entered_ns: Option<u64>,
+    close_returned_ns: Option<u64>,
+    close_succeeded: Option<bool>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JoinReaderDiagnosticControlRecord {
+    ready_returned_ns: Option<u64>,
+    ready_outcome: JoinReaderReceiveOutcome,
+    release_entered_ns: Option<u64>,
+    release_completed_ns: Option<u64>,
+    release_outcome: JoinReaderSendOutcome,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JoinReaderOperationControlRecord {
+    ready_returned_ns: Option<u64>,
+    ready_outcome: JoinReaderReceiveOutcome,
+    check_entered_ns: Option<u64>,
+    check_returned_ns: Option<u64>,
+    before_release: JoinReaderTryOutcome,
+    release_entered_ns: Option<u64>,
+    release_completed_ns: Option<u64>,
+    release_outcome: JoinReaderSendOutcome,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+enum JoinReaderRecord {
+    Observation(JoinReaderObservationRecord),
+    ReaderRelease(JoinReaderReleaseRecord),
+    DiagnosticControl(JoinReaderDiagnosticControlRecord),
+    OperationControl(JoinReaderOperationControlRecord),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JoinReaderTrace {
+    case: String,
+    invocation_nonce: String,
+    child_pid: u32,
+    mode: String,
+    instrument_control: bool,
+    clock: String,
+    record: JoinReaderRecord,
+}
+
+fn join_reader_offset(started: Instant, at: Instant) -> Option<u64> {
+    at.checked_duration_since(started).and_then(|elapsed| elapsed.as_nanos().try_into().ok())
+}
+
+fn join_reader_receive_outcome(result: &Result<(), mpsc::RecvTimeoutError>) -> JoinReaderReceiveOutcome {
+    match result {
+        Ok(()) => JoinReaderReceiveOutcome::Received,
+        Err(mpsc::RecvTimeoutError::Timeout) => JoinReaderReceiveOutcome::Timeout,
+        Err(mpsc::RecvTimeoutError::Disconnected) => JoinReaderReceiveOutcome::Disconnected,
+    }
+}
+
+fn join_reader_send_outcome(result: &Result<(), mpsc::SendError<()>>) -> JoinReaderSendOutcome {
+    if result.is_ok() { JoinReaderSendOutcome::Sent } else { JoinReaderSendOutcome::Disconnected }
+}
+
+fn observe_join_reader_call(
+    started: Instant,
+    completion: mpsc::Sender<()>,
+    operation: impl FnOnce() -> Result<Option<Value>, GatewayCommandError>,
+    diagnostic: impl FnOnce(&Result<Option<Value>, GatewayCommandError>) -> Result<(), &'static str>,
+) -> (Result<Option<Value>, GatewayCommandError>, JoinReaderCallRecord) {
+    let entered = Instant::now();
+    let result = operation();
+    let returned = Instant::now();
+    let send_entered = Instant::now();
+    let sent = completion.send(());
+    let send_completed = Instant::now();
+    // Nothing formats or logs between the operation return and notification.
+    let diagnostic_entered = Instant::now();
+    let diagnosed = diagnostic(&result);
+    let diagnostic_returned = Instant::now();
+    let result_class = match &result {
+        Ok(Some(_)) => JoinReaderResultClass::Payload,
+        Ok(None) => JoinReaderResultClass::Miss,
+        Err(GatewayCommandError::Internal(_)) => JoinReaderResultClass::InternalError,
+        Err(_) => JoinReaderResultClass::OtherError,
+    };
+    (result, JoinReaderCallRecord {
+        entered_ns: join_reader_offset(started, entered),
+        returned_ns: join_reader_offset(started, returned),
+        send_entered_ns: join_reader_offset(started, send_entered),
+        send_completed_ns: join_reader_offset(started, send_completed),
+        send_outcome: join_reader_send_outcome(&sent),
+        diagnostic_entered_ns: join_reader_offset(started, diagnostic_entered),
+        diagnostic_returned_ns: join_reader_offset(started, diagnostic_returned),
+        diagnostic_succeeded: diagnosed.is_ok(),
+        result_class,
+    })
+}
+
+fn emit_join_reader_record(case: &str, instrument_control: bool, record: JoinReaderRecord) {
+    let trace = JoinReaderTrace {
+        case: case.to_owned(),
+        invocation_nonce: std::env::var(JOIN_CHILD_TOKEN).expect("owned reader invocation nonce"),
+        child_pid: std::process::id(),
+        mode: std::env::var(JOIN_CHILD_MODE).expect("owned reader invocation mode"),
+        instrument_control,
+        clock: "child-case-start".to_owned(),
+        record,
+    };
+    eprintln!("{JOIN_READER_TRACE_PREFIX}{}", serde_json::to_string(&trace)
+        .expect("serialize credential-free reader boundary record"));
+}
+
+fn join_reader_ordered(values: &[Option<u64>]) -> bool {
+    let mut previous = None;
+    for value in values {
+        let Some(value) = *value else { return false; };
+        if previous.is_some_and(|previous| value < previous) {
+            return false;
+        }
+        previous = Some(value);
+    }
+    true
+}
+
+fn join_reader_boundaries_ordered(observation: &JoinReaderObservationRecord) -> bool {
+    let Some(call) = &observation.call else { return false; };
+    observation.worker_returned
+        && join_reader_ordered(&[
+            call.entered_ns, call.returned_ns, call.send_entered_ns, call.send_completed_ns,
+            call.diagnostic_entered_ns, call.diagnostic_returned_ns, observation.join_completed_ns,
+        ])
+        && join_reader_ordered(&[
+            observation.wait_entered_ns, observation.wait_returned_ns, observation.join_completed_ns,
+        ])
+        // A receiver can return before the sender resumes after send(). Do not
+        // impose a false send-completed-before-receive-returned ordering.
+        && (observation.wait_outcome != JoinReaderReceiveOutcome::Received
+            || (call.send_outcome == JoinReaderSendOutcome::Sent
+                && join_reader_ordered(&[call.send_entered_ns, observation.wait_returned_ns])))
+}
+
+fn join_reader_successful_observation(observation: &JoinReaderObservationRecord) -> bool {
+    join_reader_boundaries_ordered(observation)
+        && observation.wait_outcome == JoinReaderReceiveOutcome::Received
+        && observation.call.as_ref().is_some_and(|call|
+            call.send_outcome == JoinReaderSendOutcome::Sent && call.diagnostic_succeeded)
+}
+
+fn join_reader_diagnostic_control_ordered(
+    observation: &JoinReaderObservationRecord,
+    control: &JoinReaderDiagnosticControlRecord,
+) -> bool {
+    let Some(call) = &observation.call else { return false; };
+    join_reader_successful_observation(observation)
+        && call.result_class == JoinReaderResultClass::Miss
+        && control.ready_outcome == JoinReaderReceiveOutcome::Received
+        && control.release_outcome == JoinReaderSendOutcome::Sent
+        && join_reader_ordered(&[
+            call.diagnostic_entered_ns, control.ready_returned_ns,
+            observation.wait_entered_ns, observation.wait_returned_ns,
+            control.release_entered_ns, control.release_completed_ns, observation.join_completed_ns,
+        ])
+        && join_reader_ordered(&[control.release_entered_ns, call.diagnostic_returned_ns])
+}
+
+fn join_reader_operation_control_ordered(
+    observation: &JoinReaderObservationRecord,
+    control: &JoinReaderOperationControlRecord,
+) -> bool {
+    let Some(call) = &observation.call else { return false; };
+    join_reader_successful_observation(observation)
+        && call.result_class == JoinReaderResultClass::Miss
+        && control.ready_outcome == JoinReaderReceiveOutcome::Received
+        && control.before_release == JoinReaderTryOutcome::Empty
+        && control.release_outcome == JoinReaderSendOutcome::Sent
+        && join_reader_ordered(&[
+            call.entered_ns, control.ready_returned_ns,
+            control.check_entered_ns, control.check_returned_ns,
+            control.release_entered_ns, control.release_completed_ns,
+            observation.wait_entered_ns, observation.wait_returned_ns, observation.join_completed_ns,
+        ])
+        // The operation may return before the releasing sender resumes.
+        && join_reader_ordered(&[control.release_entered_ns, call.returned_ns])
+}
+
+fn collect_join_reader_records(case: &str, report: &JoinChildReport) -> Result<Vec<String>, String> {
+    if !report.terminal || !report.ready || report.outcome != JoinChildOutcome::Completed {
+        return Err("reader records require the same accepted terminal child receipt".into());
+    }
+    let ready = fs::read_to_string(report.root.join("ready"))
+        .map_err(|_| "read retained reader ready receipt")?;
+    let complete = fs::read_to_string(report.root.join("complete"))
+        .map_err(|_| "read retained reader completion receipt")?;
+    let identity = ready.split('\n').collect::<Vec<_>>();
+    if ready != complete || identity.len() != 5 || identity[0].is_empty()
+        || identity[2] != case || identity[3] != "actual" || !identity[4].is_empty()
+    {
+        return Err("reader records do not match the retained invocation receipts".into());
+    }
+    let pid: u32 = identity[1].parse().map_err(|_| "invalid retained reader child PID")?;
+    let instrument_control = case != "join_storage_commit_refusal_never_publishes_payload";
+    let stderr = fs::read_to_string(report.root.join("stderr"))
+        .map_err(|_| "read terminal reader child stderr")?;
+    let mut lines = Vec::new();
+    let mut records = Vec::new();
+    for line in stderr.lines() {
+        let Some(raw) = line.strip_prefix(JOIN_READER_TRACE_PREFIX) else {
+            if line.contains("DJC_READER_") {
+                return Err("malformed reader trace prefix".into());
+            }
+            continue;
+        };
+        // Derived records reject unknown and duplicate object fields; the
+        // required boundary values and outcomes are checked below.
+        let trace: JoinReaderTrace = serde_json::from_str(raw)
+            .map_err(|_| "malformed reader boundary record")?;
+        if trace.case != case || trace.invocation_nonce != identity[0] || trace.child_pid != pid
+            || trace.mode != "actual" || trace.instrument_control != instrument_control
+            || trace.clock != "child-case-start"
+        {
+            return Err("reader record identity or kind differs from its accepted child".into());
+        }
+        lines.push(line.to_owned());
+        records.push(trace.record);
+    }
+    if records.len() != 2 {
+        return Err("missing or duplicate reader boundary/control records".into());
+    }
+    let valid = match (case, &records[0], &records[1]) {
+        ("join_storage_commit_refusal_never_publishes_payload",
+            JoinReaderRecord::Observation(observation), JoinReaderRecord::ReaderRelease(release)) =>
+        {
+            join_reader_successful_observation(observation)
+                && observation.call.as_ref().is_some_and(|call|
+                    call.result_class == JoinReaderResultClass::InternalError)
+                && release.rollback_succeeded && release.close_succeeded == Some(true)
+                && join_reader_ordered(&[
+                    observation.join_completed_ns, release.entered_ns, release.rollback_returned_ns,
+                    release.close_entered_ns, release.close_returned_ns,
+                ])
+        }
+        ("join_reader_observation_notifies_before_diagnostic_release",
+            JoinReaderRecord::Observation(observation), JoinReaderRecord::DiagnosticControl(control)) =>
+        {
+            join_reader_diagnostic_control_ordered(observation, control)
+        }
+        ("join_reader_observation_cannot_notify_before_operation_return",
+            JoinReaderRecord::Observation(observation), JoinReaderRecord::OperationControl(control)) =>
+        {
+            join_reader_operation_control_ordered(observation, control)
+        }
+        _ => false,
+    };
+    if !valid {
+        return Err("mismatched or inconsistent reader boundary/control records".into());
+    }
+    Ok(lines)
 }
 
 fn wait_for_uncommitted_write(
@@ -588,8 +917,131 @@ fn join_storage_write_failure_preserves_row_and_redacts_errors() {
 }
 
 #[test]
+fn join_reader_observation_notifies_before_diagnostic_release() {
+    isolated_join_case("join_reader_observation_notifies_before_diagnostic_release", |_root| {
+        const CASE: &str = "join_reader_observation_notifies_before_diagnostic_release";
+        let started = Instant::now();
+        thread::scope(|scope| {
+            let (sender, receiver) = mpsc::channel();
+            let (diagnostic_entered, diagnostic_ready) = mpsc::channel();
+            let (release_diagnostic, diagnostic_release) = mpsc::channel();
+            let worker = scope.spawn(move || observe_join_reader_call(
+                started, sender, || Ok(None), move |_| {
+                    diagnostic_entered.send(()).map_err(|_| "diagnostic readiness disconnected")?;
+                    diagnostic_release.recv_timeout(Duration::from_secs(8))
+                        .map_err(|_| "bounded diagnostic release failed")
+                },
+            ));
+            let ready = diagnostic_ready.recv_timeout(Duration::from_secs(8));
+            let ready_returned = Instant::now();
+            let wait_entered = Instant::now();
+            let waited = receiver.recv_timeout(Duration::from_secs(8));
+            let wait_returned = Instant::now();
+            // Always release/drop the gate and join before any assertion. A
+            // failed observation cannot strand the bounded diagnostic receiver.
+            let release_entered = Instant::now();
+            let released = release_diagnostic.send(());
+            let release_completed = Instant::now();
+            drop(release_diagnostic);
+            let joined = worker.join();
+            let join_completed = Instant::now();
+            let observation = JoinReaderObservationRecord {
+                call: joined.as_ref().ok().map(|(_, call)| call.clone()),
+                wait_entered_ns: join_reader_offset(started, wait_entered),
+                wait_returned_ns: join_reader_offset(started, wait_returned),
+                wait_outcome: join_reader_receive_outcome(&waited),
+                join_completed_ns: join_reader_offset(started, join_completed),
+                worker_returned: joined.is_ok(),
+            };
+            let control = JoinReaderDiagnosticControlRecord {
+                ready_returned_ns: join_reader_offset(started, ready_returned),
+                ready_outcome: join_reader_receive_outcome(&ready),
+                release_entered_ns: join_reader_offset(started, release_entered),
+                release_completed_ns: join_reader_offset(started, release_completed),
+                release_outcome: join_reader_send_outcome(&released),
+            };
+            let ordered = join_reader_diagnostic_control_ordered(&observation, &control);
+            emit_join_reader_record(CASE, true, JoinReaderRecord::Observation(observation));
+            emit_join_reader_record(CASE, true, JoinReaderRecord::DiagnosticControl(control));
+            let (result, _) = joined.expect("join bounded diagnostic observation control");
+            assert!(matches!(result, Ok(None)), "observation control must return its sentinel");
+            assert!(ordered, "completion must arrive while post-return diagnostics remain unreleased");
+        });
+    });
+}
+
+#[test]
+fn join_reader_observation_cannot_notify_before_operation_return() {
+    isolated_join_case("join_reader_observation_cannot_notify_before_operation_return", |_root| {
+        const CASE: &str = "join_reader_observation_cannot_notify_before_operation_return";
+        let started = Instant::now();
+        thread::scope(|scope| {
+            let (sender, receiver) = mpsc::channel();
+            let (operation_entered, operation_ready) = mpsc::channel();
+            let (release_operation, operation_release) = mpsc::channel();
+            let worker = scope.spawn(move || observe_join_reader_call(
+                started, sender, move || {
+                    operation_entered.send(()).map_err(|_| GatewayCommandError::Internal(
+                        "observation control operation readiness disconnected".into(),
+                    ))?;
+                    operation_release.recv_timeout(Duration::from_secs(8)).map_err(|_| GatewayCommandError::Internal(
+                        "bounded observation control operation release failed".into(),
+                    ))?;
+                    Ok(None)
+                }, |_| Ok(()),
+            ));
+            let ready = operation_ready.recv_timeout(Duration::from_secs(8));
+            let ready_returned = Instant::now();
+            let check_entered = Instant::now();
+            let before_release = receiver.try_recv();
+            let check_returned = Instant::now();
+            // No assertion precedes release and retirement, even if an invalid
+            // early notification was consumed by the negative observation.
+            let release_entered = Instant::now();
+            let released = release_operation.send(());
+            let release_completed = Instant::now();
+            drop(release_operation);
+            let wait_entered = Instant::now();
+            let waited = receiver.recv_timeout(Duration::from_secs(8));
+            let wait_returned = Instant::now();
+            let joined = worker.join();
+            let join_completed = Instant::now();
+            let observation = JoinReaderObservationRecord {
+                call: joined.as_ref().ok().map(|(_, call)| call.clone()),
+                wait_entered_ns: join_reader_offset(started, wait_entered),
+                wait_returned_ns: join_reader_offset(started, wait_returned),
+                wait_outcome: join_reader_receive_outcome(&waited),
+                join_completed_ns: join_reader_offset(started, join_completed),
+                worker_returned: joined.is_ok(),
+            };
+            let control = JoinReaderOperationControlRecord {
+                ready_returned_ns: join_reader_offset(started, ready_returned),
+                ready_outcome: join_reader_receive_outcome(&ready),
+                check_entered_ns: join_reader_offset(started, check_entered),
+                check_returned_ns: join_reader_offset(started, check_returned),
+                before_release: match before_release {
+                    Err(mpsc::TryRecvError::Empty) => JoinReaderTryOutcome::Empty,
+                    Ok(()) => JoinReaderTryOutcome::Received,
+                    Err(mpsc::TryRecvError::Disconnected) => JoinReaderTryOutcome::Disconnected,
+                },
+                release_entered_ns: join_reader_offset(started, release_entered),
+                release_completed_ns: join_reader_offset(started, release_completed),
+                release_outcome: join_reader_send_outcome(&released),
+            };
+            let ordered = join_reader_operation_control_ordered(&observation, &control);
+            emit_join_reader_record(CASE, true, JoinReaderRecord::Observation(observation));
+            emit_join_reader_record(CASE, true, JoinReaderRecord::OperationControl(control));
+            let (result, _) = joined.expect("join bounded operation observation control");
+            assert!(matches!(result, Ok(None)), "released observation control must return its sentinel");
+            assert!(ordered, "an operation held before return cannot notify completion");
+        });
+    });
+}
+
+#[test]
 fn join_storage_commit_refusal_never_publishes_payload() {
     isolated_join_case("join_storage_commit_refusal_never_publishes_payload", |root| {
+        const CASE: &str = "join_storage_commit_refusal_never_publishes_payload";
         let started = Instant::now();
         let mut fixture = Fixture::in_owned_root(root.join("commit-refusal"));
         let code = fixture.register(&payload());
@@ -609,10 +1061,13 @@ fn join_storage_commit_refusal_never_publishes_payload() {
             let code = &code;
             let worker = scope.spawn(move || {
                 join_phase(started, "owner-call-started");
-                let result = owner.redeem_device_pairing_join_code(code);
-                join_result_phase(started, &result);
-                let _ = sender.send(());
-                result
+                observe_join_reader_call(started, sender,
+                    || owner.redeem_device_pairing_join_code(code),
+                    |result| {
+                        join_result_phase(started, result);
+                        Ok(())
+                    },
+                )
             });
             match wait_for_uncommitted_write(&journal, &receiver) {
                 Ok(()) => join_phase(started, "journaled-write-observed"),
@@ -621,7 +1076,10 @@ fn join_storage_commit_refusal_never_publishes_payload() {
                     observation_failures.push(failure);
                 }
             }
-            match receiver.recv_timeout(Duration::from_secs(8)) {
+            let wait_entered = Instant::now();
+            let waited = receiver.recv_timeout(Duration::from_secs(8));
+            let wait_returned = Instant::now();
+            match &waited {
                 Ok(()) => join_phase(started, "completion-notification-received"),
                 Err(mpsc::RecvTimeoutError::Timeout) => {
                     join_phase(started, "original-8s-observation-expired");
@@ -634,7 +1092,28 @@ fn join_storage_commit_refusal_never_publishes_payload() {
             }
             // Joining does not release the reader fence. The parent process
             // owns the 120s diagnostic deadline and 5s stop/reap boundary.
-            worker.join().expect("join the owned actual redemption worker")
+            let joined = worker.join();
+            let join_completed = Instant::now();
+            let observation = JoinReaderObservationRecord {
+                call: joined.as_ref().ok().map(|(_, call)| call.clone()),
+                wait_entered_ns: join_reader_offset(started, wait_entered),
+                wait_returned_ns: join_reader_offset(started, wait_returned),
+                wait_outcome: join_reader_receive_outcome(&waited),
+                join_completed_ns: join_reader_offset(started, join_completed),
+                worker_returned: joined.is_ok(),
+            };
+            emit_join_reader_record(CASE, false, JoinReaderRecord::Observation(observation.clone()));
+            let (result, call) = joined.expect("join the owned actual redemption worker");
+            if !join_reader_boundaries_ordered(&observation) {
+                observation_failures.push("missing or inconsistent reader completion boundaries");
+            }
+            if call.send_outcome != JoinReaderSendOutcome::Sent {
+                observation_failures.push("owner completion send disconnected");
+            }
+            if !call.diagnostic_succeeded {
+                observation_failures.push("owner post-return diagnostic failed");
+            }
+            result
         });
         let error = match refusal {
             Err(error) => error,
@@ -643,8 +1122,30 @@ fn join_storage_commit_refusal_never_publishes_payload() {
         };
         assert_storage_error(error, &code);
         join_phase(started, "storage-error-status-and-redaction-checked");
-        blocker.execute_batch("ROLLBACK").expect("release only fixture's read fence");
-        blocker.close().expect("close fixture reader");
+        let release_entered = Instant::now();
+        let rolled_back = blocker.execute_batch("ROLLBACK");
+        let rollback_returned = Instant::now();
+        if rolled_back.is_err() {
+            emit_join_reader_record(CASE, false, JoinReaderRecord::ReaderRelease(JoinReaderReleaseRecord {
+                entered_ns: join_reader_offset(started, release_entered),
+                rollback_returned_ns: join_reader_offset(started, rollback_returned),
+                rollback_succeeded: false,
+                close_entered_ns: None, close_returned_ns: None, close_succeeded: None,
+            }));
+        }
+        rolled_back.expect("release only fixture's read fence");
+        let close_entered = Instant::now();
+        let closed = blocker.close();
+        let close_returned = Instant::now();
+        emit_join_reader_record(CASE, false, JoinReaderRecord::ReaderRelease(JoinReaderReleaseRecord {
+            entered_ns: join_reader_offset(started, release_entered),
+            rollback_returned_ns: join_reader_offset(started, rollback_returned),
+            rollback_succeeded: true,
+            close_entered_ns: join_reader_offset(started, close_entered),
+            close_returned_ns: join_reader_offset(started, close_returned),
+            close_succeeded: Some(closed.is_ok()),
+        }));
+        closed.expect("close fixture reader");
         join_phase(started, "reader-fence-explicitly-released");
         assert_eq!(fixture.observe(&code), before, "known refused commit rolled back its marker");
         join_phase(started, "refused-row-preservation-checked");

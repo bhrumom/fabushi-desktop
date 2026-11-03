@@ -1,6 +1,6 @@
 import hashlib, json, os, pathlib, re, subprocess
 validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
-if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
+if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
     raise ValueError("Unknown portable contract scope")
 root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
@@ -401,7 +401,22 @@ memory_checked_list_inputs = [
     "source/host/tests/memory_extension_contract.rs",
     "source/host/src/workflows/workflow_store.rs"
 ]
-inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs))
+djc_reader_observation_inputs = [
+    "projects/openclaw-rust/upstream.lock.json",
+    "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "source/host/Cargo.toml",
+    "source/host/Cargo.lock",
+    "source/host/src/device_pairing_owner.rs",
+    "source/host/src/gateway_command_error.rs",
+    "source/host/src/gateway_server.rs",
+    "source/host/src/host_gateway_api.rs",
+    "source/host/app/src/main.rs",
+    "source/host/tests/device_pairing_join_admission_contract.rs"
+]
+inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs) | set(djc_reader_observation_inputs))
 base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
 integration = base + ["--no-fail-fast"]
 for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
@@ -980,6 +995,8 @@ cases = [
         "join_concurrent_file_owners_publish_one_payload",
         "join_gateway_reports_storage_failure_and_preserves_public_recovery",
         "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
+        "join_reader_observation_notifies_before_diagnostic_release",
+        "join_reader_observation_cannot_notify_before_operation_return",
     ]),
     ('device-join-limit-state', base + ['--lib', 'gateway_server::join_rate_limit_tests::', '--', '--test-threads=1'], [
         'gateway_server::join_rate_limit_tests::join_limit_defaults_window_lockout_and_retry_boundaries',
@@ -1817,13 +1834,43 @@ custody_desktop_names = (
     "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
 )
 djc_qualified_name = "join_deferred_commit_refusal_is_qualified_and_preserves_recovery"
+djc_reader_observation_names = (
+    "join_storage_commit_refusal_never_publishes_payload",
+    "join_reader_observation_notifies_before_diagnostic_release",
+    "join_reader_observation_cannot_notify_before_operation_return",
+)
+djc_reader_observation_cases = [
+    ("djc-reader-observation-" + suffix,
+        base + ["--test", "device_pairing_join_admission_contract", name,
+            "--", "--exact", "--test-threads=1", "--show-output"], [name])
+    for suffix, name in zip(("owner", "diagnostic-control", "operation-control"),
+        djc_reader_observation_names)
+]
+djc_reader_observation_labels = {label for label, _, _ in djc_reader_observation_cases}
+djc_reader_parent_contract = next(
+    (tuple(command), tuple(required)) for label, command, required in full_cases
+    if label == "device-pairing-join")
+
 
 def select_portable_cases(scope, declared):
-    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle"):
+    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
         raise ValueError("Unknown portable contract scope")
     indexed = {label: (label, command, required) for label, command, required in declared}
     if len(indexed) != len(declared):
         raise ValueError("Duplicate portable case label")
+    if scope == "djc-reader-observation":
+        if "device-pairing-join" not in indexed:
+            raise ValueError("DJC reader observation lost its complete parent target")
+        _, command, required = indexed["device-pairing-join"]
+        if ((tuple(command), tuple(required)) != djc_reader_parent_contract
+            or len(required) != 11 or len(set(required)) != 11
+            or any(required.count(name) != 1 for name in djc_reader_observation_names)):
+            raise ValueError("DJC reader parent command or names drifted")
+        if (len(djc_reader_observation_cases) != 3
+            or len(djc_reader_observation_labels) != 3):
+            raise ValueError("DJC reader observation requires three distinct exact commands")
+        return [(label, list(command), list(required))
+            for label, command, required in djc_reader_observation_cases]
     if scope in ("memory-checked-list", "memory-fixture-lifecycle"):
         selected = (memory_fixture_lifecycle_plan(memory_checked_list_native_platform)
             if scope == "memory-fixture-lifecycle"
@@ -2068,12 +2115,40 @@ for platform, expected in [("unix", True), ("windows", True), ("foreign", False)
 
 for selected_scope, expected in [("full", True), ("custody-recovery", True),
     ("background-custody", True), ("background-custody-recovery", True),
-    ("memory-checked-list", False), ("memory-fixture-lifecycle", False)]:
+    ("memory-checked-list", False), ("memory-fixture-lifecycle", False),
+    ("djc-reader-observation", False)]:
     actual = any(label.startswith("box-response-")
         for label, _, _ in select_portable_cases(selected_scope, full_cases))
     selection_controls.append({"case": "box-producer-required-" + selected_scope,
         "expected": expected, "actual": actual})
     assert actual == expected, "Selected scope changed the Box producer compilation boundary"
+
+djc_reader_selection_controls = []
+djc_reader_variants = [
+    ("qualified-reader-plan", full_cases, True),
+    ("duplicate-parent-label", full_cases + [full_cases[0]], False),
+    ("missing-reader-parent", [case for case in full_cases if case[0] != "device-pairing-join"], False),
+    ("changed-reader-command", [(label, command + ["--foreign"], required)
+        if label == "device-pairing-join" else (label, command, required)
+        for label, command, required in full_cases], False),
+]
+for name in djc_reader_parent_contract[1]:
+    djc_reader_variants.extend([
+        ("missing-positive:" + name, [(label, command, [item for item in required if item != name])
+            if label == "device-pairing-join" else (label, command, required)
+            for label, command, required in full_cases], False),
+        ("duplicate-positive:" + name, [(label, command, required + [name])
+            if label == "device-pairing-join" else (label, command, required)
+            for label, command, required in full_cases], False),
+    ])
+for control, declared, expected in djc_reader_variants:
+    try:
+        selected = select_portable_cases("djc-reader-observation", declared)
+        actual = selected == djc_reader_observation_cases
+    except ValueError:
+        actual = False
+    djc_reader_selection_controls.append({"case": control, "expected": expected, "actual": actual})
+    assert actual == expected, f"DJC reader selection oracle failed: {control}"
 
 cases = select_portable_cases(validation_scope, full_cases)
 box_producer_required = any(label.startswith("box-response-") for label, _, _ in cases)
@@ -2203,6 +2278,152 @@ for control, output, command_exit, capture_exit, expected in [
     selected_result_controls.append({"case": control, "expected": expected, "actual": actual})
     assert actual == expected, f"CRF result oracle failed: {control}"
 
+
+# The Rust child qualifies every boundary against its actual invocation receipt.
+# Recheck the transported records as data before accepting a successful command.
+def djc_reader_unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate DJC trace JSON field")
+        result[key] = value
+    return result
+
+def djc_reader_trace_records(output):
+    records, errors = [], []
+    for line in output.replace("\r\n", "\n").splitlines():
+        if line.startswith("DJC_READER_TRACE "):
+            try:
+                records.append(json.loads(line[len("DJC_READER_TRACE "):],
+                    object_pairs_hook=djc_reader_unique_object))
+            except ValueError:
+                errors.append("malformed-or-duplicated-json")
+        elif "DJC_READER_TRACE" in line:
+            errors.append("malformed-trace-prefix")
+    return records, errors
+
+def djc_reader_trace_accepted(name, records, errors):
+    if errors or name not in djc_reader_observation_names or len(records) != 2:
+        return False
+    envelope = {"case", "invocation_nonce", "child_pid", "mode", "instrument_control", "clock", "record"}
+    expected_kind = dict(zip(djc_reader_observation_names,
+        ("reader-release", "diagnostic-control", "operation-control")))[name]
+    control = name != djc_reader_observation_names[0]
+    for row in records:
+        if (not isinstance(row, dict) or set(row) != envelope or row["case"] != name
+            or not isinstance(row["invocation_nonce"], str) or not row["invocation_nonce"]
+            or type(row["child_pid"]) is not int or row["child_pid"] <= 0
+            or row["mode"] != "actual" or row["instrument_control"] is not control
+            or row["clock"] != "child-case-start" or not isinstance(row["record"], dict)):
+            return False
+    if any(records[0][key] != records[1][key] for key in envelope - {"record"}):
+        return False
+    if set(records[0]["record"]) != {"observation"} or set(records[1]["record"]) != {expected_kind}:
+        return False
+    observation, secondary = records[0]["record"]["observation"], records[1]["record"][expected_kind]
+    if (not isinstance(observation, dict)
+        or set(observation) != {"call", "wait_entered_ns", "wait_returned_ns", "wait_outcome", "join_completed_ns", "worker_returned"}
+        or not isinstance(observation["call"], dict) or not isinstance(secondary, dict)):
+        return False
+    call = observation["call"]
+    if (set(call) != {"entered_ns", "returned_ns", "send_entered_ns", "send_completed_ns", "send_outcome",
+            "diagnostic_entered_ns", "diagnostic_returned_ns", "diagnostic_succeeded", "result_class"}
+        or observation["worker_returned"] is not True or observation["wait_outcome"] != "received"
+        or call["send_outcome"] != "sent" or call["diagnostic_succeeded"] is not True
+        or call["result_class"] != ("miss" if control else "internal-error")):
+        return False
+    def ordered(*values):
+        return all(type(value) is int and value >= 0 for value in values) and list(values) == sorted(values)
+    if (not ordered(call["entered_ns"], call["returned_ns"], call["send_entered_ns"],
+            call["send_completed_ns"], call["diagnostic_entered_ns"],
+            call["diagnostic_returned_ns"], observation["join_completed_ns"])
+        or not ordered(observation["wait_entered_ns"], observation["wait_returned_ns"], observation["join_completed_ns"])
+        or not ordered(call["send_entered_ns"], observation["wait_returned_ns"])):
+        return False
+    if expected_kind == "reader-release":
+        return (set(secondary) == {"entered_ns", "rollback_returned_ns", "rollback_succeeded",
+                "close_entered_ns", "close_returned_ns", "close_succeeded"}
+            and secondary["rollback_succeeded"] is True and secondary["close_succeeded"] is True
+            and ordered(observation["join_completed_ns"], secondary["entered_ns"],
+                secondary["rollback_returned_ns"], secondary["close_entered_ns"], secondary["close_returned_ns"]))
+    if expected_kind == "diagnostic-control":
+        return (set(secondary) == {"ready_returned_ns", "ready_outcome", "release_entered_ns", "release_completed_ns", "release_outcome"}
+            and secondary["ready_outcome"] == "received" and secondary["release_outcome"] == "sent"
+            and ordered(call["diagnostic_entered_ns"], secondary["ready_returned_ns"],
+                observation["wait_entered_ns"], observation["wait_returned_ns"], secondary["release_entered_ns"],
+                secondary["release_completed_ns"], observation["join_completed_ns"])
+            and ordered(secondary["release_entered_ns"], call["diagnostic_returned_ns"]))
+    return (set(secondary) == {"ready_returned_ns", "ready_outcome", "check_entered_ns", "check_returned_ns",
+            "before_release", "release_entered_ns", "release_completed_ns", "release_outcome"}
+        and secondary["ready_outcome"] == "received" and secondary["before_release"] == "empty"
+        and secondary["release_outcome"] == "sent"
+        and ordered(call["entered_ns"], secondary["ready_returned_ns"], secondary["check_entered_ns"],
+            secondary["check_returned_ns"], secondary["release_entered_ns"], secondary["release_completed_ns"],
+            observation["wait_entered_ns"], observation["wait_returned_ns"], observation["join_completed_ns"])
+        and ordered(secondary["release_entered_ns"], call["returned_ns"]))
+
+# These synthetic data controls qualify capture, never product/SQLite behavior.
+djc_reader_trace_controls = []
+for index, name in enumerate(djc_reader_observation_names):
+    call = dict(entered_ns=1, returned_ns=2, send_entered_ns=3, send_completed_ns=4,
+        send_outcome="sent", diagnostic_entered_ns=5, diagnostic_returned_ns=6,
+        diagnostic_succeeded=True, result_class="internal-error" if index == 0 else "miss")
+    observation = dict(call=call, wait_entered_ns=0, wait_returned_ns=7,
+        wait_outcome="received", join_completed_ns=8, worker_returned=True)
+    if index == 0:
+        kind = "reader-release"
+        secondary = dict(entered_ns=9, rollback_returned_ns=10, rollback_succeeded=True,
+            close_entered_ns=11, close_returned_ns=12, close_succeeded=True)
+    elif index == 1:
+        kind = "diagnostic-control"
+        call["diagnostic_returned_ns"] = 11
+        observation.update(wait_entered_ns=7, wait_returned_ns=9, join_completed_ns=14)
+        secondary = dict(ready_returned_ns=6, ready_outcome="received",
+            release_entered_ns=10, release_completed_ns=12, release_outcome="sent")
+    else:
+        kind = "operation-control"
+        call.update(returned_ns=8, send_entered_ns=9, send_completed_ns=10,
+            diagnostic_entered_ns=11, diagnostic_returned_ns=13)
+        observation.update(wait_entered_ns=7, wait_returned_ns=12, join_completed_ns=15)
+        secondary = dict(ready_returned_ns=2, ready_outcome="received", check_entered_ns=3,
+            check_returned_ns=4, before_release="empty", release_entered_ns=5,
+            release_completed_ns=6, release_outcome="sent")
+    rows = [dict(case=name, invocation_nonce="instrument-only-nonce", child_pid=1,
+        mode="actual", instrument_control=index != 0, clock="child-case-start", record=record)
+        for record in ({"observation": observation}, {kind: secondary})]
+    encode = lambda values: "".join("DJC_READER_TRACE " + json.dumps(row) + "\n" for row in values)
+    variants = [("qualified-" + kind, encode(rows), True),
+        ("missing-" + kind, encode(rows[:1]), False),
+        ("duplicate-" + kind, encode(rows + rows[1:]), False)]
+    changed = json.loads(json.dumps(rows))
+    changed[1]["child_pid"] += 1
+    variants.append(("mismatched-child-" + kind, encode(changed), False))
+    changed = json.loads(json.dumps(rows))
+    changed[0]["record"]["observation"]["call"]["returned_ns"] = None
+    variants.append(("missing-boundary-" + kind, encode(changed), False))
+    changed = json.loads(json.dumps(rows))
+    changed[0]["record"]["observation"]["wait_outcome"] = "timeout"
+    variants.append(("failed-observation-" + kind, encode(changed), False))
+    changed = json.loads(json.dumps(rows))
+    changed[0]["record"]["observation"]["call"]["returned_ns"] = 100
+    variants.append(("invalid-order-" + kind, encode(changed), False))
+    changed = json.loads(json.dumps(rows))
+    changed[0]["record"]["observation"]["call"]["entered_ns"] = True
+    variants.append(("boolean-boundary-" + kind, encode(changed), False))
+    changed = json.loads(json.dumps(rows))
+    changed[0]["foreign"] = True
+    variants.append(("unknown-field-" + kind, encode(changed), False))
+    duplicate_json = encode(rows).replace('"case":', '"case": "foreign", "case":', 1)
+    variants.append(("duplicate-json-field-" + kind, duplicate_json, False))
+    variants.append(("foreign-case-" + kind, encode(rows).replace(name, "foreign::case"), False))
+    variants.append(("malformed-prefix-" + kind, encode(rows).replace("DJC_READER_TRACE ", "xDJC_READER_TRACE ", 1), False))
+    for control_name, output, expected in variants:
+        records, errors = djc_reader_trace_records(output)
+        actual = djc_reader_trace_accepted(name, records, errors)
+        djc_reader_trace_controls.append({"case": control_name, "expected": expected, "actual": actual})
+        assert actual == expected, f"DJC reader transport oracle failed: {control_name}"
+
+
 box_daemon_lock = pathlib.Path("source/box-exec-daemon/Cargo.lock")
 box_daemon_lock_tracked = subprocess.run(
     ["git", "cat-file", "-e", f"{head}:source/box-exec-daemon/Cargo.lock"],
@@ -2284,7 +2505,15 @@ assert all(item["matches_head_bytes"] for item in box_response_inputs_before.val
 memory_checked_list_inputs_before = source_bindings(memory_checked_list_inputs)
 assert all(item["matches_head_bytes"] for item in memory_checked_list_inputs_before.values()), "MGL source input differs from exact H"
 
+djc_reader_inputs_before = source_bindings(djc_reader_observation_inputs)
+assert all(item["matches_head_bytes"] for item in djc_reader_inputs_before.values()), "DJC reader source input differs from exact H"
+
 receipt = {
+    "djc_reader_observation_contract": "DJC-09",
+    "djc_reader_observation_selected_here": validation_scope == "djc-reader-observation",
+    "djc_reader_selection_controls": djc_reader_selection_controls,
+    "djc_reader_trace_controls": djc_reader_trace_controls,
+    "djc_reader_inputs_before": djc_reader_inputs_before,
     "native_source_identity_controls": native_source_identity_controls,
     "memory_checked_list_contract": "MGL-v1/MGS-native-components",
     "memory_checked_list_native_platform": memory_checked_list_native_platform,
@@ -2313,7 +2542,7 @@ receipt = {
         "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
         "run": "41618863245", "attempt": 1, "job": "125859112570",
         "state": "historical-eight-second-observation-failed; unchanged assertion retained",
-        "selected_here": validation_scope == "full",
+        "selected_here": validation_scope in ("full", "djc-reader-observation"),
         "qualification": "DJC-07 success does not resolve this lock timing failure",
     }],
     "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v2",
@@ -2425,10 +2654,32 @@ if validation_scope == "memory-fixture-lifecycle":
         "reason": "Only two test fixtures changed. Refresh their exact target graphs; retained production compilation is historical, not a new shipping result.",
     }
 
+if validation_scope == "djc-reader-observation":
+    receipt["scope"] = ("DJC-09 reader observation only: three exact cases, original 8s assertion, "
+        "real public file owner and two deterministic observation-order controls. "
+        "Child records are qualified and forwarded under the same actual invocation receipts; "
+        "call/notification/receive boundaries are not private SQL durations or latency guarantees. "
+        "Original H6d8/e383 failures and the other eight historical positives remain under their subjects; "
+        "this receipt does not execute or accept the complete target, shipping App or real devices.")
+    receipt["djc_reader_required_names"] = list(djc_reader_observation_names)
+    receipt["djc_reader_original_full_target_count"] = 11
+    receipt["djc_reader_retained_failed_subject"] = {
+        "subject_commit": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
+        "run_id": "41642220354", "run_attempt": 1, "job_id": "125938337174",
+        "result": "8-passed-1-failed; historical original observation remains failed",
+        "assessment": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
+    }
+    receipt["shipping_host_verification"] = {
+        "result": "not-executed", "accepted": False,
+        "reason": "Only the retained reader fixture/observation instrument changes; compile its exact integration target.",
+    }
+
 # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
 # the complete Host test graph once; this is a compile gate, not test evidence.
 constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
-if validation_scope == "memory-fixture-lifecycle":
+if validation_scope == "djc-reader-observation":
+    constructor_command = constructor_command[:-1] + ["--test", "device_pairing_join_admission_contract"]
+elif validation_scope == "memory-fixture-lifecycle":
     constructor_command = constructor_command[:-1]
     for _, command, _ in cases:
         constructor_command.extend(["--test", command[command.index("--test") + 1]])
@@ -2708,6 +2959,15 @@ for label, command, required in cases:
         complete_counts = [tuple(map(int, count)) for count in re.findall(
             r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
             text, re.MULTILINE)]
+    djc_trace_records, djc_trace_errors, djc_trace_accepted = [], [], None
+    if label in djc_reader_observation_labels:
+        djc_trace_records, djc_trace_errors = djc_reader_trace_records(text)
+        djc_trace_accepted = djc_reader_trace_accepted(required[0], djc_trace_records, djc_trace_errors)
+        accepted = (exact_target_results_accepted(cargo_exit, capture_exit, required, text, True)
+            and djc_trace_accepted)
+        complete_counts = [tuple(map(int, count)) for count in re.findall(
+            r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
+            text, re.MULTILINE)]
     if label.startswith("box-response-"):
         accepted = box_response_results_accepted(label, cargo_exit, capture_exit, required, text)
         complete_counts = [tuple(map(int, count)) for count in re.findall(
@@ -2716,6 +2976,9 @@ for label, command, required in cases:
     receipt["executions"].append({
         "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
         "child_environment_overrides": child_environment_overrides,
+        "djc_reader_trace_records": djc_trace_records,
+        "djc_reader_trace_errors": djc_trace_errors,
+        "djc_reader_trace_accepted": djc_trace_accepted,
         "observed_raw_passed_test_names": raw_passed,
         "execution_error": execution_error, "required_positive_names": required,
         "missing_or_nonunique_positive_results": missing, "observed_passed_test_names": passed,
@@ -2775,7 +3038,13 @@ memory_checked_list_sources_unchanged = (
     and all(item["matches_head_bytes"] for item in memory_checked_list_inputs_after.values()))
 receipt["memory_checked_list_inputs_after"] = memory_checked_list_inputs_after
 receipt["memory_checked_list_sources_unchanged"] = memory_checked_list_sources_unchanged
-accepted = ((palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
+djc_reader_inputs_after = source_bindings(djc_reader_observation_inputs)
+djc_reader_sources_unchanged = (djc_reader_inputs_after == djc_reader_inputs_before
+    and all(item["matches_head_bytes"] for item in djc_reader_inputs_after.values()))
+receipt["djc_reader_inputs_after"] = djc_reader_inputs_after
+receipt["djc_reader_sources_unchanged"] = djc_reader_sources_unchanged
+accepted = (djc_reader_sources_unchanged
+    and (palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
     and all(case["oracle_accepted"] for case in receipt["executions"])
     and box_response_sources_unchanged and (not box_producer_required or (daemon_unchanged and capture_unchanged))
     and memory_checked_list_sources_unchanged and local_exec_outcome_sources_unchanged
