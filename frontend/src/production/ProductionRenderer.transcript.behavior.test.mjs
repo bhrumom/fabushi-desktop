@@ -574,7 +574,7 @@ test("UI-HRR-AC-03-IDENTITY-RETRY-001 retry sends only durable identities, singl
   assert.equal(await f.count("sendHumanMessage"), 0);
 
   await f.rejectRequest(first, "temporary retry failure");
-  await f.page.getByText("temporary retry failure", { exact: true }).waitFor();
+  await f.page.getByText("fixture/read-failed: temporary retry failure", { exact: true }).waitFor();
   await resend.click();
   const second = await f.request(RETRY_HUMAN, { conversationId: A, clientNonce }, first.id);
   assert.deepEqual(second.args, { conversationId: A, clientNonce });
@@ -613,6 +613,9 @@ test("UI-HRR-AC-03-ACCOUNT-ABA-001 stale A-B-A account lifetime cannot post a Hu
   const f = await fixture(t);
   const clientNonce = "retry-account-aba";
   await loadFailedHuman(f, [failedHumanEntry(clientNonce)]);
+  const previousTail = (await f.call("requests")).filter((request) => request.method === TAIL).at(-1);
+  assert.ok(previousTail, "the initial Human tail must be present before account replacement");
+  assert.equal(previousTail.settled, true, "the initial Human tail must settle before account replacement");
 
   await f.call("holdNextReady");
   const portId = await f.call("replaceCoordinatorPort");
@@ -623,6 +626,14 @@ test("UI-HRR-AC-03-ACCOUNT-ABA-001 stale A-B-A account lifetime cannot post a Hu
   await f.call("switchAccount", "fixture-a");
   await f.frames();
   await f.call("releaseReady", portId);
+  await f.frames();
+
+  const restoredTail = await f.request(TAIL, { conversationId: A, beforeSeq: null }, previousTail.id);
+  assert.equal(restoredTail.account, "fixture-a");
+  assert.equal(restoredTail.port, portId);
+  assert.equal(await f.count("openAgentTail"), 0, "a restored Human selection must wait for the canonical Human roster before choosing a transcript owner");
+  await f.resolveRequest(restoredTail, historyPage([failedHumanEntry(clientNonce)]));
+  await f.expectRows([`human-message:${clientNonce}`]);
   await f.frames();
 
   const posted = (await f.call("requests")).filter((request) => request.method === RETRY_HUMAN);

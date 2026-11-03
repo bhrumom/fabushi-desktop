@@ -1001,6 +1001,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const humanFindGenerationRef = useRef(0);
   const agentsRef = useRef(agents);
   const humanConversationsRef = useRef(humanConversations);
+  // A restored id is not an Agent until this account's canonical Human roster is resolved.
+  const humanRosterLoadedRef = useRef(false);
   const pinnedAgentIdsRef = useRef(pinnedAgentIds);
   const pinnedStateVersionRef = useRef(0);
   const rebuildRevisionRef = useRef(0);
@@ -1143,6 +1145,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       readRoster: client == null ? null : () => client.call("listHumanConversations"),
       applyRoster: (value) => {
         const projected = projectHumanConversations(value);
+        humanRosterLoadedRef.current = true;
         humanConversationsRef.current = projected;
         setHumanConversations(projected);
         reconcileCompleteRosterSelection([...projected, ...agentsRef.current].sort((left, right) => right.updatedAt - left.updatedAt));
@@ -1192,6 +1195,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       try {
         const projectedHumans = projectHumanConversations(await client.call("listHumanConversations"));
         if (!isCurrent()) throw new Error("Composer submission is outside its account scope");
+        humanRosterLoadedRef.current = true;
         humanConversationsRef.current = projectedHumans;
         setHumanConversations(projectedHumans);
       } catch (error) {
@@ -2611,6 +2615,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         }
         if (!isCurrent()) return;
         const projectedHumans = projectHumanConversations(humanValue);
+        humanRosterLoadedRef.current = true;
         humanConversationsRef.current = projectedHumans;
         setHumanConversations(projectedHumans);
         reconcileCompleteRosterSelection([...projectedHumans, ...projected]);
@@ -2736,7 +2741,14 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const accountScopeGeneration = accountScopeGenerationRef.current;
     const transportScopeGeneration = transportScopeGenerationRef.current;
     if (accountRef.current?.kind !== "logged-in") return;
-    const isHumanTranscript = humanConversationsRef.current.some((conversation) => conversation.id === agentId);
+    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
+    const isHumanTranscript = humanConversation != null;
+    const isKnownAgent = agentsRef.current.some((agent) => agent.id === agentId);
+    if (!isHumanTranscript && !isKnownAgent && !humanRosterLoadedRef.current) {
+      // A persisted Human selection may restore before its roster arrives. Defer owner selection
+      // rather than misrouting the unknown id through openAgentTail; refreshRoster retries it.
+      return;
+    }
     if (initialTranscriptRequestRef.current?.agentId === agentId
       && initialTranscriptRequestRef.current.accountGeneration === accountScopeGeneration
       && initialTranscriptRequestRef.current.requestGeneration === openAgentRequestGenerationRef.current
@@ -2783,7 +2795,6 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       if (client == null) selectionStore.settle(agentId);
       return;
     }
-    const humanConversation = humanConversationsRef.current.find((conversation) => conversation.id === agentId);
     const agentName = humanConversation?.name ?? agentsRef.current.find((agent) => agent.id === agentId)?.name ?? UI_TEXT.title;
     const pendingRead: TranscriptReadUpdateBuffer = {
       accountSlot: transcriptAccountSlot,
@@ -3227,7 +3238,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   useEffect(() => {
     if (activeAgentId && entriesByAgent[activeAgentId] == null) void openAgent(activeAgentId);
-  }, [activeAgentId, entriesByAgent, openAgent]);
+  }, [activeAgentId, agents, entriesByAgent, humanConversations, openAgent]);
 
   useEffect(() => {
     setAgentSettingsOpen(false);
@@ -3369,6 +3380,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         selectionStore.reset();
         acknowledgementController.reset();
         completeRosterAgentIdsRef.current = [];
+        humanRosterLoadedRef.current = false;
         humanConversationsRef.current = [];
         setHumanConversations([]);
         setAgents([]); setHasLoadedAgents(false); setActiveAgentId(""); setEntriesByAgent({});
@@ -3414,6 +3426,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         setChannelsInfoPaneOpen(false);
         setAsyncTasksAgentId(null);
         asyncTasksReturnFocusRef.current = null;
+        humanRosterLoadedRef.current = false;
         humanConversationsRef.current = [];
         setHumanConversations([]);
       }
