@@ -1,0 +1,129 @@
+{
+  "contract": "OCRM-CANONICAL-ROOT-ADMISSION-v1",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 2,
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "subject": "4fdf18a4906f5ea924e125aed6082de634d410e1",
+  "preserved_integration_base": "7dd8664f5f5a48864a71accac9d587c419fde5d7",
+  "run_id": 41564022484,
+  "run_attempt": 1,
+  "job_id": 125681064794,
+  "finding": {
+    "id": "CRA-ORACLE-01",
+    "classification": "TEST_FLAW",
+    "decision": "FIX",
+    "recorded_before_fix": true,
+    "failure": "The six-target command passes 91 tests; the success-name parser recognizes 88 because three standard expected-panic success lines contain the literal suffix - should panic.",
+    "cause": "The parser requires the name to be followed immediately by the ellipsis. The newly required total-summary/name-cardinality equality correctly rejects this incomplete capture.",
+    "fix": "Recognize only the exact optional Rust - should panic success decoration. Preserve all names, required-positive uniqueness, six summaries, zero failed/ignored, command/capture success and total cardinality. Qualify parser and exact result oracle with standard successes, wrong/missing panic failure, duplicate, malformed suffix and zero/missing-summary controls in Actions.",
+    "not_authorized": "No product changes, removed assertions, skipped tests, rewritten old receipt, global flag promotion or unchanged rerun."
+  },
+  "evidence": {
+    "artifact_id": 13197949486,
+    "zip_sha256": "e4bd105c6fbd8a64de4b9579cf69d7250d941aa6d47da52efc0779f41f3708d0",
+    "log": "channel-pending-recovery/canonical-root-admission-contracts.log",
+    "log_bytes": 37036,
+    "log_sha256": "a9f7881a0c0de45b22a1236edeb408692a5c0cd0e5c8eff6fc77c87970243e96",
+    "command_exit": 0,
+    "capture_exit": 0,
+    "summaries_passed_failed_ignored": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        29,
+        0,
+        0
+      ],
+      [
+        15,
+        0,
+        0
+      ],
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        19,
+        0,
+        0
+      ],
+      [
+        4,
+        0,
+        0
+      ]
+    ],
+    "required_positive_names_unique": 12,
+    "recorded_success_names": 88,
+    "omitted_success_names": [
+      "runner_construction_oracle_rejects_delegation_present_only_in_tests",
+      "runner_construction_oracle_rejects_production_runner_constructor",
+      "runner_construction_oracle_rejects_production_turn_owner_constructor"
+    ],
+    "source_blob": "e5bb721269b93bf259c2dcff3e507ae2ebf3f037",
+    "retained_positives": [
+      "CRA8 command/capture0/0, eight required successes",
+      "GTH9 command/capture0/0, nine required successes",
+      "six integration targets all91 actual tests0failed0ignored"
+    ],
+    "prior_gate": "failed; retained without relabeling"
+  },
+  "review": {
+    "status": "converged NO_FINDINGS; both full reports read by root",
+    "effort": "xhigh",
+    "reason": "CI evidence parsing controls exact shared gate; preserve causal negative coverage",
+    "reports": [
+      {
+        "worker": "cra_oracle_general_r1",
+        "lens": "GENERAL correctness/security",
+        "model": "configured",
+        "effort": "xhigh",
+        "adapter_setting": "spawn reasoning_effort=xhigh accepted",
+        "verdict": "NO_FINDINGS",
+        "full_report_read": true,
+        "findings": []
+      },
+      {
+        "worker": "cra_oracle_structure_r1",
+        "lens": "STRUCTURE/REUSE/PERFORMANCE",
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "status": "launch failed: Selected model is at capacity",
+        "verdict": null
+      },
+      {
+        "worker": "cra_oracle_structure_fallback_r1",
+        "lens": "STRUCTURE/REUSE/PERFORMANCE",
+        "model": "configured fallback authorized by root AGENTS",
+        "effort": "xhigh",
+        "adapter_setting": "spawn reasoning_effort=xhigh accepted",
+        "verdict": "NO_FINDINGS",
+        "full_report_read": true,
+        "findings": []
+      }
+    ],
+    "snapshot": "293a2ee562985c4ec1ba895bd25fc45c350eb94d",
+    "tree": "87a1445d8e17a2c1d49f61d011959a5776c8bc35",
+    "diff_sha256": "e63958b554fd019cfe9d4b028c226c84219b6a26eb30820d19345a6ca17460d6",
+    "declared_paths": [
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md"
+    ]
+  },
+  "verification": {
+    "status": "pending new exact-H Actions; no local or htch execution",
+    "global_flags_changed": false
+  },
+  "integration_carry": {
+    "incoming_paths": [
+      "projects/openclaw-rust/evidence/device-pairing-revocation-actions-647e0932-20261103.json"
+    ],
+    "reviewed_product_blobs_unchanged": true,
+    "reason": "Only independent public evidence metadata arrived after the frozen review base; preserve it without changing either reviewed product path."
+  }
+}

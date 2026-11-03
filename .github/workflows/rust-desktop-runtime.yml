@@ -4125,6 +4125,49 @@ jobs:
                   "shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror",
               ]),
           ]
+          def successful_test_names(output):
+              # libtest decorates an expected-panic success without changing its name.
+              return re.findall(r"^test (\S+)(?: - should panic)? \.\.\. ok$", output, re.MULTILINE)
+
+          def successful_test_summaries(output):
+              return [tuple(map(int, count)) for count in re.findall(
+                  r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", output)]
+
+          def canonical_contract_results_accepted(cargo_exit, capture_exit, required, output):
+              names = successful_test_names(output)
+              summaries = successful_test_summaries(output)
+              return (cargo_exit == 0 and capture_exit == 0
+                  and all(names.count(name) == 1 for name in required)
+                  and len(summaries) == 6
+                  and all(count[0] > 0 and count[1:] == (0, 0) for count in summaries)
+                  and sum(count[0] for count in summaries) == len(names))
+
+          # These qualify the capture oracle; they are not product test positives.
+          oracle_names = ["expected_panic"] + [f"ordinary_{index}" for index in range(5)]
+          oracle_summary = "test result: ok. 1 passed; 0 failed; 0 ignored;\n"
+          oracle_text = "".join(f"test {name}{' - should panic' if index == 0 else ''} ... ok\n" + oracle_summary
+              for index, name in enumerate(oracle_names))
+          oracle_controls = []
+          for label, output, cargo_exit, capture_exit, expected in [
+              ("standard-expected-panic-success", oracle_text, 0, 0, True),
+              ("standard-ordinary-success", oracle_text.replace(" - should panic", ""), 0, 0, True),
+              ("expected-panic-did-not-occur", oracle_text.replace(" - should panic ... ok", " - should panic ... FAILED"), 0, 0, False),
+              ("wrong-panic-message", oracle_text.replace(" - should panic ... ok", " - should panic ... FAILED") + "panic did not contain expected string\n", 101, 0, False),
+              ("ordinary-failure", oracle_text.replace("test ordinary_0 ... ok", "test ordinary_0 ... FAILED"), 0, 0, False),
+              ("ignored-case", oracle_text.replace("test expected_panic - should panic ... ok", "test expected_panic - should panic ... ignored"), 0, 0, False),
+              ("ignored-summary", oracle_text.replace(oracle_summary, "test result: ok. 1 passed; 0 failed; 1 ignored;\n", 1), 0, 0, False),
+              ("duplicate-name", oracle_text.replace("ordinary_0", "expected_panic"), 0, 0, False),
+              ("malformed-decoration", oracle_text.replace(" - should panic", " - unexpected decoration"), 0, 0, False),
+              ("trailing-content", oracle_text.replace(" - should panic ... ok", " - should panic ... ok extra"), 0, 0, False),
+              ("missing-summary", oracle_text.replace(oracle_summary, "", 1), 0, 0, False),
+              ("zero-tests", "", 0, 0, False),
+              ("command-refusal", oracle_text, 101, 0, False),
+              ("capture-refusal", oracle_text, 0, 1, False),
+          ]:
+              actual = canonical_contract_results_accepted(cargo_exit, capture_exit, oracle_names, output)
+              oracle_controls.append({"case": label, "expected": expected, "actual": actual})
+              assert actual == expected, f"CRA result oracle control failed: {label}"
+
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
               "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1"],
@@ -4141,6 +4184,7 @@ jobs:
               "job": os.environ["GITHUB_JOB"], "runner_os": os.environ["RUNNER_OS"],
               "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
+              "synthetic_result_oracle_controls": oracle_controls,
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
               "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 adds complete owner26, HTTP8 and retained-stream14 targets for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and upstream remove/token-revoke aliases remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
@@ -4160,9 +4204,9 @@ jobs:
                   capture_exit, execution_error = 1, str(error)
               text = raw.decode("utf-8", errors="replace")
               print(text, flush=True)
-              passed = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
+              passed = successful_test_names(text)
               missing = [name for name in required if passed.count(name) != 1]
-              counts = [tuple(map(int, count)) for count in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
+              counts = successful_test_summaries(text)
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
               if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
@@ -4172,9 +4216,7 @@ jobs:
                       r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
                   accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]
               if label == "canonical-root-admission-contracts":
-                  accepted = (accepted and len(counts) == 6
-                      and all(count[2] == 0 for count in counts)
-                      and sum(count[0] for count in counts) == len(passed))
+                  accepted = accepted and canonical_contract_results_accepted(cargo_exit, capture_exit, required, text)
               if label == "session-owner-namespace":
                   accepted = (accepted and len(counts) == 3
                       and all(count[2] == 0 for count in counts)

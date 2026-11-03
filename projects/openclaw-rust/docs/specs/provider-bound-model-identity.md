@@ -1460,3 +1460,21 @@ formats and cannot treat a rejected invocation as completed or replay its tools.
 Review-runner arbitration and source-review provenance are retained in
 `projects/openclaw-rust/evidence/canonical-root-admission-d56b3d1d-20261103/review-decisions.json`.
 They are separate from the product contract and runtime execution evidence.
+
+
+### CRA result-oracle recovery — 2026-11-03
+
+At H `4fdf18a4906f5ea924e125aed6082de634d410e1`, the six selected shared
+contract targets executed 91 successful tests, including three existing
+`#[should_panic(expected = ...)]` constructor-refusal controls. The strict
+receipt rejected only because its success-line parser omitted the standard
+` - should panic` decoration and therefore counted 88 names. Preserve that
+failed receipt as `TEST_FLAW` and retain every existing product assertion.
+The parser must recognize the exact optional decoration only on a successful
+Rust test line; wrong/missing panic, failed, ignored, malformed and duplicate
+results must not qualify the same strict oracle. Keep command/capture success,
+required-name uniqueness, six target summaries, zero failures/ignored tests
+and equality of summary positives with captured names. Qualify those result
+controls in the existing Actions instrument; they are synthetic oracle
+controls, not additional product positives. No source or global completion
+claim follows until the corrected exact-H receipt executes.
