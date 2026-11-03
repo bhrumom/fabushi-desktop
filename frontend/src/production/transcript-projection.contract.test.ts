@@ -81,6 +81,40 @@ test("NMR-49 dispatching Human text and attachments stay pending until settlemen
   }
 });
 
+test("HRR-05 restart projects only persisted local Human pending errors as retryable failures", () => {
+  const base = {
+    id: "human-message:failed-nonce", kind: "message", role: "user",
+    authorKind: "human", authorId: "self", content: "Retained message",
+    clientNonce: "failed-nonce", replyToId: "human-server-message:11",
+    attachments: [{ path: "/durable/saved.bin", name: "saved.bin", resourceId: "resource-7" }],
+    delivery: "pending", lastDispatchError: "HTTP request failed", timestampMs: 400,
+  };
+  const original = structuredClone(base);
+  const project = (overrides: Record<string, unknown> = {}) => {
+    const projected = projectTranscriptEntry({ ...base, ...overrides }, 0, "Fabushi", "human-a");
+    assert.ok(projected?.kind === "message");
+    return projected;
+  };
+  const failed = project();
+  assert.equal(failed.delivery, "failed");
+  assert.equal(failed.id, base.id);
+  assert.equal(failed.clientNonce, base.clientNonce);
+  assert.equal(failed.replyToId, base.replyToId);
+  assert.equal(failed.text, base.content);
+  assert.deepEqual(failed.attachments?.map((attachment) => attachment.name), ["saved.bin"]);
+  assert.deepEqual(base, original);
+  assert.equal(project({ lastDispatchError: "" }).delivery, "pending");
+  assert.equal(project({ lastDispatchError: null }).delivery, "pending");
+  assert.equal(project({ delivery: "dispatching" }).delivery, "pending");
+  assert.equal(project({ delivery: "sent", remoteMessageId: "remote-7" }).delivery, "sent");
+  assert.equal(project({ delivery: "pending", remoteMessageId: "remote-7" }).delivery, "pending");
+  assert.equal(project({ id: "human-server-message:remote-7" }).delivery, "pending");
+  assert.equal(project({ clientNonce: "other" }).delivery, "pending");
+  assert.equal(project({ authorKind: "agent" }).delivery, "pending");
+  assert.equal(project({ role: "assistant" }).delivery, "pending");
+  assert.equal(project({ kind: "notice" }).kind, "notice");
+});
+
 test("NMR-49 existing Human and Agent delivery projections remain unchanged", () => {
   const deliveryCases: { fields: Record<string, unknown>; expected: TranscriptMessage["delivery"] }[] = [
     { fields: {}, expected: "sent" },

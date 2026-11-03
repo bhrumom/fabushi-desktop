@@ -326,6 +326,17 @@ function transcriptDelivery(entry: Record<string, unknown>): TranscriptMessage["
   const candidate = entry.delivery ?? entry.status;
   // A Host dispatch has not settled its canonical remote identity yet.
   if (candidate === "dispatching") return "pending";
+  // Only an unsent locally authored Human outbox row may project a stored
+  // dispatch failure. A later dispatch or canonical send takes precedence
+  // over any old error, including after reload or restart.
+  if (candidate === "pending"
+    && entry.kind === "message" && entry.role === "user"
+    && entry.authorKind === "human"
+    && typeof entry.clientNonce === "string" && entry.clientNonce.length > 0
+    && entry.id === `human-message:${entry.clientNonce}`
+    && entry.remoteMessageId == null
+    && typeof entry.lastDispatchError === "string" && entry.lastDispatchError.trim().length > 0
+  ) return "failed";
   if (candidate === "pending" || candidate === "queued" || candidate === "failed" || candidate === "sent") return candidate;
   if (entry.pending === true || entry.isPending === true) return "pending";
   if (entry.failed === true || entry.isFailed === true) return "failed";
