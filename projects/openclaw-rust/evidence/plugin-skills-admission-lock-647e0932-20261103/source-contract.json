@@ -123,12 +123,12 @@
     ],
     "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance. R2 adds a complete foreign-process uninstall cycle while the paused owner performs no intermediate read, authoritative corruption/restoration controls, actual workflow publication interleavings and actual cleanup-I/O fault with reentrant owner callbacks. These are source-authored until exact-H Actions returns evidence. Constructor controls now use actual EX and real I/O faults to distinguish an unowned observation from authoritative corruption, plus the actual first image/marker publisher under EX and a genuinely absent root with no constructor writes. Ordinary repaired reads retain unknown until explicit successful sync; no claim to execute every OS scheduling interleaving.",
     "prior_failure": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-    "exact_candidate_execution": "pending R3 complete-scope source review and frozen exact-H Actions",
+    "exact_candidate_execution": "R3 focused source review converged at b8a648abd90b6ae5c4f9feae8a1e159f126fd69b; exact frozen combined-H Actions remains pending.",
     "reuse_note": "The existing skill_publish_contract target is also selected in the Linux plugin-uninstall-service command; its four retained public publish/restore oracles run alongside the actual-owner lease regression. No second capture owner.",
     "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh."
   },
   "acceptance": {
-    "scoped_authority": "AR-LOCK-R2 source contract and root FIX decisions saved before implementation; fresh integrated candidate review required",
+    "scoped_authority": "AR-LOCK-R2/R3 source contract and root FIX decisions saved before implementation; two fresh focused R3 source reviews converge. This is not executable verification or unit/real-ecosystem/shipping acceptance.",
     "full_unit_verified": false,
     "canonical_source_review_changed": false,
     "global_flags_changed": false,
@@ -149,6 +149,13 @@
       "source_contract_blob": "155f4dff0f6fe7c7f9f1f3210296beac7bf81a6a",
       "disposition": "R2 complete source review identifies an unlocked constructor observation promoted to permanent fault. Root confirms the actual source path and records FIX before correction; no executable verification.",
       "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+    },
+    {
+      "contract": "PS-LOCK-RECONCILE-v2",
+      "source_subject": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+      "source_contract_blob": "ce649cd09cefb4c2bec99f8c2d0b94a266645e7a",
+      "disposition": "R3 focused source review converged; complete original scope retained and seven-path proper delta reviewed. Executable evidence pending.",
+      "convergence": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/convergence.json"
     }
   ],
   "private_image_migration": {

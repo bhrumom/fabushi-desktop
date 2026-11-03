@@ -1,0 +1,85 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "review_round": 3,
+  "contract": "PS-LOCK-RECONCILE-v2",
+  "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+  "previous_source_candidate": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "subject": {
+    "commit": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+    "tree": "a81ada24a6aa47714af36250b43f62d44d49d54c"
+  },
+  "scope": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/scope.json",
+  "full_diff_blob": "90da47f3910061885378588cd3aa0d47877eeed1",
+  "proper_delta_blob": "471b50503be2936ed14105749609eb803a45e9df",
+  "original_path_count": 14,
+  "proper_delta_path_count": 7,
+  "result": "APPROVED_FOCUSED_SOURCE_REVIEW",
+  "must_fix": [],
+  "new_non_blocking": [],
+  "resolved_fix": {
+    "id": "PS-R2-CONSTRUCTOR-CONTENDED-OBSERVATION",
+    "decision_path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json",
+    "preimplementation_commit": "e4785646a7cd9322660ae9d5edcd2bc99dd8ad58",
+    "implementation_commit": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+    "disposition": "Both fresh reviews approve the existing owner's unknown-on-contention constructor, explicit fresh-sync recovery, authoritative corruption retention and side-effect-free absence. All prior assertions retained."
+  },
+  "reviews": [
+    {
+      "reviewer": "/root/plugin_admission_r3_general",
+      "lens": "GENERAL/security/lifetime/concurrency/oracle",
+      "outcome": "APPROVED_SOURCE_ONLY",
+      "model_requested": "gpt-6-astra",
+      "effort_requested": "xhigh",
+      "spawn_parameters_applied": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "hidden_runtime_attestation": false,
+      "report_path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/general.md",
+      "report_blob": "3580eb17ea494f4ee7da4bbe2eea38ef2e4e0a4e",
+      "bytes": 11876,
+      "sha256": "5a56a0eb4cd5d2932602bc616b696113f9a5c2b78d55db53086d1917ff5951ea",
+      "readback": "Reviewer exact upload/readback, then root independent blob fetch and digest",
+      "read_depth": "Complete proper fix delta and canonical Spec; deep changed constructor plus affected admission/recovery/handoff and real consumers/oracles. Original fourteen-path scope retained with truthful scoped/context dispositions in the full report; no new full-file claim for large unchanged ledger/Session/integration files."
+    },
+    {
+      "reviewer": "/root/plugin_admission_r3_structure",
+      "lens": "STRUCTURE/REUSE/PERF/correctness/oracle",
+      "outcome": "APPROVED_SOURCE_ONLY",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "xhigh",
+      "spawn_parameters_applied": {
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "hidden_runtime_attestation": false,
+      "report_path": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/structure.md",
+      "report_blob": "981d17440a5385875908aa4689409e4c4c4d44a9",
+      "bytes": 15134,
+      "sha256": "29274b812f4d73193910760c43f9d6344b80b3f3db69d48bc891d44ee7c7d173",
+      "readback": "Reviewer exact upload/readback, then root independent blob fetch and digest",
+      "read_depth": "Complete proper fix delta and canonical Spec; deep changed constructor plus affected admission/recovery/handoff and real consumers/oracles. Original fourteen-path scope retained with truthful scoped/context dispositions in the full report; no new full-file claim for large unchanged ledger/Session/integration files."
+    }
+  ],
+  "bookkeeping": "The complete proper delta has seven file sections. The task-introduction count of eight was inaccurate; manifest identities and actual patch are complete and unchanged.",
+  "shared_capture": "Incoming SC bindings/artifact selection/receipt changes reviewed as shared-gate integration only; neither reviewer claims full SC product acceptance.",
+  "retained_non_blocking": "Unmeasured repeated image-I/O fanout retains the prior DEFER and does not independently reopen a source-fix round or waive eventual performance/soak.",
+  "execution": {
+    "environment": "GitHub Actions only",
+    "state": "pending frozen combined H",
+    "required_compile": "cargo check --locked --manifest-path source/host/Cargo.toml --tests",
+    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "new_required_name_count": 21,
+    "earlier_failed_subject": "550909022eba44eb9326d760f8c33d613b40a7bb",
+    "old_results_are_current_verification": false
+  },
+  "acceptance": {
+    "full_unit_verified": false,
+    "global_flags_changed": false,
+    "real_ecosystem_accepted": false,
+    "shipping_accepted": false
+  }
+}
