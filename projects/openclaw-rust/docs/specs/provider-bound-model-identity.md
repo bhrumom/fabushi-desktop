@@ -1201,3 +1201,38 @@ without finding a release call. Bind the slice to the actual `accept_routed_send
 failure and require both release operations and their order. The earlier claim
 refusal remains a distinct path. This finding is source evidence, not a new
 executed Actions failure.
+
+
+### Frozen Actions dispatch admission — OCRM-FROZEN-DISPATCH-01
+
+Decision **OCRM-FROZEN-DISPATCH-01 — FIX / TEST_FLAW (verification
+orchestration)**, recorded before workflow repair. At H
+`d95efb8a690750ad8dc78ec375ec5ff2a7ad2660`, source run `41551759333`
+passed tracked-tree and structural gates, but Rust dispatch `41551761864`,
+attempt 1, remained `pending` with zero jobs. The older admitted dispatch
+`41541130401` for H `79920666e475920109690520cd913df40b28c0f7` still held
+the same branch-only concurrency group: its renderer and restore jobs had
+finished successfully, its native job had failed, and macOS job
+`125624966769` remained queued. Both immutable workflow versions map
+`workflow_dispatch` to
+`rust-desktop-runtime-refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer`.
+The queued older platform job therefore retains the group while the new
+frozen subject cannot enter any job. This is an evidenced workflow admission
+problem; the cause of macOS runner unavailability is not established.
+
+Keep the existing workflow and evidence owners. For the migration writer
+branch, both push and workflow-dispatch events use the actual immutable
+`github.sha` in the existing concurrency group. Preserve the PR group and
+PR-only cancellation policy, all other branch behavior, job selection,
+permissions, commands, named positives, input hashes and artifact contracts.
+Continue to bind each checkout to `github.sha`; when `expected_subject` is
+provided, retain its full-SHA and equality refusal before checks. The supplied
+expected value is never a replacement for the actual checked-out identity.
+
+Verification requires the repaired published subject to receive actual job
+admission and its own affected compile/contract evidence through this workflow.
+A queued job, successful dispatch request or source-only approval is not a
+runtime pass. Existing historical runs/results remain bound to their subjects;
+no cancellation, replay, weakened gate or promotion of platform acceptance is
+part of this repair. The macOS queue and all unexecuted checks retain their
+actual non-passing state. No local/htch executable validation.

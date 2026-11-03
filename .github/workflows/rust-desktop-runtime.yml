@@ -68,7 +68,7 @@ env:
   EXPECTED_DISPATCH_SHA: ${{ inputs.expected_subject || '' }}
 
 concurrency:
-  group: rust-desktop-runtime-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && format('{0}-{1}', github.ref, github.sha)) || github.ref }}
+  group: rust-desktop-runtime-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && format('{0}-{1}', github.ref, github.sha)) || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
