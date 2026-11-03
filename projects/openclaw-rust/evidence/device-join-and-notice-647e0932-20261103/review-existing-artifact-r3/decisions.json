@@ -1,0 +1,64 @@
+{
+  "schema": "ocrm-independent-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 3,
+  "scope": "DJC existing artifact collector complete two-path base-to-candidate scope",
+  "base": "511bcebf08738c59ec0313a425a591a327d9cd20",
+  "candidate_commit": "80f6816577946efee1b7131a422454175963b438",
+  "candidate_tree": "ae753241c71cf2455066123fc52aa454ce3e49ae",
+  "scope_blob": "cd5d5d1526b4b96880ee9498bde07aabb2bdb290",
+  "complete_diff_blob": "48df8289954ed0673b69f0e9350998728bc8c49d",
+  "reviewers": [
+    {
+      "worker": "/root/djc_collector_r3_general",
+      "lens": "GENERAL",
+      "model": "configured parent model",
+      "requested_effort": "xhigh",
+      "applied_effort": "inherited parent session setting as reported",
+      "fresh_blind": true,
+      "verdict": "REQUEST_CHANGES",
+      "findings": [
+        "DJC-CARRIER-CASE-001"
+      ]
+    },
+    {
+      "worker": "/root/djc_collector_r3_structure",
+      "lens": "STRUCTURE",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "fresh_blind": true,
+      "verdict": "source-only APPROVE",
+      "findings": []
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DJC-CARRIER-CASE-001",
+      "severity": "P2",
+      "category": "correctness/evidence-admission",
+      "decision": "FIX",
+      "path": ".github/workflows/ocrm-p0-authority.yml",
+      "symbol": "validate_carrier_push / persist-verified-inventory.if / matching event+API controls",
+      "failure": "The Python lowercase-marker membership test is case-sensitive while the actual persistence gate uses case-insensitive Actions contains(). An otherwise admissible workflow-only carrier with the lowercase DJC marker plus an uppercase/mixed legacy marker passes collection, skips persistence and falsely records normal_persistence_exempted=false.",
+      "counterexample": "[ocrm-recover-djc-e383-command-evidence] [OCRM-RECOVER-563-COMMAND-EVIDENCE]",
+      "root_verification": "Direct source read of candidate admission/gate/control and official GitHub expression documentation confirms the source-derived counterexample; no executable validation performed.",
+      "primary_semantics": "https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#contains",
+      "rationale": "Preserve the previous FIX decision and normal jobs. Make only legacy membership case-insensitive, retaining exact raw event/API message equality; require lower/upper/mixed controls for every existing legacy marker.",
+      "required_fix": "Use the lowercase message for legacy-marker lookup; expand the control matrix to9 combinations with identical raw fixture messages and required unapproved_collector_carrier refusal.",
+      "supersedes_prior_decision": false
+    }
+  ],
+  "spec_before_code": {
+    "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+    "update": "Declare case-insensitive legacy matching and causal lower/upper/mixed controls before applying code."
+  },
+  "round_conclusion": "not-converged; no collector activation authorized by this review state",
+  "execution": "not-run; original source failure retained",
+  "limits": [
+    "STRUCTURE approval does not override the concrete GENERAL counterexample.",
+    "No prior failed product campaign, assertion or source/persistence gate is deleted or weakened.",
+    "The original failed DJC result remains failed; the collector only transports existing evidence."
+  ],
+  "next_review": "Fresh blind GENERAL and STRUCTURE on the complete frozen scope plus focused fix delta; configured cap10."
+}
