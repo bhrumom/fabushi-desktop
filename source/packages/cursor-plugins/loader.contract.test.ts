@@ -223,7 +223,8 @@ test("failed cache publication removes only its staging directory", async (t) =>
 });
 
 
-test("filesystem EACCES during cache installation is an install failure, not clone authentication", async (t) => {  const cache = await cacheFixture(t);
+test("filesystem EACCES during cache installation is an install failure, not clone authentication", async (t) => {
+  const cache = await cacheFixture(t);
   const plugin = entry();
   const filesystemError = Object.assign(new Error("permission denied while publishing plugin cache"), { code: "EACCES" });
   const result = await loadFromMarketplaceSource({
