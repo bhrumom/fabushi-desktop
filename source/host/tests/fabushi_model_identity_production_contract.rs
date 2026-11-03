@@ -1416,9 +1416,10 @@ fn run_bound_memory_consumers(
     assert!(report.episode_summary_attempted);
     assert!(!report.evidence_recorded);
     assert_eq!(report.removed_memories, 0);
-    assert!(session.db.get_pending_episode_turns().expect("pending episode turns").is_empty());
+    let pending = session.db.get_pending_episode_turns().expect("pending episode turns");
     let memories = session.memory.list_memories(100);
     if case.rotates() {
+        assert!(pending.is_empty());
         assert_eq!(report.added_memories, 1);
         assert!(report.episode_memory_added);
         assert!(memories.iter().any(|memory| memory.content == "User prefers frozen turn memory"));
@@ -1426,6 +1427,11 @@ fn run_bound_memory_consumers(
             "{MEMORY_EPISODE_PREFIX}The bound turn completed its memory episode."
         )));
     } else {
+        assert_eq!(pending, vec![EpisodeTurn {
+            ts: 1_900_000_000_000.0,
+            user: exchange.user.clone(),
+            agent: exchange.agent.clone(),
+        }], "refused summary must retain the original completed exchange");
         assert_eq!(report.added_memories, 0);
         assert!(!report.episode_memory_added);
         assert!(memories.is_empty(), "refused memory prompts must not invent extracted memories");

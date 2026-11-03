@@ -271,6 +271,19 @@ fn run_completed_episode_turn(
     turn: &EpisodeTurn,
     expected_pending: &[EpisodeTurn],
     summary: &str,
+    on_summary: impl FnMut(),
+) -> TurnMemoryReport {
+    run_completed_episode_turn_with_result(
+        session, progress, turn, expected_pending, Ok(summary), on_summary,
+    )
+}
+
+fn run_completed_episode_turn_with_result(
+    session: &ProductionMaterializedSession,
+    progress: &ProductionEpisodeProgress,
+    turn: &EpisodeTurn,
+    expected_pending: &[EpisodeTurn],
+    summary: Result<&str, &str>,
     mut on_summary: impl FnMut(),
 ) -> TurnMemoryReport {
     let mut extraction_calls = 0;
@@ -303,7 +316,7 @@ fn run_completed_episode_turn(
                         .expect("pending agent text in episode input").1;
                 }
                 on_summary();
-                Ok(summary.into())
+                summary.map(str::to_owned).map_err(str::to_owned)
             }
         },
     );
@@ -489,6 +502,276 @@ fn episode_duplicate_append_acknowledges_existing_fact_before_clearing_pending()
             assert!(progress.get_pending_episode_turns().unwrap().is_empty());
             assert_eq!(fs::read(&destination).unwrap(), before);
             assert_eq!(session.memory.list_memories(100), vec![existing]);
+            workers.shutdown();
+        },
+    );
+}
+
+#[test]
+fn episode_summary_failure_preserves_pending_turns_and_recovers() {
+    isolated_episode_case(
+        "episode_summary_failure_preserves_pending_turns_and_recovers",
+        |root| {
+            // These are controlled model results at the real consumer boundary,
+            // not live provider failures or cancellation/scheduler timing proof.
+            for (label, error) in [
+                ("transport", "transport error: connection reset during episode summary"),
+                ("cancelled", "cancelled: episode summary request was cancelled"),
+            ] {
+                let case_root = root.join(label);
+                let (workers, session, progress) = episode_session(&case_root, None);
+                let agent_id = session.record.id.clone();
+                let now = episode_append_time();
+                let history = session.memory.add_memory(
+                    "Preserve the reviewed release history.", now - 86_400_000, MemoryKind::Log,
+                ).unwrap().expect("readable history before summary failure");
+                let destination = episode_log_path(&session.memory, now);
+                let before = fs::read(&destination).unwrap();
+                assert_eq!(fs::read_to_string(&destination).unwrap().as_bytes(), before);
+
+                let first = episode_turn(now - 1_000, "Keep the approved release checklist.", "The approved checklist remains available.");
+                let current = episode_turn(now, "Review the résumé export.\nKeep its original title.", "The résumé export still needs review.\nIts title is preserved.");
+                let interleaved = episode_turn(now + 1_000, "Also retain the regional release freeze.", "The regional freeze remains in force.");
+                assert!(progress.record_episode_turn(&first).unwrap());
+                let mut pending = vec![first, current.clone()];
+                let report = run_completed_episode_turn_with_result(
+                    &session, &progress, &current, &pending, Err(error), || {
+                        assert!(workers.record_agent_episode_turn(&agent_id, &interleaved).unwrap());
+                    },
+                );
+                pending.push(interleaved);
+                assert_episode_report(report, false);
+                assert_eq!(progress.get_pending_episode_turns().unwrap(), pending, "{label}");
+                assert_eq!(fs::read(&destination).unwrap(), before, "{label}");
+                assert_eq!(session.memory.list_memories(100), vec![history.clone()], "{label}");
+
+                workers.shutdown();
+                drop(progress);
+                drop(session);
+                drop(workers);
+                let (workers, session, progress) = episode_session(&case_root, Some(&agent_id));
+                assert_eq!(progress.get_pending_episode_turns().unwrap(), pending, "{label} after reopen");
+                assert_eq!(fs::read(&destination).unwrap(), before, "{label} after reopen");
+                assert_eq!(session.memory.list_memories(100), vec![history.clone()], "{label} after reopen");
+
+                let next = episode_turn(now + 2_000, "Continue the release review.", "The checklist, résumé export and regional freeze remain in scope.");
+                pending.push(next.clone());
+                let summary = "The user and Fabushi reviewed the release checklist, résumé export and regional freeze.";
+                let report = run_completed_episode_turn(&session, &progress, &next, &pending, summary, || {});
+                assert_episode_report(report, true);
+                assert_repaired_episode(&session, &progress, &before, now + 2_000, summary, &history.id);
+
+                workers.shutdown();
+                drop(progress);
+                drop(session);
+                drop(workers);
+                let (workers, session, progress) = episode_session(&case_root, Some(&agent_id));
+                assert_repaired_episode(&session, &progress, &before, now + 2_000, summary, &history.id);
+                workers.shutdown();
+            }
+        },
+    );
+}
+
+#[test]
+fn episode_successful_no_summary_reply_keeps_existing_settlement() {
+    isolated_episode_case(
+        "episode_successful_no_summary_reply_keeps_existing_settlement",
+        |root| {
+            for (label, summary) in [
+                ("empty", ""),
+                ("whitespace", " \t\r\n "),
+                ("upper_none", "NONE"),
+                ("lower_none", "none"),
+                ("mixed_none", " \tNoNe\r\n "),
+            ] {
+                let case_root = root.join(label);
+                let (workers, session, progress) = episode_session(&case_root, None);
+                let agent_id = session.record.id.clone();
+                let now = episode_append_time();
+                let history = session.memory.add_memory(
+                    "Retain the existing release history without another episode.", now - 86_400_000, MemoryKind::Log,
+                ).unwrap().expect("readable history before no-summary settlement");
+                let destination = episode_log_path(&session.memory, now);
+                let before = fs::read(&destination).unwrap();
+                let first = episode_turn(now - 1_000, "Keep the earlier release note.", "The earlier release note is unchanged.");
+                let current = episode_turn(now, "No new release decision is needed.", "The existing release decision still applies.");
+                assert!(progress.record_episode_turn(&first).unwrap());
+                let pending = vec![first, current.clone()];
+                let report = run_completed_episode_turn(&session, &progress, &current, &pending, summary, || {});
+                assert_episode_report(report, false);
+                assert!(progress.get_pending_episode_turns().unwrap().is_empty(), "{label}");
+                assert_eq!(fs::read(&destination).unwrap(), before, "{label}");
+                assert_eq!(session.memory.list_memories(100), vec![history.clone()], "{label}");
+
+                workers.shutdown();
+                drop(progress);
+                drop(session);
+                drop(workers);
+                let (workers, session, progress) = episode_session(&case_root, Some(&agent_id));
+                assert!(progress.get_pending_episode_turns().unwrap().is_empty(), "{label} after reopen");
+                assert_eq!(fs::read(&destination).unwrap(), before, "{label} after reopen");
+                assert_eq!(session.memory.list_memories(100), vec![history], "{label} after reopen");
+                workers.shutdown();
+            }
+        },
+    );
+}
+
+#[test]
+fn episode_record_refusal_preserves_archived_pending_until_restore() {
+    isolated_episode_case(
+        "episode_record_refusal_preserves_archived_pending_until_restore",
+        |root| {
+            // This composes the real public owners; it is not a Host/UI archive race.
+            let (workers, session, progress) = episode_session(root, None);
+            let agent_id = session.record.id.clone();
+            let now = episode_append_time();
+            let history = session.memory.add_memory(
+                "Preserve the reviewed release history while the session is archived.",
+                now - 86_400_000, MemoryKind::Log,
+            ).unwrap().expect("readable history before archive");
+            let destination = episode_log_path(&session.memory, now);
+            let before = fs::read(&destination).unwrap();
+            let pending = vec![
+                episode_turn(
+                    now - 2_000,
+                    "Keep the résumé export title.\nRetain the regional freeze.",
+                    "The résumé title is fixed.\nThe regional freeze remains active.",
+                ),
+                episode_turn(
+                    now - 1_000,
+                    "Preserve the signed release checklist.",
+                    "The signed release checklist is retained.",
+                ),
+            ];
+            for turn in &pending {
+                assert!(progress.record_episode_turn(turn).unwrap());
+            }
+            assert_eq!(progress.get_pending_episode_turns().unwrap(), pending);
+            let admission = workers.read_session_work_admission(&agent_id).unwrap().unwrap();
+            let archived = workers.transition_session_work_archive(
+                &agent_id, &admission.session_key, &admission.session_id,
+                Some(&admission.lifecycle_revision), true, Some("fixture-user"),
+                Some("archive before episode admission"), now as f64,
+            ).expect("archive through the production Session transaction");
+            assert_eq!(archived.archived_at_ms, Some(now as f64));
+            assert_ne!(archived.lifecycle_revision, admission.lifecycle_revision);
+            assert_eq!(workers.read_session_work_admission(&agent_id).unwrap(), Some(archived.clone()));
+
+            let rejected = episode_turn(
+                now + 1_000,
+                "MER rejected request: publish the unapproved pricing change.",
+                "MER rejected reply: the unapproved pricing change was published.",
+            );
+            assert_eq!(progress.record_episode_turn(&rejected), Ok(false));
+            assert_eq!(progress.get_pending_episode_turns().unwrap(), pending);
+            assert_eq!(fs::read(&destination).unwrap(), before);
+            assert_eq!(session.memory.list_memories(100), vec![history.clone()]);
+            assert_eq!(workers.read_session_work_admission(&agent_id).unwrap(), Some(archived.clone()));
+
+            let mut extraction_calls = 0;
+            let mut summary_calls = 0;
+            let report = run_turn_memory_with(
+                &session.memory,
+                Some(&progress),
+                rejected.ts as i64,
+                TurnExchange { user: rejected.user.clone(), agent: rejected.agent.clone() },
+                TurnMemoryMode::Extract,
+                |system, _user| {
+                    if system.contains(MEMORY_EXTRACTION_PROMPT_MARKER) {
+                        extraction_calls += 1;
+                        Ok("NONE".into())
+                    } else {
+                        assert!(system.contains(MEMORY_EPISODE_PROMPT_MARKER));
+                        summary_calls += 1;
+                        // Let a false-admission regression reach the actual file append.
+                        Ok("An archived episode incorrectly reached the memory file after record refusal.".into())
+                    }
+                },
+            );
+            assert_eq!(fs::read(&destination).unwrap(), before, "a refused record must not append an episode");
+            assert_eq!(session.memory.list_memories(100), vec![history.clone()]);
+            assert_eq!(progress.get_pending_episode_turns().unwrap(), pending);
+            assert_eq!(workers.read_session_work_admission(&agent_id).unwrap(), Some(archived.clone()));
+            assert_eq!(extraction_calls, 1);
+            assert_eq!(summary_calls, 0);
+            assert_eq!(report, TurnMemoryReport {
+                extraction_attempted: true,
+                ..TurnMemoryReport::default()
+            });
+
+            workers.shutdown();
+            drop(progress);
+            drop(session);
+            drop(workers);
+            let (workers, session, progress) = episode_session(root, Some(&agent_id));
+            assert_eq!(progress.get_pending_episode_turns().unwrap(), pending);
+            assert_eq!(fs::read(&destination).unwrap(), before);
+            assert_eq!(session.memory.list_memories(100), vec![history.clone()]);
+            let current_archive = workers.read_session_work_admission(&agent_id).unwrap().unwrap();
+            assert_eq!(current_archive, archived);
+
+            let restored = workers.transition_session_work_archive(
+                &agent_id, &current_archive.session_key, &current_archive.session_id,
+                Some(&current_archive.lifecycle_revision), false, None, None,
+                (now + 2_000) as f64,
+            ).expect("restore using the current production Session revision");
+            assert!(restored.archived_at_ms.is_none());
+            assert_ne!(restored.lifecycle_revision, current_archive.lifecycle_revision);
+            assert_eq!(workers.read_session_work_admission(&agent_id).unwrap(), Some(restored.clone()));
+            let next = episode_turn(
+                now + 3_000,
+                "Resume the release review after restoring the session.",
+                "The résumé export, regional freeze and signed checklist remain in scope.",
+            );
+            let mut accepted_pending = pending;
+            accepted_pending.push(next.clone());
+            let summary = "The user and Fabushi resumed the release review with the résumé export, regional freeze and signed checklist.";
+            let mut extraction_calls = 0;
+            let mut summary_calls = 0;
+            let report = run_turn_memory_with(
+                &session.memory,
+                Some(&progress),
+                next.ts as i64,
+                TurnExchange { user: next.user.clone(), agent: next.agent.clone() },
+                TurnMemoryMode::Extract,
+                |system, user| {
+                    if system.contains(MEMORY_EXTRACTION_PROMPT_MARKER) {
+                        extraction_calls += 1;
+                        Ok("NONE".into())
+                    } else {
+                        assert!(system.contains(MEMORY_EPISODE_PROMPT_MARKER));
+                        summary_calls += 1;
+                        assert_eq!(progress.get_pending_episode_turns().unwrap(), accepted_pending);
+                        assert!(!user.contains(rejected.user.as_str()), "refused user input must not enter a later summary");
+                        assert!(!user.contains(rejected.agent.as_str()), "refused agent input must not enter a later summary");
+                        let mut remaining = user;
+                        for turn in &accepted_pending {
+                            remaining = remaining.split_once(turn.user.as_str())
+                                .expect("complete admitted user text in turn order").1;
+                            remaining = remaining.split_once(turn.agent.as_str())
+                                .expect("complete admitted agent text in turn order").1;
+                        }
+                        Ok(summary.into())
+                    }
+                },
+            );
+            assert_eq!(extraction_calls, 1);
+            assert_eq!(summary_calls, 1);
+            assert_episode_report(report, true);
+            assert_repaired_episode(&session, &progress, &before, now + 3_000, summary, &history.id);
+            let settled_memories = session.memory.list_memories(100);
+            assert_eq!(workers.read_session_work_admission(&agent_id).unwrap(), Some(restored.clone()));
+
+            workers.shutdown();
+            drop(progress);
+            drop(session);
+            drop(workers);
+            let (workers, session, progress) = episode_session(root, Some(&agent_id));
+            assert_repaired_episode(&session, &progress, &before, now + 3_000, summary, &history.id);
+            assert_eq!(session.memory.list_memories(100), settled_memories);
+            assert_eq!(workers.read_session_work_admission(&agent_id).unwrap(), Some(restored));
             workers.shutdown();
         },
     );

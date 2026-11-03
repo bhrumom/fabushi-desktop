@@ -326,6 +326,7 @@ jobs:
               "source/host/tests/memory_service_contract.rs",
               "source/host/src/runner/turn_memory.rs",
               "source/host/tests/turn_memory_contract.rs",
+              "source/host/tests/fabushi_model_identity_production_contract.rs",
               "source/host/tests/memory_synthesis_store_contract.rs",
               "source/host/tests/memory_synthesis_service_contract.rs",
               "source/host/src/storage/agent_paths.rs",
@@ -1725,6 +1726,9 @@ jobs:
               "episode_append_read_failure_preserves_pending_turns_across_restart",
               "episode_append_write_failure_preserves_interleaved_turns_and_recovers",
               "episode_duplicate_append_acknowledges_existing_fact_before_clearing_pending",
+              "episode_summary_failure_preserves_pending_turns_and_recovers",
+              "episode_successful_no_summary_reply_keeps_existing_settlement",
+              "episode_record_refusal_preserves_archived_pending_until_restore",
               "completed_memorable_turns_extract_memory_and_roll_episode_summary",
               "evidence_mode_clears_pending_episode_state_without_running_extraction",
               "frozen_turn_memory_exchange_keeps_agent_messages_before_final_assistant_text",
@@ -1759,12 +1763,32 @@ jobs:
           ]
           synthesis_passed = re.findall(r"^test (\S+) \.\.\. ok$", synthesis_raw.decode("utf-8", errors="replace"), re.MULTILINE)
           synthesis_missing = [name for name in synthesis_required if synthesis_passed.count(name) != 1]
+          binding_label = "settings-inference"
+          binding_log = root / (binding_label + ".log")
+          binding_raw = binding_log.read_bytes() if binding_log.is_file() else b""
+          binding_command_path = root / (binding_label + ".command.txt")
+          binding_command = binding_command_path.read_text().strip() if binding_command_path.is_file() else None
+          binding_evidence = read_command_evidence(root, binding_label)
+          binding_required = [
+              "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
+              "same_runner_nudges_and_turn_memory_accept_same_context_token_rotation",
+          ]
+          binding_passed = re.findall(r"^test (\S+) \.\.\. ok$", binding_raw.decode("utf-8", errors="replace"), re.MULTILINE)
+          binding_missing = [name for name in binding_required if binding_passed.count(name) != 1]
           append_accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
               and tree == subject["subject_tree"] and bool(command) and integration_evidence["accepted"]
               and not append_missing and synthesis_command
-              and synthesis_evidence["accepted"] and not synthesis_missing)
-          append_receipt = dict(receipt, contract="MWR-v1/MEA-v1", required_tests=append_required,
+              and synthesis_evidence["accepted"] and not synthesis_missing
+              and binding_command and binding_evidence["accepted"] and not binding_missing)
+          append_receipt = dict(receipt, contract="MWR-v1/MEA-v1/MEC-v1/MER-v1", required_tests=append_required,
               missing_or_nonunique_positive_results=append_missing,
+              bound_memory_command=binding_command,
+              bound_memory_command_exit_records=binding_evidence["command_exit_records"],
+              bound_memory_capture_exit_records=binding_evidence["capture_exit_records"],
+              bound_memory_required_tests=binding_required,
+              bound_memory_observed_passed_names=binding_passed,
+              bound_memory_missing_or_nonunique=binding_missing,
+              bound_memory_log_sha256=hashlib.sha256(binding_raw).hexdigest(),
               production_synthesis_command=synthesis_command,
               production_synthesis_exit_records=synthesis_evidence["command_exit_records"],
               production_synthesis_capture_records=synthesis_evidence["capture_exit_records"],
@@ -1773,7 +1797,7 @@ jobs:
               production_synthesis_missing_or_nonunique=synthesis_missing,
               production_synthesis_log_sha256=hashlib.sha256(synthesis_raw).hexdigest(),
               result="passed" if append_accepted else "failed",
-              scope="MEA-v1 exercises the real completed-turn consumer and ProductionEpisodeProgress: Store read/write refusal retains pending input through reopen and interleaved admission, explicit repair permits ordinary-turn settlement, and duplicate acknowledgement preserves bytes. Actual Store append admission, byte/metadata preservation, composed Runner tool, and production synthesis target/Session gate/service failure settlement, temporal-marker preservation, retained Invalid/Stale controls and repair. No immediate replay; controlled proposals are not real provider compatibility. Not arbitrary write transactions, filesystem races, symlink confinement, full permissions, UI or packaged acceptance.")
+              scope="MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. MEA-v1 exercises the real completed-turn consumer and ProductionEpisodeProgress: Store read/write refusal retains pending input through reopen and interleaved admission, explicit repair permits ordinary-turn settlement, and duplicate acknowledgement preserves bytes. Actual Store append admission, byte/metadata preservation, composed Runner tool, and production synthesis target/Session gate/service failure settlement, temporal-marker preservation, retained Invalid/Stale controls and repair. No immediate replay; controlled proposals are not real provider compatibility. Not arbitrary write transactions, filesystem races, symlink confinement, full permissions, UI or packaged acceptance.")
           (root / "memory-append-read.receipt.json").write_text(json.dumps(append_receipt, indent=2) + "\n")
           print(json.dumps(append_receipt, indent=2))
           pairing_label = "device-pairing-contract"
@@ -2981,6 +3005,7 @@ jobs:
               "source/host/tests/memory_service_contract.rs",
               "source/host/src/runner/turn_memory.rs",
               "source/host/tests/turn_memory_contract.rs",
+              "source/host/tests/fabushi_model_identity_production_contract.rs",
               "source/host/tests/memory_synthesis_store_contract.rs",
               "source/host/tests/memory_synthesis_service_contract.rs",
               "projects/openclaw-rust/docs/specs/session-communication-production-boundary.md",
@@ -3088,6 +3113,9 @@ jobs:
               "episode_append_read_failure_preserves_pending_turns_across_restart",
               "episode_append_write_failure_preserves_interleaved_turns_and_recovers",
               "episode_duplicate_append_acknowledges_existing_fact_before_clearing_pending",
+              "episode_summary_failure_preserves_pending_turns_and_recovers",
+              "episode_successful_no_summary_reply_keeps_existing_settlement",
+              "episode_record_refusal_preserves_archived_pending_until_restore",
               "completed_memorable_turns_extract_memory_and_roll_episode_summary",
               "evidence_mode_clears_pending_episode_state_without_running_extraction",
               "frozen_turn_memory_exchange_keeps_agent_messages_before_final_assistant_text",
@@ -3196,6 +3224,10 @@ jobs:
           ]
           cases = [
               ("integration", integration + ["--", "--test-threads=1"], required_integration),
+              ("memory-account-binding", base + ["--test", "fabushi_model_identity_production_contract", "same_runner_nudges_and_turn_memory_", "--", "--test-threads=1"], [
+                  "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
+                  "same_runner_nudges_and_turn_memory_accept_same_context_token_rotation",
+              ]),
               ("checked-store", base + ["--lib", store_filter, "--", "--test-threads=1"], required_store),
               ("paired-device-sse", base + ["--lib", sse_filter, "--", "--exact", "--test-threads=1"], [sse_filter]),
               ("device-pairing-join", base + ["--test", "device_pairing_join_admission_contract", "--", "--test-threads=1"], [
@@ -3333,7 +3365,7 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1"],
               "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
               "checkpoint_publication_scope": "Actual provider checkpoint writer: private owned staging, exact payload preservation, no-clobber final publication, directory-entry barriers including retry after a failed creation barrier, and retained visible payload after a controlled final barrier failure. Actual shell adapter retains a completed file effect as uncheckpointed after real store refusal and explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance.",
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
@@ -3345,7 +3377,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -3366,7 +3398,7 @@ jobs:
               missing = [name for name in required if passed.count(name) != 1]
               counts = [tuple(map(int, count)) for count in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
-              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway"):
+              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "memory-account-binding"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
               receipt["executions"].append({
                   "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,

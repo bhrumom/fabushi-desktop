@@ -155,6 +155,111 @@ under OCRM-R13/R24 and AC13/AC17/AC18/AC24, not new upstream reading or full Mem
 equivalence credit. Real provider, concurrent-success, cancellation/account-policy,
 device/platform/package and final acceptance requirements remain independently open.
 
+### Failed episode-summary execution custody — MEC-v1
+
+Discovery and implementation base: `f5e58a5dd052dd9c74454ae9a77a5b1ed531b981`;
+the fixed upstream U is unchanged. The shipping completed-turn Host callback
+passes `InferenceService::run_turn_memory_prompt` errors into
+`run_turn_memory_with`. That Runner currently converts an episode-summary
+execution error to `None` with `.ok()` and then clears all pending turns through
+`ProductionEpisodeProgress`. A failed request is therefore treated as a
+successful decision that no summary is needed, losing the retained input even
+though neither a summary nor a store acknowledgement exists.
+
+Decision **MEC-01 — FIX / IMPL_BUG**: preserve Session-owned pending input when
+the episode-summary model execution returns `Err`. This supersedes MEA-04 only
+for unsuccessful model execution; successful empty/whitespace/`NONE` responses
+retain their existing settlement policy. Existing Runner, Inference, Session
+and FileMemoryStore owners remain responsible. No transport retry, new queue,
+scheduler, persistence format, public RPC or cancellation authority is added.
+
+| ID | Required behavior and oracle |
+| --- | --- |
+| MEC-01 | An episode-summary `execute` error returns before summary append or pending clear. Preserve all current pending turns and existing memory bytes, and leave `episode_memory_added` false. The report still reflects extraction, episode recording and the attempted summary. This applies equally to a transport error and a cancellation surfaced through the existing result contract. |
+| MEC-02 | With actual ProductionSessionWorkers, ProductionEpisodeProgress and FileMemoryStore, retain exact pending values, including a turn recorded through the Session owner during the failed callback. Shutdown and reopen those owners and observe the same pending input and unchanged memory bytes. The callback interleave is a controlled consumer contract; it does not establish a live provider/scheduler concurrency acceptance. |
+| MEC-03 | A subsequent ordinary completed turn can summarize the retained input and append one episode through the existing Store before clearing pending turns. Do not schedule an automatic retry or repair another owner's state. Retain the existing store-error, duplicate-acknowledgement, normal-summary and evidence-mode controls. |
+| MEC-04 | Successful empty, whitespace-only and case-insensitive `NONE` model replies keep their existing no-summary settlement: no episode is added, memory bytes stay unchanged and pending input is cleared durably. Preserve normalization, provider/account selection, extraction behavior and all existing report fields. |
+
+Implement the result distinction in `runner/turn_memory.rs`, at the existing
+consumer immediately after the episode model call. Use the existing isolated
+episode fixture and real Session/store helpers in `turn_memory_contract.rs`;
+reuse their exact child ownership, fixed interval and complete value/byte
+assertions. Add named error/recovery and successful-no-summary controls to the
+existing Linux and macOS commands/receipts without removing inherited controls.
+The model result is controlled in these contracts; real provider credentials,
+live cancellation timing and the scheduler's escape behavior remain separate
+acceptance subjects. No claim of a successful-append concurrency fence is made.
+The existing handling of `record_episode_turn` returning `Ok(false)` requires
+the separate MER-v1 admission contract below; it is not changed by MEC-v1.
+
+Decision **MEC-ORACLE-01 — FIX / TEST_FLAW**: independent source review found
+that the existing actual account-binding consumer control still requires empty
+pending state after a typed Authentication refusal of both memory prompts.
+Update only that obsolete settlement expectation: a refused summary retains the
+exact original EpisodeTurn, while successful same-context token rotation still
+clears pending. Preserve all existing typed-authentication, zero-HTTP, zero-memory,
+secret-redaction and evidence-mode assertions in
+`fabushi_model_identity_production_contract.rs`. This is a source-proven oracle
+conflict, not an observed CI failure. Require both existing
+`same_runner_nudges_and_turn_memory_*` cases: use the existing macOS
+`settings-inference` log and its command/capture records; select the two-case
+filter on the existing Linux Host cache with exact names and a 2/0/0 summary.
+These are real composed consumers with fixture-owned credentials and HTTP, not
+real account/provider compatibility acceptance.
+
+Freeze the complete spec, Runner, tests and workflow scope for independent source
+review, then verify the exact published H in GitHub Actions. This extends the
+same OCRM-R13/R24 and AC13/AC17/AC18/AC24 preservation evidence without changing
+inventory review classifications or global completion flags. Rollback needs no
+data conversion; pending turns remain in the existing Session DB. Reverting the
+consumer fix would restore the known loss on a later failed summary, so retain
+the failed-result controls as regression oracles.
+
+### Episode record admission — MER-v1
+
+Discovery source: `f986b457e77d106638f02e8ff23f6b15d3eb792c`, with the
+MEC candidate frozen at tree `f022b8d09fbc93e496d365b479a72de1802867d1`.
+Fixed U and the existing owners remain unchanged. The public completed-turn
+consumer currently checks only whether `record_episode_turn` returned an error.
+An actual archived Session returns `Ok(false)` without recording this exchange,
+while its older pending episodes remain readable. The consumer can then summarize
+that older batch and append through FileMemoryStore, whose append operation has
+no Session-admission callback. The later clear is refused by the archive fence;
+it cannot undo an episode that was already appended.
+
+Decision **MER-01 — FIX / IMPL_BUG**: only `Ok(true)` from the existing record
+operation permits this invocation to continue the episode phase. `Ok(false)`
+is a refusal, not a duplicate acknowledgement. Preserve the existing early
+return for `Err`; do not invent a retry or replace the Session predicate.
+
+| ID | Required behavior and oracle |
+| --- | --- |
+| MER-01 | After extraction, `record_episode_turn` must return `Ok(true)` before the consumer sets `episode_recorded`, reads pending, requests a summary, appends an episode or clears pending. `Ok(false)` and `Err` return the accumulated extraction report with all three episode flags false. |
+| MER-02 | With the actual Session, production progress adapter and file store, create two pending turns, archive through `ProductionSessionWorkers::transition_session_work_archive`, and observe a real refused record. Invoking the public consumer while archived must make zero summary calls and preserve the complete old pending values, memory bytes, facts and admission record, including after owner shutdown and reopen. |
+| MER-03 | Restore through the same Session owner with the current lifecycle revision. A subsequent accepted ordinary completed turn must summarize the retained batch plus the new exchange, append exactly one episode through the existing Store and durably clear pending. Preserve existing normal, duplicate, store-error, failed-summary, successful-no-summary, account-binding and evidence-mode controls. |
+| MER-04 | Keep extraction in its existing position before record admission and retain its report fields and effects. This narrow episode consumer correction does not provide admission for earlier extraction, authorize later lifecycle changes, or establish a successful concurrent-settlement fence or a cross-store transaction. |
+
+Extend `turn_memory_contract.rs` using its existing exact owned child, interval
+and real-owner reopen helpers. Return controlled `NONE` for extraction and count
+that call. If the summary callback is incorrectly reached, return a unique
+successful summary so the negative can expose both the unwanted request and a
+real file append. Do not replace the Session result with a mock, set archive by
+raw SQL, or present direct consumer invocation as a Host/UI archive race.
+The shipping `sessions.patch` route refuses an active foreground stream, and
+ordinary transcript admission refuses an already archived Session; a complete
+Host/UI route producing this rejected-record scenario has not been established.
+The existing public owner-consumer contract nevertheless must honor refusal.
+
+Use the existing full Turn Memory target in the Linux and macOS recovery lanes,
+adding the new named archive/refusal/restore control without removing any of the
+eight preceding names or the account-binding requirements. Freeze the complete
+spec, consumer, test and workflow scope for independent source review and bind
+all execution evidence to its published exact H in GitHub Actions. No local or
+htch-runtime validation, new RPC, schema, owner, timer, queue or automatic retry.
+Rollback requires no data conversion but restores the known false-admission
+behavior. Real provider, lifecycle timing, UI/platform/package and full OCRM
+acceptance remain separate; no inventory read state or global flag is promoted.
+
 No persisted format or migration changes. The existing `StateWriteResult`
 failure / tool error and synthesis apply failure carry refusal; the user must
 repair or restore the existing file before retrying. Do not log memory content

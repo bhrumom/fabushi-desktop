@@ -152,18 +152,15 @@ where
     let Some(progress) = episode_progress else {
         return report;
     };
-    if progress
-        .record_episode_turn(
-            &EpisodeTurn {
-                ts: turn_timestamp as f64,
-                user: exchange.user.clone(),
-                agent: exchange.agent.clone(),
-            },
-        )
-        .is_err()
-    {
+    let Ok(true) = progress.record_episode_turn(&EpisodeTurn {
+        ts: turn_timestamp as f64,
+        user: exchange.user.clone(),
+        agent: exchange.agent.clone(),
+    }) else {
+        // Readable older pending turns do not authorize this episode phase
+        // when the Session owner refused to record the current exchange.
         return report;
-    }
+    };
     report.episode_recorded = true;
 
     let Ok(pending) = progress.get_pending_episode_turns() else {
@@ -188,18 +185,19 @@ where
         .map(|turn| timestamp_ms_i64(turn.ts, turn_timestamp))
         .unwrap_or(turn_timestamp);
 
-    let summary = execute(
+    let Ok(summary) = execute(
         &build_episode_system_prompt(),
         &build_episode_user_prompt(&turns),
-    )
-    .ok()
-    .map(|value| value.split_whitespace().collect::<Vec<_>>().join(" "))
-    .filter(|value| {
-        !value.is_empty()
-            && !value.eq_ignore_ascii_case(MEMORY_EXTRACTION_NONE_SENTINEL)
-    });
+    ) else {
+        // A failed or cancelled request is not an acknowledged no-summary
+        // decision. Keep the Session-owned input for a later ordinary turn.
+        return report;
+    };
+    let summary = summary.split_whitespace().collect::<Vec<_>>().join(" ");
 
-    if let Some(summary) = summary {
+    if !summary.is_empty()
+        && !summary.eq_ignore_ascii_case(MEMORY_EXTRACTION_NONE_SENTINEL)
+    {
         match memory_store.add_memory(
             &format!("{MEMORY_EPISODE_PREFIX}{summary}"),
             latest_timestamp,
