@@ -1,0 +1,21 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 1,
+  "base_commit": "073b98b4826c8125d0a42d15f8ccdbfebb5eb488",
+  "base_tree": "f73e4982a23b357647b6fec38550c75bfe11f25e",
+  "candidate_tree": "c817ca3f97a3cc911aa62041a9d8c5e8a899bb96",
+  "fixed_upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "patch_sha256": "206c67025fdd83d7720964a2c30cdefe56a92410f66eecdb97d9dedbfe330c78",
+  "targets": [
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "before_blob": "df9cba558cccc210b35a811e9b5f9f3f8817cd79",
+      "after_blob": "62c874ca380f8fc619934a4a5da25aa05fa11f3c",
+      "after_bytes": 1429325,
+      "after_sha256": "737165b3e5a0c37312e0c99f230382da0883c2bb77c8a5d2435618924944022f"
+    }
+  ],
+  "purpose": "Only materialize the reviewed current production-mapping ledger Git object. No historical Actions metadata, private logs, archives, or product-validation results are included. No product validation or ref mutation is performed by this carrier."
+}

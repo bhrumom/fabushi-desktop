@@ -1,0 +1,95 @@
+name: OCRM stage reviewed MSI ledger object
+
+on:
+  push:
+    branches: ['codex/openclaw-rust-fusion-chat-20261101-writer']
+    paths:
+      - '.github/ocrm-msi-reviewed-objects/**'
+      - '.github/workflows/ocrm-stage-msi-reviewed-objects.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  stage-reviewed-object:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Materialize the frozen Memory ledger Git object
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CARRIER_SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, subprocess, urllib.request
+          from pathlib import Path
+          folder = Path('.github/ocrm-msi-reviewed-objects')
+          declared = json.loads((folder / 'manifest.json').read_text())
+          allowed = {'projects/openclaw-rust/parity-ledger.json'}
+          targets = declared['targets']
+          assert len(targets) == 1 and {item['path'] for item in targets} == allowed
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          assert declared['repository'] == os.environ['GITHUB_REPOSITORY'] == 'bhrumom/fabushi-desktop'
+          assert declared['task_id'] == 'd56b3d1d-6125-4f6f-a8d8-e7e36728a1ba' and declared['round'] == 1
+          upstream = json.loads(Path('projects/openclaw-rust/upstream.lock.json').read_text())['upstream']
+          assert upstream['commit'] == declared['fixed_upstream_commit'] == '1440bb1771372334bea23d7642bb52deb7db1845'
+          assert upstream['tree'] == declared['fixed_upstream_tree'] == '90c8aab39972da11cfad220361781d49e1bc6700'
+          assert git('rev-parse', 'HEAD') == os.environ['CARRIER_SHA']
+          assert git('rev-list', '--parents', '-n', '1', 'HEAD').split() == [os.environ['CARRIER_SHA'], declared['base_commit']]
+          expected_carrier_paths = {
+              '.github/ocrm-msi-reviewed-objects/manifest.json',
+              '.github/ocrm-msi-reviewed-objects/object.patch',
+              '.github/workflows/ocrm-stage-msi-reviewed-objects.yml',
+          }
+          carrier_changes = [line.split('\t', 1) for line in git('diff', '--name-status', declared['base_commit'], 'HEAD').splitlines()]
+          assert len(carrier_changes) == 3 and all(status == 'A' for status, _ in carrier_changes)
+          assert {path for _, path in carrier_changes} == expected_carrier_paths
+          for item in targets:
+              assert git('rev-parse', 'HEAD:' + item['path']) == item['before_blob']
+          patch = folder / 'object.patch'
+          assert hashlib.sha256(patch.read_bytes()).hexdigest() == declared['patch_sha256']
+          subprocess.run(['git', 'apply', '--index', str(patch)], check=True)
+          assert set(git('diff', '--cached', '--name-only').splitlines()) == allowed
+          verified_objects = []
+          for item in targets:
+              raw = Path(item['path']).read_bytes()
+              assert len(raw) == item['after_bytes']
+              assert hashlib.sha256(raw).hexdigest() == item['after_sha256']
+              assert git('hash-object', item['path']) == item['after_blob']
+              verified_objects.append((item, raw))
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, *args, **kwargs):
+                  return None
+          objects = []
+          for item, raw in verified_objects:
+              body = json.dumps({'content': base64.b64encode(raw).decode('ascii'), 'encoding': 'base64'}).encode()
+              request = urllib.request.Request(
+                  'https://api.github.com/repos/bhrumom/fabushi-desktop/git/blobs', data=body,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json',
+                           'Content-Type': 'application/json', 'X-GitHub-Api-Version': '2022-11-28'}, method='POST')
+              with urllib.request.build_opener(NoRedirect).open(request, timeout=60) as response:
+                  uploaded = json.load(response)
+              assert uploaded['sha'] == item['after_blob']
+              objects.append({'path': item['path'], 'git_blob': uploaded['sha'], 'bytes': len(raw)})
+          receipt = {'kind': 'reviewed-git-object-staging', 'carrier_commit': os.environ['CARRIER_SHA'],
+                     'base_commit': declared['base_commit'], 'candidate_tree': declared['candidate_tree'],
+                     'objects': objects, 'patch_sha256': declared['patch_sha256'],
+                     'product_validation_executed_by_staging_job': False}
+          Path('.evidence').mkdir(exist_ok=True)
+          Path('.evidence/ocrm-staged-object.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('GIT_OBJECT_STAGED ' + json.dumps(receipt, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-msi-staged-object-${{ github.sha }}
+          path: .evidence/ocrm-staged-object.json
+          if-no-files-found: error
+          retention-days: 30
