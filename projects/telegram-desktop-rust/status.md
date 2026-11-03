@@ -95,3 +95,8 @@ Do not report Telegram-provider, Telegram-network, survey, document count, or ve
 
 
 
+
+
+## Current exact-head reconciliation — 2026-11-04
+
+Current product code head `08f408ac0de6223fb0e7637974bb7cadc8db4927` on `checkpoint/tdrp-forward-privacy-task20bf-r1`. Previous exact H `50bc3d275dff24be1bf60a13810fce93ae568930` has run291 Human73, actual ProductionRenderer13/Transcript10 and shipping compile successful. Run91 source contract/schema checks pass but candidate remains unaccepted; run9650 renderer build/asset/strict architecture passes with conditional jobs skipped. New retry admission and four UI cases await exact-H Actions. Full source closure, product, real service, signed packages, Bot, long-duration and independent ACCEPT remain open.

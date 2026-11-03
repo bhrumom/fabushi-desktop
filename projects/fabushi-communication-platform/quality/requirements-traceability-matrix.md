@@ -694,3 +694,9 @@ NMR-26 specification records the root cause and active-page reselection
 oracle. This is authored evidence only. Run291 `41694984873` and source
 run9649 `41694984872` are the required current-H gates; no current-H pass
 is inferred from run290. PR #189 remains draft.
+
+## Round12 — exact-H qualification and retry admission follow-up
+
+Run291 `41694984873` at exact `50bc3d275dff24be1bf60a13810fce93ae568930` passed: Human73/0 failures/0 ignored, including independent SQLite duplicate clientNonce before HTTP, HTTP duplicate canonical identity after restart, concurrent retry idempotency and attachment receipt reuse/settled replay. Foreign retry actual was `Internal("local Human identity is not a conversation participant")`, matching the explicit oracle. UI passed actual ProductionRenderer13 and Transcript10/10 including active-page reselection; shipping compile succeeded. Run91 source contract171/Python schema37/schema errors0; candidate remains unaccepted. Run9650 renderer build/45-asset boundary/strict architecture modules2002 passed; conditional matrix jobs skipped.
+
+Exact H `08f408ac0de6223fb0e7637974bb7cadc8db4927` passes captured current-scope predicate into the existing Coordinator request boundary, and adds four actual-root renderer cases for persisted failure after reload, identity-only single-flight retry, selection ABA and account ABA. Transcript gate14. Run295 `41704725299` and Rust run9658 `41704725388` were queued at evidence freeze; this follow-up is not yet executed. PR #189 remains open/draft.

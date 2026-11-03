@@ -1,0 +1,53 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 12,
+  "codeHead": "08f408ac0de6223fb0e7637974bb7cadc8db4927",
+  "run291": {
+    "id": 41694984873,
+    "humanJob": 126123024045,
+    "human": 73,
+    "foreignRetryActual": "Internal(\"local Human identity is not a conversation participant\")",
+    "oracleMatches": true,
+    "sqliteDuplicate": true,
+    "httpDuplicateAfterRestart": true,
+    "uiJob": 126123024525,
+    "productionRenderer": 13,
+    "transcript": 10,
+    "shippingJob": 126123024588,
+    "shipping": "success"
+  },
+  "run91": {
+    "id": 41695350819,
+    "nodeContracts": 171,
+    "pythonSchema": 37,
+    "schemaErrors": 0,
+    "candidateAccepted": false
+  },
+  "run9650": {
+    "id": 41695350903,
+    "rendererBuild": true,
+    "assets": 45,
+    "strictArchitectureModules": 2002,
+    "conditionalJobs": "skipped"
+  },
+  "followup": {
+    "head": "08f408ac0de6223fb0e7637974bb7cadc8db4927",
+    "testsAuthored": 4,
+    "transcriptExpected": 14,
+    "run295": 41704725299,
+    "run9658": 41704725388,
+    "execution": "queued-at-freeze"
+  },
+  "ledger": {
+    "responsibilities": 184,
+    "sourceEntries": 16381,
+    "sourceReviews": 6,
+    "completedReviews": 2,
+    "unknown": null,
+    "unread": null
+  },
+  "pr189": {
+    "state": "open",
+    "draft": true
+  }
+}
