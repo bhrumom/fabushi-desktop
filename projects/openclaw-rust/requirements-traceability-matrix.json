@@ -756,7 +756,8 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -1293,7 +1294,8 @@
         "source/host/tests/palette_message_gateway_contract.rs",
         "frontend/src/production/command-palette-message-search.contract.test.ts",
         "source/host/src/runner/turn_memory.rs",
-        "source/host/tests/turn_memory_contract.rs"
+        "source/host/tests/turn_memory_contract.rs",
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -1997,7 +1999,8 @@
         "source/host/tests/palette_message_gateway_contract.rs",
         "frontend/src/production/command-palette-message-search.contract.test.ts",
         "source/host/src/runner/turn_memory.rs",
-        "source/host/tests/turn_memory_contract.rs"
+        "source/host/tests/turn_memory_contract.rs",
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC13",
@@ -2162,7 +2165,8 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2225,7 +2229,8 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -2554,7 +2559,8 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",
