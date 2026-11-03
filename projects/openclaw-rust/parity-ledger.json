@@ -12,10 +12,10 @@
   "file_coverage": {
     "applicability_assessed_paths": 0,
     "dispositioned_paths": 0,
-    "mapped_paths": 877,
+    "mapped_paths": 884,
     "omitted_known": 0,
     "tracked_paths": 62130,
-    "unclassified_paths": 61253,
+    "unclassified_paths": 61246,
     "unreviewed_applicable_paths": 0
   },
   "inventory_authority": {
