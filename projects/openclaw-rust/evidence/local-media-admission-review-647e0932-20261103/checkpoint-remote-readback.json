@@ -1,0 +1,623 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject_commit": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+  "subject_tree": "abeb6ffdf09b676279462fea3b9e1f6d72abc1b6",
+  "parent": "6637beb50c6c227b32563d0c80db98869bd3ca9d",
+  "commit_parent_tree_and_declared_blobs_match": true,
+  "files": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "sha": "5abace3386897aaca3c4a256a11f90b8e3b98119",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "sha": "9249e4a93f353247e97c7ef47339382932451d72",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "sha": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+      "sha": "0722207d574b638c1e9984737f85cb05fa3aa3b7",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
+      "sha": "721190ec1e165a8fbdf9e5764d779796000e71e9",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "3fb5f2b4b5cade7d15d3cbedacc01c8a5dcd1cf0",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "dddcfc37286add1e5c3be86bed9eb346057b0fbb",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "sha": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "ee404c54ce24a740f6808a8c7bba9650a0f0e2d6",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "sha": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "sha": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "sha": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "sha": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "sha": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "sha": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "sha": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "sha": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "sha": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "sha": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "sha": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "sha": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "sha": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "sha": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/incoming-071-audit.md",
+      "sha": "d351933ef1a4253b2759e321903223b2540557d3",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/incoming-0e-decisions.json",
+      "sha": "1c1207d8ae12408c02a6824903b5d2499222c5f0",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/incoming-3438-decisions.json",
+      "sha": "61fed1aa52ccfa6dadb688a6fc2e4feab6d2e7e0",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/incoming-native-contract-assessment.md",
+      "sha": "efe00350b60cb0d452e6c1c7326ffb074c875f57",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/next-persistence-consumer-audit.md",
+      "sha": "4fb1f1067b544c901104e1646dd0cc5edfd9d3ab",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/next-settlement-unknown-audit.md",
+      "sha": "01b724729a97f33ad1ef63b937360022ee5e48b9",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r1-complete.patch",
+      "sha": "3b04a5c4691a07b78cdf8cf8541dd2c48863913d",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r1-finding-decisions.json",
+      "sha": "4f9450128989cf44b4f2525cb3601ba20a26c42e",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r1-general.md",
+      "sha": "fb3806cd28a2fce9edaad4e8c43c401bec94ce5a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r1-scope.json",
+      "sha": "207f7fbf7aed48259b81b727a42dbb243e58831a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r1-structure.md",
+      "sha": "f5273e6679c4a7b04b14f1dbc1125211d804a751",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r2-complete.patch",
+      "sha": "f847dff1893c20aba13e443b83bccbb819d41daa",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r2-fix-and-incoming.patch",
+      "sha": "34254ddf52b6498815beb0c04fc3a65fb755e565",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r2-general.md",
+      "sha": "3ca669044ed635c51c0c95e79fc9d6a8607b707a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r2-scope.json",
+      "sha": "5662f9351cae1f54016a8a4cc938aaca5c545211",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r2-structure.md",
+      "sha": "9380610a7b6376da3829d949eba12e37a9fac9a9",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r3-complete.patch",
+      "sha": "cdac0807dabc1bbe0f9e8c104375318d4e916d0c",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r3-general.md",
+      "sha": "e0b52eebe917131515752b2116b1b66e4045c509",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r3-integration.patch",
+      "sha": "6064d3a2f08150d759c2679be58fef00a01eb65a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r3-scope.json",
+      "sha": "b317d08b07b6a4406c49874742ea08c2dd20498a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r3-structure-incomplete.md",
+      "sha": "a9c0ee722d7f691d2fe714dcbf45e8acbf189016",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r4-complete.patch",
+      "sha": "b7410735d6a256233e91a8b8cf8111be6e37599a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r4-finding-decisions.json",
+      "sha": "f4a19f0f49cf186dd63b93f8c0ed4503dd5a2343",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r4-fix.patch",
+      "sha": "5f6b8bf85ed4f9df86296106362f809533da0c5d",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r4-general.md",
+      "sha": "a134c4380c004b32057897f9716bb5e6de42264b",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r4-root-adjudication.json",
+      "sha": "29c6223ccda628ea723e334c2d55b4df69d65db7",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r4-scope.json",
+      "sha": "7db6d285ec6f7cee291747e15bd1ca50b7494ce2",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r4-structure.md",
+      "sha": "b1b94f4228fe4fa09a8dd058181cc137e0dc3daa",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-complete.patch",
+      "sha": "6e5e03b4e4fdbfe810ef375b126ea19a854cabb4",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-contract-decisions.json",
+      "sha": "3d27eaa8db027acc99054210c6a36eca69a3ecbb",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-general.md",
+      "sha": "002b3d5ac947465e5ed5c4fc2e0c6940b2faff18",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-incoming-decisions.json",
+      "sha": "a440337cbf984f78afba4bb9963f8f32ac125c94",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-integration.patch",
+      "sha": "4824eaf27ea1e65d88842df8a9c4f40e341b9a2d",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-root-adjudication.json",
+      "sha": "278aae276b256120ce40d3eb680aacf3cef7b52a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-scope.json",
+      "sha": "13b5e2e6775175206d90d532b15a5ae1784f24b4",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r5-structure.md",
+      "sha": "ed88b27bdeb55b95d36f6a6732d47e14cd9513a3",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r6-complete.patch",
+      "sha": "4333a86e1ed6e4f92711e9c43c832273d589699a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r6-general.md",
+      "sha": "58b66853f85c838cbd5fe798b4e0c3c407d4dd81",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r6-incoming-decisions.json",
+      "sha": "b4a5e515fa7fd105d999f293dea63b2f0d9658a5",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r6-integration.patch",
+      "sha": "29e5c0527798d16cfd0dcaf8da0212e671b29b9b",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r6-scope.json",
+      "sha": "011ca055be750c1442693842e5f14230a98e353d",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r6-structure.md",
+      "sha": "759ea6c8d905e2767642c92ca93b1f2a09539894",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r7-complete.patch",
+      "sha": "bb7649019facf97cead4a73965cdaa5f960402f5",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r7-incoming-decisions.json",
+      "sha": "4ebed15e78b9424bbf86da4b0edf76629caab2f1",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r7-integration.patch",
+      "sha": "e151affca173d75c07517531604b46a497555a5a",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/r7-scope.json",
+      "sha": "f82e0c097aab8b18d0ea09eeb676704018427a78",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/root-metadata-and-review-boundary.json",
+      "sha": "c55e05ca54ae7d2e9c50cedf936bc868ae803fce",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/shared-497-ci.json",
+      "sha": "b154d03269e4d50d2f783b7c9756dc705a30ce98",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/shared-497-ci.md",
+      "sha": "01a0b41fa1ffd67cc8afaf32245e3f083ff1016b",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/wfx-source-move.json",
+      "sha": "1314703cc84800d9624e2cfca548244aa25916f5",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/windows-3438.zip",
+      "sha": "307aa079d2b59ac435ee19d25494bdf8b071854c",
+      "matched": true,
+      "error": "isError",
+      "original_direct_error": "isError",
+      "method": "original ZIP Git blob identity in subject tree plus lossless base64 content in fully read-back GitHub text blob",
+      "content_carrier_blob": "0961160de2f409677b0a2f1affc41a29a5c12399"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/windows-e19.zip",
+      "sha": "1ad1bbb899303022489f2965b6f1d437ae7ecf5f",
+      "matched": true,
+      "error": "isError",
+      "original_direct_error": "isError",
+      "method": "original ZIP Git blob identity in subject tree plus lossless base64 content in fully read-back GitHub text blob",
+      "content_carrier_blob": "0961160de2f409677b0a2f1affc41a29a5c12399"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/windows-root-failure-receipts.json",
+      "sha": "2c6c30e04be20d16d6207a43368d972bcadd2d0d",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/publication-checkpoint.json",
+      "sha": "d31acf081f8918867f59bc5a7c80c2da9b049009",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/decisions.json",
+      "sha": "da184546ea4dd1afb1983195f08cf245c6793a98",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/dependency-member-confirmation.json",
+      "sha": "63cc1b41889c2d97c26208b7a61ddd13c8c36cb1",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/failed-subject-collector.json",
+      "sha": "5ee03d8254c094b4489c1833bad1db0f6ffd214f",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/general.md",
+      "sha": "8a23d2a9066b36b6f658cc32f341840e104fba65",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/linux-media-364.zip",
+      "sha": "22cecd50eed2487627d9f137bd998dea37a85048",
+      "matched": true,
+      "error": "isError",
+      "original_direct_error": "isError",
+      "method": "original ZIP Git blob identity in subject tree plus lossless base64 content in fully read-back GitHub text blob",
+      "content_carrier_blob": "0961160de2f409677b0a2f1affc41a29a5c12399"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/scope.json",
+      "sha": "9e56b1e8fc98d5e89d4545708d529e3f627a3add",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/structure.md",
+      "sha": "51a8d0e7e3a6b99292fc72ff4992f49b0ad45ba3",
+      "encoding": "utf-8",
+      "matched": true,
+      "method": "complete UTF-8 blob content returned by GitHub connector"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-review-647e0932-20261103/windows-media-364.zip",
+      "sha": "4349deacdd107198a580000d3503852ee2990e72",
+      "matched": true,
+      "error": "isError",
+      "original_direct_error": "isError",
+      "method": "original ZIP Git blob identity in subject tree plus lossless base64 content in fully read-back GitHub text blob",
+      "content_carrier_blob": "0961160de2f409677b0a2f1affc41a29a5c12399"
+    }
+  ],
+  "binary_readback": {
+    "limitation": "github_fetch and fetch_blob reject ZIP bytes as UTF-8; original failed calls retained, not represented as direct binary reads.",
+    "carrier_path": "projects/openclaw-rust/evidence/local-media-admission-review-647e0932-20261103/archive-content-readback.json",
+    "carrier_blob": "0961160de2f409677b0a2f1affc41a29a5c12399",
+    "carrier_sha256": "ef5f68f5a2b56aea8da5c3a261dbabc10bd3d3501b09ab9ff1d8d096b3ad87c7",
+    "complete_remote_carrier_content_equal": true,
+    "all_decoded_zip_lengths_sha256_git_blob_hashes_match_original_subject_tree": true,
+    "carrier_commit_state": "Uploaded immutable blob; will be included with terminal review evidence."
+  },
+  "validation": "Git/source data readback only, not product executable or Actions evidence."
+}

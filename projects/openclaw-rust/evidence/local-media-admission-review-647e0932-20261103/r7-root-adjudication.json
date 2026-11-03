@@ -1,0 +1,246 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "recorded_at": "2026-11-03T04:10:00.261887+00:00",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "candidate_review_tree": "71e8a1838cf8e925e88d514b95b35b7245895f63",
+  "published_checkpoint": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+  "checkpoint_tree": "abeb6ffdf09b676279462fea3b9e1f6d72abc1b6",
+  "terminal_evidence_parent": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+  "terminal_evidence_parent_tree": "a3d749529dfd92e985a085cea71807ff23b15088",
+  "verdict": "APPROVED for declared integrated source changes; executable verification remains pending",
+  "findings": [],
+  "review_chain": [
+    {
+      "review_round": 4,
+      "scope": "full21 non-historical paths; two historical JSON root-audited",
+      "root_read_complete_reports": true,
+      "reports": [
+        {
+          "file": "r4-general.md",
+          "sha256": "d72b8106660287912de1a607818031e369973fb4a3226ed83022ff73ffa277a9",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "configured GPT-6 Astra Pro",
+          "reasoning_effort": "xhigh actually applied"
+        },
+        {
+          "file": "r4-structure.md",
+          "sha256": "a59872abab0fcca4da18bddd450bd2f76e5e4d94e94d66125df841e92abe1ac6",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "xhigh actually applied"
+        }
+      ]
+    },
+    {
+      "review_round": 5,
+      "scope": "eight-path integration and affected adjacency",
+      "root_read_complete_reports": true,
+      "reports": [
+        {
+          "file": "r5-general.md",
+          "sha256": "0438c87393651df6cb143d25d829c1d4f663b30aaeb72685dbee727ada87957b",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "configured GPT-6 Astra Pro",
+          "reasoning_effort": "xhigh actually applied"
+        },
+        {
+          "file": "r5-structure.md",
+          "sha256": "47a1b858a0ef0698ca6596e87f2d503b51c632a58575e54beacc46fde9ce62a9",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "xhigh actually applied"
+        }
+      ]
+    },
+    {
+      "review_round": 6,
+      "scope": "two shared capture/workflow paths and affected adjacency",
+      "root_read_complete_reports": true,
+      "reports": [
+        {
+          "file": "r6-general.md",
+          "sha256": "13771b17d4bb933da3bfbeaace773612c670aad18f24099c51a70b75abcb9af3",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "configured GPT-6 Astra Pro",
+          "reasoning_effort": "xhigh actually applied"
+        },
+        {
+          "file": "r6-structure.md",
+          "sha256": "25be9c0faedf2cca73b30fcfc2d225f50594d6ecfe78a646e324cb2dc6f1f5e5",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "xhigh actually applied"
+        }
+      ]
+    },
+    {
+      "review_round": 7,
+      "scope": "five-path integration and affected adjacency",
+      "root_read_complete_reports": true,
+      "reports": [
+        {
+          "file": "r7-general.md",
+          "sha256": "e9bf79c9375203f02916f04048374c86a00caa4ef7562e07e1256aa182d7eda6",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "configured GPT-6 Astra Pro",
+          "reasoning_effort": "xhigh actually applied"
+        },
+        {
+          "file": "r7-structure.md",
+          "sha256": "56a42c67a8ec3bf84667e2592ed68ed77e28f94f605958312206c09718498861",
+          "verdict": "APPROVED for declared source-review scope",
+          "model": "gpt-6.1-sol",
+          "reasoning_effort": "xhigh actually applied"
+        }
+      ]
+    }
+  ],
+  "coverage_rule": "R4 supplies fresh full source-scope review; R5/R6/R7 cover each subsequent integration delta and affected adjacency. Earlier conclusions apply only to unchanged blobs and unaffected context. R3 structure remains INCOMPLETE and is never counted as approval. No fresh whole-file semantic reading is claimed for hash-only or scoped-context entries.",
+  "historical_json_audit": "The two unchanged historical candidate declarations remain under the complete root serial audit in root-metadata-and-review-boundary.json; historical pending text and original H/U/results are preserved.",
+  "current_scope": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "git_blob": "5abace3386897aaca3c4a256a11f90b8e3b98119",
+      "sha256": "6f10da0e15d1463e144e58c3e8a63ca4c028623ba77fce7e2cc7f036a616b52e"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "sha256": "146dadba7911290f7f78a4b6e436e02b1b0332754e7b219b62aba39690f65526"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "sha256": "2ceaf7878a603c77d438e6dd4d68ac9366eb0216976e02100f5c1c6039b14f7c"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+      "git_blob": "0722207d574b638c1e9984737f85cb05fa3aa3b7",
+      "sha256": "bd7bbcdd2fd6b536599b636c0904bdab129668fd0965753fac83f95d5b966a40"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
+      "git_blob": "721190ec1e165a8fbdf9e5764d779796000e71e9",
+      "sha256": "68187df3c539f99703f0e7b06460b33884ee13dc1d8ddc499693832dff2d23fe"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "git_blob": "3fb5f2b4b5cade7d15d3cbedacc01c8a5dcd1cf0",
+      "sha256": "7aadc1a486ed5626d271434ca50790134d72f72c416cb20fb82c41c714c563c3"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "git_blob": "dddcfc37286add1e5c3be86bed9eb346057b0fbb",
+      "sha256": "99777c80b3a643ce4cf67b5499a8ce43b82dedfc5209ce74e7b1fd59fe44e700"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "git_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "sha256": "f08df363a4ba718cb3ffa0b3fa0cb6f50d61ac6a214a4cf66f8da8306525df2e"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "git_blob": "ee404c54ce24a740f6808a8c7bba9650a0f0e2d6",
+      "sha256": "2afde2fd2340dfa2764b2ced64f525641fa131bc74b34d17ea3478c107d5f2b7"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "git_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "sha256": "36605022e09e91269ee17770a48fa9897e5ba4adcf5bbc7b21b6f382e3cdd4fa"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "git_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80"
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "sha256": "7cff2caf2a4ae941f00b5c41d4134aa333f4657077a9146313398556ad0d85e9"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "sha256": "041e8addb24aa00ae8f86df7a458315d44e4f2ae678a079a8fbed9c37e9a2080"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "sha256": "33eb05fd603a4c032918ef61e0b1c0d451ea25fa24f82fa42f4e99323d6bc738"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "sha256": "bcd7bf57f01a4f5996a04bd7d9c937436bbfcb45ac86048b12c3877ca905cedc"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "sha256": "469a181b842c1a276ba5fdf83cb4cf6a19e437e3441a4e0e592acc503363cb3b"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "git_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "sha256": "9fcb3f301ebf9f0191fa019e606f6cf9123ff13268c02eee1f182a91caa04f35"
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "sha256": "712a51c8240dd0e612eb52644f715f53d56773e59d162d5a87bcaa74239b1a6d"
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "sha256": "1969ea135cf99c0f30fae7c08f715f034eea4f5ec11fc85e3807af7b983be85a"
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "sha256": "22a62e8c3e1cf2945da22fa93b53d983cbba7a9e65584d2b8f06a3de50bf9c45"
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "sha256": "e1072ab95a02e4da8ad7925d22a84fe0e25d9ae802b4f97e717cc06b0238093d"
+    },
+    {
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "sha256": "e04282673878faea7837a446e3d8aae2d44ced129bd4cfcf645afe728373e25c"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "git_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "sha256": "bf20eb522055db43112c01d09fcf039b6104b2f5dbb9dddda76172ede3f4540c"
+    }
+  ],
+  "remote_identity_check": {
+    "checkpoint_complete_text_readback": 81,
+    "historical_archives": 4,
+    "binary_method": "Original ZIP blob identity plus complete remotely read-back lossless UTF-8 base64 carrier; not a direct binary connector read. See checkpoint-remote-readback.json and archive-content-readback.json.",
+    "parent_recursive_tree_entries": 10631,
+    "parent_tree_truncated": false,
+    "all23_reviewed_blobs_unchanged_in_parent": true
+  },
+  "incoming_preserved": "The f82ce244 parent adds only23 Device review/Actions evidence files after the checkpoint. They are inherited intact; no production source or shared gate overlap.",
+  "actions_selection": {
+    "subject": "The exact new commit containing this terminal evidence is the next frozen H; obtain its actual full SHA and workflow receipts after push. No R7 Actions result exists at authoring.",
+    "source": "Existing OpenClaw source-accounting workflow",
+    "runtime": "Existing rust-desktop-runtime workflow with its unchanged affected-source selection",
+    "native_media": "16 native capture command groups;163 expected Linux/macOS selected positives,158 Windows;46 declared inputs. Static expectations only.",
+    "portable_send_message": "Strict complete target summaries13/14/17; actual six App LFA consumers selected in Linux",
+    "shared_gates": "Preserve Device owner44, HTTP14 and retained27; no ignored-count or result gate relaxed.",
+    "local_or_htch_execution": false
+  },
+  "acceptance": {
+    "unit_verified_promoted": false,
+    "global_flags_promoted": false,
+    "full_scope_complete": false,
+    "remaining": "Current-H Linux/Windows/macOS compilation and receipts, actual App/runtime behavior, full recursive dependency/source closure, all remaining responsibilities, G01-G12/AC01-AC24 and real provider/channel/plugin/node/device/package/upgrade/regression/independent ACCEPT remain open."
+  },
+  "next_production_batch": "MSU-v1: preserve typed unknown media settlement and recovery custody through existing DB/Session/Transcript/App/Runner owners; tracked separately and not part of this LFA runtime claim."
+}
