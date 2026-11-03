@@ -1,0 +1,1137 @@
+{
+  "schema": "ocrm-djc-reader-observation-terminal-assessment-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "subject_commit": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+  "subject_tree": "9c879741ffe74176d3b0892c4f3aa97304c61b1d",
+  "parent": "43ef7393378a447eb981dbcd67e66b6ad58fbfbf",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "execution": {
+    "runtime_run": 41661449688,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "scope": "ocrm-djc-reader-observation",
+    "platforms": [
+      {
+        "platform": "linux",
+        "job_id": 126005403073,
+        "conclusion": "success",
+        "subject_commit": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+        "subject_tree": "9c879741ffe74176d3b0892c4f3aa97304c61b1d",
+        "result": "passed-scoped-only",
+        "compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "device_pairing_join_admission_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "abf9c9fd7c411e6bd35419d5732052e7b008cdc24cd4aa62ac045af5fb008a5d"
+        },
+        "shipping": {
+          "result": "not-executed",
+          "accepted": false,
+          "reason": "Only the retained reader fixture/observation instrument changes; compile its exact integration target."
+        },
+        "box_producers": {
+          "ordinary": "not-selected",
+          "private_test": "not-selected"
+        },
+        "source_bindings_before": {
+          "projects/openclaw-rust/upstream.lock.json": {
+            "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+            "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+            "bytes": 3495,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md": {
+            "git_blob": "df026c824762d0bb12a8b686ffca40179743937f",
+            "sha256": "05ab3fd28dcf77c3a325aa87fb58262e7f522901a8005a8c8a4d2e898ba07d5c",
+            "bytes": 20236,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json": {
+            "git_blob": "a5419de64cde66ed1d948f6f2fa0909f1b284144",
+            "sha256": "40626cf66b43bf60dc539368d3a3a7a24a33347b34338df314c003e57645e468",
+            "bytes": 11181,
+            "matches_head_bytes": true
+          },
+          ".github/workflows/rust-desktop-runtime.yml": {
+            "git_blob": "d72e5591ecb27a29439e55d778ada74a343279bc",
+            "sha256": "f72ab6370afdd4bddcfb73a59ca3f79b7d6e21eb0b417f7b638ac0c2be15be42",
+            "bytes": 484636,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+            "git_blob": "0a53c7f781189b145e67b2c64b56d8dd9f3ac34a",
+            "sha256": "757b753664e4a665fbf2480ad786289425c13e27b6bec9121657a8cdf6948d72",
+            "bytes": 240984,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.toml": {
+            "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+            "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+            "bytes": 1899,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.lock": {
+            "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+            "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "bytes": 119989,
+            "matches_head_bytes": true
+          },
+          "source/host/src/device_pairing_owner.rs": {
+            "git_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+            "sha256": "719a84fe502691e1a14008167f3652174b9a7fe7bd3975ed34067b5351885073",
+            "bytes": 103155,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_command_error.rs": {
+            "git_blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
+            "sha256": "879b40b479dd6ab66acb8150e06888b4c95ca66eee7cd1428e1286acee3fc43d",
+            "bytes": 6296,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_server.rs": {
+            "git_blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+            "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+            "bytes": 97871,
+            "matches_head_bytes": true
+          },
+          "source/host/src/host_gateway_api.rs": {
+            "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+            "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+            "bytes": 12641,
+            "matches_head_bytes": true
+          },
+          "source/host/app/src/main.rs": {
+            "git_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+            "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37",
+            "bytes": 1008894,
+            "matches_head_bytes": true
+          },
+          "source/host/tests/device_pairing_join_admission_contract.rs": {
+            "git_blob": "fdadc78e956ec70a31d09d305fd0d3c77cc58d60",
+            "sha256": "72416df6af8bea9b2f377394679aadb7d8749fca5a8605b9ba4cec38ec9c7e2d",
+            "bytes": 74605,
+            "matches_head_bytes": true
+          }
+        },
+        "source_bindings_after": {
+          "projects/openclaw-rust/upstream.lock.json": {
+            "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+            "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+            "bytes": 3495,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md": {
+            "git_blob": "df026c824762d0bb12a8b686ffca40179743937f",
+            "sha256": "05ab3fd28dcf77c3a325aa87fb58262e7f522901a8005a8c8a4d2e898ba07d5c",
+            "bytes": 20236,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json": {
+            "git_blob": "a5419de64cde66ed1d948f6f2fa0909f1b284144",
+            "sha256": "40626cf66b43bf60dc539368d3a3a7a24a33347b34338df314c003e57645e468",
+            "bytes": 11181,
+            "matches_head_bytes": true
+          },
+          ".github/workflows/rust-desktop-runtime.yml": {
+            "git_blob": "d72e5591ecb27a29439e55d778ada74a343279bc",
+            "sha256": "f72ab6370afdd4bddcfb73a59ca3f79b7d6e21eb0b417f7b638ac0c2be15be42",
+            "bytes": 484636,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+            "git_blob": "0a53c7f781189b145e67b2c64b56d8dd9f3ac34a",
+            "sha256": "757b753664e4a665fbf2480ad786289425c13e27b6bec9121657a8cdf6948d72",
+            "bytes": 240984,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.toml": {
+            "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+            "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+            "bytes": 1899,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.lock": {
+            "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+            "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "bytes": 119989,
+            "matches_head_bytes": true
+          },
+          "source/host/src/device_pairing_owner.rs": {
+            "git_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+            "sha256": "719a84fe502691e1a14008167f3652174b9a7fe7bd3975ed34067b5351885073",
+            "bytes": 103155,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_command_error.rs": {
+            "git_blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
+            "sha256": "879b40b479dd6ab66acb8150e06888b4c95ca66eee7cd1428e1286acee3fc43d",
+            "bytes": 6296,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_server.rs": {
+            "git_blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+            "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+            "bytes": 97871,
+            "matches_head_bytes": true
+          },
+          "source/host/src/host_gateway_api.rs": {
+            "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+            "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+            "bytes": 12641,
+            "matches_head_bytes": true
+          },
+          "source/host/app/src/main.rs": {
+            "git_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+            "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37",
+            "bytes": 1008894,
+            "matches_head_bytes": true
+          },
+          "source/host/tests/device_pairing_join_admission_contract.rs": {
+            "git_blob": "fdadc78e956ec70a31d09d305fd0d3c77cc58d60",
+            "sha256": "72416df6af8bea9b2f377394679aadb7d8749fca5a8605b9ba4cec38ec9c7e2d",
+            "bytes": 74605,
+            "matches_head_bytes": true
+          }
+        },
+        "bindings_equal": true,
+        "sources_unchanged": true,
+        "controls": {
+          "djc_reader_selection_controls": {
+            "count": 26,
+            "all_expected_match": true
+          },
+          "djc_reader_trace_controls": {
+            "count": 36,
+            "all_expected_match": true
+          },
+          "native_source_identity_controls": {
+            "count": 2,
+            "all_expected_match": true
+          },
+          "memory_checked_list_selection_controls": {
+            "count": 36,
+            "all_expected_match": true
+          },
+          "memory_fixture_lifecycle_selection_controls": {
+            "count": 36,
+            "all_expected_match": true
+          },
+          "scope_selection_controls": {
+            "count": 28,
+            "all_expected_match": true
+          },
+          "selected_result_oracle_controls": {
+            "count": 11,
+            "all_expected_match": true
+          },
+          "box_background_recovery_selection_controls": {
+            "count": 16,
+            "all_expected_match": true
+          },
+          "box_response_result_oracle_controls": {
+            "count": 16,
+            "all_expected_match": true
+          },
+          "synthetic_result_oracle_controls": {
+            "count": 14,
+            "all_expected_match": true
+          }
+        },
+        "commands": [
+          {
+            "case": "djc-reader-observation-owner",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "device_pairing_join_admission_contract",
+              "join_storage_commit_refusal_never_publishes_payload",
+              "--",
+              "--exact",
+              "--test-threads=1",
+              "--show-output"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "required_names": [
+              "join_storage_commit_refusal_never_publishes_payload"
+            ],
+            "observed_names": [
+              "join_storage_commit_refusal_never_publishes_payload"
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "oracle_accepted": true,
+            "trace_accepted": true,
+            "trace_errors": [],
+            "records": [
+              {
+                "case": "join_storage_commit_refusal_never_publishes_payload",
+                "invocation_nonce": "83cb64f1-908f-41d4-93d5-aaa7b9c8cb0a",
+                "child_pid": 3898,
+                "mode": "actual",
+                "instrument_control": false,
+                "clock": "child-case-start",
+                "record": {
+                  "observation": {
+                    "call": {
+                      "entered_ns": 11756906,
+                      "returned_ns": 5018360099,
+                      "send_entered_ns": 5018360269,
+                      "send_completed_ns": 5018388582,
+                      "send_outcome": "sent",
+                      "diagnostic_entered_ns": 5018388622,
+                      "diagnostic_returned_ns": 5018415092,
+                      "diagnostic_succeeded": true,
+                      "result_class": "internal-error"
+                    },
+                    "wait_entered_ns": 16793322,
+                    "wait_returned_ns": 5018435557,
+                    "wait_outcome": "received",
+                    "join_completed_ns": 5018487705,
+                    "worker_returned": true
+                  }
+                }
+              },
+              {
+                "case": "join_storage_commit_refusal_never_publishes_payload",
+                "invocation_nonce": "83cb64f1-908f-41d4-93d5-aaa7b9c8cb0a",
+                "child_pid": 3898,
+                "mode": "actual",
+                "instrument_control": false,
+                "clock": "child-case-start",
+                "record": {
+                  "reader-release": {
+                    "entered_ns": 5018599544,
+                    "rollback_returned_ns": 5018616495,
+                    "rollback_succeeded": true,
+                    "close_entered_ns": 5018616746,
+                    "close_returned_ns": 5018683210,
+                    "close_succeeded": true
+                  }
+                }
+              }
+            ],
+            "log": "djc-reader-observation-owner.log",
+            "log_sha256": "f01b150ef42ae95e23d31bf15981aa189ff08c81504cd93910dd26e32eceef4e"
+          },
+          {
+            "case": "djc-reader-observation-diagnostic-control",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "device_pairing_join_admission_contract",
+              "join_reader_observation_notifies_before_diagnostic_release",
+              "--",
+              "--exact",
+              "--test-threads=1",
+              "--show-output"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "required_names": [
+              "join_reader_observation_notifies_before_diagnostic_release"
+            ],
+            "observed_names": [
+              "join_reader_observation_notifies_before_diagnostic_release"
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "oracle_accepted": true,
+            "trace_accepted": true,
+            "trace_errors": [],
+            "records": [
+              {
+                "case": "join_reader_observation_notifies_before_diagnostic_release",
+                "invocation_nonce": "2d1fd445-ddd7-47ef-b564-45c1df2525b6",
+                "child_pid": 3916,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "observation": {
+                    "call": {
+                      "entered_ns": 91735,
+                      "returned_ns": 91905,
+                      "send_entered_ns": 91935,
+                      "send_completed_ns": 95953,
+                      "send_outcome": "sent",
+                      "diagnostic_entered_ns": 95983,
+                      "diagnostic_returned_ns": 131690,
+                      "diagnostic_succeeded": true,
+                      "result_class": "miss"
+                    },
+                    "wait_entered_ns": 112892,
+                    "wait_returned_ns": 113222,
+                    "wait_outcome": "received",
+                    "join_completed_ns": 168666,
+                    "worker_returned": true
+                  }
+                }
+              },
+              {
+                "case": "join_reader_observation_notifies_before_diagnostic_release",
+                "invocation_nonce": "2d1fd445-ddd7-47ef-b564-45c1df2525b6",
+                "child_pid": 3916,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "diagnostic-control": {
+                    "ready_returned_ns": 112851,
+                    "ready_outcome": "received",
+                    "release_entered_ns": 113252,
+                    "release_completed_ns": 120085,
+                    "release_outcome": "sent"
+                  }
+                }
+              }
+            ],
+            "log": "djc-reader-observation-diagnostic-control.log",
+            "log_sha256": "b25077742c9e5c6acf707e37d2e4c0b5044c3d2da393096e5c7ebfb2bee54574"
+          },
+          {
+            "case": "djc-reader-observation-operation-control",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "device_pairing_join_admission_contract",
+              "join_reader_observation_cannot_notify_before_operation_return",
+              "--",
+              "--exact",
+              "--test-threads=1",
+              "--show-output"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "required_names": [
+              "join_reader_observation_cannot_notify_before_operation_return"
+            ],
+            "observed_names": [
+              "join_reader_observation_cannot_notify_before_operation_return"
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "oracle_accepted": true,
+            "trace_accepted": true,
+            "trace_errors": [],
+            "records": [
+              {
+                "case": "join_reader_observation_cannot_notify_before_operation_return",
+                "invocation_nonce": "1ab195b4-f836-45f5-9f70-776eb573874e",
+                "child_pid": 3928,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "observation": {
+                    "call": {
+                      "entered_ns": 84168,
+                      "returned_ns": 126807,
+                      "send_entered_ns": 126848,
+                      "send_completed_ns": 132638,
+                      "send_outcome": "sent",
+                      "diagnostic_entered_ns": 132658,
+                      "diagnostic_returned_ns": 132708,
+                      "diagnostic_succeeded": true,
+                      "result_class": "miss"
+                    },
+                    "wait_entered_ns": 125625,
+                    "wait_returned_ns": 141044,
+                    "wait_outcome": "received",
+                    "join_completed_ns": 186789,
+                    "worker_returned": true
+                  }
+                }
+              },
+              {
+                "case": "join_reader_observation_cannot_notify_before_operation_return",
+                "invocation_nonce": "1ab195b4-f836-45f5-9f70-776eb573874e",
+                "child_pid": 3928,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "operation-control": {
+                    "ready_returned_ns": 105027,
+                    "ready_outcome": "received",
+                    "check_entered_ns": 105057,
+                    "check_returned_ns": 105618,
+                    "before_release": "empty",
+                    "release_entered_ns": 105648,
+                    "release_completed_ns": 112611,
+                    "release_outcome": "sent"
+                  }
+                }
+              }
+            ],
+            "log": "djc-reader-observation-operation-control.log",
+            "log_sha256": "37a474474ff616a1e981a799beaf016bb2bbb2f2faa1ce513cf2515cf690b572"
+          }
+        ],
+        "connector_decoded_job_log": {
+          "bytes": 659388,
+          "sha256": "cce6d56316cdee487fc619c825c6dfa2b7da0f1c1afeec3f5f78845e7792ecdf"
+        },
+        "log_identity_method": "Root recomputed SHA-256 of the connector-decoded UTF-8 job log, preserving returned BOM and line endings. Individual command hashes are from actual receipt; binary ZIP not downloaded."
+      },
+      {
+        "platform": "macos",
+        "job_id": 126005403948,
+        "conclusion": "failure",
+        "subject_commit": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+        "subject_tree": "9c879741ffe74176d3b0892c4f3aa97304c61b1d",
+        "result": "failed-or-incomplete",
+        "compile": {
+          "command": [
+            "cargo",
+            "check",
+            "--locked",
+            "--manifest-path",
+            "source/host/Cargo.toml",
+            "--test",
+            "device_pairing_join_admission_contract"
+          ],
+          "cargo_exit": 0,
+          "capture_exit": 0,
+          "log": "mcp-origin-constructor-check.log",
+          "result": "compiled",
+          "execution_error": null,
+          "log_sha256": "648451cc8defd1090c465ee4a3174ba49a97900e373673233778c8778f9c2bf5"
+        },
+        "shipping": {
+          "result": "not-executed",
+          "accepted": false,
+          "reason": "Only the retained reader fixture/observation instrument changes; compile its exact integration target."
+        },
+        "box_producers": {
+          "ordinary": "not-selected",
+          "private_test": "not-selected"
+        },
+        "source_bindings_before": {
+          "projects/openclaw-rust/upstream.lock.json": {
+            "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+            "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+            "bytes": 3495,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md": {
+            "git_blob": "df026c824762d0bb12a8b686ffca40179743937f",
+            "sha256": "05ab3fd28dcf77c3a325aa87fb58262e7f522901a8005a8c8a4d2e898ba07d5c",
+            "bytes": 20236,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json": {
+            "git_blob": "a5419de64cde66ed1d948f6f2fa0909f1b284144",
+            "sha256": "40626cf66b43bf60dc539368d3a3a7a24a33347b34338df314c003e57645e468",
+            "bytes": 11181,
+            "matches_head_bytes": true
+          },
+          ".github/workflows/rust-desktop-runtime.yml": {
+            "git_blob": "d72e5591ecb27a29439e55d778ada74a343279bc",
+            "sha256": "f72ab6370afdd4bddcfb73a59ca3f79b7d6e21eb0b417f7b638ac0c2be15be42",
+            "bytes": 484636,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+            "git_blob": "0a53c7f781189b145e67b2c64b56d8dd9f3ac34a",
+            "sha256": "757b753664e4a665fbf2480ad786289425c13e27b6bec9121657a8cdf6948d72",
+            "bytes": 240984,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.toml": {
+            "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+            "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+            "bytes": 1899,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.lock": {
+            "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+            "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "bytes": 119989,
+            "matches_head_bytes": true
+          },
+          "source/host/src/device_pairing_owner.rs": {
+            "git_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+            "sha256": "719a84fe502691e1a14008167f3652174b9a7fe7bd3975ed34067b5351885073",
+            "bytes": 103155,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_command_error.rs": {
+            "git_blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
+            "sha256": "879b40b479dd6ab66acb8150e06888b4c95ca66eee7cd1428e1286acee3fc43d",
+            "bytes": 6296,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_server.rs": {
+            "git_blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+            "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+            "bytes": 97871,
+            "matches_head_bytes": true
+          },
+          "source/host/src/host_gateway_api.rs": {
+            "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+            "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+            "bytes": 12641,
+            "matches_head_bytes": true
+          },
+          "source/host/app/src/main.rs": {
+            "git_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+            "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37",
+            "bytes": 1008894,
+            "matches_head_bytes": true
+          },
+          "source/host/tests/device_pairing_join_admission_contract.rs": {
+            "git_blob": "fdadc78e956ec70a31d09d305fd0d3c77cc58d60",
+            "sha256": "72416df6af8bea9b2f377394679aadb7d8749fca5a8605b9ba4cec38ec9c7e2d",
+            "bytes": 74605,
+            "matches_head_bytes": true
+          }
+        },
+        "source_bindings_after": {
+          "projects/openclaw-rust/upstream.lock.json": {
+            "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+            "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+            "bytes": 3495,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md": {
+            "git_blob": "df026c824762d0bb12a8b686ffca40179743937f",
+            "sha256": "05ab3fd28dcf77c3a325aa87fb58262e7f522901a8005a8c8a4d2e898ba07d5c",
+            "bytes": 20236,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json": {
+            "git_blob": "a5419de64cde66ed1d948f6f2fa0909f1b284144",
+            "sha256": "40626cf66b43bf60dc539368d3a3a7a24a33347b34338df314c003e57645e468",
+            "bytes": 11181,
+            "matches_head_bytes": true
+          },
+          ".github/workflows/rust-desktop-runtime.yml": {
+            "git_blob": "d72e5591ecb27a29439e55d778ada74a343279bc",
+            "sha256": "f72ab6370afdd4bddcfb73a59ca3f79b7d6e21eb0b417f7b638ac0c2be15be42",
+            "bytes": 484636,
+            "matches_head_bytes": true
+          },
+          "projects/openclaw-rust/scripts/capture_portable_contracts.py": {
+            "git_blob": "0a53c7f781189b145e67b2c64b56d8dd9f3ac34a",
+            "sha256": "757b753664e4a665fbf2480ad786289425c13e27b6bec9121657a8cdf6948d72",
+            "bytes": 240984,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.toml": {
+            "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+            "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+            "bytes": 1899,
+            "matches_head_bytes": true
+          },
+          "source/host/Cargo.lock": {
+            "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+            "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+            "bytes": 119989,
+            "matches_head_bytes": true
+          },
+          "source/host/src/device_pairing_owner.rs": {
+            "git_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+            "sha256": "719a84fe502691e1a14008167f3652174b9a7fe7bd3975ed34067b5351885073",
+            "bytes": 103155,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_command_error.rs": {
+            "git_blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
+            "sha256": "879b40b479dd6ab66acb8150e06888b4c95ca66eee7cd1428e1286acee3fc43d",
+            "bytes": 6296,
+            "matches_head_bytes": true
+          },
+          "source/host/src/gateway_server.rs": {
+            "git_blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+            "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+            "bytes": 97871,
+            "matches_head_bytes": true
+          },
+          "source/host/src/host_gateway_api.rs": {
+            "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+            "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+            "bytes": 12641,
+            "matches_head_bytes": true
+          },
+          "source/host/app/src/main.rs": {
+            "git_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+            "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37",
+            "bytes": 1008894,
+            "matches_head_bytes": true
+          },
+          "source/host/tests/device_pairing_join_admission_contract.rs": {
+            "git_blob": "fdadc78e956ec70a31d09d305fd0d3c77cc58d60",
+            "sha256": "72416df6af8bea9b2f377394679aadb7d8749fca5a8605b9ba4cec38ec9c7e2d",
+            "bytes": 74605,
+            "matches_head_bytes": true
+          }
+        },
+        "bindings_equal": true,
+        "sources_unchanged": true,
+        "controls": {
+          "djc_reader_selection_controls": {
+            "count": 26,
+            "all_expected_match": true
+          },
+          "djc_reader_trace_controls": {
+            "count": 36,
+            "all_expected_match": true
+          },
+          "native_source_identity_controls": {
+            "count": 2,
+            "all_expected_match": true
+          },
+          "memory_checked_list_selection_controls": {
+            "count": 36,
+            "all_expected_match": true
+          },
+          "memory_fixture_lifecycle_selection_controls": {
+            "count": 36,
+            "all_expected_match": true
+          },
+          "scope_selection_controls": {
+            "count": 28,
+            "all_expected_match": true
+          },
+          "selected_result_oracle_controls": {
+            "count": 11,
+            "all_expected_match": true
+          },
+          "box_background_recovery_selection_controls": {
+            "count": 16,
+            "all_expected_match": true
+          },
+          "box_response_result_oracle_controls": {
+            "count": 16,
+            "all_expected_match": true
+          },
+          "synthetic_result_oracle_controls": {
+            "count": 14,
+            "all_expected_match": true
+          }
+        },
+        "commands": [
+          {
+            "case": "djc-reader-observation-owner",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "device_pairing_join_admission_contract",
+              "join_storage_commit_refusal_never_publishes_payload",
+              "--",
+              "--exact",
+              "--test-threads=1",
+              "--show-output"
+            ],
+            "cargo_exit": 101,
+            "capture_exit": 0,
+            "required_names": [
+              "join_storage_commit_refusal_never_publishes_payload"
+            ],
+            "observed_names": [],
+            "complete_summaries": [],
+            "oracle_accepted": false,
+            "trace_accepted": false,
+            "trace_errors": [],
+            "records": [
+              {
+                "case": "join_storage_commit_refusal_never_publishes_payload",
+                "invocation_nonce": "ca79ea36-6199-45f9-bb47-7d00f836e25a",
+                "child_pid": 5231,
+                "mode": "actual",
+                "instrument_control": false,
+                "clock": "child-case-start",
+                "record": {
+                  "observation": {
+                    "call": {
+                      "entered_ns": 6126708,
+                      "returned_ns": 9985267750,
+                      "send_entered_ns": 9985267791,
+                      "send_completed_ns": 9985278875,
+                      "send_outcome": "sent",
+                      "diagnostic_entered_ns": 9985278875,
+                      "diagnostic_returned_ns": 9985356041,
+                      "diagnostic_succeeded": true,
+                      "result_class": "internal-error"
+                    },
+                    "wait_entered_ns": 14973208,
+                    "wait_returned_ns": 8107774625,
+                    "wait_outcome": "timeout",
+                    "join_completed_ns": 9986367083,
+                    "worker_returned": true
+                  }
+                }
+              },
+              {
+                "case": "join_storage_commit_refusal_never_publishes_payload",
+                "invocation_nonce": "ca79ea36-6199-45f9-bb47-7d00f836e25a",
+                "child_pid": 5231,
+                "mode": "actual",
+                "instrument_control": false,
+                "clock": "child-case-start",
+                "record": {
+                  "reader-release": {
+                    "entered_ns": 9987195000,
+                    "rollback_returned_ns": 9987451583,
+                    "rollback_succeeded": true,
+                    "close_entered_ns": 9987451750,
+                    "close_returned_ns": 9988220041,
+                    "close_succeeded": true
+                  }
+                }
+              }
+            ],
+            "log": "djc-reader-observation-owner.log",
+            "log_sha256": "5a7f6cf4c53bf381a08f23577257c13db1a2afb029c2515accfe9707fbd562dd"
+          },
+          {
+            "case": "djc-reader-observation-diagnostic-control",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "device_pairing_join_admission_contract",
+              "join_reader_observation_notifies_before_diagnostic_release",
+              "--",
+              "--exact",
+              "--test-threads=1",
+              "--show-output"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "required_names": [
+              "join_reader_observation_notifies_before_diagnostic_release"
+            ],
+            "observed_names": [
+              "join_reader_observation_notifies_before_diagnostic_release"
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "oracle_accepted": true,
+            "trace_accepted": true,
+            "trace_errors": [],
+            "records": [
+              {
+                "case": "join_reader_observation_notifies_before_diagnostic_release",
+                "invocation_nonce": "8a8e7a95-c928-40b1-98ac-6680fc9df109",
+                "child_pid": 5420,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "observation": {
+                    "call": {
+                      "entered_ns": 62250,
+                      "returned_ns": 62375,
+                      "send_entered_ns": 62416,
+                      "send_completed_ns": 63416,
+                      "send_outcome": "sent",
+                      "diagnostic_entered_ns": 63416,
+                      "diagnostic_returned_ns": 133666,
+                      "diagnostic_succeeded": true,
+                      "result_class": "miss"
+                    },
+                    "wait_entered_ns": 79000,
+                    "wait_returned_ns": 79208,
+                    "wait_outcome": "received",
+                    "join_completed_ns": 326250,
+                    "worker_returned": true
+                  }
+                }
+              },
+              {
+                "case": "join_reader_observation_notifies_before_diagnostic_release",
+                "invocation_nonce": "8a8e7a95-c928-40b1-98ac-6680fc9df109",
+                "child_pid": 5420,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "diagnostic-control": {
+                    "ready_returned_ns": 78958,
+                    "ready_outcome": "received",
+                    "release_entered_ns": 79208,
+                    "release_completed_ns": 95583,
+                    "release_outcome": "sent"
+                  }
+                }
+              }
+            ],
+            "log": "djc-reader-observation-diagnostic-control.log",
+            "log_sha256": "77ab34eaff79c83c8cdf8f43b3718455c80b44523ab5191a5b3b5940864d9bdf"
+          },
+          {
+            "case": "djc-reader-observation-operation-control",
+            "command": [
+              "cargo",
+              "test",
+              "--locked",
+              "--manifest-path",
+              "source/host/Cargo.toml",
+              "--test",
+              "device_pairing_join_admission_contract",
+              "join_reader_observation_cannot_notify_before_operation_return",
+              "--",
+              "--exact",
+              "--test-threads=1",
+              "--show-output"
+            ],
+            "cargo_exit": 0,
+            "capture_exit": 0,
+            "required_names": [
+              "join_reader_observation_cannot_notify_before_operation_return"
+            ],
+            "observed_names": [
+              "join_reader_observation_cannot_notify_before_operation_return"
+            ],
+            "complete_summaries": [
+              [
+                1,
+                0,
+                0,
+                0,
+                10
+              ]
+            ],
+            "oracle_accepted": true,
+            "trace_accepted": true,
+            "trace_errors": [],
+            "records": [
+              {
+                "case": "join_reader_observation_cannot_notify_before_operation_return",
+                "invocation_nonce": "13ee2ace-0af2-4b43-82fd-00a1e68825cc",
+                "child_pid": 5423,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "observation": {
+                    "call": {
+                      "entered_ns": 106166,
+                      "returned_ns": 187500,
+                      "send_entered_ns": 187541,
+                      "send_completed_ns": 198500,
+                      "send_outcome": "sent",
+                      "diagnostic_entered_ns": 198541,
+                      "diagnostic_returned_ns": 198583,
+                      "diagnostic_succeeded": true,
+                      "result_class": "miss"
+                    },
+                    "wait_entered_ns": 179791,
+                    "wait_returned_ns": 205083,
+                    "wait_outcome": "received",
+                    "join_completed_ns": 276250,
+                    "worker_returned": true
+                  }
+                }
+              },
+              {
+                "case": "join_reader_observation_cannot_notify_before_operation_return",
+                "invocation_nonce": "13ee2ace-0af2-4b43-82fd-00a1e68825cc",
+                "child_pid": 5423,
+                "mode": "actual",
+                "instrument_control": true,
+                "clock": "child-case-start",
+                "record": {
+                  "operation-control": {
+                    "ready_returned_ns": 150958,
+                    "ready_outcome": "received",
+                    "check_entered_ns": 151000,
+                    "check_returned_ns": 161000,
+                    "before_release": "empty",
+                    "release_entered_ns": 161041,
+                    "release_completed_ns": 167458,
+                    "release_outcome": "sent"
+                  }
+                }
+              }
+            ],
+            "log": "djc-reader-observation-operation-control.log",
+            "log_sha256": "9675a07a4ccdea008caea5c87c5fe75093304afa86da2ab6ff8216b40bd4ee2c"
+          }
+        ],
+        "connector_decoded_job_log": {
+          "bytes": 632042,
+          "sha256": "24b527002c9e941f9bcad9aac8c43b650485ad10bb7f0c2684c9d7a22fdec765"
+        },
+        "log_identity_method": "Root recomputed SHA-256 of the connector-decoded UTF-8 job log, preserving returned BOM and line endings. Individual command hashes are from actual receipt; binary ZIP not downloaded."
+      }
+    ]
+  },
+  "source_authority": {
+    "run": 41661449626,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "source_job": 126005400554,
+    "persistence_job": 126006726175,
+    "review_tests": 33,
+    "inventory_tests": 21,
+    "negative_probes": [
+      "duplicate source path rejected",
+      "unread denominator tamper rejected",
+      "unbacked accepted verdict rejected",
+      "orphan responsibility rejected"
+    ],
+    "inventory": {
+      "paths": 62130,
+      "mapped": 888,
+      "literal_unread_or_partial": 62067,
+      "pending_forward_links": 0,
+      "closure": "open",
+      "sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a"
+    },
+    "persistence": "No new source-derived shard content; no derived carrier commit.",
+    "source_log": {
+      "bytes": 31547,
+      "sha256": "2f23eadf35dc4328a29d9df7e2a1c12a90ebfb6ed0d7bc47872371681bf674f4"
+    },
+    "persistence_log": {
+      "bytes": 18156,
+      "sha256": "4ecef56b0ba2f2f603dc55214a8a7b972b4cb47d0bbb9b1fff3da736c1d3cc68"
+    },
+    "scope": "G01 tracked-source and G02 structural proof; no complete source closure, semantic implementation or global acceptance."
+  },
+  "artifacts": [
+    {
+      "id": 13242731780,
+      "name": "ocrm-djc-reader-observation-macOS-45847ae07d0af58e8caaea4dcdad60c179da0631-41661449688-1",
+      "bytes": 160720,
+      "digest": "sha256:9705ed5ed5baed27ff6bc390533d12495613673a18fdd64bd4b0a16c62b786d1",
+      "expired": false,
+      "expires_at": "2027-02-01T15:12:26Z",
+      "head_sha": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+      "identity": "GitHub artifact metadata; upload/persistence logs corroborate transport digest; no local ZIP download."
+    },
+    {
+      "id": 13241193769,
+      "name": "ocrm-djc-reader-observation-Linux-45847ae07d0af58e8caaea4dcdad60c179da0631-41661449688-1",
+      "bytes": 156146,
+      "digest": "sha256:54d60f2a8f94c7cd78d9bcda97c0b12238d5271c4946b31bf37bb9996d953362",
+      "expired": false,
+      "expires_at": "2027-02-01T15:12:26Z",
+      "head_sha": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+      "identity": "GitHub artifact metadata; upload/persistence logs corroborate transport digest; no local ZIP download."
+    },
+    {
+      "id": 13242042646,
+      "name": "ocrm-p0-authority-45847ae07d0af58e8caaea4dcdad60c179da0631",
+      "bytes": 4951973,
+      "digest": "sha256:340812522b4534f21a3bb61390778b2e2d56ef08c489393a6764924a03d5beac",
+      "expired": false,
+      "expires_at": "2026-12-03T15:14:30Z",
+      "head_sha": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+      "identity": "GitHub artifact metadata; upload/persistence logs corroborate transport digest; no local ZIP download."
+    }
+  ],
+  "adjudication": {
+    "state": "failed-retained-owner-observation; independent-causal-assessment-pending",
+    "macos_failure": "Owner command101/0; exact original8s assertion remains. Two observation controls0/0. One failed selected owner case appears in nested child/outer summaries; not two independent failed cases.",
+    "decisive_failure_assertion": "DJC original observation failed despite later diagnostics: [\"bounded actual commit refusal: original 8s observation timed out\"]",
+    "causal_observation": "Same-child adjacent return boundary9985267750ns follows wait timeout8107774625ns by1877493125ns; completion send and diagnostics follow that return boundary. Post-result diagnostics do not account for this late return boundary. Adjacent timestamps include descheduling and cannot locate private SQL duration or prove an environment cause.",
+    "macos_records": "Four control records are accepted positives. The two owner failure records are retained diagnostics and have trace_accepted=false; they are not promoted into qualified success.",
+    "later_reached_assertions": [
+      "Internal error/status/redaction",
+      "Explicit held-reader rollback and close",
+      "Complete refused-row preservation",
+      "Owner reopen",
+      "Fresh successful redemption after unlock",
+      "Consumed marker and complete-row preservation except that marker"
+    ],
+    "later_scope_limit": "This selected case does not perform a second redemption after repair. Complete single-use/repeated-use coverage remains historical under its own subjects.",
+    "retained_history": [
+      {
+        "subject": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
+        "run": 41642220354,
+        "job": 125938337174,
+        "result": "8 passed / 1 failed; unchanged historical failure"
+      },
+      {
+        "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+        "run": 41618863245,
+        "job": 125859112570,
+        "result": "historical8s observation failure retained"
+      }
+    ],
+    "next_action": "Fresh read-only independent causal/exhaustion assessment of exact owner transaction/drop/busy semantics and scoped oracle authority; no unchanged rerun or timeout/assertion weakening."
+  },
+  "independent_observer": {
+    "agent": "/root/djc_observation_actions_observer",
+    "activity": "Read-only actual run/job/log/artifact/source-binding verification",
+    "concurrence": "Confirmed sameH/tree/U, Linux3pass,Macownerfail/2controls pass,sourceauthoritysuccess, actualcontrolcounts, and rawdiagnostic-vs-qualified-positive distinction.",
+    "no_writes_or_executable_local_validation": true
+  },
+  "acceptance": {
+    "full_unit_verified": false,
+    "full_eleven_case_target_executed": false,
+    "shipping_app_compiled": false,
+    "real_devices_accepted": false,
+    "all_eight_global_flags": false,
+    "final_acceptance": false
+  },
+  "carrier": "This document is an evidence carrier for H45847; its later commit is not an executed subject."
+}

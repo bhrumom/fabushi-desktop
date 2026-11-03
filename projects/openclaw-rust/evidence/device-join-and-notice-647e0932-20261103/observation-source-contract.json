@@ -97,7 +97,16 @@
       ],
       "review": "Independent source assessor verified default5000ms busy sleep budget and consuming-commit rollback behavior; it is not an operation-wide wall deadline. No dependency changes."
     },
-    "independent_review": "pending complete immutable candidate GENERAL/STRUCTURE review",
+    "independent_review": {
+      "result": "converged-source-only",
+      "candidate": "e8271d8aedd80803a8f5494c4c653001d57bf1fe",
+      "scope_blob": "6be9f8b6d7f5130b915f89fd229754f80f54b2c6",
+      "complete_patch_blob": "274d175058deca6cf9f5d61b54b37978aed59c79",
+      "convergence": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/review-observation-r1/convergence.json",
+      "general": "approved",
+      "structure": "approved",
+      "execution_is_separate": true
+    },
     "source_read_history_promoted": false
   },
   "trace": {
@@ -192,7 +201,23 @@
     ],
     "shipping_compile": false,
     "box_producer": false,
-    "execution": "not-run",
+    "execution": {
+      "subject_commit": "45847ae07d0af58e8caaea4dcdad60c179da0631",
+      "subject_tree": "9c879741ffe74176d3b0892c4f3aa97304c61b1d",
+      "executed_source_contract_blob": "a5419de64cde66ed1d948f6f2fa0909f1b284144",
+      "runtime_run": 41661449688,
+      "attempt": 1,
+      "result": "failed-or-incomplete",
+      "platforms": {
+        "Linux": "3 exact selected commands passed",
+        "macOS": "owner8s assertion failed101/0; two instrument controls passed0/0"
+      },
+      "source_authority_run": 41661449626,
+      "source_authority_result": "success",
+      "assessment": "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-45847-terminal-assessment.json",
+      "next": "Independent causal/exhaustion assessment; no unchanged rerun.",
+      "carrier_not_subject": true
+    },
     "campaign_budget": "One changed-instrument focused campaign after fresh source review and retained independent assessments. A further failure is assessed causally before any new action; no unchanged rerun."
   },
   "history": {
@@ -235,6 +260,7 @@
   "open_work": [
     "Actual new three-case source/compile/runtime results.",
     "Resolution of retained lock observation if new direct instrument still fails.",
-    "Full source closure and actual setup issuer/UI/schema/companion-node behavior, unknown commit/crash handling, all supported platforms/packages and final G01-G12/AC01-AC24/independent ACCEPT."
+    "Full source closure and actual setup issuer/UI/schema/companion-node behavior, unknown commit/crash handling, all supported platforms/packages and final G01-G12/AC01-AC24/independent ACCEPT.",
+    "H45847 new observation clarifies that the recorded adjacent public-call return follows the macOS wait timeout; cause/oracle classification remains independently assessed. Raw failure traces are not accepted positives."
   ]
 }
