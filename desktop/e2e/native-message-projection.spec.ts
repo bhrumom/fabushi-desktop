@@ -703,7 +703,7 @@ for (const outcome of ['failure', 'selection-expired-success'] as const) {
     await page.locator('[contenteditable="true"]').fill('Queued successor must advance');
     await page.getByRole('button', { name: 'Send message', exact: true }).click();
     const successor = page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id^="pending-"]').filter({ hasText: 'Queued successor must advance' });
-    await expect(successor).toContainText('Will send when reconnected');
+    // Online queued work waits behind the active retry; offline copy is distinct.\n    await expect(successor).toContainText('Waiting to send…');
     expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
     await page.locator('[contenteditable="true"]').fill('New unsent draft after successor');
 

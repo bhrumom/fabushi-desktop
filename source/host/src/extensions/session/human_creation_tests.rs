@@ -446,21 +446,44 @@ fn encoded_json(value: &Value) -> String {
 }
 
 fn assert_canonical_pair_consumers_refuse(workers: &ProductionSessionWorkers, id: &str) {
+    // Read-only admission must not create an SQLite WAL/index on refusal.
+    // Assert after each product entrypoint to identify the exact caller if it
+    // violates the byte-preservation invariant under a cold restart.
+    let db_path = get_native_conversation_db_path(&workers.agents_root, id).unwrap();
+    let directory = db_path.parent().unwrap();
+    let byte_snapshot = directory_file_bytes(directory);
+    let assert_no_side_effect = |caller: &str| {
+        let after = directory_file_bytes(directory);
+        let before_names = byte_snapshot.iter().map(|entry| entry.0.as_str()).collect::<Vec<_>>();
+        let after_names = after.iter().map(|entry| entry.0.as_str()).collect::<Vec<_>>();
+        assert_eq!(after_names, before_names, "refused {caller} created or removed stored sidecars");
+        assert_eq!(after, byte_snapshot, "refused {caller} changed stored bytes");
+    };
+
     assert!(workers.open_human_conversation_db_owner(id).is_err(), "ordinary owner admission");
+    assert_no_side_effect("owner");
     assert!(workers.read_human_conversation_transcript(id).is_err(), "full transcript");
+    assert_no_side_effect("full transcript");
     assert!(workers.read_human_conversation_transcript_tail(id, HumanTranscriptPageQuery {
         before_seq: None, before_cursor: None, limit: 1,
     }).is_err(), "bounded transcript");
+    assert_no_side_effect("bounded transcript");
     assert!(workers.search_human_messages(id, "retained", 10).is_err(), "message search");
+    assert_no_side_effect("search");
     assert!(workers.search_human_recipients(id, "human-server-message:17", "", 10).is_err(),
         "forward recipient selection");
+    assert_no_side_effect("recipients");
     assert!(workers.append_human_message(id, "must not be appended", "rebound-send", Some(30.0), None, &[])
         .is_err(), "ordinary send");
+    assert_no_side_effect("send");
     assert!(workers.append_human_agent_message(id, "retained-agent", "rebound-result", "must not be appended", 30.0)
         .is_err(), "Agent handoff result");
+    assert_no_side_effect("handoff");
     assert!(workers.sync_human_conversation(id).is_err(), "history synchronization");
+    assert_no_side_effect("sync");
     assert!(workers.list_human_conversations().unwrap().iter().all(|row| row["id"] != id),
         "invalid stores cannot be offered as destinations");
+    assert_no_side_effect("roster");
 }
 
 #[test]
@@ -499,6 +522,8 @@ fn canonical_pair_admission_preserves_rebound_state_across_cached_fresh_and_rest
         let cold_bytes = directory_file_bytes(path.parent().unwrap());
         for _ in 0..2 {
             let reopened = test_workers(&root);
+            assert_eq!(directory_file_bytes(path.parent().unwrap()), cold_bytes,
+                "constructing new Session cannot mutate a rejected Human store");
             assert_canonical_pair_consumers_refuse(&reopened, &id);
             assert_eq!(directory_file_bytes(path.parent().unwrap()), cold_bytes,
                 "cold pair refusal must precede writable open: {label}");

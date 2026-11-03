@@ -308,7 +308,7 @@ export function MessageReactionAction({ entryId, agentId, myReactions, transport
           style={{
             position: "fixed", top: 0, left: 0, zIndex: 3000,
             boxSizing: "border-box", width: "max-content", maxWidth: "min(340px, calc(100vw - 16px))",
-            overflow: "auto", visibility: "hidden", pointerEvents: "auto",
+            // Position is installed in the layout effect before paint. A per-render\n            // visibility:hidden inline default would hide the focused portal on\n            // subsequent unrelated transcript updates without rerunning [open].\n            overflow: "auto", pointerEvents: "auto",
             padding: 6, borderRadius: 10,
             border: "1px solid var(--cursor-border-subtle, #343832)",
             background: "var(--cursor-bg-primary, #20231f)",
