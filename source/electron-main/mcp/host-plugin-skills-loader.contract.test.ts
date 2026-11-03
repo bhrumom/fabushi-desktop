@@ -326,7 +326,7 @@ test("remote Git clone authorization denial retains its canonical ID as an auth 
   const result = await host.load();
   assert.deepEqual(result.listedPluginIds, ["41"]);
   assert.deepEqual(result.authBlocked, [{
-    pluginId: "41", pluginName: "7", marketplaceName: "cursor-public",
+    pluginId: "41", pluginName: "7",
   }]);
   assert.equal(await readFile(oldSkill, "utf8"), "Previous committed skill bytes.\n");
 });
