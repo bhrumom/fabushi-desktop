@@ -1,0 +1,74 @@
+{
+  "schema": "ocrm-independent-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review": "MGL-native-source-binding-focused-recovery-R1",
+  "repository": "bhrumom/fabushi-desktop",
+  "base": "5405a24c46e9808a3377933f07b2ba4eab0fcf9a",
+  "base_tree": "afb099c64687ca4ae02ea03784ce0bbb15399d71",
+  "candidate_commit": "b09f3d11372e5fee7463169169d0482b7bff5a6b",
+  "candidate_tree": "9f731080db2edb16a33b889b0337c00fe7a3a715",
+  "scope_blob": "b5b47bb303804e2f8d2dde69dbb3a473856b7a14",
+  "complete_diff_blob": "508a7148da113f847d6fe887da07579e4eda3e4d",
+  "files": [
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "04e8651579cee3a72fd637de471e3b6f9643f1a0",
+      "candidate_blob": "0768505f6cb4b52c6e0b2b9e14b66e844b64604e",
+      "candidate_utf8": {
+        "bytes": 218789,
+        "sha256": "2c7e4ef4504d9d8b438d1693cda0094f0f9274f8a6cb6c5199c3bec8aff69637"
+      }
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "0c530c5038bf7ad6c095ecb9db728805a21c7a71",
+      "candidate_blob": "60165b9589cf057c491b63ae08be49f031efd7e5",
+      "candidate_utf8": {
+        "bytes": 477039,
+        "sha256": "b3d00dfe0ff3f35700c4e8ecc52caf877d67042b23b9eb01ca30a8b7fe77d3e3"
+      }
+    }
+  ],
+  "reviewers": [
+    {
+      "worker": "/root/mgl_binding_r1_general",
+      "lens": "GENERAL",
+      "model": "configured parent model",
+      "effort": "xhigh",
+      "fresh_blind": true,
+      "verdict": "APPROVE",
+      "findings": [],
+      "source_scope": "Complete frozen two-path diff; native path producers/dedup, actual Git controls, raw-byte source binding, selected plans/oracles/compile/receipt, job selection and early failure capture. Unchanged Rust production not re-reviewed.",
+      "execution": "not-run"
+    },
+    {
+      "worker": "/root/mgl_binding_r1_structure",
+      "lens": "STRUCTURE",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "fresh_blind": true,
+      "verdict": "APPROVE",
+      "findings": [],
+      "source_scope": "Complete frozen two-path diff plus root instructions/behavior spec/§17 authority, input producers and actual fixture tracking, exact-source bindings, selected plans/result consumers, job composition and failure artifact lifecycle. Unchanged Rust production not re-reviewed.",
+      "execution": "not-run"
+    }
+  ],
+  "result": "source-review-converged; executable Windows recovery still required",
+  "integration": {
+    "expected_parent": "f6da7d7e109f48e61cc81cebcc88f0f25aadf419",
+    "exact_two_blobs_reused": true,
+    "old_source_blobs_rechecked": true,
+    "other_current_work_preserved": true
+  },
+  "acceptance_limits": [
+    "No execution result is created by source review.",
+    "Original Windows failure and original-H Linux/macOS positives retain their subjects.",
+    "No Windows shipping App/package or full OCRM acceptance claim."
+  ],
+  "full_reports": "Terminal reviewer reports in task conversation; this file is a factual convergence index."
+}

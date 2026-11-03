@@ -236,7 +236,7 @@ inputs = [
     "source/packages/proto/generated/agent/v1/send_message_tool_pb.ts",
 ]
 inputs = sorted(set(inputs) | {"source/host/build.rs", "source/host/tests/generated_occurrence_codec_contract.rs"} | {
-    str(path) for path in pathlib.Path("source/packages/proto/generated").rglob("*.ts")
+    path.as_posix() for path in pathlib.Path("source/packages/proto/generated").rglob("*.ts")
 })
 # BXR-v1.3 binds the actual Box owner, all changed consumers and the existing
 # daemon producer separately from unrelated portable-source coverage.
@@ -2166,8 +2166,8 @@ box_daemon_lock_tracked = subprocess.run(
     ["git", "cat-file", "-e", f"{head}:source/box-exec-daemon/Cargo.lock"],
     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False).returncode == 0
 if box_daemon_lock_tracked:
-    box_response_inputs.append(str(box_daemon_lock))
-    inputs = sorted(set(inputs) | {str(box_daemon_lock)})
+    box_response_inputs.append(box_daemon_lock.as_posix())
+    inputs = sorted(set(inputs) | {box_daemon_lock.as_posix()})
 else:
     assert not box_daemon_lock.exists(), "Untracked daemon lock would be an unbound build input"
 
@@ -2182,6 +2182,41 @@ def source_bindings(paths):
             "matches_head_bytes": actual == committed,
         }
     return bindings
+
+# Repository identities use Git's slash-separated namespace. Native Path
+# spellings still serve filesystem/process APIs and are recorded only as data.
+native_source_identity_controls = []
+generated_control_key = "source/packages/proto/generated/agent/v1/agent_pb.ts"
+generated_control_path = next((path for path in pathlib.Path("source/packages/proto/generated").rglob("*.ts")
+    if path.as_posix() == generated_control_key), None)
+assert generated_control_path is not None, "Real generated input discovery control is missing"
+native_binding_fixtures = [("generated-recursive-member", generated_control_path, generated_control_key, [inputs])]
+if box_daemon_lock_tracked:
+    native_binding_fixtures.append(("tracked-daemon-lock", box_daemon_lock,
+        "source/box-exec-daemon/Cargo.lock", [inputs, box_response_inputs]))
+assert all("\\" not in path for path in inputs), "Native separator leaked into repository input identity"
+for case, native_path, expected_key, producer_lists in native_binding_fixtures:
+    repository_key = native_path.as_posix()
+    assert repository_key == expected_key
+    assert all(paths.count(repository_key) == 1 for paths in producer_lists), "Repository input identity is not unique"
+    bound = source_bindings([repository_key])
+    assert set(bound) == {repository_key} and bound[repository_key]["matches_head_bytes"], "Native Git binding control failed"
+    native_source_identity_controls.append({
+        "case": case, "native_spelling": str(native_path), "repository_key": repository_key,
+        "expected": "bound-exact-bytes-once", "actual": "bound-exact-bytes-once",
+        "binding": bound[repository_key],
+    })
+    if os.name == "nt":
+        native_spelling = str(native_path)
+        assert "\\" in native_spelling and native_spelling != repository_key
+        assert all(native_spelling not in paths for paths in producer_lists), "Native source alias survived deduplication"
+        rejected = subprocess.run(["git", "show", f"{head}:{native_spelling}"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        assert rejected.returncode != 0, "Original backslash Git operand unexpectedly resolved"
+        native_source_identity_controls.append({
+            "case": case + "-backslash-refusal", "native_spelling": native_spelling,
+            "expected": "rejected", "actual": "rejected", "git_exit": rejected.returncode,
+        })
 
 custody_recovery_inputs = [
     "projects/openclaw-rust/upstream.lock.json",
@@ -2208,6 +2243,7 @@ memory_checked_list_inputs_before = source_bindings(memory_checked_list_inputs)
 assert all(item["matches_head_bytes"] for item in memory_checked_list_inputs_before.values()), "MGL source input differs from exact H"
 
 receipt = {
+    "native_source_identity_controls": native_source_identity_controls,
     "memory_checked_list_contract": "MGL-v1/MGS-native-components",
     "memory_checked_list_native_platform": memory_checked_list_native_platform,
     "memory_checked_list_expected_positive_count": memory_checked_list_expected_counts[memory_checked_list_native_platform],

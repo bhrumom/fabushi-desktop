@@ -1,0 +1,58 @@
+diff --git a/.github/workflows/ocrm-p0-authority.yml b/.github/workflows/ocrm-p0-authority.yml
+index 46861e7d6b26f2e250840f0f7b6c4481b5d74622..7d55bc935ac2c73f7dd9f48a3b614a75bcb943d4 100644
+--- a/.github/workflows/ocrm-p0-authority.yml
++++ b/.github/workflows/ocrm-p0-authority.yml
+@@ -578,6 +578,12 @@
+               if status == 0 and command.startswith("cargo test ") and "--no-run" not in command:
+                   require(summaries > 0, "missing_successful_test_summary")
+           
++          legacy_persistence_markers = (
++              "[ocrm-recover-563-command-evidence]",
++              "[ocrm-recover-812-command-evidence]",
++              "[ocrm-recover-563-command-evidence-v2]",
++          )
++          
+           def validate_carrier_push(event, commit, comparison, carrier_sha):
+               before = event.get("before")
+               require(isinstance(before, str) and re.fullmatch(r"[0-9a-f]{40}", before) is not None
+@@ -589,6 +595,7 @@
+                       and commit.get("sha") == carrier_sha
+                       and isinstance(commit.get("message"), str)
+                       and "[ocrm-recover-djc-e383-command-evidence]" in commit["message"]
++                      and not any(marker in commit["message"] for marker in legacy_persistence_markers)
+                       and event["head_commit"].get("message") == commit["message"]
+                       and [parent.get("sha") for parent in commit.get("parents", [])] == [before],
+                       "unapproved_collector_carrier")
+@@ -822,6 +829,19 @@
+                   require(validate_carrier_push(control_event, control_commit, control_compare, control_after)
+                           == control_before, "valid_carrier_control")
+                   controls.append({"control": "djc_workflow_only_carrier", "result": "accepted"})
++                  for legacy_marker in legacy_persistence_markers:
++                      combined_message = control_message + " " + legacy_marker
++                      combined_event = {**control_event, "head_commit": {
++                          **control_event["head_commit"], "message": combined_message}}
++                      combined_commit = {**control_commit, "message": combined_message}
++                      try:
++                          validate_carrier_push(combined_event, combined_commit, control_compare, control_after)
++                      except CollectionRefusal as error:
++                          require(error.args == ("unapproved_collector_carrier",), "wrong_control_refusal")
++                          controls.append({"control": "djc_conflicting_legacy_marker",
++                                           "marker": legacy_marker, "result": "rejected"})
++                      else:
++                          raise CollectionRefusal("accepted_conflicting_carrier_control")
+                   for label, event_delta, commit_delta, compare_delta in (
+                           ("product_files", {}, {}, {"files": control_compare["files"] + [
+                               {"filename": "source/host/src/device_pairing_owner.rs", "status": "modified", "sha": "4" * 40}]}),
+diff --git a/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md b/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
+index b3baccdb4f68ce0c0d5b9a280c67d20803210954..44b3b7c695fb75d4e069ae7875eb6d599806017d 100644
+--- a/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
++++ b/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
+@@ -213,6 +213,8 @@
+ read-only GitHub commit/compare APIs that the complete before/after range is one
+ commit changing only this authority workflow. Mixed product paths, multiple
+ commits, absent/truncated identity or an unresolved comparison refuse collection.
++The DJC profile also refuses every legacy marker that suppresses persistence,
++even when the same commit otherwise qualifies as a workflow-only carrier.
+ The marker grants no exemption from normal source-authority or persistence jobs;
+ those existing owners retain their normal gates and permissions on every push.
+ This avoids a marker-based route around product source authority. The collector
