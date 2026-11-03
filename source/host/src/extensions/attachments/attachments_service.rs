@@ -2008,7 +2008,11 @@ impl AttachmentsService {
                     .get("url")
                     .and_then(Value::as_str)
                     .ok_or_else(|| "loadWebMedia.url must be a string".to_string())?;
-                let max_bytes = args.get("maxBytes").and_then(Value::as_u64).map(|v| v as usize);
+                let max_bytes = args.get("maxBytes")
+                    .and_then(Value::as_u64)
+                    .map(usize::try_from)
+                    .transpose()
+                    .map_err(|_| "loadWebMedia.maxBytes exceeds the supported byte-count range".to_string())?;
                 let optimize = args.get("optimizeImages").and_then(Value::as_bool).unwrap_or(true);
                 let opts = crate::extensions::attachments::web_media::WebMediaOptions {
                     max_bytes,

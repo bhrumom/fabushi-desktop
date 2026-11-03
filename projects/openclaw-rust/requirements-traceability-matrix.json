@@ -1481,7 +1481,10 @@
         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
         "source/host/src/extensions/memory/production_identity_tests.rs",
-        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+        "projects/openclaw-rust/evidence/media-bounded-read-contract-647e0932-20261103.json",
+        "source/host/tests/channel_attachment_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2939,7 +2942,10 @@
         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
         "source/host/src/extensions/memory/production_identity_tests.rs",
-        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+        "projects/openclaw-rust/evidence/media-bounded-read-contract-647e0932-20261103.json",
+        "source/host/tests/channel_attachment_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

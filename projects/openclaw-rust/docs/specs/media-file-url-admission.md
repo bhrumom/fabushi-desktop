@@ -126,3 +126,46 @@ refusal, without adding logs containing file contents or credentials.
 - Fixed-U package/lock binding: `@openclaw/fs-safe` 0.27.0, archive SHA-256 `02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c`; packaged `dist/local-file-access.js` SHA-256 `7530a957ca9d56f56deba8da1dd06be03c894c6f6472bc8571080937b57bfda8`. Review is scoped dependency-contract/actual-use review, not a claim of full package reading or generator closure.
 - Target host and App locks both bind `url` 2.5.8, checksum `ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed`. Version-source commit `d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce` documents Windows UNC conversion; exact crate archive acquisition remains separate.
 - Existing `media-store-read-scope.md`, `media-html-policy-safety.md` and `media-image-probe-boundary.md` retain their independent authority and open scope.
+
+## Locked-parser normalization correction before combined BR publication
+
+This pre-implementation amendment is based on current owner commit
+`3647531d1d47d1c690b98a06f0156ae2734ff7ad`, inherited at
+`073b98b4826c8125d0a42d15f8ccdbfebb5eb488`. It enforces FUA-01 through
+FUA-04 with the actual locked `url` 2.5.8 archive, SHA-256
+`ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed`.
+The archive source is the authority for these library semantics; no executable
+reproduction has been performed locally or on htch.
+
+The parsed host alone is insufficient: `parser.rs` 1344–1363 reports
+`FileWithHostAndWindowsDrive` then clears a nonempty host; 1371–1378 removes
+initial empty file path segments without a violation. The Windows converter
+`lib.rs` 3128–3202 can reach its absolute-path assertion on a bare drive.
+
+- Retain the parser's original-host violation through its existing parse-options
+  callback and refuse it as `invalid-file-url`. Ordinary empty/localhost native
+  URLs, mixed-case schemes and valid single-slash forms remain accepted.
+- Preserve the existing all-platform four-slash refusal, including equivalent
+  mixed slash/backslash and localhost forms. A private prefix/component guard
+  may observe the original leading file-path separator shape while ignoring
+  exactly the tab/CR/LF characters ignored by the URL parser. It is not another
+  URL parser or a blanket ban on ordinary interior separators. Query/fragment
+  bytes do not become path admission input.
+- Before Windows native conversion, refuse bare path/drive forms lacking a root
+  segment. No assertion/panic, implicit current-drive path or successful empty
+  result may replace `invalid-file-url`. Actual rooted native positives must
+  still work.
+- Keep the existing private no-I/O reader boundary and add these cases to its
+  zero-entry controls under default, rooted and sandbox option variants. Keep
+  every pre-existing four-slash/authority/encoded-separator assertion. Exercise
+  legitimate localhost, percent/unicode names and query/fragment forms through
+  real native file/service consumers; no live share/device negative is allowed.
+
+This retains the existing stricter all-platform leading-separator policy;
+it does not claim equivalence for all POSIX double-root spellings. Strict
+pathname UTF-8/percent decoding, encoded drive-letter behavior, Unix terminal
+colon spelling, broader dot-normalization parity, Windows ADS/NUL/device opens,
+and existing capability/identity/transport obligations remain applicable
+followup work. Neither this correction nor BR's generic reader promotes the
+complete FUA/media row or any global acceptance flag. Every native execution
+and exact current-H input/log/exit observation remains required in Actions.

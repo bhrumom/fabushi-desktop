@@ -378,3 +378,120 @@ fn mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals() {
         assert!(matches!(parse_inbound_media_uri(source), Err(MediaReferenceError::InvalidPath(_))), "{source}");
     }
 }
+
+struct BoundedMediaFixture(PathBuf);
+
+impl BoundedMediaFixture {
+    fn new(label: &str) -> Self {
+        let path = std::env::temp_dir().join(format!(
+            "ocrm-bounded-media-{label}-{}",
+            uuid::Uuid::new_v4()
+        ));
+        fs::create_dir(&path).expect("create owned bounded-media fixture");
+        Self(path)
+    }
+}
+
+impl Drop for BoundedMediaFixture {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(&self.0);
+    }
+}
+
+#[test]
+fn br_public_empty_zero_exact_and_over_limits() {
+    let fixture = BoundedMediaFixture::new("limits");
+    let empty = fixture.0.join("empty.bin");
+    fs::write(&empty, b"").expect("write empty file");
+    assert!(read_outbound_media_file_bounded(&empty, 0).unwrap().is_empty());
+
+    let source = fixture.0.join("source.bin");
+    fs::write(&source, b"abc").expect("write ordinary file");
+    for cap in [0, 2] {
+        let error = read_outbound_media_file_bounded(&source, cap).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+    }
+    assert_eq!(read_outbound_media_file_bounded(&source, 3).unwrap(), b"abc");
+    assert_eq!(read_outbound_media_file_bounded(&source, 4).unwrap(), b"abc");
+}
+
+#[test]
+fn br_public_usize_max_returns_original_bytes() {
+    let fixture = BoundedMediaFixture::new("max-cap");
+    let source = fixture.0.join("source.bin");
+    let original = b"\0nonempty\xff";
+    fs::write(&source, original).expect("write binary file");
+    assert_eq!(
+        read_outbound_media_file_bounded(&source, usize::MAX).unwrap(),
+        original,
+        "the maximum cap must not panic or wrap the read limit to zero"
+    );
+}
+
+#[test]
+fn br_public_missing_and_directory_preserve_not_found() {
+    let fixture = BoundedMediaFixture::new("missing-kind");
+    let missing = fixture.0.join("absent.bin");
+    assert_eq!(
+        read_outbound_media_file_bounded(&missing, usize::MAX).unwrap_err().kind(),
+        std::io::ErrorKind::NotFound
+    );
+    assert_eq!(
+        read_outbound_media_file_bounded(&fixture.0, usize::MAX).unwrap_err().kind(),
+        std::io::ErrorKind::NotFound
+    );
+}
+
+#[test]
+fn br_public_retry_observes_replaced_file() {
+    let fixture = BoundedMediaFixture::new("fresh-retry");
+    let source = fixture.0.join("source.bin");
+    fs::write(&source, b"first").expect("write first file");
+    assert_eq!(read_outbound_media_file_bounded(&source, 5).unwrap(), b"first");
+
+    let replacement = fixture.0.join("replacement.bin");
+    fs::write(&replacement, b"replacement").expect("write replacement");
+    fs::remove_file(&source).expect("remove old owned file after read");
+    fs::rename(&replacement, &source).expect("publish owned replacement for retry");
+    assert_eq!(
+        read_outbound_media_file_bounded(&source, 5).unwrap_err().kind(),
+        std::io::ErrorKind::InvalidData
+    );
+    assert_eq!(
+        read_outbound_media_file_bounded(&source, b"replacement".len()).unwrap(),
+        b"replacement",
+        "retry must observe the current file rather than retain old bytes or a prior error"
+    );
+}
+
+#[test]
+fn br_public_hard_links_preserve_bytes() {
+    let fixture = BoundedMediaFixture::new("hard-link");
+    let source = fixture.0.join("source.bin");
+    let alias = fixture.0.join("hard-link.bin");
+    fs::write(&source, b"linked bytes").expect("write linked source");
+    fs::hard_link(&source, &alias).expect("create real native hard link");
+    assert_eq!(
+        read_outbound_media_file_bounded(&alias, b"linked bytes".len()).unwrap(),
+        b"linked bytes"
+    );
+}
+
+#[cfg(any(unix, windows))]
+#[test]
+fn br_public_symbolic_links_preserve_bytes() {
+    let fixture = BoundedMediaFixture::new("symbolic-link");
+    let source = fixture.0.join("source.bin");
+    let alias = fixture.0.join("symbolic-link.bin");
+    fs::write(&source, b"linked bytes").expect("write linked source");
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(&source, &alias).expect("create real Unix file symlink");
+    #[cfg(windows)]
+    std::os::windows::fs::symlink_file(&source, &alias)
+        .expect("create real Windows file symlink (required native fixture)");
+    assert_eq!(
+        read_outbound_media_file_bounded(&alias, b"linked bytes".len()).unwrap(),
+        b"linked bytes"
+    );
+}
+

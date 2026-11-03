@@ -201,6 +201,22 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         "file://user:secret@localhost/share/image.png",
         "file://localhost:8080/share/image.png",
         "FILE:////files.example/share/image.png",
+        "file:////C:/safe/image.png",
+        r"file:/\/\C:/safe/image.png",
+        r"file:\/\\C:/safe/image.png",
+        r"file:\\\/C:/safe/image.png",
+        "file://localhost//C:/safe/image.png",
+        r"FiLe://LOCALHOST/\C:/safe/image.png",
+        r"file:\\localhost\/C:\safe\image.png",
+        "file:/\t/\r/\n/C:/safe/image.png",
+        "file://local\thost/\r/\nC:/safe/image.png",
+        "file://files.example/C:/safe/image.png",
+        "FiLe://localhost.example/C:/safe/image.png",
+        "FILE://127.0.0.1/C:/safe/image.png",
+        "file://[::1]/C:/safe/image.png",
+        "file://files.exa\tmple/C:/safe/image.png",
+        "file://files.example/C|/safe/image.png",
+        r"file:\\files.example\C:\safe\image.png",
         "file:///C:/safe/folder%2fimage.png",
         "FILE:///C:/safe/folder%5Cimage.png",
         "https://localhost/image.png",
@@ -211,9 +227,30 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         }
     }
     #[cfg(windows)]
-    match file_url_to_path("file:///drive-less/image.png").expect_err("native conversion failure") {
-        WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
-        other => panic!("Expected invalid-file-url, got {other:?}"),
+    for reference in [
+        "file:///drive-less/image.png",
+        "file:",
+        "file:/",
+        "file://localhost/",
+        "file:C:",
+        "file:/C:",
+        "file://C:",
+        "file:///C:",
+        "file:///C|",
+        "file:///C%3A",
+        "file:///C%3a",
+        "FiLe://localhost/C:",
+        "file:///C:?ignored=/",
+        "file:///C:#ignored=/",
+    ] {
+        match file_url_to_path(reference).expect_err("native conversion failure") {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
+            other => panic!("Expected invalid-file-url for {reference:?}, got {other:?}"),
+        }
+    }
+    #[cfg(windows)]
+    for reference in ["file:///C:/", "file://C:/", "file:///C|/", "file:///C%3A/"] {
+        assert_eq!(file_url_to_path(reference).expect("rooted drive remains valid"), PathBuf::from(r"C:\"));
     }
 }
 
@@ -231,8 +268,19 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
         format!("FILE:{}", native_url.as_str().strip_prefix("file://").unwrap()),
         format!("fIlE:{}", native_url.as_str().strip_prefix("file:").unwrap()),
         format!("file://localhost{}", native_url.path()),
-    ];
-    for reference in references {
+        format!("file://local\thost{}", native_url.path()),
+        format!("FILE:{}", native_url.path().replace('/', r"\")),
+        format!("file:///{}", native_url.path().trim_start_matches('/').replacen('/', "//", 1)),
+    ].into_iter();
+    #[cfg(windows)]
+    let references = references.chain([
+        format!("file://{}", native_url.path().trim_start_matches('/')),
+        format!("file://{}", native_url.path().trim_start_matches('/').replacen('/', "//", 1)),
+    ]);
+    for reference in references.flat_map(|reference| {
+        let with_components = format!("{reference}?next=%2F%5C#part=%5C%2F");
+        [reference, with_components]
+    }) {
         assert_eq!(file_url_to_path(&reference).unwrap(), path);
         let mut options = WebMediaOptions {
             max_bytes: Some(bytes.len()),
@@ -824,4 +872,154 @@ fn test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes() {
         assert_explicit_html_rejected(&service, &path.to_string_lossy());
     }
     assert_eq!(fs::read_dir(&temp.path).unwrap().count(), 1, "no staged file or provenance sidecar");
+}
+
+#[test]
+fn test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes() {
+    let temp = TempTestDir::new("maximum-cap");
+    let service = test_attachments_service(&temp.path);
+    // Header-only bytes exercise the existing metadata probe, not a full decoder.
+    let png = [
+        0x89, b'P', b'N', b'G', 13, 10, 26, 10,
+        0, 0, 0, 13, b'I', b'H', b'D', b'R',
+        0, 0, 0, 1, 0, 0, 0, 1, 8, 6,
+    ];
+    let html = b"<html><body>maximum cap still reads real bytes</body></html>";
+    for (name, bytes, publication, mime, kind) in [
+        ("limit.png", png.as_slice(), None, "image/png", "image"),
+        ("limit.html", html.as_slice(), Some("explicit"), "text/html", "document"),
+    ] {
+        let path = temp.path.join(name);
+        fs::write(&path, bytes).expect("write actual file");
+        let result = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": path.to_string_lossy(),
+            "maxBytes": u64::MAX,
+            "optimizeImages": false,
+            "htmlPublication": publication,
+        }))
+        .expect("existing service handles the request");
+        if usize::try_from(u64::MAX).is_err() {
+            assert_eq!(result.expect_err("unrepresentable cap must be refused"),
+                "loadWebMedia.maxBytes exceeds the supported byte-count range");
+        } else {
+            let value = result.expect("representable maximum cap must preserve the file");
+            assert_eq!(value, json!({
+                "buffer": bytes,
+                "contentType": mime,
+                "kind": kind,
+                "fileName": name,
+            }));
+            assert!(value.get("trustedGeneratedHtmlSource").is_none());
+        }
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_service_reader_zero_exact_and_default_caps() {
+    let temp = TempTestDir::new("reader-cap-boundaries");
+    let service = test_attachments_service(&temp.path);
+    let path = temp.path.join("bytes.bin");
+    for (bytes, cap, succeeds) in [
+        (b"".as_slice(), 0usize, true),
+        (b"actual bytes".as_slice(), 0usize, false),
+        (b"actual bytes".as_slice(), 12usize, true),
+        (b"actual bytes".as_slice(), 11usize, false),
+    ] {
+        fs::write(&path, bytes).expect("write bounded input");
+        let result = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": path.to_string_lossy(), "maxBytes": cap, "optimizeImages": false,
+        }))
+        .expect("existing service handles the request");
+        if succeeds {
+            let value = result.expect("EOF within cap is success");
+            assert_eq!(value["buffer"], json!(bytes));
+        } else {
+            let error = result.expect_err("over-cap input must not publish a prefix");
+            assert!(error.starts_with("Media exceeds "), "wrong error: {error}");
+        }
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+    }
+
+    let bytes = b"ordinary default behavior";
+    fs::write(&path, bytes).unwrap();
+    for cap in [json!(null), json!(-1), json!("1"), json!(1.5), json!(false)] {
+        let value = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": path.to_string_lossy(), "maxBytes": cap, "optimizeImages": false,
+        }))
+        .expect("existing service handles the request")
+        .expect("non-u64 options retain the established default");
+        assert_eq!(value["buffer"], json!(bytes));
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_service_reader_failures_and_fresh_retry() {
+    let temp = TempTestDir::new("reader-failure-retry");
+    let service = test_attachments_service(&temp.path);
+    let path = temp.path.join("retry.bin");
+    let directory = temp.path.join("directory.bin");
+    fs::create_dir(&directory).unwrap();
+    for refused in [&path, &directory] {
+        let error = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": refused.to_string_lossy(), "maxBytes": 1024, "optimizeImages": false,
+        }))
+        .expect("existing service handles the request")
+        .expect_err("missing and nonregular files remain failures");
+        assert!(error.starts_with("Local media access error [not-found]:"), "wrong error: {error}");
+    }
+    for bytes in [b"first bytes".as_slice(), b"replacement bytes".as_slice()] {
+        if path.exists() {
+            fs::remove_file(&path).unwrap();
+        }
+        fs::write(&path, bytes).unwrap();
+        let value = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": path.to_string_lossy(), "maxBytes": bytes.len(), "optimizeImages": false,
+        }))
+        .expect("existing service handles the request")
+        .expect("fresh admitted file is read after refusal or replacement");
+        assert_eq!(value["buffer"], json!(bytes));
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        assert!(value.get("trustedGeneratedHtmlSource").is_none());
+    }
+    assert!(directory.is_dir(), "a failed read cannot replace the directory");
+}
+
+#[cfg(unix)]
+#[test]
+fn test_ocrm_web_media_reader_aliases_keep_actual_root_checks() {
+    use std::os::unix::fs::symlink;
+
+    let temp = TempTestDir::new("reader-alias-roots");
+    let allowed = temp.path.join("allowed");
+    let outside = temp.path.join("outside.bin");
+    fs::create_dir(&allowed).unwrap();
+    let target = allowed.join("target.bin");
+    let bytes = b"admitted alias bytes";
+    fs::write(&target, bytes).unwrap();
+    fs::write(&outside, b"outside bytes").unwrap();
+    let symbolic = allowed.join("symbolic.bin");
+    let hard = allowed.join("hard.bin");
+    let escaping = allowed.join("escaping.bin");
+    symlink(&target, &symbolic).expect("actual ordinary-file symlink");
+    fs::hard_link(&target, &hard).expect("actual ordinary-file hardlink");
+    symlink(&outside, &escaping).expect("actual outside-root alias");
+    let options = WebMediaOptions {
+        max_bytes: Some(usize::MAX),
+        local_roots: Some(vec![allowed]),
+        optimize_images: false,
+        ..Default::default()
+    };
+    for path in [&target, &symbolic, &hard] {
+        let loaded = load_web_media(&path.to_string_lossy(), &options)
+            .expect("existing admitted ordinary aliases remain readable");
+        assert_eq!(loaded.buffer, bytes);
+        assert!(loaded.trusted_generated_html_source.is_none());
+    }
+    match load_web_media(&escaping.to_string_lossy(), &options)
+        .expect_err("same reader must not bypass its caller's root check") {
+        WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "path-not-allowed"),
+        other => panic!("wrong root refusal: {other:?}"),
+    }
+    assert_eq!(fs::read(&outside).unwrap(), b"outside bytes");
 }

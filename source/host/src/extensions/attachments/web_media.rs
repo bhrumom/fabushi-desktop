@@ -6,10 +6,11 @@
 //! - `src/media/web-media.animated-webp.test.ts`
 //! - `src/media/web-media.file-url.windows.test.ts`
 
+use std::cell::Cell;
 use std::fs;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
-use url::Url;
+use url::{SyntaxViolation, Url};
 
 use crate::extensions::attachments::host_read_media_policy::{
     assert_host_read_media_allowed, AssertHostReadParams,
@@ -257,25 +258,76 @@ pub fn optimize_image_buffer_for_web_media(
     }
 }
 
+// url removes initial empty file-path segments without a syntax violation.
+// Inspect only the original path prefix, ignoring the same tab/CR/LF bytes.
+fn file_url_has_extra_leading_path_separator(url_str: &str) -> bool {
+    let Some((_, after_scheme)) = url_str.split_once(':') else {
+        return false;
+    };
+    let mut bytes = after_scheme
+        .bytes()
+        .filter(|byte| !matches!(*byte, b'\t' | b'\r' | b'\n'));
+    if !matches!(bytes.next(), Some(b'/' | b'\\'))
+        || !matches!(bytes.next(), Some(b'/' | b'\\'))
+    {
+        return false;
+    }
+
+    // A drive token after the two separators is already a path component,
+    // not an authority: file://C://dir has an ordinary interior separator.
+    let mut drive = bytes.clone();
+    if drive.next().is_some_and(|byte| byte.is_ascii_alphabetic())
+        && matches!(drive.next(), Some(b':' | b'|'))
+        && matches!(drive.next(), None | Some(b'/' | b'\\' | b'?' | b'#'))
+    {
+        return false;
+    }
+
+    matches!(
+        bytes.find(|byte| matches!(*byte, b'/' | b'\\' | b'?' | b'#')),
+        Some(b'/' | b'\\')
+    ) && matches!(bytes.next(), Some(b'/' | b'\\'))
+}
+
 /// Resolves single-slash or standard file URL to path string.
 pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
     let invalid = |message: &str| WebMediaError::LocalAccess {
         code: "invalid-file-url".to_string(),
         message: message.to_string(),
     };
-    let parsed = Url::parse(url_str).map_err(|_| invalid("Invalid file URL"))?;
+    let removed_host = Cell::new(false);
+    let parsed = Url::options()
+        .syntax_violation_callback(Some(&|violation| {
+            if violation == SyntaxViolation::FileWithHostAndWindowsDrive {
+                removed_host.set(true);
+            }
+        }))
+        .parse(url_str)
+        .map_err(|_| invalid("Invalid file URL"))?;
     if parsed.scheme() != "file" {
         return Err(invalid("Not a file URL"));
     }
-    if parsed.host_str().is_some_and(|host| {
-        !host.is_empty() && !host.eq_ignore_ascii_case("localhost")
-    }) {
+    if removed_host.get()
+        || parsed.host_str().is_some_and(|host| {
+            !host.is_empty() && !host.eq_ignore_ascii_case("localhost")
+        })
+    {
         return Err(invalid("File URLs with remote hosts are not allowed"));
+    }
+    if file_url_has_extra_leading_path_separator(url_str) {
+        return Err(invalid("File URL contains extra leading path separators"));
     }
 
     let path = parsed.path().to_ascii_lowercase();
     if path.contains("%2f") || path.contains("%5c") {
         return Err(invalid("Encoded path separators in file URL"));
+    }
+
+    // url's Windows converter can assert on a bare drive. A second segment,
+    // even the empty segment in /C:/, supplies the required root separator.
+    #[cfg(windows)]
+    if parsed.path_segments().and_then(|mut segments| segments.nth(1)).is_none() {
+        return Err(invalid("File URL cannot be converted to an absolute local path"));
     }
 
     let file_path = parsed
@@ -493,6 +545,22 @@ mod file_url_admission_tests {
                     "file://localhost./share/image.png",
                     r"file:\\files.example\share\image.png",
                     "FILE:////files.example/share/image.png",
+                    "file:////C:/fua-boundary-only/image.png",
+                    r"file:/\/\C:/fua-boundary-only/image.png",
+                    r"file:\/\\C:/fua-boundary-only/image.png",
+                    r"file:\\\/C:/fua-boundary-only/image.png",
+                    "file://localhost//C:/fua-boundary-only/image.png",
+                    r"FiLe://LOCALHOST/\C:/fua-boundary-only/image.png",
+                    r"file:\\localhost\/C:\fua-boundary-only\image.png",
+                    "file:/\t/\r/\n/C:/fua-boundary-only/image.png",
+                    "file://local\thost/\r/\nC:/fua-boundary-only/image.png",
+                    "file://files.example/C:/fua-boundary-only/image.png",
+                    "FiLe://localhost.example/C:/fua-boundary-only/image.png",
+                    "FILE://127.0.0.1/C:/fua-boundary-only/image.png",
+                    "file://[::1]/C:/fua-boundary-only/image.png",
+                    "file://files.exa\tmple/C:/fua-boundary-only/image.png",
+                    "file://files.example/C|/fua-boundary-only/image.png",
+                    r"file:\\files.example\C:\fua-boundary-only\image.png",
                 ] {
                     assert_reader_not_entered(reference, &options, "invalid-file-url");
                 }
@@ -502,24 +570,45 @@ mod file_url_admission_tests {
 
     #[test]
     fn invalid_file_urls_never_enter_local_reader() {
-        let options = WebMediaOptions {
-            local_roots: Some(vec![std::env::temp_dir()]),
-            sandbox_validated: true,
-            ..Default::default()
-        };
-        for reference in [
-            "file://[broken/share/image.png",
-            "file://user:secret@localhost/share/image.png",
-            "file://localhost:8080/share/image.png",
-            "file:///C:/safe/folder%2fimage.png",
-            "FILE:///C:/safe/folder%2Fimage.png",
-            "file:///C:/safe/folder%5cimage.png",
-            "FILE:///C:/safe/folder%5Cimage.png",
-        ] {
-            assert_reader_not_entered(reference, &options, "invalid-file-url");
+        for sandbox_validated in [false, true] {
+            for local_roots in [None, Some(vec![std::env::temp_dir()])] {
+                let options = WebMediaOptions {
+                    local_roots,
+                    sandbox_validated,
+                    ..Default::default()
+                };
+                for reference in [
+                    "file://[broken/share/image.png",
+                    "file://user:secret@localhost/share/image.png",
+                    "file://localhost:8080/share/image.png",
+                    "file:///C:/safe/folder%2fimage.png",
+                    "FILE:///C:/safe/folder%2Fimage.png",
+                    "file:///C:/safe/folder%5cimage.png",
+                    "FILE:///C:/safe/folder%5Cimage.png",
+                ] {
+                    assert_reader_not_entered(reference, &options, "invalid-file-url");
+                }
+                #[cfg(windows)]
+                for reference in [
+                    "file:///drive-less/image.png",
+                    "file:",
+                    "file:/",
+                    "file://localhost/",
+                    "file:C:",
+                    "file:/C:",
+                    "file://C:",
+                    "file:///C:",
+                    "file:///C|",
+                    "file:///C%3A",
+                    "file:///C%3a",
+                    "FiLe://localhost/C:",
+                    "file:///C:?ignored=/",
+                    "file:///C:#ignored=/",
+                ] {
+                    assert_reader_not_entered(reference, &options, "invalid-file-url");
+                }
+            }
         }
-        #[cfg(windows)]
-        assert_reader_not_entered("file:///drive-less/image.png", &options, "invalid-file-url");
     }
 
     #[test]

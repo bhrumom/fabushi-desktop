@@ -11197,7 +11197,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Bounded outbound media file reading with max bytes enforcement and size bounds protection.",
+      "behavior": "BR-v1: existing Attachments shared reader enforces actual-byte EOF bounds without cap overflow, rechecks ordinary-file kind and size on the opened handle, uses a nonblocking owned Unix descriptor and bounded fallible buffering; existing aliases, caller limits and error projections remain.",
       "blocker_ids": [],
       "capability_ids": [
         "media.bounded_read"
@@ -11207,7 +11207,13 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_media_reference_contract.rs",
-        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md"
+        "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md",
+        "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+        "projects/openclaw-rust/evidence/media-bounded-read-contract-647e0932-20261103.json",
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "source/host/tests/attachments_service_contract.rs",
+        "source/host/tests/channel_attachment_contract.rs",
+        "projects/openclaw-rust/scripts/capture_media_cleanup.py"
       ],
       "existing_owner_candidates": [
         {
@@ -11217,28 +11223,37 @@
       ],
       "id": "OCRM-RESP-MEDIA-BOUNDED-READ-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+        "consumer": "Existing eight read_outbound_media_file_bounded call expressions; AttachmentsService loadWebMedia checked-converts maxBytes and consumes the actual reader bytes/errors, preserving HHP-v2 explicit HTML.",
         "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::read_outbound_media_file_bounded",
         "owner": "source/host/src/extensions/attachments/media_reference.rs",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+        "producer": "Existing file producers admitted by Attachments ingestion/image/video/dimension helpers, Box staging, generated-image resources, channel attachment preparation and load_web_media; no new permission authority."
       },
       "invariants": [
-        "Files exceeding max_bytes rejected with InvalidData before full memory allocation"
+        "Metadata oversize and observed growth beyond max_bytes return InvalidData; successful bytes require EOF within the cap and are never a truncated prefix.",
+        "All usize caps are arithmetic-safe; parsed u64 service caps use checked conversion and explicitly reject values unrepresentable on the target.",
+        "The same owned opened ordinary-file handle is checked and read; Unix O_NONBLOCK refuses replacement-to-FIFO without waiting for a writer while preserving ordinary symlinks and hardlinks.",
+        "Initial heap reservation and scratch are at most 64 KiB; growth is fallible and amortized from actual bytes. Allocation and read errors cannot become successful empty data or false TooLarge.",
+        "Each attempt releases its owned handle; retry opens fresh bytes. No shared read state, background worker, successful publication, generated trust or permission grant is created by a failed read.",
+        "Original pathname identity, immutable content, complete callback/read-scope authority, cancellation and hostile Windows open deadlines remain separately unproved."
       ],
-      "migration_rollback": "Unbounded file reading",
+      "migration_rollback": "Restore a prior approved artifact or refuse the affected read; never replace the bounded reader with unbounded I/O or suppress size, ordinary-file or permission refusal.",
       "oracle_ids": [
         "OCRM-MEDIA-REF-O04"
       ],
-      "owner_decision": "Implement bounded media file reading in attachments reference module",
+      "owner_decision": "Reuse the existing Attachments media_reference bounded-reader owner and all eight caller expressions. Keep private admission/read-loop test seams beside that owner; no new module, dependency, store, runtime or filesystem permission authority.",
       "postconditions": [
-        "Bounded byte buffer returned or size error raised"
+        "Exact observed byte buffer returned only after admitted EOF within cap; otherwise the existing I/O/size projection rejects the attempt without successful publication.",
+        "Fresh retry has no reader-owned persistent state. No generated-origin or cross-principal authority is inferred."
       ],
       "preconditions": [
-        "Target file path exists and is a file"
+        "The existing caller supplies its path, policy admission and per-call usize byte bound; these values do not supply principal or scope authority."
       ],
       "required_evidence_dimensions": [
         "unit",
-        "format"
+        "format",
+        "integration",
+        "state-machine",
+        "negative"
       ],
       "required_gate_ids": [
         "OCRM-G04-rust-contract",
@@ -11250,7 +11265,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Low; prevents unbounded memory consumption during media reads",
+      "risk": "High: untrusted byte caps, file replacement, synchronous I/O blocking, allocation and multiple real publication consumers. BR-v1 requires scoped deep source/consumer review and native Actions; complete confinement and capability semantics remain open.",
       "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
       "source_refs": [
         {
@@ -11277,7 +11292,21 @@
         "symbol": "read_outbound_media_file_bounded"
       },
       "tests": [
-        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_04_bounded_read_file"
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_04_bounded_read_file",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_service_reader_failures_and_fresh_retry",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_reader_aliases_keep_actual_root_checks",
+        "source/host/tests/attachments_service_contract.rs::service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+        "source/host/tests/attachments_service_contract.rs::image_reads_and_persistence_preserve_content_addressed_dimensions",
+        "source/host/tests/channel_attachment_contract.rs",
+        "source/host/src/extensions/attachments/media_reference.rs::bounded_read_tests",
+        "source/host/tests/openclaw_media_reference_contract.rs::br_public_usize_max_returns_original_bytes",
+        "source/host/tests/openclaw_media_reference_contract.rs::br_public_empty_zero_exact_and_over_limits",
+        "source/host/tests/openclaw_media_reference_contract.rs::br_public_missing_and_directory_preserve_not_found",
+        "source/host/tests/openclaw_media_reference_contract.rs::br_public_retry_observes_replaced_file",
+        "source/host/tests/openclaw_media_reference_contract.rs::br_public_hard_links_preserve_bytes",
+        "source/host/tests/openclaw_media_reference_contract.rs::br_public_symbolic_links_preserve_bytes"
       ],
       "typed_contracts": [
         "read_outbound_media_file_bounded"

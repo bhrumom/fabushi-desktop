@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture media lifecycle, HTML, file URL and image contracts in Actions only."""
+"""Capture media lifecycle, HTML, file URL, image and bounded-read contracts in Actions only."""
 
 import hashlib
 import json
@@ -83,6 +83,54 @@ WEB_MEDIA_NAMES = [
     "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
     "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
     "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
+    "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
+    "test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
+    "test_ocrm_web_media_service_reader_failures_and_fresh_retry",
+]
+WEB_MEDIA_UNIX_NAMES = [
+    "test_ocrm_web_media_file_url_authority_alias_is_not_read",
+    "test_ocrm_web_media_reader_aliases_keep_actual_root_checks",
+]
+BOUNDED_READ_OWNER_PREFIX = "extensions::attachments::media_reference::bounded_read_tests::"
+BOUNDED_READ_OWNER_NAMES = [
+    "br_loop_short_reads_and_interrupted_preserve_bytes",
+    "br_loop_zero_and_one_over_probe_without_allocating_extra_bytes",
+    "br_loop_late_read_error_discards_prefix",
+    "br_loop_allocation_failure_discards_prefix",
+    "br_loop_growth_is_bounded_and_amortized",
+    "br_initial_allocation_ignores_large_metadata_hint",
+    "br_opened_admission_rechecks_size_after_preflight",
+    "br_opened_file_growth_is_not_successful_prefix",
+]
+BOUNDED_READ_OWNER_UNIX_NAMES = [
+    "br_unix_opened_admission_rejects_directory_replacement",
+    "br_unix_open_owns_nonblocking_descriptor",
+    "br_unix_fifo_replacement_after_preflight_does_not_block",
+]
+MEDIA_REFERENCE_NAMES = [
+    "test_ocrm_media_ref_01_inbound_uri_parsing_and_validation",
+    "test_ocrm_media_ref_02_classify_media_reference_source",
+    "test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite",
+    "test_ocrm_media_ref_04_bounded_read_file",
+    "test_ocrm_media_ref_05_playback_codec_policy_resolution",
+    "test_ocrm_media_ref_06_native_codec_compatibility_rules",
+    "test_ocrm_media_ref_07_probe_metadata_aspect_ratio_and_rotation",
+    "test_ocrm_media_ref_08_canonicalize_persisted_user_message_media",
+    "mru_unicode_non_media_references_preserve_normalization_and_local_projection",
+    "mru_unicode_scheme_classification_preserves_ascii_authority_and_data_policy",
+    "mru_unicode_inbound_ids_preserve_legacy_prefix_and_typed_refusals",
+    "br_public_empty_zero_exact_and_over_limits",
+    "br_public_usize_max_returns_original_bytes",
+    "br_public_missing_and_directory_preserve_not_found",
+    "br_public_retry_observes_replaced_file",
+    "br_public_hard_links_preserve_bytes",
+    "br_public_symbolic_links_preserve_bytes",
+]
+CHANNEL_ATTACHMENT_NAMES = [
+    "remote_urls_are_forwarded_without_host_fetching",
+    "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules",
+    "empty_directory_zero_and_oversize_local_inputs_fail_closed",
+    "frozen_shared_media_inventory_drives_channel_classification",
 ]
 IMAGE_OPS_NAMES = [
     "test_ocrm_image_ops_build_resize_side_grid",
@@ -133,6 +181,13 @@ INPUTS = [
     "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
     "source/host/src/gateway_protocol.rs",
     "source/host/src/host_gateway_api.rs",
+    "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+    "source/host/tests/openclaw_media_reference_contract.rs",
+    "source/host/tests/attachments_service_contract.rs",
+    "source/host/src/extensions/attachments/box_staging.rs",
+    "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+    "source/host/src/connectors/channel_attachment.rs",
+    "source/host/tests/channel_attachment_contract.rs",
 ]
 
 
@@ -254,9 +309,9 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This executable verification is GitHub Actions-only.")
     ROOT.mkdir(parents=True, exist_ok=False)
-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1"],
+    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1"],
                "result": "failed-or-incomplete", "executions": [],
-               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, and PNG header bounds through existing metadata/attachment/file consumers. FUA-v1 covers local file URL authority/conversion and pure admission before the private local-reader boundary, native path/byte/service controls and a Unix local alias refusal; the counter measures boundary entries, not OS syscalls. No live network share is used. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, permission-capability closure, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
+               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
     save(receipt)
     try:
         head = output(["git", "rev-parse", "HEAD"])
@@ -291,13 +346,15 @@ def main():
         html_policy = HTML_POLICY_NAMES.copy()
         file_url_owner = [FILE_URL_OWNER_PREFIX + name for name in FILE_URL_OWNER_NAMES]
         web_media = WEB_MEDIA_NAMES.copy()
+        bounded_reader = [BOUNDED_READ_OWNER_PREFIX + name for name in BOUNDED_READ_OWNER_NAMES]
         if runner_os == "Windows":
             owner.append(OWNER_PREFIX + "cleanup_windows_identity_compares_full_file_id")
             file_url_owner.append(FILE_URL_OWNER_PREFIX + "verbatim_drive_workspace_enters_local_reader")
         else:
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries")
             html_policy.extend(HTML_POLICY_UNIX_NAMES)
-            web_media.append("test_ocrm_web_media_file_url_authority_alias_is_not_read")
+            web_media.extend(WEB_MEDIA_UNIX_NAMES)
+            bounded_reader.extend(BOUNDED_READ_OWNER_PREFIX + name for name in BOUNDED_READ_OWNER_UNIX_NAMES)
         if runner_os == "Linux":
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_raw_names")
         if runner_os in {"macOS", "Windows"}:
@@ -311,6 +368,11 @@ def main():
             ("file-url-admission", base + ["--lib", FILE_URL_OWNER_PREFIX, "--", "--test-threads=1"], file_url_owner),
             ("explicit-html-consumers", base + ["--test", "openclaw_web_media_contract", "--", "--test-threads=1"], web_media),
             ("image-probe-consumers", base + ["--test", "openclaw_image_ops_contract", "--", "--test-threads=1"], IMAGE_OPS_NAMES),
+            ("bounded-reader-owner", base + ["--lib", BOUNDED_READ_OWNER_PREFIX, "--", "--test-threads=1", "--show-output"], bounded_reader),
+            ("bounded-reader-public", base + ["--test", "openclaw_media_reference_contract", "--", "--test-threads=1"], MEDIA_REFERENCE_NAMES),
+            ("bounded-reader-box-consumer", base + ["--test", "attachments_service_contract", "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store", "--", "--exact", "--test-threads=1"], ["service_upload_read_text_chunk_and_gateway_use_single_agent_media_store"]),
+            ("bounded-reader-image-consumer", base + ["--test", "attachments_service_contract", "image_reads_and_persistence_preserve_content_addressed_dimensions", "--", "--exact", "--test-threads=1"], ["image_reads_and_persistence_preserve_content_addressed_dimensions"]),
+            ("bounded-reader-channel-consumers", base + ["--test", "channel_attachment_contract", "--", "--test-threads=1"], CHANNEL_ATTACHMENT_NAMES),
         ]
         receipt["planned_commands"] = [{"case": label, "command": command, "required_positive_names": names}
                                        for label, command, names in cases]
