@@ -305,6 +305,32 @@ test("Host refuses an SDK auth denial without canonical identity instead of gues
   }
 });
 
+test("remote Git clone authorization denial retains its canonical ID as an auth block", async (t) => {
+  const host = await fixture(t, async () => ({ plugins: [effectivePlugin("41", "7")] }), (getResponse, options) => {
+    const client = createBackendMarketplaceClient(getResponse, options);
+    return {
+      async listEnabledPlugins(userId, teamId) {
+        const listed = await client.listEnabledPlugins(userId, teamId);
+        return {
+          ...listed,
+          listFailures: [{
+            pluginName: "7", pluginId: "7", pluginDbId: "41",
+            errorMessage: "Repository not found", errorType: "clone" as const,
+          }],
+        };
+      },
+      async installPlugin() { assert.fail("a version-resolution denial cannot install content"); },
+    };
+  });
+  const oldSkill = await seedOldVersion(host.cache, "7");
+  const result = await host.load();
+  assert.deepEqual(result.listedPluginIds, ["41"]);
+  assert.deepEqual(result.authBlocked, [{
+    pluginId: "41", pluginName: "7", marketplaceName: "cursor-public",
+  }]);
+  assert.equal(await readFile(oldSkill, "utf8"), "Previous committed skill bytes.\n");
+});
+
 test("Host defers SDK pruning even after a complete successful materialization", async (t) => {
   const host = await fixture(t, async () => ({ plugins: [effectivePlugin("db-current", "current", "{}")] }));
   const oldSkill = await seedOldVersion(host.cache, "current");
