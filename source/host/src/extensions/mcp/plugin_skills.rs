@@ -285,15 +285,10 @@ pub fn plugin_auth_blocks_from_failures(failures: &[PluginLoadFailure]) -> Vec<P
     let mut blocks = Vec::new();
     let mut seen = HashSet::new();
     for failure in failures {
-        let auth_failure = failure.error_kind.as_deref() == Some("user_git_access")
-            || failure
-                .error_message
-                .to_ascii_lowercase()
-                .contains("permission denied")
-            || failure
-                .error_message
-                .to_ascii_lowercase()
-                .contains("authentication");
+        // Error prose is not an authorization oracle: local cache/filesystem
+        // failures can contain "permission denied" too. Only the typed clone
+        // classification from the marketplace loader may block remote access.
+        let auth_failure = failure.error_kind.as_deref() == Some("user_git_access");
         if !auth_failure {
             continue;
         }
