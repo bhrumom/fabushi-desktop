@@ -1,0 +1,114 @@
+{
+  "schema": "ocrm-independent-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review": "MGL-native-source-binding-focused-recovery-R1",
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_id": 1375312893,
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "scope_mode": "complete immutable two-file verification adapter change",
+  "base": "5405a24c46e9808a3377933f07b2ba4eab0fcf9a",
+  "starting_head": "5405a24c46e9808a3377933f07b2ba4eab0fcf9a",
+  "base_tree": "afb099c64687ca4ae02ea03784ce0bbb15399d71",
+  "candidate_commit": "b09f3d11372e5fee7463169169d0482b7bff5a6b",
+  "candidate_tree": "9f731080db2edb16a33b889b0337c00fe7a3a715",
+  "applied_to_branch": false,
+  "authority": {
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+    "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+    "behavior_spec": "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
+    "behavior_spec_blob": "bfb7a89fa3c867492dd09c9cf09ff16945cd947a",
+    "spec_before_code_commit": "5405a24c46e9808a3377933f07b2ba4eab0fcf9a"
+  },
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "complete_diff": {
+    "blob": "508a7148da113f847d6fe887da07579e4eda3e4d",
+    "bytes": 49264,
+    "sha256": "2a6c1005feebf7f7b66d8eda6e682fba36ec45bfa911fc2e254361dcc18dd892",
+    "binary_or_rename_changes": false,
+    "acquisition": "Read-isolated exact Git objects and complete source text delta, no repository executable validation or shared index."
+  },
+  "files": [
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "04e8651579cee3a72fd637de471e3b6f9643f1a0",
+      "candidate_blob": "0768505f6cb4b52c6e0b2b9e14b66e844b64604e",
+      "candidate_utf8": {
+        "bytes": 218789,
+        "sha256": "2c7e4ef4504d9d8b438d1693cda0094f0f9274f8a6cb6c5199c3bec8aff69637"
+      }
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "0c530c5038bf7ad6c095ecb9db728805a21c7a71",
+      "candidate_blob": "60165b9589cf057c491b63ae08be49f031efd7e5",
+      "candidate_utf8": {
+        "bytes": 477039,
+        "sha256": "b3d00dfe0ff3f35700c4e8ecc52caf877d67042b23b9eb01ca30a8b7fe77d3e3"
+      }
+    }
+  ],
+  "prior_execution": {
+    "commit": "511bcebf08738c59ec0313a425a591a327d9cd20",
+    "tree": "49b5ad915c48c7a10d67d4c6a6c3e42f54f27d16",
+    "run": 41648714149,
+    "attempt": 1,
+    "windows_job": 125960842811,
+    "windows_result": "failed before Cargo in native Git object operand lookup; no artifact was written",
+    "decoded_connector_log": {
+      "bytes": 60017,
+      "sha256": "7225454d752b38db86d45e98c9316b94e01ec599d16d3e6ab57764dfd0e7b7bd",
+      "not_archive_digest": true
+    },
+    "linux_job": 125960843306,
+    "macos_job": 125960843500,
+    "other_job_metadata": "both terminal success; complete receipt assessment is separate and not asserted by this scope"
+  },
+  "review_contract": {
+    "complete_scope_required": true,
+    "adjacent_producer_consumer_required": true,
+    "fresh_and_blind": true,
+    "round_cap": 10,
+    "general": {
+      "model": "configured parent model",
+      "reasoning_effort": "xhigh"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh"
+    },
+    "reason": "Git tree identity across native paths, deduplication and raw source evidence; preserved failure status/early capture; bounded recovery selection without weakening original platform gates."
+  },
+  "verification": {
+    "state": "not-run",
+    "environment": "GitHub Actions only",
+    "workflow_scope": "ocrm-memory-native-binding",
+    "capture_scope": "memory-checked-list",
+    "platform": "windows-2025",
+    "expected_groups": 7,
+    "expected_positive_cases": 65,
+    "actual_source_binding_controls": "Real native tracked lock and recursively discovered generated member through Git show/rev-parse and exact-byte equality; canonical uniqueness and rejected original Windows backslash Git operands.",
+    "compile": "Actual selected Host library target graph; Windows shipping App remains not executed/unaccepted.",
+    "original_scope": "ocrm-memory-checked-list still selects all three platforms and66/66/65 expected positives.",
+    "earlier_evidence": "Original Linux/macOS observations retain H511; no execution is relabeled to recovery H.",
+    "full_acceptance": false
+  },
+  "preservation": {
+    "rust_product_blobs_changed": false,
+    "source_bytes_normalized": false,
+    "source_inputs_removed": false,
+    "positive_names_removed": false,
+    "source_ledger_flags_changed": false,
+    "local_validation": false
+  }
+}

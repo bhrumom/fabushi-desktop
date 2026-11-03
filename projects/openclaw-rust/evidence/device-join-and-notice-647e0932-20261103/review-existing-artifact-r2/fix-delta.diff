@@ -1,0 +1,162 @@
+diff --git a/.github/workflows/ocrm-p0-authority.yml b/.github/workflows/ocrm-p0-authority.yml
+index 903deaba01040c91c0375d2bf2ef6a4f3eb43d27..46861e7d6b26f2e250840f0f7b6c4481b5d74622 100644
+--- a/.github/workflows/ocrm-p0-authority.yml
++++ b/.github/workflows/ocrm-p0-authority.yml
+@@ -25,7 +25,6 @@
+ 
+ jobs:
+   source-authority:
+-    if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && contains(github.event.head_commit.message, '[ocrm-recover-djc-e383-command-evidence]')) }}
+     runs-on: ubuntu-latest
+     timeout-minutes: 30
+     env:
+@@ -177,7 +176,7 @@
+   persist-verified-inventory:
+     # P0 source-derived files only; never overwrite a moved PR head.
+     needs: source-authority
+-    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence-v2]') && !contains(github.event.head_commit.message, '[ocrm-recover-djc-e383-command-evidence]')) }}
++    if: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-812-command-evidence]') && !contains(github.event.head_commit.message, '[ocrm-recover-563-command-evidence-v2]')) }}
+     runs-on: ubuntu-latest
+     timeout-minutes: 15
+     permissions:
+@@ -579,6 +578,34 @@
+               if status == 0 and command.startswith("cargo test ") and "--no-run" not in command:
+                   require(summaries > 0, "missing_successful_test_summary")
+           
++          def validate_carrier_push(event, commit, comparison, carrier_sha):
++              before = event.get("before")
++              require(isinstance(before, str) and re.fullmatch(r"[0-9a-f]{40}", before) is not None
++                      and before != "0" * 40 and event.get("after") == carrier_sha
++                      and event.get("ref") == "refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer"
++                      and event.get("repository", {}).get("full_name") == repository
++                      and event.get("repository", {}).get("id") == 1375312893
++                      and event.get("head_commit", {}).get("id") == carrier_sha
++                      and commit.get("sha") == carrier_sha
++                      and isinstance(commit.get("message"), str)
++                      and "[ocrm-recover-djc-e383-command-evidence]" in commit["message"]
++                      and event["head_commit"].get("message") == commit["message"]
++                      and [parent.get("sha") for parent in commit.get("parents", [])] == [before],
++                      "unapproved_collector_carrier")
++              require(comparison.get("status") == "ahead" and comparison.get("ahead_by") == 1
++                      and comparison.get("behind_by") == 0 and comparison.get("total_commits") == 1
++                      and comparison.get("base_commit", {}).get("sha") == before
++                      and comparison.get("merge_base_commit", {}).get("sha") == before
++                      and [item.get("sha") for item in comparison.get("commits", [])] == [carrier_sha],
++                      "unapproved_collector_carrier")
++              files = comparison.get("files")
++              require(isinstance(files, list) and len(files) == 1
++                      and files[0].get("filename") == ".github/workflows/ocrm-p0-authority.yml"
++                      and files[0].get("status") == "modified" and "previous_filename" not in files[0]
++                      and re.fullmatch(r"[0-9a-f]{40}", files[0].get("sha", "")) is not None,
++                      "unapproved_collector_carrier")
++              return before
++          
+           def require_djc_members(members):
+               require(djc_members <= set(members) and all(members[name] for name in djc_members),
+                       "missing_selected_member")
+@@ -775,6 +802,48 @@
+                       "non_harness_line_control")
+               controls.append({"control": "non_harness_line", "result": "rejected"})
+               if profile == "djc-e383":
++                  control_before, control_after = "1" * 40, "2" * 40
++                  control_message = "[ocrm-recover-djc-e383-command-evidence]"
++                  control_event = {
++                      "before": control_before, "after": control_after,
++                      "ref": "refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer",
++                      "repository": {"full_name": repository, "id": 1375312893},
++                      "head_commit": {"id": control_after, "message": control_message},
++                  }
++                  control_commit = {"sha": control_after, "parents": [{"sha": control_before}],
++                                    "message": control_message}
++                  control_compare = {
++                      "status": "ahead", "ahead_by": 1, "behind_by": 0, "total_commits": 1,
++                      "base_commit": {"sha": control_before}, "merge_base_commit": {"sha": control_before},
++                      "commits": [{"sha": control_after}],
++                      "files": [{"filename": ".github/workflows/ocrm-p0-authority.yml",
++                                 "status": "modified", "sha": "3" * 40}],
++                  }
++                  require(validate_carrier_push(control_event, control_commit, control_compare, control_after)
++                          == control_before, "valid_carrier_control")
++                  controls.append({"control": "djc_workflow_only_carrier", "result": "accepted"})
++                  for label, event_delta, commit_delta, compare_delta in (
++                          ("product_files", {}, {}, {"files": control_compare["files"] + [
++                              {"filename": "source/host/src/device_pairing_owner.rs", "status": "modified", "sha": "4" * 40}]}),
++                          ("product_only", {}, {}, {"files": [
++                              {"filename": "source/host/src/device_pairing_owner.rs", "status": "modified", "sha": "4" * 40}]}),
++                          ("multiple_commits", {}, {}, {"total_commits": 2, "ahead_by": 2}),
++                          ("wrong_parent", {}, {"parents": [{"sha": "4" * 40}]}, {}),
++                          ("wrong_before", {"before": "4" * 40}, {}, {}),
++                          ("zero_before", {"before": "0" * 40}, {}, {}),
++                          ("wrong_head", {"after": "4" * 40}, {}, {}),
++                          ("wrong_repository", {"repository": {"full_name": "other/repository", "id": 1375312893}}, {}, {}),
++                          ("unresolved_files", {}, {}, {"files": None}),
++                          ("renamed_workflow", {}, {}, {"files": [
++                              {**control_compare["files"][0], "previous_filename": "source/host/other.rs"}]})):
++                      try:
++                          validate_carrier_push({**control_event, **event_delta}, {**control_commit, **commit_delta},
++                                                {**control_compare, **compare_delta}, control_after)
++                      except CollectionRefusal as error:
++                          require(error.args == ("unapproved_collector_carrier",), "wrong_control_refusal")
++                          controls.append({"control": "djc_carrier_" + label, "result": "rejected"})
++                      else:
++                          raise CollectionRefusal("accepted_carrier_control")
+                   try:
+                       validate_subject({**valid, "inputs_sha256": {}}, artifacts[0]["kind"],
+                                        input_paths["recovery"])
+@@ -841,6 +910,32 @@
+                           raise CollectionRefusal("accepted_command_table_control")
+               save_json("instrument-controls.json", controls)
+               emit({"kind": "instrument-controls", "controls": controls, "product_tests": False})
++          
++              if profile == "djc-e383":
++                  stage = "carrier_admission"
++                  require(os.environ.get("GITHUB_EVENT_NAME") == "push"
++                          and os.environ.get("GITHUB_REPOSITORY") == repository
++                          and os.environ.get("GITHUB_REF") == "refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer",
++                          "unapproved_collector_carrier")
++                  event = decode_json(Path(os.environ["GITHUB_EVENT_PATH"]).read_bytes())
++                  before = event.get("before")
++                  require(isinstance(before, str) and re.fullmatch(r"[0-9a-f]{40}", before) is not None
++                          and before != "0" * 40, "unapproved_collector_carrier")
++                  carrier_sha = os.environ["GITHUB_SHA"]
++                  require(re.fullmatch(r"[0-9a-f]{40}", carrier_sha) is not None,
++                          "unapproved_collector_carrier")
++                  carrier_commit = api_json(f"/git/commits/{carrier_sha}")
++                  comparison = api_json(f"/compare/{before}...{carrier_sha}")
++                  validate_carrier_push(event, carrier_commit, comparison, carrier_sha)
++                  carrier = {"kind": "carrier-admission", "before": before, "after": carrier_sha,
++                             "carrier_tree": carrier_commit["tree"]["sha"],
++                             "complete_push_commits": 1,
++                             "complete_push_files": [{"path": item["filename"], "status": item["status"],
++                                                      "blob": item["sha"]} for item in comparison["files"]],
++                             "normal_source_authority_exempted": False,
++                             "normal_persistence_exempted": False}
++                  save_json("carrier-admission.json", carrier)
++                  emit(carrier)
+           
+               stage = "source_metadata"
+               run = api_json(f"/actions/runs/{source_run}/attempts/{source_attempt}")
+diff --git a/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md b/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
+index c8c06d437ba32bbe642d62ca4e63f5a0e944455c..b3baccdb4f68ce0c0d5b9a280c67d20803210954 100644
+--- a/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
++++ b/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
+@@ -208,10 +208,15 @@
+ identity drift, missing/changed selected members, a mismatched failure receipt
+ and executable Actions syntax; they provide no product behavior evidence.
+ 
+-Activate collection with a workflow-only push and a narrowly recognized marker,
+-excluding source-authority generation/persistence for that carrier only. The
+-normal source-authority gate remains required for every product subject. The
+-collector executes no checkout, build, product test or archived command, writes
++Activate collection with a workflow-only push and a narrowly recognized marker.
++Before historical acquisition, the collector must prove from the push event and
++read-only GitHub commit/compare APIs that the complete before/after range is one
++commit changing only this authority workflow. Mixed product paths, multiple
++commits, absent/truncated identity or an unresolved comparison refuse collection.
++The marker grants no exemption from normal source-authority or persistence jobs;
++those existing owners retain their normal gates and permissions on every push.
++This avoids a marker-based route around product source authority. The collector
++job itself executes no checkout, build, product test or archived command, writes
+ no repository state and names the failed source subject separately from the
+ carrier SHA/run. Its successful receipt means complete evidence transport only.
+ No scoped DJC equivalence, real onboarding/device acceptance, global flag or
