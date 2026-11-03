@@ -1,0 +1,54 @@
+{
+  "task_id": "69f645c6-aaa2-4eaf-8bc6-88d5d9d2d5fe",
+  "round": 1,
+  "kind": "model-selection-recovery-observation",
+  "observed_at": "2026-11-03",
+  "target": {
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "head": "70195a457a8e3b75d3429c0a3b7091efe5ba1989"
+  },
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "inspected": {
+    "required_documents": [
+      "AGENTS.md",
+      "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+      "docs/specs/openclaw-rust-equivalence-migration.md",
+      "projects/openclaw-rust/management/prompts/full-fusion-batch.md",
+      "projects/openclaw-rust/management/tasks/P0-provider-bound-model-identity.md",
+      "projects/openclaw-rust/dossiers/model-picker-scoped.md"
+    ],
+    "live_head": "70195a457a8e3b75d3429c0a3b7091efe5ba1989",
+    "upstream_fixed": true,
+    "prior_bridge_commit": "e96c39ebe5b1c3fc318b20579bc38595d4d588a3",
+    "prior_bridge_commit_in_history": true,
+    "bridge_scope_static_review": "STATIC_CONVERGED",
+    "bridge_execution": "not assessed in this recovery",
+    "model_identity_task_status": "implementation present in existing owners; scoped verification/real-provider/package acceptance still pending",
+    "session_model_picker_status": "existing Rust policy and SQLite owners present; authenticated production mutation ingress and UI picker remain not wired",
+    "source_inventory": {
+      "tracked_paths": 62130,
+      "mapped_paths": 888,
+      "unclassified_paths": 61242,
+      "applicability_assessed_paths": 0,
+      "dispositioned_paths": 0,
+      "completion_flags": {
+        "baseline_identity_accepted": false,
+        "ecosystem_compatibility_accepted": false,
+        "production_wiring_complete": false,
+        "release_accepted": false,
+        "responsibility_mapping_complete": false,
+        "rust_implementation_complete": false,
+        "source_closure_ready": false,
+        "ui_accepted": false
+      }
+    }
+  },
+  "concrete_next_action": "Continue the model-selection closure by deriving catalog, operator authority, visibility, placement and lifecycle generation only from existing canonical Rust owners, then connect the existing authenticated session-action producer to SandAgentSessionStore::apply_session_model_selection and the existing UI selection entry point. Do not accept policy fields from renderer/request JSON or add a parallel catalog/store/agent loop.",
+  "verification": "No local or htch-runtime verification was run. No GitHub Actions result was observed for the exact current head in this recovery. Exact-H Actions verification remains required after an implementation batch.",
+  "status": "recovery-observation-only; implementation batch not yet landed"
+}
