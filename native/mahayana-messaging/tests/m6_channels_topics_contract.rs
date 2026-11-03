@@ -1232,7 +1232,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     thread_root_message_id: None,
                     scheduled_at_ms: None,
                     silent: false,
-                    privacy: mahayana_messaging::ForwardPrivacy {
+                    privacy: ForwardPrivacy {
                         drop_sender_names: false,
                         drop_captions: false,
                     },
@@ -1280,7 +1280,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     thread_root_message_id: None,
                     scheduled_at_ms: None,
                     silent: false,
-                    privacy: mahayana_messaging::ForwardPrivacy {
+                    privacy: ForwardPrivacy {
                         drop_sender_names: true,
                         drop_captions: false,
                     },
@@ -1388,7 +1388,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
                     thread_root_message_id: None,
                     scheduled_at_ms: None,
                     silent: false,
-                    privacy: mahayana_messaging::ForwardPrivacy {
+                    privacy: ForwardPrivacy {
                         drop_sender_names: false,
                         drop_captions: false,
                     },
@@ -1426,7 +1426,7 @@ fn typed_child_lifecycle_pagination_pin_active_payment_and_destroy_are_actor_sco
         .or_default()
         .insert(
             "legacy-topic".into(),
-            mahayana_messaging::TopicDraft {
+            TopicDraft {
                 conversation_id: child_id.clone(),
                 topic_id: "legacy-topic".into(),
                 actor_id: ActorId::new("human:owner"),

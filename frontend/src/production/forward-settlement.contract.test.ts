@@ -214,4 +214,27 @@ test("single self/Saved Messages destination uses Saved Messages default, custom
     "custom:human:self",
     "suppressed:human:self",
   ]);
+
+  const pairedSelf = harness();
+  await settleForwardProjection({
+    settlement: [
+      { conversationId: "human:self", status: "sent" },
+      { conversationId: "human:alice", status: "sent" },
+    ],
+    recipientNames: new Map([["human:alice", "Alice"]]),
+    selfConversationId: "human:self",
+    onSelfForwarded: (id) => selfNotifications.push(`paired:${id}`),
+    accountScopeGeneration: 3,
+    isAccountScopeCurrent: pairedSelf.isCurrent,
+    setNotice: pairedSelf.notice,
+    readRoster: null,
+    applyRoster: pairedSelf.apply,
+  });
+  assert.deepEqual(pairedSelf.notices, ["Forwarded to Saved Messages and Alice."]);
+  assert.deepEqual(selfNotifications, [
+    "default:human:self",
+    "custom:human:self",
+    "suppressed:human:self",
+    "paired:human:self",
+  ]);
 });

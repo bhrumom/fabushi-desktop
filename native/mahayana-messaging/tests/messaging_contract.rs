@@ -1102,7 +1102,7 @@ fn paid_send_plan_approval_consumption_and_story_share_at_time_revalidation() {
     let sender_id = ActorId::new("human:sender");
     let peer_free_id = ActorId::new("human:free");
     let peer_paid_id = ActorId::new("human:paid");
-    let peer_unresolved_id = ActorId::new("human:unresolved");
+    let _peer_unresolved_id = ActorId::new("human:unresolved");
 
     let mut peer_paid = Actor::human("human:paid", "Paid Creator");
     peer_paid.capabilities = vec!["stars_per_message:25".into()];
@@ -1529,12 +1529,14 @@ fn forward_panel_option_cycle_draft_lifecycle_forced_info_and_custom_emoji_strip
                         text: "Yes".into(),
                         voter_count: 0,
                         chosen: false,
+                        correct: None,
                     },
                     PollOption {
                         id: "opt:2".into(),
                         text: "No".into(),
                         voter_count: 0,
                         chosen: false,
+                        correct: None,
                     },
                 ],
                 anonymous: true,

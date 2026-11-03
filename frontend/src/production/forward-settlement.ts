@@ -23,6 +23,9 @@ export async function settleForwardProjection(input: {
   const normalizedSelfId = typeof input.selfConversationId === "string" && input.selfConversationId.trim().length > 0
     ? input.selfConversationId.trim()
     : null;
+  if (normalizedSelfId != null && sent.some((item) => item.conversationId === normalizedSelfId)) {
+    input.onSelfForwarded?.(normalizedSelfId);
+  }
   if (settlement.length === 0) {
     setNotice("No forwarding destinations were confirmed.");
   } else if (sent.length === 0) {
@@ -30,15 +33,21 @@ export async function settleForwardProjection(input: {
   } else if (failed > 0) {
     setNotice(`Forwarded to ${sent.length}; ${attention}`);
   } else if (sent.length === 1 && normalizedSelfId != null && sent[0].conversationId === normalizedSelfId) {
-    input.onSelfForwarded?.(sent[0].conversationId);
     if (input.suppressSelfNotice !== true) {
       const selfLabel = input.recipientNames?.get(sent[0].conversationId)?.trim();
       setNotice(`Forwarded to ${selfLabel && selfLabel.length > 0 ? selfLabel : "Saved Messages"}.`);
     }
   } else {
     // Names explain this accepted settlement; they never choose or authorize
-    // destinations. Missing labels retain the truthful count projection.
-    const names = sent.map((item) => input.recipientNames?.get(item.conversationId)?.trim());
+    // destinations. Missing labels retain the truthful count projection, except
+    // the authenticated self conversation which defaults to "Saved Messages".
+    const names = sent.map((item) => {
+      const explicit = input.recipientNames?.get(item.conversationId)?.trim();
+      if (explicit && explicit.length > 0) return explicit;
+      return normalizedSelfId != null && item.conversationId === normalizedSelfId
+        ? "Saved Messages"
+        : undefined;
+    });
     const hasNamedRecipients = sent.length <= 2 && names.every((name) => name != null && name.length > 0);
     setNotice(hasNamedRecipients
       ? `Forwarded to ${names.join(" and ")}.`
