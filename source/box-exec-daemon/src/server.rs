@@ -5652,6 +5652,16 @@ mod tests {
 
     #[test]
     fn background_custody_setup_unwind_preserves_actual_child_and_capture_cleanup() {
+        // The command is repeated in frontmatter before any reader starts.
+        // Only the body can establish the real captured-output precondition.
+        let captured_prefix = |content: &str| content.strip_prefix("---\n")
+            .and_then(|rest| rest.split_once("\n---\n"))
+            .is_some_and(|(_, output)| output.contains("SC_CAPTURE_PREFIX"));
+        let command = "trap '' TERM; printf 'effect\\n' > effect-count; printf SC_CAPTURE_PREFIX; \
+                       while :; do sleep 1; done";
+        let header_only = terminal_frontmatter(&background_args(command), None, Utc::now());
+        assert!(header_only.contains("SC_CAPTURE_PREFIX"));
+        assert!(!captured_prefix(&header_only), "command metadata is not captured child output");
         let (_root, runtime) = runtime();
         let runtime = Arc::new(runtime);
         let _cleanup = BackgroundFixture::new(&runtime, &[]);
@@ -5660,16 +5670,13 @@ mod tests {
         *runtime.background_controller_gate.lock().unwrap() = Some(gate);
         let worker_runtime = Arc::clone(&runtime);
         let worker = thread::spawn(move || {
-            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| worker_runtime.execute(background_request(
-                "trap '' TERM; printf 'effect\\n' > effect-count; printf SC_CAPTURE_PREFIX; \
-                 while :; do sleep 1; done",
-            ))))
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| worker_runtime.execute(background_request(command))))
         });
         let deadline = Instant::now() + Duration::from_secs(3);
         let owner = loop {
             let entry = runtime.background.lock().unwrap().get(&1).cloned();
             if let Some(owner) = entry {
-                if fs::read_to_string(&owner.terminal_path).unwrap_or_default().contains("SC_CAPTURE_PREFIX") {
+                if captured_prefix(&fs::read_to_string(&owner.terminal_path).unwrap_or_default()) {
                     break owner;
                 }
             }
