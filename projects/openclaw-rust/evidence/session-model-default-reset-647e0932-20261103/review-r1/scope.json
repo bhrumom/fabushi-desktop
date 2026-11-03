@@ -1,0 +1,807 @@
+{
+  "schema": "ocrm-immutable-review-scope-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "RMD-v1",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "repository_id": 1375312893,
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "original_base": "f46bf90857fd4e7e0d2186e4eabfd158c0f0c8a0",
+  "starting_head": "f46bf90857fd4e7e0d2186e4eabfd158c0f0c8a0",
+  "candidate": {
+    "commit": "ed6e0b09205f26a723395571692b8cfb1870f9da",
+    "tree": "52f5512c1b9c19be0304bb0647603ef6a68eaa3f",
+    "parent": "f46bf90857fd4e7e0d2186e4eabfd158c0f0c8a0",
+    "role": "Immutable unapplied review-only production candidate; not an execution or shipping subject. Root will integrate the exact reviewed blobs into the current migration branch after BGC execution subject is frozen."
+  },
+  "authority": {
+    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "spec": {
+      "path": "projects/openclaw-rust/docs/specs/session-model-default-reset.md",
+      "blob": "f3475a66b88c2a773745b23a1c618e14c27b7e61",
+      "commit": "7b81bb378d1cae3a9cb20c5060b74e201a62d776"
+    },
+    "adr": {
+      "path": "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md",
+      "blob": "4214c876cbec0fe8785a35d950a1836bcb6ca562"
+    },
+    "master": "docs/specs/openclaw-rust-equivalence-migration.md §17"
+  },
+  "scope": {
+    "mode": "complete-candidate-against-frozen-base",
+    "path_count": 21,
+    "uncommitted_included": false,
+    "staging": "GitHub immutable tree/blob API; no actual index or executor",
+    "complete_diff": {
+      "path": "projects/openclaw-rust/evidence/session-model-default-reset-647e0932-20261103/review-r1/complete.diff",
+      "blob": "3431fdabd86e971534b4e3d44b63978ba26afbe4",
+      "bytes": 336775,
+      "sha256": "39330f409139a92f2536f57bdddcfd387c2a377a5a02e5061176c14fdad1b537"
+    },
+    "integrity": {
+      "github_compare_file_count": 21,
+      "added": 4,
+      "modified": 17,
+      "deleted": 0,
+      "renamed": 0,
+      "binary": 0,
+      "all_modes": "100644",
+      "source_blobs_and_complete_patch_read_back": true
+    },
+    "all_changed_production_test_wiring_included": true,
+    "inherited_changes": "Existing BGC source, LocalExec capture and exact-body workflow extraction are retained in the base, not substituted or omitted from the candidate tree. No U/source lock/dependency changes."
+  },
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "bc0f5de312135db7a531779478b37dc7c4ab8f7e",
+      "candidate_blob": "5e50c9327848afc98a957c51f4cb72de7241aac2",
+      "base_content": {
+        "bytes": 462342,
+        "sha256": "64e3e72497af491fb627beccc950a622229bdc2aeec3024be38b0914126c4a55"
+      },
+      "candidate_content": {
+        "bytes": 466278,
+        "sha256": "3fbc6a43f119ec2a4d63ac04d58a3cbc9d4cdb2e0d79c21bef70324c8764f0e0"
+      },
+      "diff": {
+        "bytes": 31065,
+        "sha256": "c94293988113a225958dcba4936edf12d884dc0ac5394d59d9ff269c1d21de37"
+      }
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "61ccc13ab46557218cd4375b6dbc66ca8a804c0c",
+      "candidate_blob": "955242d5604cb8f01f593e256cd0b3405f431828",
+      "base_content": {
+        "bytes": 247137,
+        "sha256": "828a9b7135e209c0ffd40b13807db048fdba68067992a20224c5ea3a0ef74408"
+      },
+      "candidate_content": {
+        "bytes": 247454,
+        "sha256": "7dc1c39a00237bbe4739f809f029e3134ea4188c6aa064f472093ea0974f2d15"
+      },
+      "diff": {
+        "bytes": 1693,
+        "sha256": "2ad53668daa6d4eddf5ba2f2408d2a5fa266e12806aa98e0a2b0f4fac62fa99d"
+      }
+    },
+    {
+      "path": "frontend/src/recovered/features/agent-info-settings-model-reset.contract.test.ts",
+      "status": "A",
+      "mode": "100644",
+      "base_blob": null,
+      "candidate_blob": "93eaa697c6237edd165320fc11f5c411e4d22c57",
+      "base_content": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "candidate_content": {
+        "bytes": 21799,
+        "sha256": "222c6ff5e701f3c2e99258da8a3000e4720888770323c1f5db83382e76ca6460"
+      },
+      "diff": {
+        "bytes": 22660,
+        "sha256": "f1a4237038784480f108f37ecd61f60b257407bdcfb9a752edf3325437b4f1ee"
+      }
+    },
+    {
+      "path": "frontend/src/recovered/features/agent-info/settings/model.ts",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "5d641cd3c8da63aab780e9bf1b56dae71a59ede4",
+      "candidate_blob": "6c3ddb0e11cff38c08ed596484df0fed493b9473",
+      "base_content": {
+        "bytes": 7494,
+        "sha256": "5486c2ecb9362552b83d6fc7e4629b13031c18223631110298ad989969815d21"
+      },
+      "candidate_content": {
+        "bytes": 14380,
+        "sha256": "0867285bd7a0fade3712d3695375d8c8e344ce997b209b0cf630117909652659"
+      },
+      "diff": {
+        "bytes": 9742,
+        "sha256": "c16e97a180cc64cd85ccfe7217d365b3141ff1b0d39450ebaee585b971fadca7"
+      }
+    },
+    {
+      "path": "frontend/src/recovered/features/agent-info/settings/view.tsx",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "c1cb6bb94d6d0557ed6f6d8a653e04b8f5771b64",
+      "candidate_blob": "e2d2149f800ab48352d2f44aff1cbfe43596d755",
+      "base_content": {
+        "bytes": 4822,
+        "sha256": "5bbf4477e213fffe962371b85f2bf2a658df77d03ad19524ec2729ac2ca77d92"
+      },
+      "candidate_content": {
+        "bytes": 7339,
+        "sha256": "b18b3edd9c82189b23a1c726daf390e9d07f59d8f840d345de1e5b792d6e6baa"
+      },
+      "diff": {
+        "bytes": 4707,
+        "sha256": "d32e7bb97389a616e9093f8b85e62255b84bdf13d53a27fa228223c970695acd"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/session-model-default-reset-647e0932-20261103/source-contract.json",
+      "status": "A",
+      "mode": "100644",
+      "base_blob": null,
+      "candidate_blob": "f3fabb7686838059fd2db39413e2caad5aeab7c7",
+      "base_content": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "candidate_content": {
+        "bytes": 34405,
+        "sha256": "7a23a815819ea9343cb8d8db2cee49c32653b238df75fef00922385155af3a81"
+      },
+      "diff": {
+        "bytes": 35520,
+        "sha256": "11e33ea568262522c761c8ddf8932ab1a7447367f9387b9c0b53c0d2e275c4a9"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+      "candidate_blob": "d2b55a7d9b2ce49006fff1543c050dfc3baa41e6",
+      "base_content": {
+        "bytes": 1778,
+        "sha256": "b1605cfab7367390177f63c25d6264b575ace04813bc4a3999f876ec1e5f994a"
+      },
+      "candidate_content": {
+        "bytes": 2146,
+        "sha256": "9f6c6dbd6066b128e54d251775ac508447811f573b1cc865541636b6b77ce2a3"
+      },
+      "diff": {
+        "bytes": 859,
+        "sha256": "85c114c9fc140e587b503cc64576e57aa95e67740eff342d50f5c7cc68ace054"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/read-observations.json",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "1329183336744c6746532d7f64c8e3aa405cd308",
+      "candidate_blob": "ed374a53b3bea2a1352812e906b0c05dce9645ac",
+      "base_content": {
+        "bytes": 39928,
+        "sha256": "3561f7feaf98df8f82865fa3c45597b3e03fa824f58c37f9221e081a0b5adaf2"
+      },
+      "candidate_content": {
+        "bytes": 40514,
+        "sha256": "0cf3f5f49714a79a83fdb98d13143dbb59968c008222ecdf42d8a974c3e8d9a3"
+      },
+      "diff": {
+        "bytes": 1677,
+        "sha256": "086db74c53098d8fe3f6b78cf0e3477606a23dbe711d9600c62345834a073e79"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "d0c3081bba725956e5eb261150c6c57513dedaea",
+      "candidate_blob": "1d8bc6e3c631b0cb88248c31ae7ef650b6523dba",
+      "base_content": {
+        "bytes": 1487764,
+        "sha256": "f2949d1fe52afa2276845da50a683536151703b9666a9697f30e4062cf489449"
+      },
+      "candidate_content": {
+        "bytes": 1501318,
+        "sha256": "755c2f0e37e933e449500e859bf8bdc8c78c9abba282f6d55a2713a7aba77ae1"
+      },
+      "diff": {
+        "bytes": 22900,
+        "sha256": "d0952eb34a2738f52d4b9e5f8eae3bf3c0c7d795e5f44b7f05f142ad39eb7daf"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "4a415a830fccdfec7b7ae73fa16133929c84652f",
+      "candidate_blob": "45bb5943dc76d5cd53aada1c821ddce6850a7b6d",
+      "base_content": {
+        "bytes": 174692,
+        "sha256": "1300b5434880a1f8a67d99e87ac9c47a34cb5bfa361b86d6bf676108a6e6cedc"
+      },
+      "candidate_content": {
+        "bytes": 179868,
+        "sha256": "14dd629513b3b744ef17850c0517574895ea7bef20c1dbfacd1d76038ec1d9ad"
+      },
+      "diff": {
+        "bytes": 18231,
+        "sha256": "72a8e3a4fffbac57e9d5ea96c71b3a6844d0198a7dbf37fbb23d42b4cde0be4b"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "7e74b03b08cba4a6cf70d1d33160ac85e3ff4c1e",
+      "candidate_blob": "8e3fabac6ee2684294b89a3a7b87052cf1f5b015",
+      "base_content": {
+        "bytes": 178170,
+        "sha256": "d3468c5cfdea0801bafa470ce0a098f15d688429dcfc1cf98a0844ed2f9d8b8e"
+      },
+      "candidate_content": {
+        "bytes": 200694,
+        "sha256": "7832e84899b04c63b1720ab5308f59a9e857c772c0ace7a9c4f3ff9794c67feb"
+      },
+      "diff": {
+        "bytes": 34981,
+        "sha256": "242da2a2dff6438a5390dc7fd961c47d53e6cdb7cb6802e97da43f0e145e568b"
+      }
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+      "candidate_blob": "c21c1239540ba999d4e127b357d85fb575ed8cc8",
+      "base_content": {
+        "bytes": 1008894,
+        "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37"
+      },
+      "candidate_content": {
+        "bytes": 1019130,
+        "sha256": "3b599524ba8898a6448098c31aa87fd735f167366b89cb22743f708da33eb058"
+      },
+      "diff": {
+        "bytes": 13727,
+        "sha256": "5ffa502fe6cf0b34300607b7b895450d62051690239d4ac70020d8954229322e"
+      }
+    },
+    {
+      "path": "source/host/app/src/tests/session_model_default_reset_tests.rs",
+      "status": "A",
+      "mode": "100644",
+      "base_blob": null,
+      "candidate_blob": "effd8a6c660f54a3b2fdc8c4025314bf5dff3896",
+      "base_content": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "candidate_content": {
+        "bytes": 83383,
+        "sha256": "0a34065955b1de426512b99a977aebed079699a054e759570abffb9aaa1e4c05"
+      },
+      "diff": {
+        "bytes": 85338,
+        "sha256": "c6dcbb7abe5208f49c314b2c07492bebd654ea9fc59d850fbfbab8f9d1af8b81"
+      }
+    },
+    {
+      "path": "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "71b9bd7891343798e7ece4faf7a648ca704b10c0",
+      "candidate_blob": "44e134f33c8666f6c458bfa5d110db0d2e1ab643",
+      "base_content": {
+        "bytes": 61184,
+        "sha256": "c5449ef48823021063dc89879a071b2118f99455b74afec74a3588cbe80b975d"
+      },
+      "candidate_content": {
+        "bytes": 75510,
+        "sha256": "0e54743fbae6598265bd1a10ca77cbe04c97d1723f670030f55da4f8dcd4349f"
+      },
+      "diff": {
+        "bytes": 17853,
+        "sha256": "6abb54b047792645df453228157d00150c809f4de9a3f6cc29b506bace5628b7"
+      }
+    },
+    {
+      "path": "source/host/src/extensions/inference/production.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "ecb3fa84772ac09e3dd7ccc73d859555ab624208",
+      "candidate_blob": "c6aa4d51afb36b4bf1d818755d8f77047acf6c90",
+      "base_content": {
+        "bytes": 38854,
+        "sha256": "e2b4a65e28358c8da875ac00378ae090b839dcb7bdd18b3909e6e75e45037b18"
+      },
+      "candidate_content": {
+        "bytes": 40209,
+        "sha256": "db58a38774124b0769c8f19fa4ab194b7e558bc76bd64527dd1e718f71832e97"
+      },
+      "diff": {
+        "bytes": 4630,
+        "sha256": "e8d5b8604f5f0494bc869012d2856b4f68e1353928946cbfc718750909f1693d"
+      }
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_session.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "0a54da8349bc3edc9ef21c5f1c1862e13a9e3039",
+      "candidate_blob": "865c263fce8079371a3fb9b058d8ce4146f1661e",
+      "base_content": {
+        "bytes": 46458,
+        "sha256": "8ed1d9dc2ec500798ecef06297a32255d53f3859efb772ce39d66a2a066c432e"
+      },
+      "candidate_content": {
+        "bytes": 47201,
+        "sha256": "11480b11cf6f8f5af2e2e6d269d15bcc0f51af4597428588331193c9acc30e07"
+      },
+      "diff": {
+        "bytes": 2250,
+        "sha256": "360216b0670d1b1cd3a1d415bfb3bbdd15f193f4d3459cb94802d00ce12022ea"
+      }
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "4c88b00b2dfe563ba957bd0669f177a422a330a7",
+      "candidate_blob": "58a52e5be126ccdc9d06a349b4cc79e824d50b42",
+      "base_content": {
+        "bytes": 290933,
+        "sha256": "577a8a46990d805754fa300d79cc113b0d17a24aa84d6b68ea03b251f81cd6ee"
+      },
+      "candidate_content": {
+        "bytes": 292374,
+        "sha256": "a7b85819cd21dd16398fded6d722ec7c8888096fd775d31658712efeb189dd27"
+      },
+      "diff": {
+        "bytes": 3413,
+        "sha256": "a18f3069b07a70cfbe6d8196a860ed1061bee686d94cb885756a68d4b3287236"
+      }
+    },
+    {
+      "path": "source/host/src/extensions/settings/settings_service.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "7c17f9a08af73365b062e2f212e0b444bfa546f3",
+      "candidate_blob": "f426dca5998054d2ca039827c34e89bcd6d1cb6d",
+      "base_content": {
+        "bytes": 82628,
+        "sha256": "6980f7942e6c2f7c837e8113fd2edb75ba00ff5c35cec77bffdc62918f3e178d"
+      },
+      "candidate_content": {
+        "bytes": 83600,
+        "sha256": "7bdb2de3aa99c857af7aeb5964b3071c7e9377ea6f8dc03406c13a629033ea01"
+      },
+      "diff": {
+        "bytes": 2428,
+        "sha256": "f9c749deb81dd0ee5be0dbbbcd489349a1bf03772303bb8663e794d91dd30772"
+      }
+    },
+    {
+      "path": "source/host/src/gateway_server.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+      "candidate_blob": "87e5454291054e907bd95a4aba90ac00366022d0",
+      "base_content": {
+        "bytes": 97871,
+        "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a"
+      },
+      "candidate_content": {
+        "bytes": 98159,
+        "sha256": "e84d5daba8458f073cf55bc620be8347a91848e4710002fa3f0333f2507eb32c"
+      },
+      "diff": {
+        "bytes": 1440,
+        "sha256": "b103d67311a1e79de0c0ea4344db679ed55fc7afc97e67427e11a9b8c14eeafd"
+      }
+    },
+    {
+      "path": "source/host/tests/agent_session_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "base_blob": "fd10353b72f9a75970e2db1705e1da1f6180c646",
+      "candidate_blob": "0e4850a4bedf5540a3b83cdaee75b0ec08ea5be8",
+      "base_content": {
+        "bytes": 108750,
+        "sha256": "ec125fcb1eef8edf18d12e14075185ce9138a29331d9c32f2234b15262b926f8"
+      },
+      "candidate_content": {
+        "bytes": 108972,
+        "sha256": "4d578bc55b9aa5a81babc20f5fd3fdbe1fc1125048e5bd867892281cfe5d110c"
+      },
+      "diff": {
+        "bytes": 1026,
+        "sha256": "a6d4e2ccbf4b85c70b91712a9193f8710e30f67393ed325b27ddceee293929fe"
+      }
+    },
+    {
+      "path": "source/host/tests/session_model_default_reset_contract.rs",
+      "status": "A",
+      "mode": "100644",
+      "base_blob": null,
+      "candidate_blob": "1d222b2b0ebb24d3f2c2ec0b9a536650138252f5",
+      "base_content": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "candidate_content": {
+        "bytes": 19826,
+        "sha256": "d610bfb6445c994fc0f083bc8d75be1ef077d2a51b4687cd85ec89b12a37ec0a"
+      },
+      "diff": {
+        "bytes": 20635,
+        "sha256": "a2bdadd0f3c2177e177c6c82cbf51cd209ba6f90783e327f7ab890d78b9c67e2"
+      }
+    }
+  ],
+  "reviews": {
+    "general": {
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "state": "pending"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "state": "pending"
+    },
+    "fresh_blind": true,
+    "max_rounds": 10,
+    "reason": "Actual native authorization, lifecycle identity, Session SQLite transaction, inference admission and thin UI reply fences cross security and recovery boundaries. Complete changed scope and adjacent consumers are required."
+  },
+  "validation": {
+    "state": "not-run",
+    "subject": null,
+    "selection": "model-default-reset",
+    "rust_groups": 12,
+    "rust_exact_names": 45,
+    "matrix": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "shipping_compile": "locked mahayana-app-host, separate from cfg(test)",
+    "linux_renderer": {
+      "node": 24,
+      "exact_cases": 8,
+      "build": "TypeScript + Vite + existing desktop bundle boundary"
+    },
+    "source_authority": "Existing exact-U OCRM risk/source coverage/identity/negative controls and canonical shard materialization",
+    "cases": [
+      {
+        "label": "session-model-default-reset-owner",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "session_model_default_reset_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "session_model_default_reset_clears_overrides_reopens_and_preserves_settings",
+          "session_model_default_reset_archive_restore_fences_reads_and_mutations",
+          "session_model_default_reset_wrong_identity_and_exact_revision_refuse_without_writes",
+          "session_model_default_reset_deleted_recreated_session_rejects_old_observation",
+          "session_model_default_reset_locked_entry_preserves_bytes_then_allows_reset",
+          "session_model_default_reset_malformed_model_entry_preserves_bytes_then_allows_reset",
+          "session_model_default_reset_sqlite_write_refusals_do_not_report_applied_and_can_recover"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-app",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/app/Cargo.toml",
+          "--bin",
+          "mahayana-app-host",
+          "tests::session_model_default_reset_tests::",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "tests::session_model_default_reset_tests::session_model_reset_http_native_status_commit_and_reopen",
+          "tests::session_model_default_reset_tests::session_model_reset_http_authority_cannot_be_forged_or_promoted",
+          "tests::session_model_default_reset_tests::session_model_reset_http_strict_intent_and_lifecycle_refusals_preserve_owners",
+          "tests::session_model_default_reset_tests::session_model_reset_http_strict_state_default_and_route_errors_preserve_owners",
+          "tests::session_model_default_reset_tests::session_model_reset_http_storage_refusals_are_not_acknowledged_as_success",
+          "tests::session_model_default_reset_tests::session_model_reset_product_mode_uses_actual_route_not_configured_provider",
+          "tests::session_model_default_reset_tests::session_model_reset_fabushi_admission_and_runner_keep_a_then_emit_b",
+          "tests::session_model_default_reset_tests::session_model_reset_codex_admission_keeps_a_then_admits_b",
+          "tests::session_model_default_reset_tests::session_model_reset_shipping_owner_and_context_bindings"
+        ]
+      },
+      {
+        "label": "codex-model-identity",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--lib",
+          "extensions::inference::provider_session::codex_model_identity_tests::",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_saved_model_reaches_production_retry_and_later_admission",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_checkpoint_retry_retains_model_history_and_single_effect",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_direct_runner_fallback_is_frozen_before_tools_and_retry",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_model_resolution_preserves_precedence_provider_isolation_and_fallbacks",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_model_resolution_refuses_malformed_sources_pairs_and_raw_values",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_known_checkpoint_mismatch_and_invalid_identity_have_no_effects",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_cancelled_dispatch_precedes_model_transport_and_tools",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_legacy_checkpoint_preserves_history_without_replaying_tools",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_memory_and_summary_consume_the_correct_admitted_model",
+          "extensions::inference::provider_session::codex_model_identity_tests::cmi_transport_factory_is_thread_scoped_borrow_free_and_restored",
+          "extensions::inference::provider_session::codex_model_identity_tests::session_model_reset_codex_preserves_admitted_retry_and_nudges_then_emits_reopened_default"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-policy",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "openclaw_model_picker_contract",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "test_ocrm_model_picker_o01_capability_profile_and_event_formatting",
+          "test_ocrm_model_picker_o02_locked_and_conflict_rejections",
+          "test_ocrm_model_picker_o03_operator_and_visibility_policy",
+          "test_ocrm_model_picker_rejects_non_default_model_absent_from_catalog",
+          "test_ocrm_model_picker_o04_placement_fences_and_successful_mutation"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-deletion",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "agent_session_contract",
+          "deletion_fence_rejects_new_transcript_work_before_durable_write",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "deletion_fence_rejects_new_transcript_work_before_durable_write"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-persistence",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "agent_session_contract",
+          "model_selection_does_not_report_applied_when_owner_rejects_persistence",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "model_selection_does_not_report_applied_when_owner_rejects_persistence"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-settings",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "settings_service_contract",
+          "checked_agent_default_model_",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "checked_agent_default_model_reads_are_nonmutating_and_preserve_selection_fields",
+          "checked_agent_default_model_rejects_malformed_present_bound_and_legacy_values"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-fabushi-resolution",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "inference_extension_composition_contract",
+          "fabushi_model_resolution_",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "fabushi_model_resolution_preserves_priority_identity_and_reopened_defaults",
+          "fabushi_model_resolution_rejects_malformed_pairs_and_present_raw_overrides"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-route",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "inference_extension_composition_contract",
+          "bound_defaults_are_isolated_from_cursor_and_do_not_change_route_authority",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "bound_defaults_are_isolated_from_cursor_and_do_not_change_route_authority"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-default-source",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "inference_extension_composition_contract",
+          "fabushi_default_consumer_rejects_invalid_source_instead_of_using_fallback",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "fabushi_default_consumer_rejects_invalid_source_instead_of_using_fallback"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-continuation",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "fabushi_model_identity_production_contract",
+          "persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization",
+          "--",
+          "--exact",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "persisted_fabushi_model_is_frozen_across_tools_retry_and_summarization"
+        ]
+      },
+      {
+        "label": "session-model-default-reset-admission-retained",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/app/Cargo.toml",
+          "--bin",
+          "mahayana-app-host",
+          "tests::codex_model_admission_tests::cmi_",
+          "--",
+          "--test-threads=1"
+        ],
+        "required_names": [
+          "tests::codex_model_admission_tests::cmi_shipping_admission_freezes_saved_model_and_keeps_native_recovery_isolated",
+          "tests::codex_model_admission_tests::cmi_shipping_refusal_releases_lease_without_permission_or_settings_effects",
+          "tests::codex_model_admission_tests::cmi_shipping_session_precedence_preserves_raw_validation_and_other_routes",
+          "tests::codex_model_admission_tests::cmi_shipping_cancellation_before_and_after_model_capture_preserves_admission_owners"
+        ]
+      }
+    ],
+    "ui_names": [
+      "agent settings model reset sends exact lifecycle-bound intent and applies only acknowledged state",
+      "agent settings model reset rejects malformed status and acknowledgements without clearing the observed override",
+      "agent settings model reset preserves failures and requires a status read before another mutation",
+      "agent settings model reset keeps the newest read and prevents refresh from overtaking acknowledgement",
+      "agent settings model reset fences agent selection changes for reads and mutation replies",
+      "agent settings model reset fences account controller replacement and disposal",
+      "agent settings model reset treats unsupported locked and absent authority as presentation-only refusals",
+      "agent settings model reset preserves profile notification and ordinary roster behavior"
+    ],
+    "selection_oracle_controls": "29 RMD selection controls plus 4 retained Box-selection ownership controls; UI TAP parser controls are separate from product cases.",
+    "source_binding_paths": [
+      "source/host/app/src/main.rs",
+      "source/host/src/gateway_server.rs",
+      "source/host/src/extensions/settings/settings_service.rs",
+      "source/host/src/extensions/inference/production.rs",
+      "frontend/src/production/ProductionRenderer.tsx",
+      "source/host/src/extensions/session/agent_session.rs",
+      "source/host/src/extensions/session/production.rs",
+      "source/host/tests/agent_session_contract.rs",
+      "source/host/tests/session_model_default_reset_contract.rs",
+      "frontend/src/recovered/features/agent-info/settings/model.ts",
+      "frontend/src/recovered/features/agent-info/settings/view.tsx",
+      "frontend/src/recovered/features/agent-info-settings-model-reset.contract.test.ts",
+      "source/host/app/src/tests/session_model_default_reset_tests.rs",
+      "source/host/src/extensions/inference/codex_model_identity_tests.rs",
+      "projects/openclaw-rust/docs/specs/session-model-default-reset.md",
+      "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md",
+      "projects/openclaw-rust/evidence/session-model-default-reset-647e0932-20261103/source-contract.json",
+      "source/host/Cargo.toml",
+      "source/host/Cargo.lock",
+      "source/host/app/Cargo.toml",
+      "source/host/app/Cargo.lock",
+      "source/host/src/extensions/inference/model_picker_service.rs",
+      "source/host/src/extensions/inference/model_catalog_service.rs",
+      "source/host/src/host_runner_composition.rs",
+      "source/host/src/runner_production_bridge.rs",
+      "source/host/tests/openclaw_model_picker_contract.rs",
+      "source/host/tests/settings_service_contract.rs",
+      "source/host/tests/inference_extension_composition_contract.rs",
+      "source/host/tests/fabushi_model_identity_production_contract.rs",
+      "source/host/app/src/tests/codex_model_admission_tests.rs",
+      "desktop/package.json",
+      "desktop/package-lock.json",
+      "desktop/tsconfig.json",
+      "desktop/vite.config.ts",
+      "desktop/scripts/check-desktop-bundle.mjs"
+    ],
+    "limits": [
+      "Controlled provider transports are not live compatibility",
+      "Source binding checks do not prove full Unified host boot",
+      "No browser/device UI, final packaging, real account/service or final migration acceptance is claimed"
+    ]
+  },
+  "acceptance": {
+    "source_review": "pending",
+    "scoped_execution": "not-run",
+    "responsibility_verified": false,
+    "eight_global_flags_promoted": false,
+    "full_migration_accepted": false
+  }
+}
