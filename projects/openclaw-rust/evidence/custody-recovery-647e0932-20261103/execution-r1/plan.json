@@ -1,0 +1,183 @@
+{
+  "schema": "ocrm-selected-execution-plan-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "CRF-v1",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "execution_subject": "The immutable commit containing this plan, selected by its fix(ocrm-custody-recovery): push. The actual full SHA/tree must be recorded and checked by Actions before executing; this plan contains no executed result.",
+  "source_candidates": {
+    "shell_capture": "cbc6a15f34038dfb66ed175436fac2673ad935c6",
+    "focused_instrumentation": "6f76741a57ccdb66a4f276f120821da1bc7819e1",
+    "djc_qualified_commit": "70195a457a8e3b75d3429c0a3b7091efe5ba1989",
+    "plugin_v3_consumer_oracles": "d29be0b93225943851c6054016686d571f8d9e2a"
+  },
+  "critical_inputs": [
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "blob": "9e3e46179bbc25bf323bc886e9e33d1506792306"
+    },
+    {
+      "path": "source/box-exec-daemon/Cargo.lock",
+      "blob": "114bb8122dd6eefd7ca569b7391ec72d1fecc561"
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "blob": "23941b650376d23c07c67064f49c083bf7db8689"
+    },
+    {
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5"
+    },
+    {
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "blob": "a54a3a6e3e6b5a010f3564abb37cd6c996dc9752"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
+      "blob": "939e1d588dc7d3f740e88ae4ec6232a49d8ea51e"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "6895c24549a81f5c0b346170975fe850e383d956"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "e047585c9ea0670fc41626ed41b4be6b8ade7ca3"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/custody-recovery-verification.md",
+      "blob": "95c83e8d2a8e3df7a744a0d8f74db202ac4f0206"
+    }
+  ],
+  "text_carry_forward": {
+    "from_capture": "d6566d9d1955c02a9fbc035c3d6ad6eff2019de7",
+    "to_capture": "6895c24549a81f5c0b346170975fe850e383d956",
+    "change": "Only six SC02-R3 qualified names appended to each of the two existing name declarations; removing those literal entries exactly restores the prior source text.",
+    "role": "Source-text comparison, not executable verification"
+  },
+  "workflow": ".github/workflows/rust-desktop-runtime.yml",
+  "job": "custody-recovery",
+  "platforms": [
+    "ubuntu-24.04",
+    "macos-15"
+  ],
+  "workflow_scope": "ocrm-custody-recovery",
+  "capture_scope": "custody-recovery",
+  "commands": [
+    [
+      "cargo",
+      "check",
+      "--locked",
+      "--profile",
+      "ci",
+      "--bin",
+      "mahayana-app-host",
+      "--manifest-path",
+      "source/host/app/Cargo.toml"
+    ],
+    [
+      "python3",
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py"
+    ]
+  ],
+  "selected_groups": [
+    {
+      "name": "box-response-manager",
+      "required_positive_names": 10
+    },
+    {
+      "name": "box-response-codec",
+      "required_positive_names": 44
+    },
+    {
+      "name": "box-response-runner-bridge",
+      "required_positive_names": 9
+    },
+    {
+      "name": "box-response-spill",
+      "required_positive_names": 4
+    },
+    {
+      "name": "box-response-prompt-glue",
+      "required_positive_names": 5
+    },
+    {
+      "name": "box-response-manager-exhaustion",
+      "required_positive_names": 1
+    },
+    {
+      "name": "box-response-forever-box",
+      "required_positive_names": 3
+    },
+    {
+      "name": "box-response-real-daemon",
+      "required_positive_names": 1
+    },
+    {
+      "name": "box-response-shell-capture-unit",
+      "required_positive_names": 19
+    },
+    {
+      "name": "box-response-shell-capture-consumer",
+      "required_positive_names": 2
+    },
+    {
+      "name": "box-response-shell-capture-disconnect",
+      "required_positive_names": 1
+    },
+    {
+      "name": "plugin-custody-desktop-1",
+      "required_positive_names": 1
+    },
+    {
+      "name": "plugin-custody-desktop-2",
+      "required_positive_names": 1
+    },
+    {
+      "name": "plugin-custody-desktop-3",
+      "required_positive_names": 1
+    },
+    {
+      "name": "plugin-uninstall-relay-handoff",
+      "required_positive_names": 1
+    },
+    {
+      "name": "device-pairing-join-qualified",
+      "required_positive_names": 1
+    }
+  ],
+  "required_selected_groups": 16,
+  "required_positive_names_per_platform": 104,
+  "oracle": "Require successful actual commands/capture, exact unique qualified positives and one complete libtest summary for each selected target, zero failed/ignored/measured, and source/lock/normal-daemon/test-artifact before-after identity. Synthetic result/selection/artifact controls qualify the instrument and are not product positives.",
+  "evidence": {
+    "root": ".evidence/custody-recovery",
+    "artifact": "ocrm-custody-recovery-{runner.os}-{full_subject_sha}-{run_id}-{attempt}",
+    "owned_failure_root": ".evidence/custody-recovery/owned-tmp",
+    "result_required": "passed-scoped-only",
+    "shipping_compile_result_required": "compiled",
+    "actual_run": null,
+    "actual_result": "not-run"
+  },
+  "retained_unresolved": [
+    {
+      "case": "join_storage_commit_refusal_never_publishes_payload",
+      "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+      "run": 41618863245,
+      "attempt": 1,
+      "job": 125859112570,
+      "state": "failed original eight-second observation; assertion remains unchanged; not selected by CRF",
+      "closure": "DJC-07 causal COMMIT control does not resolve the original timing observation"
+    }
+  ],
+  "limits": [
+    "Fourteen downstream custody names remain in the full plan; this focused selection does not execute them.",
+    "No palette producer/export or unrelated whole contract is accepted by the selected receipt.",
+    "Separate BGC-v1 spec and subsequent implementation do not alter this frozen source subject.",
+    "No real provider/channel/plugin ecosystem/node/device, UI/platform package/performance/soak/upgrade/rollback or final ACCEPT claim.",
+    "All eight OCRM global flags remain false and full fixed-U source/dependency/legal closure remains open."
+  ]
+}
