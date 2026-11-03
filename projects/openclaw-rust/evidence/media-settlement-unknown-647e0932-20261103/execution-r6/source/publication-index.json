@@ -1,0 +1,11 @@
+{
+  "subject": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "run_id": 41586608762,
+  "attempt": 1,
+  "artifact_id": 13207619380,
+  "original_zip_sha256": "75178fb1e14b9f4219b0417e2f5fa917fd2a16347a3862e1c3ebc76eea507e23",
+  "original_zip_contains_all8_original_members": true,
+  "repository_input_snapshots": "Not duplicated; exact-H Git blobs and bytes are bound in inputs/source-receipt-input-index.json and root-proof.json. Source capture/read depths are distinct.",
+  "complete_logs": "Two original decoded job logs are retained unchanged.",
+  "source_only": "Tracked-tree/structural success; dependency/source/final acceptance remain open."
+}

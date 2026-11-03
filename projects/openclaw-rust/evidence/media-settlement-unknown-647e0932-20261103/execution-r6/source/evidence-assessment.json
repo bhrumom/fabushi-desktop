@@ -1,0 +1,408 @@
+{
+  "task": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "task_round": 1,
+  "phase": "R6 exact-H source-authority Actions evidence assessment",
+  "selected_effort": "xhigh",
+  "actual_configuration": "existing configured model/session inherited; no model or effort override attempted",
+  "repository": "bhrumom/fabushi-desktop",
+  "subject_commit": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "subject_tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+  "reviewed_source_tree": "4b94e525d6790d6f355ea6e2113db02cb5e5a46f",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "run": {
+    "id": 41586608762,
+    "run_attempt": 1,
+    "workflow_id": 392577148,
+    "path": ".github/workflows/ocrm-p0-authority.yml",
+    "event": "push",
+    "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "status": "completed",
+    "conclusion": "success",
+    "created_at": "2026-11-03T05:54:20Z",
+    "run_started_at": "2026-11-03T05:54:20Z",
+    "updated_at": "2026-11-03T05:56:33Z",
+    "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41586608762"
+  },
+  "observations": [
+    {
+      "number": 1,
+      "first_observed_at": "2026-11-03 05:55:33 UTC",
+      "collection_completed_by": "2026-11-03 05:55:45 UTC",
+      "run_status": "in_progress",
+      "source_job_status": "in_progress"
+    },
+    {
+      "number": 2,
+      "observed_at": "2026-11-03 05:56:47 UTC",
+      "run_status": "completed",
+      "run_conclusion": "success"
+    }
+  ],
+  "observation_limit": 3,
+  "observations_used": 2,
+  "terminal_observation_obviated_further_polling": true,
+  "jobs": [
+    {
+      "id": 125753466394,
+      "name": "source-authority",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41586608762,
+      "run_attempt": 1,
+      "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+      "started_at": "2026-11-03T05:54:24Z",
+      "completed_at": "2026-11-03T05:56:17Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-03T05:54:24Z",
+          "completed_at": "2026-11-03T05:54:25Z"
+        },
+        {
+          "name": "Checkout exact subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-03T05:54:25Z",
+          "completed_at": "2026-11-03T05:54:31Z"
+        },
+        {
+          "name": "Verify checked-out subject and lock",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-03T05:54:31Z",
+          "completed_at": "2026-11-03T05:54:31Z"
+        },
+        {
+          "name": "Exercise risk review contract and fail-closed counterexamples",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-03T05:54:31Z",
+          "completed_at": "2026-11-03T05:54:32Z"
+        },
+        {
+          "name": "Acquire exact upstream and verify identity",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-03T05:54:32Z",
+          "completed_at": "2026-11-03T05:55:20Z"
+        },
+        {
+          "name": "Generate recursive tracked-source inventory",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-03T05:55:20Z",
+          "completed_at": "2026-11-03T05:55:21Z"
+        },
+        {
+          "name": "Scan LFS pointer candidates without claiming closure",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-03T05:55:21Z",
+          "completed_at": "2026-11-03T05:55:21Z"
+        },
+        {
+          "name": "Record dependency authority inputs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-03T05:55:21Z",
+          "completed_at": "2026-11-03T05:55:21Z"
+        },
+        {
+          "name": "Expand canonical source records and verify P0 G01/G02 structural",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-03T05:55:21Z",
+          "completed_at": "2026-11-03T05:56:12Z"
+        },
+        {
+          "name": "Upload immutable authority evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-03T05:56:12Z",
+          "completed_at": "2026-11-03T05:56:14Z"
+        },
+        {
+          "name": "Post Checkout exact subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-03T05:56:14Z",
+          "completed_at": "2026-11-03T05:56:15Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 21,
+          "started_at": "2026-11-03T05:56:15Z",
+          "completed_at": "2026-11-03T05:56:15Z"
+        }
+      ]
+    },
+    {
+      "id": 125753467693,
+      "name": "recover-original-host-log",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 41586608762,
+      "run_attempt": 1,
+      "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+      "started_at": "2026-11-03T05:54:21Z",
+      "completed_at": "2026-11-03T05:54:21Z",
+      "steps": []
+    },
+    {
+      "id": 125754056567,
+      "name": "persist-verified-inventory",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41586608762,
+      "run_attempt": 1,
+      "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+      "started_at": "2026-11-03T05:56:19Z",
+      "completed_at": "2026-11-03T05:56:32Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-03T05:56:19Z",
+          "completed_at": "2026-11-03T05:56:20Z"
+        },
+        {
+          "name": "Checkout guarded original subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-03T05:56:20Z",
+          "completed_at": "2026-11-03T05:56:25Z"
+        },
+        {
+          "name": "Download this exact-subject verified canonical manifest",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-03T05:56:25Z",
+          "completed_at": "2026-11-03T05:56:26Z"
+        },
+        {
+          "name": "Materialize deterministic shards and dependency declarations in Actions",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-03T05:56:26Z",
+          "completed_at": "2026-11-03T05:56:30Z"
+        },
+        {
+          "name": "CAS commit derived source shards to the existing branch (non-force)",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-03T05:56:30Z",
+          "completed_at": "2026-11-03T05:56:30Z"
+        },
+        {
+          "name": "Dispatch scoped checks for the resulting exact branch head",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 6,
+          "started_at": "2026-11-03T05:56:30Z",
+          "completed_at": "2026-11-03T05:56:30Z"
+        },
+        {
+          "name": "Post Checkout guarded original subject",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-03T05:56:30Z",
+          "completed_at": "2026-11-03T05:56:31Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-03T05:56:31Z",
+          "completed_at": "2026-11-03T05:56:31Z"
+        }
+      ]
+    }
+  ],
+  "artifact": {
+    "id": 13207619380,
+    "node_id": "MDg6QXJ0aWZhY3QxMzIwNzYxOTM4MA==",
+    "name": "ocrm-p0-authority-8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "size_in_bytes": 4951968,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13207619380",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13207619380/zip",
+    "expired": false,
+    "digest": "sha256:75178fb1e14b9f4219b0417e2f5fa917fd2a16347a3862e1c3ebc76eea507e23",
+    "created_at": "2026-11-03T05:56:14Z",
+    "updated_at": "2026-11-03T05:56:14Z",
+    "expires_at": "2026-12-03T05:56:12Z",
+    "workflow_run": {
+      "id": 41586608762,
+      "repository_id": 1375312893,
+      "head_repository_id": 1375312893,
+      "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+      "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc"
+    }
+  },
+  "artifact_zip": {
+    "path": "artifacts/source-authority-13207619380.zip",
+    "bytes": 4951968,
+    "sha256": "75178fb1e14b9f4219b0417e2f5fa917fd2a16347a3862e1c3ebc76eea507e23",
+    "matches_api_digest_and_source_upload_log_and_persist_download_log": true,
+    "member_count": 8,
+    "member_manifest": "artifacts/source-authority-13207619380-manifest.json"
+  },
+  "logs": [
+    {
+      "path": "logs/persist-inventory-job-125754056567.log",
+      "bytes": 18126,
+      "sha256": "ac55a0f511d3e9c0967b2d9dfe4372f87390d5c551c19b253166d92fe606da4a",
+      "lines": 216,
+      "encoding": "UTF-8; initial BOM retained; GitHub connector decoded job-log text"
+    },
+    {
+      "path": "logs/source-authority-job-125753466394.log",
+      "bytes": 31514,
+      "sha256": "838e6ea2ae35f184417032906e0050d92f9ca833f8dd6a8d568d96837103ca51",
+      "lines": 380,
+      "encoding": "UTF-8; initial BOM retained; GitHub connector decoded job-log text"
+    }
+  ],
+  "remote_test_suites": [
+    {
+      "command": "python3 projects/openclaw-rust/scripts/test_source_review.py",
+      "tests_reported": 33,
+      "elapsed_seconds_reported": 0.003,
+      "harness_verdict": "OK",
+      "source_log_lines": [
+        163,
+        177
+      ]
+    },
+    {
+      "command": "python3 projects/openclaw-rust/scripts/test_inventory_materialization.py",
+      "tests_reported": 21,
+      "elapsed_seconds_reported": 4.801,
+      "harness_verdict": "OK",
+      "source_log_lines": [
+        292,
+        326
+      ]
+    }
+  ],
+  "exit_code_evidence": "Actions step conclusions are success under bash -e / set -euo pipefail; numeric zero is inferred from these terminal success records, not a separate numeric exit-code artifact.",
+  "negative_probes_reported_rejected": [
+    "duplicate source path",
+    "unread denominator tamper",
+    "unbacked accepted verdict",
+    "orphan responsibility"
+  ],
+  "gate_verdicts": {
+    "OCRM-G01-dependency-LFS-closure": "open",
+    "OCRM-G01-tracked-tree": "success",
+    "OCRM-G02-final": "not-run",
+    "OCRM-G02-structural": "success"
+  },
+  "independent_review_field": "pending",
+  "input_binding": {
+    "receipt_repository_paths": 26,
+    "all_26_exact_h_git_blobs_match": true,
+    "all_26_receipt_sha256_match_exact_h_bytes": true,
+    "canonical_inventory_output_paths": 1,
+    "canonical_inventory_sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
+    "subject_inputs_digest_recorded": "e0af690266d3b7509fdb25d409f3e64d4633c9df7b5fb9be8ef42ba1531527ec",
+    "subject_inputs_digest_computed": "e0af690266d3b7509fdb25d409f3e64d4633c9df7b5fb9be8ef42ba1531527ec",
+    "index": "inputs/source-receipt-input-index.json",
+    "receipt_hash_phase": "after expand_inventory and shard_inventory in source-authority job",
+    "receipt_output_hashes_equal_exact_h_inputs": true,
+    "full_transitive_dependency_closure_claimed": false
+  },
+  "generated_carrier": {
+    "new_commit_produced": false,
+    "source_log_evidence": "persist-inventory-job-125754056567.log:200 No new source-derived shard content",
+    "dispatch_step_conclusion": "skipped",
+    "resulting_subject": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "historical_carrier_not_relabelled": true
+  },
+  "accounting": {
+    "tracked_paths": 62130,
+    "blob_paths": 62128,
+    "symlink_paths": 2,
+    "gitlink_paths": 0,
+    "shards": 61,
+    "mapped_paths": 888,
+    "unclassified_paths": 61242,
+    "unread_or_partial_paths": 62067,
+    "pending_forward_links_reported_by_actions": 0,
+    "index_inventory": {
+      "applicability_assessed": 0,
+      "blob_entries_total": 62128,
+      "canonical_manifest_format": "projects/openclaw-rust/schemas/source-inventory.schema.json",
+      "dispositioned": 0,
+      "gitlink_entries_total": 0,
+      "itemized_manifest_location": "projects/openclaw-rust/inventory/shards/manifest.json (Git-tracked canonical row shards; authority checked in Actions)",
+      "lfs_pointer_candidates_observed": 0,
+      "lfs_pointer_entries_total": null,
+      "omitted_known": 0,
+      "responsibility_decomposition_complete": false,
+      "semantic_read_complete": false,
+      "symlink_entries_total": 2,
+      "tracked_entries_total": 62130,
+      "unclassified": 61242,
+      "unread": 62067,
+      "unreviewed_applicable": 0
+    }
+  },
+  "msu_status": {
+    "acceptance": "pending",
+    "implementation": "implementing",
+    "mapping": "mapped",
+    "read": "partial",
+    "verification": "not-run",
+    "wiring": "wired"
+  },
+  "completion_flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "terminal_evidence_verdict": "exact-H source-authority tracked-tree and structural gates passed; evidence collection complete for the source and persist jobs",
+  "scope_exclusions": [
+    "runtime run 41586608776",
+    "Rust/App/media runtime acceptance",
+    "dependency/LFS closure",
+    "final AC02",
+    "global OCRM acceptance",
+    "full semantic reading of all 62130 source rows"
+  ],
+  "local_operations": "read-only Git/API/source/log reads; JSON, ZIP and hash evidence accounting; evidence writes only within assigned destinations",
+  "prohibited_operations_performed": false,
+  "existing_source_review_report_modified": false
+}

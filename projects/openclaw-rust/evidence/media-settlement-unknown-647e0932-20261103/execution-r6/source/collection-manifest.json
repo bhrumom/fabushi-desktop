@@ -1,0 +1,270 @@
+{
+  "description": "Collected evidence and report byte inventory; excludes this manifest itself. Not a product/source validation result.",
+  "files": [
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/archive-transport.json",
+      "bytes": 325,
+      "sha256": "f11e8b37baf12d89b614f1cfb9af1fa8fd587a87f2653cc279ab01acc548bf8d"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/exact-h-commit.json",
+      "bytes": 1942,
+      "sha256": "a1a853762be6b3dc243e7b4505cf5b3947a16f047d924f966fa72f2c154198ea"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/exact-h-manifest-fetch.json",
+      "bytes": 374,
+      "sha256": "3106d49226848f408ca82d14da9e1109662e70311d2bda7d13c5ebdb6eb31c9a"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/exact-h-tree.json",
+      "bytes": 3200087,
+      "sha256": "44c1c28e882ee780efae0fa7ee00c1b5217fe8dab000a305b9c94aeb0451c684"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/observation-01.json",
+      "bytes": 371,
+      "sha256": "f0e86cf2d15ca48880a0b4ca7bfda75ab20e14fef2a26c54ed72625789b81ec9"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/observation-02.json",
+      "bytes": 307,
+      "sha256": "0b0642f80f8fbb957a74b541f63c367c6ec3b3a9dc1126e2d41424cedfc92c35"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/source-artifacts-02.json",
+      "bytes": 808,
+      "sha256": "3f3e1cd742ed09a216314f1804a449411c1a2efed39a9aac148b89c28cb62a9e"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/source-jobs-attempt-1-01.json",
+      "bytes": 3778,
+      "sha256": "b472dbb2e79115f9d82ebc3efbbc707c27e39a983b25c68a81efaa5e75b91599"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/source-jobs-attempt-1-02.json",
+      "bytes": 6509,
+      "sha256": "fd3cf106520783117fffdc1f5bd514dc1f8af897a5402be0c9325bef5a6c065a"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/source-jobs-normalized-01.json",
+      "bytes": 2313,
+      "sha256": "0efc0aae07a55b8c07b03c0f27de8cab66d450ed130cec0f84d15f33f6c41e91"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/source-run-01.json",
+      "bytes": 13184,
+      "sha256": "49f8209be9ecf178bfc6f78e95e96002a64560d11e416ab41906178c449ad651"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/api/source-run-02.json",
+      "bytes": 13187,
+      "sha256": "3d8560f862f64dfe09ff60b87a45f44a980bc00767a2d6fa3e964671643615bb"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/authority-summary.json",
+      "bytes": 607,
+      "sha256": "525cf85ad14c5ccffdcb3e27a4eabdf845d7bba39c8f43add759a9e929ceb497"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/dependency-root-inputs.tsv",
+      "bytes": 171,
+      "sha256": "dd26a8316202da93dbca27ab63cd046c365ac2db499de18af844e51f654806f4"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/lfs-pointer-candidates.count",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/lfs-pointer-candidates.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/ls-tree.z",
+      "bytes": 6271094,
+      "sha256": "ad8da8a294e1f3bbb98f4f711163e84b1a416b8bfa1745db76b027cee2bc52f0"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/p0-structural-receipt.json",
+      "bytes": 5080,
+      "sha256": "5b15f0acf53720dba3bbc9b99c78df0a5296cd121808ee14223513e33dfacca7"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/upstream-recursive-inventory.json",
+      "bytes": 55595275,
+      "sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380/upstream-recursive-inventory.sha256",
+      "bytes": 65,
+      "sha256": "4acc8ff9da82505ebd5006c8038c46324893975b9a87ef517ee727b94bfc5823"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380-manifest.json",
+      "bytes": 1641,
+      "sha256": "e005ebfe0e47cca352ab2ea0b8327f5f3be3f624ffb629e7919dbff1ee93d9c6"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/artifacts/source-authority-13207619380.zip",
+      "bytes": 4951968,
+      "sha256": "75178fb1e14b9f4219b0417e2f5fa917fd2a16347a3862e1c3ebc76eea507e23"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/evidence-assessment.json",
+      "bytes": 14654,
+      "sha256": "be93ddfafcef474152f987029a1484a01ffee18d6997d7a2327dc08dfb18bc1f"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/.github/workflows/ocrm-p0-authority.yml",
+      "bytes": 45615,
+      "sha256": "15e7cd4e6402dd515bbd023c2b421162fb854e13c8744ba6abec8f7fc33fc86e"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/dependencies/source-manifest-inputs.json",
+      "bytes": 62176,
+      "sha256": "b16d26dbbaa63ede053231e615463d63c82351e68c8ad9761094d16d8bc8b46e"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+      "bytes": 100962,
+      "sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/dossiers/model-picker-scoped.md",
+      "bytes": 36192,
+      "sha256": "f7e716850861d51521931657cdd1c9b1e68aefad8088126758aa43bba1d0b884"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+      "bytes": 25731,
+      "sha256": "e96d1a0b0d2588b063f79443ec5bdebc23932f19f9f23fb458915ea1f44f1119"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+      "bytes": 23146,
+      "sha256": "c28fce04d80bc059c83be01b1b98fe61ea23044a3eebdc6c9fc6f2e5214ba308"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
+      "bytes": 35827,
+      "sha256": "db6fda256eaa618d651a46ef921ed31d6b44b57714f8be27ed6a015eb5dee828"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-range-correction.json",
+      "bytes": 3685,
+      "sha256": "5e523c78719144fe75699a78d75bfd5fb485623c88d60f8ca66ee18b2b55db6c"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+      "bytes": 122311,
+      "sha256": "7ff0a3892a8df00ea7a91e41f70b9217fe7e2295c2b05013d5609245bddb7fd1"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+      "bytes": 98926,
+      "sha256": "c9005d2e9e07233f9bce523dfbc79bd3872ca42046aa6fd7e4a38a879860abb3"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/inventory/index.json",
+      "bytes": 1778,
+      "sha256": "b1605cfab7367390177f63c25d6264b575ace04813bc4a3999f876ec1e5f994a"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/inventory/read-observations.json",
+      "bytes": 39928,
+      "sha256": "3561f7feaf98df8f82865fa3c45597b3e03fa824f58c37f9221e081a0b5adaf2"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/inventory/shards/manifest.json",
+      "bytes": 27556,
+      "sha256": "9b4dc21b09d80a94259d0688b552c920f41fb93363589235ba4d14a55470b6d3"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/parity-ledger.json",
+      "bytes": 1457556,
+      "sha256": "d8b197d9e9bf18b5a7f1515116ef524bcf20d518382618cab1f9446c3ae70c8b"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/requirements-traceability-matrix.json",
+      "bytes": 161514,
+      "sha256": "e724440db1cb0391d4512c03f8fab5f7e3a08f5762e35c42c82b41f3fa271961"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/schemas/parity-ledger.schema.json",
+      "bytes": 14189,
+      "sha256": "7cddb11feeb4ac52939c86cba2cd1a124bc9ee6a7cd1dd84c11142c4091762aa"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/schemas/requirements-traceability-matrix.schema.json",
+      "bytes": 4172,
+      "sha256": "4d473e1c5f666e47fa3dec54a313d3fd4897af89a1089930a87e3b7253908eea"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/schemas/source-inventory.schema.json",
+      "bytes": 11012,
+      "sha256": "4c9e99b87aa4323c213118716ca674d269438e599f87349c9879b4c7df67d154"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/scripts/expand_inventory.py",
+      "bytes": 9638,
+      "sha256": "05c5112ff0576eeab51c85787833322f75dffa498fb3ae9b5c9e799fc117a636"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/scripts/shard_inventory.py",
+      "bytes": 11547,
+      "sha256": "bdf875a0be08a19e4cfe23387aa93b97eb8da4e4855942b429c3307205fda6ae"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/scripts/source_review.py",
+      "bytes": 20450,
+      "sha256": "a4d628822136b3a86c6f74a89041cb5b9b68935193ac74b2f975e3426476a097"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/scripts/test_inventory_materialization.py",
+      "bytes": 20045,
+      "sha256": "5f810f98278e0961e14d3e193f0dd008740ce1c07cb24c3d24d0327d4c4ca472"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/scripts/test_source_review.py",
+      "bytes": 17084,
+      "sha256": "999017d9103582464304a6761dc60b6bb11c4882f9d2b82c97b9510c6b130b98"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/scripts/validate_p0.py",
+      "bytes": 23240,
+      "sha256": "74225a9451d7b689a490d71706292306ef1e6a69d51bf63c3a22415ce51b732c"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/scripts/verify_audit_integrity.py",
+      "bytes": 7378,
+      "sha256": "80a72f221ca0e51bad3a97e3ca9ad13b148d8b35a09c65f7f7991f393665f8c3"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/exact-h/projects/openclaw-rust/upstream.lock.json",
+      "bytes": 3495,
+      "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/inputs/source-receipt-input-index.json",
+      "bytes": 16602,
+      "sha256": "d1edced9fe858e23f3727d46136ccd77db80c66ef46950ee69419dcc080b8778"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/logs/persist-inventory-job-125754056567.log",
+      "bytes": 18126,
+      "sha256": "ac55a0f511d3e9c0967b2d9dfe4372f87390d5c551c19b253166d92fe606da4a"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci/logs/source-authority-job-125753466394.log",
+      "bytes": 31514,
+      "sha256": "838e6ea2ae35f184417032906e0050d92f9ca833f8dd6a8d568d96837103ca51"
+    },
+    {
+      "path": "/workspace/scratch/7d27ea239237/media-r6-source-ci-report.md",
+      "bytes": 19343,
+      "sha256": "b9f0743924ca813825c8a334020a8dd3a53442cd25512ca24a1ed3c016577823"
+    }
+  ]
+}

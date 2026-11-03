@@ -1,0 +1,12 @@
+{
+  "observation_number": 2,
+  "observed_at": "2026-11-03 05:56:47 UTC",
+  "elapsed_seconds_since_first_observation": 74,
+  "run_id": 41586608762,
+  "attempt": 1,
+  "status": "completed",
+  "conclusion": "success",
+  "source_job": 125753466394,
+  "persist_job": 125754056567,
+  "skipped_job": 125753467693
+}

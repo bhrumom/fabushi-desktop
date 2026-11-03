@@ -1,0 +1,211 @@
+{
+  "subject": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "artifact_id": 13207619380,
+  "artifact_bytes": 4951968,
+  "artifact_sha256": "75178fb1e14b9f4219b0417e2f5fa917fd2a16347a3862e1c3ebc76eea507e23",
+  "repository_inputs": [
+    {
+      "path": ".github/workflows/ocrm-p0-authority.yml",
+      "git_blob": "2d22dce2d6067e7f4c16c3c01ed95c58cd3354df",
+      "sha256": "15e7cd4e6402dd515bbd023c2b421162fb854e13c8744ba6abec8f7fc33fc86e",
+      "bytes": 45615,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/dependencies/source-manifest-inputs.json",
+      "git_blob": "ca14f1db252329d98780f318729ef18dd76e9ae7",
+      "sha256": "b16d26dbbaa63ede053231e615463d63c82351e68c8ad9761094d16d8bc8b46e",
+      "bytes": 62176,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+      "git_blob": "a50e82588d796974b19d8253c5b74351c35a44bf",
+      "sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e",
+      "bytes": 100962,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+      "git_blob": "8ba93d03aa710d1a70aeafe6863c0fc5e5f42271",
+      "sha256": "f7e716850861d51521931657cdd1c9b1e68aefad8088126758aa43bba1d0b884",
+      "bytes": 36192,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+      "git_blob": "219b67f7e747efff28ae063a4ddd9436a239af85",
+      "sha256": "e96d1a0b0d2588b063f79443ec5bdebc23932f19f9f23fb458915ea1f44f1119",
+      "bytes": 25731,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+      "git_blob": "2a597f7779084ef1789697b1c1080369574b9632",
+      "sha256": "c28fce04d80bc059c83be01b1b98fe61ea23044a3eebdc6c9fc6f2e5214ba308",
+      "bytes": 23146,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
+      "git_blob": "37261b14305e72a8c9423bce4e168fff3b099f73",
+      "sha256": "db6fda256eaa618d651a46ef921ed31d6b44b57714f8be27ed6a015eb5dee828",
+      "bytes": 35827,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-range-correction.json",
+      "git_blob": "34448ef9efadf69f943d22d3738ae5414509caef",
+      "sha256": "5e523c78719144fe75699a78d75bfd5fb485623c88d60f8ca66ee18b2b55db6c",
+      "bytes": 3685,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+      "git_blob": "7fed0d35c0f39a22191a46c88df182e9969a6a5d",
+      "sha256": "7ff0a3892a8df00ea7a91e41f70b9217fe7e2295c2b05013d5609245bddb7fd1",
+      "bytes": 122311,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+      "git_blob": "85e3c1d8e60a74bdd61ca0e5b692211daee5291d",
+      "sha256": "c9005d2e9e07233f9bce523dfbc79bd3872ca42046aa6fd7e4a38a879860abb3",
+      "bytes": 98926,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "git_blob": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+      "sha256": "b1605cfab7367390177f63c25d6264b575ace04813bc4a3999f876ec1e5f994a",
+      "bytes": 1778,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/read-observations.json",
+      "git_blob": "1329183336744c6746532d7f64c8e3aa405cd308",
+      "sha256": "3561f7feaf98df8f82865fa3c45597b3e03fa824f58c37f9221e081a0b5adaf2",
+      "bytes": 39928,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/shards/manifest.json",
+      "git_blob": "911019b1c4c3b629a4425610bf941caf88a97e18",
+      "sha256": "9b4dc21b09d80a94259d0688b552c920f41fb93363589235ba4d14a55470b6d3",
+      "bytes": 27556,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "git_blob": "285f9ca672947d9ad054832557c0b4abf38a0d68",
+      "sha256": "d8b197d9e9bf18b5a7f1515116ef524bcf20d518382618cab1f9446c3ae70c8b",
+      "bytes": 1457556,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "git_blob": "1bdbd1ca17b2ff334f365183c51bcd15c7ca0871",
+      "sha256": "e724440db1cb0391d4512c03f8fab5f7e3a08f5762e35c42c82b41f3fa271961",
+      "bytes": 161514,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/schemas/parity-ledger.schema.json",
+      "git_blob": "bf2cbeeda5d3a0b9fe2ff53e9091fd9905015bcb",
+      "sha256": "7cddb11feeb4ac52939c86cba2cd1a124bc9ee6a7cd1dd84c11142c4091762aa",
+      "bytes": 14189,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/schemas/requirements-traceability-matrix.schema.json",
+      "git_blob": "1ce8880ce38ca943ed83f384a8b2a07155654482",
+      "sha256": "4d473e1c5f666e47fa3dec54a313d3fd4897af89a1089930a87e3b7253908eea",
+      "bytes": 4172,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/schemas/source-inventory.schema.json",
+      "git_blob": "ec3ece0e74819082fdfbeecc0e4610c095818e46",
+      "sha256": "4c9e99b87aa4323c213118716ca674d269438e599f87349c9879b4c7df67d154",
+      "bytes": 11012,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/expand_inventory.py",
+      "git_blob": "49b7313151e9d5602a9edf9de4c82050b65cc98d",
+      "sha256": "05c5112ff0576eeab51c85787833322f75dffa498fb3ae9b5c9e799fc117a636",
+      "bytes": 9638,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/shard_inventory.py",
+      "git_blob": "3f2e86c61793b1f9d3cbeefac621f7b55de279f7",
+      "sha256": "bdf875a0be08a19e4cfe23387aa93b97eb8da4e4855942b429c3307205fda6ae",
+      "bytes": 11547,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/source_review.py",
+      "git_blob": "143e310f263d474a3a711a8b992013f5ded74b85",
+      "sha256": "a4d628822136b3a86c6f74a89041cb5b9b68935193ac74b2f975e3426476a097",
+      "bytes": 20450,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/test_inventory_materialization.py",
+      "git_blob": "9a7357193f2aa03f419bb0cadeb181b58b6fa901",
+      "sha256": "5f810f98278e0961e14d3e193f0dd008740ce1c07cb24c3d24d0327d4c4ca472",
+      "bytes": 20045,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/test_source_review.py",
+      "git_blob": "cda4a8319d82a599491c965bd55fdc412bad8110",
+      "sha256": "999017d9103582464304a6761dc60b6bb11c4882f9d2b82c97b9510c6b130b98",
+      "bytes": 17084,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/validate_p0.py",
+      "git_blob": "2bf4350bf6f4220ee3be1b82a21a65ea4ee52014",
+      "sha256": "74225a9451d7b689a490d71706292306ef1e6a69d51bf63c3a22415ce51b732c",
+      "bytes": 23240,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+      "git_blob": "d6001d6c9bab9860e8ba7e0f1434d48581c9c42d",
+      "sha256": "80a72f221ca0e51bad3a97e3ca9ad13b148d8b35a09c65f7f7991f393665f8c3",
+      "bytes": 7378,
+      "matches_root_api_tree_and_receipt": true
+    },
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+      "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "bytes": 3495,
+      "matches_root_api_tree_and_receipt": true
+    }
+  ],
+  "canonical_output_sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
+  "gates": {
+    "OCRM-G01-dependency-LFS-closure": "open",
+    "OCRM-G01-tracked-tree": "success",
+    "OCRM-G02-final": "not-run",
+    "OCRM-G02-structural": "success"
+  },
+  "flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "collector_report_sha256": "b9f0743924ca813825c8a334020a8dd3a53442cd25512ca24a1ed3c016577823",
+  "root_read": "Complete collector report and structural receipt plus executed raw source/persist log sections. All26 input bytes independently rebound to root-owned exact-H API tree; original artifact ZIP and canonical output completely rehashed. No local source validation."
+}

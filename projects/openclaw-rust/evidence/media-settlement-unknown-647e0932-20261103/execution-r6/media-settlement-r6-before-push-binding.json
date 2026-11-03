@@ -1,0 +1,149 @@
+{
+  "parent": "edcd0ed893f0a09b97cd3663d49287db0d7ec797",
+  "parent_tree": "7b0b5e6a6cee2e339b49d366dba08487a6ac5b62",
+  "tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+  "overlay_paths": 37,
+  "core_bindings": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "expected": "25e80da72d20d4dbfed8ab6f2a50a3eff62b53af",
+      "actual": "25e80da72d20d4dbfed8ab6f2a50a3eff62b53af",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
+      "expected": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "actual": "e89c27654614752fd4700e6506735bee3bde25a8",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
+      "expected": "8235f203e5ac0797f73cb2d9002b64eeb1f69110",
+      "actual": "8235f203e5ac0797f73cb2d9002b64eeb1f69110",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "expected": "285f9ca672947d9ad054832557c0b4abf38a0d68",
+      "actual": "285f9ca672947d9ad054832557c0b4abf38a0d68",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "expected": "1bdbd1ca17b2ff334f365183c51bcd15c7ca0871",
+      "actual": "1bdbd1ca17b2ff334f365183c51bcd15c7ca0871",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "expected": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "actual": "d5376d94f569b112c5778efb529eb64d2b863766",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "expected": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae",
+      "actual": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae",
+      "match": true
+    },
+    {
+      "path": "source/host/Cargo.toml",
+      "expected": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "actual": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+      "match": true
+    },
+    {
+      "path": "source/host/app/Cargo.toml",
+      "expected": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "actual": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "expected": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "actual": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+      "expected": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "actual": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "expected": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "actual": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+      "match": true
+    },
+    {
+      "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+      "expected": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5",
+      "actual": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5",
+      "match": true
+    },
+    {
+      "path": "source/host/src/attachment_paths.rs",
+      "expected": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "actual": "6e1a2b8eb5752e005bbce30ed0b6eaaacfda0cda",
+      "match": true
+    },
+    {
+      "path": "source/host/src/extensions/session/agent_db.rs",
+      "expected": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "actual": "87186bc4b246d88a5ce51ebda0623b76f4425d3d",
+      "match": true
+    },
+    {
+      "path": "source/host/src/extensions/session/production.rs",
+      "expected": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "actual": "c5912cab4f95d3a75fc13cb264a21b1deef9a733",
+      "match": true
+    },
+    {
+      "path": "source/host/src/extensions/transcript/production_runtime.rs",
+      "expected": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "actual": "9f15ddbdebe0ec7fe612975e28e9a7d5d0c3beb6",
+      "match": true
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "expected": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "actual": "86a9e0e394b0145173bc033ceb757b7fb10835e5",
+      "match": true
+    },
+    {
+      "path": "source/host/tests/openclaw_sessions_and_config_contract.rs",
+      "expected": "32a7218874c4b03e27a9872adf339186fab50f28",
+      "actual": "32a7218874c4b03e27a9872adf339186fab50f28",
+      "match": true
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "expected": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "actual": "3027419ca36d652ae2ab8b2c1fff16197903fa6c",
+      "match": true
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "expected": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+      "actual": "aa5ef87202903d9ba344a4e1e7fbe6ffedb04772",
+      "match": true
+    },
+    {
+      "path": "source/host/tests/background_wakes_production_contract.rs",
+      "expected": "1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713",
+      "actual": "1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713",
+      "match": true
+    }
+  ],
+  "all_other_parent_leaves_preserved": true,
+  "undeclared_new_paths": [],
+  "truncated": false,
+  "commit": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "reviewed_source_tree": "4b94e525d6790d6f355ea6e2113db02cb5e5a46f",
+  "campaign_decision_blob": "c560f96e54b44d755b8bedcaaf94c2ac359667db",
+  "source_review": "converged; reports fully read by root",
+  "binary_content_api_readback": true,
+  "status": "BOUND_BEFORE_BRANCH_ADVANCE"
+}

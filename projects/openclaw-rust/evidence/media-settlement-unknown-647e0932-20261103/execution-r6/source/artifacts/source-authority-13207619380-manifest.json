@@ -1,0 +1,58 @@
+[
+  {
+    "path": "authority-summary.json",
+    "bytes": 607,
+    "sha256": "525cf85ad14c5ccffdcb3e27a4eabdf845d7bba39c8f43add759a9e929ceb497",
+    "crc32": "fbf18e71",
+    "compressed_bytes": 361
+  },
+  {
+    "path": "dependency-root-inputs.tsv",
+    "bytes": 171,
+    "sha256": "dd26a8316202da93dbca27ab63cd046c365ac2db499de18af844e51f654806f4",
+    "crc32": "bc2a2ef6",
+    "compressed_bytes": 126
+  },
+  {
+    "path": "lfs-pointer-candidates.count",
+    "bytes": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "crc32": "7e4acd12",
+    "compressed_bytes": 4
+  },
+  {
+    "path": "lfs-pointer-candidates.txt",
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "crc32": "00000000",
+    "compressed_bytes": 2
+  },
+  {
+    "path": "ls-tree.z",
+    "bytes": 6271094,
+    "sha256": "ad8da8a294e1f3bbb98f4f711163e84b1a416b8bfa1745db76b027cee2bc52f0",
+    "crc32": "2887f285",
+    "compressed_bytes": 1998533
+  },
+  {
+    "path": "p0-structural-receipt.json",
+    "bytes": 5080,
+    "sha256": "5b15f0acf53720dba3bbc9b99c78df0a5296cd121808ee14223513e33dfacca7",
+    "crc32": "a08d04f0",
+    "compressed_bytes": 2137
+  },
+  {
+    "path": "upstream-recursive-inventory.json",
+    "bytes": 55595275,
+    "sha256": "d0049087bdbcc8eecdc8d0a69bd48bfc7d70688f8917122198a6e15c80863d8a",
+    "crc32": "8710caf2",
+    "compressed_bytes": 2949583
+  },
+  {
+    "path": "upstream-recursive-inventory.sha256",
+    "bytes": 65,
+    "sha256": "4acc8ff9da82505ebd5006c8038c46324893975b9a87ef517ee727b94bfc5823",
+    "crc32": "679d281b",
+    "compressed_bytes": 54
+  }
+]

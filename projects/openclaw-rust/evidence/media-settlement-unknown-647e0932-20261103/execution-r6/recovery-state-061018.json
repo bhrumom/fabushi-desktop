@@ -1,0 +1,79 @@
+{
+  "schema": "ocrm-exact-subject-evidence-carrier-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "observedAt": "2026-11-03 06:10:18 UTC",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "testedSubject": {
+    "sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+    "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "carrierParent": {
+    "sha": "72b6ed8b6e91a0ac7e0588fd9492a7d30c535079",
+    "tree": "43a10201b568d46bcfcd64c99b0f08f5134c0fe4",
+    "incomingCommitPreserved": true,
+    "claimTransferToParent": false
+  },
+  "source": {
+    "runId": 41586608762,
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "rootIndependentlyVerified": true,
+    "sourceReviewTests": 33,
+    "materializationTests": 21,
+    "structuralNegativeProbes": 4,
+    "trackedSourceFiles": 62130,
+    "mappedSourceFiles": 888,
+    "unclassifiedSourceFiles": 61242,
+    "unreadOrPartialSourceFiles": 62067,
+    "globalCompletionFlagsChanged": false,
+    "finalG02": false,
+    "completeUpstreamClosure": false,
+    "evidenceArchive": "source/artifacts/source-authority-13207619380.zip"
+  },
+  "native": {
+    "runId": 41586608776,
+    "attempt": 1,
+    "collector": "/root/msu_r5_campaign_directness",
+    "collectorReportReceivedAndRead": true,
+    "collectorObserved": {
+      "Linux": {
+        "groups": 19,
+        "passed": 210,
+        "failed": 0,
+        "ignored": 0,
+        "artifactId": 13208536790,
+        "sha256": "1a1e43152d88b5e15a51303f2cd42fb69055af6cf00a43af5bbfcdf4b58d09bb"
+      },
+      "Windows": {
+        "groups": 19,
+        "passed": 205,
+        "failed": 0,
+        "ignored": 0,
+        "artifactId": 13208900865,
+        "sha256": "2d7f714f7d751b9949b0b0aca78e18407528ccb9be619fd1c495d292c86a341b"
+      }
+    },
+    "rootIndependentlyReadArtifactMetadata": true,
+    "rootPersonallyReadAllRawNativeLogs": false,
+    "nativeRawArtifactsIncludedInThisCarrier": false,
+    "scope": "Native media only; actual App, portable contracts, full Linux job, macOS and package acceptance remain separate"
+  },
+  "workspace": {
+    "available": false,
+    "recovery": "Complete source evidence content was retained in memory and Git blob objects. Native terminal report was returned by agent; its attempted local write failed. Native original bytes require fresh cloud acquisition or workspace recovery; GitHub artifacts remain available."
+  },
+  "nextEvidence": "Acquire same-H portable and actual-App raw results from existing run 41586608776; do not dispatch or rerun.",
+  "finalAcceptance": {
+    "G01toG12": "open",
+    "AC01toAC24": "open",
+    "independentACCEPT": "not obtained",
+    "status": "next"
+  },
+  "noSourceChanges": true,
+  "noNewCampaign": true
+}

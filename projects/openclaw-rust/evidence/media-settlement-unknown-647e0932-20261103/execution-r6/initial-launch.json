@@ -1,0 +1,36 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "subject": {
+    "sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+    "upstream": "1440bb1771372334bea23d7642bb52deb7db1845"
+  },
+  "source_run": 41586608762,
+  "runtime_run": 41586608776,
+  "attempt": 1,
+  "trigger": "existing writer push; no dispatch",
+  "initial_runs": [
+    {
+      "id": 41586608776,
+      "name": "Rust desktop runtime",
+      "status": "queued",
+      "conclusion": null,
+      "event": "push",
+      "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+      "run_attempt": 1,
+      "created_at": "2026-11-03T05:54:20Z"
+    },
+    {
+      "id": 41586608762,
+      "name": "OCRM P0 source authority",
+      "status": "in_progress",
+      "conclusion": null,
+      "event": "push",
+      "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+      "run_attempt": 1,
+      "created_at": "2026-11-03T05:54:20Z"
+    }
+  ],
+  "observation": "Initial launch metadata only. Source/native/App results are separately recorded; no acceptance inferred."
+}

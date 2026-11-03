@@ -1,0 +1,12 @@
+{
+  "run_id": 41586608762,
+  "attempt": 1,
+  "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "first_jobs_observed_at": "2026-11-03 05:55:33 UTC",
+  "collection_completed_by": "2026-11-03 05:55:45 UTC",
+  "source_job": 125753466394,
+  "run_status": "in_progress",
+  "source_job_status": "in_progress",
+  "source_job_conclusion": null,
+  "observation_number": 1
+}
