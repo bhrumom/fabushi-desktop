@@ -4625,8 +4625,17 @@ jobs:
           print(json.dumps(receipt, indent=2), flush=True)
           raise SystemExit(0 if accepted else 1)
           PY
+      - name: Test actual Coordinator native process identity wire
+        id: local_exec_identity
+        if: ${{ always() && steps.native_paths.outcome == 'success' && steps.channel_pending_recovery.outcome == 'success' }}
+        timeout-minutes: 12
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+          CARGO_BUILD_JOBS: '1'
+        shell: bash
+        run: python3 projects/openclaw-rust/scripts/capture_local_exec_identity.py
       - name: Preserve failed owned native-path and Automation fixtures
-        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.prior_root_identity.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
+        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.prior_root_identity.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure' || steps.local_exec_identity.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail

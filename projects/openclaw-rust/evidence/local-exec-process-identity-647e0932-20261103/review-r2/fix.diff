@@ -1,0 +1,298 @@
+diff --git a/projects/openclaw-rust/scripts/capture_local_exec_identity.py b/projects/openclaw-rust/scripts/capture_local_exec_identity.py
+index 984470651ac9df0b26dd7a3a97dc78c429eb27a2..cc895ade421f0fe7b958c010d475638eed43f500 100644
+--- a/projects/openclaw-rust/scripts/capture_local_exec_identity.py
++++ b/projects/openclaw-rust/scripts/capture_local_exec_identity.py
+@@ -6,9 +6,11 @@
+ import os
+ import pathlib
+ import re
++import select
+ import signal
+ import subprocess
+ import sys
++import time
+ 
+ 
+ ROOT = pathlib.Path(".evidence/sqlite-native-path/local-exec-process-identity")
+@@ -173,6 +175,192 @@ def qualify_oracles():
+             "controls": controls, "accepted": all(x["expected"] == x["observed"] for x in controls)}
+ 
+ 
++def observe_unreaped_child(process):
++    """Only this owner reaps the Popen child; waitid never releases its PID."""
++    if process.returncode is not None:
++        raise ChildProcessError("Owned child was already reaped; group identity is no longer reserved")
++    info = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
++    if info is None:
++        return {"pid": process.pid, "state": "not-exited", "wait_flags": "WEXITED|WNOHANG|WNOWAIT"}
++    if info.si_pid != process.pid or info.si_code not in (os.CLD_EXITED, os.CLD_KILLED, os.CLD_DUMPED):
++        raise ChildProcessError("Unexpected owned-child waitid identity or state")
++    return {"pid": info.si_pid, "state": "exited", "si_code": info.si_code,
++            "si_status": info.si_status, "wait_flags": "WEXITED|WNOHANG|WNOWAIT"}
++
++
++def wait_unreaped(process, timeout_seconds):
++    deadline = time.monotonic() + timeout_seconds
++    while True:
++        observed = observe_unreaped_child(process)
++        if observed["state"] == "exited":
++            return observed
++        remaining = deadline - time.monotonic()
++        if remaining <= 0:
++            return None
++        time.sleep(min(0.05, remaining))
++
++
++def reap_observed_child(process, observed):
++    if observed is None or observed["pid"] != process.pid or observed["state"] != "exited":
++        raise ChildProcessError("Reaping requires the owned child's non-reaping exit observation")
++    # No group signal may follow this call. WNOWAIT left this exact terminal
++    # child waitable, so this waitpid does not wait for a live process.
++    pid, status = os.waitpid(process.pid, 0)
++    if pid != process.pid:
++        raise ChildProcessError("Reaped a different child")
++    process.returncode = os.waitstatus_to_exitcode(status)
++    expected = observed["si_status"] if observed["si_code"] == os.CLD_EXITED else -observed["si_status"]
++    if process.returncode != expected:
++        raise ChildProcessError("Reaped status differs from the owned child's exit observation")
++    return process.returncode
++
++
++def observe_owned_session(process):
++    observed = observe_unreaped_child(process)
++    pgid, sid = os.getpgid(process.pid), os.getsid(process.pid)
++    if pgid != process.pid or sid != process.pid:
++        raise ChildProcessError("Owned child no longer anchors the session group created for it")
++    return {**observed, "pgid": pgid, "sid": sid, "popen_returncode": process.returncode}
++
++
++def stop_owned_session(process):
++    """Keep the leader unreaped through the last group signal, or refuse it."""
++    cleanup = {"pid": process.pid, "result": "unresolved", "events": [], "signals": [],
++               "reap_confirmed": process.returncode is not None, "command_exit": process.returncode}
++    try:
++        for sig in (signal.SIGTERM, signal.SIGKILL):
++            # A successful waitid establishes that this is still our unreaped
++            # child. Its reserved PID and checked session/group identity make
++            # the following killpg refer to the original owned group.
++            observed = observe_owned_session(process)
++            cleanup["events"].append({"event": "before-group-signal",
++                                      "signal": sig.name, "observation": observed})
++            os.killpg(process.pid, sig)
++            cleanup["signals"].append(sig.name)
++            cleanup["events"].append({"event": "group-signal", "signal": sig.name})
++            exited = wait_unreaped(process, 5)
++            if sig == signal.SIGTERM:
++                cleanup["after_term"] = exited
++        if exited is None:
++            raise ChildProcessError("Owned leader did not exit after the final group signal")
++        cleanup["command_exit"] = reap_observed_child(process, exited)
++        cleanup["reap_confirmed"] = True
++        cleanup["events"].append({"event": "reap", "command_exit": cleanup["command_exit"]})
++        cleanup["result"] = "terminated-and-reaped"
++    except (OSError, ValueError) as error:
++        # No fallback uses a retained numeric PGID after an ownership failure.
++        # Unresolved cleanup is non-passing, not inferred termination.
++        cleanup["error"] = str(error)
++        cleanup["command_exit"] = process.returncode
++        cleanup["reap_confirmed"] = process.returncode is not None
++    return cleanup
++
++
++def read_probe_line(pipe, timeout_seconds=5):
++    deadline, raw = time.monotonic() + timeout_seconds, bytearray()
++    while len(raw) < 128:
++        remaining = deadline - time.monotonic()
++        if remaining <= 0 or not select.select([pipe.fileno()], [], [], remaining)[0]:
++            raise ValueError("Owned cleanup qualification pipe timed out")
++        byte = os.read(pipe.fileno(), 1)
++        if not byte:
++            raise ValueError("Owned cleanup qualification pipe closed before its response")
++        raw.extend(byte)
++        if byte == b"\n":
++            return raw.decode("ascii")
++    raise ValueError("Owned cleanup qualification response exceeded its bound")
++
++
++def qualify_owned_cleanup():
++    if os.environ.get("GITHUB_ACTIONS") != "true" or sys.platform != "linux":
++        raise ValueError("Actual owned-cleanup qualification is Linux Actions-only")
++    leader_code = ("import signal,sys\n"
++                   "signal.signal(signal.SIGTERM, lambda *_: sys.exit(23))\n"
++                   "print('LEADER READY', flush=True)\n"
++                   "while True: signal.pause()\n")
++    peer_code = ("import sys\n"
++                 "print('PEER READY', flush=True)\n"
++                 "for line in sys.stdin: print('PEER ' + line.rstrip('\\n'), flush=True)\n")
++    commands = {"leader": [sys.executable, "-u", "-c", leader_code],
++                "peer": [sys.executable, "-u", "-c", peer_code]}
++    log = ROOT / "owned-cleanup-qualification.log"
++    evidence = {"scope": "Actual owned child and separate live peer; no PID-reuse simulation or product termination claim.",
++                "commands": commands, "cwd": "repository root", "accepted": False,
++                "stdout": {}, "teardown": [], "log": log.name}
++    leader = peer = None
++    cleanup_attempted = set()
++    try:
++        with log.open("wb") as errors:
++            peer = subprocess.Popen(commands["peer"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
++                                    stderr=errors, bufsize=0, start_new_session=True)
++            leader = subprocess.Popen(commands["leader"], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
++                                      stderr=errors, bufsize=0, start_new_session=True)
++            evidence["stdout"]["peer_ready"] = read_probe_line(peer.stdout)
++            evidence["stdout"]["leader_ready"] = read_probe_line(leader.stdout)
++            if evidence["stdout"] != {"peer_ready": "PEER READY\n", "leader_ready": "LEADER READY\n"}:
++                raise ValueError("Cleanup qualification children did not establish readiness")
++            evidence["peer_before"] = observe_owned_session(peer)
++            if peer.pid == leader.pid or evidence["peer_before"]["pgid"] == leader.pid:
++                raise ValueError("Qualification peer is not in a separate owned session")
++            cleanup_attempted.add("leader")
++            evidence["owned_cleanup"] = stop_owned_session(leader)
++            cleanup = evidence["owned_cleanup"]
++            final_guards = [event["observation"] for event in cleanup["events"]
++                            if event["event"] == "before-group-signal" and event["signal"] == "SIGKILL"]
++            if (cleanup["result"] != "terminated-and-reaped" or cleanup["command_exit"] != 23
++                    or cleanup["signals"] != ["SIGTERM", "SIGKILL"]
++                    or len(final_guards) != 1 or final_guards[0]["state"] != "exited"
++                    or final_guards[0]["si_code"] != os.CLD_EXITED
++                    or final_guards[0]["si_status"] != 23
++                    or final_guards[0]["popen_returncode"] is not None
++                    or cleanup["events"][-1]["event"] != "reap"):
++                raise ValueError("Final group signal lacked the actual unreaped leader exit proof")
++            # A real, already-reaped owner must not authorize another signal.
++            evidence["reaped_owner_refusal"] = stop_owned_session(leader)
++            refused = evidence["reaped_owner_refusal"]
++            if refused["result"] != "unresolved" or refused["signals"] or refused["events"]:
++                raise ValueError("Reaped owner was reused as group signalling authority")
++            evidence["peer_after"] = observe_owned_session(peer)
++            if evidence["peer_after"]["state"] != "not-exited":
++                raise ValueError("Independent peer did not survive the owned group's cleanup")
++            challenge = "after-cleanup-" + os.urandom(16).hex() + "\n"
++            encoded = challenge.encode("ascii")
++            if peer.stdin.write(encoded) != len(encoded):
++                raise ValueError("Incomplete qualification peer challenge write")
++            evidence["challenge"] = challenge
++            evidence["stdout"]["peer_response"] = read_probe_line(peer.stdout)
++            if evidence["stdout"]["peer_response"] != "PEER " + challenge:
++                raise ValueError("Independent peer did not answer the fresh post-cleanup challenge")
++            peer.stdin.close()
++            evidence["peer_exit"] = reap_observed_child(peer, wait_unreaped(peer, 5))
++            if evidence["peer_exit"] != 0:
++                raise ValueError("Independent peer failed normal EOF shutdown")
++            evidence["accepted"] = True
++    except (OSError, ValueError, subprocess.SubprocessError) as error:
++        evidence["error"] = str(error)
++    finally:
++        for role, process in (("leader", leader), ("peer", peer)):
++            if process is None:
++                continue
++            if process.returncode is None and role not in cleanup_attempted:
++                cleanup_attempted.add(role)
++                cleanup = stop_owned_session(process)
++                evidence["teardown"].append({"role": role, **cleanup})
++                if cleanup["result"] != "terminated-and-reaped":
++                    evidence["accepted"] = False
++            for pipe in (process.stdin, process.stdout):
++                if pipe is not None and not pipe.closed:
++                    try:
++                        pipe.close()
++                    except OSError as error:
++                        evidence["accepted"] = False
++                        evidence.setdefault("pipe_close_errors", []).append(str(error))
++    raw = log.read_bytes() if log.is_file() else b""
++    evidence.update({"log_bytes": len(raw), "log_sha256": hashlib.sha256(raw).hexdigest()})
++    print(raw.decode("utf-8", errors="replace"), flush=True)
++    return evidence
++
++
+ def run_command(label, command, timeout_seconds, environment=None, assessor=None):
+     log = ROOT / (label + ".log")
+     result = {"case": label, "command": command, "cwd": "repository root",
+@@ -181,38 +369,30 @@ def run_command(label, command, timeout_seconds, environment=None, assessor=None
+     raw = b""
+     try:
+         with log.open("wb") as stream:
+-            # A new session owns only this command and its children. The TS
+-            # harness also closes and awaits each actual Coordinator child.
+             process = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT,
+                                        env=environment, start_new_session=True)
++            cleanup_attempted = False
+             try:
+-                result["command_exit"] = process.wait(timeout=timeout_seconds)
+-            except subprocess.TimeoutExpired:
+-                result["capture_exit"] = 1
+-                result["execution_error"] = "Owned command session exceeded its deadline"
+-                try:
+-                    os.killpg(process.pid, signal.SIGTERM)
+-                except ProcessLookupError:
+-                    pass
+-                try:
+-                    process.wait(timeout=5)
+-                except subprocess.TimeoutExpired:
+-                    pass
+-                # Kill only the session group created above, including any
+-                # descendants that did not exit with its leader.
+-                try:
+-                    os.killpg(process.pid, signal.SIGKILL)
+-                except ProcessLookupError:
+-                    pass
+-                result["command_exit"] = process.wait(timeout=5)
++                observed = wait_unreaped(process, timeout_seconds)
++                if observed is None:
++                    result["capture_exit"] = 1
++                    result["execution_error"] = "Owned command session exceeded its deadline"
++                    cleanup_attempted = True
++                    result["cleanup"] = stop_owned_session(process)
++                    result["command_exit"] = result["cleanup"]["command_exit"]
++                else:
++                    result["exit_observation"] = observed
++                    result["command_exit"] = reap_observed_child(process, observed)
+             finally:
+-                if process.poll() is None:
+-                    # An interrupted wait or cleanup error must not knowingly
+-                    # abandon this directly owned command session.
+-                    os.killpg(process.pid, signal.SIGKILL)
+-                    result["command_exit"] = process.wait(timeout=5)
++                # Reading returncode does not reap. If a prior cleanup was
++                # unresolved, do not repeat it with a potentially stale PGID.
++                if process.returncode is None and not cleanup_attempted:
++                    result["capture_exit"] = 1
++                    cleanup_attempted = True
++                    result["cleanup"] = stop_owned_session(process)
++                    result["command_exit"] = result["cleanup"]["command_exit"]
+         raw = log.read_bytes()
+-    except (OSError, subprocess.SubprocessError) as error:
++    except (OSError, ValueError, subprocess.SubprocessError) as error:
+         result["capture_exit"] = 1
+         result["execution_error"] = str(error)
+         if log.is_file():
+@@ -226,7 +406,6 @@ def run_command(label, command, timeout_seconds, environment=None, assessor=None
+     print(text, flush=True)
+     return result
+ 
+-
+ def bundle_inputs():
+     metadata = json.loads(META.read_text(encoding="utf-8"))
+     output_entry = None
+@@ -296,6 +475,12 @@ def main():
+         save(receipt)
+         if not receipt["oracle_qualification"]["accepted"]:
+             raise ValueError("LPI result oracle qualification failed")
++        receipt["active_case"] = "owned-cleanup-qualification"
++        save(receipt)
++        receipt["cleanup_qualification"] = qualify_owned_cleanup()
++        save(receipt)
++        if not receipt["cleanup_qualification"]["accepted"]:
++            raise ValueError("Actual owned-child cleanup qualification failed")
+         cargo = ["cargo", "test", "--locked", "--target-dir", "source/host/target",
+                  "--manifest-path", CRATE + "/Cargo.toml"]
+         planned = [
+@@ -340,7 +525,8 @@ def main():
+         receipt["inputs_unchanged"] = receipt["inputs_before"] == receipt["inputs_after"]
+         receipt["producer_unchanged"] = receipt["producer_before"] == receipt["producer_after"]
+         receipt["bundled_inputs_unchanged"] = receipt["bundled_inputs_before"] == receipt["bundled_inputs_after"]
+-        accepted = (len(receipt["executions"]) == 4
++        accepted = (receipt["cleanup_qualification"]["accepted"]
++                    and len(receipt["executions"]) == 4
+                     and all(case["oracle_accepted"] for case in receipt["executions"])
+                     and receipt["inputs_unchanged"] and receipt["producer_unchanged"]
+                     and receipt["bundled_inputs_unchanged"])

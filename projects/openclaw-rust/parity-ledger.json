@@ -1654,7 +1654,8 @@
       "dependencies": [
         "mahayana_host_runtime::extensions::node_host::runtime_state",
         "mahayana_host_runtime::extensions::local_exec",
-        "source/host/app::UnifiedGatewayApi"
+        "source/host/app::UnifiedGatewayApi",
+        "source/node-agent-coordinator/src/local_exec/supervisor.rs::LocalExecDaemonRuntime"
       ],
       "evidence_refs": [
         "source/host/src/extensions/node_host/runtime_state.rs",
@@ -1662,7 +1663,9 @@
         "projects/openclaw-rust/dossiers/node-host-scoped.md",
         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
-        "source/host/app/src/tests/local_exec_outcome_tests.rs"
+        "source/host/app/src/tests/local_exec_outcome_tests.rs",
+        "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
       ],
       "existing_owner_candidates": [
         {
@@ -1697,7 +1700,8 @@
         "Local invocation admission uses idempotency and generation fencing before the existing local executor side effect",
         "This row does not claim a remote Gateway caller, reconnect scheduler, remote manifest publication or physical worker executor",
         "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller",
-        "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR"
+        "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR",
+        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
       ],
       "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
       "oracle_ids": [],
@@ -1757,7 +1761,9 @@
       "tests": [
         "source/host/tests/openclaw_node_host_contract.rs",
         "source/host/src/extensions/node_host/runtime_state.rs::tests::replacement_drains_predecessor_invocations_before_successor",
-        "source/host/app/src/tests/local_exec_outcome_tests.rs"
+        "source/host/app/src/tests/local_exec_outcome_tests.rs",
+        "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
+        "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts"
       ],
       "typed_contracts": [
         "NodeHostRuntimeState",
@@ -9737,7 +9743,8 @@
         "exec.process_spawn"
       ],
       "dependencies": [
-        "mahayana_host_runtime::extensions::local_exec"
+        "mahayana_host_runtime::extensions::local_exec",
+        "source/node-agent-coordinator/src/local_exec/supervisor.rs::LocalExecDaemonRuntime"
       ],
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
@@ -9745,7 +9752,9 @@
         "source/host/tests/openclaw_chat_cron_node_contract.rs",
         "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
-        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+        "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9775,7 +9784,8 @@
         "Execution timeout requests cancellation through the registered operation; only an observed shell Exit establishes completion or abort, otherwise settlement remains OutcomeUnknown",
         "Environment variables are stripped of non-allowlisted credentials",
         "Distinct permission facades from one Host extension share one lazy operation owner and one ordered journal publication transaction",
-        "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation"
+        "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation",
+        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
       ],
       "migration_rollback": "Disable sandboxed tool execution in runner config",
       "oracle_ids": [
@@ -9826,7 +9836,9 @@
         "source/host/tests/openclaw_chat_cron_node_contract.rs::test_ocrm_node_o06_shipping_routes_to_unique_native_owners",
         "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs::operation_journal_fail_closed_tests",
         "source/host/tests/local_exec_production_codec_contract.rs",
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs::exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel"
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
+        "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
+        "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts"
       ],
       "typed_contracts": [
         "GatewayLocalExecSandBox::ensure_ready",

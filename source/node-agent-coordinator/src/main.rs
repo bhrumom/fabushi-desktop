@@ -393,19 +393,15 @@ impl LocalExecControl for CoordinatorLocalExecControl {
         &mut self,
         expected: &ExpectedLocalExecProcessIdentity,
     ) -> Result<Option<LocalExecProcessIdentity>, LocalExecSupervisorError> {
-        let value = control_command(
-            &self.state,
-            "getProcessIdentity",
-            json!({
-                "pid": expected.pid,
-                "entryRealpath": expected.entry_realpath,
-                "generationToken": expected.generation_token,
-                "startEpochMs": expected.start_epoch_ms,
-                "command": expected.command,
-                "discoveryStartedAt": expected.discovery_started_at,
-            }),
-        )
-        .map_err(local_exec_error)?;
+        // Omitted optional constraints must remain absent on the control wire:
+        // the native identity comparator deliberately rejects explicit null.
+        let args = serde_json::to_value(expected).map_err(|error| {
+            LocalExecSupervisorError::new(format!(
+                "getProcessIdentity request serialization failed: {error}"
+            ))
+        })?;
+        let value = control_command(&self.state, "getProcessIdentity", args)
+            .map_err(local_exec_error)?;
         if value.is_null() {
             return Ok(None);
         }

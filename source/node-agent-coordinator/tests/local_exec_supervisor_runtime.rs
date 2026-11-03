@@ -348,3 +348,59 @@ fn identity_helpers_require_exact_generation_arguments_and_bounded_publication_t
 
     let _ = Path::new(".");
 }
+
+#[test]
+fn process_identity_wire_omits_only_absent_optional_constraints() {
+    for presence in 0_u8..8 {
+        let expected = ExpectedLocalExecProcessIdentity {
+            pid: 71,
+            entry_realpath: "/opt/fabushi/local-exec.js".into(),
+            generation_token: "wire-generation".into(),
+            start_epoch_ms: (presence & 1 != 0).then_some(9_900),
+            command: (presence & 2 != 0).then(|| "node local-exec.js".into()),
+            discovery_started_at: (presence & 4 != 0).then_some(9_950),
+        };
+        let wire = serde_json::to_value(&expected).expect("serialize actual identity DTO");
+        let object = wire.as_object().expect("identity request object");
+        assert_eq!(object.len(), 3 + presence.count_ones() as usize, "presence {presence}");
+        assert_eq!(wire["pid"], json!(71));
+        assert_eq!(wire["entryRealpath"], json!("/opt/fabushi/local-exec.js"));
+        assert_eq!(wire["generationToken"], json!("wire-generation"));
+        for (key, present, value) in [
+            ("startEpochMs", presence & 1 != 0, json!(9_900)),
+            ("command", presence & 2 != 0, json!("node local-exec.js")),
+            ("discoveryStartedAt", presence & 4 != 0, json!(9_950)),
+        ] {
+            assert_eq!(wire.get(key).cloned(), present.then_some(value),
+                "presence {presence}, field {key}");
+        }
+        assert!(object.values().all(|value| !value.is_null()), "presence {presence}");
+        for old_name in ["entry_realpath", "generation_token", "start_epoch_ms", "discovery_started_at"] {
+            assert!(!object.contains_key(old_name), "non-wire key {old_name}");
+        }
+    }
+}
+
+#[test]
+fn process_identity_wire_retains_present_zero_and_empty_constraints() {
+    let expected = ExpectedLocalExecProcessIdentity {
+        pid: 71,
+        entry_realpath: "/opt/fabushi/local-exec.js".into(),
+        generation_token: "wire-generation".into(),
+        start_epoch_ms: Some(0),
+        command: Some(String::new()),
+        discovery_started_at: Some(0),
+    };
+    assert_eq!(
+        serde_json::to_value(&expected).expect("serialize restrictive zero/empty values"),
+        json!({
+            "pid": 71,
+            "entryRealpath": "/opt/fabushi/local-exec.js",
+            "generationToken": "wire-generation",
+            "startEpochMs": 0,
+            "command": "",
+            "discoveryStartedAt": 0,
+        }),
+        "present constraints must reach the native comparator, not become absence",
+    );
+}

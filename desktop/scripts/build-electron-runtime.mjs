@@ -113,3 +113,17 @@ if (process.argv.includes("--plugin-skills-contracts")) {
     });
   }
 }
+
+// This boundary needs the same-H Rust Coordinator. Keep it isolated from the
+// renderer-only contract entries, which do not own a native test executable.
+if (process.argv.includes("--local-exec-identity-contracts")) {
+  const outContracts = path.join(desktopRoot, ".tmp-grok-electron", "ocrm-local-exec-identity");
+  await fs.mkdir(outContracts, { recursive: true });
+  const result = await build({
+    ...common,
+    entryPoints: [path.join(repoRoot, "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts")],
+    outfile: path.join(outContracts, "local-exec-process-identity.contract.test.cjs"),
+    metafile: true,
+  });
+  await fs.writeFile(path.join(outContracts, "build-metafile.json"), JSON.stringify(result.metafile, null, 2) + "\n");
+}

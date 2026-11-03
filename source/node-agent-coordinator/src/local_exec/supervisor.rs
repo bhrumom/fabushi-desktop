@@ -170,13 +170,17 @@ pub struct LocalExecProcessIdentity {
     pub generation_token: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExpectedLocalExecProcessIdentity {
     pub pid: u32,
     pub entry_realpath: String,
     pub generation_token: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub start_epoch_ms: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub discovery_started_at: Option<u64>,
 }
 

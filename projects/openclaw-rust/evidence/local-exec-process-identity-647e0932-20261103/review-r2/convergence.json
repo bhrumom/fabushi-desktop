@@ -1,0 +1,134 @@
+{
+  "schema": "ocrm-scoped-source-review-convergence-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LPI-v1",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "authority_commit": "6f11d0185330de82aa4a4971b185ec302c8e4a13",
+  "source_candidate": {
+    "sha": "e47e97613f1cf12437e960d43ac7805f23e8b957",
+    "tree": "06fc7ee3051989968b5f6f2d781b672aa652e93a",
+    "parent": "7b8bfdfc5557c0f7cd6dc4b5cba84ccdf56e8ffe",
+    "base": "98202d3b272b45f0968f741e1df064e8fbec6462"
+  },
+  "integration_candidate": {
+    "sha": "628942066825c3fb236909ce0ca1ef8d3c296afd",
+    "tree": "d99857ccb20b6c25fcafe4ed933e07234416cebf",
+    "parent": "dffc80c8f72cbb1f631152f70b9d5c80491808f2"
+  },
+  "reviews": [
+    {
+      "lens": "general correctness/lifetime/security",
+      "candidate": "e47e97613f1cf12437e960d43ac7805f23e8b957",
+      "tree": "06fc7ee3051989968b5f6f2d781b672aa652e93a",
+      "base": "98202d3b272b45f0968f741e1df064e8fbec6462",
+      "fix_base": "7b8bfdfc5557c0f7cd6dc4b5cba84ccdf56e8ffe",
+      "verdict": "NO_FINDINGS",
+      "findings": 0,
+      "coverage": {
+        "paths": 10,
+        "hunks": 17,
+        "focused_paths": 1,
+        "focused_hunks": 6,
+        "capture_lines": 543
+      },
+      "integration": {
+        "candidate": "628942066825c3fb236909ce0ca1ef8d3c296afd",
+        "tree": "d99857ccb20b6c25fcafe4ed933e07234416cebf",
+        "base": "dffc80c8f72cbb1f631152f70b9d5c80491808f2",
+        "verdict": "NO_FINDINGS",
+        "non_accounting_blobs_identical": 8,
+        "accounting_incoming_bytes_retained": true
+      },
+      "launch": {
+        "fork_turns": "none",
+        "model": "configured parent GPT-6 Astra Pro",
+        "reasoning_effort": "xhigh",
+        "host_accepted": true,
+        "worker_effort_introspection": "unavailable; launch setting recorded by root",
+        "fallback": false
+      },
+      "execution": "not-run",
+      "full_report": "inline reviewer return; no full report upload"
+    },
+    {
+      "lens": "structure/reuse/performance",
+      "candidate": "e47e97613f1cf12437e960d43ac7805f23e8b957",
+      "tree": "06fc7ee3051989968b5f6f2d781b672aa652e93a",
+      "base": "98202d3b272b45f0968f741e1df064e8fbec6462",
+      "fix_base": "7b8bfdfc5557c0f7cd6dc4b5cba84ccdf56e8ffe",
+      "verdict": "NO_FINDINGS",
+      "findings": 0,
+      "coverage": {
+        "paths": 10,
+        "hunks": 17,
+        "focused_paths": 1,
+        "focused_hunks": 6,
+        "capture_lines": 543
+      },
+      "integration": {
+        "candidate": "628942066825c3fb236909ce0ca1ef8d3c296afd",
+        "tree": "d99857ccb20b6c25fcafe4ed933e07234416cebf",
+        "base": "dffc80c8f72cbb1f631152f70b9d5c80491808f2",
+        "verdict": "NO_FINDINGS",
+        "non_accounting_blobs_identical": 8,
+        "accounting_hunks": 9,
+        "incoming_content_preserved": true
+      },
+      "launch": {
+        "fork_turns": "none",
+        "model": "gpt-6.1-sol",
+        "reasoning_effort": "xhigh",
+        "host_accepted": true,
+        "fallback": false
+      },
+      "execution": "not-run",
+      "full_report": "inline reviewer return; no full report upload"
+    }
+  ],
+  "resolved_findings": [
+    {
+      "id": "LPI-R1-GENERAL-01",
+      "decision": "FIX",
+      "durable_decision_commit": "909e2f72a3c8f2ee14c1e986a5c8867416d01afb",
+      "repair_blob": "cc895ade421f0fe7b958c010d475638eed43f500",
+      "source_result": "Fresh independent R2 source reviews converged; actual cleanup qualification is authored and not executed."
+    }
+  ],
+  "integration_checks": {
+    "complete_patch_reconstruction": true,
+    "paths": 10,
+    "hunks": 17,
+    "unchanged_non_accounting_blobs": 8,
+    "accounting_merge_paths": 2,
+    "incoming_untouched_bytes_preserved": true,
+    "global_flags_changed": false
+  },
+  "primary_api_references": [
+    {
+      "url": "https://docs.python.org/3.12/library/os.html#os.waitid",
+      "review": "Python waitid return and WNOWAIT contract; Linux-only instrument guard retained."
+    },
+    {
+      "url": "https://man7.org/linux/man-pages/man2/waitid.2.html",
+      "review": "Non-reaping wait and retained child status contract; not a runtime proof."
+    }
+  ],
+  "state": {
+    "source_review": "converged",
+    "executable_verification": "not-run",
+    "unit_acceptance": "pending",
+    "global_acceptance": "not-accepted"
+  },
+  "execution_selection": {
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "job": "sqlite-native-path",
+    "step": "local_exec_identity",
+    "subject": "Actual frozen campaign H must supply all identities; evidence from earlier H is not transferred.",
+    "shared_gate": "Prior Plugin Skills failure at550909022eba44eb9326d760f8c33d613b40a7bb remains recorded. Incoming repair and combined candidate require their own source convergence and exact-H execution; no unchanged-failure rerun or assertion removal."
+  },
+  "claim_limits": [
+    "Source review does not establish actual cleanup, normal-binary build or Rust/TypeScript test success.",
+    "Controlled native process observations do not prove real OS process inspection, external device/account or shipping-package compatibility.",
+    "No source closure, Rust completion, UI, ecosystem or release flag is promoted."
+  ]
+}

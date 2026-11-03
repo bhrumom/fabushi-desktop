@@ -1,0 +1,83 @@
+{
+  "schema": "ocrm-scoped-production-contract-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LPI-v1",
+  "implementation_base": "55b2d4ae2cfad77623a9cc00750979c9fcf7bd72",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+    "commit": "6f11d0185330de82aa4a4971b185ec302c8e4a13",
+    "blob": "c7fe2757167c910ba0354ea102647281cf99f311"
+  },
+  "chain": {
+    "entry": "Existing Rust LocalExecDaemonRuntime adoption/readiness/liveness",
+    "producer": "CoordinatorLocalExecControl::get_process_identity",
+    "wire": "Existing ExpectedLocalExecProcessIdentity serde representation and private control carrier",
+    "consumer": "Existing createCoordinatorControlServer → createCoordinatorControlExecutors.getProcessIdentity",
+    "identity_owner": "Existing native identity map and process observation authority",
+    "state_owner": "Existing Rust LocalExecDaemonRuntime; no new persistent owner"
+  },
+  "production_changes": [
+    "Serialize the existing expected identity DTO using camel-case keys; omit only None for3optional fields",
+    "Use that exact serializer in the actual Rust control request; explicit serialization failure precedes publication"
+  ],
+  "preserved_contracts": [
+    "Canonical entry and generation must still match",
+    "Supplied start, command and publication time constrain the process",
+    "Explicit null/wrong scalar type remains refusal",
+    "Present zero/empty constraints stay present",
+    "Existing pause, quarantine, discovery, restart and credential state unchanged"
+  ],
+  "oracle": {
+    "rust_target": "source/node-agent-coordinator/tests/local_exec_supervisor_runtime.rs",
+    "rust_required": [
+      "runtime_spawns_pauses_and_resumes_with_generation_fencing",
+      "runtime_adopts_busy_generation_and_replaces_idle_generation",
+      "runtime_quarantines_same_pid_generation_change_without_duplicate_spawn",
+      "client_pause_refusal_prevents_spawn_until_connection_recovers",
+      "identity_helpers_require_exact_generation_arguments_and_bounded_publication_time",
+      "process_identity_wire_omits_only_absent_optional_constraints",
+      "process_identity_wire_retains_present_zero_and_empty_constraints"
+    ],
+    "typescript_target": "source/electron-main/coordinator/local-exec-process-identity.contract.test.ts",
+    "typescript_required": [
+      "LPI actual Coordinator adopts busy discovery and re-adopts after control restart",
+      "LPI actual Coordinator preserves pre-discovery spawn and full liveness identity",
+      "LPI actual native identity consumer rejects null types and mismatched identities",
+      "LPI control EOF settles the owned Coordinator without daemon mutation"
+    ],
+    "actual_binary": "source/host/target/debug/mahayana-node-agent-coordinator",
+    "scope": "Actual normal Rust Coordinator control producer and actual TS server/executor; native observations/daemon handle are controlled. Rust8presence table supplements, rather than replaces, the cross-language producer/consumer behavior.",
+    "status": "authored, not executed"
+  },
+  "capture": {
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "job": "sqlite-native-path",
+    "step": "local_exec_identity",
+    "script": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+    "requirement": "ExactH/U/tree/source and artifact identities, commands/exits, exact7Rust and4TAP positive names/fullzero-failure summaries; no skip/fallback",
+    "command_caps_seconds": [
+      180,
+      180,
+      90,
+      180
+    ],
+    "workflow_step_minutes": 12,
+    "cleanup_budget": "Each command owns a fresh Unix session; timeout/cleanup is non-passing and remains within the enclosing step budget."
+  },
+  "ocrm_responsibility_dependencies": [
+    "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
+    "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001"
+  ],
+  "verification": "not-run",
+  "acceptance": "pending",
+  "limits": [
+    "Controlled native observations are not OS process-inspection or physical device compatibility",
+    "No new Host/provider process-provenance grant or generated HTML origin marker",
+    "No process-tree termination, external account/service or packaged-platform acceptance",
+    "Global source closure andG01–G12/AC01–AC24 remain open; all8flagsfalse"
+  ]
+}
