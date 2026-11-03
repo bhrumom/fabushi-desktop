@@ -235,3 +235,17 @@ preserves the legitimate new `lastDispatchError` written by a failed suffix
 replay without allowing a partial echo to erase immutable intent. Existing
 Host/HTTP/SQLite, Coordinator and actual Renderer checks remain required, and
 no original upstream lock or ledger acceptance status is promoted by this batch.
+
+
+HRR-09 legacy compatibility: The existing pre-journal forward nonce path is
+not a v1 batch. Historical receipt admission must use the existing
+`pending_human_forward_is_batch_owned` resolver: it returns false only after
+verifying the precise legacy nonce digest and authorizing the original readable
+source; that legitimate path may still settle the existing pending row without
+inventing a v1 journal. Current `forwardBatchOwned` markers, versioned contexts,
+unresolvable/malformed journals, revoked source membership/protection and
+nonlegacy nonces with source claims cannot use this fallback. Existing
+`shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources`
+remains an exact Host/HTTP/SQLite/kill/restart negative and positive control.
+At first new-H execution, 79/80 Human passed; this one genuine pre-journal
+compatibility case was an implementation regression, not a flawed oracle.

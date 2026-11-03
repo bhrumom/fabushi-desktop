@@ -2093,7 +2093,14 @@ impl ProductionSessionWorkers {
             return Ok(());
         }
         if !self.pending_human_forward_is_batch_owned(conversation_id, pending)? {
-            if marked || context.is_some() {
+            // The existing owner resolves genuine pre-journal forwards by the
+            // exact legacy nonce digest and authorizes their retained source.
+            // Those messages have no v1 journal to compare. Never synthesize
+            // that legacy grant for a current marker/versioned forward or a
+            // non-legacy nonce carrying damaged source claims.
+            if marked || context.is_some_and(|value| value.get("batchVersion").is_some())
+                || !nonce.starts_with("human-forward-")
+            {
                 return Err("remote Human forward acknowledgement lost its durable source owner".into());
             }
             return Ok(());

@@ -452,6 +452,17 @@
         "source/host/tests/session_gateway_contract.rs": "4b67de8519c2c9f9274a7a813d50fe2b6bb5763b"
       },
       "retest": "not-run on repair H at authoring; do not promote old failed H or earlier scoped passes"
+    },
+    "legacy_compatibility_repair": {
+      "failed_head": "1f3ff21c8e1f6dfaa0582bf5da9d997b4636b00e",
+      "run": 41598880273,
+      "job": 125792629742,
+      "actual": "79 passed/1 failed of 80 Human",
+      "previous_failing_case": "shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources",
+      "classification": "IMPLEMENTATION: legitimate pre-journal forward nonce was already validated by existing resolver but new history guard incorrectly demanded v1 batch",
+      "changed_source_blob": "e460cfb3a9cec39f56164800a7512ee0f14c3bac",
+      "legacy_rule": "Exact legacy digest+readable original source policy admitted only if existing ownership resolver returned false; v1 marker/versioned/malformed/unresolvable journal remains fail closed",
+      "execution": "not run on next containing H at authoring"
     }
   }
 }

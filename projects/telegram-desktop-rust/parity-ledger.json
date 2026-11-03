@@ -50387,7 +50387,8 @@
         "Request round9 resumed remaining delta is authored, not executed at preparation: version1 coverage/legacy upgrade, full ProductionRenderer11 and actual authority CLI acquisition negative require exact containing-H Actions. Preserve current qualified59 execution pointers until new results are read.",
         "Backend52fb/PR137 tests29 handler+10 realSQLite+24 injected readiness pass, but readiness jobs are skipped; canonical main6877 rejects explicit afterId0/no historyCursor. Current active Worker and real authenticated production multi-page/empty-page/denial/restart evidence remain unverified. Historical source33a26692/version3ad1a889 is not current deployment proof.",
         "HRR-08/09 current branch stage-A receipt/history and forward-source reauthorization are authored on existing Session gateway, coordinator and renderer owner paths, pending exact containing-H Actions. Historical batch review/Actions evidence is not a substitute. Preserve original intent, no source or release acceptance promoted.",
-        "826e Native stage-A 68/80 failure repaired in new source/test blob; next exact-H execution remains pending, do not promote earlier source/UI success."
+        "826e Native stage-A 68/80 failure repaired in new source/test blob; next exact-H execution remains pending, do not promote earlier source/UI success.",
+        "79/80 Host in 1f3ff; unversioned pre-journal legacy must be authorized by exact nonce hash and readable source, not require v1 journal; next H required."
       ],
       "production_entrypoints": [
         "frontend/src/production/ProductionRenderer.tsx#sendComposerPrompt -> source/host/src/extensions/session/gateway.rs#sendHumanMessage -> ProductionSessionWorkers::append_human_message_with_context -> FabushiNativeMessagingClient::send_direct_message -> /api/social/messages -> validate_remote_human_message/materialize_remote_human_message -> SandAgentDb::settle_transcript_entry_identity -> existing transcript mutation/renderer projection.",
@@ -50442,7 +50443,7 @@
         "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@976339e378f234fa349491d62a20d7342e779039#AppHost::new_with_feature_mode_and_storage_passphrase",
         "round14-exact-c15dfbd9631f8b9fb6920cb5f80b9aea35210d07:source/mahayana/mahayana-rs/mahayana-app-host/src/lib.rs@976339e378f234fa349491d62a20d7342e779039#create_feature_host",
         "task20bf NMR-50a/b/c: existing ProductionSessionWorkers automatic recovery uses nonblocking batch admission with one held guard; explicit delivery remains serialized. Roster scans recovery once, direct conversation sync once, then existing history owner. Native list_friends_for_user binds local Human before HTTP and fences all six credential fields after the body; list_friends remains compatible. Source/target authorization, immutable attachments, journal CAS and canonical Transcript owner are retained. Authored at the repair of7f8; containing-H execution required.",
-        "authored-unexecuted-20261103:source/host/src/extensions/session/production.rs@53bb6d18980dfe915a32bfa3639c195af1302384#reauthorize_human_history_forward_settlement-and-qualified_pending_human_upload_receipts"
+        "authored-unexecuted-20261103:source/host/src/extensions/session/production.rs@e460cfb3a9cec39f56164800a7512ee0f14c3bac#reauthorize_human_history_forward_settlement-and-qualified_pending_human_upload_receipts"
       ],
       "test_evidence": [
         "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50538,7 +50539,8 @@
         "authored task20bf NMR-50a/b/c: session_gateway_contract.rs adds shipping_human_forward_active_batch_recovery_does_not_block_history, shipping_human_forward_roster_sync_recovers_once_per_invocation, shipping_human_roster_bound_request_rejects_wrong_user_before_http and shipping_human_roster_rejects_streamed_body_credential_rotation_and_recovers. Real Host/HTTP/SQLite/barriers/reopen; six credential fields; existing65 retained, new selection69. Independent static review only; no local execution.",
         "authored-unexecuted-20261103:source/host/tests/session_gateway_contract.rs@4b67de8519c2c9f9274a7a813d50fe2b6bb5763b#shipping_human_malformed_complete_upload_history_receipts_preserve_intent_and_coverage",
         "authored-unexecuted-20261103:source/host/tests/session_gateway_contract.rs@4b67de8519c2c9f9274a7a813d50fe2b6bb5763b#shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_settlement",
-        "test-failure-real-826e3f3cde7a450eab23a98cc0751f9326ce141a:Native job125790380486:68/80, 12 failed; journal extra fields and unrelated reply-context rejection are implementation regressions; resource-ID precedence and new closed-owner restoration are test-oracle/fixture corrections; exact next-H rerun required"
+        "test-failure-real-826e3f3cde7a450eab23a98cc0751f9326ce141a:Native job125790380486:68/80, 12 failed; journal extra fields and unrelated reply-context rejection are implementation regressions; resource-ID precedence and new closed-owner restoration are test-oracle/fixture corrections; exact next-H rerun required",
+        "real-1f3ff21c8e1f6dfaa0582bf5da9d997b4636b00e:Native job125792629742:79/80; only genuine pre-journal legacy forward settlement remained pending. HRR09 legacy repair authored, exact containing H pending."
       ],
       "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
       "workflow_run": 41508537631,
