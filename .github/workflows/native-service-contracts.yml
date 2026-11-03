@@ -245,7 +245,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 71 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 73 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok' artifacts/native-message/session-gateway.log
@@ -256,6 +256,9 @@ jobs:
           grep -F 'shipping_human_forward_roster_sync_recovers_once_per_invocation ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_roster_bound_request_rejects_wrong_user_before_http ... ok' artifacts/native-message/session-gateway.log
           grep -F 'shipping_human_roster_rejects_streamed_body_credential_rotation_and_recovers ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_settled_replay ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_retry_rejects_duplicate_client_nonce_identity_before_http ... ok' artifacts/native-message/session-gateway.log
+          grep -F 'shipping_human_retry_rejects_duplicate_http_canonical_identity_after_restart ... ok' artifacts/native-message/session-gateway.log
       - name: Human resource upload size and bounded-read contracts
         shell: bash
         run: |

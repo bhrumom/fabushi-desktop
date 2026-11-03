@@ -4898,7 +4898,20 @@ impl ForwardHttpFixture {
                             (json!({"success":false,"error":"fixture first dispatch failure"})
                                 .to_string().into_bytes(), "application/json", 503)
                         } else {
+                        // Human sends and source-owned Forward batches intentionally share the
+                        // same direct-message HTTP envelope. Forward provenance remains in
+                        // the local Human journal and must never leak into this remote request.
                         let submitted = fixture_request_json(&request);
+                        let request_fields = submitted.as_object().expect("direct-message request object");
+                        assert!(
+                            request_fields.keys().all(|field| matches!(
+                                field.as_str(),
+                                "targetUserId" | "text" | "clientRequestId" | "replyToMessageId" | "attachments"
+                            )),
+                            "Human and Forward must use the narrow direct-message HTTP contract; local ownership fields are not wire fields: {submitted}"
+                        );
+                        assert!(submitted.get("forwardContext").is_none(),
+                            "forward provenance is owned by the local journal, not the remote HTTP payload");
                         let nonce = submitted["clientRequestId"].as_str().expect("forward nonce");
                         let peer = submitted["targetUserId"].as_str().expect("forward target")
                             .parse::<u64>().expect("numeric forward target");
@@ -7259,6 +7272,29 @@ fn shipping_human_retry_reuses_uploaded_attachment_receipt_after_restart_and_set
         .as_str().unwrap().to_owned();
     let foreign_conversation_id = runtime.create_human_conversation("3", "Foreign").unwrap()["id"]
         .as_str().unwrap().to_owned();
+    let local_owner = runtime.open_human_conversation_db_owner(&conversation_id)
+        .expect("local conversation owner");
+    assert_eq!(
+        local_owner.get_metadata("participantIds").expect("local participantIds"),
+        Some(json!(["1", "2"])),
+        "Human conversation creation persists participantIds as local and peer string identities"
+    );
+    let foreign_owner = runtime.open_human_conversation_db_owner(&foreign_conversation_id)
+        .expect("foreign conversation owner");
+    assert_eq!(
+        foreign_owner.get_metadata("participantIds").expect("initial foreign participantIds"),
+        Some(json!(["1", "3"])),
+        "creating another peer conversation still includes the authenticated local identity"
+    );
+    assert!(foreign_owner.set_metadata("participantIds", json!(["2", "3"]))
+        .expect("persist foreign participant identities"));
+    assert_eq!(
+        foreign_owner.get_metadata("participantIds").expect("re-read foreign participantIds"),
+        Some(json!(["2", "3"])),
+        "the foreign fixture must exclude local Human identity 1"
+    );
+    drop(local_owner);
+    drop(foreign_owner);
     let attachment_path = root.join("retry-report.pdf");
     fs::create_dir_all(&root).unwrap();
     fs::write(&attachment_path, [0_u8, 1, 2, 0xfe, 0xff]).unwrap();
@@ -7358,6 +7394,87 @@ fn shipping_human_retry_rejects_duplicate_client_nonce_identity_before_http() {
     drop(restarted);
     server.finish();
     fs::remove_dir_all(root).expect("remove duplicate identity fixture");
+}
+
+#[test]
+fn shipping_human_retry_rejects_duplicate_http_canonical_identity_after_restart() {
+    let root = temp_root("human-retry-http-duplicate-identity");
+    let existing_nonce = "settled-http-identity-nonce";
+    let retry_nonce = "retry-http-duplicate-identity-nonce";
+    let existing_remote = fixture_remote_human_message(
+        901, 1, 2, "existing settled identity", Some(existing_nonce), json!([])
+    );
+    let conflicting_remote = fixture_remote_human_message(
+        901, 1, 2, "retry exact payload", Some(retry_nonce), json!([])
+    );
+    let (url, server) = spawn_human_message_fixture(vec![
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"message":existing_remote})),
+        HumanMessageFixtureReply::Json(503, json!({"success":false,"error":"temporary dispatch failure"})),
+        HumanMessageFixtureReply::Json(201, json!({"success":true,"message":conflicting_remote})),
+    ]);
+    let runtime = human_message_fixture_runtime(&root, &url);
+    let conversation_id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("conversation id").to_owned();
+
+    let settled = runtime.append_human_message(
+        &conversation_id, "existing settled identity", existing_nonce, Some(1000.0), None, &[]
+    ).expect("first remote identity settles");
+    assert_eq!(settled["remoteMessageId"], "901");
+    runtime.append_human_message(
+        &conversation_id, "retry exact payload", retry_nonce, Some(2000.0), None, &[]
+    ).expect_err("second initial dispatch fails and remains retryable");
+    let owner = runtime.open_human_conversation_db_owner(&conversation_id).expect("durable owner");
+    let before_restart = owner.get_transcript_entries().expect("settled and pending identities");
+    assert_eq!(before_restart.len(), 2);
+    assert_eq!(before_restart[0]["clientNonce"], existing_nonce);
+    assert_eq!(before_restart[0]["remoteMessageId"], "901");
+    assert_eq!(before_restart[1]["id"], format!("human-message:{retry_nonce}"));
+    assert_eq!(before_restart[1]["delivery"], "pending");
+
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+
+    let restarted = human_message_fixture_runtime(&root, &url);
+    let error = dispatch_production_session_gateway_call(
+        &restarted,
+        "retryHumanMessage",
+        &json!({"conversationId":conversation_id,"clientNonce":retry_nonce}),
+    )
+    .expect("registered retry gateway")
+    .expect_err("HTTP acknowledgement cannot reuse another durable canonical message identity");
+    let error = format!("{error:?}");
+    assert!(
+        error.contains("remote Human acknowledgement conflicts with the local send identity or text"),
+        "{error}"
+    );
+
+    let owner = restarted.open_human_conversation_db_owner(&conversation_id).expect("reopened owner");
+    let after_retry = owner.get_transcript_entries().expect("unchanged canonical identities");
+    assert_eq!(after_retry.len(), 2, "a conflicting HTTP identity cannot append a second canonical row");
+    let settled = after_retry.iter().find(|entry| entry["clientNonce"] == existing_nonce)
+        .expect("original settled message remains");
+    assert_eq!(settled["id"], "human-server-message:901");
+    assert_eq!(settled["remoteMessageId"], "901");
+    let pending = after_retry.iter().find(|entry| entry["clientNonce"] == retry_nonce)
+        .expect("retry intent remains pending");
+    assert_eq!(pending["id"], format!("human-message:{retry_nonce}"));
+    assert_eq!(pending["delivery"], "pending");
+    assert!(pending.get("remoteMessageId").is_none(), "conflicting remote id is never persisted");
+    assert!(
+        pending["lastDispatchError"].as_str().is_some_and(|message| !message.trim().is_empty()),
+        "the rejected HTTP acknowledgement remains a durable retry error"
+    );
+
+    let requests = server.join().expect("three explicit HTTP message responses");
+    assert_eq!(requests.len(), 3);
+    assert!(requests.iter().all(|request| request.starts_with("POST /api/social/messages ")));
+    assert_eq!(restarted.read_human_conversation_transcript(&conversation_id).unwrap().len(), 2);
+
+    restarted.shutdown();
+    drop(owner);
+    drop(restarted);
+    fs::remove_dir_all(root).expect("remove HTTP duplicate identity fixture");
 }
 
 #[test]
