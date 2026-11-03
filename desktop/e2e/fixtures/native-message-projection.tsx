@@ -118,6 +118,9 @@ function receive(request: Request) {
       const entry = row(`human-server-message:${remoteMessageId}`, String(request.args.text), {
         authorId: account.kind === 'logged-in' ? account.authId : '', clientNonce: request.args.clientNonce,
         remoteMessageId,
+        // The Session success echo carries committed attachment metadata.
+        // Keep this controlled service fixture faithful to that raw receipt.
+        attachments: Array.isArray(request.args.attachments) ? clone(request.args.attachments) : [],
       });
       sends.push({ request, value: entry });
       sendPositions.set(request.requestId, transcript.length);
