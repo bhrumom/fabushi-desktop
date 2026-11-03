@@ -1042,9 +1042,9 @@ fn send_menu_mode_and_applicability_enforces_paid_silent_only_reminder_and_sched
     hidden_last_seen.rules.insert(
         PrivacyKey::LastSeen,
         PrivacyRule {
-            visibility: PrivacyVisibility::Nobody,
-            allow_actors: Vec::new(),
-            disallow_actors: Vec::new(),
+            audience: PrivacyAudience::Nobody,
+            always_allow: std::collections::BTreeSet::new(),
+            never_allow: std::collections::BTreeSet::new(),
         },
     );
     engine
@@ -1094,4 +1094,279 @@ fn send_menu_mode_and_applicability_enforces_paid_silent_only_reminder_and_sched
     let sublist_after_exception =
         engine.resolve_destination_send_menu_details(&sender_id, &[saved_sublist_dest]);
     assert_eq!(sublist_after_exception.mode, SendMenuMode::Scheduled);
+}
+
+#[test]
+fn paid_send_plan_approval_consumption_and_story_share_at_time_revalidation() {
+    let mut engine = MessagingEngine::new();
+    let sender_id = ActorId::new("human:sender");
+    let peer_free_id = ActorId::new("human:free");
+    let peer_paid_id = ActorId::new("human:paid");
+    let peer_unresolved_id = ActorId::new("human:unresolved");
+
+    let mut peer_paid = Actor::human("human:paid", "Paid Creator");
+    peer_paid.capabilities = vec!["stars_per_message:25".into()];
+
+    let mut peer_unresolved = Actor::human("human:unresolved", "Unresolved Peer");
+    peer_unresolved.capabilities = vec!["paid_restriction_unresolved".into()];
+
+    for actor in [
+        Actor::human("human:sender", "Sender"),
+        Actor::human("human:free", "Free Peer"),
+        peer_paid,
+        peer_unresolved,
+    ] {
+        engine.execute(Command::UpsertActor { actor }).unwrap();
+    }
+
+    let mut saved_messages = Conversation::direct(
+        "chat:saved",
+        "Saved Messages",
+        vec![participant("human:sender", ParticipantRole::Owner)],
+        1,
+    );
+    saved_messages.kind = ConversationKind::SavedMessages;
+
+    let direct_free = Conversation::direct(
+        "chat:free",
+        "Free Peer",
+        vec![
+            participant("human:sender", ParticipantRole::Owner),
+            participant("human:free", ParticipantRole::Member),
+        ],
+        1,
+    );
+    let direct_paid = Conversation::direct(
+        "chat:paid",
+        "Paid Creator",
+        vec![
+            participant("human:sender", ParticipantRole::Owner),
+            participant("human:paid", ParticipantRole::Member),
+        ],
+        1,
+    );
+    let direct_unresolved = Conversation::direct(
+        "chat:unresolved",
+        "Unresolved Peer",
+        vec![
+            participant("human:sender", ParticipantRole::Owner),
+            participant("human:unresolved", ParticipantRole::Member),
+        ],
+        1,
+    );
+
+    for conversation in [saved_messages, direct_free, direct_paid, direct_unresolved] {
+        engine
+            .execute(Command::UpsertConversation { conversation })
+            .unwrap();
+    }
+
+    let dest_free = ConversationDestination::root(ConversationId::new("chat:free"));
+    let dest_paid = ConversationDestination::root(ConversationId::new("chat:paid"));
+    let dest_unresolved = ConversationDestination::root(ConversationId::new("chat:unresolved"));
+    let dest_sublist = ConversationDestination::saved_sublist(
+        ConversationId::new("chat:saved"),
+        peer_paid_id.clone(),
+    );
+
+    // 1. Unresolved destination fences submit until full restriction state arrives
+    assert_eq!(
+        engine.compute_paid_send_plan(
+            &sender_id,
+            &[dest_free.clone(), dest_unresolved.clone()],
+            1,
+            false,
+        ),
+        Err(PaidSendValidationError::RecipientRestrictionUnresolved(
+            dest_unresolved
+        ))
+    );
+
+    // 2. Story share context counts 2 outgoing messages when story object + non-empty comment are sent
+    let story_ctx = StoryShareContext {
+        owner_id: peer_free_id.clone(),
+        story_id: StoryId("story:share:1".into()),
+        share_url: "https://fabushi.example/s/peer_free/1".into(),
+        video_timestamp_seconds: Some(83),
+    };
+    assert_eq!(story_ctx.formatted_timestamp().as_deref(), Some("1:23"));
+    assert_eq!(
+        story_ctx.resolved_share_url(),
+        "https://fabushi.example/s/peer_free/1?t=83"
+    );
+    assert_eq!(format_share_at_time(3_723), "1:02:03");
+
+    let comment = FormattedText {
+        text: "🔥 highlight".into(),
+        entities: vec![TextEntity {
+            offset: 3,
+            length: 9,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    assert_eq!(story_ctx.outgoing_message_count(false, Some(&comment)), 2);
+    assert_eq!(story_ctx.outgoing_message_count(true, Some(&comment)), 1);
+    assert_eq!(story_ctx.outgoing_message_count(false, None), 1);
+
+    let composed_link = story_ctx
+        .compose_link_with_comment(Some(&comment))
+        .expect("UTF-16 link prefix + comment composition");
+    let expected_prefix = "https://fabushi.example/s/peer_free/1?t=83\n";
+    assert_eq!(composed_link.text, format!("{expected_prefix}🔥 highlight"));
+    assert_eq!(
+        composed_link.entities[0].offset,
+        u32::try_from(expected_prefix.encode_utf16().count()).unwrap() + 3
+    );
+
+    // 3. Aggregate cost calculation across free, paid, and SavedSublist destinations (2 messages each)
+    let plan_before_sublist_exempt = engine
+        .compute_paid_send_plan(
+            &sender_id,
+            &[dest_free.clone(), dest_paid.clone(), dest_sublist.clone()],
+            2,
+            false,
+        )
+        .unwrap();
+    // dest_free = 0, dest_paid = 25 * 2 = 50, dest_sublist = 25 * 2 = 50 -> total 100
+    assert_eq!(plan_before_sublist_exempt.aggregate_amount_minor, 100);
+    assert!(plan_before_sublist_exempt.requires_payment());
+
+    // SavedSublist no_paid_messages exception reduces aggregate cost to 50
+    engine
+        .execute(Command::SetConversationChildNoPaidMessages {
+            destination: dest_sublist.clone(),
+            actor_id: sender_id.clone(),
+            no_paid_messages: true,
+        })
+        .unwrap();
+    let plan = engine
+        .compute_paid_send_plan(
+            &sender_id,
+            &[dest_free.clone(), dest_paid.clone(), dest_sublist.clone()],
+            2,
+            false,
+        )
+        .unwrap();
+    assert_eq!(plan.aggregate_amount_minor, 50);
+
+    // 4. Prior approval below required aggregate amount fails closed; exact/higher approval succeeds
+    assert_eq!(
+        plan.authorize_with_approval(Some(40)),
+        Err(PaidSendValidationError::ApprovalRequired {
+            required_minor: 50,
+            approved_minor: 40,
+        })
+    );
+    let mut consumer = plan.authorize_with_approval(Some(50)).unwrap();
+
+    // Consuming free and exempted SavedSublist destinations takes 0 minor units
+    assert_eq!(
+        engine
+            .revalidate_and_consume_paid_send(&sender_id, &dest_free, 2, false, &mut consumer)
+            .unwrap(),
+        0
+    );
+    assert_eq!(
+        engine
+            .revalidate_and_consume_paid_send(&sender_id, &dest_sublist, 2, false, &mut consumer)
+            .unwrap(),
+        0
+    );
+    assert_eq!(consumer.remaining_approved_minor, 50);
+
+    // Consuming first message of range to paid destination deducts 25, leaving 25
+    assert_eq!(
+        engine
+            .revalidate_and_consume_paid_send(&sender_id, &dest_paid, 1, false, &mut consumer)
+            .unwrap(),
+        25
+    );
+    assert_eq!(consumer.remaining_approved_minor, 25);
+
+    // 5. If paid restriction increases during send, revalidation fails visibly before consuming
+    let mut peer_paid_increased = Actor::human("human:paid", "Paid Creator");
+    peer_paid_increased.capabilities = vec!["stars_per_message:30".into()];
+    engine
+        .execute(Command::UpsertActor {
+            actor: peer_paid_increased,
+        })
+        .unwrap();
+    assert_eq!(
+        engine.revalidate_and_consume_paid_send(&sender_id, &dest_paid, 1, false, &mut consumer),
+        Err(PaidSendValidationError::RestrictionChangedDuringSend {
+            destination: dest_paid.clone(),
+            expected_per_message_minor: 25,
+            live_per_message_minor: 30,
+        })
+    );
+    assert_eq!(consumer.remaining_approved_minor, 25);
+
+    // Restoring 25 allows the second message in the range to consume the remaining 25
+    let mut peer_paid_restored = Actor::human("human:paid", "Paid Creator");
+    peer_paid_restored.capabilities = vec!["stars_per_message:25".into()];
+    engine
+        .execute(Command::UpsertActor {
+            actor: peer_paid_restored,
+        })
+        .unwrap();
+    assert_eq!(
+        engine
+            .revalidate_and_consume_paid_send(&sender_id, &dest_paid, 1, false, &mut consumer)
+            .unwrap(),
+        25
+    );
+    assert_eq!(consumer.remaining_approved_minor, 0);
+    assert_eq!(consumer.consumed_by_destination[&dest_paid], 50);
+
+    // Attempting to send beyond approved allowance fails closed
+    assert_eq!(
+        engine.revalidate_and_consume_paid_send(&sender_id, &dest_paid, 1, false, &mut consumer),
+        Err(PaidSendValidationError::InsufficientApprovedAllowance {
+            destination: dest_paid,
+            required_minor: 25,
+            remaining_approved_minor: 0,
+        })
+    );
+
+    // 6. Story source disappearance / protected-content revalidation fails closed at submit time
+    let valid_story = Story {
+        id: StoryId("story:share:1".into()),
+        owner_id: peer_free_id.clone(),
+        media: MediaRef {
+            id: "media:story:share:1".into(),
+            mime_type: "video/mp4".into(),
+            size_bytes: 2048,
+            width: Some(720),
+            height: Some(1280),
+            duration_ms: Some(120_000),
+            sha256: "ef".repeat(32),
+            thumbnail_id: None,
+        },
+        caption: FormattedText::plain("shareable"),
+        privacy: StoryPrivacy {
+            kind: StoryPrivacyKind::Everyone,
+            included_actor_ids: std::collections::BTreeSet::new(),
+            excluded_actor_ids: std::collections::BTreeSet::new(),
+        },
+        created_at_ms: 100,
+        expires_at_ms: 1_000,
+        edited_at_ms: None,
+        pinned_to_profile: false,
+        protected_content: false,
+        allow_replies: true,
+        views: std::collections::BTreeMap::new(),
+    };
+    assert!(story_ctx
+        .revalidate_source([&valid_story], &sender_id, false, false, 500)
+        .is_some());
+    // Expired story fails revalidation
+    assert!(story_ctx
+        .revalidate_source([&valid_story], &sender_id, false, false, 1_500)
+        .is_none());
+    // Protected story fails revalidation
+    let mut protected_story = valid_story;
+    protected_story.protected_content = true;
+    assert!(story_ctx
+        .revalidate_source([&protected_story], &sender_id, false, false, 500)
+        .is_none());
 }

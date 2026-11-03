@@ -17,7 +17,10 @@ use crate::miniapp::{
     MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
     MiniAppSession,
 };
-use crate::payment::{CustomerInfo, Invoice, Money, PaymentOrder, PaymentStatus};
+use crate::payment::{
+    CustomerInfo, Invoice, Money, PaidSendApprovalConsumer, PaidSendPlan,
+    PaidSendRestrictionState, PaidSendValidationError, PaymentOrder, PaymentStatus,
+};
 use crate::privacy::{PrivacyKey, PrivacySettings};
 use crate::story::{Story, StoryError, StoryId};
 use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
@@ -1109,6 +1112,116 @@ impl MessagingEngine {
             }
         }
         SendMenuDetails::from_mode(SendMenuMode::Scheduled)
+    }
+
+    pub fn resolve_destination_paid_restriction(
+        &self,
+        sender_id: &ActorId,
+        destination: &ConversationDestination,
+        ignore_paid_restrictions: bool,
+    ) -> PaidSendRestrictionState {
+        let effective_conversation_id = destination_message_conversation_id(destination);
+        let Some(conversation) = self.state.conversations.get(effective_conversation_id) else {
+            return PaidSendRestrictionState::Unresolved;
+        };
+        let mut candidate_actors: BTreeSet<&ActorId> = conversation
+            .participants
+            .iter()
+            .map(|participant| &participant.actor_id)
+            .chain(conversation.owner_id.iter())
+            .filter(|actor_id| *actor_id != sender_id)
+            .collect();
+        if let Some(ConversationChildIdentity::SavedSublist { participant_id }) =
+            &destination.child
+        {
+            if participant_id != sender_id {
+                candidate_actors.insert(participant_id);
+            }
+        }
+        let mut per_message_minor = 0i64;
+        for actor_id in candidate_actors {
+            let Some(actor) = self.state.actors.get(actor_id) else {
+                return PaidSendRestrictionState::Unresolved;
+            };
+            let mut actor_cost = 0i64;
+            for cap in &actor.capabilities {
+                if cap == "paid_restriction_unresolved" {
+                    return PaidSendRestrictionState::Unresolved;
+                }
+                if let Some(raw) = cap
+                    .strip_prefix("paid_messages_minor:")
+                    .or_else(|| cap.strip_prefix("stars_per_message:"))
+                {
+                    match raw.trim().parse::<i64>() {
+                        Ok(amount) if amount > 0 => {
+                            actor_cost = actor_cost.max(amount);
+                        }
+                        _ => return PaidSendRestrictionState::Unresolved,
+                    }
+                } else if matches!(
+                    cap.as_str(),
+                    "paid_messages_required" | "stars_per_message_required"
+                ) {
+                    actor_cost = actor_cost.max(1);
+                }
+            }
+            per_message_minor = per_message_minor.saturating_add(actor_cost);
+        }
+        if ignore_paid_restrictions {
+            return PaidSendRestrictionState::Free;
+        }
+        let child_exempts_paid = self
+            .state
+            .conversation_child_states
+            .iter()
+            .find(|child| &child.destination == destination && &child.actor_id == sender_id)
+            .is_some_and(|child| child.no_paid_messages);
+        if child_exempts_paid || per_message_minor <= 0 {
+            PaidSendRestrictionState::Free
+        } else {
+            PaidSendRestrictionState::Paid {
+                amount_per_message_minor: per_message_minor,
+            }
+        }
+    }
+
+    pub fn compute_paid_send_plan(
+        &self,
+        sender_id: &ActorId,
+        destinations: &[ConversationDestination],
+        outgoing_message_count: u32,
+        ignore_paid_restrictions: bool,
+    ) -> Result<PaidSendPlan, PaidSendValidationError> {
+        let resolved = destinations
+            .iter()
+            .map(|destination| {
+                (
+                    destination.clone(),
+                    self.resolve_destination_paid_restriction(
+                        sender_id,
+                        destination,
+                        ignore_paid_restrictions,
+                    ),
+                )
+            })
+            .collect();
+        PaidSendPlan::from_resolved(resolved, outgoing_message_count)
+    }
+
+    pub fn revalidate_and_consume_paid_send(
+        &self,
+        sender_id: &ActorId,
+        destination: &ConversationDestination,
+        message_count: u32,
+        ignore_paid_restrictions: bool,
+        consumer: &mut PaidSendApprovalConsumer,
+    ) -> Result<i64, PaidSendValidationError> {
+        let live_restriction = self.resolve_destination_paid_restriction(
+            sender_id,
+            destination,
+            ignore_paid_restrictions,
+        );
+        consumer.consume_for_destination(destination, live_restriction, message_count)
     }
 
     pub fn execute(&mut self, command: Command) -> Result<Vec<Event>, EngineError> {

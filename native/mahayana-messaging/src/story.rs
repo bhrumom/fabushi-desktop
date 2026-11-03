@@ -282,3 +282,115 @@ pub struct StorySiblingHeaderCacheKey {
     pub available_width_px: u32,
     pub device_pixel_ratio_milli: u32,
 }
+
+/// Formats a video share-at-time offset in seconds as `M:SS` or `H:MM:SS`
+/// (`FormatShareAtTime` in `media_stories_share.h`).
+pub fn format_share_at_time(timestamp_seconds: u32) -> String {
+    let hours = timestamp_seconds / 3_600;
+    let minutes = (timestamp_seconds % 3_600) / 60;
+    let seconds = timestamp_seconds % 60;
+    if hours > 0 {
+        format!("{hours}:{minutes:02}:{seconds:02}")
+    } else {
+        format!("{minutes}:{seconds:02}")
+    }
+}
+
+/// Appends or replaces a canonical `?t=<seconds>` / `&t=<seconds>` share-at-time query
+/// parameter on a story/video share URL when `timestamp_seconds` is positive.
+pub fn append_share_at_time_query(url: &str, timestamp_seconds: Option<u32>) -> String {
+    let base = url.trim();
+    let Some(seconds) = timestamp_seconds.filter(|seconds| *seconds > 0) else {
+        return base.to_owned();
+    };
+    let (without_fragment, fragment) = match base.split_once('#') {
+        Some((prefix, frag)) => (prefix, Some(frag)),
+        None => (base, None),
+    };
+    let separator = if without_fragment.contains('?') {
+        '&'
+    } else {
+        '?'
+    };
+    match fragment {
+        Some(frag) => format!("{without_fragment}{separator}t={seconds}#{frag}"),
+        None => format!("{without_fragment}{separator}t={seconds}"),
+    }
+}
+
+/// Canonical story-share context (`PrepareShareBox` / `PrepareShareAtTimeBox` in
+/// `media_stories_share.{h,cpp}`) carrying story identity, optional video timestamp,
+/// source-disappearance revalidation, outgoing message counting, and UTF-16-safe
+/// link + formatted comment composition.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StoryShareContext {
+    pub owner_id: ActorId,
+    pub story_id: StoryId,
+    pub share_url: String,
+    pub video_timestamp_seconds: Option<u32>,
+}
+
+impl StoryShareContext {
+    pub fn formatted_timestamp(&self) -> Option<String> {
+        self.video_timestamp_seconds
+            .filter(|seconds| *seconds > 0)
+            .map(format_share_at_time)
+    }
+
+    pub fn resolved_share_url(&self) -> String {
+        append_share_at_time_query(&self.share_url, self.video_timestamp_seconds)
+    }
+
+    /// Computes the per-destination outgoing message count (`computeStarsCount` in
+    /// `media_stories_share.cpp`): when sharing a story object (as opposed to a plain link)
+    /// accompanied by a non-empty user comment, two messages are sent per destination
+    /// (the story media/object plus the comment message); otherwise one message is sent.
+    pub fn outgoing_message_count(&self, share_as_link_only: bool, comment: Option<&FormattedText>) -> u32 {
+        let has_comment = comment.is_some_and(|text| !text.text.trim().is_empty());
+        if !share_as_link_only && has_comment {
+            2
+        } else {
+            1
+        }
+    }
+
+    /// Composes a link-share payload by prepending `<resolved_share_url>\n` to the optional
+    /// formatted comment while shifting all existing UTF-16 entity offsets atomically.
+    pub fn compose_link_with_comment(
+        &self,
+        comment: Option<&FormattedText>,
+    ) -> Option<FormattedText> {
+        let url = self.resolved_share_url();
+        match comment {
+            Some(existing) if !existing.text.is_empty() => {
+                let mut combined = existing.clone();
+                combined.prepend_plain_text(&format!("{url}\n")).ok()?;
+                Some(combined)
+            }
+            _ => Some(FormattedText::plain(url)),
+        }
+    }
+
+    /// Revalidates before exposure and again at submit time that the source story still exists,
+    /// belongs to `owner_id`, has not expired, is not protected content, and is visible to `viewer_id`.
+    pub fn revalidate_source<'a, I>(
+        &self,
+        stories: I,
+        viewer_id: &ActorId,
+        is_contact: bool,
+        is_close_friend: bool,
+        now_ms: i64,
+    ) -> Option<&'a Story>
+    where
+        I: IntoIterator<Item = &'a Story>,
+    {
+        stories.into_iter().find(|story| {
+            story.id == self.story_id
+                && story.owner_id == self.owner_id
+                && !story.protected_content
+                && (story.pinned_to_profile || story.expires_at_ms > now_ms)
+                && story.is_visible_to(viewer_id, is_contact, is_close_friend)
+        })
+    }
+}
