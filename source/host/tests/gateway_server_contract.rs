@@ -928,7 +928,8 @@ fn native_box_mcp_nonloopback_configuration_requires_authentication() {
                     "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n",
                     &case.args.to_string(),
                 );
-                assert_box_mcp_native_only(&response);
+                assert!(response.starts_with("HTTP/1.1 401 Unauthorized"), "{response}");
+                assert_eq!(json_body(&response), json!({"error": "unauthorized"}));
                 assert!(api.recorded_calls().is_empty(), "unprotected listener reached owner");
             }
         }
@@ -936,15 +937,26 @@ fn native_box_mcp_nonloopback_configuration_requires_authentication() {
             let control = box_mcp_post(
                 server.port(), "getTranscript", None, "", r#"{"listenerControl":true}"#,
             );
-            assert!(control.starts_with("HTTP/1.1 200 OK"), "{control}");
-            assert_eq!(json_body(&control), json!({"listenerControl": true}));
-            assert_eq!(
-                api.recorded_calls(),
-                vec![("getTranscript".to_string(), json!({"listenerControl": true}))]
-            );
+            assert!(control.starts_with("HTTP/1.1 401 Unauthorized"), "{control}");
+            assert_eq!(json_body(&control), json!({"error": "unauthorized"}));
+            assert!(api.recorded_calls().is_empty(), "ordinary wildcard request reached owner");
         }
         server.close();
-        assert_eq!(api.recorded_calls().len(), if token.is_some() { 3 } else { 1 });
+        if token.is_none() {
+            // Repair only the listener's trust boundary around the same owner.
+            let native = start_box_mcp_gateway(&api, config(None));
+            for case in box_mcp_route_cases() {
+                assert_box_mcp_round_trip(&api, native.port(), None, "", &case);
+            }
+            let ordinary = BoxMcpRouteCase {
+                method: "getTranscript",
+                args: json!({"listenerControl": true}),
+                result: json!({"listenerControl": true}),
+            };
+            assert_box_mcp_round_trip(&api, native.port(), None, "", &ordinary);
+            native.close();
+        }
+        assert_eq!(api.recorded_calls().len(), if token.is_some() { 3 } else { 4 });
     }
 }
 
@@ -1501,19 +1513,22 @@ fn native_link_preview_nonloopback_configuration_requires_authentication() {
             gateway.assert_native_control(token);
         } else {
             let body = cache.args(&cache.records[0]).to_string();
-            assert_link_preview_native_only(gateway.assert_no_dispatch(
+            assert_eq!(gateway.assert_no_dispatch(
                 "fetchLinkMetadata", None,
                 "x-sand-role: operator\r\nx-sand-scope: operator.write\r\n", &body,
-                "HTTP/1.1 403 Forbidden",
-            ));
-            // The same wildcard listener remains alive for an ordinary method.
-            gateway.assert_ordinary_control(None, json!({"listenerControl": true}));
+                "HTTP/1.1 401 Unauthorized",
+            ), json!({"error": "unauthorized"}));
+            assert_eq!(gateway.assert_no_dispatch(
+                "getTranscript", None, "", r#"{"listenerControl":true}"#,
+                "HTTP/1.1 401 Unauthorized",
+            ), json!({"error": "unauthorized"}));
             let api = gateway.api.clone();
             drop(gateway);
             // Restore a trusted listener around the same actual service, so
             // the native positive control is not a replacement owner.
             let native = LinkPreviewGateway::with_api(cache.clone(), config(None), api);
             native.assert_native_control(None);
+            native.assert_ordinary_control(None, json!({"listenerControl": true}));
         }
     }
 }

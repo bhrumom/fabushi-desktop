@@ -615,9 +615,8 @@ fn channel_gateway_registry_origin_and_memory_controls_remain_intact() {
         }
         let ordinary = json!({"ordinaryControl":"still served"});
         assert_eq!(fixture.invoke("getTranscript", ordinary.clone(), Some(&node.bearer), ""), ordinary);
-        if !configured {
-            assert_eq!(fixture.invoke("getTranscript", ordinary.clone(), Some("Basic ignored"), ""), ordinary);
-        }
+        assert_eq!(fixture.invoke("getTranscript", ordinary.clone(), native.as_deref(), ""), ordinary);
+        fixture.deny("getTranscript", &ordinary.to_string(), Some("Basic ignored"), "", 401, "unauthorized");
         fixture.deny("config.get", "{}", Some(&node.bearer), "", 403, "ROLE_MISMATCH: node cannot invoke operator method: config.get");
         fixture.deny("config.set", "{}", Some(&admin.bearer), "", 403, "INSUFFICIENT_SCOPE: device token cannot invoke mutating method: config.set");
         fixture.deny("mcp.resolveLifecycleRequest", "{}", Some(&admin.bearer), "", 403,

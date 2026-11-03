@@ -97,3 +97,66 @@ The fixed-U device-management handler/authz, token kernel/policy/identity/operat
 U `device.pair.remove` also deletes pending repairs and APNs registrations; native `device.pair.revoke` retains its established pending rows. U `device.token.revoke` is a separate role-token operation. This batch does not claim those wire aliases, pending/APNs effects or every upstream client lifecycle are now equivalent. Its behavior adapts source management/currentness requirements into the existing native HTTP/SSE owners. These explicit gaps remain applicable future work, not out-of-scope exemptions for OCRM.
 
 References: root `AGENTS.md`; OCRM SOT, main Spec §17, module map and P0 task; `device-pairing-authenticated-rotation.md`; `device-pairing-revision-admission.md`; `device-pairing-startup-durability.md`; `device-pairing-join-admission.md`; actual `source/host/src/{device_pairing_owner,gateway_server}.rs`, `source/host/app/src/main.rs`, event bus and local-exec/WebAuthn provider owners.
+
+## Exact-H ordinary-route oracle recovery — DVR-CI-011
+
+On product H `8bdcf1012c15c08a0320c85c9d4d42e1cc100949`, runtime
+`41559093519`, Linux job `125665070447`, original artifact `13196816131`
+retains 38 accepted portable groups out of 39, including complete DVR26/8/14,
+DPA9/8, DPR20, DJC8, DJL11/7/2/1, generated-history9 and the PRC wiring
+controls. The integration group has two failed ordinary-route controls:
+`channel_gateway_registry_origin_and_memory_controls_remain_intact` and
+`memory_gateway_preserves_projection_selectors_and_unrelated_routes`.
+Both receive HTTP401 `unauthorized` where their helpers expect200.
+
+Classify **TEST_FLAW / FIX before editing**: both source callers explicitly
+send `Authorization: Basic ignored` to protected `getTranscript` under an
+unconfigured loopback listener and expect native success. That expectation
+contradicts DVR-03's already-adopted explicit-credential refusal. The original
+log records helper panic lines (Channel306 and Memory338), not a full stack
+identifying the source-diagnosed caller lines (Channel619 and Memory577).
+
+Retain the real paired-node ordinary-route positive, add the existing native
+configured-secret/credential-absent positive in both configuration modes, and
+retain the explicit Basic request as a401 negative through each fixture's
+existing denial helper. Preserve no-dispatch, device-binding, original bytes,
+Memory/credential projections, private-content and valid-after-refusal checks.
+Keep all downstream origin/Host/registry/config/native-only controls, selector
+and100-row-cap assertions, test names, command selections and strict counts.
+Do not weaken production authentication to restore the obsolete expectation.
+
+The original failed artifact and its SHA-256
+`365c7162b207d4814730925507829544b5cb641ca78ffef61bd3e802808e545b`
+remain evidence for H. New execution uses a separately frozen exact H after
+fresh focused review. The later native link-preview-step failure is separately
+resolved as DVR-CI-012 below; skipped App/Automation and queued macOS receive no credit.
+Source structural and renderer positives do not make this failed runtime pass.
+
+## Exact-H wildcard-listener oracle recovery — DVR-CI-012
+
+The same H/run/job's original final artifact `13196766905`, SHA-256
+`697697eaa5cec007e39b7c4430382505056d5b3bb1dd0aeadaacc2170f60d15e`,
+preserves Host source checks9passed and Gateway41passed/2failed. The failing
+`native_box_mcp_nonloopback_configuration_requires_authentication` and
+`native_link_preview_nonloopback_configuration_requires_authentication`
+expect native-only403 where unauthenticated wildcard ingress now returns401.
+Their captured helper panics are Gateway684 and1334. Both also contain later
+unexecuted ordinary-route200 expectations under the same unauthenticated
+wildcard configuration; those source-diagnosed follow-ons are not additional
+captured failures.
+
+Classify **TEST_FLAW / FIX before editing** under DVR-03. Require fixed401
+`unauthorized` for protected native-only and ordinary methods on that listener,
+preserving no-owner-access and unchanged real cache/file witnesses. Keep
+configured-secret native positives and the authenticated paired/header-limited
+native-only403 negatives elsewhere. Close the denied wildcard listener, then
+start an actual trusted loopback listener around the same API/service/cache;
+require native and ordinary positive results there without replacing the owner.
+Keep all43 Gateway tests and their remaining assertions, existing commands,
+source checks and strict receipt conditions. No production change is required.
+
+The original Coordinator58/14/1 and filtered actual link-preview App3 positives
+remain attached to H. The missing shared-MCP consumer receipt follows skipped
+Automation; it is a dependency failure, not a separately demonstrated product
+defect. Main App81/DPS7 and Automation require the corrected candidate's
+execution. No local/htch reproduction or unchanged-subject rerun is authorized.

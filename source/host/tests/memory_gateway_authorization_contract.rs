@@ -573,9 +573,8 @@ fn memory_gateway_preserves_projection_selectors_and_unrelated_routes() {
         let before = fixture.state();
         let ordinary = json!({"ordinaryControl": "still served"});
         assert_eq!(fixture.invoke("getTranscript", ordinary.clone(), Some(&node.bearer), "", 200), ordinary);
-        if !configured {
-            assert_eq!(fixture.invoke("getTranscript", ordinary.clone(), Some("Basic ignored"), "", 200), ordinary);
-        }
+        assert_eq!(fixture.invoke("getTranscript", ordinary.clone(), native.as_deref(), "", 200), ordinary);
+        fixture.deny("getTranscript", &ordinary.to_string(), Some("Basic ignored"), "", 401, "unauthorized");
         fixture.deny("config.get", "{}", Some(&node.bearer), "", 403, "ROLE_MISMATCH");
         let admin = issue_credential(&fixture.api.pairing, "neighbor-admin", "operator", &["operator.admin"]);
         fixture.deny("config.set", "{}", Some(&admin.bearer), "", 403, "INSUFFICIENT_SCOPE");
