@@ -25,6 +25,20 @@ export interface DraftAttachment {
   mimeType?: string;
 }
 
+/** Observable resource identity shared by transcript viewer lifetime owners. */
+export function transcriptAttachmentIdentity(
+  attachment: DraftAttachment & { readonly sourceKind?: string; readonly id?: string },
+): string {
+  return JSON.stringify([
+    attachment.path,
+    attachment.name,
+    attachment.mimeType ?? null,
+    attachment.size ?? null,
+    attachment.sourceKind ?? null,
+    attachment.id ?? null,
+  ]);
+}
+
 export interface ComposerDraft {
   prompt: string;
   attachments: DraftAttachment[];

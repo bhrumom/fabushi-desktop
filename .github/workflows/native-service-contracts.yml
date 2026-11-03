@@ -19,6 +19,8 @@ on:
       - 'frontend/src/production/ProductionRenderer.tsx'
       - 'frontend/src/production/ProductionRenderer.transcript.*'
       - 'frontend/src/recovered/features/conversation/workspace/transcript.tsx'
+      - 'frontend/src/recovered/features/conversation/workspace/media-viewer.tsx'
+      - 'frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts'
       - 'desktop/transcript-test.html'
       - 'desktop/transcript-test.ts'
       - 'frontend/src/production/model.ts'
@@ -1003,12 +1005,19 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# tests 8' artifacts/native-message-ui/production-transcript.log
-          grep -Fx '# pass 8' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# tests 12' artifacts/native-message-ui/production-transcript.log
+          grep -Fx '# pass 12' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/production-transcript.log
           grep -Fx '# todo 0' artifacts/native-message-ui/production-transcript.log
+          for entry_case in \
+            'human_entry_refresh_requeries_search_and_discards_older_results' \
+            'human_entry_refresh_retires_action_menus_without_hook_order_errors' \
+            'human_entry_refresh_retires_removed_pdf_and_late_resource_reads' \
+            'human_entry_refresh_retires_spreadsheet_mount_when_source_changes'; do
+            grep -Eq "^ok [0-9]+ - ${entry_case}$" artifacts/native-message-ui/production-transcript.log
+          done
       - name: Actual ProductionRenderer author and draft recovery behaviors
         if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
         shell: bash

@@ -927,3 +927,27 @@ Oracle and invariants for FBCP-NMR-001:
 - INV-NMR-HUMAN-PAIR-MATCHES-DIRECTORY-ID-001: changing either participant without changing the canonical directory identity is rejected before the owner is returned to an ordinary consumer.
 - INV-NMR-HUMAN-PAIR-ORDER-INDEPENDENT-001: the sorted participant pair produces the same canonical ID regardless of stored participant order; display title is not part of identity.
 
+
+
+## NMR-UI-ENTRY-REFRESH-01 — Existing Human dependent UI lifetime
+
+Frozen boundary: `docs/specs/fbcp-native-message-reconciliation.md#nmr-ui-entry-refresh-01--retire-dependent-ui-state-when-an-existing-human-row-changes`.
+Same Host/Transcript/Renderer owners; no revision/tombstone or remote deletion inference.
+Source tuple is shared by the existing workspace model, gallery and root spreadsheet
+mount. Future source changes in both viewer owners remain in the actual Native/UI
+and Mac workflow path filters.
+
+| Requirement | Production entry | Required actual behavior evidence | Execution |
+| --- | --- | --- | --- |
+| NMR-UI-ENTRY-REFRESH-01a | ProductionRenderer Human find-in-chat request and navigation lifetime | human_entry_refresh_requeries_search_and_discards_older_results | Pending containing-H Actions |
+| NMR-UI-ENTRY-REFRESH-01b | Existing MessageActionAnchor hooks, eligibility and listeners | human_entry_refresh_retires_action_menus_without_hook_order_errors | Pending containing-H Actions |
+| NMR-UI-ENTRY-REFRESH-01c | TranscriptAttachmentGallery and shared transcriptAttachmentIdentity | human_entry_refresh_retires_removed_pdf_and_late_resource_reads | Pending containing-H Actions |
+| NMR-UI-ENTRY-REFRESH-01d | ProductionRenderer original row/attachment-bound spreadsheet mount and existing provider | human_entry_refresh_retires_spreadsheet_mount_when_source_changes | Pending containing-H Actions |
+
+All four cases extend the existing ProductionRenderer.transcript.behavior.test.mjs
+from8 to12 without changing original8 bodies or strict diagnostics. Required
+UI209 is173 Node +13 projection +23 author, zero skipped/retries; Human81/
+reconciliation125, owner40, actualMac2+2 and all current gates stay mandatory.
+Legal bounded-read viewer lifetime controls do not establish parser/rendering
+acceptance. Fixed-U source, canonical mutation discovery, service deployment,
+signed platforms, all Bot/quality and independent ACCEPT remain open.

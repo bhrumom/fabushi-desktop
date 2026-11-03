@@ -6,75 +6,76 @@ Date: 2026-11-03
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Round8 — qualified message recovery and admitted reaction refusal continuation
+## Round8 — qualified reaction recovery and current-entry UI lifetime
 
-Fixed U is f985723b552b30fe1c17d377d57f44e61a15a8c4. Existing checkpoint
-checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1 is retained with force=false
-expected-head CAS. Main last reread is5528062177e3865eef60a073a066cca144f9e3e8.
-The local execution environment is offline; no uncommitted-clean claim or local
-test/build/validator execution is made.
+Fixed U remains f985723b552b30fe1c17d377d57f44e61a15a8c4. Work continues on the
+existing checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1 with force=false,
+expected-head CAS and complete remote ref/commit/file readback. The local
+environment is offline; no local/htch validation or clean-worktree claim.
 
-Exacte8ee557383661694c44a590950f2fdc8631c39a9/run41560824752 actually passed
-reconciliation121 (Human77), desktop owner40 (10+11+6+8+5) and UI205
-(Node169 + Renderer13 + author23), zero failed/ignored in those selected groups,
-zero browser retries. Full logs and exact artifact identities were read.
-Source run41560824735 passed Node161/Python37/schema0 and the unaccepted
-candidate check. Inventory remains16381/root6895;184 responsibility rows,
-16 source reviews with2 complete/14 pending, opaque inputs2/unresolved refs76.
-Unknown/unread remain null and every source/product/independent acceptance false.
-Shipping compile job125670726737 is still queued at this preparation boundary;
-the new legacy policy is not macOS shipping qualified by its Linux40 alone.
+Exact6d42fa7d64d6059ae010891a20d41dfacc51f246/run41563429938 actually passed
+Human81/reconciliation125, desktop owner40, UI205 (169 Node+13 projection+23
+author, retry0), Electron100 with build, peer23 on Linux and Windows, and
+Windows publisher11. Retained direct FFI passed15 with its one explicit
+live-DC case still ignored. Source41563429876 passed161 Node/37 Python,
+schema0 and unaccepted-candidate-consistent. Exact6d42 actualMac41563429896/
+job125679138961 passed Plugins2/Human2 with zero failures/skips/retries and
+five Human process lifetimes; artifact13197364144/digest
+110d237cd4ae44a997205060540dbd5bad9ac35ca4595dab0f84da6b460ff2c6.
+Shipping compile job125679140188 remains separately unqualified/queued at
+the preparation boundary. Controlled process/service evidence is not signed
+package, active backend or complete Bot acceptance.
 
-Previous exact1de845141d5e30ae9ff4965caf2915f68df2f650/run41559676882 UI
-executed205 with204 passed/1 failed. Its final author case completed business
-assertions and afterEach, then context teardown exceeded90seconds; the retained
-trace shows an approximately88-second context fixture stop before the secondary
-already-stopping error. Artifact13197690404/digest
-e06334d026a6086c574fd3f884e465d60d166e4d88de4754d7ec7d24beb0f575 remains
-failed evidence. Read-only Actions41562018504 and41562413518 inspected that
-same immutable artifact, without rerunning product tests. The later e8ee pass
-does not erase this failure or prove stability. Exact1de actual Mac
-run41559676909 executed Plugins2/Human2 with zero failures/skips/retries; this
-controlled process/SQLite evidence is not deployed service or signed acceptance.
+The reaction batch now keeps an admitted original404/409 visible while bounded
+history, later canonical friends and Calls progress. All four new real
+Host/SQLite/HTTP cases passed, including full credential/owner changes,
+actual shutdown without cold reopen and later hard-error priority. Original
+6400/32-page, persisted restart, reaction concurrency and late send receipt
+controls remain in the passing125. Native/Session remain the sole owners.
 
-The next frozen product batch implements NMR-REACTION-RECOVERY-01 in the
-existing Native/Session owners. Only admitted structured404/409 with the
-original complete credential and unchanged canonical target may defer its
-original error. Keep the unconfirmed intent; continue bounded history, later
-friends and Calls, then return the first refusal. Later credential, owner,
-pending, protocol or persistence errors stop immediately across all later
-friends. Revalidation never reopens a retired owner; Calls keep original scope
-and event identity. Canonical duplicate friends do not repeat recovery.
-Four actual Host/SQLite/HTTP cases extend Human77 to81/reconciliation125.
-These new125 inputs require containing-H Actions; they are not passed yet.
+The next UI batch was frozen at04ba336789a46d926bf8b49c90f40b4dfedece84
+under NMR-UI-ENTRY-REFRESH-01. It reuses current Renderer/search/menu/gallery/
+spreadsheet owners: refresh current Human search after committed updates,
+retire stale result/navigation errors, keep action hooks stable, and bind
+viewer lifetime to the original row and shared observable attachment tuple.
+Another row with the same path cannot keep an old viewer alive. Scope-keyed
+Transcript lifetime preserves composer/cache ownership. Original8 actual
+Renderer cases are preserved; four new cases require12 and totalUI209.
+These new inputs require containing-H Actions and are not passed at freeze.
+Bounded-read viewer controls do not establish PDF/spreadsheet parsing.
 
-The only browser fixture change excludes its owned author-recovery-results
-directory from the Vite source watcher. All23 cases, oracles,90-second budget,
-zero retries and trace/video/screenshot capture remain. This repairs the proven
-watch-isolation defect without claiming it alone explains the teardown stall.
-UI205, owner40, actual Mac2+2 and every shipping gate remain required.
+Concurrent Human pair admission commits bbcee06bc82333e10b8fbea331fbd0f31453b32c,
+6e9ffe388d5483310ead7c185e5a8760c7fd614c and43670ef219508bffc6eb0870f267a43782e7af14
+are preserved. Their canonical participant-ID check and original81-case matrix
+remain in this batch; this does not grant an interprocess identity lease.
+Canonical ledger preparation41565220523 at2ca32cbf0719df9f7daa7fa7b0ee0285cb929532
+produced4fab6af26774440532630e79e125dedad5b68410 from the current76765dc8498dc3ffd92931169ea7ae754ba4ffe9.
+Complete source readback confirms only FBCP-NMR-001 appended; its68 paths/92
+symbols retain the concurrent identity additions. All183 other rows, global/
+source-review fields, historical execution scalars and acceptance are preserved. Containing-H schema/
+candidate checks remain required. Inventory16381/root6895,184 rows and
+16 source reviews (2 complete/14 pending) are unchanged; unknown/unread remain
+null. Current scoped fixed-U and owner audits do not grant new source ACCEPT.
 
-Spec reaction boundary was frozen at4d05c96a8485d67425d04140f85833ae19c57729;
-the evidence-isolation boundary atc8028d72c1cb72af2008225413f895350036ef52.
-Actions41561761778 generated canonical ledger blob3bf47d8f7504bb179896c502a16329d9f0f80645
-fromcd1b4b2cee8763b61392cb0be718354b20d02eee. Root read the full input/output:
-only FBCP-NMR-001 appended; all183 other rows, globals/source-review fields,
-historical execution scalars and acceptance remain unchanged. The new row has
-64 paths/83 symbols and requires its containing-H schema/candidate validation.
-Public source, review, exact-run and artifact pointers are saved in
-projects/telegram-desktop-rust/evidence/round8-reaction-recovery-20261103.json.
-Raw diagnostics remain in Actions artifacts.
+Prior exact1de UI204/205 context teardown failure remains failed evidence at
+artifact13197690404; later e8ee and6d42 passes do not erase it or certify soak
+stability. Own-output watcher isolation changed no timeout/retry/capture gate.
+Execution receipt:
+projects/telegram-desktop-rust/evidence/round8-reaction-recovery-execution-20261103.json.
+Current source/implementation receipt:
+projects/telegram-desktop-rust/evidence/round8-entry-refresh-20261103.json.
+Raw logs and diagnostics remain in exact Actions artifacts.
 
 Backend main687718ce9e0083aa124d29005bcce4051d357919 still rejects explicit
-afterId=0 in the inspected source; draft PR137/head52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23
-is open/unmerged and active Worker/D1/readiness remains unverified. No backend
-write, merge, deployment or active service probe is authorized/performed here.
-Permanent reaction-intent termination, canonical revision/tombstones, bounded
-old-message change discovery and outbound edit/delete remain incomplete.
-Full fixed-U source/dependency/generated/legal disposition, old-data mapping,
-supported signed packages, complete Bot/UI/visual/a11y/security/performance/
-soak/upgrade/rollback and independent ACCEPT remain open. This is not complete
-migration or shipping acceptance.
+afterId0 in inspected source. PR137/head52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23
+remains draft/open/unmerged; active Worker/D1 contract is unverified and this
+task retains read-only backend authority. Canonical revisions/tombstones,
+arbitrary-old change discovery, definitive reaction-intent cancellation,
+outbound edit/delete and their reply/forward/handoff policies remain open.
+Full fixed-U dependency/generated/resource/tool/legal disposition, old-data
+mapping, supported signed packages, complete Bot/UI/visual/accessibility/
+timing/security/performance/soak/upgrade/rollback and independent ACCEPT
+are not complete.
 
 ## Round30 — forward feedback and recovery qualification
 

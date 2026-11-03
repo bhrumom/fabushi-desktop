@@ -90,6 +90,7 @@ async function fixture(t) {
       requests: window.__transcriptHarness?.requests() ?? [],
       unexpected: window.__transcriptHarness?.unexpected() ?? ["fixture did not mount"],
       ports: window.__transcriptHarness?.ports() ?? [],
+      resources: window.__transcriptHarness?.resources() ?? [],
     })).catch((error) => ({ unexpected: [String(error)] }));
     await writeFile(resolve(artifacts, `${name}.browser.json`), JSON.stringify({ diagnostics, rows, ...state }, null, 2));
     await page.close();
@@ -400,4 +401,514 @@ test("UI-NMR-FIND-PAGE-FAILURE-001 finding an unloaded match stops after one fai
   await f.resolveRequest(retry, historyPage([message("m1", "UNLOADED_NEEDLE"), ...messages(2, 20)]));
   await f.expectRows(ids(1, 64));
   assert.equal(await f.error().count(), 0);
+});
+
+
+// NMR-UI-ENTRY-REFRESH-01 uses committed Host-shaped updates, never a fixture
+// copy of the root's invalidation rules or a new transcript/cache owner.
+const RESOURCE_CAP = 25 * 1024 * 1024;
+const humanRefreshMessage = (remoteId, text, attachments = []) => ({
+  ...message("human-server-message:" + remoteId, text),
+  authorKind: "human", authorId: "peer-alpha", remoteMessageId: String(remoteId),
+  richText: "", attachments, reactions: [],
+});
+const refreshAttachment = (path, name, mimeType, size = 16) => ({ path, fileName: name, mimeType, byteSize: size });
+async function refreshRoot(t, initialRows) {
+  const f = await fixture(t);
+  const initial = await f.request(TAIL, { conversationId: A, beforeSeq: null });
+  await f.resolveRequest(initial, historyPage(initialRows));
+  await f.expectRows(initialRows.map((entry) => entry.id));
+  await f.frames();
+  const editor = f.page.locator('.sand-chat-input-dock [contenteditable="true"]');
+  assert.equal(await editor.count(), 1);
+  const row = (id) => f.page.locator('[data-entry-id="' + id + '"]');
+  const update = (entry, conversationId = A) => f.call("event", "transcript", { type: "updated", agentId: conversationId, entry });
+  const openFind = async (query) => {
+    if (await f.page.getByRole("textbox", { name: "Find in chat" }).count() === 0) {
+      await f.page.getByRole("log", { name: "Conversation transcript" }).focus();
+      await f.page.keyboard.press("Control+f");
+    }
+    await f.page.getByRole("textbox", { name: "Find in chat" }).fill(query);
+  };
+  const findState = async (query, value) => {
+    await f.page.waitForFunction(([query, value]) => {
+      const input = document.querySelector('input[aria-label="Find in chat"]');
+      const status = document.querySelector('.sand-chat-find [role="status"]');
+      return input?.value === query && status?.textContent === value;
+    }, [query, value]);
+    assert.equal(await f.page.locator('.sand-chat-find [role="status"]').textContent(), value);
+  };
+  const resourceRequests = () => f.call("resources");
+  const resourceRequest = async (method, source, after = 0) => {
+    await f.page.waitForFunction(({ method, source, after }) => window.__transcriptHarness.resources().some((request) =>
+      request.id > after && !request.settled && request.method === method && request.args.source === source), { method, source, after });
+    const found = (await resourceRequests()).find((request) => request.id > after && !request.settled
+      && request.method === method && request.args.source === source);
+    assert.ok(found);
+    if (method === "readAttachmentBytes") assert.deepEqual(found.args, { source, maxBytes: RESOURCE_CAP });
+    return found;
+  };
+  const resourceCount = async (method, source) => (await resourceRequests()).filter((request) =>
+    request.method === method && (source === undefined || request.args.source === source)).length;
+  const declareBytes = async (attachment) => {
+    await f.call("declareResource", "readAttachmentBytes", { source: attachment.path, maxBytes: RESOURCE_CAP });
+    await f.call("declareResource", "downloadAttachment", { source: attachment.path, suggestedName: attachment.fileName });
+  };
+  const resolveResource = (request, value) => f.call("resolveResource", request.id, value);
+  const boundedRead = (request) => resolveResource(request, { kind: "too-large", size: RESOURCE_CAP + 1 });
+  const noSend = async () => {
+    assert.equal(await f.count("sendHumanMessage"), 0);
+    assert.equal(await f.count("sendMessage"), 0);
+    assert.equal(await f.count("forwardHumanMessage"), 0);
+  };
+  return { ...f, initial, editor, row, update, openFind, findState, resourceRequests,
+    resourceRequest, resourceCount, declareBytes, resolveResource, boundedRead, noSend };
+}
+
+test("human_entry_refresh_requeries_search_and_discards_older_results", { timeout: 60_000 }, async (t) => {
+  const firstRow = humanRefreshMessage(9001, "needle before update");
+  const retainedRow = humanRefreshMessage(9002, "retained needle");
+  const f = await refreshRoot(t, [firstRow, retainedRow]);
+  await f.editor.fill("SEARCH_DRAFT_MUST_SURVIVE");
+  await f.openFind("needle");
+  const oldSuccess = await f.request("searchHumanMessages", { conversationId: A, query: "needle" });
+  assert.deepEqual(oldSuccess.args, { conversationId: A, query: "needle", limit: 200 });
+  await f.update({ ...firstRow, content: "edited without the queried word" });
+  const current = await f.request("searchHumanMessages", { conversationId: A, query: "needle" }, oldSuccess.id);
+  assert.deepEqual(current.args, oldSuccess.args);
+  assert.equal(current.account, "fixture-a");
+  await f.resolveRequest(current, { entries: [retainedRow] });
+  await f.findState("needle", "1/1");
+  await f.resolveRequest(oldSuccess, { entries: [{ ...firstRow, content: "needle needle needle" }] });
+  await f.frames();
+  await f.findState("needle", "1/1");
+  assert.equal(await f.count("searchHumanMessages"), 2, "ordinary render/result commits cannot create search requests");
+  assert.equal(await f.editor.innerText(), "SEARCH_DRAFT_MUST_SURVIVE");
+  assert.equal(await f.row(firstRow.id).locator(".sand-message-prose").innerText(), "edited without the queried word");
+
+  // A later accepted update retires a pending error as well as an old success.
+  await f.update({ ...retainedRow, content: "retained needle edited once" });
+  const oldFailure = await f.request("searchHumanMessages", { conversationId: A, query: "needle" }, current.id);
+  await f.update({ ...retainedRow, content: "" });
+  const empty = await f.request("searchHumanMessages", { conversationId: A, query: "needle" }, oldFailure.id);
+  await f.resolveRequest(empty, { entries: [] });
+  await f.findState("needle", "0/0");
+  await f.rejectRequest(oldFailure, "RETIRED_SEARCH_FAILURE");
+  await f.frames();
+  await f.findState("needle", "0/0");
+  assert.equal(await f.page.getByText("RETIRED_SEARCH_FAILURE", { exact: false }).count(), 0);
+  assert.equal(await f.editor.innerText(), "SEARCH_DRAFT_MUST_SURVIVE");
+
+  const beforeForeign = await f.count("searchHumanMessages");
+  assert.equal(beforeForeign, 4);
+  await f.update(humanRefreshMessage(9090, "needle in another conversation"), B);
+  await f.frames();
+  assert.equal(await f.count("searchHumanMessages"), beforeForeign, "another conversation cannot invalidate the current query");
+
+  // Reusing the conversation and query under a new account cannot admit A's reply.
+  await f.update({ ...firstRow, content: "needle old account held" });
+  const accountARead = await f.request("searchHumanMessages", { conversationId: A, query: "needle" }, empty.id);
+  const beforeAccountSwitch = await f.count("searchHumanMessages");
+  await f.call("switchAccount", "fixture-b");
+  const accountBTail = await f.request(TAIL, { conversationId: A, beforeSeq: null, account: "fixture-b" }, accountARead.id);
+  const accountBRow = humanRefreshMessage(9010, "needle current account");
+  await f.resolveRequest(accountBTail, historyPage([accountBRow]));
+  await f.expectRows([accountBRow.id]);
+  await f.frames();
+  assert.equal(await f.editor.innerText(), "", "an old account's composer does not enter the new account");
+  assert.equal(await f.count("searchHumanMessages"), beforeAccountSwitch,
+    "scope reset must reject an old render's query before any request enters account B");
+  await f.editor.fill("ACCOUNT_B_DRAFT");
+  await f.openFind("needle");
+  const accountBRead = await f.request("searchHumanMessages", { conversationId: A, query: "needle", account: "fixture-b" }, accountARead.id);
+  await f.resolveRequest(accountBRead, { entries: [accountBRow] });
+  await f.findState("needle", "1/1");
+  await f.resolveRequest(accountARead, { entries: [{ ...firstRow, content: "needle needle needle needle" }] });
+  await f.frames();
+  await f.findState("needle", "1/1");
+  assert.equal(await f.editor.innerText(), "ACCOUNT_B_DRAFT");
+  await f.expectRows([accountBRow.id]);
+
+  // The same query in another chat has a separate result/error lifetime.
+  await f.update({ ...accountBRow, content: "needle pending before chat switch" });
+  const alphaRead = await f.request("searchHumanMessages", { conversationId: A, query: "needle", account: "fixture-b" }, accountBRead.id);
+  const beforeChatSwitch = await f.count("searchHumanMessages");
+  await f.page.getByRole("button", { name: "Beta", exact: true }).click();
+  const betaTail = await f.request(TAIL, { conversationId: B, beforeSeq: null, account: "fixture-b" }, alphaRead.id);
+  const betaRow = humanRefreshMessage(9020, "needle in Beta");
+  await f.resolveRequest(betaTail, historyPage([betaRow]));
+  await f.expectRows([betaRow.id]);
+  await f.frames();
+  assert.equal(await f.count("searchHumanMessages"), beforeChatSwitch,
+    "scope reset must reject an old render's query before any request enters Beta");
+  await f.openFind("needle");
+  const betaRead = await f.request("searchHumanMessages", { conversationId: B, query: "needle", account: "fixture-b" }, alphaRead.id);
+  await f.resolveRequest(betaRead, { entries: [betaRow] });
+  await f.findState("needle", "1/1");
+  await f.rejectRequest(alphaRead, "RETIRED_OTHER_CHAT_SEARCH_FAILURE");
+  await f.frames();
+  await f.findState("needle", "1/1");
+  assert.equal(await f.page.getByText("RETIRED_OTHER_CHAT_SEARCH_FAILURE", { exact: false }).count(), 0);
+  await f.expectRows([betaRow.id]);
+  const beforeEmptyQuery = await f.count("searchHumanMessages");
+  await f.page.getByRole("textbox", { name: "Find in chat" }).fill("");
+  await f.frames();
+  await f.update({ ...betaRow, content: "ordinary update with no active query" }, B);
+  await f.frames();
+  assert.equal(await f.count("searchHumanMessages"), beforeEmptyQuery);
+  assert.equal(beforeEmptyQuery, 8, "only the eight explicit current-query stages may dispatch");
+  assert.ok((await f.call("requests")).filter((request) => request.method === "searchHumanMessages").every((request) => request.settled));
+  await f.noSend();
+});
+
+test("human_entry_refresh_retires_action_menus_without_hook_order_errors", { timeout: 60_000 }, async (t) => {
+  const entry = humanRefreshMessage(9101, "ACTION_SOURCE");
+  const f = await refreshRoot(t, [entry]);
+  await f.call("holdActionRpc", "reactHumanMessage");
+  await f.call("holdActionRpc", "searchHumanRecipients");
+  await f.editor.fill("ACTION_DRAFT_MUST_SURVIVE");
+  const row = f.row(entry.id);
+  const menu = f.page.getByRole("menu", { name: "More message actions", exact: true });
+  await row.locator(".sand-message-prose").click({ button: "right" });
+  await menu.getByRole("menuitem", { name: "Forward", exact: true }).waitFor();
+  await f.update({ ...entry, content: "", attachments: [], richText: "" });
+  await menu.waitFor({ state: "detached" });
+  await f.frames();
+  assert.equal(await row.locator(".sand-message-prose").innerText(), "");
+  assert.equal(await row.getByRole("button", { name: "More message actions", exact: true }).count(), 0);
+  assert.equal(await f.count("searchHumanRecipients"), 0);
+  assert.equal(await f.count("reactHumanMessage"), 0);
+  await f.page.keyboard.press("Escape");
+  assert.equal(await f.editor.innerText(), "ACTION_DRAFT_MUST_SURVIVE");
+
+  const restored = { ...entry, content: "ACTION_RESTORED" };
+  await f.update(restored);
+  await f.frames();
+  assert.equal(await menu.count(), 0, "eligibility restoration cannot reopen an old ordinary menu");
+  await row.locator(".sand-message-prose").click({ button: "right" });
+  await menu.getByRole("menuitem", { name: "Reply", exact: true }).click();
+  await f.page.getByRole("button", { name: "Cancel reply", exact: true }).waitFor();
+  assert.equal(await f.page.locator(".sand-prompt-reply-pill").innerText(), "ACTION_RESTORED");
+  await f.page.getByRole("button", { name: "Cancel reply", exact: true }).click();
+  assert.equal(await f.editor.innerText(), "ACTION_DRAFT_MUST_SURVIVE");
+
+  // Keyboard interaction enters the real reaction control, without force clicks.
+  await row.getByRole("button", { name: "Add reaction", exact: true }).focus();
+  await row.getByRole("button", { name: "Add reaction", exact: true }).press("Enter");
+  const picker = row.getByRole("group", { name: "Add reaction", exact: true });
+  await picker.getByRole("button", { name: "React with 👍", exact: true }).waitFor();
+  await f.update({ ...restored, content: "", attachments: [], richText: "" });
+  await picker.waitFor({ state: "detached" });
+  await f.frames();
+  assert.equal(await f.count("reactHumanMessage"), 0, "retired menus cannot issue a reaction");
+  await f.update(restored);
+  await f.frames();
+  assert.equal(await row.getByRole("group", { name: "Add reaction", exact: true }).count(), 0);
+  await row.getByRole("button", { name: "Add reaction", exact: true }).focus();
+  await row.getByRole("button", { name: "Add reaction", exact: true }).press("Enter");
+  await row.getByRole("button", { name: "React with 👍", exact: true }).click();
+  const reaction = await f.request("reactHumanMessage", { conversationId: A, entryId: entry.id, emoji: "👍" });
+  assert.deepEqual(reaction.args, { conversationId: A, entryId: entry.id, emoji: "👍" });
+  await f.resolveRequest(reaction, { ...restored, reactions: [{ emoji: "👍", by: "me" }] });
+  await row.getByRole("button", { name: /Toggle your 👍 reaction/ }).waitFor();
+  assert.equal(await f.count("reactHumanMessage"), 1);
+
+  await row.locator(".sand-message-prose").click({ button: "right" });
+  await menu.getByRole("menuitem", { name: "Forward", exact: true }).click();
+  const forward = f.page.getByRole("dialog", { name: "Forward message", exact: true });
+  await forward.waitFor();
+  const recipients = await f.request("searchHumanRecipients", { sourceConversationId: A, sourceEntryId: entry.id, query: "" });
+  assert.deepEqual(recipients.args, { sourceConversationId: A, sourceEntryId: entry.id, query: "", limit: 50 });
+  await f.resolveRequest(recipients, []);
+  await f.page.keyboard.press("Escape");
+  await forward.waitFor({ state: "detached" });
+  assert.equal(await f.count("searchHumanRecipients"), 1);
+  assert.equal(await f.count("reactHumanMessage"), 1);
+  assert.equal(await f.editor.innerText(), "ACTION_DRAFT_MUST_SURVIVE");
+  await f.noSend();
+});
+
+
+test("human_entry_refresh_retires_removed_pdf_and_late_resource_reads", { timeout: 60_000 }, async (t) => {
+  const pdfA = refreshAttachment("fixture-entry-refresh-a.pdf", "Original.pdf", "application/pdf");
+  const pdfB = refreshAttachment("fixture-entry-refresh-b.pdf", "Retained.pdf", "application/pdf");
+  const entry = humanRefreshMessage(9201, "PDF_SOURCE", [pdfA, pdfB]);
+  const f = await refreshRoot(t, [entry]);
+  await f.declareBytes(pdfA);
+  await f.declareBytes(pdfB);
+  await f.editor.fill("RESOURCE_DRAFT_MUST_SURVIVE");
+  const row = f.row(entry.id);
+  const pdf = (name) => f.page.getByRole("dialog", { name, exact: true });
+  const openPdf = async (attachment) => {
+    await row.getByRole("button", { name: "Open " + attachment.fileName, exact: true }).click();
+    await pdf(attachment.fileName).waitFor();
+  };
+  await openPdf(pdfA);
+  const retiredRead = await f.resourceRequest("readAttachmentBytes", pdfA.path);
+  await pdf(pdfA.fileName).getByRole("button", { name: "Download file", exact: true }).click();
+  const retiredDownload = await f.resourceRequest("downloadAttachment", pdfA.path);
+  assert.deepEqual(retiredDownload.args, { source: pdfA.path, suggestedName: pdfA.fileName });
+  await f.update({ ...entry, content: "unrelated text edit", attachments: [pdfB, { ...pdfA }] });
+  await f.frames();
+  assert.equal(await pdf(pdfA.fileName).count(), 1, "same resource survives attachment reorder and text edits");
+  assert.equal(await f.resourceCount("readAttachmentBytes", pdfA.path), 1);
+  assert.equal(await f.resourceCount("readAttachmentBytes", pdfB.path), 0);
+  assert.equal(await f.editor.innerText(), "RESOURCE_DRAFT_MUST_SURVIVE");
+
+  await f.update({ ...entry, attachments: [pdfB] });
+  await pdf(pdfA.fileName).waitFor({ state: "detached" });
+  assert.equal(await row.getByRole("button", { name: "Open " + pdfB.fileName, exact: true }).count(), 1);
+  await f.update({ ...entry, attachments: [pdfB, pdfA] });
+  await openPdf(pdfA);
+  const currentRead = await f.resourceRequest("readAttachmentBytes", pdfA.path, retiredRead.id);
+  assert.equal(await pdf(pdfA.fileName).getByText("Loading PDF…", { exact: true }).count(), 1);
+  await f.boundedRead(retiredRead);
+  await f.call("rejectResource", retiredDownload.id, "RETIRED_PDF_DOWNLOAD_FAILURE");
+  await f.frames();
+  assert.equal(await pdf(pdfA.fileName).getByText("Loading PDF…", { exact: true }).count(), 1,
+    "old same-path read completion cannot populate the new viewer");
+  assert.equal(await pdf(pdfA.fileName).getByText("PDF too large to preview", { exact: true }).count(), 0);
+  await f.boundedRead(currentRead);
+  await pdf(pdfA.fileName).getByText("PDF too large to preview", { exact: true }).waitFor();
+  // This is the real viewer's documented bounded-read branch, not PDF parsing.
+  await pdf(pdfA.fileName).getByRole("button", { name: "Download file", exact: true }).click();
+  const currentDownload = await f.resourceRequest("downloadAttachment", pdfA.path, retiredDownload.id);
+  await f.resolveResource(currentDownload, true);
+
+  const changedPdf = { ...pdfA, byteSize: pdfA.byteSize + 1 };
+  await f.update({ ...entry, attachments: [pdfB, changedPdf] });
+  await pdf(pdfA.fileName).waitFor({ state: "detached" });
+  await openPdf(changedPdf);
+  const changedRead = await f.resourceRequest("readAttachmentBytes", pdfA.path, currentRead.id);
+  await f.boundedRead(changedRead);
+  await pdf(pdfA.fileName).getByText("PDF too large to preview", { exact: true }).waitFor();
+  await f.update({ ...entry, attachments: [] });
+  await pdf(pdfA.fileName).waitFor({ state: "detached" });
+  await f.update({ ...entry, attachments: [pdfB] });
+  await openPdf(pdfB);
+  const retainedRead = await f.resourceRequest("readAttachmentBytes", pdfB.path);
+  await f.boundedRead(retainedRead);
+  await pdf(pdfB.fileName).getByText("PDF too large to preview", { exact: true }).waitFor();
+  await pdf(pdfB.fileName).getByRole("button", { name: "Download file", exact: true }).click();
+  const retainedDownload = await f.resourceRequest("downloadAttachment", pdfB.path);
+  await f.resolveResource(retainedDownload, true);
+  await pdf(pdfB.fileName).getByRole("button", { name: "Close preview", exact: true }).click();
+  await pdf(pdfB.fileName).waitFor({ state: "detached" });
+
+  // Images exercise the actual media viewer: opening index 1 must remain B
+  // when that same attachment moves to index 0.
+  const imageA = refreshAttachment("fixture-entry-refresh-a.png", "Image A.png", "image/png");
+  const imageB = refreshAttachment("fixture-entry-refresh-b.png", "Image B.png", "image/png");
+  for (const [attachment, color] of [[imageA, "red"], [imageB, "blue"]]) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="64"><rect width="96" height="64" fill="' + color + '"/></svg>';
+    await f.call("declareResource", "resolveAttachmentMedia", { source: attachment.path }, true,
+      { kind: "image", dataUrl: "data:image/svg+xml," + encodeURIComponent(svg), width: 96, height: 64 });
+  }
+  await f.update({ ...entry, attachments: [imageA, imageB] });
+  await row.getByRole("img", { name: imageB.fileName, exact: true }).waitFor();
+  await row.getByRole("button", { name: "Media preview", exact: true }).nth(1).click();
+  const media = f.page.locator('.sand-media-viewer[role="dialog"]');
+  await media.getByRole("img", { name: imageB.fileName, exact: true }).waitFor();
+  await f.update({ ...entry, content: "media reordered", attachments: [{ ...imageB }, imageA] });
+  await f.frames();
+  assert.equal(await media.getByRole("img", { name: imageB.fileName, exact: true }).count(), 1);
+  assert.equal(await media.getByRole("img", { name: imageA.fileName, exact: true }).count(), 0);
+  await f.update({ ...entry, attachments: [imageA] });
+  await media.waitFor({ state: "detached" });
+  await f.update({ ...entry, attachments: [imageB, imageA] });
+  await row.getByRole("img", { name: imageB.fileName, exact: true }).waitFor();
+  await row.getByRole("button", { name: "Media preview", exact: true }).first().click();
+  await media.getByRole("img", { name: imageB.fileName, exact: true }).waitFor();
+  await f.update({ ...entry, attachments: [] });
+  await media.waitFor({ state: "detached" });
+
+  // Warm both chat caches with the same row ID and attachment tuple. This
+  // exercises the real root mount scope key, not an incidental empty page.
+  await f.update({ ...entry, attachments: [pdfB] });
+  await f.page.getByRole("button", { name: "Beta", exact: true }).click();
+  const betaTail = await f.request(TAIL, { conversationId: B, beforeSeq: null }, f.initial.id);
+  const betaEntry = { ...entry, content: "BETA_SAME_ID_RESOURCE", attachments: [pdfB] };
+  await f.resolveRequest(betaTail, historyPage([betaEntry]));
+  await f.expectRows([entry.id]);
+  await f.frames();
+  await f.page.getByRole("button", { name: "Alpha", exact: true }).click();
+  await f.frames();
+  assert.equal(await row.locator(".sand-message-prose").innerText(), entry.content);
+  assert.equal(await f.editor.innerText(), "RESOURCE_DRAFT_MUST_SURVIVE");
+  await openPdf(pdfB);
+  const alphaRead = await f.resourceRequest("readAttachmentBytes", pdfB.path, retainedRead.id);
+  // The modal covers the sidebar. Use the existing real next-conversation
+  // keyboard command, whose root handler includes Human conversations.
+  await pdf(pdfB.fileName).getByRole("button", { name: "Close preview", exact: true }).focus();
+  await f.page.keyboard.press("Alt+ArrowDown");
+  await pdf(pdfB.fileName).waitFor({ state: "detached" });
+  await f.frames();
+  assert.equal(await row.locator(".sand-message-prose").innerText(), betaEntry.content);
+  assert.equal(await f.editor.innerText(), "");
+  await openPdf(pdfB);
+  const betaRead = await f.resourceRequest("readAttachmentBytes", pdfB.path, alphaRead.id);
+  await f.boundedRead(alphaRead);
+  await f.frames();
+  assert.equal(await pdf(pdfB.fileName).getByText("Loading PDF…", { exact: true }).count(), 1,
+    "a cached chat with the same tuple cannot inherit another chat's resource lifetime");
+  await f.boundedRead(betaRead);
+  await pdf(pdfB.fileName).getByText("PDF too large to preview", { exact: true }).waitFor();
+  await pdf(pdfB.fileName).getByRole("button", { name: "Close preview", exact: true }).click();
+  await f.page.getByRole("button", { name: "Alpha", exact: true }).click();
+  await f.frames();
+  assert.equal(await f.editor.innerText(), "RESOURCE_DRAFT_MUST_SURVIVE");
+  assert.ok((await f.resourceRequests()).every((request) => request.settled));
+  await f.noSend();
+});
+
+test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { timeout: 60_000 }, async (t) => {
+  // A data URL makes the genuine browser download link self-contained. Reads
+  // remain held at the real DesktopBridge byte boundary with its exact cap.
+  const sheet = refreshAttachment("data:text/csv,Column%0Afixture", "Source.csv", "text/csv");
+  const spare = refreshAttachment("fixture-retained.txt", "Retained.txt", "text/plain");
+  const original = humanRefreshMessage(9301, "ORIGINAL_SHEET_OWNER", [sheet, spare]);
+  const shadow = humanRefreshMessage(9302, "ANOTHER_ROW_WITH_THE_SAME_RESOURCE", [sheet]);
+  const other = humanRefreshMessage(9303, "UNRELATED_ROW");
+  const f = await refreshRoot(t, [original, shadow, other]);
+  await f.declareBytes(sheet);
+  await f.editor.fill("SHEET_DRAFT_MUST_SURVIVE");
+  const viewer = f.page.getByRole("dialog", { name: sheet.fileName, exact: true });
+  const openSheet = async (entryId) => {
+    const chip = f.row(entryId).getByRole("button", { name: "Open " + sheet.fileName, exact: true });
+    await chip.focus();
+    await chip.press("Enter");
+    await viewer.waitFor();
+  };
+  await openSheet(original.id);
+  const retiredRead = await f.resourceRequest("readAttachmentBytes", sheet.path);
+  await viewer.getByRole("link", { name: "Download file", exact: true }).click();
+  const retiredDownload = await f.resourceRequest("downloadAttachment", sheet.path);
+  assert.deepEqual(retiredDownload.args, { source: sheet.path, suggestedName: sheet.fileName });
+  await f.update({ ...other, content: "UNRELATED_ROW_UPDATED" });
+  await f.update({ ...original, content: "TEXT_EDIT_WITH_SAME_RESOURCE", attachments: [spare, { ...sheet }] });
+  await f.frames();
+  assert.equal(await viewer.count(), 1);
+  assert.equal(await f.resourceCount("readAttachmentBytes", sheet.path), 1);
+  await f.call("event", "transcript", { type: "snapshot", activeAgentId: A,
+    entries: [shadow, { ...other, content: "UNRELATED_ROW_UPDATED" }, { ...original, content: "TEXT_EDIT_WITH_SAME_RESOURCE", attachments: [spare, sheet] }] });
+  await f.expectRows([shadow.id, other.id, original.id]);
+  assert.equal(await viewer.count(), 1, "entry reorder cannot change a valid resource owner");
+  assert.equal(await f.editor.innerText(), "SHEET_DRAFT_MUST_SURVIVE");
+
+  await f.update({ ...original, attachments: [spare] });
+  await viewer.waitFor({ state: "detached" });
+  assert.equal(await f.row(shadow.id).getByRole("button", { name: "Open " + sheet.fileName, exact: true }).count(), 1,
+    "the same path remains present in a different row but cannot keep the old source authorized");
+  await openSheet(shadow.id);
+  const shadowRead = await f.resourceRequest("readAttachmentBytes", sheet.path, retiredRead.id);
+  await f.boundedRead(retiredRead);
+  await f.resolveResource(retiredDownload, true);
+  await f.frames();
+  assert.equal(await viewer.getByText("Loading spreadsheet…", { exact: true }).count(), 1);
+  await f.boundedRead(shadowRead);
+  await viewer.getByText("Spreadsheet too large to preview", { exact: true }).waitFor();
+  // No parser substitute is provided; this positive control qualifies the
+  // actual bounded-read window and download lifetime, not CSV/XLSX parsing.
+  await viewer.getByRole("link", { name: "Download file", exact: true }).click();
+  const shadowDownload = await f.resourceRequest("downloadAttachment", sheet.path, retiredDownload.id);
+  await f.resolveResource(shadowDownload, true);
+
+  const changedSheet = { ...sheet, byteSize: sheet.byteSize + 1 };
+  const changedShadow = { ...shadow, attachments: [changedSheet] };
+  await f.update(changedShadow);
+  await viewer.waitFor({ state: "detached" });
+  await openSheet(shadow.id);
+  const changedRead = await f.resourceRequest("readAttachmentBytes", sheet.path, shadowRead.id);
+  await f.boundedRead(changedRead);
+  await viewer.getByText("Spreadsheet too large to preview", { exact: true }).waitFor();
+  await viewer.getByRole("button", { name: "Close preview", exact: true }).click();
+  await viewer.waitFor({ state: "detached" });
+  await openSheet(shadow.id);
+  const accountARead = await f.resourceRequest("readAttachmentBytes", sheet.path, changedRead.id);
+  await f.call("switchAccount", "fixture-b");
+  await viewer.waitFor({ state: "detached" });
+  const accountBTail = await f.request(TAIL, { conversationId: A, beforeSeq: null, account: "fixture-b" }, f.initial.id);
+  const accountBEntry = { ...changedShadow, content: "ACCOUNT_B_SAME_ID_AND_RESOURCE" };
+  await f.resolveRequest(accountBTail, historyPage([accountBEntry]));
+  await f.expectRows([shadow.id]);
+  await f.frames();
+  assert.equal(await f.editor.innerText(), "");
+  await f.editor.fill("SHEET_ACCOUNT_B_DRAFT");
+  await openSheet(shadow.id);
+  const accountBRead = await f.resourceRequest("readAttachmentBytes", sheet.path, accountARead.id);
+  assert.equal(accountARead.account, "fixture-a");
+  assert.equal(accountBRead.account, "fixture-b");
+  await f.boundedRead(accountARead);
+  await f.frames();
+  assert.equal(await viewer.getByText("Loading spreadsheet…", { exact: true }).count(), 1);
+  await f.boundedRead(accountBRead);
+  await viewer.getByText("Spreadsheet too large to preview", { exact: true }).waitFor();
+  assert.equal(await f.editor.innerText(), "SHEET_ACCOUNT_B_DRAFT");
+  await f.update({ ...accountBEntry, attachments: [] });
+  await viewer.waitFor({ state: "detached" });
+  assert.ok((await f.resourceRequests()).every((request) => request.settled));
+  await f.noSend();
+
+  // Separately exercise the existing PUBLIC provider contract. This proves
+  // its close/dispose callback fence; it does not pretend to capture private
+  // callbacks from the mounted root or invoke detached React event handlers.
+  const providerUrl = "/@fs" + resolve(root, "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts").replaceAll("\\", "/");
+  const providerEvidence = await f.page.evaluate(async ({ providerUrl, cap }) => {
+    const { createSpreadsheetViewerProvider } = await import(providerUrl);
+    const calls = [];
+    const pendingReads = [];
+    const pendingDownloads = [];
+    const provider = createSpreadsheetViewerProvider({
+      readAttachmentBytes: (source, maxBytes) => {
+        calls.push({ method: "read", source, maxBytes });
+        return new Promise((resolveRead) => pendingReads.push(resolveRead));
+      },
+      downloadAttachment: (source, suggestedName) => {
+        calls.push({ method: "download", source, suggestedName });
+        return new Promise((resolveDownload) => pendingDownloads.push(resolveDownload));
+      },
+    });
+    const attachment = { path: "provider-source.csv", name: "Provider.csv", mimeType: "text/csv", size: 16 };
+    const retired = provider.mount(attachment);
+    if (retired == null) throw new Error("public spreadsheet provider did not mount");
+    const oldRead = retired.readAttachmentBytes(attachment.path, cap);
+    const oldDownload = retired.onDownload();
+    retired.close();
+    const countAtClose = calls.length;
+    const closedRead = await retired.readAttachmentBytes(attachment.path, cap);
+    const closedDownload = await retired.onDownload();
+    const noDispatchAfterClose = calls.length === countAtClose;
+    const current = provider.mount({ ...attachment });
+    if (current == null) throw new Error("same-path provider reopening failed");
+    retired.close();
+    const oldCloseCannotRetireCurrent = current.isOpen();
+    pendingReads.shift()({ kind: "too-large", size: cap + 1 });
+    pendingDownloads.shift()(true);
+    const oldResults = { read: await oldRead, download: await oldDownload };
+    const currentReadPromise = current.readAttachmentBytes(attachment.path, cap);
+    pendingReads.shift()({ kind: "too-large", size: cap + 1 });
+    const currentRead = await currentReadPromise;
+    const currentDownloadPromise = current.onDownload();
+    pendingDownloads.shift()(true);
+    const currentDownload = await currentDownloadPromise;
+    provider.dispose();
+    const countAtDispose = calls.length;
+    const disposedRead = await current.readAttachmentBytes(attachment.path, cap);
+    const disposedDownload = await current.onDownload();
+    return { calls, closedRead, closedDownload, noDispatchAfterClose, oldCloseCannotRetireCurrent,
+      oldResults, currentRead, currentDownload, disposedRead, disposedDownload,
+      noDispatchAfterDispose: calls.length === countAtDispose, currentClosed: !current.isOpen() };
+  }, { providerUrl, cap: RESOURCE_CAP });
+  assert.deepEqual(providerEvidence, {
+    calls: [
+      { method: "read", source: "provider-source.csv", maxBytes: RESOURCE_CAP },
+      { method: "download", source: "provider-source.csv", suggestedName: "Provider.csv" },
+      { method: "read", source: "provider-source.csv", maxBytes: RESOURCE_CAP },
+      { method: "download", source: "provider-source.csv", suggestedName: "Provider.csv" },
+    ],
+    closedRead: null, closedDownload: false, noDispatchAfterClose: true,
+    oldCloseCannotRetireCurrent: true, oldResults: { read: null, download: false },
+    currentRead: { kind: "too-large", size: RESOURCE_CAP + 1 }, currentDownload: true,
+    disposedRead: null, disposedDownload: false, noDispatchAfterDispose: true, currentClosed: true,
+  });
 });

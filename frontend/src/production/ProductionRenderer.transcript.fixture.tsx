@@ -101,6 +101,55 @@ const broker = createCoordinatorPortBroker<TransferredCoordinatorPort>({
   },
 });
 const coordinatorPort: CoordinatorPortBridge = broker.bridge;
+
+// NMR-UI-ENTRY-REFRESH-01: declare only the external resource calls a case uses.
+// Every request is delivered even after its UI owner retires; production owns
+// cancellation and generation fences, never this fixture.
+type ResourceMethod = "readAttachmentBytes" | "downloadAttachment" | "resolveAttachmentMedia";
+type ResourceRequest = {
+  id: number; method: ResourceMethod; args: Record<string, unknown>; account: string; settled: boolean;
+};
+type ResourcePlan = { method: ResourceMethod; args: Record<string, unknown>; fixed: boolean; value?: unknown };
+const resourceRequests: ResourceRequest[] = [];
+const resourcePlans: ResourcePlan[] = [];
+const pendingResources = new Map<number, { request: ResourceRequest; resolve(value: unknown): void; reject(reason: string): void }>();
+let resourceSequence = 0;
+const resourceKey = (args: Record<string, unknown>) => JSON.stringify(Object.keys(args).sort().map((key) => [key, args[key]]));
+function resourceValue(method: ResourceMethod, value: unknown): unknown {
+  if (method === "readAttachmentBytes" && value != null && typeof value === "object"
+    && "kind" in value && value.kind === "bytes" && "bytes" in value && Array.isArray(value.bytes)) {
+    return { kind: "bytes", bytes: new Uint8Array(value.bytes) };
+  }
+  return value;
+}
+function declareResource(method: ResourceMethod, args: Record<string, unknown>, fixed = false, value?: unknown) {
+  if (!["readAttachmentBytes", "downloadAttachment", "resolveAttachmentMedia"].includes(method)
+    || typeof args.source !== "string" || args.source.length === 0) throw new Error("Invalid declared resource boundary");
+  if (resourcePlans.some((plan) => plan.method === method && resourceKey(plan.args) === resourceKey(args))) {
+    throw new Error("Resource boundary already declared");
+  }
+  resourcePlans.push({ method, args: { ...args }, fixed, value });
+}
+function requestResource(method: ResourceMethod, args: Record<string, unknown>): Promise<unknown> {
+  const plan = resourcePlans.find((candidate) => candidate.method === method && resourceKey(candidate.args) === resourceKey(args));
+  if (plan == null) return Promise.reject(forbidden(method + ":" + JSON.stringify(args)));
+  const request: ResourceRequest = {
+    id: ++resourceSequence, method, args: { ...args },
+    account: account.kind === "logged-in" ? account.authId! : "signed-out", settled: plan.fixed,
+  };
+  resourceRequests.push(request);
+  if (plan.fixed) return Promise.resolve(resourceValue(method, plan.value));
+  return new Promise((resolve, reject) => pendingResources.set(request.id, { request, resolve, reject }));
+}
+function settleResource(id: number, value: unknown, failed: boolean) {
+  const pending = pendingResources.get(id);
+  if (pending == null) throw new Error("Unknown pending resource request " + id);
+  pendingResources.delete(id);
+  pending.request.settled = true;
+  if (failed) pending.reject(String(value));
+  else pending.resolve(resourceValue(pending.request.method, value));
+}
+
 const storage = new Map<string, string>();
 const theme = { preference: "light", resolved: "light" } as const;
 const update = {
@@ -113,8 +162,9 @@ const update = {
 // reported by every test; there is deliberately no permissive Proxy fallback.
 const bridge = {
   platform: "linux", isDev: false,
-  resolveAttachmentMedia: async () => null, readAttachmentText: async () => null,
-  readAttachmentBytes: async () => null, downloadAttachment: async () => false,
+  resolveAttachmentMedia: async (source: string) => requestResource("resolveAttachmentMedia", { source }), readAttachmentText: async () => null,
+  readAttachmentBytes: async (source: string, maxBytes: number) => requestResource("readAttachmentBytes", { source, maxBytes }),
+  downloadAttachment: async (source: string, suggestedName?: string) => requestResource("downloadAttachment", { source, suggestedName }),
   getLinkMetadata: async () => null,
   openExternal: () => forbidden("openExternal"), openCloudAgent: () => forbidden("openCloudAgent"),
   stageAttachmentBytes: () => forbidden("stageAttachmentBytes"), commitStagedAttachments: () => forbidden("commitStagedAttachments"), discardStagedAttachment: done,
@@ -209,6 +259,15 @@ Object.assign(window, {
     resolve: (id: number, value: unknown) => settle(id, value, false),
     reject: (id: number, reason: string) => settle(id, reason, true),
     event: emit,
+    // Opt-in controls keep the original eight cases' RPC allowlist unchanged.
+    holdActionRpc: (method: string) => {
+      if (!["reactHumanMessage", "searchHumanRecipients"].includes(method)) throw new Error("Unsupported action RPC control");
+      controlled.add(method);
+    },
+    declareResource,
+    resources: () => resourceRequests.map((request) => ({ ...request, args: { ...request.args } })),
+    resolveResource: (id: number, value: unknown) => settleResource(id, value, false),
+    rejectResource: (id: number, reason: string) => settleResource(id, reason, true),
     switchAccount: (id: string) => {
       account = { kind: "logged-in", authId: id, email: `${id}@example.invalid`, displayName: id };
       auth.emit(account);

@@ -1,0 +1,253 @@
+{
+  "schema": "FBCP_NMR_BATCH_RECEIPT_V1",
+  "taskId": "20bf9475-a885-4314-b509-bea53ef8849f",
+  "round": 8,
+  "batch": "NMR-UI-ENTRY-REFRESH-01",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+  "preparedAt": "2026-11-03 02:19:11 UTC",
+  "fixedUpstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "contract": {
+    "frozenAt": "04ba336789a46d926bf8b49c90f40b4dfedece84",
+    "frozenBlob": "ea996e71ccb16b2e422838cf69ccfe32252b6c46",
+    "currentBlob": "90dd4159de943d67c56ec608093b439145eb7108",
+    "path": "docs/specs/fbcp-native-message-reconciliation.md",
+    "execution": "New UI changes require their containing commit's Actions; no test pass is asserted here."
+  },
+  "integration": {
+    "preparedParent": "2ca32cbf0719df9f7daa7fa7b0ee0285cb929532",
+    "mainObserved": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "force": false,
+    "expectedShaRequired": true,
+    "concurrentCommitsPreserved": [
+      "bbcee06bc82333e10b8fbea331fbd0f31453b32c",
+      "6e9ffe388d5483310ead7c185e5a8760c7fd614c",
+      "43670ef219508bffc6eb0870f267a43782e7af14"
+    ],
+    "concurrentScope": "Canonical participant-pair owner admission, original Human81 matrix extra assertion, Spec/RTM/ledger additions. No local worktree inspection is possible in the offline environment; no clean-worktree claim."
+  },
+  "files": [
+    {
+      "path": "frontend/src/production/ProductionRenderer.tsx",
+      "baseBlob": "8e3723e7208bbad9fc80c6b6bb4ad849dc54d722",
+      "finalBlob": "71a4b8d2582f82bfeb0e37f0c5a70b45b830fdf6",
+      "fullApiReadback": true
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/model.ts",
+      "baseBlob": "c546fd40fe60e0fb0aa1eb402bbd24922a298c3b",
+      "finalBlob": "6aa32d3a15af9a82d8fbe2eadd08abe103673143",
+      "fullApiReadback": true
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+      "baseBlob": "d3af9728a0ae50200be2809316d18ba27f66e628",
+      "finalBlob": "e77ddd449d858131cad0b772a4a602cbb6833741",
+      "fullApiReadback": true
+    },
+    {
+      "path": "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx",
+      "baseBlob": "740e2e4362faade0e27ca790bb801b7081c40308",
+      "finalBlob": "900f25d7c773be75b8ccc107629facc6d21087e7",
+      "fullApiReadback": true
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+      "baseBlob": "b861f9d079f236acbba78cd3eaf60e58a5b3d933",
+      "finalBlob": "9ebdd4325f3011ada9c821ee527d65a17a186bce",
+      "fullApiReadback": true
+    },
+    {
+      "path": "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
+      "baseBlob": "98f981a808f83bb2cb2f03c5131bb2db99e401ee",
+      "finalBlob": "ee1540e3d15db460a0c1dfff3fff1c279d3d3a3c",
+      "fullApiReadback": true
+    }
+  ],
+  "behavior": [
+    "Accepted current Human transcript changes invalidate existing search synchronously. Account generation, slot, conversation, query and update generation guard both the only search RPC dispatch and its success/error/navigation continuation.",
+    "MessageActionAnchor keeps hooks and child wrapper stable across eligible/empty/restored messages. Current entry/permission, mount and eligibility epoch guard its callbacks; ordinary/reaction menus retire while legitimate read-only Copy remains.",
+    "Existing attachment gallery selects by shared observable tuple path,name,mimeType,size,sourceKind,id and per-open token. Reorder/unrelated edits preserve the actual resource; removed/replaced resources and scope changes retire pending operations.",
+    "Actual PDF download late rejection is neutralized only after its original source/token retires. Current errors still propagate; no already-dispatched download or reaction RPC is undone.",
+    "Both actual file chips expose shared tuple identity. Existing Root resolves nearest original entry plus tuple, and existing spreadsheet provider retains its mount generation, close/reset and read/download lifecycle. Same path in another row cannot authorize an old mount.",
+    "ConversationTranscript account-generation/slot/conversation key retires cached same-ID/same-resource views across scopes; composer and cache owners remain unchanged."
+  ],
+  "authoredTests": {
+    "path": "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
+    "originalBodiesPreserved": 8,
+    "newCases": [
+      "human_entry_refresh_requeries_search_and_discards_older_results",
+      "human_entry_refresh_retires_action_menus_without_hook_order_errors",
+      "human_entry_refresh_retires_removed_pdf_and_late_resource_reads",
+      "human_entry_refresh_retires_spreadsheet_mount_when_source_changes"
+    ],
+    "topLevelTotal": 12,
+    "requiredUI": 209,
+    "requiredBreakdown": {
+      "nodeGroups": [
+        43,
+        14,
+        7,
+        5,
+        19,
+        47,
+        9,
+        17,
+        12
+      ],
+      "projection": 13,
+      "author": 23
+    },
+    "executedAtContainingCommit": false,
+    "failuresSkipsRetriesAllowed": 0,
+    "controls": "Real ProductionRenderer/Coordinator/feed/viewers; only declared external request/byte boundaries held. No copied invalidation logic, parser substitute, private React access or detached-node callback fiction. Old timeouts/diagnostic and unsupported-operation checks retained."
+  },
+  "reviews": {
+    "renderer": {
+      "source": "1b37f1945a42995448d9a148a1898911c15ec948",
+      "diff": "53ae34bd7c5d309058a28978d3db56f2f9952dbd",
+      "independent": "85e0aa1682c68d32b4c9ea483682f05fe6ffe1e8"
+    },
+    "galleryAndMenu": {
+      "source": "5a843341109ed92cc3d960dc55be17c8aa92eb86",
+      "diff": "4aa3f1e719dbe9024dfb9842a876f0ca56503613",
+      "independent": "4506855fd741bc836bc7fd23541a68892b6c6f05"
+    },
+    "behavior": {
+      "source": "0c4ee9da06d32cdf039f0a8f61805773f8546e15",
+      "diff": "c02305484db64e988cbb4ce2afef205d8cbd558f",
+      "independent": "6e9da8b5d910e4f942b797a17ec06a4da960df16"
+    },
+    "conclusion": "All listed sources fetched in full. Scoped static review found and corrected retired-download late failure and pre-dispatch old-query defects. Source review is not executed validation or independent ACCEPT."
+  },
+  "ledger": {
+    "path": "projects/telegram-desktop-rust/parity-ledger.json",
+    "input": "76765dc8498dc3ffd92931169ea7ae754ba4ffe9",
+    "output": "4fab6af26774440532630e79e125dedad5b68410",
+    "outputSha256": "0b2e3ae7d140bdb4b99cdf7f4bfae29bb87e9fff79142b202592e4ce599c1018",
+    "producerCommit": "2ca32cbf0719df9f7daa7fa7b0ee0285cb929532",
+    "run": 41565220523,
+    "job": 125684997475,
+    "artifact": 13199070334,
+    "artifactSha256": "9a2a8c928b45b33e834676daf5a02de675279e0225b3494c664857ed97c13831",
+    "fullInputOutputReadback": true,
+    "onlyAppendedRow": "FBCP-NMR-001",
+    "targetPaths": 68,
+    "targetSymbols": 92,
+    "preserved": "All existing array/notes prefixes including concurrent pair-identity additions; all other183 rows, global/source-review data, historical scalar execution fields and acceptance.",
+    "qualification": "Object preparation only. Containing-H schema/source checks remain required. Only this batch's two completed helper paths are removed during integration."
+  },
+  "prerequisiteExecution": {
+    "commit": "6d42fa7d64d6059ae010891a20d41dfacc51f246",
+    "nativeRun": 41563429938,
+    "reconciliation": {
+      "job": 125679139806,
+      "passed": 125,
+      "human": 81,
+      "failed": 0,
+      "ignored": 0
+    },
+    "ui": {
+      "job": 125679140092,
+      "passed": 205,
+      "node": 169,
+      "projection": 13,
+      "author": 23,
+      "retry": 0
+    },
+    "owner": {
+      "job": 125679140064,
+      "passed": 40
+    },
+    "electron": {
+      "job": 125679140130,
+      "passed": 100,
+      "build": "success"
+    },
+    "peer": {
+      "linux": 23,
+      "windows": 23
+    },
+    "directFFI": {
+      "passed": 15,
+      "ignoredLiveDC": 1
+    },
+    "windowsPublisher": 11,
+    "mac": {
+      "run": 41563429896,
+      "job": 125679138961,
+      "plugins": 2,
+      "human": 2,
+      "failures": 0,
+      "skips": 0,
+      "retries": 0,
+      "humanProcessLifetimes": 5,
+      "artifact": 13197364144,
+      "artifactSha256": "110d237cd4ae44a997205060540dbd5bad9ac35ca4595dab0f84da6b460ff2c6"
+    },
+    "source": {
+      "run": 41563429876,
+      "node": 161,
+      "python": 37,
+      "schemaErrors": 0,
+      "candidate": "unaccepted-candidate-consistent"
+    },
+    "shipping": {
+      "job": 125679140188,
+      "status": "queued",
+      "passed": false
+    },
+    "evidence": "Full exact-H job logs/API bindings read. Nested child summaries and shell-echo assertions are not additional executed tests. Full logs remain in their Actions artifacts; see round8-reaction-recovery-execution-20261103.json for earlier complete pointers."
+  },
+  "retainedFailure": {
+    "commit": "1de845141d5e30ae9ff4965caf2915f68df2f650",
+    "run": 41559676882,
+    "job": 125666991740,
+    "executed": 205,
+    "passed": 204,
+    "failed": 1,
+    "retry": 0,
+    "artifact": 13197690404,
+    "artifactSha256": "e06334d026a6086c574fd3f884e465d60d166e4d88de4754d7ec7d24beb0f575",
+    "boundary": "Author context teardown timed out after business/afterEach assertions. Subsequent passes do not erase this result, establish sole cause or certify soak stability."
+  },
+  "source": {
+    "inventoryEntries": 16381,
+    "rootEntries": 6895,
+    "responsibilityRows": 184,
+    "reviews": 16,
+    "completeReviews": 2,
+    "pendingReviews": 14,
+    "unknown": null,
+    "unread": null,
+    "fixedUpstreamScopedAudit": "d947aceb176f6965505c67737b86781ea45af0d3",
+    "currentOwnerScopedAudit": "a16d1e12d95ef8c54abd036916ccf32f10bc7719",
+    "reviewCredit": "18 upstream anchors:6 fully read and12 scoped/declaration; no additional complete/source-acceptance credit or unread-count claim."
+  },
+  "backend": {
+    "observedAt": "2026-11-03 02:19:11 UTC",
+    "main": "687718ce9e0083aa124d29005bcce4051d357919",
+    "pr": 137,
+    "prHead": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "mainFriendsBlob": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+    "prFriendsBlob": "fca0ed323b34fe767cad262af57cedcf0e71a79f",
+    "contract": "Inspected main rejects explicit afterId0. DraftPR source accepts >=0 with ascending/echo contract and mutation metadata. No active Worker/D1/readiness proof.",
+    "authority": "Read-only; no service probe, account use, merge or deployment."
+  },
+  "limitations": [
+    "This is current-entry update consumer completion, not canonical remote revision/tombstone admission, arbitrary-old discovery, outbound edit/delete or definitive reaction-intent cancellation.",
+    "Pending nonce send reconciliation still needs immutable original acknowledgement evidence before accepting remotely edited/deleted first-discovery payloads. Current canonical message/reaction/read-receipt version semantics and reply/forward/handoff consequences remain open.",
+    "PDF/spreadsheet too-large positives qualify actual window/read/download lifetime, not parsing or supported document rendering. Pure virtual chip additions without current Root effect dependencies remain a pre-existing binding limitation.",
+    "Identical observable attachment tuple with changed underlying bytes is unobservable here. No resource or user data is deleted.",
+    "Full fixed-U dependencies/generated inputs/resources/tools/legal, historical data mapping, active backend, signed supported packages, complete Bot, visual/accessibility/timing/security/performance/soak/upgrade/rollback and independent ACCEPT remain incomplete."
+  ],
+  "acceptance": {
+    "source": false,
+    "product": false,
+    "independent": false,
+    "release": false
+  }
+}

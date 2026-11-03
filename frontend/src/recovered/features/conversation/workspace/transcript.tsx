@@ -159,29 +159,50 @@ function isMessageContextTargetExcluded(target: EventTarget | null): boolean {
 
 function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, onOpenThread, onCopy, onForward, onReply, onStartThread, renderReactionActions, children }: { entry: TranscriptMessage; isReadOnly: boolean; threadRootId: string | null; threadSummary?: TranscriptThreadSummary | null; onOpenThread?: (targetId: string) => void; onCopy?: (entry: TranscriptMessage) => void | Promise<void>; onForward?: (entry: TranscriptMessage) => void; onReply?: (entry: TranscriptMessage) => void; onStartThread?: (entry: TranscriptMessage) => void; renderReactionActions?: (onOpenChange: (open: boolean) => void) => ReactNode; children: ReactNode }) {
   const hasActions = isOrdinaryMessageActionable(entry, isReadOnly, onCopy, onForward);
-  if (!hasActions) return <>{children}</>;
+  const hasReactionActions = hasActions && !isReadOnly && renderReactionActions != null;
   const isThreadActionVisible = threadRootId == null;
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reactionMenuOpen, setReactionMenuOpen] = useState(false);
-  const reactionActions = renderReactionActions?.((open) => {
-    setReactionMenuOpen(open);
-    if (open) setMenuOpen(false);
+  const mountedRef = useRef(false);
+  const actionEpochRef = useRef(0);
+  const committedActionsRef = useRef({ entry, isReadOnly, threadRootId, hasActions, hasReactionActions, onOpenThread, onCopy, onForward, onReply, onStartThread });
+  const actionEpoch = actionEpochRef.current;
+
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+  useLayoutEffect(() => {
+    if (committedActionsRef.current.hasActions && !hasActions) actionEpochRef.current += 1;
+    committedActionsRef.current = { entry, isReadOnly, threadRootId, hasActions, hasReactionActions, onOpenThread, onCopy, onForward, onReply, onStartThread };
+    if (!hasActions) setMenuOpen(false);
+    if (!hasReactionActions) setReactionMenuOpen(false);
   });
+
+  const currentActions = () => mountedRef.current && actionEpochRef.current === actionEpoch && committedActionsRef.current.hasActions
+    ? committedActionsRef.current
+    : null;
   const closeMenu = (restoreFocus: boolean) => {
+    if (currentActions() == null) return;
     setMenuOpen(false);
     if (restoreFocus) triggerRef.current?.focus();
   };
+  const reactionActions = !hasReactionActions ? null : renderReactionActions?.((open) => {
+    if (currentActions()?.hasReactionActions !== true) return;
+    setReactionMenuOpen(open);
+    if (open) setMenuOpen(false);
+  });
 
   useEffect(() => {
-    if (!menuOpen) return;
+    if (!hasActions || !menuOpen) return;
     const handlePointerDown = (event: PointerEvent) => {
-      if (!(event.target instanceof Node) || anchorRef.current?.contains(event.target)) return;
+      if (currentActions() == null || !(event.target instanceof Node) || anchorRef.current?.contains(event.target)) return;
       closeMenu(false);
     };
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (currentActions() == null || event.key !== "Escape") return;
       event.preventDefault();
       closeMenu(true);
     };
@@ -191,43 +212,66 @@ function MessageActionAnchor({ entry, isReadOnly, threadRootId, threadSummary, o
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [menuOpen]);
+  }, [hasActions, menuOpen]);
 
   const copy = () => {
+    const current = currentActions();
+    if (current?.onCopy == null) return;
     closeMenu(true);
-    if (entry.sendMessageText?.streaming === true && entry.sendMessageText.message.content.length === 0) return;
-    if (onCopy != null) {
-      void Promise.resolve(onCopy(entry)).catch(() => undefined);
-    }
+    if (current.entry.sendMessageText?.streaming === true && current.entry.sendMessageText.message.content.length === 0) return;
+    void Promise.resolve(current.onCopy(current.entry)).catch(() => undefined);
+  };
+  const reply = (close: boolean) => {
+    const current = currentActions();
+    if (current == null || current.isReadOnly || current.threadRootId != null || current.onReply == null) return;
+    current.onReply(current.entry);
+    if (close) closeMenu(true);
+  };
+  const startThread = () => {
+    const current = currentActions();
+    if (current == null || current.isReadOnly || current.threadRootId != null || current.onStartThread == null) return;
+    current.onStartThread(current.entry);
+    closeMenu(true);
+  };
+  const forward = () => {
+    const current = currentActions();
+    if (current == null || current.isReadOnly || current.onForward == null) return;
+    current.onForward(current.entry);
+    closeMenu(false);
+  };
+  const openThread = (targetId: string) => {
+    const current = currentActions();
+    if (current == null || current.isReadOnly || current.threadRootId != null || current.onOpenThread == null) return;
+    current.onOpenThread(targetId);
   };
 
   return (
     <div
       ref={anchorRef}
-      className={menuOpen || reactionMenuOpen ? "sand-message-action-anchor sand-message-action-anchor--menu-open" : "sand-message-action-anchor"}
+      className={(hasActions && menuOpen) || (hasReactionActions && reactionMenuOpen) ? "sand-message-action-anchor sand-message-action-anchor--menu-open" : "sand-message-action-anchor"}
       onContextMenu={(event) => {
-        if (isMessageContextTargetExcluded(event.target)) return;
+        if (currentActions() == null || isMessageContextTargetExcluded(event.target)) return;
         event.preventDefault();
         setReactionMenuOpen(false);
         setMenuOpen(true);
       }}
     >
       {children}
-      {threadSummary != null && threadRootId == null && !isReadOnly && onOpenThread != null ? <ThreadAffordance onOpen={onOpenThread} role={entry.role} summary={threadSummary} /> : null}
-      <div aria-label={messageActionLabel(entry)} className="sand-message-hover-actions" role="toolbar">
+      {hasActions && threadSummary != null && threadRootId == null && !isReadOnly && onOpenThread != null ? <ThreadAffordance onOpen={openThread} role={entry.role} summary={threadSummary} /> : null}
+      {!hasActions ? null : <div aria-label={messageActionLabel(entry)} className="sand-message-hover-actions" role="toolbar">
         {reactionActions}
-        {!isReadOnly && isThreadActionVisible && onReply != null ? <button aria-label={replyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => onReply(entry)} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} /></button> : null}
-        <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { setReactionMenuOpen(false); setMenuOpen((open) => !open); }} ref={triggerRef} type="button">
+        {!isReadOnly && isThreadActionVisible && onReply != null ? <button aria-label={replyActionLabel(entry)} className="sand-message-hover-actions__button" onClick={() => reply(false)} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} /></button> : null}
+        <button aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More message actions" className="sand-message-hover-actions__button" onClick={() => { if (currentActions() == null) return; setReactionMenuOpen(false); setMenuOpen((open) => !open); }} ref={triggerRef} type="button">
           <span aria-hidden="true" data-icon-name="dots-3-horizontal" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("dots-3-horizontal"))}</span>
         </button>
         {menuOpen ? <div aria-label="More message actions" role="menu" style={{ position: "absolute", right: 0, bottom: "34px", display: "grid", minWidth: "150px", padding: "4px", background: "#20231f", border: "1px solid #343832", borderRadius: "8px", boxShadow: "0 12px 28px rgba(0, 0, 0, .35)" }}>
-          {!isReadOnly && isThreadActionVisible && onReply != null ? <button className="sand-message-hover-actions__button" onClick={() => { onReply(entry); closeMenu(true); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} />Reply</button> : null}
-          {!isReadOnly && isThreadActionVisible && onStartThread != null ? <button className="sand-message-hover-actions__button" onClick={() => { onStartThread(entry); closeMenu(true); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</button> : null}
+          {!isReadOnly && isThreadActionVisible && onReply != null ? <button className="sand-message-hover-actions__button" onClick={() => reply(true)} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name={replyActionIconName(entry)} />Reply</button> : null}
+          {!isReadOnly && isThreadActionVisible && onStartThread != null ? <button className="sand-message-hover-actions__button" onClick={startThread} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="chat-bubbles" />Start a thread</button> : null}
           {/* @evidence recovered/frontend/app/assets/index-UbX-y3il.js#byteOffset=6395536 (immutable Copy item is conditional on injected onCopy; UTF-8; SHA256 80464803b50f478598080bdc1b91da3996c6b74168e2351ea26f620f2ec62ba5) */}
-          {!isReadOnly && onForward != null ? <button className="sand-message-hover-actions__button" onClick={() => { onForward(entry); closeMenu(false); }} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="arrow-u-up-right" />Forward</button> : null}
+          {!isReadOnly && onForward != null ? <button className="sand-message-hover-actions__button" onClick={forward} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="arrow-u-up-right" />Forward</button> : null}
           {onCopy == null ? null : <button className="sand-message-hover-actions__button" onClick={copy} role="menuitem" style={{ width: "100%", border: 0, borderRadius: "5px", textAlign: "left" }} type="button"><span aria-hidden="true" data-icon-name="copy" style={{ fontFamily: "cursor-icons" }}>{String.fromCodePoint(messageActionIconCodePoint("copy"))}</span>Copy</button>}
         </div> : null}
-      </div>
+      </div>}
     </div>
   );
 }

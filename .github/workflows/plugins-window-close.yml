@@ -20,6 +20,8 @@ on:
       - frontend/src/recovered/features/conversation/workspace/draft-state.ts
       - frontend/src/recovered/features/conversation/workspace/model.ts
       - frontend/src/recovered/features/conversation/workspace/transcript.tsx
+      - frontend/src/recovered/features/conversation/workspace/media-viewer.tsx
+      - frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts
       - frontend/src/recovered/features/conversation/workspace/submission.ts
       - source/shared/client-persistence-store.ts
       - frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts

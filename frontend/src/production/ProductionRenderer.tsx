@@ -3,7 +3,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopAutoReviewInstruct
 import computerEntrypoint from "../recovered/features/computer/overlay/entrypoint";
 import { ConversationComposer } from "../recovered/features/conversation/workspace/composer";
 import { commitComposerAttachments, stageComposerFiles } from "../recovered/features/conversation/workspace/desktop";
-import type { ComposerDraft, ConversationTranscriptEntry, DraftAttachment, TranscriptMessage } from "../recovered/features/conversation/workspace/model";
+import { transcriptAttachmentIdentity, type ComposerDraft, type ConversationTranscriptEntry, type DraftAttachment, type TranscriptMessage } from "../recovered/features/conversation/workspace/model";
 import { createComposerDraftPersistence, createComposerDraftStateStore } from "../recovered/features/conversation/workspace/draft-state";
 import { createComposerSubmissionQueue, composerSubmissionBusyState, type ComposerSubmission, type ComposerSubmissionQueue, type ComposerSubmissionAdmission } from "../recovered/features/conversation/workspace/submission";
 import { createSendJournalApprovalLifecycle } from "../recovered/features/conversation/workspace/send-journal-approval-lifecycle";
@@ -313,6 +313,12 @@ type TranscriptOperationScope = {
   readonly agentId: string;
   readonly conversationGeneration: number;
   readonly humanAuthorId: string | null | undefined;
+};
+
+type TranscriptSpreadsheetSource = TranscriptOperationScope & {
+  readonly entryId: string;
+  readonly attachmentIdentity: string;
+  mount: SpreadsheetViewerMount;
 };
 
 type TranscriptDraftOwnership = {
@@ -1006,6 +1012,9 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     && accountIdentityRef.current?.startsWith("logged-in:") === true, []);
   useForwardAccountScopeUnmountFence(accountScopeGenerationRef);
   const spreadsheetTriggerRef = useRef<HTMLElement | null>(null);
+  const spreadsheetViewerSourceRef = useRef<TranscriptSpreadsheetSource | null>(null);
+  // This points at the existing visible projection; it does not own another cache.
+  const spreadsheetEntriesRef = useRef<readonly ConversationTranscriptEntry[]>(EMPTY_ENTRIES);
   const avatarEditorTriggerRef = useRef<HTMLButtonElement | null>(null);
   const conversationOutlineReturnFocusRef = useRef<HTMLElement | null>(null);
   const asyncTasksReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -1029,6 +1038,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const transportScopeGenerationRef = useRef(0);
   const findInChatOpenRef = useRef(findInChatOpen);
   const humanFindGenerationRef = useRef(0);
+  const humanFindUpdateGenerationRef = useRef(0);
+  const [humanFindUpdateGeneration, setHumanFindUpdateGeneration] = useState(0);
   const agentsRef = useRef(agents);
   const humanConversationsRef = useRef(humanConversations);
   const pinnedAgentIdsRef = useRef(pinnedAgentIds);
@@ -1074,6 +1085,24 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         ? current.authId || null : undefined,
     };
   }, []);
+
+  const isSpreadsheetSourceCurrent = useCallback((source: TranscriptSpreadsheetSource) => {
+    if (spreadsheetViewerSourceRef.current !== source || !isTranscriptScopeCurrent(source)
+      || selectionStore.get().currentAgentId !== source.agentId) return false;
+    const entry = spreadsheetEntriesRef.current.find((candidate) => candidate.id === source.entryId);
+    return entry?.kind === "message" && entry.attachments?.some((attachment) =>
+      transcriptAttachmentIdentity(attachment) === source.attachmentIdentity) === true;
+  }, [isTranscriptScopeCurrent, selectionStore]);
+
+  const invalidateActiveHumanSearch = useCallback((ownerId: string) => {
+    if (selectionStore.get().currentAgentId !== ownerId
+      || !humanConversationsRef.current.some((conversation) => conversation.id === ownerId)) return;
+    // An event can arrive before React commits the next effect. Revoke old
+    // responses synchronously, then let that effect refresh the existing query.
+    humanFindGenerationRef.current += 1;
+    humanFindUpdateGenerationRef.current += 1;
+    setHumanFindUpdateGeneration(humanFindUpdateGenerationRef.current);
+  }, [selectionStore]);
 
   const settlePersistedHumanDraft = useCallback((operation: TranscriptOperationScope, nonce: string) => {
     if (typeof operation.humanAuthorId !== "string" || !isTranscriptScopeCurrent(operation)) return;
@@ -2253,6 +2282,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       : liveEntries,
     [activeAgentId, liveEntries, transcriptAccountSlot, transcriptPaginationSnapshot.accountSlot, transcriptPaginationSnapshot.agentId, transcriptPaginationSnapshot.entries]
   );
+  spreadsheetEntriesRef.current = entries;
   findNavigateHandlerRef.current = (match) => {
     if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
     const conversationId = activeAgentIdRef.current;
@@ -2262,20 +2292,29 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       return;
     }
     const accountSlot = transcriptAccountSlot;
+    const accountGeneration = accountScopeGenerationRef.current;
+    const searchGeneration = humanFindGenerationRef.current;
+    const query = findInChatController.getSnapshot().query.trim();
+    const isCurrent = () => {
+      const current = findInChatController.getSnapshot();
+      return accountSlot != null && accountScopeGenerationRef.current === accountGeneration
+        && accountIdentityRef.current === `logged-in:${accountSlot}`
+        && selectionStore.get().currentAgentId === conversationId
+        && humanFindGenerationRef.current === searchGeneration
+        && current.scope.accountSlot === accountSlot && current.scope.agentId === conversationId
+        && current.query.trim() === query && findInChatOpenRef.current;
+    };
     void (async () => {
       for (let page = 0; page < 32; page += 1) {
-        if (
-          activeAgentIdRef.current !== conversationId
-          || transcriptAccountSlot !== accountSlot
-          || findInChatController.getSnapshot().scope.agentId !== conversationId
-        ) return;
+        if (!isCurrent()) return;
         if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
         const pagination = transcriptPaginationController.getSnapshot();
         if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder || pagination.olderFailure != null) return;
         await transcriptPaginationController.loadOlder();
       }
-      transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
+      if (isCurrent()) transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
     })().catch((error: unknown) => {
+      if (!isCurrent()) return;
       setNotice(error instanceof Error ? `Human search navigation unavailable: ${error.message}` : `Human search navigation unavailable: ${String(error)}`);
     });
   };
@@ -2289,20 +2328,31 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [activeIsHuman, entries, findInChatController, findInChatSnapshot.query]);
   useEffect(() => {
     const query = findInChatSnapshot.query.trim();
-    if (!findInChatOpen || !activeIsHuman || query.length === 0 || client == null || activeAgent == null) return;
+    if (!findInChatOpen || !activeIsHuman || query.length === 0 || client == null || activeAgent == null || transcriptAccountSlot == null) return;
     const generation = ++humanFindGenerationRef.current;
+    const updateGeneration = humanFindUpdateGenerationRef.current;
+    const accountGeneration = accountScopeGenerationRef.current;
+    const accountSlot = transcriptAccountSlot;
     const conversationId = activeAgent.id;
     const conversationName = activeAgent.name;
+    const isCurrent = () => {
+      const current = findInChatController.getSnapshot();
+      return humanFindGenerationRef.current === generation
+        && humanFindUpdateGenerationRef.current === updateGeneration
+        && accountScopeGenerationRef.current === accountGeneration
+        && accountIdentityRef.current === `logged-in:${accountSlot}`
+        && selectionStore.get().currentAgentId === conversationId
+        && current.scope.accountSlot === accountSlot && current.scope.agentId === conversationId
+        && current.query.trim() === query && findInChatOpenRef.current;
+    };
+    // setScope can clear the controller query earlier in this same effect pass.
+    if (!isCurrent()) return;
     void client.call("searchHumanMessages", {
       conversationId,
       query,
       limit: 200
     }).then((value) => {
-      if (
-        humanFindGenerationRef.current !== generation
-        || activeAgentIdRef.current !== conversationId
-        || findInChatController.getSnapshot().query.trim() !== query
-      ) return;
+      if (!isCurrent()) return;
       findInChatController.replaceEntries(
         projectHumanConversationTranscript(value, conversationName, conversationId)
       );
@@ -2311,13 +2361,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         findInChatController.step(1);
       }
     }).catch((error: unknown) => {
-      if (humanFindGenerationRef.current !== generation || activeAgentIdRef.current !== conversationId) return;
+      if (!isCurrent()) return;
       setNotice(error instanceof Error ? `Human search unavailable: ${error.message}` : `Human search unavailable: ${String(error)}`);
     });
     return () => {
       if (humanFindGenerationRef.current === generation) humanFindGenerationRef.current += 1;
     };
-  }, [activeAgent, activeIsHuman, client, findInChatController, findInChatOpen, findInChatSnapshot.query]);
+  }, [activeAgent?.id, activeAgent?.name, activeIsHuman, client, findInChatController, findInChatOpen, findInChatSnapshot.query, humanFindUpdateGeneration, renderedAccountScopeGeneration, selectionStore, transcriptAccountSlot]);
   useEffect(() => {
     const scopedAccountKey = account?.kind === "logged-in" && transport === "connected" ? transcriptAccountSlot : null;
     const scopedAgentId = scopedAccountKey == null || activeAgentId.length === 0 ? null : activeAgentId;
@@ -2329,23 +2379,30 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     editorPrReferenceProvider.setEntries(entries);
   }, [account?.kind, activeAgentId, editorPrReferenceProvider, entries, transcriptAccountSlot, transport]);
   useEffect(() => {
+    spreadsheetViewerSourceRef.current?.mount.close();
+    spreadsheetViewerSourceRef.current = null;
     spreadsheetViewerProvider.reset();
     spreadsheetTriggerRef.current = null;
     setSpreadsheetViewerMount(null);
   }, [activeAgentId, spreadsheetViewerProvider, transcriptAccountSlot]);
+  useLayoutEffect(() => {
+    const source = spreadsheetViewerSourceRef.current;
+    if (source != null && !isSpreadsheetSourceCurrent(source)) source.mount.close();
+  }, [entries, isSpreadsheetSourceCurrent, renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId]);
   useEffect(() => {
     const transcript = findTranscriptContainer;
     if (transcript == null || account?.kind !== "logged-in" || activeAgentId.length === 0) return undefined;
-    const attachmentsByPath = new Map<string, DraftAttachment>();
-    for (const entry of entries) {
-      for (const attachment of entry.kind === "message" ? entry.attachments ?? [] : []) attachmentsByPath.set(attachment.path, attachment);
-    }
+    const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
     const chips = [...transcript.querySelectorAll<HTMLElement>(".sand-file-attachment-chip")]
       .filter((chip) => chip.dataset.kind === "table");
     const cleanups = chips.map((chip) => {
-      const attachment = attachmentsByPath.get(chip.title);
+      const entryId = chip.closest<HTMLElement>("[data-entry-id]")?.dataset.entryId;
+      const attachmentIdentity = chip.dataset.transcriptAttachmentIdentity;
+      const entry = entryId == null ? undefined : entriesById.get(entryId);
+      const attachment = entry?.kind !== "message" || attachmentIdentity == null ? undefined
+        : entry.attachments?.find((candidate) => transcriptAttachmentIdentity(candidate) === attachmentIdentity);
       const projection = attachment == null ? null : spreadsheetViewerProvider.project(attachment);
-      if (attachment == null || projection == null) return () => {};
+      if (attachment == null || projection == null || entryId == null || attachmentIdentity == null) return () => {};
       const previousRole = chip.getAttribute("role");
       const previousTabIndex = chip.getAttribute("tabindex");
       const previousLabel = chip.getAttribute("aria-label");
@@ -2353,8 +2410,47 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       chip.setAttribute("role", "button");
       chip.tabIndex = 0;
       const open = () => {
-        const mount = spreadsheetViewerProvider.mount(attachment);
-        if (mount == null) return;
+        const scope = captureTranscriptScope(activeAgentId);
+        if (scope == null || selectionStore.get().currentAgentId !== scope.agentId) return;
+        const currentEntry = spreadsheetEntriesRef.current.find((candidate) => candidate.id === entryId);
+        if (currentEntry?.kind !== "message" || !currentEntry.attachments?.some((candidate) =>
+          transcriptAttachmentIdentity(candidate) === attachmentIdentity)) return;
+        const providerMount = spreadsheetViewerProvider.mount(attachment);
+        if (providerMount == null) return;
+        const source: TranscriptSpreadsheetSource = { ...scope, entryId, attachmentIdentity, mount: providerMount };
+        const isCurrent = () => isSpreadsheetSourceCurrent(source) && providerMount.isOpen();
+        const mount: SpreadsheetViewerMount = {
+          ...providerMount,
+          isOpen: isCurrent,
+          close: () => {
+            providerMount.close();
+            if (spreadsheetViewerSourceRef.current !== source) return;
+            spreadsheetViewerSourceRef.current = null;
+            setSpreadsheetViewerMount((current) => current === mount ? null : current);
+          },
+          readAttachmentBytes: async (sourcePath, maxBytes) => {
+            if (!isCurrent()) return null;
+            try {
+              const bytes = await providerMount.readAttachmentBytes(sourcePath, maxBytes);
+              return isCurrent() ? bytes : null;
+            } catch (error: unknown) {
+              if (!isCurrent()) return null;
+              throw error;
+            }
+          },
+          onDownload: async () => {
+            if (!isCurrent()) return false;
+            try {
+              const downloaded = await providerMount.onDownload();
+              return isCurrent() ? downloaded : false;
+            } catch (error: unknown) {
+              if (!isCurrent()) return false;
+              throw error;
+            }
+          },
+        };
+        source.mount = mount;
+        spreadsheetViewerSourceRef.current = source;
         spreadsheetTriggerRef.current = chip;
         setSpreadsheetViewerMount(mount);
       };
@@ -2378,16 +2474,18 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       };
     });
     return () => { for (const cleanup of cleanups) cleanup(); };
-  }, [account?.kind, activeAgentId, entries, findTranscriptContainer, spreadsheetViewerProvider]);
+  }, [account?.kind, activeAgentId, captureTranscriptScope, entries, findTranscriptContainer, isSpreadsheetSourceCurrent, selectionStore, spreadsheetViewerProvider]);
   const closeFindInChat = useCallback(() => {
+    findInChatOpenRef.current = false;
+    humanFindGenerationRef.current += 1;
     setFindInChatOpen(false);
     const restoreFocus = () => findTranscriptContainer?.focus();
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(restoreFocus);
     else restoreFocus();
   }, [findTranscriptContainer]);
   const closeSpreadsheetViewer = useCallback(() => {
+    if (spreadsheetViewerSourceRef.current?.mount !== spreadsheetViewerMount) return;
     spreadsheetViewerMount?.close();
-    setSpreadsheetViewerMount(null);
     const restoreFocus = () => spreadsheetTriggerRef.current?.focus();
     if (typeof requestAnimationFrame === "function") requestAnimationFrame(restoreFocus);
     else restoreFocus();
@@ -3288,6 +3386,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         }
       }
     };
+    const retireChangedSpreadsheetSource = (ownerId: string, entry: ConversationTranscriptEntry, previousId?: string) => {
+      const source = spreadsheetViewerSourceRef.current;
+      if (source == null || source.agentId !== ownerId || !isTranscriptScopeCurrent(source)) return;
+      const current = spreadsheetEntriesRef.current.find((candidate) => candidate.id === source.entryId);
+      if (current == null) return;
+      // Use the same merge as the existing row owner: Human empty attachments
+      // replace the set, while an Agent partial echo can retain prior resources.
+      const isAgentAttachment = localTranscriptClientNonce(entry, undefined) != null
+        && "sourceKind" in entry && entry.sourceKind === "user-attachment";
+      const next = reconcileTranscriptMutation([current], entry, { previousId, preserveCurrentId: isAgentAttachment })
+        .find((candidate) => candidate.id === source.entryId);
+      if (next?.kind !== "message" || !next.attachments?.some((attachment) =>
+        transcriptAttachmentIdentity(attachment) === source.attachmentIdentity)) source.mount.close();
+    };
     const resolveAgentRetryEcho = (ownerId: string, entry: ConversationTranscriptEntry): ConversationTranscriptEntry => {
       if (humanConversationsRef.current.some((conversation) => conversation.id === ownerId)) return entry;
       const nonce = localTranscriptClientNonce(entry, undefined);
@@ -3308,6 +3420,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           }
         }
         for (const entry of projectedEntries) {
+          retireChangedSpreadsheetSource(ownerId, entry);
           humanReactionSettlement.observeEntry({ conversationId: ownerId, entryId: entry.id });
           humanMessageRetryController.observeEntry(ownerId, entry);
           observeTranscriptSettlement(ownerId, entry);
@@ -3320,6 +3433,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         }));
         transcriptBaselineSeen.add(ownerId);
         preBaselineFeedEntryIds.delete(ownerId);
+        invalidateActiveHumanSearch(ownerId);
       },
       onUpdated: ({ agentId: ownerId, before, after: event }) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
@@ -3337,6 +3451,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           rememberPreBaselineFeedEntry(ownerId, previousId);
         }
         rememberTranscriptUpdate(ownerId, projected, previousId);
+        retireChangedSpreadsheetSource(ownerId, projected, previousId);
+        invalidateActiveHumanSearch(ownerId);
         observeTranscriptSettlement(ownerId, projected);
         transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected, previousId);
         setEntriesByAgent((current) => {
@@ -3351,6 +3467,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       onCleared: (ownerId) => {
         if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
         humanReactionSettlement.clearConversation(ownerId);
+        if (spreadsheetViewerSourceRef.current?.agentId === ownerId) spreadsheetViewerSourceRef.current.mount.close();
+        invalidateActiveHumanSearch(ownerId);
         invalidateTranscriptConversation(ownerId);
         sendJournalApprovalLifecycle.reset();
         transcriptBaselineSeen.add(ownerId);
@@ -3388,6 +3506,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const conversationGeneration = transcriptConversationGenerationsRef.current.get(ownerId) ?? 0;
       rememberPreBaselineFeedEntry(ownerId, projected.id);
       rememberTranscriptUpdate(ownerId, projected);
+      retireChangedSpreadsheetSource(ownerId, projected);
+      invalidateActiveHumanSearch(ownerId);
       observeTranscriptSettlement(ownerId, projected);
       transcriptPaginationController.ingestEntryUpdate(transcriptAccountSlot, ownerId, projected);
       setEntriesByAgent((current) => {
@@ -3411,7 +3531,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         if (clientLifecycleGenerationRef.current === lifecycleGeneration) client.dispose();
       });
     };
-  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanMessageRetryController, humanReactionSettlement, invalidateTranscriptConversation, observeTranscriptSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, sendJournalApprovalLifecycle, transcriptAccountSlot, transcriptPaginationController]);
+  }, [account?.kind, client, clientLifecycleGenerationRef, connectionController, humanMessageRetryController, humanReactionSettlement, invalidateActiveHumanSearch, invalidateTranscriptConversation, isTranscriptScopeCurrent, observeTranscriptSettlement, pinnedAccountKey, reactionRoot, reconcileCompleteRosterSelection, refreshAgentNetworkAvailability, refreshRoster, selectionStore, sendJournalApprovalLifecycle, transcriptAccountSlot, transcriptPaginationController]);
 
   useEffect(() => {
     if (bridge == null || account?.kind !== "logged-in") {
@@ -3706,6 +3826,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       const identityChanged = accountIdentityRef.current != null && accountIdentityRef.current !== identity;
       if (accountIdentityRef.current !== identity) {
         accountScopeGenerationRef.current += 1;
+        humanFindGenerationRef.current += 1;
+        spreadsheetViewerSourceRef.current?.mount.close();
+        spreadsheetViewerSourceRef.current = null;
+        spreadsheetViewerProvider.reset();
         // Notices may contain destination names from the retired account.
         setNotice(null);
         for (const scope of submissionScopesRef.current.values()) scope.invalidate();
@@ -3815,7 +3939,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     applyRootShellTheme(bridge.theme.initial.resolved);
     void bridge.deepLinksReady().catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
     return () => { active = false; stopAccount(); stopTheme(); themeInstaller?.dispose(); stopWindow(); stopFocus(); stopDeepLink(); stopOnboarding(); stopSkip(); stopFeedback(); stopAbout(); };
-  }, [applyAccountStatus, bridge, client, composerSubmissionQueue, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sendJournalApprovalLifecycle, sharedRoomProvider]);
+  }, [applyAccountStatus, bridge, client, composerSubmissionQueue, groupMembersRoot, localToolPermissionScopeGate, openAgent, resolveOnboarding, selectionStore, sendJournalApprovalLifecycle, sharedRoomProvider, spreadsheetViewerProvider]);
 
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#L537
   useEffect(() => {
@@ -4753,6 +4877,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
+                key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId])}
                 entries={entries}
                 hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
