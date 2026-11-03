@@ -700,3 +700,52 @@ is inferred from run290. PR #189 remains draft.
 Run291 `41694984873` at exact `50bc3d275dff24be1bf60a13810fce93ae568930` passed: Human73/0 failures/0 ignored, including independent SQLite duplicate clientNonce before HTTP, HTTP duplicate canonical identity after restart, concurrent retry idempotency and attachment receipt reuse/settled replay. Foreign retry actual was `Internal("local Human identity is not a conversation participant")`, matching the explicit oracle. UI passed actual ProductionRenderer13 and Transcript10/10 including active-page reselection; shipping compile succeeded. Run91 source contract171/Python schema37/schema errors0; candidate remains unaccepted. Run9650 renderer build/45-asset boundary/strict architecture modules2002 passed; conditional matrix jobs skipped.
 
 Exact H `08f408ac0de6223fb0e7637974bb7cadc8db4927` passes captured current-scope predicate into the existing Coordinator request boundary, and adds four actual-root renderer cases for persisted failure after reload, identity-only single-flight retry, selection ABA and account ABA. Transcript gate14. Run295 `41704725299` and Rust run9658 `41704725388` were queued at evidence freeze; this follow-up is not yet executed. PR #189 remains open/draft.
+
+
+## Round13 — exact-H Human retry and restored transcript ownership
+
+At exact H `81e022997c943cdb8f0b74f2ff5c0be5f210f96e`, Native service run `41724037792` (attempt 1) is terminal
+success. Jobs: native-message-ui `126224000145`, native-message-reconciliation
+`126224000021`, native-message-shipping-compile `126224000304`, and
+desktop-social-owner-behaviors `126224000268` all completed successfully on
+the same exact commit. Actual ProductionRenderer13 and Transcript14 passed;
+Human73 passed with zero failures/ignored cases. The Human log printed the
+foreign retry error `Internal("local Human identity is not a conversation participant")`
+and matched the negative oracle. SQLite duplicate clientNonce before HTTP,
+duplicate HTTP canonical identity after restart, concurrent retry idempotency,
+attachment receipt reuse after restart and settled replay passed.
+
+The actual ProductionRenderer browser cases passed for persisted
+`lastDispatchError` after real reload, identity-only single-flight retry with
+failure then retry, selection A-B-A refusal before Coordinator frame, and
+account A-B-A refusal before Coordinator frame. The account A-B-A case also
+proved the replacement account's Human transcript tail is requested after
+roster resolution and `openAgentTail` is not called. The prior test-oracle
+message prefix is retained as an explicit assertion; no negative was removed.
+
+Shipping compile built the actual AppHost, CLI and Gateway and ran the selected
+native composition, startup, Host/FFI handoff, DNS, future-salts, Protocol122,
+TCP9, proxy and credential checks. Actual package resource copy passed 4/4;
+built and copied AppHost SHA-256 is
+`3eb1a5fa5d374e6400e46830615970ebe9a265e39c667fefb8c264bc0fbedf00`
+(size 160462688, mode 0755). The one package-hash mismatch assertion failure
+is an expected negative-control result inside a successful harness, not a
+workflow failure. The artifact scope does not qualify a signed application or
+installed package.
+
+Artifacts: UI `13273695080` /
+`sha256:8c1b2f118472889a14632c9b7110355631cdec7ae4f6790c6950263982a17d2c`;
+reconciliation `13273975441` /
+`sha256:f42d7b3b5b69066319ad6f7f47cc569d30813f07a7fd4e022c6e949a14e128af`;
+shipping `13274136085` /
+`sha256:48e8ce9cd0f0d59671f825bab0718a0edc014093b6e33e9c5fe595d4813ad964`;
+Social `13273508513` /
+`sha256:4c03fc4986e23eebfbf0d33b9245c09234616086f02c692cee62905261375993`.
+All four ZIPs were downloaded and local SHA-256 matched the API digest.
+
+The fixed upstream remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`,
+unaccepted. Recursive inventory remains 16,381 entries; six source reviews
+remain 2 complete / 4 pending; unknown/unread remain null. Product/source
+closure, live authenticated service, signed supported-platform package,
+visual/a11y/security/performance/soak/upgrade/rollback/Bot regression and
+independent ACCEPT remain open. PR #189 remains open/draft.

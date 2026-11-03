@@ -288,3 +288,16 @@ CAS. Six source reviews/two complete at936 are scoped historical counts; later
 source records remain preserved. Complete source/legal/product/platform/Bot/
 real-service and independent ACCEPT/release remain blocked. Backend PR137 is
 not modified, merged or deployed.
+
+
+## Round15 exact-H execution — 2026-11-04
+
+Native service run `41724037792` at `81e022997c943cdb8f0b74f2ff5c0be5f210f96e` completed successfully. All four
+requested jobs succeeded: Human73 reconciliation, actual ProductionRenderer13
+and Transcript14, shipping compile, and Social FeatureHost10/SQLite9/HTTP6.
+Actual retry reload projection, identity-only single-flight, selection ABA and
+account ABA passed. The restored-selection A-B-A test confirms Human transcript
+routing waits for roster readiness and does not call `openAgentTail`.
+Shipping artifact proves actual AppHost/CLI/Gateway build and AppHost resource
+copy identity, not a signed installed package. Full product and independent
+acceptance remain open; PR #189 stays draft.

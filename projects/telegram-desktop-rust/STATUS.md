@@ -454,3 +454,21 @@ upgrade/rollback and independent ACCEPT remain unaccepted.
 Run291 `41694984873` at exact `50bc3d275dff24be1bf60a13810fce93ae568930` terminal success: reconciliation Human73/0 failures/0 ignored, UI actual ProductionRenderer13/Transcript10, shipping compile success. Foreign retry actual `Internal("local Human identity is not a conversation participant")` matches oracle; SQLite and HTTP duplicate identity restart negatives passed. Run91 `41695350819` source contract171/Python37/schema errors0 but source candidate remains unaccepted. Run9650 `41695350903` renderer build/45 assets/strict architecture modules2002 passed, conditional matrix jobs skipped.
 
 New retry admission fix at `08f408ac0de6223fb0e7637974bb7cadc8db4927` passes captured account/selection scope into existing Coordinator readiness boundary. Four actual renderer cases cover reload error projection, identity-only single-flight, selection ABA and account ABA; Transcript gate14. Run295 and run9658 were queued at record time; no new-H pass is claimed. PR #189 remains open/draft. Full source/legal/product/service/package/Bot/visual/a11y/security/performance/soak/upgrade/rollback and independent ACCEPT remain unaccepted.
+
+
+## Round15 exact-H execution — 2026-11-04
+
+Run `41724037792` at exact `81e022997c943cdb8f0b74f2ff5c0be5f210f96e` is terminal success (attempt 1): Human73 /
+native-message-reconciliation `126224000021`, actual ProductionRenderer13 +
+Transcript14 / native-message-ui `126224000145`, shipping compile
+`126224000304`, and Social FeatureHost10 + SQLite9 + HTTP6
+`126224000268` all succeeded. UI retry persistence, identity-only retry,
+selection ABA and account ABA passed. Human duplicate SQLite/HTTP identity,
+concurrent retry and attachment receipt replay passed. Shipping built actual
+AppHost/CLI/Gateway; Protocol122, TCP9 and actual package resource copy4
+passed. The package hash mismatch test is an expected negative control.
+Artifacts and digests are recorded in the canonical ledger and RTM.
+
+This execution does not promote fixed U, source_reviews, package, live-service,
+full Bot/visual/a11y/security/performance/soak/upgrade/rollback or independent
+ACCEPT. PR #189 remains open/draft.
