@@ -894,6 +894,44 @@ fn token_rotate_wire_http_pairing_permission_and_existing_role_scope_guards_stay
 }
 
 #[test]
+fn token_rotate_wire_http_large_distinct_scope_request_reaches_owner_and_preserves_read_only_authority() {
+    let mut fixture = Fixture::seeded(&["operator"], &["operator.read"]);
+    let before = fixture.observe();
+    let bearer = format!("Bearer {}", before.token(CALLER, "operator"));
+    let scopes: Vec<String> = (0..100_000).map(|index| format!("operator.s{index:06}")).collect();
+    let body = json!({"deviceId": CALLER, "role": "operator", "scopes": scopes}).to_string();
+    assert!(body.len() < mahayana_host_runtime::gateway_server::MAX_BODY_BYTES);
+    let counts = fixture.observed.counts();
+    // No narrowing header: this is the actual paired read-only path through
+    // closed-request parsing, not a generic write/read-header prefilter. The
+    // existing I/O deadline bounds cleanup; no elapsed-time benchmark is used.
+    let reply = fixture.deny(&body, Some(&bearer), "", 403, 1);
+    assert_bound_once(&fixture, counts, true);
+    assert_eq!(reply.body["error"], "forbidden: token rotation requires operator pairing authority");
+    let admission = fixture.observed.admissions.lock().expect("admission witness").last().unwrap().clone();
+    assert!(admission.paired && admission.context.authenticated);
+    assert_eq!(admission.device.as_deref(), Some(CALLER));
+    assert_eq!(admission.role.as_deref(), Some("operator"));
+    assert!(admission.ceiling.is_none());
+    fixture.reopen();
+    assert_eq!(fixture.observe(), before, "large refusal survives owner/listener reopen without changing storage");
+    let proof = fixture.owner().authenticate_device_token(&before.token(CALLER, "operator"))
+        .expect("unchanged bearer lookup").expect("read-only credential remains recognized");
+    fixture.owner().validate_current_device_authorization(&proof).expect("read-only credential remains current");
+    assert_eq!(proof.scopes, ["operator.read"]);
+
+    // A genuinely paired operator can still rotate on the same reopened owner.
+    let counts = fixture.observed.counts();
+    let reply = fixture.rotate(&json!({"deviceId": TARGET, "role": "operator", "scopes": ["operator.pairing"]}),
+        Some(&format!("Bearer {}", before.token(TARGET, "operator"))), "");
+    assert_bound_once(&fixture, counts, true);
+    let successor = fixture.assert_rotation(&before, &reply, TARGET, "operator", json!(["operator.pairing"]), true);
+    let proof = fixture.owner().authenticate_device_token(&successor)
+        .expect("positive successor lookup").expect("positive successor recognized");
+    fixture.owner().validate_current_device_authorization(&proof).expect("positive successor current");
+}
+
+#[test]
 fn token_rotate_wire_http_bad_credentials_and_common_ingress_never_become_native() {
     for configured in [false, true] {
         let fixture = Fixture::new(configured, "127.0.0.1", false);
@@ -1130,6 +1168,7 @@ fn token_rotate_wire_http_issued_nel_literal_never_becomes_pairing_or_admin_at_a
             let state = fixture.observe();
             let counts = fixture.observed.counts();
             let reports = fixture.observed.errors.lock().expect("reports").len();
+            let successes = fixture.observed.successes.lock().expect("success reports").len();
             let reply = fixture.http("POST", &format!("/api/{method}"),
                 &json!({"deviceId": device, "role": role}).to_string(), Some(&format!("Bearer {successor}")),
                 "x-sand-request-id: dtr-nel-literal-refusal\r\n");
@@ -1143,12 +1182,17 @@ fn token_rotate_wire_http_issued_nel_literal_never_becomes_pairing_or_admin_at_a
                 recognized: counts.recognized + 1, ..counts
             }, "real bound owner hook refuses; a default adapter refusal is insufficient");
             let errors = fixture.observed.errors.lock().expect("normal error reports");
-            assert_eq!(errors.len(), reports + 1);
-            let report = errors.last().unwrap();
-            assert_eq!(report.method, method);
-            assert_eq!(report.status, 403);
-            assert_eq!(report.request_id.as_deref(), Some("dtr-nel-literal-refusal"));
+            assert_eq!(errors.len(), reports, "ordinary 403 is not a 5xx command-error report");
             drop(errors);
+            assert_eq!(fixture.observed.successes.lock().expect("success reports").len(), successes,
+                "refused commands never emit a success report");
+            if method == WIRE {
+                let admissions = fixture.observed.admissions.lock().expect("bound context witness");
+                let admission = admissions.last().unwrap();
+                assert!(admission.paired && admission.context.authenticated);
+                assert_eq!(admission.device.as_deref(), Some(CALLER));
+                assert_eq!(admission.context.request_id.as_deref(), Some("dtr-nel-literal-refusal"));
+            }
             state.secrets().assert_reports_redacted(&fixture.observed);
             before.secrets().assert_reports_redacted(&fixture.observed);
         }

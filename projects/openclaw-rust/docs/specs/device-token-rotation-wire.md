@@ -75,6 +75,25 @@ scope exactly against canonical grants. Explicit legacy DPA request scopes
 retain their Rust-trim adapter before that comparison, including their existing
 NEL-success/BOM-refusal behavior; omitted stored scopes use credential semantics.
 
+**Normalization work bound (DTR-PERF-04):** canonical scope deduplication must
+not compare every distinct input against every preceding input. A current
+read-only operator can reach closed-request parsing before the owner refuses
+pairing authority, so a request within the existing Gateway body limit must
+not introduce quadratic membership work. Use order-preserving set membership
+in this same helper, retaining first-seen canonical grant order, ECMAScript
+trimming and DTR's separate final UTF-16 ordering/implications. Do not change
+request limits, refusal precedence, native identity/role normalization or the
+explicit legacy DPA input adapter to hide the complexity regression.
+
+Exercise a large distinct scope request through the real bound HTTP entry with
+a current read-only bearer: the measured rotation hook must be reached, the
+result must remain the owner-specific 403, and all durable rows and credentials
+must remain unchanged. Keep a current authorized positive and the existing
+normalization, literal NEL/BOM and first-seen producer controls. This checks
+admission and outcome on the selected Actions runner; source-level set
+membership establishes the algorithmic bound, not a fabricated benchmark or
+a hardware-dependent timing threshold.
+
 ## DTR-02 — Current caller and target addressing
 
 Lock the existing owner and begin an IMMEDIATE transaction before decisive
@@ -91,6 +110,12 @@ known policy refusal is 403. Existing ingress authentication, replay, Origin,
 Host, role mismatch, node/operator-only and explicit read-header refusals keep
 their ordering. Only this bound method is exempted from the old literal-write
 prefilter. Invalid explicit credentials never fall back to native admission.
+
+Preserve Gateway reporting: ordinary 4xx policy/validation refusals emit neither
+a success report nor a 5xx error report. A bound 500 storage refusal still emits
+the existing redacted method/status/request-context error report. Wire status,
+bound-hook/context observations and complete state comparisons prove 403
+refusals; a nonexistent 403 error-report callback is not their oracle.
 
 Already admitted native callers have admin authority only absent a narrowing
 header. A supplied blank, combined or unrelated singular ceiling cannot grant

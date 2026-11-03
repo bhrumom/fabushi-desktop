@@ -131,9 +131,10 @@ fn wire_scope_trim(value: &str) -> &str {
 
 fn canonical_scope_strings<'a>(values: impl IntoIterator<Item = &'a str>) -> Vec<String> {
     let mut scopes = Vec::new();
+    let mut seen = BTreeSet::new();
     for value in values {
         let scope = wire_scope_trim(value);
-        if !scope.is_empty() && !scopes.iter().any(|known| known == scope) {
+        if !scope.is_empty() && seen.insert(scope) {
             scopes.push(scope.to_owned());
         }
     }
