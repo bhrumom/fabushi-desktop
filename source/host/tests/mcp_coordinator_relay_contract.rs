@@ -646,6 +646,7 @@ mod desktop_service_contracts {
         status: Value,
         image: Vec<u8>,
         marker: Vec<u8>,
+        uninstall_observation: Option<String>,
     }
 
     impl RealService {
@@ -731,14 +732,31 @@ mod desktop_service_contracts {
             });
             let directory = get_plugin_skills_dir(&self.root.0);
             let image = fs::read(directory.join("uninstall-state.json")).unwrap();
-            assert_eq!(serde_json::from_slice::<Value>(&image).unwrap(), json!({
-                "formatVersion":2, "confirmedPluginIds":confirmed, "pending":pending_rows,
+            let decoded: Value = serde_json::from_slice(&image).unwrap();
+            let uninstall_observation = match decoded.get("uninstallObservation")
+                .expect("v3 requires an explicit nullable uninstall observation")
+            {
+                Value::Null => None,
+                Value::String(observation) => {
+                    assert_eq!(uuid::Uuid::parse_str(observation).unwrap().to_string(),
+                        *observation, "uninstall observation must be a canonical UUID");
+                    Some(observation.clone())
+                }
+                _ => panic!("uninstall observation must be null or a canonical UUID"),
+            };
+            if !confirmed.is_empty() || !pending.is_empty() {
+                assert!(uninstall_observation.is_some(),
+                    "actual uninstall reservation and settlement establish an observation");
+            }
+            assert_eq!(decoded, json!({
+                "formatVersion":3, "confirmedPluginIds":confirmed, "pending":pending_rows,
                 "authRefusals":[], "refreshIntent":refresh.map(|id| json!({"operationId":id})),
+                "uninstallObservation":uninstall_observation.clone(),
             }));
             let marker = fs::read(directory.join("uninstall-state.version")).unwrap();
             assert_eq!(marker, b"1\n");
             assert!(!self.skills.admission_reader().is_denied("unrelated-plugin-control"));
-            UninstallCustodySnapshot { status, image, marker }
+            UninstallCustodySnapshot { status, image, marker, uninstall_observation }
         }
 
         fn seed(&self) {
@@ -747,6 +765,8 @@ mod desktop_service_contracts {
             let request = self.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
             self.resolve(&request, self.payload.clone());
             assert_eq!(finish(worker, result).unwrap().len(), 1);
+            assert_eq!(self.assert_uninstall_custody(&[], &[]).uninstall_observation, None,
+                "initial refresh must not invent an uninstall observation");
         }
     }
 
@@ -926,6 +946,9 @@ mod desktop_service_contracts {
         let (old_worker, old_result) = spawn_operation(move || skills.sync("held-before-uninstall"));
         let old_load = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
         let old_refresh = fixture.refresh_operation_id();
+        assert_eq!(fixture.assert_uninstall_custody_with_refresh(
+            &[], &[], Some(&old_refresh),
+        ).uninstall_observation, None, "refresh intent alone does not create an observation");
 
         let service = Arc::clone(&fixture.service);
         let (worker, result) = spawn_operation(move || {
@@ -935,10 +958,14 @@ mod desktop_service_contracts {
         fixture.resolve(&catalog, json!([]));
         let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
         let intent = fixture.pending_uninstall("41");
-        fixture.assert_uninstall_custody_with_refresh(&[], &[&intent], Some(&old_refresh));
+        let pending = fixture.assert_uninstall_custody_with_refresh(
+            &[], &[&intent], Some(&old_refresh),
+        );
         fixture.resolve(&uninstall, json!({"removed":true,"state":null}));
         assert!(finish(worker, result).unwrap_err().contains("requires servers"));
         let confirmed = fixture.assert_uninstall_custody_with_refresh(&["41"], &[], Some(&old_refresh));
+        assert_ne!(confirmed.uninstall_observation, pending.uninstall_observation,
+            "exact uninstall settlement rotates the reservation observation");
         assert!(fixture.skills.admission_reader().is_denied("41"));
         assert!(fixture.skills.current().is_empty());
         assert_eq!(fixture.relay.pending_count(), 1);
@@ -956,6 +983,8 @@ mod desktop_service_contracts {
         let settled = fixture.assert_uninstall_custody(&["41"], &[]);
         assert_eq!(settled.status, confirmed.status);
         assert_eq!(settled.marker, confirmed.marker);
+        assert_eq!(settled.uninstall_observation, confirmed.uninstall_observation,
+            "retiring the stale refresh intent preserves uninstall custody");
         assert_eq!(fixture.relay.pending_count(), 0);
         assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
 
@@ -968,11 +997,17 @@ mod desktop_service_contracts {
         let refreshing = fixture.assert_uninstall_custody_with_refresh(&["41"], &[], Some(&fresh_refresh));
         assert_eq!(refreshing.status, settled.status);
         assert_eq!(refreshing.marker, settled.marker);
+        assert_eq!(refreshing.uninstall_observation, settled.uninstall_observation,
+            "a fresh refresh intent does not itself release the confirmed fact");
         fixture.resolve(&fresh, fixture.payload.clone());
         assert_eq!(finish(worker, result).unwrap().len(), 1);
         assert!(!fixture.skills.admission_reader().is_denied("41"));
         assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
-        fixture.assert_uninstall_custody(&[], &[]);
+        let released = fixture.assert_uninstall_custody(&[], &[]);
+        assert!(released.uninstall_observation.is_some(),
+            "release retains a durable causal identity after the sets become empty");
+        assert_ne!(released.uninstall_observation, confirmed.uninstall_observation,
+            "fresh confirmed-fact release rotates the observation");
     }
 
     #[test]
@@ -1014,6 +1049,8 @@ mod desktop_service_contracts {
         let current_intent = current.pending_uninstall("41");
         let current_pending = current.assert_uninstall_custody(&[], &[&current_intent]);
         assert_ne!(current_intent.operation_id, old_intent.operation_id);
+        assert_ne!(current_pending.uninstall_observation, old_pending.uninstall_observation,
+            "independent real reservations have distinct causal observations");
         // Both relays have served seed, catalog and uninstall in that order;
         // a sequence-only request identity would collide on this real waiter.
         assert!(old_request["payload"]["requestId"].as_str().unwrap().ends_with("-3"));
@@ -1041,7 +1078,10 @@ mod desktop_service_contracts {
         current.resolve(&request, json!({"removed":true,"state":null}));
         assert!(finish(worker, result).unwrap_err().contains("requires servers"));
         assert!(current.skills.admission_reader().is_denied("41"));
-        current.assert_uninstall_custody(&["41"], &[]);
+        let current_confirmed = current.assert_uninstall_custody(&["41"], &[]);
+        assert_ne!(current_confirmed.uninstall_observation,
+            current_pending.uninstall_observation,
+            "only the matching current reply rotates its settlement observation");
         assert!(old.skills.admission_reader().is_denied("41"));
         assert_eq!(old.assert_uninstall_custody(&[], &[&old_intent]), old_pending);
         assert_eq!(fs::read(old.cache_path()).unwrap(), old_before);

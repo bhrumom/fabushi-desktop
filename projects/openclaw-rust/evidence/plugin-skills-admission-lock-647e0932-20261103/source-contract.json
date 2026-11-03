@@ -123,12 +123,18 @@
     ],
     "oracle_limits": "The cleanup-window unit uses an actual OS file-lock probe and retained real service hook. The separate owned-process harness proves foreign-process held-loader exclusion and terminal recovery with real Session/Workflow consumers. They do not constitute a same-window cross-process cleanup pause, live external account or platform/package acceptance. R2 adds a complete foreign-process uninstall cycle while the paused owner performs no intermediate read, authoritative corruption/restoration controls, actual workflow publication interleavings and actual cleanup-I/O fault with reentrant owner callbacks. These are source-authored until exact-H Actions returns evidence. Constructor controls now use actual EX and real I/O faults to distinguish an unowned observation from authoritative corruption, plus the actual first image/marker publisher under EX and a genuinely absent root with no constructor writes. Ordinary repaired reads retain unknown until explicit successful sync; no claim to execute every OS scheduling interleaving.",
     "prior_failure": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
-    "exact_candidate_execution": "R3 focused source review converged at b8a648abd90b6ae5c4f9feae8a1e159f126fd69b; exact frozen combined-H Actions remains pending.",
+    "exact_candidate_execution": "Actual H6d8c241b609948c4266e1e40c8f559795b317473 run41618863245/a1 Linux job125859112028 fails three retained desktop service custody checks because their image oracle still expected v2. The target reported13 passed/3 failed. Preserve that failure; corrected v3 lifecycle oracle requires fresh focused source review and new frozen-H Actions.",
     "reuse_note": "The existing skill_publish_contract target is also selected in the Linux plugin-uninstall-service command; its four retained public publish/restore oracles run alongside the actual-owner lease regression. No second capture owner.",
-    "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh."
+    "actual_publisher_lease": "The actual SandSkillPublishService with real SandPluginSkillsService is required for resync and unpublish. Probe the actual admission file with EX at backend entry, retain wrong-publisher/team/pending denial controls with no backend or restore side effects, and let the real post-operation loader prove the protected lease ended before refresh.",
+    "retained_desktop_custody_names": [
+      "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
+      "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
+      "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work"
+    ],
+    "retained_desktop_custody_oracle": "Complete status/image/marker and unchanged-byte snapshots remain. Explicit nullable canonical v3 observation is checked through seed, reservation, exact settlement, refresh-only transitions, confirmed-fact release and stale/closed-service replies. Existing capture already requires these three names and binds the actual test file; no command or assertion is removed."
   },
   "acceptance": {
-    "scoped_authority": "AR-LOCK-R2/R3 source contract and root FIX decisions saved before implementation; two fresh focused R3 source reviews converge. This is not executable verification or unit/real-ecosystem/shipping acceptance.",
+    "scoped_authority": "AR-LOCK-R2/R3 source authority and R3 source convergence retained at their exact subjects. Executed desktop consumer oracle mismatch is repaired under the existing LR2-01 authority after durable FIX; recovery review and current exact-H validation remain pending.",
     "full_unit_verified": false,
     "canonical_source_review_changed": false,
     "global_flags_changed": false,
@@ -156,6 +162,16 @@
       "source_contract_blob": "ce649cd09cefb4c2bec99f8c2d0b94a266645e7a",
       "disposition": "R3 focused source review converged; complete original scope retained and seven-path proper delta reviewed. Executable evidence pending.",
       "convergence": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r3/convergence.json"
+    },
+    {
+      "contract": "PS-LOCK-RECONCILE-v2",
+      "execution_subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+      "run_id": 41618863245,
+      "run_attempt": 1,
+      "job_id": 125859112028,
+      "disposition": "TEST_FLAW in retained adjacent desktop custody oracle: hardcoded v2 after specified v3 writer upgrade. FIX saved before source correction; no unchanged-H rerun or source/runtime acceptance.",
+      "decisions": "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-6d8c241/recovery-decisions.json",
+      "decision_commit": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e"
     }
   ],
   "private_image_migration": {
@@ -170,5 +186,17 @@
     "legacy": "Read v1/v2 without rewriting or inventing an observation. Explicit writes use v3 and preserve all existing custody.",
     "rollback": "Retained non-null identity loss to legacy/null faults. Old strict readers reject v3; rollback requires a compatible reader and cannot clear or downgrade custody.",
     "marker": "Existing marker 1\\n and file/directory durability barriers remain unchanged."
+  },
+  "oracle_recovery": {
+    "original_review_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+    "previous_review_subject": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+    "implementation_base": "312d56b68a0f3f450b21ab9da3c705b0c2fa7e3e",
+    "edited_test": {
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "old_blob": "71144e4e578a51fd2281dcb6b743e5c7a11d569e",
+      "new_blob": "a54a3a6e3e6b5a010f3564abb37cd6c996dc9752"
+    },
+    "scope": "Add the actual executed consumer test to the retained original fourteen-path review context; production owner/schema/permissions remain at their prior source identities. Complete current scope and proper previous-candidate delta accompany the recovery review.",
+    "state": "authored; source review and exact-H Actions pending"
   }
 }
