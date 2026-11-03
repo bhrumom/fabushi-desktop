@@ -7341,6 +7341,7 @@ fn shipping_human_retry_rejects_duplicate_client_nonce_identity_before_http() {
         "conversationId":conversation_id,
         "clientNonce":"duplicate-human-retry-nonce"
     })).expect("registered retry gateway").expect_err("duplicate durable identity must fail closed");
+    let error = format!("{error:?}");
     assert!(error.contains("ambiguous durable identities"), "{error}");
     assert_eq!(server.post_count(), 1, "duplicate identity must not reach the HTTP message endpoint");
     assert_eq!(server.resource_post_count(), 0, "duplicate identity must not upload or reuse an attachment receipt");
