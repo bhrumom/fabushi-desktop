@@ -85,9 +85,12 @@ inputs = [
     "source/host/tests/device_pairing_revocation_gateway_contract.rs",
     "source/host/tests/device_role_token_revocation_authority_contract.rs",
     "source/host/tests/device_role_token_revocation_gateway_contract.rs",
+    "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+    "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
     "source/host/tests/device_pairing_retained_stream_contract.rs",
     "projects/openclaw-rust/docs/specs/device-pairing-revocation-continuity.md",
     "projects/openclaw-rust/docs/specs/device-role-token-revocation.md",
+    "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
     "source/host/src/gateway_config.rs",
     "source/host/src/host_event_bus.rs",
     "source/host/src/extensions/local_exec/local_exec_bridge.rs",
@@ -98,6 +101,7 @@ inputs = [
     "source/host/src/extensions/node_host/runtime_state.rs",
     "source/host/src/extensions/node_host/session_registry.rs",
     "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+    "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
     "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
     "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
     "source/host/tests/gateway_join_admission_contract.rs",
@@ -484,6 +488,67 @@ role_token_http_required = [
     "token_revoke_http_two_self_admissions_and_rotation_races_have_serial_outcomes",
     "token_revoke_http_fresh_marker_rule_denies_retired_bearers_and_preserves_live_controls",
 ]
+wire_rotation_owner_required = [
+    "wire_rotation_pairing_self_delivers_committed_successor_and_survives_reopen",
+    "wire_rotation_admin_self_other_role_delivers_but_cross_device_withholds",
+    "wire_rotation_native_dispatch_always_withholds_and_honors_singular_ceiling",
+    "wire_rotation_closed_request_rejects_all_invalid_shapes_before_any_mutation",
+    "wire_rotation_normalization_matches_fixed_u_implications_and_utf16_order",
+    "wire_rotation_desired_scopes_select_explicit_existing_or_device_fallback",
+    "wire_rotation_explicit_empty_repairs_excessive_or_malformed_selected_grants",
+    "wire_rotation_omission_never_filters_cross_role_device_fallback",
+    "wire_rotation_target_baseline_is_mandatory_even_for_empty_repair",
+    "wire_rotation_only_decisive_scope_storage_is_read_and_malformed_fallback_refuses",
+    "wire_rotation_role_union_allows_missing_entry_but_never_stray_approval",
+    "wire_rotation_replaces_obsolete_entry_fields_and_every_retired_marker",
+    "wire_rotation_preserves_opaque_metadata_and_safe_lifecycle_values",
+    "wire_rotation_rejects_non_safe_lifecycle_and_nonobject_selected_entries",
+    "wire_rotation_target_storage_types_are_strict_and_nonoperator_scopes_are_literal",
+    "wire_rotation_scope_implications_keep_caller_and_target_ceilings_independent",
+    "wire_rotation_preserves_legacy_dpa_unicode_and_response_behavior",
+    "wire_rotation_two_current_admin_owners_serialize_replacements_without_lost_updates",
+    "wire_rotation_and_role_revoke_race_consumes_original_self_authority_once",
+    "wire_rotation_refusal_preserves_a_competing_committed_retirement_or_approval_change",
+    "wire_rotation_active_marker_variants_require_a_current_caller_even_for_empty_repair",
+    "wire_rotation_absent_reply_readback_does_not_reveal_or_reissue_replacement",
+    "wire_rotation_two_owner_distinct_roles_preserve_both_committed_replacements",
+    "wire_rotation_target_nondisclosure_precedes_malformed_or_absent_target_reads",
+    "wire_rotation_pairing_permission_and_singular_headers_do_not_promote_proofs",
+    "wire_rotation_sealed_issuer_and_projection_control_identity_and_permissions",
+    "wire_rotation_currentness_precedes_operator_policy_for_every_sealed_role",
+    "wire_rotation_caller_identity_failures_keep_established_unauthorized_status",
+    "wire_rotation_caller_corruption_and_null_approval_fallback_are_distinct",
+    "wire_rotation_intersects_sealed_live_approval_and_target_grants",
+    "wire_rotation_revision_missing_corrupt_and_overflow_roll_back_on_reopen",
+    "wire_rotation_last_revision_and_legacy_bootstrap_behaviors_remain_distinct",
+    "wire_rotation_sql_and_row_count_faults_roll_back_then_recover",
+    "wire_rotation_immediate_write_lock_precedes_policy_and_target_read_decisions",
+    "wire_rotation_failed_commit_rolls_back_token_surfaces_and_counter_durably",
+    "wire_rotation_two_owner_self_race_commits_once_and_rejects_retired_proof",
+    "wire_rotation_storage_read_failure_is_redacted_without_repair_or_mutation",
+    "wire_rotation_minted_nel_literal_never_becomes_admin_in_existing_consumers",
+    "wire_rotation_literal_baseline_and_bom_requests_have_one_scope_meaning",
+    "wire_rotation_native_and_legacy_producers_preserve_canonical_literal_grants",
+    "wire_rotation_pending_scope_identity_distinguishes_nel_and_reuses_bom_subsets",
+    "wire_rotation_primary_only_successors_reopen_and_later_withdrawal_retires_them",
+    "wire_rotation_unselected_primary_never_revives_and_existing_role_bytes_survive",
+    "wire_rotation_primary_materialization_rolls_back_with_target_revision_and_commit_faults",
+]
+wire_rotation_http_required = [
+    "token_rotate_wire_http_self_delivers_committed_successor_with_context_and_reopen",
+    "token_rotate_wire_http_native_delivery_and_singular_ceiling_bind_with_and_without_secret",
+    "token_rotate_wire_http_addressing_hides_targets_and_admin_delivery_is_device_bound",
+    "token_rotate_wire_http_scope_omission_empty_implied_and_legacy_repair_use_resulting_grant",
+    "token_rotate_wire_http_closed_request_storage_refusal_and_explicit_repair_are_atomic",
+    "token_rotate_wire_http_pairing_permission_and_existing_role_scope_guards_stay_distinct",
+    "token_rotate_wire_http_bad_credentials_and_common_ingress_never_become_native",
+    "token_rotate_wire_http_default_hook_fails_closed_and_dpa_keeps_its_distinct_contract",
+    "token_rotate_wire_http_authenticated_barrier_rechecks_current_sealed_authority",
+    "token_rotate_wire_http_two_self_admissions_have_one_winner_and_two_manager_rotations_commit",
+    "token_rotate_wire_http_socket_closed_after_commit_never_retries_or_resurrects_the_predecessor",
+    "token_rotate_wire_http_issued_nel_literal_never_becomes_pairing_or_admin_at_adjacent_consumers",
+    "token_rotate_wire_http_primary_only_successors_materialize_roles_atomically_and_withdraw_after_reopen",
+]
 retained_stream_required = [
     "retained_initial_admission_refuses_before_headers_subscription_or_provider_registration",
     "retained_default_hook_refuses_paired_streams_and_preserves_native_streams",
@@ -505,6 +570,13 @@ retained_stream_required = [
     "retained_token_revocation_initial_admission_and_registration_drop_are_causal",
     "retained_token_revocation_bridge_streams_drop_only_selected_role_once",
     "retained_token_revocation_bridge_responses_preserve_unaffected_and_prior_admission",
+    "retained_token_rotation_closes_only_selected_role_and_preserves_live_reconnect_controls",
+    "retained_token_rotation_respects_queued_and_prior_frame_admission",
+    "retained_token_rotation_quiet_heartbeat_keeps_other_role_and_native_live",
+    "retained_token_rotation_initial_admission_and_registration_drop_are_causal",
+    "retained_token_rotation_bridge_streams_drop_only_selected_role_once",
+    "retained_token_rotation_bridge_responses_preserve_unaffected_and_prior_admission",
+    "retained_primary_only_rotation_successors_reconnect_after_reopen_and_close_on_role_withdrawal",
 ]
 cases = [
     ("generated-send-message-recorder", base + ["--lib", "runner::turn_agent_composition::tool_call_recorder::tests::", "--", "--test-threads=1"], [
@@ -723,6 +795,8 @@ cases = [
     ("device-pairing-revocation-gateway", base + ["--test", "device_pairing_revocation_gateway_contract", "--", "--test-threads=1"], revocation_http_required),
     ("device-role-token-revocation-authority", base + ["--test", "device_role_token_revocation_authority_contract", "--", "--test-threads=1"], role_token_owner_required),
     ("device-role-token-revocation-gateway", base + ["--test", "device_role_token_revocation_gateway_contract", "--", "--test-threads=1"], role_token_http_required),
+    ("device-token-rotation-wire-authority", base + ["--test", "device_token_rotation_wire_authority_contract", "--", "--test-threads=1"], wire_rotation_owner_required),
+    ("device-token-rotation-wire-gateway", base + ["--test", "device_token_rotation_wire_gateway_contract", "--", "--test-threads=1"], wire_rotation_http_required),
     ("device-pairing-retained-stream", base + ["--test", "device_pairing_retained_stream_contract", "--", "--test-threads=1"], retained_stream_required),
     ("received-catalog-preparation", base + ["--test", "runner_production_bridge_contract", "--", "--test-threads=1"], [
         "production_runner_catalog_refusal_stops_before_execution_and_ordinary_failure_continues_preparation",
@@ -922,7 +996,7 @@ for label, output, cargo_exit, capture_exit, expected in [
 
 receipt = {
     "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-    "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1"],
+    "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DTR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1"],
     "memory_synthesis_identity_scope": "Per-snapshot MemorySynthesis uses one admitted model/credential identity across proposal, verification and retries. Native and Codex controls reach the production factory, actual HTTP assembly, Session apply gate and FileMemoryStore with owned credentials. Same-context token rotation is accepted; account/workspace drift and cancellation preserve memory/temporal bytes. Stale starts a new snapshot admission. Detached-worker drain, atomic cancellation/commit, original evidence account binding, durable synthesis recovery and real providers remain unaccepted.",
     "send_message_fidelity_scope": "SGF-v1 preserves actual completed SendMessage producer wire through existing canonical field 2 independently of live observation, using a fresh invocation recorder and checked receipt/callback/drain custody. Actual Session success-only decoding retains full-envelope and effective oneof semantics through backfill/reopen. Controlled actual App SQL sends compare message identity, normalized arguments, timestamps, live/canonical bytes and Journal projection; original typed failure, completion revocation and two fresh owner reads retain no replay or marker authority. Real providers/channels, external delivery ACK, lost SQL identity reconstruction, original interrupted-turn restart, rich variants and packaged-platform acceptance remain open.",
     "codex_workspace_binding_scope": "Actual private credential loading, per-turn source/workspace continuity, same-workspace rotation, recreated retry/checkpoint refusal, one-401 refresh before persistence and bound/fresh Memory consumers through real HTTP with owned redirected destinations. Real service, external-writer settlement and process-restart acceptance remain open.",
@@ -941,7 +1015,7 @@ receipt = {
     "synthetic_result_oracle_controls": oracle_controls,
     "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
     "executions": [], "result": "failed-or-incomplete",
-    "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 retains complete owner26, HTTP8 and its original14 retained-stream cases for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. DRT-v1 adds selected-role retirement through the same owner, explicit native/paired ceilings, fresh-marker rejection and six selected-role retained cases; whole-target counts and exact positive names remain mandatory. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and upstream remove/rotation wire aliases remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+    "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 retains complete owner26, HTTP8 and its original14 retained-stream cases for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. DRT-v1 adds selected-role retirement through the same owner, explicit native/paired ceilings, fresh-marker rejection and six selected-role retained cases; whole-target counts and exact positive names remain mandatory. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and the upstream remove wire alias remain open. DTR-v1 executes the complete wire-rotation owner44 and HTTP13 targets plus all27 retained cases, preserving all previous names and assertions. It covers resulting-grant caps and explicit repair, exact identity-bound delivery, supported metadata, checked single-commit revision, current-proof races, node-only surfaces, response-loss/no-replay and successor controls. Freshly issued literal scopes stay literal across adjacent management consumers; selected primary-only role materialization, decisive approval reads, rollback, reopen and later role withdrawal are required. External credential caches, issuer-generation policy, upstream WebSocket/node-surface compatibility and real devices remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
 }
 for label, command, required in cases:
     receipt["active_case"] = label
@@ -965,7 +1039,7 @@ for label, command, required in cases:
     if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http", "memory-synthesis-identity", "generated-send-message-recorder"):
         accepted = accepted and counts == [(len(required), 0, 0)]
     complete_counts = None
-    if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-role-token-revocation-authority", "device-role-token-revocation-gateway", "device-pairing-retained-stream"):
+    if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-role-token-revocation-authority", "device-role-token-revocation-gateway", "device-token-rotation-wire-authority", "device-token-rotation-wire-gateway", "device-pairing-retained-stream"):
         complete_counts = [tuple(map(int, count)) for count in re.findall(
             r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
         accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]

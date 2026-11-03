@@ -4155,6 +4155,7 @@ impl UnifiedGatewayApi {
             | "device.pair.revoke"
             | "device.pair.rotateToken"
             | "device.token.revoke"
+            | "device.token.rotate"
             | "device.pair.setupCode" => self.device_pairing.handle_pairing_command(method, &args),
             "config.get" => self.call_openclaw_config_get(&args),
             "config.set" => self.call_openclaw_config_set(&args),
@@ -13374,6 +13375,19 @@ impl GatewayApi for UnifiedGatewayApi {
         Ok(())
     }
 
+    fn rotate_device_token(
+        &self,
+        args: serde_json::Value,
+        authorization: Option<&mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization>,
+        scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        self.transcript_runtime
+            .session_runtime()
+            .note_desktop_contact(started_at_ms() as f64);
+        self.device_pairing.rotate_token_with_authority(&args, authorization, scope_ceiling)
+    }
+
     fn revoke_device_token(
         &self,
         args: serde_json::Value,
@@ -17927,6 +17941,8 @@ fn main() {
 mod tests {
     #[path = "device_pairing_revocation_tests.rs"]
     mod device_pairing_revocation_tests;
+    #[path = "device_token_rotation_wire_tests.rs"]
+    mod device_token_rotation_wire_tests;
     #[path = "original_turn_recovery_tests.rs"]
     mod original_turn_recovery_tests;
     #[path = "channel_host_lane_tests.rs"]

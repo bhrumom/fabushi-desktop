@@ -97,13 +97,23 @@ fn native_mini_app_extensions_preserve_frozen_inventory_and_mcp_owner() {
 
 #[test]
 fn openclaw_gateway_extensions_preserve_frozen_inventory_and_owners() {
-    assert_eq!(OPENCLAW_GATEWAY_METHODS.len(), 26);
+    assert_eq!(OPENCLAW_GATEWAY_METHODS.len(), 27);
     assert_eq!(
         OPENCLAW_GATEWAY_METHODS.iter().filter(|method| **method == "device.token.revoke").count(),
         1,
     );
     assert_eq!(host_gateway_owner("device.token.revoke"), Some(HostGatewayOwner::DevicePairing));
+    assert_eq!(
+        OPENCLAW_GATEWAY_METHODS.iter().filter(|method| **method == "device.token.rotate").count(),
+        1,
+    );
+    assert_eq!(host_gateway_owner("device.token.rotate"), Some(HostGatewayOwner::DevicePairing));
     for unknown in ["device.Token.revoke", "device.token.revoke.extra", "device.token.Revoke"] {
+        assert!(!is_openclaw_gateway_command(unknown));
+        assert!(!is_grok_gateway_command(unknown));
+        assert_eq!(host_gateway_owner(unknown), None);
+    }
+    for unknown in ["device.Token.rotate", "device.token.rotate.extra", "device.token.Rotate"] {
         assert!(!is_openclaw_gateway_command(unknown));
         assert!(!is_grok_gateway_command(unknown));
         assert_eq!(host_gateway_owner(unknown), None);

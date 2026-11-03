@@ -8,14 +8,14 @@ use std::{fs, path::PathBuf};
 // These are the actual helpers called by UnifiedGatewayApi, with its actual
 // durable pairing and node-runtime owners. No copied projection or remote
 // transport fixture stands in for a shipping App/device acceptance result.
-struct NodeProjectionFixture {
+pub(super) struct NodeProjectionFixture {
     root: PathBuf,
     owner: Option<DevicePairingOwner>,
-    runtime: NodeHostRuntimeState,
+    pub(super) runtime: NodeHostRuntimeState,
 }
 
 impl NodeProjectionFixture {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let root = std::env::temp_dir().join(format!("dvr-app-{}", uuid::Uuid::new_v4()));
         fs::create_dir(&root).expect("create owned node projection fixture");
         let mut fixture = Self { root, owner: None, runtime: NodeHostRuntimeState::new() };
@@ -26,11 +26,11 @@ impl NodeProjectionFixture {
         fixture
     }
 
-    fn owner(&self) -> &DevicePairingOwner {
+    pub(super) fn owner(&self) -> &DevicePairingOwner {
         self.owner.as_ref().expect("fixture owner open")
     }
 
-    fn pair(&self, id: &str, roles: &[&str], scopes: &[&str]) -> DeviceTokenAuthorization {
+    pub(super) fn pair(&self, id: &str, roles: &[&str], scopes: &[&str]) -> DeviceTokenAuthorization {
         let request = self.owner().handle_pair_request(&json!({
             "deviceId": id, "publicKey": format!("projection-key-{id}"),
             "displayName": format!("paired {id}"), "platform": "projection-platform",
@@ -49,7 +49,7 @@ impl NodeProjectionFixture {
         project_openclaw_node_list(self.owner(), &self.runtime).expect("shipping node list helper")
     }
 
-    fn status(&self, id: &str) -> Value {
+    pub(super) fn status(&self, id: &str) -> Value {
         project_openclaw_node_status(self.owner(), &self.runtime, &json!({"nodeId": id}))
             .expect("shipping node status helper")
     }
@@ -64,7 +64,7 @@ impl NodeProjectionFixture {
         assert_eq!(error.to_string(), format!("unknown nodeId: {id}"));
     }
 
-    fn local_is_live(&self) {
+    pub(super) fn local_is_live(&self) {
         let list = self.list();
         assert_eq!(list["activeNodeId"], "sand-local-node");
         let local = self.status("sand-local-node");
@@ -77,7 +77,7 @@ impl NodeProjectionFixture {
             .filter(|node| node["nodeId"] == "sand-local-node").count(), 1);
     }
 
-    fn reopen(&mut self) {
+    pub(super) fn reopen(&mut self) {
         drop(self.owner.take());
         self.owner = Some(DevicePairingOwner::new(self.root.join("pairings.sqlite"))
             .expect("reopen the same durable App owner"));
@@ -93,7 +93,7 @@ impl Drop for NodeProjectionFixture {
     }
 }
 
-fn metadata(id: &str, local: bool) -> NodeHostSessionMetadata {
+pub(super) fn metadata(id: &str, local: bool) -> NodeHostSessionMetadata {
     NodeHostSessionMetadata {
         node_id: id.into(), display_name: format!("session {id}"),
         platform: "runtime-platform".into(), device_family: "fixture".into(),
@@ -202,7 +202,7 @@ fn revocation_shipping_hooks_and_node_consumers_use_the_same_existing_owners() {
     }
 }
 
-fn role_token(fixture: &NodeProjectionFixture, id: &str, role: &str) -> String {
+pub(super) fn role_token(fixture: &NodeProjectionFixture, id: &str, role: &str) -> String {
     let conn = rusqlite::Connection::open_with_flags(
         fixture.root.join("pairings.sqlite"), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
     ).expect("independent read-only credential observer");
@@ -215,7 +215,7 @@ fn role_token(fixture: &NodeProjectionFixture, id: &str, role: &str) -> String {
     entries[role]["token"].as_str().expect("real issued role credential").to_owned()
 }
 
-fn node_surfaces(fixture: &NodeProjectionFixture, id: &str) -> (Option<String>, Option<String>) {
+pub(super) fn node_surfaces(fixture: &NodeProjectionFixture, id: &str) -> (Option<String>, Option<String>) {
     let conn = rusqlite::Connection::open_with_flags(
         fixture.root.join("pairings.sqlite"), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
     ).expect("independent read-only surface observer");
@@ -227,7 +227,7 @@ fn node_surfaces(fixture: &NodeProjectionFixture, id: &str) -> (Option<String>, 
     surfaces
 }
 
-fn seed_node_surfaces(fixture: &NodeProjectionFixture, id: &str) {
+pub(super) fn seed_node_surfaces(fixture: &NodeProjectionFixture, id: &str) {
     let conn = rusqlite::Connection::open_with_flags(
         fixture.root.join("pairings.sqlite"), rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE,
     ).expect("open existing fixture for explicit surface setup");
@@ -240,7 +240,7 @@ fn seed_node_surfaces(fixture: &NodeProjectionFixture, id: &str) {
     conn.close().expect("close surface fixture writer");
 }
 
-fn status_without_timestamp(fixture: &NodeProjectionFixture, id: &str) -> Value {
+pub(super) fn status_without_timestamp(fixture: &NodeProjectionFixture, id: &str) -> Value {
     let mut status = fixture.status(id);
     assert!(status.as_object_mut().expect("node object").remove("ts").is_some());
     status
