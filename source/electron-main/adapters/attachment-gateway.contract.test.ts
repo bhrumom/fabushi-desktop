@@ -501,7 +501,7 @@ async function rejectReadAtBoundary(t: TestContext, boundary: "probe" | "first" 
   assert.equal(a.main.matching("readAttachmentChunk").length, count);
   assertNoAttachmentRequests(b.main);
   assert.ok(f.edgeFailures.some((failure) => failure.leg === "read-bytes"));
-});
+}
 
 test("MAB attachment switch at probe rejects before the first data chunk", SERIAL, async (t) => {
   await rejectReadAtBoundary(t, "probe");
@@ -850,7 +850,7 @@ async function rejectDownloadIo(t: TestContext, boundary: "open" | "between-chun
   assert.equal(writes, boundary === "open" ? 0 : boundary === "between-chunks" ? 1 : 2);
   assert.equal(a.main.matching("readAttachmentChunk").length, boundary === "open" ? 1 : boundary === "between-chunks" ? 2 : 3);
   assertNoAttachmentRequests(b.main);
-});
+}
 
 test("MAB attachment download switch after real open closes and cleans the destination", SERIAL, async (t) => {
   await rejectDownloadIo(t, "open");

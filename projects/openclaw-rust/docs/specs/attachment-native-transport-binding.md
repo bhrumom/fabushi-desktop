@@ -206,3 +206,34 @@ and zero Node/nonzero capture; both must preserve their actual statuses and
 return failure. Retain the normal both-zero production command and require all
 three outcomes in the exact-H receipt. No local reproduction is authorized.
 This decision is recorded before the wrapper and control implementation.
+
+## Exact-subject Actions recovery
+
+**MAB-CI-R1-F1 — FIX / TEST_FLAW (authored test source):** Runtime run
+`41555028047`, attempt 1, renderer job `125651721307`, subject
+`e2b6b850584045254a574a7847623939acf8d4cb`, failed the existing Electron build.
+esbuild reported `Unexpected ")"` at
+`source/electron-main/adapters/attachment-gateway.contract.test.ts:504:1`.
+The plain `rejectReadAtBoundary` function declaration ends with the callback
+delimiter `});`. Correct only that function's closing delimiter to `}`; retain
+all four boundary scenarios, assertions and test selectors. The MAB and prior
+Plugin Skills tests were skipped, and the always-run receipt failed closed;
+neither suite is approved for this H. The completed shipping-bundle build
+substeps do not establish the unexecuted lifetime controls.
+
+This decision precedes the source correction. Freeze the complete MAB scope
+again, obtain fresh focused review of this fix and adjacent callers, then use
+the existing Actions build, 85-name MAB/capture controls and retained Plugin
+Skills suite on the new exact H. Do not rerun the unchanged failing subject,
+remove assertions, or infer a runtime defect or platform acceptance from this
+test-source failure. Prior CAP evidence keeps its original subject.
+
+**MAB-CI-R1-F2 — FIX / TEST_FLAW (same-class source inspection):** inspecting
+the remaining plain helper declarations before the recovery found the same
+callback closing delimiter at the end of `rejectDownloadIo` (original line
+853). Actions stopped at the earlier parse error; this second defect is a
+direct source observation, not another observed CI failure. Correct this
+helper's final `});` to `}` as well. Preserve all four actual-file I/O boundary
+controls and their exact assertions. Include both delimiter fixes in the same
+focused review and recovery execution; do not spend another run rediscovering
+an already confirmed syntax defect. This decision precedes the second edit.
