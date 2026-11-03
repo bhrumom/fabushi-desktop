@@ -143,6 +143,42 @@ adapter and its assertions; retain it verbatim when integrating. Neither
 that correction nor this review promotes the failed `f71bb36a8757b4acf2356fa34de9d73721ccfbda`
 campaign, a later H, or any OCRM global flag.
 
+## Exact-H reopen-oracle recovery — 2026-11-03
+
+Decision **CGWA-REOPEN-01 — FIX / TEST_FLAW**, before the local repair. Runtime
+run `41549418649`, attempt 1, Linux job `125632982580`, at subject
+`f986b457e77d106638f02e8ff23f6b15d3eb792c` failed the final assertion in
+`channel_gateway_write_and_admin_credentials_persist_through_reopen` after
+its actual HTTP mutations and two owner reopens. The assertion compared the
+entire new `DeviceTokenAuthorization` with a proof issued by the original
+owner. DPA-v1 deliberately seals proof to its issuer allocation: reopening
+preserves the bearer, device, role and scopes but must issue fresh proof.
+
+Keep that production issuer check and all existing HTTP, byte-preservation,
+mutation, deletion and reopen assertions. Authenticate the original bearer
+again through the reopened owner, require a nonempty fresh authorization,
+compare all three durable public fields, and explicitly require that the full
+proof differs from the original owner. This repairs the persistence oracle
+without granting cross-owner proof reuse or weakening the existing DPA
+foreign-owner negatives. The unchanged test name remains mandatory in the
+existing Linux/macOS command and receipt. Do not rerun the failed H unchanged.
+The next candidate must execute this repaired target and the existing paired
+rotation controls in Actions; this source decision is not a passing result.
+
+The failed integration log SHA-256 is
+`4a6b8083f80a17b5dcc027bbd4bb73c38c190407ae4702773d11b08a59612f76`;
+its command exit was 101 and capture exit 0. Preserve this failed attempt and
+the still-valid separate CAP-v1 media evidence; do not promote shared App,
+Automation, platform or final acceptance from it.
+
+Integration then found the equivalent correction already published in
+`31cac7c95ec0297f7dee72d4bc40dad56aee4f01`, test blob
+`4e8eb1b44d068fd4bfbc66a8ee755307cc534de6`. Preserve that exact incoming
+implementation (fresh authentication, all three public fields and distinct
+owner-bound proof) and discard the redundant local test edit. This observation
+records the f986 failure and required recovery, not authorship of the incoming
+fix or a passing result for it.
+
 ## Fixed-U and native provenance
 
 The native classification follows the existing MGA-v1 contract in

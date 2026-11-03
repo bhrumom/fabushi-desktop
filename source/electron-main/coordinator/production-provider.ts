@@ -19,6 +19,7 @@ import {
   type WebAuthnPromptWindowOptions,
 } from "./coordinator-executors.js";
 import { createCoordinatorHandoffTelemetry } from "./coordinator-handoff-telemetry.js";
+import type { CoordinatorMainPortOwnership } from "./coordinator-main-legs.js";
 import type {
   CoordinatorChildProcess,
   CoordinatorMessageChannel,
@@ -37,6 +38,7 @@ import {
   COORDINATOR_PORT_REQUEST_CHANNEL,
   createCoordinatorRuntime,
   resolveCoordinatorArtifactPath,
+  type CoordinatorRuntime,
 } from "./coordinator-runtime.js";
 import {
   createCoordinatorRelaunchBackoff,
@@ -441,8 +443,12 @@ export function createProductionCoordinatorAdapter<
         noteHostMcpAuthCompleted: (request) => context.requireMcp().noteHostMcpAuthCompleted(request),
         native: ports.localExecNative,
       });
-      const createRuntime = () =>
-        createCoordinatorRuntime({
+      // The native owners remain authoritative. This join only relates each
+      // exact returned runtime to the MainData port that it actually adopted.
+      const runtimeMainData = new WeakMap<object, () => CoordinatorMainPortOwnership | undefined>();
+      const createRuntime = (): CoordinatorRuntime => {
+        let ownedMainData: CoordinatorMainPortOwnership | undefined;
+        const runtime = createCoordinatorRuntime({
           fork: (path, options) =>
             ports.utilityProcess.fork(path, [], { serviceName: options.serviceName }),
           createChannel: () => new ports.MessageChannelMain(),
@@ -469,9 +475,15 @@ export function createProductionCoordinatorAdapter<
           onMainDataPort: (port) => {
             ports.resync.onHostSettingsTransportDown();
             try {
-              context.coordinatorLegs.adoptPort(
+              const ownership = context.coordinatorLegs.adoptPort(
                 port as Parameters<typeof context.coordinatorLegs.adoptPort>[0],
               );
+              if (ownership == null) {
+                handoff.invokeFailed("main_data_port");
+                return;
+              }
+              ownedMainData = ownership;
+              ownership.assertCurrent();
             } catch (error) {
               handoff.invokeFailed("main_data_port");
               throw error;
@@ -493,6 +505,26 @@ export function createProductionCoordinatorAdapter<
           },
           artifactPath,
         });
+        const ownedRuntime: CoordinatorRuntime = {
+          requestRendererPort: (sink) => runtime.requestRendererPort(sink),
+          revokeRendererPortRequest: () => runtime.revokeRendererPortRequest(),
+          restart: () => runtime.restart(),
+          dispose: () => {
+            const ownership = ownedMainData;
+            ownedMainData = undefined;
+            try {
+              ownership?.revoke();
+            } catch (error) {
+              // Ownership is withdrawn before callbacks. A reporting failure
+              // must never prevent waiting for this runtime's process exit.
+              try { ports.reportFailure("coordinator", "main-data-dispose", error); } catch { /* reporting only */ }
+            }
+            return runtime.dispose();
+          },
+        };
+        runtimeMainData.set(ownedRuntime, () => ownedMainData);
+        return ownedRuntime;
+      };
 
       const accountRuntime = createCoordinatorAccountRuntime<Status>({
         createRuntime,
@@ -508,7 +540,7 @@ export function createProductionCoordinatorAdapter<
           return ports.account.prepareAccountTransition(transition, context);
         },
         resetAccountState: () => ports.account.resetAccountState(context),
-        revokeMainDataPort: () => context.coordinatorLegs.revoke(),
+        revokeMainDataPort: (runtime) => runtimeMainData.get(runtime)?.()?.revoke(),
         deliverStatus: (status) => ports.account.deliverStatus(status, context),
         onProblem: (detail) => ports.reportProblem("coordinator-account", detail),
         onExitTimeout: handoff.exitTimeout,
@@ -543,6 +575,17 @@ export function createProductionCoordinatorAdapter<
 
       return {
         start: (status) => accountRuntime.start(status as Status),
+        captureMainDataSession() {
+          if (disposed) return null;
+          const binding = accountRuntime.captureCurrentBinding();
+          if (binding == null) return null;
+          const ownership = runtimeMainData.get(binding.runtimeIdentity)?.();
+          if (ownership == null) return null;
+          return context.coordinatorLegs.captureCurrent(() => {
+            binding.assertCurrent();
+            ownership.assertCurrent();
+          });
+        },
         getAccountRuntime: () => active,
         restartCoordinator: () => { void active?.restart(); },
         getTelemetryReportPipes: () => ({

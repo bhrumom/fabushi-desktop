@@ -1,0 +1,818 @@
+{
+  "schema": "exact-h-actions-assessment-v1",
+  "assessed_subject": {
+    "repository": "bhrumom/fabushi-desktop",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "H": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+    "tree": "f11e9e98ca9157ee114a9b6f84d2396c690ff4db",
+    "parent": "3aaa79ae47e05c5d3273bbdaf5e086b2d7e112b4",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  },
+  "last_runtime_observation_utc": "2026-11-03 00:07:40 UTC",
+  "verdicts": {
+    "cap_linux_media": "APPROVED_SCOPED",
+    "shared_linux_job": "FAILED_TEST_FLAW_AND_DEPENDENT_EVIDENCE_GAP",
+    "cap_full_candidate": "NOT_APPROVED",
+    "macos": "PENDING_QUEUED_NOT_PASSED",
+    "runtime_workflow": "NOT_SUCCESSFUL_CONCLUSION_NULL",
+    "source_authority": "APPROVED_TRACKED_TREE_AND_STRUCTURAL_ONLY"
+  },
+  "runs": {
+    "runtime": {
+      "id": 41549418649,
+      "run_attempt": 1,
+      "event": "push",
+      "head_sha": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "status": "queued",
+      "conclusion": null,
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41549418649"
+    },
+    "source": {
+      "id": 41549418613,
+      "run_attempt": 1,
+      "event": "push",
+      "head_sha": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41549418613"
+    }
+  },
+  "jobs": [
+    {
+      "id": 125632982092,
+      "name": "OCRM installation key restore boundary / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": [],
+      "skipped_steps": []
+    },
+    {
+      "id": 125632982398,
+      "name": "rust-host",
+      "status": "queued",
+      "conclusion": null,
+      "failed_steps": [],
+      "skipped_steps": []
+    },
+    {
+      "id": 125632982508,
+      "name": "renderer",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": [],
+      "skipped_steps": [
+        "Check production architecture boundary",
+        "Compile Grok Electron boundary contracts",
+        "Compile Fabushi product policy contract",
+        "Test Grok Electron boundary contracts",
+        "Test Fabushi product policy contract",
+        "Test recovered window chrome contracts",
+        "Check Agent workspace architecture boundary",
+        "Check Grok architecture inventory",
+        "Typecheck and build renderer",
+        "Verify co-staged desktop runtime",
+        "Enforce built desktop bundle boundary",
+        "Check Grok final architecture gate"
+      ]
+    },
+    {
+      "id": 125632982580,
+      "name": "sqlite-native-path",
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        {
+          "name": "Test portable recovery, Memory, pairing, palette, Session, MCP and channel controls on the existing Linux Host cache",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 10
+        },
+        {
+          "name": "Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache",
+          "status": "completed",
+          "conclusion": "failure",
+          "number": 18
+        }
+      ],
+      "skipped_steps": [
+        "Set up Node for the same-subject palette consumer",
+        "Install existing desktop dependencies for palette contracts",
+        "Consume actual Rust message results and typecheck the production palette",
+        "Test typed Automation admission and actual owners on the existing Linux Host cache",
+        "Check and execute the actual Automation, Settings and channel App owners on Linux",
+        "Post Run Swatinem/rust-cache@v2"
+      ]
+    },
+    {
+      "id": 125632983460,
+      "name": "Pressure profiler / ${{ matrix.os }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "failed_steps": [],
+      "skipped_steps": []
+    },
+    {
+      "id": 125633034552,
+      "name": "platform-worker",
+      "status": "completed",
+      "conclusion": "skipped",
+      "failed_steps": [],
+      "skipped_steps": []
+    }
+  ],
+  "media": {
+    "total_passed": 95,
+    "total_failed": 0,
+    "total_ignored": 0,
+    "new_service_case_count": 12,
+    "private_publication_case_count": 9,
+    "remaining_retained_cases_executed_here": 74,
+    "all_eight_cargo_capture_exits_zero": true,
+    "all_62_mandatory_names_unique_positive": true,
+    "input_count": 31,
+    "exact_H_input_hash_mismatches": [],
+    "receipt": "artifact:13190607525/media-input-policy/receipt.json",
+    "receipt_sha256": "ef32ab0d5bef1b56fce6f2889accad741a5dd42edf96b8bf9acb56fdad10ae3b",
+    "commands": [
+      {
+        "kind": "integration",
+        "argv": [
+          "cargo",
+          "test",
+          "--locked",
+          "--no-fail-fast",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--test",
+          "openclaw_input_files_contract",
+          "--test",
+          "safe_link_preview_fetch_contract",
+          "--test",
+          "attachments_service_contract",
+          "--test",
+          "openclaw_media_fetch_contract",
+          "--test",
+          "openclaw_media_reference_contract",
+          "--test",
+          "channel_attachment_contract"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "passed": 83,
+        "failed": 0,
+        "ignored": 0,
+        "required_name_count": 50,
+        "missing_or_nonunique_required": [],
+        "log": "artifact:13190607525/media-input-policy/tests.log",
+        "log_sha256": "9f01b7d7213e181565253df77fa83a35769514ea976263a4829b6963075fe015",
+        "summaries": [
+          "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s",
+          "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s",
+          "test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.13s",
+          "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s"
+        ]
+      },
+      {
+        "kind": "projection",
+        "argv": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--lib",
+          "extensions::attachments::input_files::tests::input_url_policy_projection_preserves_zero_caps_without_private_trust",
+          "--",
+          "--exact"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "passed": 1,
+        "failed": 0,
+        "ignored": 0,
+        "required_name_count": 1,
+        "missing_or_nonunique_required": [],
+        "log": "artifact:13190607525/media-input-policy/projection.log",
+        "log_sha256": "e5e120edfea79bbe814e2043ac0f82cb7800b5c8a131ec462ef062c18d5725eb",
+        "summaries": [
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 552 filtered out; finished in 0.04s"
+        ]
+      },
+      {
+        "kind": "unicode",
+        "argv": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--lib",
+          "extensions::cross_user_sharing::production::unicode_tests::"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0,
+        "required_name_count": 2,
+        "missing_or_nonunique_required": [],
+        "log": "artifact:13190607525/media-input-policy/unicode.log",
+        "log_sha256": "8e1a9c1180e4ee6eeb87343da770b75be8eb5c87192faddb2faa5d1044a31db4",
+        "summaries": [
+          "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 551 filtered out; finished in 0.01s"
+        ]
+      },
+      {
+        "kind": "publication",
+        "argv": [
+          "cargo",
+          "test",
+          "--locked",
+          "--manifest-path",
+          "source/host/Cargo.toml",
+          "--lib",
+          "extensions::attachments::content_addressed_file::tests::"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "passed": 9,
+        "failed": 0,
+        "ignored": 0,
+        "required_name_count": 9,
+        "missing_or_nonunique_required": [],
+        "log": "artifact:13190607525/media-input-policy/publication.log",
+        "log_sha256": "2e9cfb1c83a47144abdff8e251b0b9f10f4c11de9121ca7ea224d272f2fd2203",
+        "summaries": [
+          "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 544 filtered out; finished in 0.01s"
+        ]
+      }
+    ],
+    "new_service_cases": [
+      {
+        "name": "gateway_upload_rejects_corrupt_content_addressed_winners_without_mutation",
+        "positive_count": 1,
+        "raw_log_lines": [
+          799
+        ]
+      },
+      {
+        "name": "gateway_upload_rejects_directory_winners_without_mutation",
+        "positive_count": 1,
+        "raw_log_lines": [
+          798
+        ]
+      },
+      {
+        "name": "gateway_upload_rejects_symlink_winners_without_following_them",
+        "positive_count": 1,
+        "raw_log_lines": [
+          801
+        ]
+      },
+      {
+        "name": "gateway_upload_rejects_fifo_winners_without_opening_them",
+        "positive_count": 1,
+        "raw_log_lines": [
+          800
+        ]
+      },
+      {
+        "name": "gateway_upload_refuses_unreadable_objects_and_unwritable_destinations",
+        "positive_count": 1,
+        "raw_log_lines": [
+          797
+        ]
+      },
+      {
+        "name": "valid_legacy_winner_is_reused_without_changing_its_metadata",
+        "positive_count": 1,
+        "raw_log_lines": [
+          807
+        ]
+      },
+      {
+        "name": "publication_preserves_default_file_and_directory_permissions",
+        "positive_count": 1,
+        "raw_log_lines": [
+          805
+        ]
+      },
+      {
+        "name": "restart_ignores_orphan_staging_files_and_preserves_valid_resources",
+        "positive_count": 1,
+        "raw_log_lines": [
+          808
+        ]
+      },
+      {
+        "name": "concurrent_same_content_uploads_return_one_complete_resource",
+        "positive_count": 1,
+        "raw_log_lines": [
+          810
+        ]
+      },
+      {
+        "name": "generated_image_service_rejects_corrupt_winners_and_propagates_persistence_errors",
+        "positive_count": 1,
+        "raw_log_lines": [
+          802
+        ]
+      },
+      {
+        "name": "generated_image_service_returns_persisted_bytes_to_image_consumer",
+        "positive_count": 1,
+        "raw_log_lines": [
+          804
+        ]
+      },
+      {
+        "name": "empty_image_and_attachment_extension_behavior_remain_unchanged",
+        "positive_count": 1,
+        "raw_log_lines": [
+          796
+        ]
+      }
+    ],
+    "private_publication_cases": [
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::staged_bytes_are_complete_before_the_final_name_is_published",
+        "positive_count": 1,
+        "raw_log_lines": [
+          711
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::concurrent_staged_publishers_converge_on_one_complete_file",
+        "positive_count": 1,
+        "raw_log_lines": [
+          707
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::publication_rejects_a_corrupt_winner_created_after_staging",
+        "positive_count": 1,
+        "raw_log_lines": [
+          708
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::failed_publication_cleans_only_its_owned_stage",
+        "positive_count": 1,
+        "raw_log_lines": [
+          709
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::create_new_collision_never_owns_or_removes_the_existing_path",
+        "positive_count": 1,
+        "raw_log_lines": [
+          703
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::retry_after_publication_before_acknowledgement_reuses_the_final_file",
+        "positive_count": 1,
+        "raw_log_lines": [
+          710
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::cleanup_failure_leaves_the_complete_final_file_retryable",
+        "positive_count": 1,
+        "raw_log_lines": [
+          704
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::bounded_comparison_rejects_changes_after_the_first_buffer",
+        "positive_count": 1,
+        "raw_log_lines": [
+          706
+        ]
+      },
+      {
+        "name": "extensions::attachments::content_addressed_file::tests::dropping_an_unpublished_stage_does_not_create_a_final_object",
+        "positive_count": 1,
+        "raw_log_lines": [
+          705
+        ]
+      }
+    ],
+    "old_service_controls": [
+      {
+        "name": "attachment_extension_declares_frozen_identity_and_dependencies",
+        "positive_count": 1,
+        "raw_log_lines": [
+          794
+        ]
+      },
+      {
+        "name": "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store",
+        "positive_count": 1,
+        "raw_log_lines": [
+          809
+        ]
+      },
+      {
+        "name": "image_reads_and_persistence_preserve_content_addressed_dimensions",
+        "positive_count": 1,
+        "raw_log_lines": [
+          803
+        ]
+      },
+      {
+        "name": "text_preview_marks_known_binary_extensions_and_embedded_nul_as_binary",
+        "positive_count": 1,
+        "raw_log_lines": [
+          806
+        ]
+      },
+      {
+        "name": "gateway_link_metadata_rejects_mapped_private_cache_and_preserves_public_cache",
+        "positive_count": 1,
+        "raw_log_lines": [
+          795
+        ]
+      }
+    ]
+  },
+  "failures": [
+    {
+      "classification": "TEST_FLAW",
+      "job_id": 125632982580,
+      "step_number": 10,
+      "test": "channel_gateway_write_and_admin_credentials_persist_through_reopen",
+      "assertion": "source/host/tests/channel_gateway_authorization_contract.rs:477:17",
+      "cargo_exit": 101,
+      "capture_exit": 0,
+      "raw_log": "artifact:13190607525/channel-pending-recovery/integration.log",
+      "raw_log_sha256": "4a6b8083f80a17b5dcc027bbd4bb73c38c190407ae4702773d11b08a59612f76",
+      "raw_log_lines": [
+        854,
+        872
+      ],
+      "job_log_lines": [
+        6730,
+        6748
+      ],
+      "cause": "Test compares a fresh authorization after two owner reopens to an authorization with a sealed proof from the original owner. DeviceTokenProof equality includes Arc::ptr_eq issuer; constructors allocate a fresh issuer per owner. DPA-02 intentionally refuses foreign-owner proof. Durable public projections can remain equal while proofs differ.",
+      "source_references": [
+        "source/host/tests/channel_gateway_authorization_contract.rs:236-241,386-405,470-477",
+        "source/host/src/device_pairing_owner.rs:47-53,315,326,521-527,1084",
+        "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md:DPA-02"
+      ],
+      "recovery_hint": "Keep production proof binding. Repair the reopen oracle to require fresh successful authentication and equality of device_id/role/scopes, preserve actual mutation/reopen checks and foreign-owner proof negatives. Run only unmet or invalidated checks on a changed source; no blind same-H retry."
+    },
+    {
+      "classification": "BLOCKED_BY_FAILED_PREREQUISITE",
+      "job_id": 125632982580,
+      "step_number": 18,
+      "case": "reused-mcp-composition",
+      "cargo_exit": null,
+      "capture_exit": null,
+      "cause": "Automation step 16 was skipped after step 10 failed; the required same-H automation-admission receipt and log are absent. Three directly executed native link-preview commands passed, but the composed gate correctly fails closed.",
+      "receipt": "artifact:13190607525/link-preview-native-gateway/receipt.json",
+      "receipt_sha256": "b5db54725a7d9de307a204dac01a5e48e5e95e94286ccbf891c3bdc24c3e1f5c",
+      "job_log_lines": [
+        24785,
+        24834
+      ]
+    }
+  ],
+  "supporting_results": {
+    "portable_shared": {
+      "commands": 18,
+      "approved_commands": 17,
+      "integration_raw_summary": {
+        "passed": 209,
+        "failed": 1,
+        "ignored": 0
+      },
+      "all_raw_summaries_total": {
+        "passed": 431,
+        "failed": 1,
+        "ignored": 0
+      },
+      "note": "Receipt summary regex retains only ok summaries; raw log also contains the failed channel target: 5 passed/1 failed. Cargo 101 and missing positive correctly reject the integration command."
+    },
+    "native_sqlite": {
+      "result": "passed",
+      "cargo_exit": 0,
+      "capture_exit": 0,
+      "outer_passed": 78,
+      "outer_ignored": 1,
+      "explicit_owned_child_passed": 1,
+      "log_sha256": "ad4137019c90698b7c4a911f8028f73e9ecfcb39685fc6a55fa3eb5f442cfa72"
+    },
+    "native_link_preview": {
+      "host_passed": 52,
+      "coordinator_passed": 59,
+      "app_passed": 3,
+      "direct_cargo_capture_exits_zero": true,
+      "composed_gate_result": "failed-or-incomplete",
+      "missing_reused_mcp_composition_evidence": true,
+      "inputs_unchanged_before_after": true,
+      "exact_H_input_paths": 28
+    },
+    "renderer": {
+      "job_result": "success",
+      "node_tests": 115,
+      "passed": 115,
+      "failed": 0,
+      "skipped": 0,
+      "shipping_electron_bundle": "passed",
+      "full_renderer_typecheck_and_final_architecture_gates": "skipped"
+    },
+    "restore": {
+      "job_result": "success",
+      "compile_exit": 0,
+      "ordinary_passed": 29,
+      "ordinary_ignored": 2,
+      "explicit_mount_cases_passed": 2,
+      "all_execution_exits_zero": true,
+      "compiler_uid": 1001,
+      "compiled_executable_sha256": "5454f16fae5ac43d0bd61f2b6a802570aa90b3005a18a0b37bbd0578b7fe4592",
+      "compiled_executable_identity_scope": "SHA-256 reported by the actual CI compiler receipt; executable bytes were not in the downloaded artifact and were not independently rehashed in the assessment."
+    },
+    "source": {
+      "run_result": "success",
+      "review_contract_tests": 33,
+      "materialization_tests": 21,
+      "tracked_entries": 62130,
+      "blob_entries": 62128,
+      "symlinks": 2,
+      "gitlinks": 0,
+      "mapped_paths": 850,
+      "literal_unread_or_partial": 62093,
+      "flags_all_false": true,
+      "dependency_LFS_closure": "open",
+      "G02_final": "not-run",
+      "persist_job": "No new source-derived shard content; no new commit"
+    }
+  },
+  "identity_checks": {
+    "all_eight_publication_paths_match_exact_H": true,
+    "media_inputs_match": 31,
+    "renderer_inputs_match": 14,
+    "source_inputs_match": {
+      "repository": 21,
+      "generated_inventory": 1
+    },
+    "all_downloaded_receipt_input_references_checked": 358,
+    "unique_repository_input_paths_checked": 180,
+    "input_mismatches": [],
+    "raw_log_mismatches": [],
+    "execution_log_mismatches": [],
+    "pre_automation_files_identical_in_final_archive": 30
+  },
+  "artifacts": [
+    {
+      "kind": "renderer",
+      "id": 13190945366,
+      "name": "ocrm-plugin-edge-f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "run_id": 41549418649,
+      "head_sha": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "bytes": 8329,
+      "api_digest": "sha256:3032db30778560963536127f1d1cab225b48abb19e8d559cbc244317f1ed2124",
+      "downloaded_sha256": "3032db30778560963536127f1d1cab225b48abb19e8d559cbc244317f1ed2124",
+      "digest_matches_api": true,
+      "created_at": "2026-11-02T23:58:50Z",
+      "expires_at": "2027-01-31T23:58:27Z",
+      "expired": false,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13190945366/zip"
+    },
+    {
+      "kind": "source",
+      "id": 13190481951,
+      "name": "ocrm-p0-authority-f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "run_id": 41549418613,
+      "head_sha": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "bytes": 4941044,
+      "api_digest": "sha256:56272b5fe1d8d6bb65f95caefc2e1f1bbdbb49a43a3ccf2205133d47ce1538bf",
+      "downloaded_sha256": "56272b5fe1d8d6bb65f95caefc2e1f1bbdbb49a43a3ccf2205133d47ce1538bf",
+      "digest_matches_api": true,
+      "created_at": "2026-11-03T00:00:28Z",
+      "expires_at": "2026-12-03T00:00:26Z",
+      "expired": false,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13190481951/zip"
+    },
+    {
+      "kind": "restore",
+      "id": 13191145303,
+      "name": "ocrm-config-restore-linux-f986b457e77d106638f02e8ff23f6b15d3eb792c-41549418649-1",
+      "run_id": 41549418649,
+      "head_sha": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "bytes": 47430,
+      "api_digest": "sha256:d756fd079d9f898afee09fa9dfe7c184d86d09a2f07e7762d82eb0fcfdd8eb34",
+      "downloaded_sha256": "d756fd079d9f898afee09fa9dfe7c184d86d09a2f07e7762d82eb0fcfdd8eb34",
+      "digest_matches_api": true,
+      "created_at": "2026-11-03T00:00:47Z",
+      "expires_at": "2027-01-31T23:58:27Z",
+      "expired": false,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13191145303/zip"
+    },
+    {
+      "kind": "before-automation",
+      "id": 13191125787,
+      "name": "ocrm-linux-before-automation-f986b457e77d106638f02e8ff23f6b15d3eb792c-41549418649-1",
+      "run_id": 41549418649,
+      "head_sha": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "bytes": 189103,
+      "api_digest": "sha256:fa95cbe585934b75430c115a8fecebb176c580171c40a840de3cb34baffb1b84",
+      "downloaded_sha256": "fa95cbe585934b75430c115a8fecebb176c580171c40a840de3cb34baffb1b84",
+      "digest_matches_api": true,
+      "created_at": "2026-11-03T00:04:03Z",
+      "expires_at": "2027-01-31T23:58:27Z",
+      "expired": false,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13191125787/zip"
+    },
+    {
+      "kind": "native",
+      "id": 13190607525,
+      "name": "ocrm-sqlite-native-path-f986b457e77d106638f02e8ff23f6b15d3eb792c-41549418649-1",
+      "run_id": 41549418649,
+      "head_sha": "f986b457e77d106638f02e8ff23f6b15d3eb792c",
+      "bytes": 216706,
+      "api_digest": "sha256:124946ca8afa69bda8c5b50f561589cb254286ac84e0e4e0a4140e5eafa1b3b3",
+      "downloaded_sha256": "124946ca8afa69bda8c5b50f561589cb254286ac84e0e4e0a4140e5eafa1b3b3",
+      "digest_matches_api": true,
+      "created_at": "2026-11-03T00:06:38Z",
+      "expires_at": "2027-01-31T23:58:27Z",
+      "expired": false,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13190607525/zip"
+    }
+  ],
+  "job_logs": [
+    {
+      "job_id": 125632982580,
+      "bytes": 1794628,
+      "sha256": "582a895af55e2bcd36d44f49319a27a5c0017f6ac1ecf2456c1bf16b886c7368",
+      "tool_response_utf8_exact": true,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125632982580/logs"
+    },
+    {
+      "job_id": 125632982508,
+      "bytes": 88192,
+      "sha256": "5a6fbac83cc90fa6db10c4645eadda0807bce583ae7fd14dfbd1e1043ee9fd2a",
+      "tool_response_utf8_exact": true,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125632982508/logs"
+    },
+    {
+      "job_id": 125632982092,
+      "bytes": 88582,
+      "sha256": "39bc23444abe667d9292b57891b92745f6118762353da83d171eefad41814993",
+      "tool_response_utf8_exact": true,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125632982092/logs"
+    },
+    {
+      "job_id": 125632980936,
+      "bytes": 31524,
+      "sha256": "4449f2530c4f1721838d1f57e194c739bb3a759165c3ac9278d17577cc3868c7",
+      "tool_response_utf8_exact": true,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125632980936/logs"
+    },
+    {
+      "job_id": 125633831664,
+      "bytes": 18133,
+      "sha256": "601a392fd9e8cee7cd1dadcf59fe38d158bd4e671368d0e41d01e32d7d03c169",
+      "tool_response_utf8_exact": true,
+      "download_api": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125633831664/logs"
+    }
+  ],
+  "limits": [
+    "macOS rust-host job 125632982398 was queued with no steps at the last observation; no macOS result or whole-workflow success.",
+    "Dedicated production cfg(not(test)) App check, Automation admission and palette consumer/typecheck were skipped after the shared failure. Native link-preview App tests prove a test-mode build and three cases only.",
+    "CAP fixtures cover stable owner-selected directories, complete-byte publication/deduplication, bounded comparison, ordinary owner reopen and deterministic publication/cleanup boundaries. They do not establish hostile ancestor replacement, process-crash/power-loss, Windows/reparse acceptance or packaged platform acceptance.",
+    "Controlled generated backend/callback and direct existing-owner service tests do not establish real provider generation, complete outer HTTP registration or desktop composer parity.",
+    "Source structural success is not dependency/LFS/semantic responsibility closure, global Rust completion, full wiring, UI, ecosystem or release acceptance.",
+    "Historical 4c582ea2 MHT evidence was not substituted for this H. All stated execution counts come from attempt 1 of the specified exact-H runs.",
+    "No dispatch, rerun, cancellation, source/index/branch/ledger/flag/API write or local product validation was performed by this assessment."
+  ],
+  "record_kind": "scoped-actions-observation",
+  "carrier_rule": "This file is historical evidence for exact subject f986b457e77d106638f02e8ff23f6b15d3eb792c only. The commit storing it is a carrier. MAB and CGWA reopen-oracle recovery need their own exact-H execution; no source, wiring or acceptance flags are promoted.",
+  "scope": "CAP-v1 Linux complete-byte content publication in the existing Rust Attachments owner and actual upload/generated-image consumers. Not complete media, provider, platform or shipping acceptance.",
+  "root_media_readback": {
+    "input_count": 31,
+    "input_mismatches": [],
+    "raw_logs": [
+      {
+        "case": "integration",
+        "log_sha256": "9f01b7d7213e181565253df77fa83a35769514ea976263a4829b6963075fe015",
+        "summaries": [
+          [
+            17,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            0
+          ],
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            25,
+            0,
+            0
+          ],
+          [
+            11,
+            0,
+            0
+          ],
+          [
+            11,
+            0,
+            0
+          ]
+        ],
+        "matches_recorded_log": true
+      },
+      {
+        "case": "projection",
+        "log_sha256": "e5e120edfea79bbe814e2043ac0f82cb7800b5c8a131ec462ef062c18d5725eb",
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "matches_recorded_log": true
+      },
+      {
+        "case": "unicode",
+        "log_sha256": "8e1a9c1180e4ee6eeb87343da770b75be8eb5c87192faddb2faa5d1044a31db4",
+        "summaries": [
+          [
+            2,
+            0,
+            0
+          ]
+        ],
+        "matches_recorded_log": true
+      },
+      {
+        "case": "publication",
+        "log_sha256": "2e9cfb1c83a47144abdff8e251b0b9f10f4c11de9121ca7ea224d272f2fd2203",
+        "summaries": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "matches_recorded_log": true
+      }
+    ],
+    "inputs_sha256": {
+      ".github/workflows/rust-desktop-runtime.yml": "659d5be4112303b8b2d6f1ea8ee184d1b7400ebd701885202bc1d154bb27d74c",
+      "source/host/Cargo.toml": "3fe05f12ecd0aef14035ea61a48b909614188d21b89ab27697bf8b737a84a387",
+      "source/host/Cargo.lock": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+      "projects/openclaw-rust/docs/specs/media-input-policy-admission.md": "c64c45d911a6d6a411bb34310aeaf97ee219c2802ff5e757a850c92dcdb3898c",
+      "source/host/src/extensions/attachments/attachments_service.rs": "763e7619b1449b7e7a7cd9888e4676e277fdbe585ad079de139678272cb6b850",
+      "projects/openclaw-rust/docs/specs/attachment-content-publication.md": "ecd769878b15ae7376341dedc56b121035e4053372e1c52e72d937ee34bf0742",
+      "source/host/src/extensions/attachments/content_addressed_file.rs": "a12d7cc98389a83ebbf629bb2deea2360440e95ecd62895a3ebd04bf80d529b0",
+      "source/host/src/extensions/attachments/mod.rs": "0bdc6080a5f0abdcbed93b980c72280c6e9387777b62b3d423490393e9a666e1",
+      "source/host/src/extensions/attachments/generate_image_service.rs": "2a899bfa6a00080329065b96ff20f9577ae742c0bc28cc0bd49b505fda7b070f",
+      "source/host/src/media_mime.rs": "524302269a83413e2ad87212c3b72819fecc8bdc644be1b910f508c0aa1c7217",
+      "source/host/src/extensions/attachments/input_files.rs": "59a95a5dc7385589f2a91012d09f31f29e751c7843a9c2655427f269468020dc",
+      "source/host/tests/openclaw_input_files_contract.rs": "7f699063e00f66c57cfba2b40f6e27a0d75cd3c1610a454f38d054923ac6b0f9",
+      "projects/openclaw-rust/docs/specs/link-preview-mapped-ip-admission.md": "2c58d494539a8ad6d90fa58aa4ed581858337ad1f7678d1230721e241a9530e1",
+      "source/host/src/extensions/attachments/safe_link_preview_fetch.rs": "c63b2c8c8b991339a81bb60ffd98c5e8c3f17e5192fb11228f70888334d0a1dd",
+      "source/host/tests/safe_link_preview_fetch_contract.rs": "4a2cde583ee3c8c1697c9920ee5c8f985f3bfea79a55ddc34360b60faaacf25a",
+      "source/host/tests/attachments_service_contract.rs": "e71bcbe332ec8c4012d39e8db5ba541611ab38491bceeddb7beb928cf879a838",
+      "projects/openclaw-rust/docs/specs/media-http-error-diagnostics.md": "07cfd0014354a6d28efe02134a6485c8f846d35fdec1d456218d6d09816764aa",
+      "projects/openclaw-rust/docs/specs/media-input-url-admission.md": "e8397a7842fb8afc00e066520c119a1fdf6600ba7bb75fcfa5a89bf5dd716760",
+      "source/host/src/extensions/attachments/media_fetch.rs": "6a6f75cbc4786652dfe244dc7c9e56f92537804b48f5f91ae1d303b71ae4af2a",
+      "source/host/src/extensions/attachments/media_store.rs": "e1697b4ed89efa20ea720b0511a89db3ce686e9335c23eb089eb415aeb99dfc9",
+      "source/host/tests/openclaw_media_fetch_contract.rs": "dd07ed2d1220b8626a6ee50e656340ce121a7416245e8a67c7243da6eb70765d",
+      "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md": "417b48edfd6a88d4dc43212b63ac687711dda3a01203a18bda597b8e3a13e21d",
+      "source/host/src/extensions/attachments/media_reference.rs": "7a80344e377760ef662d6b2ab708cb00cf6dbceba52c0b2d1201d5b4f7479917",
+      "source/host/src/extensions/attachments/media_file_context.rs": "b9be6f9c287a2145b82ac2d1d5290ff144035e60d102c0ff581b3674f5ee408d",
+      "source/host/src/connectors/channel_attachment.rs": "f21d584b7afeca9568287547cfaad6c6cddbb827c4305cd3d3d3432965f009fe",
+      "source/host/src/extensions/cross_user_sharing/production.rs": "7179092e2f2639305d49c27d9ff877f079776eb4117315670c521382376b4d20",
+      "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs": "63902c40eb9ec13cbf0e23d87954fcd203024682723cb64caee24285b7ce4dd7",
+      "source/host/src/extensions/cross_user_sharing/xuser_entry_publisher.rs": "2b6cf9fdbebc441e13dd25b41720a8c68923c315798cf56e96b7b523289d7559",
+      "source/host/src/extensions/cross_user_sharing/xuser_relay.rs": "b62241dcc47b502129b4526e0161ddb093ba30f20dc7cdbb79e6a3afcaa0aa8d",
+      "source/host/tests/openclaw_media_reference_contract.rs": "b6875281828c9020e2941a10dd4f421583e0d8dd46c293dd31e8f5f03641c423",
+      "source/host/tests/channel_attachment_contract.rs": "888ac968ba1fdd244563bbba4275b84dd3113b94ccce9d7bd17b05b8e3c9a14b"
+    }
+  },
+  "recovery_decision": "CGWA-REOPEN-01 is recorded in channel-gateway-credential-authorization.md before its repair. Keep production issuer-bound proof and compare durable public grant plus fresh proof. Preserve this failed run; do not rerun H unchanged.",
+  "recovery_integration": {
+    "preserved_commit": "31cac7c95ec0297f7dee72d4bc40dad56aee4f01",
+    "preserved_test_blob": "4e8eb1b44d068fd4bfbc66a8ee755307cc534de6",
+    "disposition": "Adopt the already-published equivalent reopen oracle verbatim; discard redundant local test edit. Its execution outcome is not inferred from this historical assessment."
+  }
+}

@@ -160,3 +160,21 @@ Exact-candidate Actions, real platform filesystems, provider/UI behavior,
 source/dependency closure and final acceptance remain required. The canonical
 ledger/RTM identities, literal reading facts, historical figures and eight
 completion flags are unchanged by this addition.
+
+### Exact-H CAP observation — 2026-11-03
+
+Published H `f986b457e77d106638f02e8ff23f6b15d3eb792c` has direct Linux media
+evidence in runtime run `41549418649`, attempt 1: 95 passed, zero failed or
+ignored; all 12 new service and nine private publication cases passed, and all
+eight command/capture exits were zero. The four raw-log hashes and all 31 input
+hashes match that H. See
+[`attachment-content-publication-f986b457-20261103.json`](../evidence/attachment-content-publication-f986b457-20261103.json)
+for commands, exact cases, artifacts, source-structural results and limits.
+
+This is scoped Linux evidence, not a whole-unit verified/accepted promotion.
+The shared job failed CGWA's stale cross-owner proof equality oracle, leaving
+dependent Automation, production App and palette gates unexecuted. macOS was
+queued at the recorded observation. CGWA-REOPEN-01 preserves the issuer-bound
+security contract and repairs that test separately. Its next candidate and the
+MAB native transport binding require their own exact-H results. All source,
+real ecosystem/platform and final acceptance gaps above remain open.

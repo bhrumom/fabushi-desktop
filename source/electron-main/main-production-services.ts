@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { ApplicationMenuElectronPort, ApplicationMenuItem } from "./application-menu.js";
-import { createCoordinatorMainLegs } from "./coordinator/coordinator-main-legs.js";
+import { createCoordinatorMainLegs, type CapturedCoordinatorMainSession } from "./coordinator/coordinator-main-legs.js";
 import { createEgressConnectionObserver } from "./box/remote-connector-egress.js";
 import { createDesktopGatewayDescriptorFastPath } from "./box/gateway-descriptor-store.js";
 import { createRemoteHostConnector, type SandRemoteHostConnector } from "./box/box-host-connector.js";
@@ -330,6 +330,7 @@ export interface ProductionMcpHostPort {
 }
 export interface ProductionCoordinatorService extends ProductionDisposable {
   start(status: ProductionAccountStatus): Promise<void>;
+  captureMainDataSession(): CapturedCoordinatorMainSession | null;
   setWindowFocused(state: { readonly isFocused: boolean }): Promise<unknown>;
   pushHostSettings(update: unknown): Promise<Record<string, any> | null>;
   readHostSettings(): Promise<unknown>;

@@ -4401,6 +4401,7 @@ jobs:
       - name: Install desktop dependencies
         run: npm --prefix desktop ci --prefer-offline --no-audit --no-fund
       - name: Build Grok-shaped Electron runtime
+        id: mab_shipping_electron_build
         run: npm --prefix desktop run build:electron -- --plugin-skills-contracts
       - name: Test Plugin Skills, model settings bridge and routed MCP carrier
         env:
@@ -4506,6 +4507,261 @@ jobs:
           path: |
             .evidence/ocrm-plugin-edge.json
             .evidence/ocrm-plugin-edge.tap
+          if-no-files-found: error
+          retention-days: 90
+      - name: Test native attachment account and MainData binding
+        id: mab_contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .evidence/ocrm-mab
+          capture_mab() {
+            local evidence_dir="$1"
+            shift
+            local entry_errexit=0
+            local -a result
+            case "$-" in *e*) entry_errexit=1 ;; esac
+            printf '%s\n' "$entry_errexit" > "$evidence_dir/errexit.entry"
+            set +e
+            "$@" 2>&1 | tee "$evidence_dir/tests.tap"
+            result=("${PIPESTATUS[@]}")
+            set -e
+            printf '%s\n' "${result[0]}" > "$evidence_dir/node.exit"
+            printf '%s\n' "${result[1]}" > "$evidence_dir/capture.exit"
+            test "${result[0]}" = 0 && test "${result[1]}" = 0
+          }
+          export -f capture_mab
+          mkdir -p .evidence/ocrm-mab/controls/node-failure .evidence/ocrm-mab/controls/capture-failure/tests.tap
+          if bash --noprofile --norc -euo pipefail -c 'capture_mab "$@"' _ \
+            .evidence/ocrm-mab/controls/node-failure node -e 'process.exit(7)' \
+            > .evidence/ocrm-mab/controls/node-failure/wrapper.log 2>&1; then
+            wrapper_status=0
+          else
+            wrapper_status=$?
+          fi
+          printf '%s\n' "$wrapper_status" > .evidence/ocrm-mab/controls/node-failure/wrapper.exit
+          if bash --noprofile --norc -euo pipefail -c 'capture_mab "$@"' _ \
+            .evidence/ocrm-mab/controls/capture-failure node -e 'process.exit(0)' \
+            > .evidence/ocrm-mab/controls/capture-failure/wrapper.log 2>&1; then
+            wrapper_status=0
+          else
+            wrapper_status=$?
+          fi
+          printf '%s\n' "$wrapper_status" > .evidence/ocrm-mab/controls/capture-failure/wrapper.exit
+          capture_mab .evidence/ocrm-mab node --test --test-reporter=tap \
+            desktop/.tmp-grok-electron/ocrm-plugin/coordinator-account-runtime.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/coordinator-main-port-client.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/coordinator-runtime.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/attachment-gateway.contract.test.cjs
+      - name: Record exact-subject native attachment binding evidence
+        if: ${{ always() }}
+        shell: bash
+        env:
+          MAB_BUILD_OUTCOME: ${{ steps.mab_shipping_electron_build.outcome }}
+          MAB_TEST_OUTCOME: ${{ steps.mab_contracts.outcome }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, re, subprocess
+          from pathlib import Path
+          root = Path('.evidence/ocrm-mab')
+          root.mkdir(parents=True, exist_ok=True)
+          head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          tree = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], text=True).strip()
+          lock = json.loads(Path('projects/openclaw-rust/upstream.lock.json').read_text())
+          required = [
+              'MAB account capture waits for authorization and identifies the exact active runtime',
+              'MAB account same-account refresh and restart preserve the captured lifetime',
+              'MAB account departure retires before callbacks and scopes port revocation after preparation',
+              'MAB account logout retires immediately and settles inactive after preparation',
+              'MAB account queued A to B to A never revives the original binding',
+              'MAB account completed A to B to A creates distinct permanent lifetimes',
+              'MAB account reentrant observation preserves the latest claim after renderer revocation',
+              'MAB account logged-out and refused states cannot furnish a capture',
+              'MAB account reentrant start during construction cannot launch a second runtime',
+              'MAB account same-account construction refresh preserves the pending lifetime',
+              'MAB account stale construction waits for exit without invoking departure port revoke',
+              'MAB account construction A to B to A cannot publish the retired candidate',
+              'MAB account reentrant construction disposal waits for the owned exit and stays terminal',
+              'MAB account synchronous stale disposal failure stays blocked even if reporting throws',
+              'MAB account rejected stale exit stays blocked across later claims',
+              'MAB account timed-out stale exit recovers only the latest observed account',
+              'MAB account normal exit timeout retains cleanup ordering and recovers the latest claim',
+              'MAB account disposal from shared-port revocation cannot restore an active state',
+              'MAB account timed-out retirement cannot recover after disposal',
+              'MAB account disposal during authorization prevents later account effects',
+              'MAB transport denied admission stays request-local and uses bounded error text',
+              'MAB transport denied queued work leaves ordinary cleanup in the same ready flush',
+              'MAB transport unchanged guard completes queued work on its captured client',
+              'MAB transport ready flush rechecks each call and fences an already posted reply',
+              'MAB transport retired pending calls reject both reply outcomes without consuming other replies',
+              'MAB transport client live phase is terminal before shutdown and close callbacks',
+              'MAB transport captures and ownership fail synchronously at every terminal client phase',
+              'MAB transport same lifetime port replacement never rebinds an old capture',
+              'MAB transport failed hello preserves a valid previous client',
+              'MAB transport hello-time revoke cannot resurrect the outer candidate',
+              'MAB transport hello-time disposal cannot resurrect the outer candidate',
+              'MAB transport hello-time nested adoption keeps only the successor current',
+              'MAB transport previous-close revoke retires the published candidate',
+              'MAB transport previous-close disposal retires the published candidate',
+              'MAB transport previous-close nested adoption cannot be cleared by old settlement',
+              'MAB transport listener and start reentrancy never publishes a retired candidate',
+              'MAB transport listener and start failures close only their owned candidate',
+              'MAB transport exact ownership revoke is idempotent and cannot revoke a successor',
+              'MAB transport an old ownership revoke during hello cannot retire the new candidate',
+              'MAB transport capture rechecks identity after its opaque guard reenters',
+              'MAB transport disposed owner closes incoming ports without sending hello',
+              'a request post failure settles the pending call and closes the main-data port',
+              'a request waits for main-data ready before it is posted',
+              'a queued request is rejected when the main-data port settles before ready',
+              'a hello post failure does not replace the current main-data generation',
+              'a protocol breach still settles when the shutdown frame cannot be posted',
+              'dispose settles pending calls when the shutdown frame cannot be posted',
+              'settlement survives an endpoint close failure',
+              'renderer port replacement and restart retire the old generation before launching the next',
+              'MAB attachment multichunk read returns actual bytes through one production session',
+              'MAB attachment same account refresh preserves a multichunk read lifetime',
+              'MAB attachment switch at probe rejects before the first data chunk',
+              'MAB attachment switch at first chunk cannot append successor bytes',
+              'MAB attachment switch at last chunk cannot return a stale completed preview',
+              'MAB attachment zero byte probe still checks its captured lifetime',
+              'MAB attachment zero byte positive returns an empty preview without a data request',
+              'MAB attachment queued before ready is rejected while ordinary Host cleanup flushes',
+              'MAB attachment late text reply after native retirement is rejected without replay',
+              'MAB attachment text reply continuation cannot escape a just retired session',
+              'MAB attachment image fallback reply continuation rejects stale remote pixels',
+              'MAB attachment link reply continuation rejects metadata from a retired session',
+              'MAB attachment link image continuation rechecks lifetime after native image work',
+              'MAB attachment text image and link positive controls use the production session',
+              'MAB attachment same account restart waits for exit and never migrates an old operation',
+              'MAB attachment renderer replacement waits for exit and never migrates an old operation',
+              'MAB attachment runtime identity join rejects a foreign current port and disposal preserves it',
+              'MAB attachment failed production adoption cannot capture or revoke a prior foreign port',
+              'MAB attachment shipping disposal withdraws its own port before actual child exit',
+              'MAB attachment download positive writes real multichunk and zero size files',
+              'MAB attachment download account switch during dialog preserves existing destination bytes',
+              'MAB attachment download account switch during dialog does not create a destination',
+              'MAB attachment download switch after real open closes and cleans the destination',
+              'MAB attachment download switch between real chunk writes closes and cleans',
+              'MAB attachment download switch after the final real write cannot return success',
+              'MAB attachment download switch during final close cannot return success',
+              'MAB attachment staged read switch sends no upload and preserves the real original',
+              'MAB attachment staged positive uploads exact real bytes and retains originals until discard',
+              'MAB attachment upload reply continuation rejects stale paths and keeps all staged originals',
+              'MAB attachment offline local image staging and discard need no account or network',
+              'MAB attachment failed local read cannot capture an account that appeared during I O',
+              'MAB attachment failed local read preserves its original optional fallback identity',
+              'MAB attachment production onLaunched same account refresh publishes only after construction',
+              'MAB attachment production onLaunched account switch fences the unpublished child until exit',
+              'MAB attachment production onLaunched disposal withdraws an unpublished own port and waits for exit',
+              'MAB attachment production onLaunched foreign adoption never becomes the runtime owned session',
+          ]
+          targets = [
+              'coordinator-account-runtime.contract.test.cjs',
+              'coordinator-main-port-client.contract.test.cjs',
+              'coordinator-runtime.test.cjs',
+              'attachment-gateway.contract.test.cjs',
+          ]
+          command = ['node', '--test', '--test-reporter=tap'] + [
+              'desktop/.tmp-grok-electron/ocrm-plugin/' + name for name in targets]
+          tap_path = root / 'tests.tap'
+          tap = tap_path.read_text() if tap_path.is_file() else ''
+          def exit_code(name, directory=root):
+              path = directory / name
+              text = path.read_text() if path.is_file() else ''
+              return int(text) if re.fullmatch(r'[0-9]+\n', text) else None
+          exits = {name: exit_code(name + '.exit') for name in ('node', 'capture')}
+          capture_controls = {}
+          for name, expected in (
+              ('node-failure', {'node': 7, 'capture': 0, 'wrapper': 1}),
+              ('capture-failure', {'node': 0, 'capture': 1, 'wrapper': 1}),
+          ):
+              directory = root / 'controls' / name
+              observed = {key: exit_code(key + '.exit', directory) for key in expected}
+              inherited_errexit = exit_code('errexit.entry', directory)
+              log = directory / 'wrapper.log'
+              capture_controls[name] = {
+                  'expected_exits': expected, 'observed_exits': observed,
+                  'inherited_errexit': inherited_errexit,
+                  'wrapper_log_sha256': hashlib.sha256(log.read_bytes()).hexdigest() if log.is_file() else None,
+                  'passed': observed == expected and inherited_errexit == 1 and log.is_file(),
+              }
+          production_inherited_errexit = exit_code('errexit.entry')
+          counts = {}
+          for label in ('tests', 'pass', 'fail', 'cancelled', 'skipped', 'todo'):
+              values = re.findall(r'(?m)^# ' + label + r' ([0-9]+)$', tap)
+              counts[label] = int(values[0]) if len(values) == 1 else None
+          positives = re.findall(r'(?m)^ok [0-9]+ - (.+)$', tap)
+          missing = [name for name in required if positives.count(name) != 1]
+          input_paths = [
+              '.github/workflows/rust-desktop-runtime.yml',
+              'desktop/scripts/build-electron-runtime.mjs', 'desktop/package.json', 'desktop/package-lock.json',
+              'projects/openclaw-rust/upstream.lock.json',
+              'projects/openclaw-rust/docs/specs/attachment-native-transport-binding.md',
+              'source/electron-main/coordinator/coordinator-account-runtime.ts',
+              'source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts',
+              'source/electron-main/coordinator/coordinator-main-legs.ts',
+              'source/electron-main/coordinator/coordinator-main-port-client.ts',
+              'source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts',
+              'source/electron-main/coordinator/coordinator-runtime.ts',
+              'source/electron-main/coordinator/coordinator-runtime.test.ts',
+              'source/electron-main/coordinator/coordinator-launcher.ts',
+              'source/electron-main/coordinator/coordinator-control-server.ts',
+              'source/electron-main/coordinator/coordinator-resync.ts',
+              'source/electron-main/coordinator/production-provider.ts',
+              'source/electron-main/main-production-services.ts',
+              'source/electron-main/adapters/attachment-gateway.ts',
+              'source/electron-main/adapters/attachment-gateway.contract.test.ts',
+              'source/electron-main/attachments/attachments.ts',
+              'source/electron-main/attachments/attachment-manager.ts',
+              'source/shared/rpc/coordinator-port.ts', 'source/shared/rpc/coordinator-main.ts',
+              'source/shared/node/sand-data-root.ts',
+          ]
+          inputs = {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in input_paths}
+          input_drift = [path for path in input_paths if hashlib.sha256(
+              subprocess.check_output(['git', 'show', head + ':' + path])).hexdigest() != inputs[path]]
+          bundle_paths = ['desktop/dist/electron-main/main.cjs', 'desktop/dist/electron-preload/preload.cjs',
+                          'desktop/dist/node-agent-coordinator/main.cjs']
+          bundles = {path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+                     for path in bundle_paths if Path(path).is_file()}
+          passed = (head == os.environ['FABUSHI_TARGET_SHA'] and not input_drift
+                    and lock['upstream']['commit'] == '1440bb1771372334bea23d7642bb52deb7db1845'
+                    and lock['upstream']['tree'] == '90c8aab39972da11cfad220361781d49e1bc6700'
+                    and lock['upstream']['repository'] == 'openclaw/openclaw'
+                    and os.environ['MAB_BUILD_OUTCOME'] == 'success'
+                    and os.environ['MAB_TEST_OUTCOME'] == 'success'
+                    and exits == {'node': 0, 'capture': 0} and not missing
+                    and production_inherited_errexit == 1
+                    and all(control['passed'] for control in capture_controls.values())
+                    and counts['tests'] is not None and counts['tests'] >= len(required)
+                    and counts['pass'] == counts['tests']
+                    and all(counts[label] == 0 for label in ('fail', 'cancelled', 'skipped', 'todo'))
+                    and len(bundles) == len(bundle_paths))
+          receipt = {
+              'contract': 'MAB-v1', 'subject_commit': head, 'subject_tree': tree,
+              'upstream': {key: lock['upstream'][key] for key in ('repository', 'commit', 'tree')},
+              'run_id': os.environ['GITHUB_RUN_ID'], 'run_attempt': os.environ['GITHUB_RUN_ATTEMPT'],
+              'job': 'renderer', 'runner_os': os.environ['RUNNER_OS'], 'command': command,
+              'build_outcome': os.environ['MAB_BUILD_OUTCOME'], 'test_step_outcome': os.environ['MAB_TEST_OUTCOME'],
+              'exits': exits, 'tap_counts': counts, 'required_positive_names': required,
+              'capture_wrapper': 'capture_mab shared by the production command and both explicit bash -e failure controls',
+              'production_inherited_errexit': production_inherited_errexit, 'capture_controls': capture_controls,
+              'observed_positive_names': positives, 'missing_or_nonunique_positive_results': missing,
+              'tap_sha256': hashlib.sha256(tap_path.read_bytes()).hexdigest() if tap_path.is_file() else None,
+              'inputs_sha256': inputs, 'input_drift': input_drift, 'shipping_bundles_sha256': bundles,
+              'result': 'passed-scoped' if passed else 'failed-or-incomplete',
+              'scope': 'Actual native account owner, MainData client/queue, production Coordinator and attachment binding with controlled Electron process/port/dialog carriers and real temporary-file I/O. Fixed capture guards admission, queued posting, reply acceptance and native continuations; ordinary account cleanup remains possible. Existing shipping esbuild bundles are compiled, not a full TypeScript strict typecheck. Real Electron/account/provider/device/platform, sand-media streaming, composer target admission and complete Rust migration acceptance remain open.',
+              'independent_acceptance': 'pending',
+          }
+          (root / 'receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
+          if not passed:
+              raise SystemExit('MAB-v1 evidence is failed or incomplete')
+          PY
+      - name: Upload native attachment binding evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-mab-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          path: .evidence/ocrm-mab
           if-no-files-found: error
           retention-days: 90
       - name: Check production architecture boundary
