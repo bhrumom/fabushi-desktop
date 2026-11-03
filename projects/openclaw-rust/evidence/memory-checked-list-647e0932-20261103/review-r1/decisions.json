@@ -1,0 +1,94 @@
+{
+  "schema": "ocrm-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "memory-checked-list",
+  "base": {
+    "commit": "e2b91700f145b9b13bb77cdf6f7981aafd433627",
+    "tree": "31505eccdce32a9fddd5ef9942033362c5da44f2"
+  },
+  "candidate": {
+    "commit": "ec49fed9e3ccec083d421a9f89c079da62641b69",
+    "tree": "247747ea51a4fa92b5bb2bcb696b11a2f133f78c"
+  },
+  "packet": {
+    "commit": "604b89627c214aa8cf7facd7bb468b46c17f5e8e",
+    "scope_blob": "011d00832dbce8adf8e6a802550ebf077e6cb7a7",
+    "complete_diff_blob": "e1262c0a175e4b0650316cd4fb7066167f28a2de",
+    "changed_paths": 13
+  },
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/mgl_r1_general",
+      "model": "configured parent model",
+      "effort": "xhigh",
+      "verdict": "changes-required",
+      "coverage": "complete 13-path diff plus applicable spec and actual affected callers/consumers/build declarations",
+      "blocking_findings": [
+        "MGL-R1-G1"
+      ],
+      "execution": false
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/mgl_r1_structure",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "verdict": "approved-source-scope",
+      "coverage": "complete 13-path diff plus applicable spec and actual affected callers/consumers/build declarations",
+      "blocking_findings": [],
+      "execution": false
+    }
+  ],
+  "findings": [
+    {
+      "id": "MGL-R1-G1",
+      "first_seen_candidate": "ec49fed9e3ccec083d421a9f89c079da62641b69",
+      "state": "open",
+      "classification": "TEST_FLAW",
+      "severity": "P1",
+      "decision": "FIX",
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "symbol": "memory-checked-list-session-paths Windows selected group",
+      "related_path": "source/host/tests/session_paths_contract.rs",
+      "related_blob": "0941afd83232a7ace463e8113478b3a3d86c1dc6",
+      "test": "transcript_path_uses_the_same_sand_root_resolution_as_the_host",
+      "failure": "The new Windows group requires a test that supplies /var/lib/fabushi as an absolute override. Windows treats this rooted path as lacking a drive prefix; the actual host_paths resolver correctly rejects it and returns its normal fallback, contradicting the fixture expectation.",
+      "direct_source": [
+        {
+          "path": "source/host/src/host_paths.rs",
+          "blob": "844be87e4a278bca99bc4968bbf85b6d751983b9",
+          "symbols": [
+            "resolve_sand_data_root_override",
+            "get_sand_root_dir_with"
+          ]
+        },
+        {
+          "repository": "rust-lang/rust",
+          "commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "path": "library/std/src/path.rs",
+          "blob": "222bf77996c7f102e93c6714f4d91d7d679ec18f",
+          "symbol": "Path::is_absolute"
+        }
+      ],
+      "root_recheck": "Read exact fixture and complete host_paths.rs directly; confirmed failure by the native absolute-path contract, without executing a test.",
+      "minimum_fix": "Use a native absolute override in the same existing test on each platform, assert fixture absoluteness and compare against that root joined with agent-transcripts. Keep the production resolver unchanged.",
+      "preserved_oracles": [
+        "same test name",
+        "all nine Session-path positive cases",
+        "seven MGL groups",
+        "66 Linux / 66 macOS / 65 Windows expected positives",
+        "root-relative Windows values remain non-absolute and cannot override the data root"
+      ],
+      "scope_amendment": "Add the already-selected Session-path test file to the complete frozen-base scope; update only source-contract metadata needed to identify this fixture repair. Do not remove or ignore a selected test.",
+      "closure_required": "Fresh independent focused review of fix delta and adjacent owner, then exact-H Actions execution. This decision alone closes neither the finding nor execution."
+    }
+  ],
+  "publication": {
+    "reports": "Independent reports were delivered in the task conversation; this file is the runner's durable synthesis, not a fabricated full-report artifact.",
+    "production_candidate_applied": false,
+    "local_validation": false,
+    "global_acceptance": false
+  }
+}

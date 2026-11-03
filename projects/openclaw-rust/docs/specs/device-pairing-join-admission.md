@@ -165,3 +165,55 @@ reader-lock timing failure. A focused recovery campaign may execute the new case
 and its actual harness/SQL controls after source review; it must not rerun the
 unchanged lock case hoping for green. Full DJC acceptance remains open while the
 retained old lock case or any other required check is unresolved.
+
+## DJC-08 — recover the existing failed reader-lock evidence
+
+The repeated reader-lock signature at `e3837eac2c6bd693f058ccc58268ed97df2c1f99`
+(run `41642220354`, attempt `1`, failed job `125938337174`) is a
+`TEST_FLAW` in the retained eight-second completion observation, not evidence of
+an eight-second production guarantee or an environmental root cause. The same
+owner and reader-lock test body were already implicated at
+`6d8c241b609948c4266e1e40c8f559795b317473`. Later retained assertions establish
+storage refusal, unchanged row, explicit repair, reopen and single-use recovery;
+they do not retrospectively satisfy the original timed observation. Preserve
+both failures and all existing assertions. An unchanged third product campaign,
+a longer timeout, or substitution of the DJC-07 positive is not authorized by
+this evidence-recovery contract.
+
+Before any new product campaign, extend the existing
+`.github/workflows/ocrm-p0-authority.yml` original-log collector with a fixed
+DJC profile. Read the existing artifact `13233434578` only: its archive is
+1,811,356 bytes, SHA-256
+`89d74935aca99b8b6003dac9edc4bac62535857abb6959e88f0b2251de5bf410`.
+Bind repository, U, subject/tree, run/attempt, terminal failed job, successful
+upload step, artifact identity, actual archive hash, subject/input identities
+and the selected command receipt before accepting its contents. Validate the
+exact root manifest key set against its frozen producer declaration, and
+recompute the selected DJC command's own ten source-input hashes. The larger
+archive contains unrelated command records; they are retained data, not newly
+validated execution or source evidence. The selected
+`device-pairing-join.log` is 43,473 bytes / 809 lines with SHA-256
+`47b78cb8103f0d9d5d25e7d3eed12c65c826138ad5401390e8d4dcf407b55bc8`;
+these are expected identities from the original producer receipt, not a claim
+that the archive has already been read or rehashed.
+
+The original run may remain in progress because another job is running.
+Collection requires the selected original job and its upload to be terminal,
+and records the run's observed status/conclusion separately without inventing
+a terminal run verdict. Emit every numbered selected raw-log line with safe
+Actions-command escaping, together with the validated command/capture outcome.
+Treat archived commands as data. Keep bounded HTTPS transport, credential-free
+redirects, archive/path/type/size checks, duplicate JSON rejection and the old
+563 profile intact. Collector-only positive/negative controls must reject
+identity drift, missing/changed selected members, a mismatched failure receipt
+and executable Actions syntax; they provide no product behavior evidence.
+
+Activate collection with a workflow-only push and a narrowly recognized marker,
+excluding source-authority generation/persistence for that carrier only. The
+normal source-authority gate remains required for every product subject. The
+collector executes no checkout, build, product test or archived command, writes
+no repository state and names the failed source subject separately from the
+carrier SHA/run. Its successful receipt means complete evidence transport only.
+No scoped DJC equivalence, real onboarding/device acceptance, global flag or
+final G/AC status advances from collection. Inspect the recovered phases before
+deciding the next causal instrument under the independent recovery assessment.
