@@ -435,7 +435,7 @@ fn already_composed_shipping_sink_rechecks_before_staging_and_before_persisting(
 fn preparation_validates_selected_recovery_candidate_before_cas_and_does_not_skip_it() {
     for fault in ["missing-summary", "missing-todo", "shared-oversize-todo"] {
         let fixture = Fixture::new(fault);
-        let generated = build_text_turn_checkpoint(&[], "recover user", "recover-id", Some("recover-request"), "recover reply");
+        let generated = build_text_turn_checkpoint(None, "recover user", "recover-id", Some("recover-request"), "recover reply");
         fixture.write_blob(&generated.user_message_id, &generated.user_message_bytes);
         for (id, bytes) in generated.step_ids.iter().zip(&generated.step_bytes) { fixture.write_blob(id, bytes); }
         fixture.write_blob(&generated.turn_id, &generated.turn_bytes);
@@ -465,7 +465,7 @@ fn preparation_validates_selected_recovery_candidate_before_cas_and_does_not_ski
 #[test]
 fn preparation_recovers_real_generated_orphan_then_fresh_owner_opens_the_same_root() {
     let fixture = Fixture::new("valid-orphan-repair");
-    let generated = build_text_turn_checkpoint(&[], "recover user", "recover-id", Some("recover-request"), "recover reply");
+    let generated = build_text_turn_checkpoint(None, "recover user", "recover-id", Some("recover-request"), "recover reply");
     fixture.write_blob(&generated.user_message_id, &generated.user_message_bytes);
     for (id, bytes) in generated.step_ids.iter().zip(&generated.step_bytes) { fixture.write_blob(id, bytes); }
     fixture.write_blob(&generated.turn_id, &generated.turn_bytes);

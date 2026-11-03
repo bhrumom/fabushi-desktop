@@ -1486,3 +1486,11 @@ responsibility through actual producer observation, canonical bytes, Journal
 projection and success-aware Session recovery. It retains GTH and CRA guards.
 Its implementation/evidence does not promote complete typed replay, interrupted
 original-turn restart, real-channel delivery or any global acceptance flag.
+
+### Subsequent canonical prior-root identity contract
+
+[PRID-v1](canonical-prior-root-identity.md) addresses the historical CRA field-10
+limitation in the same checkpoint owner, binding fresh writer/proof admission to
+the actual prior root while retaining exact historical receipt compatibility.
+Its implementation, genuine BASE-produced fixtures and Actions evidence remain
+separate from CRA and all global acceptance gates.

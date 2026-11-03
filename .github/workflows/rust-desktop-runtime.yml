@@ -4282,6 +4282,15 @@ jobs:
               print(json.dumps(receipt, indent=2), flush=True)
           sys.exit(0 if receipt["result"] == "passed" else 1)
           PY
+      - name: Prove historical prior-root recovery through the current Host and shipping App
+        id: prior_root_identity
+        if: ${{ steps.automation_app.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
+        env:
+          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
+          CARGO_TARGET_DIR: ${{ github.workspace }}/source/host/target
+          CARGO_BUILD_JOBS: '1'
+        shell: bash
+        run: python3 projects/openclaw-rust/scripts/capture_prior_root_contracts.py
       - name: Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache
         id: link_preview_gateway
         if: ${{ always() && steps.native_paths.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
@@ -4430,12 +4439,12 @@ jobs:
           raise SystemExit(0 if accepted else 1)
           PY
       - name: Preserve failed owned native-path and Automation fixtures
-        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
+        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.prior_root_identity.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail
           if [ -d "$NATIVE_PATH_FIXTURES" ]; then
-            tar -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/owned-fixtures.tar .
+            tar --exclude='original-turn-credential.json' -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/owned-fixtures.tar .
           fi
       - name: Upload native SQLite path evidence
         if: ${{ always() && steps.native_paths.outcome != 'skipped' }}

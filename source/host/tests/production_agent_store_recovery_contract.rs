@@ -297,7 +297,7 @@ fn production_consumers_refuse_missing_or_corrupt_checkpoint_and_recover_after_r
             .materialize_session_with_active(None, "user", None, None)
             .expect("session");
         let store = workers.create_agent_blob_store(&session.record.id).expect("blob owner");
-        let turn = build_text_turn_checkpoint(&[], "retained question", "message-original", Some("request-original"), "retained answer");
+        let turn = build_text_turn_checkpoint(None, "retained question", "message-original", Some("request-original"), "retained answer");
         write_turn_blobs(&store, &turn);
         let root_id = Sha256::digest(&turn.state_bytes).to_vec();
         if corrupt_blob {
@@ -530,7 +530,7 @@ fn legacy_empty_root_maintenance_refreshes_the_existing_cached_agent_store() {
     let workers = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
     let session = workers.materialize_session_with_active(None, "user", None, None).expect("session");
     let store = workers.create_agent_blob_store(&session.record.id).expect("blob owner");
-    let turn = build_text_turn_checkpoint(&[], "legacy question", "message-legacy", Some("request-legacy"), "legacy answer");
+    let turn = build_text_turn_checkpoint(None, "legacy question", "message-legacy", Some("request-legacy"), "legacy answer");
     write_turn_blobs(&store, &turn);
     let root_id = Sha256::digest(&turn.state_bytes).to_vec();
     store.set_blob_blocking(&root_id, &turn.state_bytes).expect("unclaimed legacy root");

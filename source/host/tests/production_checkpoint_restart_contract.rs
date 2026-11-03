@@ -1928,7 +1928,10 @@ fn assert_original_reopen(request: &ChildRequest, sessions: &Arc<ProductionSessi
             assert_eq!(verified.original(), original);
         }
         ReopenExpectation::OriginalAbsent => assert!(result.expect("strict missing slot read").is_none()),
-        ReopenExpectation::OriginalRefuse => assert!(result.is_err(), "unavailable or invalid evidence cannot verify: {result:?}"),
+        ReopenExpectation::OriginalRefuse => {
+            let error = result.expect_err("unavailable or invalid evidence cannot verify");
+            eprintln!("original-turn reconciliation refused: {error:?}");
+        }
         _ => unreachable!(),
     }
     assert_eq!(fs::read(request.fixture_root.join("original-effect.txt")).expect("original effect receipt"), b"original-terminal-effect");
@@ -3551,3 +3554,6 @@ fn canonical_root_admission_early_errors_permanently_revoke_prior_completion() {
 fn canonical_root_admission_post_durable_journal_failure_refuses_stale_sink() {
     assert_canonical_root_processes("canonical-journal-after-commit", CanonicalRootScenario::JournalAfterCommit);
 }
+
+#[path = "support/prior_root_historical_fixture.rs"]
+mod prior_root_historical_fixture;

@@ -9,7 +9,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
 };
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
 use mahayana_host_runtime::extensions::session::production_agent_store::{
-    ProductionAgentStore, ProductionWorkerBlobStore,
+    ProductionAgentCheckpointSnapshot, ProductionAgentStore, ProductionWorkerBlobStore,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
@@ -58,8 +58,12 @@ fn user_messages() -> Vec<ProviderMessage> {
 #[test]
 fn canonical_text_turn_checkpoint_preserves_prior_wire_and_appends_turn_reference() {
     let prior = vec![0x9a, 0x06, 0x03, b'o', b'l', b'd'];
+    let snapshot = ProductionAgentCheckpointSnapshot {
+        root_blob_id: b"legacy-root".to_vec(),
+        checkpoint_bytes: prior.clone(),
+    };
     let checkpoint = build_text_turn_checkpoint(
-        &prior,
+        Some(&snapshot),
         "hello",
         "message-1",
         Some("request-1"),
@@ -69,11 +73,16 @@ fn canonical_text_turn_checkpoint_preserves_prior_wire_and_appends_turn_referenc
     let decoded = decode_transcript_mirror_conversation_state(&checkpoint.state_bytes)
         .expect("decode state");
     assert_eq!(decoded.turns, vec![checkpoint.turn_id.clone()]);
+    assert_eq!(
+        checkpoint.user_message_bytes,
+        b"\x0a\x05hello\x12\x09message-1\x52\x0blegacy-root",
+        "the generated reference is the actual prior ID, not a content hash alias",
+    );
     assert!(!checkpoint.user_message_id.is_empty());
     assert_eq!(checkpoint.step_ids.len(), 1);
 
     let rich = build_text_turn_checkpoint_with_rich_text(
-        &prior,
+        Some(&snapshot),
         "hello",
         Some("{\"type\":\"doc\",\"content\":[]}"),
         "message-rich",
@@ -93,7 +102,7 @@ fn canonical_text_turn_checkpoint_preserves_prior_wire_and_appends_turn_referenc
 fn generated_turn_checkpoint_hashes_and_references_tool_steps_before_assistant_text() {
     let tool_step = vec![0x12, 0x02, 0x0a, 0x00];
     let checkpoint = build_generated_turn_checkpoint_with_rich_text(
-        &[],
+        None,
         "use a tool",
         None,
         "message-tool",

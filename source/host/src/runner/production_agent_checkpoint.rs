@@ -181,14 +181,14 @@ pub struct TextTurnCheckpointArtifacts {
 }
 
 pub fn build_text_turn_checkpoint(
-    prior_state_bytes: &[u8],
+    prior_checkpoint: Option<&ProductionAgentCheckpointSnapshot>,
     user_text: &str,
     message_id: &str,
     request_id: Option<&str>,
     assistant_content: &str,
 ) -> TextTurnCheckpointArtifacts {
     build_text_turn_checkpoint_with_rich_text(
-        prior_state_bytes,
+        prior_checkpoint,
         user_text,
         None,
         message_id,
@@ -198,7 +198,7 @@ pub fn build_text_turn_checkpoint(
 }
 
 pub fn build_text_turn_checkpoint_with_rich_text(
-    prior_state_bytes: &[u8],
+    prior_checkpoint: Option<&ProductionAgentCheckpointSnapshot>,
     user_text: &str,
     user_rich_text: Option<&str>,
     message_id: &str,
@@ -206,7 +206,7 @@ pub fn build_text_turn_checkpoint_with_rich_text(
     assistant_content: &str,
 ) -> TextTurnCheckpointArtifacts {
     build_generated_turn_checkpoint_with_rich_text(
-        prior_state_bytes,
+        prior_checkpoint,
         user_text,
         user_rich_text,
         message_id,
@@ -217,7 +217,7 @@ pub fn build_text_turn_checkpoint_with_rich_text(
 }
 
 pub fn build_generated_turn_checkpoint_with_rich_text(
-    prior_state_bytes: &[u8],
+    prior_checkpoint: Option<&ProductionAgentCheckpointSnapshot>,
     user_text: &str,
     user_rich_text: Option<&str>,
     message_id: &str,
@@ -225,8 +225,12 @@ pub fn build_generated_turn_checkpoint_with_rich_text(
     generated_step_bytes: &[Vec<u8>],
     assistant_content: &str,
 ) -> TextTurnCheckpointArtifacts {
-    let prior_root_id = (!prior_state_bytes.is_empty())
-        .then(|| Sha256::digest(prior_state_bytes).to_vec());
+    let prior_state_bytes = prior_checkpoint
+        .map(|snapshot| snapshot.checkpoint_bytes.as_slice())
+        .unwrap_or_default();
+    // A checked legacy ID need not be the digest of its bytes, and a present
+    // empty root remains distinct from no prior checkpoint.
+    let prior_root_id = prior_checkpoint.map(|snapshot| snapshot.root_blob_id.as_slice());
 
     let mut user_message_bytes = Vec::new();
     push_length_delimited(1, user_text.as_bytes(), &mut user_message_bytes);
@@ -237,7 +241,7 @@ pub fn build_generated_turn_checkpoint_with_rich_text(
     {
         push_length_delimited(8, user_rich_text.as_bytes(), &mut user_message_bytes);
     }
-    if let Some(prior_root_id) = prior_root_id.as_deref() {
+    if let Some(prior_root_id) = prior_root_id {
         push_length_delimited(10, prior_root_id, &mut user_message_bytes);
     }
     let user_message_id = Sha256::digest(&user_message_bytes).to_vec();
@@ -535,11 +539,9 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
             ));
         }
         self.require_current_base(expected_base)?;
-        let prior_state_bytes = expected_base.as_ref()
-            .map(|snapshot| snapshot.checkpoint_bytes.as_slice()).unwrap_or_default();
 
         let mut artifacts = build_generated_turn_checkpoint_with_rich_text(
-            prior_state_bytes,
+            expected_base.as_ref(),
             user_text,
             options.recent_message_rich_text.as_deref(),
             message_id,
@@ -733,7 +735,9 @@ pub fn persist_completed_original_turn(
         &proof.original, proof.terminal, proof.final_result_sha256,
         proof.sent_message_count, proof.reacted, &proof.custody, &proof.canonical,
     )?;
-    validate_original_turn_canonical(&view, &proof.canonical)?;
+    validate_original_turn_canonical(
+        &view, &proof.canonical, OriginalTurnValidation::FreshPublication,
+    )?;
     let record = OriginalTurnTerminalRecord {
         version: 1,
         original: proof.original.clone(),
@@ -773,7 +777,9 @@ pub fn reconcile_completed_original_turn(
         record.final_result_sha256, record.sent_message_count, record.reacted,
         &custody, &record.canonical,
     )?;
-    validate_original_turn_canonical(&read.view, &record.canonical)?;
+    validate_original_turn_canonical(
+        &read.view, &record.canonical, OriginalTurnValidation::PersistedReconciliation,
+    )?;
     // Blob reads happen outside the SQL transaction. Only the Session owner can
     // check that all of its raw rows and recovery availability still agree.
     sessions.recheck_original_turn_terminal_read(&read).map_err(original_turn_error)?;
@@ -862,9 +868,59 @@ fn require_generated_blob_id(id: &[u8], bytes: &[u8]) -> Result<(), ProviderSess
     Ok(())
 }
 
+#[derive(Clone, Copy)]
+enum OriginalTurnValidation {
+    FreshPublication,
+    PersistedReconciliation,
+}
+
+fn validate_original_turn_user_image(
+    user_bytes: &[u8],
+    user_prefix: &[u8],
+    prior_root_blob_id: Option<&[u8]>,
+    prior_bytes: &[u8],
+    validation: OriginalTurnValidation,
+) -> Result<(), ProviderSessionError> {
+    let check_image = |prior_id: Option<&[u8]>| -> Result<(), ProviderSessionError> {
+        let mut suffix = Vec::new();
+        if let Some(id) = prior_id {
+            push_length_delimited(10, id, &mut suffix);
+        }
+        let middle = user_bytes.strip_prefix(user_prefix)
+            .and_then(|remaining| remaining.strip_suffix(suffix.as_slice()))
+            .ok_or_else(|| original_turn_error("canonical user differs from the checkpoint writer"))?;
+        if !middle.is_empty() {
+            let rich = std::str::from_utf8(canonical_embedded_field(middle, 8)?)
+                .map_err(original_turn_error)?;
+            if rich.is_empty() || rich.trim() != rich {
+                return Err(original_turn_error("canonical rich text differs from the checkpoint writer"));
+            }
+        }
+        Ok(())
+    };
+
+    let current = check_image(prior_root_blob_id);
+    if current.is_err()
+        && matches!(validation, OriginalTurnValidation::PersistedReconciliation)
+    {
+        // Only an already persisted receipt may use the exact former writer
+        // image. The recorded actual root was still required and read by the
+        // caller; no content-hash alias is needed or created for compatibility.
+        let historical_id = (!prior_bytes.is_empty())
+            .then(|| Sha256::digest(prior_bytes).to_vec());
+        if historical_id.as_deref() != prior_root_blob_id
+            && check_image(historical_id.as_deref()).is_ok()
+        {
+            return Ok(());
+        }
+    }
+    current
+}
+
 fn validate_original_turn_canonical(
     view: &OriginalTurnTerminalView,
     canonical: &[CanonicalTurnCommitRecord],
+    validation: OriginalTurnValidation,
 ) -> Result<(), ProviderSessionError> {
     if canonical.last().map(|commit| commit.root_blob_id.as_slice())
         != Some(view.checkpoint.root_blob_id.as_slice())
@@ -917,20 +973,10 @@ fn validate_original_turn_canonical(
         let mut user_prefix = Vec::new();
         push_length_delimited(1, user.text.as_bytes(), &mut user_prefix);
         push_length_delimited(2, user.message_id.as_bytes(), &mut user_prefix);
-        let mut user_suffix = Vec::new();
-        if !prior_bytes.is_empty() {
-            push_length_delimited(10, &Sha256::digest(&prior_bytes), &mut user_suffix);
-        }
-        let user_middle = user_bytes.strip_prefix(user_prefix.as_slice())
-            .and_then(|remaining| remaining.strip_suffix(user_suffix.as_slice()))
-            .ok_or_else(|| original_turn_error("canonical user differs from the checkpoint writer"))?;
-        if !user_middle.is_empty() {
-            let rich = std::str::from_utf8(canonical_embedded_field(user_middle, 8)?)
-                .map_err(original_turn_error)?;
-            if rich.is_empty() || rich.trim() != rich {
-                return Err(original_turn_error("canonical rich text differs from the checkpoint writer"));
-            }
-        }
+        validate_original_turn_user_image(
+            &user_bytes, &user_prefix, commit.prior_root_blob_id.as_deref(),
+            &prior_bytes, validation,
+        )?;
 
         let turn_bytes = required_original_turn_blob(&view.store, &commit.turn_blob_id)?;
         require_generated_blob_id(&commit.turn_blob_id, &turn_bytes)?;
@@ -1123,4 +1169,98 @@ fn push_varint(mut value: u64, output: &mut Vec<u8>) {
         value >>= 7;
     }
     output.push(value as u8);
+}
+
+
+#[cfg(test)]
+mod prior_root_identity_tests {
+    use super::*;
+
+    const PREFIX: &[u8] = b"\x0a\x04user\x12\x02id";
+    const LEGACY: &[u8] = b"legacy-root";
+    const PRIOR: &[u8] = b"\x18\x01";
+
+    fn image(middle: &[u8], suffix: Option<&[u8]>) -> Vec<u8> {
+        let mut bytes = PREFIX.to_vec();
+        bytes.extend_from_slice(middle);
+        if let Some(id) = suffix {
+            push_length_delimited(10, id, &mut bytes);
+        }
+        bytes
+    }
+
+    #[test]
+    fn prior_root_fresh_publication_refuses_old_hash_and_present_empty_omission() {
+        let digest = Sha256::digest(PRIOR).to_vec();
+        let historical = image(&[], Some(&digest));
+        assert!(validate_original_turn_user_image(
+            &historical, PREFIX, Some(LEGACY), PRIOR, OriginalTurnValidation::FreshPublication,
+        ).is_err(), "old content hash must not mint a new proof for a legacy root");
+        assert!(validate_original_turn_user_image(
+            PREFIX, PREFIX, Some(LEGACY), &[], OriginalTurnValidation::FreshPublication,
+        ).is_err(), "present-empty prior identity is required on fresh publication");
+    }
+
+    #[test]
+    fn prior_root_reconciliation_accepts_only_the_exact_two_writer_images() {
+        let digest = Sha256::digest(PRIOR).to_vec();
+        for middle in [b"".as_slice(), b"\x42\x04rich".as_slice()] {
+            for (prior, suffix) in [
+                (PRIOR, Some(LEGACY)),
+                (PRIOR, Some(digest.as_slice())),
+                (b"".as_slice(), Some(LEGACY)),
+                (b"".as_slice(), None),
+            ] {
+                validate_original_turn_user_image(
+                    &image(middle, suffix), PREFIX, Some(LEGACY), prior,
+                    OriginalTurnValidation::PersistedReconciliation,
+                ).expect("exact current or historical image remains readable");
+            }
+        }
+    }
+
+    #[test]
+    fn prior_root_validation_preserves_absence_and_content_addressed_controls() {
+        let digest = Sha256::digest(PRIOR).to_vec();
+        for mode in [OriginalTurnValidation::FreshPublication, OriginalTurnValidation::PersistedReconciliation] {
+            validate_original_turn_user_image(PREFIX, PREFIX, None, &[], mode)
+                .expect("absent prior remains absent");
+            validate_original_turn_user_image(
+                &image(&[], Some(&digest)), PREFIX, Some(&digest), PRIOR, mode,
+            ).expect("content-addressed prior has the same exact identity in both writers");
+            validate_original_turn_user_image(
+                &image(b"\x42\x04rich", Some(LEGACY)), PREFIX, Some(LEGACY), PRIOR, mode,
+            ).expect("actual legacy identity and normalized rich text remain valid");
+            assert!(validate_original_turn_user_image(
+                &image(&[], Some(LEGACY)), PREFIX, None, &[], mode,
+            ).is_err(), "an absent root cannot acquire an arbitrary recorded reference");
+        }
+    }
+
+    #[test]
+    fn prior_root_validation_refuses_duplicate_unsupported_and_malformed_user_images() {
+        let mut duplicate_prior = image(&[], Some(LEGACY));
+        push_length_delimited(10, LEGACY, &mut duplicate_prior);
+        let mut duplicate_prefix = PREFIX.to_vec();
+        duplicate_prefix.extend_from_slice(&image(&[], Some(LEGACY)));
+        let images = [
+            image(&[], Some(b"other-existing-root")),
+            duplicate_prior,
+            duplicate_prefix,
+            image(b"\x4a\x01x", Some(LEGACY)),
+            image(b"\x42\x01x\x42\x01y", Some(LEGACY)),
+            image(b"\x42\x00", Some(LEGACY)),
+            image(b"\x42\x02 x", Some(LEGACY)),
+            image(b"\x42\x01\xff", Some(LEGACY)),
+            image(b"\x42\x04x", Some(LEGACY)),
+            image(b"\x42\x81\x00x", Some(LEGACY)),
+            image(b"\x42\x01x\x52\x80", Some(LEGACY)),
+        ];
+        for mode in [OriginalTurnValidation::FreshPublication, OriginalTurnValidation::PersistedReconciliation] {
+            for bytes in &images {
+                assert!(validate_original_turn_user_image(bytes, PREFIX, Some(LEGACY), PRIOR, mode).is_err(),
+                    "unsupported full user image must not qualify: {bytes:?}");
+            }
+        }
+    }
 }
