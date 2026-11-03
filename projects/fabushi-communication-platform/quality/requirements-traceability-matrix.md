@@ -871,3 +871,12 @@ this origin extension validates only its explicit Human-send boundary. The
 author23 harness and actual Mac gate retain their own strict unknown-call
 oracles. This bounded evidence is not a whole-renderer RPC contract acceptance.
 All source/service/package/Bot/quality/independent acceptance gaps remain.
+
+
+### NMR-PERSIST-MIGRATION-01 — Existing one-shot marker recovery
+
+| Requirement | Existing owner and production wiring | Required evidence |
+|---|---|---|
+| NMR-PERSIST-MIGRATION-01a | Existing Electron main SandClientPersistenceStore -> trusted secrets IPC -> preload migration API. Only ENOENT is absent; other stat errors and null/nonregular observations reject before any import. Regular historical markers retain their existing completed semantics. | `NMR-DRAFT-01 one-shot migration rejects marker I/O errors without resurrecting retired drafts`: real owner, same/reopened instance, retired key stays absent, original error and file bytes retained, zero mutating calls, error recovery and ENOENT compatibility. |
+| NMR-PERSIST-MIGRATION-01b / NMR-PERSIST-MIGRATION-01c | Existing owner writes its unchanged marker through same-directory .tmp then rename, after eligible blob processing. Existing keys win, namespace/caps and supplied originals remain, no new startup invocation. | `NMR-DRAFT-01 one-shot migration commits its marker atomically and recovers after write or rename failure`: partial write and rename faults, same/reopened owner, no false completion, newer B survives stale A retry, missing-entry continuation, cleanup and repeated no-write completion. |
+| NMR-AC-PERSIST-MIGRATION-01 | Spec frozen in4b69d61c93332500197bab14daaf653027468c3d; same canonical FBCP-NMR-001 responsibility and actual persistence owner. | Preserve original5 tests and add2 (persistence7, full UI205). Execute containing-H Actions. Unknown old marker repair, automatic browser startup migration and physical power-loss remain unqualified; all previous message, actual Electron and final ACCEPT gates remain. |

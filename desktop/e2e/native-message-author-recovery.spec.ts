@@ -1234,14 +1234,59 @@ test('NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the activ
   expect(currentPorts).toHaveLength(1);
   expect(initialDiagnostics.mountCount).toBe(1);
   const portId = currentPorts[0].id;
+  expect(initialDiagnostics.heldAgentRosters).toEqual([]);
+  // One transport recovery reaches three existing consumers of listAgents:
+  // Root.refreshRoster, accessRosterStore and the editor suggestion adapter.
+  // Only Root may continue into the Human sync and Transcript assertions.
+  const transportRosterReads = 3;
+  const rosterStages: Array<{ name: string; indices: number[]; requestIds: string[] }> = [];
+  type RosterStage = (typeof rosterStages)[number];
+  const captureRosterStage = async (name: string, count: number): Promise<RosterStage> => {
+    const start = rosterStages.reduce((total, stage) => total + stage.indices.length, 0);
+    await expect.poll(async () => (await heldRosters()).length).toBe(start + count);
+    const all = await heldRosters();
+    expect(all.slice(0, start).map((pending) => pending.request.requestId))
+      .toEqual(rosterStages.flatMap((stage) => stage.requestIds));
+    const group = all.slice(start);
+    expect(group).toHaveLength(count);
+    const previousSequence = Math.max(0, ...all.slice(0, start).map((pending) => pending.request.sequence));
+    for (const pending of group) {
+      expect(pending).toMatchObject({
+        settled: false,
+        request: { method: 'listAgents', args: {}, accountId: '1', accountEpoch: initialDiagnostics.accountEpoch, portId },
+      });
+      expect(pending.request.args).toEqual({});
+      expect(typeof pending.request.requestId).toBe('string');
+      expect(pending.request.requestId.length).toBeGreaterThan(0);
+      expect(Number.isSafeInteger(pending.request.sequence)).toBe(true);
+      expect(pending.request.sequence).toBeGreaterThan(previousSequence);
+    }
+    const ids = all.map((pending) => pending.request.requestId);
+    expect(new Set(ids).size).toBe(ids.length);
+    const stage = { name, indices: group.map((_, index) => start + index), requestIds: group.map((pending) => pending.request.requestId) };
+    rosterStages.push(stage);
+    return stage;
+  };
+  const expectRosterStage = async (stage: RosterStage, settled: boolean) => {
+    const all = await heldRosters();
+    for (const [offset, index] of stage.indices.entries()) {
+      expect(all[index]).toMatchObject({
+        settled,
+        request: { requestId: stage.requestIds[offset], method: 'listAgents', args: {}, accountId: '1', accountEpoch: initialDiagnostics.accountEpoch, portId },
+      });
+    }
+  };
 
   // Establish the actual native runtime epoch on the already serving port.
   // A Host process being alive is not yet a connected Gateway event stream.
   const beforeEpoch = await counts();
   expect(await runtime({ type: 'host.lifecycle', lifecycle: 'running', generation: 1, sequence: 1 })).toBe(portId);
+  await expect(reconnectNotice).toBeVisible();
+  await drainUi(page);
+  expect(await counts(), 'A spawned Host cannot start any connected recovery consumer').toEqual(beforeEpoch);
   expect(await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 1, sequence: 2 })).toBe(portId);
   await expect.poll(counts).toEqual({
-    roster: beforeEpoch.roster + 1, humanSync: beforeEpoch.humanSync + 1, transcript: beforeEpoch.transcript + 1,
+    roster: beforeEpoch.roster + transportRosterReads, humanSync: beforeEpoch.humanSync + 1, transcript: beforeEpoch.transcript + 1,
   });
   await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.releaseRefreshes());
   await expect.poll(() => domIds(page)).toEqual(historyIds);
@@ -1268,12 +1313,16 @@ test('NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the activ
     expect(diagnostic.endpoints).toHaveLength(1);
     expect(diagnostic.endpoints[0]).toMatchObject({ id: portId, closed: false });
   };
-  const finishCurrentRoster = async (index: number, before: Awaited<ReturnType<typeof counts>>, entryId: string, content: string) => {
-    // The response goes through the actual Coordinator client and Root scope
-    // fence. Only that accepted current attempt may start Human convergence.
-    await page.evaluate((position) => window.nativeMessageAuthorRecoveryFixture.releaseAgentRoster(position), index);
+  const finishCurrentRoster = async (stage: RosterStage, before: Awaited<ReturnType<typeof counts>>, entryId: string, content: string) => {
+    // Settle all real consumers without assigning a caller from request order.
+    // Only one accepted Root attempt may start Human convergence.
+    await expectRosterStage(stage, false);
+    await page.evaluate((indices) => {
+      for (const index of indices) window.nativeMessageAuthorRecoveryFixture.releaseAgentRoster(index);
+    }, stage.indices);
+    await expectRosterStage(stage, true);
     await expect.poll(counts).toEqual({
-      roster: before.roster + 1, humanSync: before.humanSync + 1, transcript: before.transcript + 1,
+      roster: before.roster + stage.indices.length, humanSync: before.humanSync + 1, transcript: before.transcript + 1,
     });
     await expect.poll(() => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.pending().refreshes)).toBe(1);
     await expect(messageRow(page, entryId)).toHaveCount(0);
@@ -1282,6 +1331,7 @@ test('NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the activ
     expectedIds.push(entryId);
     await expect(messageRow(page, entryId)).toContainText(content);
     await expectRetained();
+    await drainUi(page);
   };
 
   // Replace the Host without navigating or handing the renderer another port.
@@ -1289,6 +1339,7 @@ test('NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the activ
   const beforeHost = await counts();
   await runtime({ type: 'host.lifecycle', lifecycle: 'stopped', generation: 1, sequence: 3 });
   await expect(reconnectNotice).toBeVisible();
+  await drainUi(page);
   await expectRetained();
   await runtime({ type: 'host.lifecycle', lifecycle: 'running', generation: 2, sequence: 4 });
   await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.appendServiceOnly(
@@ -1298,83 +1349,103 @@ test('NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the activ
   expect(await counts(), 'Host running alone cannot start the recovery read').toEqual(beforeHost);
   await expect(messageRow(page, 'human-server-message:106')).toHaveCount(0);
   await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 5 });
-  await expect.poll(async () => (await heldRosters()).length).toBe(1);
-  expect(await counts()).toEqual({ ...beforeHost, roster: beforeHost.roster + 1 });
+  const hostStage = await captureRosterStage('Host replacement', transportRosterReads);
+  expect(await counts()).toEqual({ ...beforeHost, roster: beforeHost.roster + transportRosterReads });
   await expectRetained();
-  await finishCurrentRoster(0, beforeHost, 'human-server-message:106', 'History recovered from the replacement Host');
+  await finishCurrentRoster(hostStage, beforeHost, 'human-server-message:106', 'History recovered from the replacement Host');
   await milestone(page, info, 'native-Host-replacement-refreshes-Human-without-navigation');
 
   // A reconnect of the same Gateway generation needs the same production
   // refresh path; a process-generation-only notification would miss this row.
   const beforeSse = await counts();
   await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-down', generation: 2, sequence: 6 });
+  await expect(reconnectNotice).toBeVisible();
+  await drainUi(page);
   await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.appendServiceOnly(
     'human:a', 'human-server-message:107', 'History recovered after the same Host SSE reconnect',
   ));
   await expectRetained();
   await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 7 });
-  await expect.poll(async () => (await heldRosters()).length).toBe(2);
-  expect(await counts()).toEqual({ ...beforeSse, roster: beforeSse.roster + 1 });
-  await finishCurrentRoster(1, beforeSse, 'human-server-message:107', 'History recovered after the same Host SSE reconnect');
+  const sseStage = await captureRosterStage('Same Host SSE reconnect', transportRosterReads);
+  expect(await counts()).toEqual({ ...beforeSse, roster: beforeSse.roster + transportRosterReads });
+  await finishCurrentRoster(sseStage, beforeSse, 'human-server-message:107', 'History recovered after the same Host SSE reconnect');
   await milestone(page, info, 'same-generation-SSE-restores-the-active-Human-cache');
 
   // Make the existing Retry UI available by failing a real roster RPC. Never
   // inject controller state or call its retry callback from the fixture.
   const beforeFailure = await counts();
   await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-down', generation: 2, sequence: 8 });
+  await expect(reconnectNotice).toBeVisible();
+  await drainUi(page);
   await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 9 });
-  await expect.poll(async () => (await heldRosters()).length).toBe(3);
-  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.rejectAgentRoster(
-    2, 'The native roster is temporarily unavailable before the user Retry',
-  ));
+  const failedStage = await captureRosterStage('Roster failure', transportRosterReads);
+  await page.evaluate((indices) => {
+    for (const index of indices) window.nativeMessageAuthorRecoveryFixture.rejectAgentRoster(
+      index, 'The native roster is temporarily unavailable before the user Retry',
+    );
+  }, failedStage.indices);
+  await expectRosterStage(failedStage, true);
   await expect(reconnectNotice.getByRole('button', { name: 'Retry', exact: true })).toBeEnabled();
-  expect(await counts()).toEqual({ ...beforeFailure, roster: beforeFailure.roster + 1 });
+  expect(await counts()).toEqual({ ...beforeFailure, roster: beforeFailure.roster + transportRosterReads });
   await expectRetained();
+  await drainUi(page);
+  const beforeUserRetry = await counts();
   await reconnectNotice.getByRole('button', { name: 'Retry', exact: true }).click();
-  await expect.poll(async () => (await heldRosters()).length).toBe(4);
+  const oldRetryStage = await captureRosterStage('User Retry', 1);
+  expect(await counts()).toEqual({ ...beforeUserRetry, roster: beforeUserRetry.roster + 1 });
   await expect(reconnectNotice.getByRole('button', { name: 'Retrying…', exact: true })).toBeDisabled();
-  const oldRetry = (await heldRosters())[3];
+  const oldRetry = (await heldRosters())[oldRetryStage.indices[0]];
   expect(oldRetry.settled).toBe(false);
   expect(oldRetry.request).toMatchObject({ method: 'listAgents', args: {}, accountId: '1', portId });
 
   const beforeHandoff = await counts();
   await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-down', generation: 2, sequence: 10 });
+  await drainUi(page);
   await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.appendServiceOnly(
     'human:a', 'human-server-message:108', 'The new Retry owns the post-reconnect Human refresh',
   ));
   await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 11 });
   // Controller subscribes before Root. The replacement must begin after the
   // complete transport fanout, otherwise Root captures an obsolete generation.
-  await expect.poll(async () => (await heldRosters()).length).toBe(5);
-  const newRetry = (await heldRosters())[4];
-  expect(newRetry.settled).toBe(false);
-  expect(newRetry.request).toMatchObject({ method: 'listAgents', args: {}, accountId: '1', portId });
-  expect(newRetry.request.sequence).toBeGreaterThan(oldRetry.request.sequence);
-  expect(newRetry.request.requestId).not.toBe(oldRetry.request.requestId);
-  expect(await counts()).toEqual({ ...beforeHandoff, roster: beforeHandoff.roster + 1 });
+  const replacementStage = await captureRosterStage('Retry replacement', transportRosterReads);
+  const replacementRequests = await heldRosters();
+  for (const index of replacementStage.indices) {
+    const pending = replacementRequests[index];
+    expect(pending.settled).toBe(false);
+    expect(pending.request.sequence).toBeGreaterThan(oldRetry.request.sequence);
+    expect(pending.request.requestId).not.toBe(oldRetry.request.requestId);
+  }
+  expect(await counts()).toEqual({ ...beforeHandoff, roster: beforeHandoff.roster + transportRosterReads });
   await expect(reconnectNotice.getByRole('button', { name: 'Retrying…', exact: true })).toBeDisabled();
   await expectRetained();
 
-  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.rejectAgentRoster(
-    3, 'Stale pre-reconnect roster reply must stay inert',
-  ));
+  await page.evaluate((index) => window.nativeMessageAuthorRecoveryFixture.rejectAgentRoster(
+    index, 'Stale pre-reconnect roster reply must stay inert',
+  ), oldRetryStage.indices[0]);
   await drainUi(page);
-  expect((await heldRosters())[3].settled).toBe(true);
-  expect((await heldRosters())[4].settled).toBe(false);
+  await expectRosterStage(oldRetryStage, true);
+  await expectRosterStage(replacementStage, false);
   expect(await counts(), 'The superseded Retry cannot start Human sync or consume the current attempt')
-    .toEqual({ ...beforeHandoff, roster: beforeHandoff.roster + 1 });
+    .toEqual({ ...beforeHandoff, roster: beforeHandoff.roster + transportRosterReads });
   await expect(reconnectNotice.getByRole('button', { name: 'Retrying…', exact: true })).toBeDisabled();
   await expect(page.getByText('Stale pre-reconnect roster reply must stay inert', { exact: false })).toHaveCount(0);
   await expectRetained();
   await milestone(page, info, 'late-old-Retry-cannot-clear-the-current-recovery');
 
-  await finishCurrentRoster(4, beforeHandoff, 'human-server-message:108', 'The new Retry owns the post-reconnect Human refresh');
+  await finishCurrentRoster(replacementStage, beforeHandoff, 'human-server-message:108', 'The new Retry owns the post-reconnect Human refresh');
   await expect(reconnectNotice).toHaveCount(0);
   await drainUi(page);
   await expectRetained();
   const final = await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.diagnostics());
-  expect(final.heldAgentRosters).toHaveLength(5);
+  expect(rosterStages.map((stage) => stage.name)).toEqual([
+    'Host replacement', 'Same Host SSE reconnect', 'Roster failure', 'User Retry', 'Retry replacement',
+  ]);
+  expect(rosterStages.map((stage) => stage.indices.length)).toEqual([3, 3, 3, 1, 3]);
+  expect(final.heldAgentRosters).toHaveLength(13);
+  expect(final.heldAgentRosters.map((pending) => pending.request.requestId))
+    .toEqual(rosterStages.flatMap((stage) => stage.requestIds));
   expect(final.heldAgentRosters.every((pending) => pending.settled)).toBe(true);
+  for (const stage of rosterStages) await expectRosterStage(stage, true);
   expect(final.requests.filter((request) => request.method === 'sendPrompt'
     || request.method === 'sendHumanMessage' || request.method === 'retryHumanMessage')).toEqual([]);
   const runtimeFrames = final.frames.filter((entry) =>

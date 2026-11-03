@@ -134,8 +134,14 @@ export class SandClientPersistenceStore {
 
   async hasCompletedOneShotMigration(): Promise<boolean> {
     return this.files.fileSize(this.files.joinPath(this.dir, CLIENT_PERSISTENCE_MIGRATION_MARKER_FILENAME)).then(
-      (size) => size != null,
-      () => false,
+      (size) => {
+        if (size == null) throw new Error("client persistence: migration marker is not a regular file");
+        return true;
+      },
+      (error) => {
+        if (findSystemErrno(error) !== "ENOENT") throw error;
+        return false;
+      },
     );
   }
 
@@ -153,7 +159,10 @@ export class SandClientPersistenceStore {
         }
       }
       await this.files.ensureDir(this.dir);
-      await this.files.writeTextFile(this.files.joinPath(this.dir, CLIENT_PERSISTENCE_MIGRATION_MARKER_FILENAME), new Date().toISOString());
+      const marker = this.files.joinPath(this.dir, CLIENT_PERSISTENCE_MIGRATION_MARKER_FILENAME);
+      const temporary = this.files.joinPath(this.dir, `${CLIENT_PERSISTENCE_MIGRATION_MARKER_FILENAME}${TEMP_FILE_SUFFIX}`);
+      await this.files.writeTextFile(temporary, new Date().toISOString());
+      await this.files.rename(temporary, marker);
       return true;
     });
   }

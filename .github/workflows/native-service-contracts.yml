@@ -875,12 +875,14 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild source/shared/client-persistence-store.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/client-persistence.test.mjs 2>&1 | tee artifacts/native-message-ui/client-persistence-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/client-persistence.test.mjs 2>&1 | tee artifacts/native-message-ui/client-persistence.log
-          grep -Fx '# tests 5' artifacts/native-message-ui/client-persistence.log
-          grep -Fx '# pass 5' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# tests 7' artifacts/native-message-ui/client-persistence.log
+          grep -Fx '# pass 7' artifacts/native-message-ui/client-persistence.log
           grep -Fx '# fail 0' artifacts/native-message-ui/client-persistence.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/client-persistence.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/client-persistence.log
           grep -Fx '# todo 0' artifacts/native-message-ui/client-persistence.log
+          grep -E '^ok [0-9]+ - NMR-DRAFT-01 one-shot migration rejects marker I/O errors without resurrecting retired drafts$' artifacts/native-message-ui/client-persistence.log
+          grep -E '^ok [0-9]+ - NMR-DRAFT-01 one-shot migration commits its marker atomically and recovers after write or rename failure$' artifacts/native-message-ui/client-persistence.log
       - name: Restored reply scope and explicit cancellation contracts
         shell: bash
         run: |

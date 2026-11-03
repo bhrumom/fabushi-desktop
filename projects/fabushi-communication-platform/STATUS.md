@@ -6,49 +6,52 @@ Date: 2026-11-03
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
 
-## Round8 — production feed verified; runtime recovery and explicit offline origin
+## Round8 — actual message and Electron recovery; marker and UI follow-up
 
-Exact `1bcdae6dffa038768250daa41fc4f7c0ff9c6852` run41552585826 passed
-reconciliation120/120 (Human76, all4 production Transcript feed cases, full6400/32,
-durable continuation/restart) and UI194/194 with Renderer compile. Source
-run41550895137 at `98be438bad69f9982c503e5a3442f721307c85ce` passed Node161,
-Python37/schema0 and unaccepted-candidate consistency; those are bounded older-input
-results, not approval of the new containing commit.
+Exact `6da98eae8c42a53f24a42d7e3301693bd449ecab` run41556626655 passed
+reconciliation121/121 (Human77, full6400/32, durable continuation/restart, reaction
+concurrency/late receipts, all4 production Transcript feed cases and explicit
+offline-origin persistence). Actual Mac run41556626730 passed Plugins2/2 and
+Human2/2 with retries0: five real process lifetimes covered same-directory recovery,
+original nonce replay, settled draft retirement, distinct same-text new draft,
+late closed-process receipts and canonical UI/SQLite. These controlled-service
+results do not prove active backend deployment, force-kill/power-loss or signing.
 
-The frozen NMR-TRANSPORT-RECOVERY-01 batch connects actual Host/Gateway runtime
-lifecycle to the existing client/controller/Renderer recovery path, fences
-generation/sequence/terminal state and stale held Retry results, and defers a
-replacement roster request until listener fanout finishes. The actual Renderer
-case retains current paged history and the complete Human draft without reload,
-focus or chat switching.
+The same H UI gate executed203:201 passed and2 failed. All167 Node cases and
+Renderer compile passed; projection browser12/13 and author22/23 passed.
+The queued-account oracle waited for remote rows before its explicit reconnect,
+contrary to retained observed-down state. The new author recovery oracle counted
+all three existing roster consumers as the Root's single refresh; later held-Retry
+sections were not reached. Narrow test corrections retain actual account/port/
+epoch isolation, bounded shared requests, draft/cache preservation and no-reload/
+no-send assertions; no unchanged retry or passing result is substituted.
 
-H98 actual Mac run41550895126/job125637914634 passed Plugins2 but failed both
-Human cases at canonical-body assertions: the row included an incorrect offline
-notice. The second case reached three real process lifetimes, durable A settlement,
-original A draft retirement and a distinct same-text B before its final assertions
-failed. No Human pass is inferred from that partial progress. NMR-OFFLINE-ORIGIN-01
-now carries an explicit observation through the existing submission scope, gateway,
-SQLite intent, canonical settlement, projection and JSX. Repeated nonce/retry/late
-receipt/reopen cannot change first origin or composition time. Online and legacy
-timestamp-only native Human rows remain unmarked; pending rows never claim sent.
-The actual Mac body oracle uses unique prose and independently requires zero
-offline notices for online sends.
+NMR-PERSIST-MIGRATION-01 is frozen at `4b69d61c93332500197bab14daaf653027468c3d`.
+The existing Electron persistence owner now rejects indeterminate marker reads
+before imports and commits its unchanged marker through temporary write/rename.
+Two additional real-owner controlled-I/O tests cover retired-draft resurrection,
+partial import/marker writes, rename failures, same/reopened-owner recovery,
+original-input retry and newer values. Original5 remain; persistence7/full UI205
+are authored requirements awaiting the containing frozen-H Actions.
 
-New authored gates require Human77/reconciliation121, projection43/retry47,
-browser13/author23 (UI203), actual Mac Plugins2+Human2 and shipping at the containing
-H. These counts are requirements, not executed passes. The browser13 fixture
-retains its existing fallback-null boundary; author23 and actual Mac strict
-unknown-call checks remain. Native Human constructors are reviewed; unknown old
-records without authorKind and legacy Telegram data are not certified.
+Source run41556626683 at H6da passed Node161/Python37/schema0 and unaccepted-
+candidate consistency. Fixed U remains `f985723b552b30fe1c17d377d57f44e61a15a8c4`.
+The canonical ledger append changes only FBCP-NMR-001; all183 other rows and
+source-review/global fields remain. Source review remains16 records/2 complete,
+unknown/unread null and every acceptance false. Current shipping remains queued
+without an allocated runner or execution evidence.
 
-Fixed U and all183 other ledger rows/source-review fields remain unchanged.
-Canonical ledger d5f16f98d6ae28342c9e06a3b17069121769aa79 appends only NMR owner,
-contract and test anchors; all acceptance flags remain false. Active backend
-afterId=0 deployment is unverified (PR137/main unchanged at2026-11-03T00:38:32Z).
+The current Native Session/Transcript and retained MessagingService/Telegram
+callers were checked at exact4b. Historical telegram:chat: RuntimeStore rows can
+conditionally block startup or be rewritten during recovery; actual user-store
+presence is unknown and a separate narrow preservation/refusal repair is open.
+Backend main687718ce9e0083aa124d29005bcce4051d357919 still rejects afterId=0;
+PR137 remains draft/open/unmerged at52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23,
+with production readiness skipped. Active Worker identity is unverified.
 Remote revisions/tombstones/old-message discovery, reaction409 recovery, complete
 source/legal, signed supported platforms, full Bot/UI/a11y/security/performance/
 soak/upgrade/rollback and independent ACCEPT remain open. Existing round8 receipts
-retain actual results, failures, artifact identities and exact candidate inputs.
+retain actual results, failures, artifact identities and candidate inputs.
 
 ## Round30 — forward feedback and recovery qualification
 

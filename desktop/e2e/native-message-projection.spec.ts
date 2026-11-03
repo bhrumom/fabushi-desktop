@@ -259,8 +259,17 @@ for (const oldPhase of ['in-flight', 'queued']) {
     await page.evaluate(() => window.nativeMessageFixture.setAccount(null));
     await expect(page.getByRole('log', { name: 'Conversation transcript' })).toHaveCount(0);
     await page.evaluate(() => window.nativeMessageFixture.setAccount('next-account'));
+    if (oldPhase === 'queued') {
+      // Account replacement retains the observed transport loss. It must
+      // cancel the old queue before an actual reconnect loads the new roster.
+      await expect(page.locator('.sand-agents-state--unreachable')).toBeVisible();
+      await expect(page.locator('[data-entry-id^="pending-"]')).toHaveCount(0);
+      expect(await page.evaluate(() => window.nativeMessageFixture.requests
+        .filter((request) => request.method === 'sendHumanMessage'))).toEqual([]);
+      await page.evaluate(() => window.nativeMessageFixture.reconnect());
+    }
     await expect(messageRow(page, 'new-a')).toBeVisible();
-    await page.evaluate(() => window.nativeMessageFixture.reconnect());
+    if (oldPhase === 'in-flight') await page.evaluate(() => window.nativeMessageFixture.reconnect());
     await expect(page.locator('[contenteditable="true"]')).toHaveText('');
     await page.locator('[contenteditable="true"]').fill('Current account independent send');
     await page.getByRole('button', { name: 'Send message', exact: true }).click();

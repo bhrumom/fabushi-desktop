@@ -2599,3 +2599,114 @@ preserved and repaired causally, never hidden by this independent batch.
 Rollback restores the prior API implementation while leaving final markers,
 canonical blobs and legacy originals in place. Full migration, service/platform
 and independent ACCEPT requirements remain unchanged.
+
+
+## NMR-RETAINED-TELEGRAM-01 — Preserve retired RuntimeStore work at desktop startup
+
+This is a bounded follow-up to the current shipping owner audit at exact
+`4b69d61c93332500197bab14daaf653027468c3d` (product
+`6da98eae8c42a53f24a42d7e3301693bd449ecab`), receipts
+`88c4f4f744f13898435b6b575577207b6571826f` and
+`15627f9db28c31bdec1c000fa2df7ca1af44a63c`.
+The existing RuntimeStore may contain interrupted `telegram:chat:` work from an
+older provider. Current desktop construction omits Telegram, while the existing
+Social-only retention predicate does not cover those rows. Non-waiting work can
+therefore fail startup at provider lookup; waiting-user work can be rewritten to
+Failed first. This is an exact-source conditional defect. No actual user-store
+presence or completed old-data migration is inferred.
+
+**NMR-RETAINED-TELEGRAM-01a — Existing composition, explicit compatibility.**
+Add one in-memory `RetainedConversationPolicy::PreserveDesktopLegacyConversations`
+variant in the existing Runtime owner. Only the existing
+`MahayanaHost::create_with_session_transcript_owner` composition selects it.
+Keep `None` and `PreserveSocialContacts` semantics, constructor signatures and
+default selection unchanged. The new variant retains the existing nonempty
+`mahayana:contact:` namespace plus the exact nonempty `telegram:chat:` namespace.
+This policy is not persisted and introduces no store, provider or message owner.
+
+**NMR-RETAINED-TELEGRAM-01b — Earliest no-mutation recovery.**
+Use the same existing private retention predicate at both interrupted-turn and
+pending-handoff recovery checks. The decision precedes waiting-user failure,
+provider/history access, run or turn generation/state writes, handoff terminal
+updates, capability authorization, operation admission and dispatch. Preserve
+original rows, input/nonce, question payloads, whitespace, unknown fields and
+handoff bytes across repeated restart. Recognize the retained namespace without
+trimming, parsing, normalizing or rewriting stored IDs. A nonnumeric suffix is
+preserved as unknown historical data, not asserted to be a valid Telegram chat.
+Empty `telegram:chat:`, nearby `telegram:chats:`, other `telegram:` namespaces
+and unrelated IDs retain their prior errors/recovery. Missing handoff targets
+continue through the existing Agent fallback; normal Agent recovery remains.
+Do not revive Telegram, import/relabel data, delete stores or silently resend
+historical work.
+
+**NMR-RETAINED-TELEGRAM-01c — Explicit command boundary.**
+At the existing `FeatureHostController::execute` early desktop boundary,
+Production+Electron `ConversationOpen` and `ChatSend` with an explicit trimmed
+ID starting with `telegram:chat:` are refused before authorization, state/runtime
+locks, plugin approval/call, MCP/memory/workflow reads, writes or events. Public
+intents include the empty suffix and whitespace wrapping; that broader refusal
+does not normalize persisted IDs. Preserve the existing FeatureHost error
+`provider is unavailable: telegram` and AppHost wire error
+`host operation failed: provider is unavailable: telegram`.
+Keep legacy-auth errors, Test/non-Electron dispatch, unrelated namespaces and
+ordinary Agent/Tools/Plugins/MCP behavior unchanged.
+
+**NMR-RETAINED-TELEGRAM-01d — Independent registry and retained-data proof.**
+After the early refusal is added, its matching error string alone cannot prove
+provider absence. Keep the public refusal checks and independently inspect the
+actual Session/Transcript Host provider status and direct
+`ConversationHistory(telegram:chat:42)` missing-provider result in the existing
+registry-selection harness. Keep all existing encrypted Telegram-file/original
+reader, standalone messaging, Social, credential, automation and account tests.
+The existing SQLite and native account-handoff fixtures must show retained
+Telegram rows do not prevent startup, are never dispatched, and remain unchanged
+across ordinary account transitions and separate process lifetimes.
+
+**NMR-AC-RETAINED-TELEGRAM-01 — Actual existing harnesses.**
+Extend the existing three FeatureHost boundary cases with Telegram matrices,
+without removing any Social controls or changing the ten top-level case count.
+Exercise plain/wrapped/empty-prefix intents, non-assistant agentId before plugin
+dispatch, absent runtime, poisoned owner state, unchanged full fixture bytes and
+events, explicit Test/non-Electron and unrelated-namespace controls.
+
+Keep all nine existing Runtime cases and add exactly:
+
+1. `retained_telegram_turns_and_handoffs_survive_desktop_sqlite_restart_without_dispatch`.
+   Use actual RuntimeStore SQLite, all recoverable states including waiting-user,
+   exact question payloads, legacy input without turn_requests, and queued/running/
+   completed/failed/cancelled-target handoffs. Reopen repeatedly with a registered
+   recording Telegram provider and require zero provider calls, no new operation,
+   retained row/payload equality and Ready-only events. The new desktop policy
+   also preserves Social work while an ordinary Agent recovery still progresses.
+2. `legacy_telegram_recovery_keeps_default_and_social_only_policies`.
+   For both old policies, a registered recording Telegram provider receives the
+   original pending text and message identity at the next generation; old
+   waiting-user explicit-retry/failure behavior and absent-provider errors remain.
+   New desktop policy must not swallow empty/nearby/unrelated namespace failures
+   or break the no-target Agent handoff fallback. These are Runtime library
+   compatibility controls, not a current shipping Telegram-enabled mode.
+
+Keep all seven existing native account-handoff top-level cases and add:
+
+3. `native_telegram_owner_preserves_sqlite_turns_and_refuses_bypass`.
+   Use the real initialized Production AppHost RuntimeStore and existing child
+   process harness. Seed active/waiting-user Telegram work with handoff/question
+   payloads, reopen in separate restart and repeat children, and compare every
+   retained table field and byte-sensitive payload. Exercise Native account
+   changes and logged-out public nested/flat refusal, zero leaked text/events or
+   new operations, unchanged credentials and independent provider absence.
+   Ordinary Native auth and durable Agent behavior remain positive controls.
+
+The existing Linux desktop-social-owner and macOS shipping jobs require
+FeatureHost10 + Runtime11 + platform6 + AppHost8 + NativeResponse5 =40 selected
+top-level cases, plus exact participation of all three new names. Variants and
+nested child executable summaries do not increase these counts. Retain every
+other message/UI/Electron, binary/dependency/symbol/package and shipping check.
+Freeze code and tests together, update the single NMR row/RTM and require actual
+containing-H GitHub Actions. No local or htch-runtime verification is allowed.
+
+A code revert changes only the admission/recovery policy; retained databases,
+sidecars, original readers and credentials remain. These controlled regression
+results do not certify user-data import, remote Telegram or Fabushi services,
+signed installed packages, full caller inventory, complete source/legal/Bot/
+quality acceptance, power-loss, upgrade/rollback or independent ACCEPT.
