@@ -703,7 +703,8 @@ for (const outcome of ['failure', 'selection-expired-success'] as const) {
     await page.locator('[contenteditable="true"]').fill('Queued successor must advance');
     await page.getByRole('button', { name: 'Send message', exact: true }).click();
     const successor = page.getByRole('log', { name: 'Conversation transcript' }).locator('[data-entry-id^="pending-"]').filter({ hasText: 'Queued successor must advance' });
-    // Online queued work waits behind the active retry; offline copy is distinct.\n    await expect(successor).toContainText('Waiting to send…');
+    // Online queued work waits behind the active retry; offline copy is distinct.
+    await expect(successor).toContainText('Waiting to send…');
     expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
     await page.locator('[contenteditable="true"]').fill('New unsent draft after successor');
 
@@ -720,7 +721,10 @@ for (const outcome of ['failure', 'selection-expired-success'] as const) {
     await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(2);
     await expect(original).toContainText('Original retry before successor');
     await expect(original.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
-    // The successor now owns the active send lane; the editor becomes\n    // read-only but its unsent draft must remain visible in Prompt.\n    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveText('New unsent draft after successor');\n    await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled();
+    // The successor now owns the active send lane; the editor becomes
+    // read-only but its unsent draft must remain visible in Prompt.
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveText('New unsent draft after successor');
+    await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled();
     const requests = await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage'));
     expect(requests).toHaveLength(2);
     expect(requests.map((request) => request.args.text)).toEqual(['Original retry before successor', 'Queued successor must advance']);
@@ -733,7 +737,8 @@ for (const outcome of ['failure', 'selection-expired-success'] as const) {
     await expect(messageRow(page, 'human-server-message:101')).toContainText('Queued successor must advance');
     await expect(successor).toHaveCount(0);
     await expect(original).toContainText('Original retry before successor');
-    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveText('New unsent draft after successor');\n    await expect(page.locator('[contenteditable="true"]')).toHaveText('New unsent draft after successor');
+    await expect(page.getByRole('textbox', { name: 'Prompt' })).toHaveText('New unsent draft after successor');
+    await expect(page.locator('[contenteditable="true"]')).toHaveText('New unsent draft after successor');
     await flushRenderer(page);
     expect(await page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(2);
     await milestone(page, info, `local-retry-successor-${outcome}`);
