@@ -1,0 +1,60 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 2,
+  "kind": "continuation_checkpoint",
+  "observed_at": "2026-11-03",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+  "observed_head_before_receipt": "863819da4b61a7a13a5c996cbec8ae7bbf9d8beb",
+  "fixed_upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6"
+  },
+  "pr": {
+    "number": 189,
+    "state": "open",
+    "draft": true,
+    "base": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "head_before_receipt": "863819da4b61a7a13a5c996cbec8ae7bbf9d8beb",
+    "description_updated": true,
+    "description_update_scope": "replaced stale H claim with live head, fixed U, inspected ownership facts and explicit open gates"
+  },
+  "inspected": {
+    "root_agents": "AGENTS.md at branch ref",
+    "feature_spec": "docs/specs/fbcp-human-message-retry.md NMR-HUMAN-RETRY-01",
+    "migration_spec": "docs/specs/fabushi-deferred-ci-migration.md Revision 2 including FMEP-SOURCE-01",
+    "owners": [
+      "frontend/src/production/ProductionRenderer.tsx",
+      "frontend/src/production/coordinator-client.ts",
+      "source/shared/rpc/coordinator.ts",
+      "source/host/src/extensions/session/gateway.rs",
+      "source/host/src/extensions/session/production.rs",
+      "source/host/src/extensions/session/native_messaging.rs"
+    ],
+    "verified_renderer_gap": "resendFailedSend creates fresh nonce, rewrites optimistic identity, stages projected attachment paths, omits persisted reply/composed time and calls the ordinary send journal resend owner",
+    "verified_host_owner": "Session production.rs owns durable Human message/SandAgentDb and dispatch settlement; native_messaging.rs owns HTTP client; gateway.rs currently exposes sendHumanMessage and no retryHumanMessage was found in inspected command match",
+    "recovery_foundation": "existing Session startup recovery replays pending local Human rows using durable nonce/content/reply/attachments and fail-closed forward ownership",
+    "still_missing": [
+      "explicit retryHumanMessage identity-only Host command and Coordinator contract/wiring",
+      "same-nonce explicit durable retry using existing uploaded resource identities and reply",
+      "persisted lastDispatchError failed projection after restart",
+      "HRR-01..06 complete negative/integration tests"
+    ]
+  },
+  "actions": {
+    "exact_head_runs": "not queried after description-only metadata update; no Actions evidence claimed",
+    "local_validation": "not run per FMEP-001; executable validation only on GitHub Actions"
+  },
+  "this_round_changes": [
+    "Updated PR #189 body through GitHub API to reflect current live HEAD and accurate remaining HRR/migration gates",
+    "Added this receipt only; no product code, schema, ledger, or acceptance state changed"
+  ],
+  "acceptance": false,
+  "remaining": [
+    "Implement HRR-01..06 through existing ProductionRenderer→Coordinator→Host Session/SandAgentDb→Native Messaging→Transcript/acknowledgement owners",
+    "Freeze implementation H and execute affected exact-H GitHub Actions",
+    "Complete fixed-U source/legal/generated/dependency disposition and all final service/package/UI/a11y/temporal/security/performance/soak/upgrade/rollback/Bot regression gates",
+    "Independent ACCEPT"
+  ]
+}
