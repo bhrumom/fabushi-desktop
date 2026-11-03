@@ -692,3 +692,123 @@ canonical Rust permission migration remain required follow-up responsibilities.
 There is no waiver of OCRM G01–G12 or AC01–AC24. No database upgrade is needed;
 rollback restores the stale-source risk and requires matching producer and
 consumer versions. It cannot retract a previously entered external effect.
+
+
+## Official routed provider admission — `MCP-OFFICIAL-DISPATCH-v1`
+
+### Current production gap and existing ownership
+
+This batch extends OD-01–07 after the native source/account/Attempt contract.
+At source H `72b6ed8b6e91a0ac7e0588fd9492a7d30c535079`, the production
+adapter passes its captured assertion to `DesktopMcpManagerFacade`, but the
+Official branch drops it. `OfficialMcpService.execute` then awaits native
+credentials, inventory and protocol preparation before provider `fetch`.
+Retiring only the original control source during those awaits can leave the
+account, manager and install current and permit an obsolete routed tool call.
+
+The existing Coordinator source/account owner, MCP Attempt, native Official
+service and encrypted vault remain the owners. The facade only forwards the
+existing synchronous assertion. This is native resource admission at the
+existing platform edge; it does not migrate or duplicate the canonical Rust
+policy owner. No persisted schema, wire-origin field, dependency, Agent loop,
+marketplace or permission registry is added. Fixed U remains
+`1440bb1771372334bea23d7642bb52deb7db1845`.
+
+### Required behavior and effect boundary
+
+- **OF-01 / producer and wiring:** Official routed execution receives the exact
+  `McpDispatchAssertion` already supplied by the production adapter. Never
+  reacquire a current source/Attempt or attach authority to tool arguments.
+  Preserve current unguarded UI listing/auth behavior.
+- **OF-02 / final resource admission:** each provider send belonging to that
+  execution, including initialize, notification, pagination and tools/call,
+  prepares its URL, headers and serialized body before a synchronous check
+  immediately adjacent to provider fetch entry. Reuse the service disposal
+  check and the captured source/Attempt assertion, with no intervening await
+  or arbitrary observer. Payload serialization must not run after that check.
+  Assertion types continue to exclude Promise-returning callbacks.
+- **OF-03 / request-local proof:** only that invocation's final assertion may
+  record a known refusal witness, only for the existing
+  `McpOriginRetiredError`, and only before any tools/call fetch has entered.
+  Mark tools/call entry synchronously before invoking fetch. Return the existing
+  generated rejected arm with fixed `MCP_ORIGIN_RETIRED` for this witnessed
+  pre-call refusal. Arbitrary matching error text, typed errors from credential
+  I/O, payload preparation or entered fetch are not known refusal.
+- **OF-04 / precise effect claim:** rejected means zero tools/call fetch entries.
+  Prior initialize, initialized notification and tools/list traffic can already
+  exist; tests and evidence count these separately. Zero total provider I/O is
+  claimed only if rejection precedes the first provider send. Broker refresh,
+  vault writes and account/registration mutation are separate boundaries.
+- **OF-05 / entered result custody:** after tools/call entry, source-only
+  retirement preserves actual success or provider `isError: true` results
+  while account/install/service remains valid. Transport, HTTP and JSON-RPC
+  failure remains the existing redacted generic error/unknown outcome. Never
+  retry, borrow a replacement source or classify a late failure as no effect.
+- **OF-06 / FMCP-007 compatibility:** account change, uninstall, credential
+  revision change or service disposal continues to suppress late private
+  output through the existing account/install fences. Do not apply legacy
+  HTTP late-visibility rules across those fences. Keep raw-name disable checks,
+  fixed provider endpoint, provider-only token, exact arguments, protocol and
+  session headers, output redaction, time/body/pagination limits and no retry.
+  Closing a control port before reply delivery still leaves Host custody
+  unknown; a direct native refusal is not proof of a delivered Host rejection.
+- **OF-07 / isolation and recovery:** guards and witnesses belong to an
+  invocation, never service-global current request state. Concurrent calls on
+  one service cannot share refusal state. Reset retires the original Attempt;
+  a stale call does not construct or borrow its replacement. A fresh source
+  or Attempt may use the existing owner normally. Existing abort and cleanup
+  own their original resources; no retry/replay or persistent migration.
+
+### Implementation and causal acceptance
+
+Use the existing `official-mcp-service.ts`, facade and actual default-production
+fixture in `mcp-runtime.contract.test.ts`. The fixture constructs the real
+adapter, runtime, facade, service, OAuth adapter and vault mapping; it may hold
+or observe the native I/O ports and provider fetch without replacing those
+owners. Extend its one-shot read hook only as needed for an awaitable gate.
+Keep all existing MO, OD, MB and standalone Official contracts.
+
+Required positive and negative oracles:
+
+1. **OF-T1:** obtain a descriptor from the actual native source through the
+   default production chain. Hold a vault/protocol completion, retire only
+   that source and release it; zero tools/call and a witnessed native refusal.
+   A fresh source on the same Attempt succeeds. Also reset an Attempt during
+   preparation and prove no old provider handoff or replacement borrowing,
+   with a fresh-Attempt positive. Earlier plain disposal errors may remain
+   conservative generic failures.
+2. **OF-T2:** retire in the last continuation after the final awaited fence
+   fulfills but before fetch. Use deterministic promise-reaction ordering,
+   not sleeps. A guard placed only before the await must fail this oracle.
+   Include body-serialization retirement before the final handoff.
+3. **OF-T3:** concurrent requests on one service retain separate assertions
+   and witnesses; A retirement cannot reject current B. Distinguish the owned
+   final typed refusal from same-message Error and typed errors thrown after
+   actual fetch entry.
+4. **OF-T4:** latch tools/call fetch entry, retire only source, then complete
+   success, server error and transport failure. Require one call, unchanged
+   result classification and no replay or replacement access.
+5. **OF-T5:** after actual tools/call entry, account switch, uninstall and
+   credential revision replacement suppress private late output. Keep
+   disabled raw-tool refusal and enabled sibling, pinned URL, provider
+   credential isolation, raw nested arguments, negotiated protocol/session
+   headers and redaction controls.
+
+Root owns facade/composition, the existing bundle/workflow, ledger and evidence
+integration. Frozen source review must include these consumer connections.
+Run the complete existing native plugin/MCP and account targets, the existing
+standalone Official target, and new exact named positives in GitHub Actions on
+the frozen published H. Native-only scoped recovery may reuse the existing
+workflow and caches, provided its scope is explicit and it never credits
+unexecuted Host/platform gates; existing unchanged-H or unchanged-input
+positives keep their actual subject identity. No local executable validation.
+
+This batch needs no database upgrade. Rollback restores the former admission
+gap and cannot retract a provider call already entered. Preserve sanitized
+fixed errors; do not log credentials or raw private results.
+
+Real provider/account compatibility remains blocked by its actual credentials,
+registration and entitlement prerequisites until tested. This batch does not
+close Box's final resource boundary, same-manager install/registration atomic
+revocation, broker final HTTP admission, native credential/session epochs,
+canonical Rust policy migration, or any full OCRM G01–G12 / AC01–AC24 gate.

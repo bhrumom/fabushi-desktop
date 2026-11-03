@@ -1,0 +1,13 @@
+diff --git a/source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts b/source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts
+index 3605572af9d62734a6cc79d1f801ddf2a158eeab..517cd42f6af6d6114790d4144cc7ba9156f4e308 100644
+--- a/source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts
++++ b/source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts
+@@ -904,7 +904,7 @@
+ }
+ 
+ function assertWireOriginRetired(value: unknown): void {
+-  assert.deepEqual(value, { result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED } } });
++  assert.deepEqual(value, { result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED, isReadonly: false } } });
+ }
+ 
+ test("OD-T2 production Coordinator refuses departed account and serialized origin replay before manager B", options, async (t) => {
