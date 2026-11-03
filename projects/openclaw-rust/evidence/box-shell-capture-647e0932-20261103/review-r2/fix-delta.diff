@@ -1,0 +1,2064 @@
+diff --git a/docs/specs/g11-box-browser-wire-completion.md b/docs/specs/g11-box-browser-wire-completion.md
+--- a/docs/specs/g11-box-browser-wire-completion.md
++++ b/docs/specs/g11-box-browser-wire-completion.md
+@@ -433,3 +433,77 @@ platform/device/service, raw capture cap, generated-HTML provenance or full
+ OCRM acceptance. Those responsibilities and the existing eight global flags
+ remain open. Record actual source review depth, failed results and execution
+ subject separately from evidence carriers; no mock is real compatibility proof.
++
++### SC02-R2 — foreground registration outlives reusable process identity
++
++The frozen first candidate 152467880098cd87581ca279be4d2bc872a7620b retains a
++Capture after observing its direct child's reap, until its readers are joined.
++A numeric PID can be reused during that interval. Its unconditional map insert
++can therefore replace an older incomplete invocation, hiding owned workers from
++stop. Record this as FIX before changing the existing registry.
++
++Retain one existing foreground registry, keyed by an internal non-reusable
++invocation identity or an equivalent representation retaining every generation.
++PID is process data, not the lifetime identity. Every ordinary and streamed
++foreground registration/removal/handoff must carry its own identity; older
++completion cannot replace or erase a newer invocation. Stop must enumerate all
++retained captures and refuse clean completion while any required capture worker
++has not been observed. Keep signaling under the owned Child's unreaped-state
++check. If allocating identity can fail, refuse before spawn; never wrap or reuse
++a live or retired identity. Add no public protocol field, dependency or registry.
++
++A controlled registration seam may present a reused numeric PID while real
++owned children and capture state establish older reaped-but-incomplete custody.
++Require both invocations retained, generation-specific completion/removal,
++truthful bounded stop and later successful cleanup. This proves the internal
++identity invariant, not that OS PID wraparound occurred in an executed run.
++Retain all existing producer/consumer, stop/race/disconnect and wire assertions.
++
++The existing pre-aborted control proves bounded observed abort and its result
++shape; it does not establish that the child installed its TERM-ignore trap before
++the abort. Keep that narrower claim and the separate timeout/escalation control.
++Active nonblocking-reader wakeups remain an unmeasured performance/soak question.
++Neither nonblocking observation independently starts a fix round.
++
++SC02-R2 stream-stop integration: stop must not signal a cached stream PID after
++the request may have reaped its Child. The actual stream request may consume
++the existing runtime stopping flag and signal only while it still owns an
++unreaped Child. Keep its invocation registration through observed completion
++or an admitted background handoff, serialize affected spawn/handoff against
++stop admission, and refuse bounded clean stop while a required foreground
++registration is unresolved. This is the same unique registry and existing
++request owner; no extra process table, public cancellation field or retry.
++
++SC02-R2 exceptional stream ownership: once stream spawn succeeds, every early
++return or unwind must retain the actual Child and all started reader handles.
++A setup/wait failure cannot leave only an inert marker after dropping those
++resources. The request must perform bounded cleanup or transfer real cleanup
++custody into its exact invocation in the same registry, where stop can observe
++later completion. Keep unobserved worker handles owned, and remove registration
++only after actual reap plus required worker observation. Normal completion or
++background handoff relinquishes custody only after its admitted transition.
++Use real setup-error fixtures and actual entered worker/child controls; an
++injected wait/unwind boundary is labeled controlled, not an OS failure replay.
++No second registry, runtime, protocol field or generic background controller is
++introduced. The separate existing background raw-PID stop window remains open
++for a following existing-owner batch and blocks full Box/shipping acceptance.
++
++SC02-R2 completed-recovery observation: exceptional cleanup must retain unresolved
++resources, not indefinitely retain already reaped, worker-free registrations or
++parent pipe handles. After bounded exceptional cleanup, nonblockingly observe
++finished readers and remove only the exact completed invocation. Reuse existing
++foreground request boundaries to observe retained stream recoveries whose readers
++finish just after the exceptional return; add no sweeper thread, scheduler or
++second registry. An observation error or still-live child/reader remains pending.
++The request outcome stays unknown even after resource cleanup becomes complete.
++
++Require real setup failure and repeated-error controls proving actual child
++termination/reap without accumulating completed registrations until stop. Keep a
++late-reader recovery retained through real EOF, then prove an existing normal
++request boundary observes it without using shutdown as a garbage collector.
++Fixture-only observation may expose the actual owned state without substituting
++execution results. Keep inherited pipes alive by an owned explicit release until
++the unresolved assertion; an independent countdown cannot supply that oracle.
++Retain failure cleanup and all prior identity, unknown outcome and no-resignal
++assertions. Normal stream drain/termination and full background custody remain
++separate open behavior; this correction does not accept them.
+diff --git a/projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json
+--- a/projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json
+@@ -11,7 +11,7 @@
+   "producer_implementation_base": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
+   "authority": {
+     "path": "docs/specs/g11-box-browser-wire-completion.md",
+-    "blob": "f495d1a04dcf39453f0a6da5b7a2bce310e7dd44",
++    "blob": "707256fe48cae8ac3667464bbf1bfa5c1ece6e53",
+     "preimplementation_commit": "d1fd235e8bd46c2bb0099267bc45e2800dbd1168",
+     "ownership_clarification_commit": "d2187abaef74f979fb5bf85cd59e7d75700cba0a",
+     "requirements": [
+@@ -22,6 +22,29 @@
+       "SC05",
+       "SC06",
+       "SC07"
++    ],
++    "initial_blob": "f495d1a04dcf39453f0a6da5b7a2bce310e7dd44",
++    "amendments": [
++      {
++        "commit": "f539f517c88a8a3c2ea1cdaf88648cc24a9e59b2",
++        "blob": "550fa629aa9e550ba63644b2598f99efd6068c82",
++        "contract": "SC02-R2 identity"
++      },
++      {
++        "commit": "ade72fa1b1f201c94767cff723fccc07055cb058",
++        "blob": "261151c609b4281df22e249615a3368bb1a5770a",
++        "contract": "SC02-R2 owned stream stop"
++      },
++      {
++        "commit": "96121a0234fcc65d20a1edc6352ef0f17eb39654",
++        "blob": "f839b1f51effaa62e2df3a1fb1bdaa23461fa6be",
++        "contract": "SC02-R2 exceptional stream ownership; source correction pending"
++      },
++      {
++        "commit": "b31b2c6a131b09aff80233952de404d7ea7497c3",
++        "blob": "707256fe48cae8ac3667464bbf1bfa5c1ece6e53",
++        "contract": "SC02-R2 completed recovery observation and explicit release oracle"
++      }
+     ]
+   },
+   "responsibility_id": "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+@@ -66,7 +89,7 @@
+   ],
+   "required_behaviors": {
+     "SC01": "Pre-spawn refusal retains known SpawnError. Successful spawn followed by missing pipe, setup, worker creation, read, wait or join failure yields typed execution uncertainty without partial/empty substitution; Interrupted read is retried.",
+-    "SC02": "Retain Child and both capture workers in existing ownership chain through terminal cleanup. Signal only while owned unreaped child is observed; bounded cleanup retains unresolved child in the same registry and stop cannot claim clean completion. No second process registry.",
++    "SC02": "Retain Child and both capture workers in existing ownership chain through terminal cleanup. Signal only while owned unreaped child is observed; bounded cleanup retains unresolved child in the same registry and stop cannot claim clean completion. No second process registry. Registration identity must outlive reusable PID and be carried through every capture/stream insertion, completion and handoff. No registration may overwrite another incomplete invocation; identity exhaustion must refuse before spawn. Exceptional streamed returns/unwinds retain actual Child and started worker handles in that same invocation; bounded cleanup and later stop observation must not be replaced by an inert marker or detached handles. Completed transferred resources are observed after bounded Drop cleanup and at existing normal foreground admission boundaries; keep only actual unresolved custody, release completed parent pipe handles, and preserve unknown classification independently of later cleanup.",
+     "SC03": "Both foreground dispatch variants emit existing matching Throw/StreamClose with bounded static phase diagnostics, no command/output payload and no new protobuf fields.",
+     "SC04": "Complete success/nonzero/timeout/abort and existing lossy UTF-8 display remain; no independent EOF deadline for a still-authorized request. Cancellation/stop/explicit timeout bounds incomplete drain.",
+     "SC05": "Actual Host/ForeverBox/Runner consumer receives ToolOutcomeUnknown, sticky DownstreamOutcomeUnknown, refusal of further tools/checkpoint/replay and one provider attempt; counted external effect remains one.",
+@@ -197,7 +220,14 @@
+         "server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child",
+         "server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals",
+         "server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging",
+-        "server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes"
++        "server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes",
++        "server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
++        "server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
++        "server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
++        "server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture",
++        "server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup",
++        "server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
++        "server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+       ],
+       "consumer": [
+         "foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
+@@ -219,10 +249,10 @@
+       "consumer_env": "FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN",
+       "scope": "Only cfg(test) artifact may expose the private owned fault probe; normal shipping binary is separately built and exercised."
+     },
+-    "retained": "All existing BXR 77 direct positives in eight cases and 14 actual downstream custody names remain required; three added cases require nine additional direct positives. Existing Plugin/LocalExec capture contracts remain intact.",
++    "retained": "All existing BXR77 direct positives in eight cases and14 actual downstream custody names remain required; three SC cases now require16 additional direct positives (13 daemon unit,2 actual consumer,1 disconnect). Existing Plugin/LocalExec capture contracts remain intact.",
+     "execution": "not-run",
+-    "source_review": "pending frozen complete scope with fresh independent GENERAL and STRUCTURE review",
+-    "oracle_limits": "Owned real children and actual authenticated loopback producers/consumers with cfg(test) operation faults are controlled evidence, not live service/device/platform/package acceptance."
++    "source_review": "Combined SC02-R2 registration identity, owned stream stop, exceptional custody and completed-recovery fixes are authored and integrated for fresh complete-context R2 GENERAL/STRUCTURE review. Source authors and root inspected the exact changed functions and meaningful real-child oracles; this is not independent approval or executable verification.",
++    "oracle_limits": "Owned real children and actual authenticated loopback producers/consumers with cfg(test) operation faults are controlled evidence, not live service/device/platform/package acceptance. The pre-aborted unit proves bounded observed abort, not trap readiness/escalation for that same abort. A controlled registration alias proves PID-independent custody without claiming actual OS PID wraparound. A private cfg(test) observation channel exposes the guard's actual completed owner after cleanup; it does not substitute an execution result. Three repeated real setup failures must leave no completed registrations or parent pipes without stop. Stop and both normal admission variants share a real controlled unwind/release fixture; no independent descendant countdown may preempt the unresolved assertion."
+   },
+   "recovery": {
+     "owner": "Existing ephemeral BoxExecRuntime foreground registry and durable existing Runner custody only.",
+@@ -231,6 +261,8 @@
+     "rollback": "Atomic existing-owner source batch rollback subject to preserved unknown-custody and no-replay constraints; no authority downgrade."
+   },
+   "open_work": [
++    "Normal active streamed termination/drain still uses existing TERM-only behavior and synchronous reader joins after reap; this exceptional-custody slice does not grant bounded normal-stream or complete process-owner acceptance.",
++    "Separate existing background child controller: reap precedes reader/footer completion while stop still snapshots raw background PID; no full background/Box stop acceptance from this foreground batch.",
+     "Full generated origin/raw-byte provenance grant, existing Session/AgentDb persistence, marker-aware send/media consumer and prune/restart chain",
+     "Raw capture byte caps and attempt-to-socket cancellation proof",
+     "Descendant-process closure and arbitrary hostile process/filesystem changes",
+@@ -243,5 +275,56 @@
+     "global_flags_changed": false,
+     "real_ecosystem_accepted": false,
+     "shipping_accepted": false
+-  }
++  },
++  "review_corrections": [
++    {
++      "subject": "152467880098cd87581ca279be4d2bc872a7620b",
++      "decisions": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/decisions.json",
++      "repair_contract": "docs/specs/g11-box-browser-wire-completion.md#sc02-r2--foreground-registration-outlives-reusable-process-identity",
++      "state": "FIX saved before implementation; no test execution or acceptance"
++    },
++    {
++      "id": "SC-R2-STREAM-STOP-SIGNAL",
++      "decision": "FIX",
++      "decisions": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/decisions.json",
++      "requirement": "Stop cannot signal a cached stream PID after concurrent reap; actual Child owner consumes existing stopping state, exact registration/handoff remains tracked, and unresolved foreground completion refuses bounded clean stop.",
++      "execution": "not-run"
++    },
++    {
++      "id": "SC-PRE-R2-STREAM-EARLY-RETURN",
++      "decision": "FIX",
++      "source_candidate_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
++      "state": "Recorded before source correction; exact owned resources must survive exceptional stream returns."
++    },
++    {
++      "identity_checkpoint": "96121a0234fcc65d20a1edc6352ef0f17eb39654",
++      "source_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
++      "new_required_names": [
++        "server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
++        "server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
++        "server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
++        "server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture"
++      ],
++      "disposition": "Partial production checkpoint with four actual invocation identity/exhaustion/stream/handoff oracles; not a converged candidate. Required exceptional stream ownership correction remains open.",
++      "execution": "not-run"
++    },
++    {
++      "kind": "combined-r2-candidate-source",
++      "source_blob": "20b6a1635c091a5cacbc0bbdabff17cdc041e90f",
++      "source_bytes": 187435,
++      "source_sha256": "d919432a2c872a006379383ca751db396948feddc513b2b24a07b7d7f893fb89",
++      "prior_published_source_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
++      "intermediate_unintegrated_blob": "33cec3aeccc3c94034acbc3795fc677aea4763b6",
++      "authority_commit": "b31b2c6a131b09aff80233952de404d7ea7497c3",
++      "decisions": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/decisions.json",
++      "applied_fixes": [
++        "SC-PRE-R2-STREAM-EARLY-RETURN",
++        "SC-PRE-R2-HANDOFF-ORACLE",
++        "SC-PRE-R2-COMPLETED-RECOVERY-RETENTION",
++        "SC-PRE-R2-UNWIND-RELEASE-ORACLE"
++      ],
++      "disposition": "Actual source correction and13 authored foreground unit selectors; fresh independent R2 source review and exact-H execution pending. No full-unit or shipping acceptance.",
++      "execution": "not-run"
++    }
++  ]
+ }
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -1665,7 +1665,8 @@
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "source/host/app/src/tests/local_exec_outcome_tests.rs",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -1701,9 +1702,10 @@
+         "This row does not claim a remote Gateway caller, reconnect scheduler, remote manifest publication or physical worker executor",
+         "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller",
+         "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR",
+-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
++        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
++        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+       ],
+-      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
++      "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
+       "oracle_ids": [],
+       "owner_decision": "Record local producer/state/consumer wiring separately from the full NodeHost transport and worker responsibility",
+       "postconditions": [
+@@ -9754,7 +9756,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -9785,9 +9788,10 @@
+         "Environment variables are stripped of non-allowlisted credentials",
+         "Distinct permission facades from one Host extension share one lazy operation owner and one ordered journal publication transaction",
+         "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation",
+-        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority"
++        "The existing desktop Coordinator process lifecycle emits absent optional identity constraints as absent wire keys; native canonical entry, generation, command and supplied time checks retain their existing authority",
++        "LXR-v1 retains unresolved operation identity/output through bounded history and startup; only known terminal history may be evicted, capacity is reserved before provider dispatch, and journal v3 preserves v2 custody while refusing unsafe downgrade."
+       ],
+-      "migration_rollback": "Disable sandboxed tool execution in runner config",
++      "migration_rollback": "Disable sandboxed tool execution in runner config; LXR-v1 preserves the version-3 operation journal and requires a compatible reader for rollback; no clearing or downgrade of unresolved custody",
+       "oracle_ids": [
+         "OCRM-EXEC-O01",
+         "OCRM-EXEC-O02"
+@@ -19639,7 +19643,9 @@
+         "Trusted generated HTML markers strictly enforce kind=trusted-generated-html and version=1",
+         "Host read media admission validates exact SHA256 and byte size against recorded provenance",
+         "Pruning filters rows referencing missing files, symbolic links, or hardlinks (nlink != 1)",
+-        "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority"
++        "NotFound and NotADirectory establish missing-path selection; all other inspection errors retain the original provenance snapshot and confer no read authority",
++        "SC02 foreground invocation identities never reuse a live or retired registration; a reaped Child with unobserved workers cannot be replaced or erased by a later Capture/Stream sharing numeric PID data. Bounded stop retains unresolved foreground identity; this is not background-controller acceptance.",
++        "SC02 exceptional streamed exits retain actual Child and started reader handles under the same invocation. Completed resources are observed after bounded cleanup or at existing ordinary/stream request boundaries; recovery never requires shutdown merely to release completed registrations, never removes pending inherited-pipe custody, and never changes an unknown execution outcome into success."
+       ],
+       "migration_rollback": "Retain uninspectable marker snapshots and fail closed at independent read/trust admission; never enable an HTML text fallback to bypass provenance. HHP-v2 adds no schema or persisted-state migration.",
+       "oracle_ids": [
+@@ -19753,7 +19759,14 @@
+         "source/box-exec-daemon/src/server.rs::tests::foreground_capture_interrupted_read_retries_without_losing_bytes",
+         "source/box-exec-daemon/src/server.rs::tests::disconnect_aborts_foreground_shell_process_group",
+         "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay",
+-        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"
++        "source/host/tests/box_exec_daemon_process_contract.rs::foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_handoff_retains_reused_pid_capture",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof",
++        "source/box-exec-daemon/src/server.rs::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"
+       ],
+       "typed_contracts": [
+         "validate_provenance_row",
+@@ -33123,7 +33136,8 @@
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+         "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs",
+         "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -33270,7 +33284,11 @@
+         "source/host/tests/mcp_service_contract.rs::confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication",
+         "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease",
+         "source/host/tests/workflow_store_contract.rs::live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication",
+-        "source/host/src/extensions/mcp/skill_publish.rs::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"
++        "source/host/src/extensions/mcp/skill_publish.rs::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_contended_constructor_recovers_after_actual_first_image_publication",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_authoritative_constructor_corruption_remains_faulted_after_restore",
++        "source/host/src/extensions/mcp/plugin_skills_auth_recovery_tests.rs::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes"
+       ],
+       "typed_contracts": [
+         "SkillDefinition",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -181,7 +181,8 @@
+         "source/host/app/src/tests/cron_job_identity_tests.rs",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R04",
+@@ -488,7 +489,8 @@
+         "source/host/tests/memory_synthesis_service_contract.rs",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R08",
+@@ -675,7 +677,8 @@
+         "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/execution-r1/assessment.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R09",
+@@ -1133,7 +1136,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R16",
+@@ -1329,7 +1333,8 @@
+         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R21",
+@@ -1610,7 +1615,8 @@
+         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R24",
+@@ -2080,7 +2086,8 @@
+         "source/host/tests/memory_synthesis_service_contract.rs",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC08",
+@@ -2334,7 +2341,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC11",
+@@ -2566,7 +2574,8 @@
+         "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+         "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/docs/specs/local-exec-process-identity-wire.md",
+-        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json"
++        "projects/openclaw-rust/evidence/local-exec-process-identity-647e0932-20261103/source-contract.json",
++        "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC16",
+@@ -2902,7 +2911,8 @@
+         "source/host/app/src/tests/automation_terminal_custody_tests.rs::checked_backend_delivery::backend_fire_fresh_history_refusal_preserves_delivery_through_reopen_and_repair",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC21",
+@@ -3213,7 +3223,8 @@
+         "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/fixed-u-contract.md",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/source-contract.json",
+         "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/failure-5509090/assessment.json",
+-        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json"
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r1/decisions.json",
++        "projects/openclaw-rust/evidence/plugin-skills-admission-lock-647e0932-20261103/review-r2/decisions.json"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -1098,6 +1098,10 @@
+         "extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery",
+         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction",
+         "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_recovers_after_actual_first_image_publication",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_constructor_corruption_remains_faulted_after_restore",
++        "extensions::mcp::plugin_skills::auth_recovery_tests::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes",
+     ]),
+     ("plugin-uninstall-binding", base + ["--lib", "host_production_extensions::plugin_skills_binding_tests::", "--", "--test-threads=1"], [
+         "host_production_extensions::plugin_skills_binding_tests::fresh_host_binding_recovers_uninstall_custody_before_either_startup_order",
+@@ -1266,7 +1270,7 @@
+     ("box-response-real-daemon", base + ["--test","box_exec_daemon_process_contract","box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion","--","--exact","--ignored","--test-threads=1"], [
+         "box_exec_response_roundtrip_uses_actual_daemon_identity_and_completion"
+ ]),
+-    ("box-response-shell-capture-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::foreground_capture_", "--", "--test-threads=1"], ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes"]),
++    ("box-response-shell-capture-unit", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::foreground_capture_", "--", "--test-threads=1"], ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed","server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn","server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias","server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture","server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup","server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof","server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission"]),
+     ("box-response-shell-capture-consumer", base + ["--test", "box_exec_daemon_process_contract", "box_foreground_capture_", "--", "--ignored", "--test-threads=1"], ["foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed"]),
+     ("box-response-shell-capture-disconnect", ["cargo", "test", "--locked", "--manifest-path", "source/box-exec-daemon/Cargo.toml", "--lib", "--target-dir", "source/box-exec-daemon/target", "server::tests::disconnect_aborts_foreground_shell_process_group", "--", "--exact", "--test-threads=1"], ["server::tests::disconnect_aborts_foreground_shell_process_group"]),
+ ]
+@@ -1398,15 +1402,15 @@ def source_bindings(paths):
+ receipt = {
+     "plugin_admission_lock_contract": "PS-LOCK-RECONCILE-v2",
+     "plugin_admission_lock_inputs_before": plugin_admission_lock_inputs_before,
+-    "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish","extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition","extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes","extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault","confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication","live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease","live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication","extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error"],
+-    "plugin_admission_lock_scope": "Existing Rust Skills admission and durable image owner preserves live denial and unknown recovery. Strict v3 uninstallObservation fences a foreign reserve/settle ABA across loader, publication and prune; legacy v1/v2 read facts remain. Authoritative SH image faults latch retained recovery; contended reads remain observation-only. Workflow mutation re-reads canonical current record, publisher and path under the actual lease. Actual publisher cleanup releases its lease before reentrant diagnostics. All retained assertions and OS/process controls remain required. Real accounts/ecosystem, hostile directory replacement, power loss, performance and supported-platform package acceptance remain open.",
++    "plugin_admission_lock_required_positive_names": ["extensions::mcp::plugin_skills::auth_recovery_tests::auth_failed_negative_write_survives_ordinary_workflow_reads_and_partial_refresh","extensions::mcp::plugin_skills::auth_recovery_tests::auth_unknown_ordinary_reads_cannot_restore_partial_fallback","extensions::mcp::plugin_skills::auth_recovery_tests::auth_refresh_process_lock_covers_cleanup_and_releases_at_worker_terminal","confirmed_uninstall_consumers::auth_refresh_process_lease_excludes_overlap_and_releases_after_failed_worker","extensions::mcp::plugin_skills::auth_recovery_tests::auth_observed_state_loss_latches_fault_across_reads_and_restoration","confirmed_uninstall_consumers::skill_publish_real_owner_holds_mutation_lease_through_resync_and_unpublish","extensions::mcp::plugin_skills::uninstall_state::tests::legacy_v2_migrates_to_v3_without_inventing_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_requires_explicit_nullable_canonical_uninstall_observation","extensions::mcp::plugin_skills::uninstall_state::tests::v3_observation_cannot_be_dropped_by_an_explicit_image_transition","extensions::mcp::plugin_skills::uninstall_state::tests::uninstall_observation_rotates_for_real_transitions_and_survives_auth_refreshes","extensions::mcp::plugin_skills::uninstall_state::tests::retained_v3_observation_loss_to_legacy_or_null_latches_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_reader_faults_latch_until_fresh_owner_reconstruction","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_unlocked_image_error_does_not_latch_recovery_fault","confirmed_uninstall_consumers::cross_process_uninstall_cycles_fence_unobserving_refresh_before_publication","live_admission::real_workflow_mutation_rechecks_committed_publisher_and_record_after_lease","live_admission::real_workflow_mutation_keeps_current_publisher_after_unchanged_publication","extensions::mcp::skill_publish::cleanup_callback_tests::upload_cleanup_callbacks_release_admission_before_reentrant_sync_on_success_and_error","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_defers_unserialized_errors_until_explicit_recovery","extensions::mcp::plugin_skills::auth_recovery_tests::auth_contended_constructor_recovers_after_actual_first_image_publication","extensions::mcp::plugin_skills::auth_recovery_tests::auth_authoritative_constructor_corruption_remains_faulted_after_restore","extensions::mcp::plugin_skills::auth_recovery_tests::auth_missing_root_constructor_preserves_legacy_absence_without_filesystem_writes"],
++    "plugin_admission_lock_scope": "Existing Rust Skills admission and durable image owner preserves live denial and unknown recovery. Strict v3 uninstallObservation fences a foreign reserve/settle ABA across loader, publication and prune; legacy v1/v2 read facts remain. Authoritative SH image faults latch retained recovery; contended reads and constructors remain observation-only, with explicit fresh recovery required. Workflow mutation re-reads canonical current record, publisher and path under the actual lease. Actual publisher cleanup releases its lease before reentrant diagnostics. All retained assertions and OS/process controls remain required. Real accounts/ecosystem, hostile directory replacement, power loss, performance and supported-platform package acceptance remain open.",
+     "local_exec_outcome_contract": "LXO-v1",
+     "local_exec_outcome_inputs_before": local_exec_outcome_inputs_before,
+     "local_exec_outcome_required_runner_names": ["production_generated_runner_retains_unknown_external_shell_effects","production_generated_runner_preserves_known_external_shell_outcomes","production_external_shell_adapter_types_uncertain_results_and_errors"],
+     "local_exec_outcome_scope": "Actual registered generated Runner, production ExternalShell adapter, shared Host LocalExec and permission owner through real bridge delivery. Counted external effects, unknown post-entry outcomes, sticky custody, no uncertain checkpoint/replay, known refusal/Exit and fresh-owner journal controls use fixture-owned peers. Separate native three-platform and actual App/protocol receipts remain required; no physical device, external account, full process-tree, package or global acceptance.",
+     "box_shell_capture_contract": "BXR-SHELL-CAPTURE-v1",
+-    "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
+-    "box_shell_capture_scope": "Actual daemon foreground capture distinguishes pre-spawn known refusal from entered read/wait/worker uncertainty for ordinary Shell and MiniSwe. Owned children remain in the existing registry through bounded observed cleanup; actual Throw/Close reaches Host, ForeverBox, Runner sticky custody, no replay and checkpoint refusal. Private cfg(test) operation faults are bound to a separately identified library test artifact; normal shipping daemon controls remain independent. Descendant-process closure, hostile ownership changes, raw HTML provenance, power loss, platform packages and real services remain unaccepted.",
++    "box_shell_capture_required_names": ["server::tests::foreground_capture_faults_preserve_unknown_for_both_dispatches","server::tests::foreground_capture_complete_results_preserve_text_failure_and_refusal","server::tests::foreground_capture_timeout_and_abort_escalate_owned_term_ignoring_child","server::tests::foreground_capture_stop_race_retains_owner_until_reap_and_never_resignals","server::tests::foreground_capture_inherited_pipe_refuses_incomplete_eof_without_hanging","server::tests::foreground_capture_interrupted_read_retries_without_losing_bytes","server::tests::foreground_capture_reused_pid_retains_each_invocation_until_observed","server::tests::foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn","server::tests::foreground_capture_stream_stop_preserves_identity_and_never_signals_alias","server::tests::foreground_capture_stream_handoff_retains_reused_pid_capture","server::tests::foreground_capture_stream_setup_error_retains_owned_child_for_cleanup","server::tests::foreground_capture_stream_unwind_retains_readers_until_later_eof","server::tests::foreground_capture_stream_late_eof_is_observed_by_normal_admission","foreground_capture::box_foreground_capture_faults_reach_real_runner_custody_without_replay","foreground_capture::box_foreground_capture_definitive_results_remain_usable_and_checkpointed","server::tests::disconnect_aborts_foreground_shell_process_group"],
++    "box_shell_capture_scope": "Actual daemon foreground capture distinguishes pre-spawn known refusal from entered read/wait/worker uncertainty for ordinary Shell and MiniSwe. Owned children and incomplete captures remain in the same registry under nonreusable invocation identities through bounded observed cleanup; exhaustion refuses before spawn and streamed stop/handoff preserves exact invocation custody. Exceptional stream returns/unwinds retain the real Child and started readers; completed recovery is observed after bounded cleanup or at ordinary/stream admission without requiring shutdown, while inherited-pipe custody remains pending until actual EOF; actual Throw/Close reaches Host, ForeverBox, Runner sticky custody, no replay and checkpoint refusal. Private cfg(test) operation faults are bound to a separately identified library test artifact; normal shipping daemon controls remain independent. Descendant-process closure, hostile ownership changes, raw HTML provenance, power loss, platform packages and real services remain unaccepted.",
+     "box_response_contract": "BXR-v1.3",
+     "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
+     "box_response_inputs_before": box_response_inputs_before,
+diff --git a/source/box-exec-daemon/src/server.rs b/source/box-exec-daemon/src/server.rs
+--- a/source/box-exec-daemon/src/server.rs
++++ b/source/box-exec-daemon/src/server.rs
+@@ -4,7 +4,7 @@ use std::io::{Read, Write};
+ use std::net::{Shutdown, TcpListener, TcpStream};
+ use std::path::{Path, PathBuf};
+ use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
+-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
++use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
+ use std::sync::{Arc, Mutex, mpsc};
+ use std::thread::{self, JoinHandle};
+ use std::time::{Duration, Instant};
+@@ -646,9 +646,14 @@ enum ProcessFailure {
+     Unknown(ShellExecutionUnknown),
+ }
+ 
++// A registration outlives both its direct child PID and any observed reap.
++// Allocated once per invocation; no live or retired identity is reused.
++#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
++struct ForegroundId(u64);
++
+ #[derive(Clone)]
+ enum ForegroundProcess {
+-    // Existing streamed/background-handoff ownership remains unchanged.
++    // The request owns the Child and consumes the runtime stopping flag.
+     Stream,
+     // The same registry retains a Child if bounded cleanup cannot observe reap.
+     Capture(Arc<Mutex<CapturedChild>>),
+@@ -659,11 +664,44 @@ struct CapturedChild {
+     status: Option<ExitStatus>,
+     cleanup_unknown: bool,
+     capture_complete: bool,
++    stream_recovery: Option<StreamRecovery>,
+     #[cfg(test)]
+     signals_sent: usize,
+ }
+ 
+ impl CapturedChild {
++    fn new(child: Child) -> Self {
++        Self {
++            child, status: None, cleanup_unknown: false, capture_complete: false,
++            stream_recovery: None,
++            #[cfg(test)]
++            signals_sent: 0,
++        }
++    }
++
++    fn observe_stream_recovery(&mut self) {
++        let Some(recovery) = self.stream_recovery.as_mut() else { return; };
++        for worker in [&mut recovery.stdout_worker, &mut recovery.stderr_worker] {
++            if worker.as_ref().is_some_and(|handle| handle.is_finished()) {
++                // A panic is still an observed worker termination. This path
++                // certifies cleanup only; the request already returned unknown.
++                let _ = worker.take().expect("finished stream worker").join();
++            }
++        }
++        if self.status.is_some()
++            && recovery.stdout_worker.is_none() && recovery.stderr_worker.is_none()
++        {
++            for path in &recovery.cleanup_paths {
++                let _ = fs::remove_file(path);
++            }
++            drop(self.child.stdin.take());
++            drop(self.child.stdout.take());
++            drop(self.child.stderr.take());
++            self.capture_complete = true;
++            self.stream_recovery = None;
++        }
++    }
++
+     fn poll(&mut self) -> Result<Option<ExitStatus>, ShellExecutionUnknown> {
+         if self.status.is_none() {
+             self.status = self.child.try_wait()
+@@ -673,7 +711,7 @@ impl CapturedChild {
+     }
+ 
+     fn signal(&mut self, force: bool) -> Result<(), ShellExecutionUnknown> {
+-        // Poll and signal under the same ownership mutex. An unreaped child
++        // Poll and signal through the same owned state. An unreaped child
+         // reserves its PID; after observing reap we never signal that number.
+         if self.poll()?.is_some() {
+             return Ok(());
+@@ -701,6 +739,78 @@ impl CapturedChild {
+     }
+ }
+ 
++struct StreamRecovery {
++    stdout_worker: Option<JoinHandle<()>>,
++    stderr_worker: Option<JoinHandle<()>>,
++    cleanup_paths: Vec<PathBuf>,
++}
++
++struct StreamResources {
++    state: CapturedChild,
++    recovery: StreamRecovery,
++}
++
++// The active request retains its actual resources from spawn onward. Any
++// exceptional return or unwind transfers them to the same invocation's
++// captured-child recovery, which request admission or stop can observe without
++// blocking on a pipe held open by a descendant.
++struct StreamRequest<'a> {
++    runtime: &'a BoxExecRuntime,
++    registration_id: ForegroundId,
++    resources: Option<StreamResources>,
++}
++
++impl StreamRequest<'_> {
++    fn resources(&mut self) -> &mut StreamResources {
++        self.resources.as_mut().expect("owned stream resources")
++    }
++
++    fn complete(&mut self) -> Result<(), String> {
++        let resources = self.resources();
++        if resources.state.status.is_none()
++            || resources.recovery.stdout_worker.is_some()
++            || resources.recovery.stderr_worker.is_some()
++        {
++            return Err("stream cleanup was not fully observed".into());
++        }
++        self.resources.take();
++        self.runtime.foreground_processes.lock()
++            .unwrap_or_else(|poisoned| poisoned.into_inner())
++            .remove(&self.registration_id);
++        Ok(())
++    }
++}
++
++impl Drop for StreamRequest<'_> {
++    fn drop(&mut self) {
++        let Some(mut resources) = self.resources.take() else { return; };
++        resources.state.capture_complete = false;
++        resources.state.stream_recovery = Some(resources.recovery);
++        let pid = resources.state.child.id();
++        let owner = Arc::new(Mutex::new(resources.state));
++        {
++            let mut processes = self.runtime.foreground_processes.lock()
++                .unwrap_or_else(|poisoned| poisoned.into_inner());
++            if let Some((_, process)) = processes.get_mut(&self.registration_id) {
++                *process = ForegroundProcess::Capture(Arc::clone(&owner));
++            } else {
++                processes.insert(self.registration_id,
++                    (pid, ForegroundProcess::Capture(Arc::clone(&owner))));
++            }
++        }
++        // This observes only the direct Child and is bounded. Reader handles
++        // remain in recovery even if a descendant prevents EOF indefinitely.
++        let _ = cleanup_captured_child(&owner);
++        self.runtime.observe_retained_stream_recovery(self.registration_id, &owner);
++        #[cfg(test)]
++        if let Some(observer) = self.runtime.stream_recovery_observer.lock()
++            .unwrap_or_else(|poisoned| poisoned.into_inner()).as_ref()
++        {
++            let _ = observer.send((self.registration_id, Arc::clone(&owner)));
++        }
++    }
++}
++
+ const FOREGROUND_POLL_INTERVAL: Duration = Duration::from_millis(10);
+ const FOREGROUND_TERM_GRACE: Duration = Duration::from_millis(250);
+ const FOREGROUND_CLEANUP_LIMIT: Duration = Duration::from_secs(2);
+@@ -782,7 +892,20 @@ pub struct BoxExecRuntime {
+     pub workspace_root: PathBuf,
+     pub terminals_directory: PathBuf,
+     environment: Mutex<HashMap<String, String>>,
+-    foreground_pids: Mutex<HashMap<u32, ForegroundProcess>>,
++    // PID is observational process data; it never selects registration or signals.
++    foreground_processes: Mutex<HashMap<ForegroundId, (u32, ForegroundProcess)>>,
++    next_foreground_id: AtomicU64,
++    #[cfg(test)]
++    foreground_pid_alias: Mutex<Option<u32>>,
++    #[cfg(test)]
++    capture_observation_gate: Mutex<Option<mpsc::Receiver<()>>>,
++    #[cfg(test)]
++    stream_setup_gate: Mutex<Option<mpsc::Receiver<()>>>,
++    #[cfg(test)]
++    stream_panic_after_reap: AtomicBool,
++    #[cfg(test)]
++    stream_recovery_observer:
++        Mutex<Option<mpsc::Sender<(ForegroundId, Arc<Mutex<CapturedChild>>)>>>,
+     #[cfg(test)]
+     capture_probe: Mutex<Option<Arc<CaptureProbe>>>,
+     background: Arc<Mutex<HashMap<u32, BackgroundProcess>>>,
+@@ -800,7 +923,18 @@ impl BoxExecRuntime {
+             workspace_root,
+             terminals_directory,
+             environment: Mutex::new(environment),
+-            foreground_pids: Mutex::new(HashMap::new()),
++            foreground_processes: Mutex::new(HashMap::new()),
++            next_foreground_id: AtomicU64::new(1),
++            #[cfg(test)]
++            foreground_pid_alias: Mutex::new(None),
++            #[cfg(test)]
++            capture_observation_gate: Mutex::new(None),
++            #[cfg(test)]
++            stream_setup_gate: Mutex::new(None),
++            #[cfg(test)]
++            stream_panic_after_reap: AtomicBool::new(false),
++            #[cfg(test)]
++            stream_recovery_observer: Mutex::new(None),
+             #[cfg(test)]
+             capture_probe: Mutex::new(None),
+             background: Arc::new(Mutex::new(HashMap::new())),
+@@ -1108,6 +1242,7 @@ impl BoxExecRuntime {
+     where
+         F: FnMut(ExecStreamElement) -> Result<(), String>,
+     {
++        self.observe_retained_stream_recoveries();
+         let cwd = self.resolve_path(&args.working_directory)?;
+         emit(client_message(
+             id,
+@@ -1118,31 +1253,52 @@ impl BoxExecRuntime {
+             None,
+         ))?;
+ 
++        #[cfg(test)]
++        let stream_setup_gate = self.stream_setup_gate.lock()
++            .expect("stream setup gate").take();
+         let started_at = Utc::now();
+         let started = Instant::now();
+-        let mut child = Some(self.spawn_shell(&args.command, &cwd)?);
+-        let pid = child.as_ref().expect("stream child").id();
+-        self.foreground_pids
+-            .lock()
+-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+-            .insert(pid, ForegroundProcess::Stream);
+-        let stdout = child
+-            .as_mut()
+-            .expect("stream child")
+-            .stdout
++        let mut request = {
++            let mut processes = self.foreground_processes.lock()
++                .unwrap_or_else(|poisoned| poisoned.into_inner());
++            if self.stopping.load(Ordering::Acquire) {
++                return Err("box exec daemon is stopping".into());
++            }
++            let registration_id = self.allocate_foreground_id()?;
++            let child = self.spawn_shell(&args.command, &cwd)?;
++            let pid = child.id();
++            let request = StreamRequest {
++                runtime: self, registration_id,
++                resources: Some(StreamResources {
++                    state: CapturedChild::new(child),
++                    recovery: StreamRecovery {
++                        stdout_worker: None, stderr_worker: None, cleanup_paths: Vec::new(),
++                    },
++                }),
++            };
++            processes.insert(registration_id,
++                self.foreground_registration(pid, ForegroundProcess::Stream));
++            request
++        };
++        #[cfg(test)]
++        if let Some(gate) = stream_setup_gate {
++            gate.recv_timeout(Duration::from_secs(10))
++                .map_err(|_| "test stream setup gate not released".to_string())?;
++        }
++        // Only this request owns/reaps this Child. Registry PID data is never
++        // signal authority, including when a test presents a reused number.
++        let stdout = request.resources().state.child.stdout
+             .take()
+             .ok_or_else(|| "shell stream stdout was unavailable".to_string())?;
+-        let stderr = child
+-            .as_mut()
+-            .expect("stream child")
+-            .stderr
++        let stderr = request.resources().state.child.stderr
+             .take()
+             .ok_or_else(|| "shell stream stderr was unavailable".to_string())?;
+ 
+         fs::create_dir_all(&self.terminals_directory).map_err(|error| error.to_string())?;
+         let stream_spool_path = self
+             .terminals_directory
+-            .join(format!(".shell-stream-{pid}.tmp"));
++            .join(format!(".shell-stream-{}.tmp", request.registration_id.0));
++        request.resources().recovery.cleanup_paths.push(stream_spool_path.clone());
+         let stream_spool_writer = Arc::new(Mutex::new(
+             OpenOptions::new()
+                 .create(true)
+@@ -1153,13 +1309,13 @@ impl BoxExecRuntime {
+         ));
+ 
+         let (events_tx, events_rx) = mpsc::channel::<ShellPipeEvent>();
+-        let mut stdout_worker = Some(spawn_stream_pipe(
++        request.resources().recovery.stdout_worker = Some(spawn_stream_pipe(
+             stdout,
+             events_tx.clone(),
+             false,
+             Arc::clone(&stream_spool_writer),
+         ));
+-        let mut stderr_worker = Some(spawn_stream_pipe(
++        request.resources().recovery.stderr_worker = Some(spawn_stream_pipe(
+             stderr,
+             events_tx.clone(),
+             true,
+@@ -1198,26 +1354,20 @@ impl BoxExecRuntime {
+                 )) {
+                     abort.store(true, Ordering::Release);
+                     stream_error = Some(error);
+-                    kill_process_group(pid);
+-                    kill_requested = true;
+                     break;
+                 }
+             }
+-            if stream_error.is_some() {
+-                status = child
+-                    .as_mut()
+-                    .expect("stream child")
+-                    .wait()
+-                    .ok();
+-                break;
++            if let Some(error) = stream_error.take() {
++                return Err(error);
+             }
+-            match child
+-                .as_mut()
+-                .expect("stream child")
+-                .try_wait()
++            match request.resources().state.poll()
+                 .map_err(|error| error.to_string())?
+             {
+                 Some(done) => {
++                    #[cfg(test)]
++                    if self.stream_panic_after_reap.swap(false, Ordering::AcqRel) {
++                        panic!("controlled stream unwind after actual child reap");
++                    }
+                     status = Some(done);
+                     break;
+                 }
+@@ -1237,13 +1387,10 @@ impl BoxExecRuntime {
+                 && args.timeout_behavior == TIMEOUT_BEHAVIOR_BACKGROUND
+             {
+                 let backgrounded = self.handoff_shell_stream_to_background(
+-                    child.take().expect("stream child"),
++                    &mut request,
+                     args,
+-                    pid,
+                     started,
+                     started_at,
+-                    stdout_worker.take().expect("stdout worker"),
+-                    stderr_worker.take().expect("stderr worker"),
+                     Arc::clone(&stream_spool_writer),
+                     stream_spool_path.clone(),
+                 )?;
+@@ -1265,7 +1412,8 @@ impl BoxExecRuntime {
+                     || (block_timeout_elapsed
+                         && args.timeout_behavior != TIMEOUT_BEHAVIOR_BACKGROUND))
+             {
+-                kill_process_group(pid);
++                request.resources().state.signal(false)
++                    .map_err(|error| error.to_string())?;
+                 kill_requested = true;
+             }
+             match events_rx.recv_timeout(Duration::from_millis(10)) {
+@@ -1289,20 +1437,18 @@ impl BoxExecRuntime {
+                         None,
+                     )) {
+                         abort.store(true, Ordering::Release);
+-                        stream_error = Some(error);
+-                        kill_process_group(pid);
+-                        kill_requested = true;
++                        return Err(error);
+                     }
+                 }
+                 Err(mpsc::RecvTimeoutError::Timeout) => {}
+                 Err(mpsc::RecvTimeoutError::Disconnected) => {}
+             }
+         }
+ 
+-        if let Some(worker) = stdout_worker.take() {
++        if let Some(worker) = request.resources().recovery.stdout_worker.take() {
+             let _ = worker.join();
+         }
+-        if let Some(worker) = stderr_worker.take() {
++        if let Some(worker) = request.resources().recovery.stderr_worker.take() {
+             let _ = worker.join();
+         }
+         while let Ok(event) = events_rx.try_recv() {
+@@ -1331,25 +1477,14 @@ impl BoxExecRuntime {
+                 stream_error = Some(error);
+             }
+         }
+-        self.foreground_pids
+-            .lock()
+-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+-            .remove(&pid);
+-
+         drop(stream_spool_writer);
+         let _ = fs::remove_file(&stream_spool_path);
+ 
+         if let Some(error) = stream_error {
+             return Err(error);
+         }
+-        let status = match status {
+-            Some(status) => status,
+-            None => child
+-                .as_mut()
+-                .expect("stream child")
+-                .wait()
+-                .map_err(|error| error.to_string())?,
+-        };
++        let status = status.ok_or_else(|| "stream child reap was not observed".to_string())?;
++        request.complete()?;
+         emit(client_message(
+             id,
+             exec_id,
+@@ -1367,59 +1502,32 @@ impl BoxExecRuntime {
+         ))
+     }
+ 
+-    #[allow(clippy::too_many_arguments)]
+     fn handoff_shell_stream_to_background(
+         &self,
+-        mut child: Child,
++        request: &mut StreamRequest<'_>,
+         args: &ShellArgs,
+-        pid: u32,
+         started: Instant,
+         started_at: chrono::DateTime<Utc>,
+-        stdout_worker: JoinHandle<()>,
+-        stderr_worker: JoinHandle<()>,
+         stream_spool_writer: Arc<Mutex<File>>,
+         stream_spool_path: PathBuf,
+     ) -> Result<ShellStreamBackgrounded, String> {
+         let shell_id = self.next_shell_id.fetch_add(1, Ordering::Relaxed);
+         if shell_id == 0 {
+-            kill_process_group(pid);
+-            let _ = child.wait();
+-            let _ = stdout_worker.join();
+-            let _ = stderr_worker.join();
+-            self.foreground_pids
+-                .lock()
+-                .unwrap_or_else(|poisoned| poisoned.into_inner())
+-                .remove(&pid);
+-            let _ = fs::remove_file(&stream_spool_path);
+             return Err("background shell id space exhausted".into());
+         }
+-
+-        let stdin = match child.stdin.take() {
+-            Some(stdin) => stdin,
+-            None => {
+-                kill_process_group(pid);
+-                let _ = child.wait();
+-                let _ = stdout_worker.join();
+-                let _ = stderr_worker.join();
+-                self.foreground_pids
+-                    .lock()
+-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+-                    .remove(&pid);
+-                let _ = fs::remove_file(&stream_spool_path);
+-                return Err("shell stream stdin was unavailable during background handoff".into());
+-            }
+-        };
+-        let terminal_path = self
+-            .terminals_directory
+-            .join(format!("{shell_id}.txt"));
++        let pid = request.resources().state.child.id();
++        let stdin = request.resources().state.child.stdin.take()
++            .ok_or_else(|| "shell stream stdin was unavailable during background handoff".to_string())?;
++        let terminal_path = self.terminals_directory.join(format!("{shell_id}.txt"));
++        request.resources().recovery.cleanup_paths.push(terminal_path.clone());
+         let background_args = BackgroundShellSpawnArgs {
+             command: args.command.clone(),
+             working_directory: args.working_directory.clone(),
+             tool_call_id: args.tool_call_id.clone(),
+         };
+         let started_at_ms = started_at.timestamp_millis();
+ 
+-        let setup = (|| -> Result<(), String> {
++        {
+             let mut current_writer = stream_spool_writer
+                 .lock()
+                 .map_err(|_| "shell stream output writer is poisoned".to_string())?;
+@@ -1431,109 +1539,87 @@ impl BoxExecRuntime {
+                 .write(true)
+                 .open(&terminal_path)
+                 .map_err(|error| error.to_string())?;
+-            terminal
+-                .write_all(
+-                    terminal_frontmatter(&background_args, Some(pid), started_at.clone()).as_bytes(),
+-                )
+-                .map_err(|error| error.to_string())?;
+-            terminal
+-                .write_all(&spooled)
+-                .map_err(|error| error.to_string())?;
++            terminal.write_all(
++                terminal_frontmatter(&background_args, Some(pid), started_at).as_bytes(),
++            ).map_err(|error| error.to_string())?;
++            terminal.write_all(&spooled).map_err(|error| error.to_string())?;
+             terminal.flush().map_err(|error| error.to_string())?;
+-            *current_writer = OpenOptions::new()
+-                .append(true)
+-                .open(&terminal_path)
++            *current_writer = OpenOptions::new().append(true).open(&terminal_path)
+                 .map_err(|error| error.to_string())?;
+-            Ok(())
+-        })();
+-
+-        if let Err(error) = setup {
+-            kill_process_group(pid);
+-            let _ = child.wait();
+-            let _ = stdout_worker.join();
+-            let _ = stderr_worker.join();
+-            self.foreground_pids
+-                .lock()
+-                .unwrap_or_else(|poisoned| poisoned.into_inner())
+-                .remove(&pid);
+-            let _ = fs::remove_file(&stream_spool_path);
+-            let _ = fs::remove_file(&terminal_path);
+-            return Err(error);
+         }
+         let _ = fs::remove_file(&stream_spool_path);
+ 
+-        let inserted = {
+-            let mut processes = self
+-                .background
+-                .lock()
+-                .unwrap_or_else(|poisoned| poisoned.into_inner());
+-            if processes.contains_key(&shell_id) {
+-                false
+-            } else {
+-                processes.insert(
+-                    shell_id,
+-                    BackgroundProcess {
+-                        stdin: Arc::new(Mutex::new(stdin)),
+-                        terminal_path: terminal_path.clone(),
+-                        pid,
+-                    },
+-                );
+-                true
+-            }
+-        };
+-        if !inserted {
+-            kill_process_group(pid);
+-            let _ = child.wait();
+-            let _ = stdout_worker.join();
+-            let _ = stderr_worker.join();
+-            self.foreground_pids
+-                .lock()
+-                .unwrap_or_else(|poisoned| poisoned.into_inner())
+-                .remove(&pid);
+-            let _ = fs::remove_file(&terminal_path);
+-            return Err(format!("background shell id {shell_id} is already registered"));
+-        }
+-        self.foreground_pids
+-            .lock()
+-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+-            .remove(&pid);
+-
++        // Keep the request guard armed until the background receiver exists
++        // and the exact registry transition can commit. A thread creation
++        // failure must not drop a closure containing the only Child/readers.
+         let processes = Arc::clone(&self.background);
+         let footer_writer = Arc::clone(&stream_spool_writer);
+-        let hard_timeout_ms = args
+-            .hard_timeout
+-            .filter(|timeout| *timeout > 0)
++        let hard_timeout_ms = args.hard_timeout.filter(|timeout| *timeout > 0)
+             .map(|timeout| timeout as u64);
+-        thread::spawn(move || {
+-            let status = if let Some(hard_timeout_ms) = hard_timeout_ms {
+-                loop {
+-                    match child.try_wait() {
+-                        Ok(Some(status)) => break Some(status),
+-                        Ok(None) => {}
+-                        Err(_) => break child.wait().ok(),
+-                    }
+-                    if started.elapsed() >= Duration::from_millis(hard_timeout_ms) {
+-                        kill_process_group(pid);
+-                        break child.wait().ok();
++        let (handoff_tx, handoff_rx) = mpsc::channel::<StreamResources>();
++        let mut foreground = self.foreground_processes.lock()
++            .unwrap_or_else(|poisoned| poisoned.into_inner());
++        let mut background = self.background.lock()
++            .unwrap_or_else(|poisoned| poisoned.into_inner());
++        if self.stopping.load(Ordering::Acquire) {
++            return Err("box exec daemon is stopping".into());
++        }
++        if background.contains_key(&shell_id) {
++            return Err(format!("background shell id {shell_id} is already registered"));
++        }
++        let background_worker = thread::Builder::new().name("box-stream-background".into())
++            .spawn(move || {
++                let Ok(mut resources) = handoff_rx.recv() else { return; };
++                // Admission holds this mutex until both registry changes are
++                // committed. Do not reap/remove before the entry is visible.
++                drop(processes.lock().unwrap_or_else(|poisoned| poisoned.into_inner()));
++                let child = &mut resources.state.child;
++                let status = if let Some(hard_timeout_ms) = hard_timeout_ms {
++                    loop {
++                        match child.try_wait() {
++                            Ok(Some(status)) => break Some(status),
++                            Ok(None) => {}
++                            Err(_) => break child.wait().ok(),
++                        }
++                        if started.elapsed() >= Duration::from_millis(hard_timeout_ms) {
++                            kill_process_group(pid);
++                            break child.wait().ok();
++                        }
++                        thread::sleep(Duration::from_millis(10));
+                     }
+-                    thread::sleep(Duration::from_millis(10));
++                } else {
++                    child.wait().ok()
++                };
++                if let Some(worker) = resources.recovery.stdout_worker.take() {
++                    let _ = worker.join();
+                 }
+-            } else {
+-                child.wait().ok()
+-            };
+-            let _ = stdout_worker.join();
+-            let _ = stderr_worker.join();
+-            let code = status
+-                .and_then(|status| status.code())
+-                .unwrap_or(1);
+-            if let Ok(mut writer) = footer_writer.lock() {
+-                let _ = writer.write_all(terminal_footer(code, started_at_ms).as_bytes());
+-                let _ = writer.flush();
+-            }
+-            if let Ok(mut processes) = processes.lock() {
+-                processes.remove(&shell_id);
+-            }
++                if let Some(worker) = resources.recovery.stderr_worker.take() {
++                    let _ = worker.join();
++                }
++                let code = status.and_then(|status| status.code()).unwrap_or(1);
++                if let Ok(mut writer) = footer_writer.lock() {
++                    let _ = writer.write_all(terminal_footer(code, started_at_ms).as_bytes());
++                    let _ = writer.flush();
++                }
++                if let Ok(mut processes) = processes.lock() {
++                    processes.remove(&shell_id);
++                }
++            }).map_err(|_| "background stream worker creation failed".to_string())?;
++        let resources = request.resources.take().expect("owned handoff resources");
++        if let Err(mpsc::SendError(resources)) = handoff_tx.send(resources) {
++            request.resources = Some(resources);
++            drop(background);
++            drop(foreground);
++            let _ = background_worker.join();
++            return Err("background stream handoff was not received".into());
++        }
++        background.insert(shell_id, BackgroundProcess {
++            stdin: Arc::new(Mutex::new(stdin)), terminal_path: terminal_path.clone(), pid,
+         });
++        foreground.remove(&request.registration_id);
++        drop(background);
++        drop(foreground);
++        drop(background_worker);
+ 
+         Ok(ShellStreamBackgrounded {
+             shell_id,
+@@ -1794,20 +1880,6 @@ impl BoxExecRuntime {
+ 
+     pub fn stop(&self) -> Result<(), String> {
+         self.stopping.store(true, Ordering::Release);
+-        let foreground = self.foreground_pids
+-            .lock()
+-            .unwrap_or_else(|poisoned| poisoned.into_inner())
+-            .iter().map(|(pid, process)| (*pid, process.clone())).collect::<Vec<_>>();
+-        let mut unresolved = false;
+-        for (pid, process) in foreground {
+-            match process {
+-                ForegroundProcess::Stream => kill_process_group(pid),
+-                ForegroundProcess::Capture(owner) => {
+-                    unresolved |= cleanup_captured_child(&owner).is_err();
+-                    self.remove_completed_capture(pid, &owner);
+-                }
+-            }
+-        }
+         let background = self
+             .background
+             .lock()
+@@ -1818,13 +1890,34 @@ impl BoxExecRuntime {
+         for pid in background {
+             kill_process_group(pid);
+         }
+-        // The request still owns its capture workers. Reaping alone is not
+-        // permission to report that the request has finished cleanup.
++        let mut unresolved = false;
++        let mut attempted = Vec::new();
+         let deadline = Instant::now() + FOREGROUND_CLEANUP_LIMIT;
+         loop {
+-            let pending = self.foreground_pids.lock()
++            let foreground = self.foreground_processes.lock()
++                .unwrap_or_else(|poisoned| poisoned.into_inner())
++                .iter().map(|(id, (_, process))| (*id, process.clone())).collect::<Vec<_>>();
++            for (registration_id, process) in foreground {
++                if let ForegroundProcess::Capture(owner) = process {
++                    if !attempted.contains(&registration_id) {
++                        unresolved |= cleanup_captured_child(&owner).is_err();
++                        attempted.push(registration_id);
++                    }
++                    {
++                        let mut state = owner.lock()
++                            .unwrap_or_else(|poisoned| poisoned.into_inner());
++                        unresolved |= state.poll().is_err();
++                        state.observe_stream_recovery();
++                    }
++                    self.remove_completed_capture(registration_id, &owner);
++                }
++                // Active streams consume stopping in their actual Child owner.
++                // If one returns/unwinds, its guard transfers real resources
++                // into Capture; the next iteration observes that transition.
++            }
++            let pending = !self.foreground_processes.lock()
+                 .unwrap_or_else(|poisoned| poisoned.into_inner())
+-                .values().any(|process| matches!(process, ForegroundProcess::Capture(_)));
++                .is_empty();
+             if !pending {
+                 return if unresolved {
+                     Err("foreground child cleanup was not fully observed".into())
+@@ -1839,18 +1932,72 @@ impl BoxExecRuntime {
+         }
+     }
+ 
+-    fn remove_completed_capture(&self, pid: u32, owner: &Arc<Mutex<CapturedChild>>) {
++    fn observe_retained_stream_recoveries(&self) {
++        // Snapshot first: never acquire a Child mutex while holding the map.
++        let recoveries = self.foreground_processes.lock()
++            .unwrap_or_else(|poisoned| poisoned.into_inner())
++            .iter().filter_map(|(id, (_, process))| match process {
++                ForegroundProcess::Capture(owner) => Some((*id, Arc::clone(owner))),
++                ForegroundProcess::Stream => None,
++            }).collect::<Vec<_>>();
++        for (registration_id, owner) in recoveries {
++            self.observe_retained_stream_recovery(registration_id, &owner);
++        }
++    }
++
++    fn observe_retained_stream_recovery(
++        &self,
++        registration_id: ForegroundId,
++        owner: &Arc<Mutex<CapturedChild>>,
++    ) {
++        {
++            let mut state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
++            // Ordinary capture readers still belong to their active caller.
++            // Only the transferred stream recovery may be observed here.
++            if state.stream_recovery.is_none() || state.poll().is_err() {
++                return;
++            }
++            state.observe_stream_recovery();
++        }
++        // Release the Child mutex before exact identity/Arc-checked removal.
++        self.remove_completed_capture(registration_id, owner);
++    }
++
++    fn allocate_foreground_id(&self) -> Result<ForegroundId, String> {
++        self.next_foreground_id.fetch_update(Ordering::Relaxed, Ordering::Relaxed,
++            |next| next.checked_add(1))
++            .map(ForegroundId)
++            .map_err(|_| "foreground invocation id space exhausted".to_string())
++    }
++
++    fn foreground_registration(
++        &self,
++        pid: u32,
++        process: ForegroundProcess,
++    ) -> (u32, ForegroundProcess) {
++        #[cfg(test)]
++        let pid = self.foreground_pid_alias.lock().expect("foreground PID alias")
++            .unwrap_or(pid);
++        (pid, process)
++    }
++
++    fn remove_completed_capture(
++        &self,
++        registration_id: ForegroundId,
++        owner: &Arc<Mutex<CapturedChild>>,
++    ) {
+         let completed = {
+             let state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+             state.status.is_some() && state.capture_complete
+         };
+         if completed {
+-            let mut processes = self.foreground_pids.lock()
++            let mut processes = self.foreground_processes.lock()
+                 .unwrap_or_else(|poisoned| poisoned.into_inner());
+-            if matches!(processes.get(&pid), Some(ForegroundProcess::Capture(current))
++            if matches!(processes.get(&registration_id),
++                Some((_, ForegroundProcess::Capture(current)))
+                 if Arc::ptr_eq(current, owner))
+             {
+-                processes.remove(&pid);
++                processes.remove(&registration_id);
+             }
+         }
+     }
+@@ -1886,30 +2033,33 @@ impl BoxExecRuntime {
+         timeout_ms: Option<u64>,
+         abort: &AtomicBool,
+     ) -> Result<ProcessOutcome, ProcessFailure> {
+-        let (pid, owner) = {
++        self.observe_retained_stream_recoveries();
++        #[cfg(test)]
++        let capture_observation_gate = self.capture_observation_gate.lock()
++            .expect("capture observation gate").take();
++        let (registration_id, owner) = {
+             // Admission and stop's snapshot share the existing registry mutex.
+             // Stop cannot report clean between a successful spawn and insertion.
+-            let mut processes = self.foreground_pids.lock()
++            let mut processes = self.foreground_processes.lock()
+                 .unwrap_or_else(|poisoned| poisoned.into_inner());
+             if self.stopping.load(Ordering::Acquire) {
+                 return Err(ProcessFailure::Spawn("box exec daemon is stopping".into()));
+             }
++            let registration_id = self.allocate_foreground_id().map_err(ProcessFailure::Spawn)?;
+             let child = self.spawn_shell(command, cwd).map_err(ProcessFailure::Spawn)?;
+             let pid = child.id();
+-            let owner = Arc::new(Mutex::new(CapturedChild {
+-                child, status: None, cleanup_unknown: false, capture_complete: false,
+-                #[cfg(test)]
+-                signals_sent: 0,
+-            }));
+-            processes.insert(pid, ForegroundProcess::Capture(Arc::clone(&owner)));
+-            (pid, owner)
++            let owner = Arc::new(Mutex::new(CapturedChild::new(child)));
++            processes.insert(registration_id, self.foreground_registration(
++                pid, ForegroundProcess::Capture(Arc::clone(&owner)),
++            ));
++            (registration_id, owner)
+         };
+         let control = CaptureControl {
+             cancelled: Arc::new(AtomicBool::new(false)),
+             #[cfg(test)]
+             probe: self.capture_probe.lock().expect("capture probe").clone(),
+             #[cfg(test)]
+-            pid,
++            pid: owner.lock().expect("capture child PID").child.id(),
+         };
+         let mut stdout_worker = CaptureWorker::new();
+         let mut stderr_worker = CaptureWorker::new();
+@@ -1927,6 +2077,15 @@ impl BoxExecRuntime {
+             prepare_capture_pipe(&stderr)?;
+             stdout_worker.worker = Some(spawn_capture_worker(stdout, control.clone(), "stdout")?);
+             stderr_worker.worker = Some(spawn_capture_worker(stderr, control.clone(), "stderr")?);
++            #[cfg(test)]
++            {
++                // Hold the actual request before observing/joining either
++                // worker while the test observes this owned Child's real reap.
++                if let Some(gate) = capture_observation_gate {
++                    gate.recv_timeout(Duration::from_secs(15))
++                        .map_err(|_| ShellExecutionUnknown::new("test capture gate not released"))?;
++                }
++            }
+             let mut timed_out = false;
+             let mut termination_started = None;
+             let mut sent_kill = false;
+@@ -2007,7 +2166,7 @@ impl BoxExecRuntime {
+             state.capture_complete = true;
+             state.cleanup_unknown |= cleanup.is_err();
+         }
+-        self.remove_completed_capture(pid, &owner);
++        self.remove_completed_capture(registration_id, &owner);
+         match result {
+             Err(mut error) => {
+                 error.cleanup_unresolved = owner.lock()
+@@ -2884,7 +3043,7 @@ mod tests {
+             }
+         }
+         handle.stop().expect("owned probe graceful stop");
+-        let remaining = handle.runtime.foreground_pids.lock().expect("foreground registry").len();
++        let remaining = handle.runtime.foreground_processes.lock().expect("foreground registry").len();
+         assert_eq!(remaining, 0, "probe retained unresolved foreground ownership");
+         publish_capture_probe_json(&root.join("stopped.json"), &serde_json::json!({
+             "pid": pid, "clean": true, "foregroundCount": remaining,
+@@ -2964,7 +3123,7 @@ mod tests {
+                 assert_eq!(record["prefix"], "SC_CAPTURE_PREFIX");
+                 assert!(record["bytesObserved"].as_u64().unwrap() >= 17);
+                 assert_eq!(fs::read_to_string(runtime.workspace_root.join("effect-count")).unwrap(), "effect\n");
+-                assert!(runtime.foreground_pids.lock().unwrap().is_empty(), "{mode}");
++                assert!(runtime.foreground_processes.lock().unwrap().is_empty(), "{mode}");
+                 runtime.stop().expect("no unresolved capture owner");
+             }
+         }
+@@ -2996,7 +3155,7 @@ mod tests {
+         assert!(matches!(runtime.shell(&refused).expect("known pre-spawn refusal").result,
+             Some(shell_result::Result::SpawnError(_))));
+         assert!(!runtime.workspace_root.join("refused-effect").exists());
+-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+     }
+ 
+     #[test]
+@@ -3008,7 +3167,7 @@ mod tests {
+         assert!(matches!(runtime.shell(&timed).expect("timeout observed").result,
+             Some(shell_result::Result::Timeout(_))));
+         assert!(started.elapsed() < Duration::from_secs(5));
+-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+ 
+         let abort = AtomicBool::new(true);
+         let started = Instant::now();
+@@ -3018,7 +3177,7 @@ mod tests {
+         assert!(matches!(result.result,
+             Some(shell_result::Result::Failure(ShellFailure { aborted: true, .. }))));
+         assert!(started.elapsed() < Duration::from_secs(5));
+-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+     }
+ 
+     #[test]
+@@ -3034,7 +3193,7 @@ mod tests {
+             assert!(Instant::now() < deadline, "real child did not start");
+             thread::sleep(FOREGROUND_POLL_INTERVAL);
+         }
+-        let owner = runtime.foreground_pids.lock().unwrap().values().find_map(|process| {
++        let owner = runtime.foreground_processes.lock().unwrap().values().find_map(|(_, process)| {
+             match process {
+                 ForegroundProcess::Capture(owner) => Some(Arc::clone(owner)),
+                 ForegroundProcess::Stream => None,
+@@ -3052,7 +3211,7 @@ mod tests {
+         assert_eq!(state.signals_sent, signals, "never signal a reaped PID");
+         drop(state);
+         runtime.stop().expect("repeated stop is observation");
+-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+         assert!(matches!(runtime.shell(&foreground_args(
+             "printf forbidden > after-stop",
+         )).expect("stopped owner refuses before spawn").result,
+@@ -3082,14 +3241,636 @@ mod tests {
+         let error = result.expect_err("explicit timeout cannot certify missing EOF");
+         assert_eq!(error.phase, "capture cancelled before EOF");
+         assert!(started.elapsed() < Duration::from_secs(2));
+-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+         // Let the deliberately bounded fixture descendant end before deleting
+         // its workspace; its PID is never used as cleanup authority.
+         while started.elapsed() < Duration::from_millis(3_100) {
+             thread::sleep(FOREGROUND_POLL_INTERVAL);
+         }
+     }
+ 
++
++    // A private gate pauses the real run_process caller before it observes its
++    // real capture workers. Tests observe the same owned Child's actual reap.
++    // Neither Child.id nor signal authority is changed by the PID alias seam.
++    struct RetainedCaptureFixture {
++        registration_id: ForegroundId,
++        owner: Arc<Mutex<CapturedChild>>,
++        release: mpsc::Sender<()>,
++        worker: Option<JoinHandle<Result<ShellResult, ShellExecutionUnknown>>>,
++    }
++
++    impl RetainedCaptureFixture {
++        fn new(runtime: &Arc<BoxExecRuntime>) -> Self {
++            let previous = runtime.foreground_processes.lock().unwrap()
++                .keys().copied().collect::<Vec<_>>();
++            let (release, gate) = mpsc::channel();
++            *runtime.capture_observation_gate.lock().unwrap() = Some(gate);
++            let worker_runtime = Arc::clone(runtime);
++            let worker = thread::spawn(move || worker_runtime.shell(&foreground_args(
++                "printf capture-stdout; printf capture-stderr >&2",
++            )));
++            let deadline = Instant::now() + Duration::from_secs(3);
++            let (registration_id, owner) = loop {
++                let entry = runtime.foreground_processes.lock().unwrap().iter()
++                    .find_map(|(id, (_, process))| match process {
++                        ForegroundProcess::Capture(owner) if !previous.contains(id) =>
++                            Some((*id, Arc::clone(owner))),
++                        _ => None,
++                    });
++                if let Some(entry) = entry { break entry; }
++                assert!(Instant::now() < deadline, "real capture invocation not registered");
++                thread::sleep(FOREGROUND_POLL_INTERVAL);
++            };
++            loop {
++                if owner.lock().unwrap().poll().expect("actual fixture child wait").is_some() {
++                    break;
++                }
++                assert!(Instant::now() < deadline, "fixture child did not exit");
++                thread::sleep(FOREGROUND_POLL_INTERVAL);
++            }
++            assert!(!owner.lock().unwrap().capture_complete);
++            assert!(!worker.is_finished(), "real caller has not observed its workers");
++            Self { registration_id, owner, release, worker: Some(worker) }
++        }
++
++        fn complete(&mut self, runtime: &BoxExecRuntime) {
++            self.release.send(()).expect("release actual capture caller");
++            let result = self.worker.take().unwrap().join().expect("capture caller joined")
++                .expect("real pipes and reap completely observed");
++            let (stdout, stderr) = match result.result {
++                Some(shell_result::Result::Success(result)) => (result.stdout, result.stderr),
++                Some(shell_result::Result::Failure(result)) => {
++                    assert!(result.aborted, "stop preserves the observed abort shape");
++                    (result.stdout, result.stderr)
++                }
++                _ => panic!("complete fixture capture retains its actual text"),
++            };
++            assert_eq!(stdout, "capture-stdout");
++            assert_eq!(stderr, "capture-stderr");
++            let state = self.owner.lock().unwrap();
++            assert!(state.status.is_some(), "actual child reap remains observed");
++            assert!(state.capture_complete, "actual request observed both capture workers");
++            assert_eq!(state.signals_sent, 0, "reaped fixture must never be signaled");
++            drop(state);
++            assert!(!runtime.foreground_processes.lock().unwrap()
++                .contains_key(&self.registration_id), "actual completion removed its identity");
++        }
++    }
++
++    #[test]
++    fn foreground_capture_reused_pid_retains_each_invocation_until_observed() {
++        let (_root, runtime) = runtime();
++        let runtime = Arc::new(runtime);
++        let mut older = RetainedCaptureFixture::new(&runtime);
++        let old_pid = older.owner.lock().unwrap().child.id();
++        *runtime.foreground_pid_alias.lock().unwrap() = Some(old_pid);
++        let mut successor = RetainedCaptureFixture::new(&runtime);
++        assert_ne!(older.registration_id, successor.registration_id);
++        {
++            let processes = runtime.foreground_processes.lock().unwrap();
++            assert_eq!(processes.len(), 2, "reused PID cannot replace unfinished capture");
++            assert_eq!(processes.get(&older.registration_id).unwrap().0, old_pid);
++            assert_eq!(processes.get(&successor.registration_id).unwrap().0, old_pid);
++        }
++        let started = Instant::now();
++        assert!(runtime.stop().is_err(), "unobserved readers prevent clean stop");
++        assert!(started.elapsed() < Duration::from_secs(4));
++        assert_eq!(runtime.foreground_processes.lock().unwrap().len(), 2);
++        older.complete(&runtime);
++        // Neither a repeated older completion nor a mismatched owner may erase
++        // the newer invocation whose observational PID is the same.
++        runtime.remove_completed_capture(older.registration_id, &older.owner);
++        runtime.remove_completed_capture(successor.registration_id, &older.owner);
++        {
++            let processes = runtime.foreground_processes.lock().unwrap();
++            assert_eq!(processes.len(), 1);
++            assert!(processes.contains_key(&successor.registration_id));
++        }
++        let started = Instant::now();
++        assert!(runtime.stop().is_err(), "the successor still has unobserved readers");
++        assert!(started.elapsed() < Duration::from_secs(4));
++        successor.complete(&runtime);
++        runtime.stop().expect("both actual reaps and both pairs of readers observed");
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++        for owner in [&older.owner, &successor.owner] {
++            let mut state = owner.lock().unwrap();
++            state.signal(true).expect("late signal is an observed-reap no-op");
++            assert_eq!(state.signals_sent, 0);
++        }
++    }
++
++    #[test]
++    fn foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn() {
++        let (_root, runtime) = runtime();
++        runtime.next_foreground_id.store(u64::MAX - 1, Ordering::Relaxed);
++        let accepted = runtime.shell(&foreground_args("printf accepted > accepted-effect"))
++            .expect("last available invocation");
++        assert!(matches!(accepted.result, Some(shell_result::Result::Success(_))));
++        assert_eq!(fs::read_to_string(runtime.workspace_root.join("accepted-effect")).unwrap(),
++            "accepted");
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++        for mini in [false, true] {
++            let output = runtime.execute(foreground_request(
++                foreground_args("printf forbidden > exhausted-effect"), mini,
++            ));
++            assert_eq!(output.len(), 2);
++            let Some(exec_stream_element::Element::ExecClientMessage(message)) =
++                &output[0].element else { panic!("known pre-spawn refusal"); };
++            let result = match &message.message {
++                Some(exec_client_message::Message::ShellResult(result)) |
++                Some(exec_client_message::Message::MiniSweAgentBashResult(result)) => result,
++                _ => panic!("foreground refusal retains its dispatch result"),
++            };
++            assert!(matches!(&result.result,
++                Some(shell_result::Result::SpawnError(error))
++                    if error.error == "foreground invocation id space exhausted"));
++        }
++        let mut events = Vec::new();
++        let result = runtime.shell_stream_live(
++            74, "exhaustion", &foreground_args("printf forbidden > exhausted-stream-effect"),
++            &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
++        );
++        assert_eq!(result.unwrap_err(), "foreground invocation id space exhausted");
++        assert_eq!(events.len(), 1, "only the existing stream Start precedes refusal");
++        assert!(matches!(&events[0].element,
++            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                    event: Some(shell_stream::Event::Start(_)),
++                })), ..
++            }))));
++        assert!(!runtime.workspace_root.join("exhausted-effect").exists());
++        assert!(!runtime.workspace_root.join("exhausted-stream-effect").exists());
++        assert_eq!(runtime.next_foreground_id.load(Ordering::Relaxed), u64::MAX);
++        assert!(runtime.allocate_foreground_id().is_err(), "exhaustion never wraps");
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++        runtime.stop().expect("no child entered execution after exhaustion");
++    }
++
++    #[test]
++    fn foreground_capture_stream_stop_preserves_identity_and_never_signals_alias() {
++        let (_root, runtime) = runtime();
++        let runtime = Arc::new(runtime);
++        let mut older = RetainedCaptureFixture::new(&runtime);
++        let old_pid = older.owner.lock().unwrap().child.id();
++        *runtime.foreground_pid_alias.lock().unwrap() = Some(old_pid);
++        let (ready_tx, ready_rx) = mpsc::channel();
++        let (release_tx, release_rx) = mpsc::channel();
++        let worker_runtime = Arc::clone(&runtime);
++        let worker = thread::spawn(move || {
++            let mut args = foreground_args(
++                "trap 'printf stopped > stream-stopped; exit 0' TERM; \
++                 printf stream-prefix; while :; do sleep 1; done",
++            );
++            args.timeout = 1_000;
++            args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
++            let mut held = false;
++            let mut events = Vec::new();
++            worker_runtime.shell_stream_live(
++                75, "identity-stop", &args, &AtomicBool::new(false), &mut |event| {
++                    if !held && matches!(&event.element,
++                        Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                            message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                                event: Some(shell_stream::Event::Stdout(_)),
++                            })), ..
++                        })))
++                    {
++                        held = true;
++                        ready_tx.send(()).map_err(|error| error.to_string())?;
++                        release_rx.recv_timeout(Duration::from_secs(10))
++                            .map_err(|error| error.to_string())?;
++                    }
++                    events.push(event);
++                    Ok(())
++                },
++            )?;
++            Ok::<_, String>(events)
++        });
++        ready_rx.recv_timeout(Duration::from_secs(3)).expect("live stream emitted prefix");
++        let stream_id = {
++            let processes = runtime.foreground_processes.lock().unwrap();
++            assert_eq!(processes.len(), 2, "stream insertion retains older capture");
++            processes.iter().find_map(|(id, (pid, process))| {
++                if matches!(process, ForegroundProcess::Stream) {
++                    assert_eq!(*pid, old_pid);
++                    Some(*id)
++                } else { None }
++            }).expect("stream invocation registered")
++        };
++        older.complete(&runtime);
++        runtime.remove_completed_capture(older.registration_id, &older.owner);
++        assert!(runtime.foreground_processes.lock().unwrap().contains_key(&stream_id));
++
++        // An observational PID alias must not authorize signaling any other
++        // live Child. This owned sentinel is deliberately outside the registry.
++        struct Sentinel(Arc<Mutex<CapturedChild>>);
++        impl Drop for Sentinel {
++            fn drop(&mut self) { let _ = cleanup_captured_child(&self.0); }
++        }
++        let sentinel = Sentinel(Arc::new(Mutex::new(CapturedChild {
++            child: runtime.spawn_shell("sleep 30", &runtime.workspace_root).unwrap(),
++            status: None, cleanup_unknown: false, capture_complete: true,
++            stream_recovery: None, signals_sent: 0,
++        })));
++        let sentinel_pid = {
++            let mut state = sentinel.0.lock().unwrap();
++            assert!(state.poll().unwrap().is_none());
++            state.child.id()
++        };
++        runtime.foreground_processes.lock().unwrap().get_mut(&stream_id).unwrap().0 = sentinel_pid;
++        let started = Instant::now();
++        assert!(runtime.stop().is_err(), "blocked stream completion is unresolved");
++        assert!(started.elapsed() < Duration::from_secs(4));
++        {
++            let mut state = sentinel.0.lock().unwrap();
++            assert!(state.poll().unwrap().is_none(), "stop must not signal the PID alias");
++            assert_eq!(state.signals_sent, 0);
++        }
++        assert!(runtime.background.lock().unwrap().is_empty(), "stop forbids timed handoff");
++        release_tx.send(()).expect("release actual stream request owner");
++        let events = worker.join().expect("stream request joined").expect("stream stop observed");
++        assert!(events.iter().any(|event| matches!(&event.element,
++            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                    event: Some(shell_stream::Event::Exit(_)),
++                })), ..
++            })))));
++        assert!(!events.iter().any(|event| matches!(&event.element,
++            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                    event: Some(shell_stream::Event::Backgrounded(_)),
++                })), ..
++            })))));
++        assert_eq!(fs::read_to_string(runtime.workspace_root.join("stream-stopped")).unwrap(),
++            "stopped", "actual stream Child handled termination before exit");
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++        assert_eq!(older.owner.lock().unwrap().signals_sent, 0);
++        cleanup_captured_child(&sentinel.0).expect("sentinel cleanup uses its actual Child");
++        {
++            let mut state = sentinel.0.lock().unwrap();
++            assert!(state.poll().unwrap().is_some());
++            assert!(state.signals_sent > 0);
++            let signals = state.signals_sent;
++            state.signal(true).unwrap();
++            assert_eq!(state.signals_sent, signals, "no signal after sentinel reap");
++        }
++        runtime.stop().expect("stream reap and workers observed");
++        let mut events = Vec::new();
++        let refused = runtime.shell_stream_live(
++            76, "stopped", &foreground_args("printf forbidden > stream-after-stop"),
++            &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
++        );
++        assert_eq!(refused.unwrap_err(), "box exec daemon is stopping");
++        assert!(!runtime.workspace_root.join("stream-after-stop").exists());
++    }
++
++    #[test]
++    fn foreground_capture_stream_handoff_retains_reused_pid_capture() {
++        let (_root, runtime) = runtime();
++        let runtime = Arc::new(runtime);
++        let mut older = RetainedCaptureFixture::new(&runtime);
++        let old_pid = older.owner.lock().unwrap().child.id();
++        *runtime.foreground_pid_alias.lock().unwrap() = Some(old_pid);
++        struct HandoffRelease {
++            runtime: Arc<BoxExecRuntime>,
++            shell_id: Option<u32>,
++        }
++        impl Drop for HandoffRelease {
++            fn drop(&mut self) {
++                if let Some(shell_id) = self.shell_id {
++                    let _ = self.runtime.write_stdin(&WriteShellStdinArgs {
++                        shell_id, chars: "finish\n".into(),
++                    });
++                    let deadline = Instant::now() + Duration::from_secs(3);
++                    while self.runtime.background.lock().unwrap().contains_key(&shell_id)
++                        && Instant::now() < deadline
++                    {
++                        thread::sleep(FOREGROUND_POLL_INTERVAL);
++                    }
++                }
++                let background_empty = self.runtime.background.lock().unwrap().is_empty();
++                if background_empty {
++                    let _ = self.runtime.stop();
++                }
++            }
++        }
++        let mut release = HandoffRelease { runtime: Arc::clone(&runtime), shell_id: None };
++        // The actual Child cannot exit independently before Backgrounded:
++        // its stdin remains owned until this fixture explicitly releases it.
++        let mut args = foreground_args(
++            "printf handoff-prefix; IFS= read -r release; \
++             [ \"$release\" = finish ] || exit 91; printf handoff-tail",
++        );
++        args.timeout = 20;
++        args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
++        let mut events = Vec::new();
++        runtime.shell_stream_live(
++            77, "identity-handoff", &args, &AtomicBool::new(false),
++            &mut |event| {
++                if let Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                    message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                        event: Some(shell_stream::Event::Backgrounded(backgrounded)),
++                    })), ..
++                })) = &event.element {
++                    release.shell_id = Some(backgrounded.shell_id);
++                }
++                events.push(event);
++                Ok(())
++            },
++        ).expect("actual timed handoff");
++        let backgrounded = events.iter().find_map(|event| match &event.element {
++            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                    event: Some(shell_stream::Event::Backgrounded(backgrounded)),
++                })), ..
++            })) => Some(backgrounded),
++            _ => None,
++        }).expect("timed stream retained the same real child");
++        {
++            let processes = runtime.foreground_processes.lock().unwrap();
++            assert_eq!(processes.len(), 1, "handoff removes only its own invocation");
++            assert!(processes.contains_key(&older.registration_id));
++            assert_eq!(processes.get(&older.registration_id).unwrap().0, old_pid);
++        }
++        let terminal = runtime.terminals_directory.join(format!("{}.txt", backgrounded.shell_id));
++        older.complete(&runtime);
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++        let released = runtime.write_stdin(&WriteShellStdinArgs {
++            shell_id: backgrounded.shell_id, chars: "finish\n".into(),
++        });
++        assert!(matches!(released.result, Some(write_shell_stdin_result::Result::Success(_))));
++        let deadline = Instant::now() + Duration::from_secs(4);
++        while runtime.background.lock().unwrap().contains_key(&backgrounded.shell_id) {
++            assert!(Instant::now() < deadline, "bounded background fixture did not settle");
++            thread::sleep(FOREGROUND_POLL_INTERVAL);
++        }
++        let output = fs::read_to_string(terminal).expect("actual handoff output");
++        assert!(output.contains("handoff-prefix"));
++        assert!(output.contains("handoff-tail"));
++        assert!(output.contains("exit_code: 0"));
++        assert_eq!(older.owner.lock().unwrap().signals_sent, 0);
++        runtime.stop().expect("completed handoff and capture");
++    }
++
++
++    #[test]
++    fn foreground_capture_stream_setup_error_retains_owned_child_for_cleanup() {
++        let (_root, runtime) = runtime();
++        let runtime = Arc::new(runtime);
++        let (observed_tx, observed_rx) = mpsc::channel();
++        *runtime.stream_recovery_observer.lock().unwrap() = Some(observed_tx);
++        for attempt in 0..3 {
++            let (release, gate) = mpsc::channel();
++            *runtime.stream_setup_gate.lock().unwrap() = Some(gate);
++            let worker_runtime = Arc::clone(&runtime);
++            let worker = thread::spawn(move || {
++                let mut events = Vec::new();
++                let result = worker_runtime.shell_stream_live(
++                    78, "setup-error",
++                    &foreground_args(
++                        "trap '' TERM; printf 'effect\\n' >> setup-effect; \
++                         while :; do sleep 1; done",
++                    ),
++                    &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
++                );
++                (result, events)
++            });
++            let expected_effects = "effect\n".repeat(attempt + 1);
++            let deadline = Instant::now() + Duration::from_secs(3);
++            while fs::read_to_string(runtime.workspace_root.join("setup-effect"))
++                .unwrap_or_default() != expected_effects
++            {
++                assert!(Instant::now() < deadline, "real post-spawn effect was not observed");
++                thread::sleep(FOREGROUND_POLL_INTERVAL);
++            }
++            let registration_id = {
++                let processes = runtime.foreground_processes.lock().unwrap();
++                assert_eq!(processes.len(), 1, "previous completed errors must not accumulate");
++                let (id, (_, process)) = processes.iter().next().unwrap();
++                assert!(matches!(process, ForegroundProcess::Stream));
++                *id
++            };
++            // A real filesystem failure, after successful spawn and a real effect.
++            // The private gate controls ordering, not the I/O result.
++            fs::remove_dir(&runtime.terminals_directory).expect("empty fixture terminals");
++            fs::write(&runtime.terminals_directory, b"not a directory").unwrap();
++            release.send(()).unwrap();
++            let started = Instant::now();
++            let (result, events) = worker.join().expect("stream request returned");
++            assert!(result.is_err(), "actual spool setup failure remains unknown");
++            assert!(started.elapsed() < Duration::from_secs(4), "bounded direct-child cleanup");
++            assert_eq!(events.len(), 1, "only Start, no definitive Exit after setup failure");
++
++            // Observe the actual state retained by the guard, even though its
++            // completed registration has already been removed without stop.
++            let (observed_id, owner) = observed_rx.recv_timeout(Duration::from_secs(1))
++                .expect("actual cleanup owner observation");
++            assert_eq!(observed_id, registration_id);
++            assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++            assert!(!runtime.stopping.load(Ordering::Acquire), "cleanup must not require shutdown");
++            assert_eq!(Arc::strong_count(&owner), 1, "only this observation retains the owner");
++            {
++                let mut state = owner.lock().unwrap();
++                assert!(state.poll().unwrap().is_some(), "guard observed actual reap");
++                assert!(state.signals_sent > 0, "guard terminated its entered Child");
++                assert!(state.capture_complete, "worker-free recovery is observed immediately");
++                assert!(state.stream_recovery.is_none(), "no completed recovery remains owned");
++                assert!(state.child.stdin.is_none());
++                assert!(state.child.stdout.is_none());
++                assert!(state.child.stderr.is_none());
++                let signals = state.signals_sent;
++                state.signal(true).unwrap();
++                assert_eq!(state.signals_sent, signals, "no signal after observed reap");
++            }
++            assert_eq!(fs::read_to_string(runtime.workspace_root.join("setup-effect")).unwrap(),
++                expected_effects, "exactly one effect per failed invocation");
++            fs::remove_file(&runtime.terminals_directory).unwrap();
++            fs::create_dir(&runtime.terminals_directory).unwrap();
++        }
++        *runtime.stream_recovery_observer.lock().unwrap() = None;
++        let result = runtime.shell(&foreground_args("printf still-active")).unwrap();
++        assert!(matches!(result.result,
++            Some(shell_result::Result::Success(result)) if result.stdout == "still-active"));
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++        runtime.stop().expect("final fixture shutdown after live-runtime cleanup assertions");
++    }
++
++    #[derive(Clone, Copy)]
++    enum StreamRecoveryBoundary { Stop, Shell, Stream }
++
++    fn assert_stream_unwind_recovery(boundary: StreamRecoveryBoundary) {
++        let (_root, runtime) = runtime();
++        let runtime = Arc::new(runtime);
++        struct PipeRelease {
++            runtime: Arc<BoxExecRuntime>,
++        }
++        impl Drop for PipeRelease {
++            fn drop(&mut self) {
++                let _ = fs::write(self.runtime.workspace_root.join("release-pipe"), b"release");
++                let _ = self.runtime.stop();
++            }
++        }
++        let _release = PipeRelease { runtime: Arc::clone(&runtime) };
++        runtime.stream_panic_after_reap.store(true, Ordering::Release);
++        let mut prefix_observed = false;
++        let mut prefix_bytes = String::new();
++        let mut events = Vec::new();
++        // The direct Child exits only after its actual prefix reaches the
++        // emitter. Its descendant retains both pipes until the owned explicit
++        // release; the failure guard releases it before bounded cleanup.
++        let args = foreground_args(
++            "(trap '' TERM; while [ ! -f release-pipe ]; do sleep 0.01; done; \
++             printf later-tail) & \
++             printf 'effect\\n' > unwind-effect; printf unwind-prefix; \
++             while [ ! -f prefix-observed ]; do sleep 0.01; done; exit 0",
++        );
++        // This is a controlled unwind at the real successful wait boundary,
++        // not a claim to reproduce an operating-system wait failure.
++        let unwound = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            runtime.shell_stream_live(
++                79, "worker-unwind", &args, &AtomicBool::new(false), &mut |event| {
++                    if let Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                        message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                            event: Some(shell_stream::Event::Stdout(stdout)),
++                        })), ..
++                    })) = &event.element {
++                        prefix_bytes.push_str(&stdout.data);
++                        if prefix_bytes.contains("unwind-prefix") {
++                            prefix_observed = true;
++                            fs::write(runtime.workspace_root.join("prefix-observed"), b"observed")
++                                .map_err(|error| error.to_string())?;
++                        }
++                    }
++                    events.push(event);
++                    Ok(())
++                },
++            )
++        }));
++        assert!(unwound.is_err());
++        assert!(prefix_observed, "real pipe bytes precede the controlled unwind");
++        assert_eq!(fs::read_to_string(runtime.workspace_root.join("unwind-effect")).unwrap(), "effect\n");
++        assert!(!events.iter().any(|event| matches!(&event.element,
++            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                    event: Some(shell_stream::Event::Exit(_)),
++                })), ..
++            })))));
++        let (registration_id, owner) = {
++            let processes = runtime.foreground_processes.lock().unwrap();
++            assert_eq!(processes.len(), 1);
++            let (id, (_, process)) = processes.iter().next().unwrap();
++            let ForegroundProcess::Capture(owner) = process else {
++                panic!("unwind retains real Child and readers");
++            };
++            (*id, Arc::clone(owner))
++        };
++        let spool = {
++            let state = owner.lock().unwrap();
++            assert!(state.status.is_some(), "real direct-child reap preceded unwind");
++            assert_eq!(state.signals_sent, 0, "never signal the reaped direct child");
++            assert!(!state.capture_complete);
++            let recovery = state.stream_recovery.as_ref().expect("retained reader handles");
++            assert!(recovery.stdout_worker.is_some());
++            assert!(recovery.stderr_worker.is_some());
++            recovery.cleanup_paths[0].clone()
++        };
++        match boundary {
++            StreamRecoveryBoundary::Stop => {
++                let started = Instant::now();
++                assert!(runtime.stop().is_err(), "inherited pipes keep cleanup unresolved");
++                assert!(started.elapsed() < Duration::from_secs(4));
++            }
++            StreamRecoveryBoundary::Shell | StreamRecoveryBoundary::Stream => {
++                // A normal request before release must not complete the older
++                // reaped invocation while either real reader still awaits EOF.
++                let result = runtime.shell(&foreground_args("printf before-release")).unwrap();
++                assert!(matches!(result.result,
++                    Some(shell_result::Result::Success(result)) if result.stdout == "before-release"));
++                assert!(!runtime.stopping.load(Ordering::Acquire));
++                assert!(!owner.lock().unwrap().capture_complete);
++            }
++        }
++        assert!(runtime.foreground_processes.lock().unwrap().contains_key(&registration_id));
++        assert!(spool.exists(), "retain owned output until reader observation");
++        assert_eq!(owner.lock().unwrap().signals_sent, 0);
++        fs::write(runtime.workspace_root.join("release-pipe"), b"release").unwrap();
++        match boundary {
++            StreamRecoveryBoundary::Stop => {
++                runtime.stop().expect("later actual EOF permits retained reader joins");
++            }
++            StreamRecoveryBoundary::Shell | StreamRecoveryBoundary::Stream => {
++                let deadline = Instant::now() + Duration::from_secs(3);
++                loop {
++                    let finished = {
++                        let state = owner.lock().unwrap();
++                        let recovery = state.stream_recovery.as_ref().expect("retained recovery");
++                        recovery.stdout_worker.as_ref().unwrap().is_finished()
++                            && recovery.stderr_worker.as_ref().unwrap().is_finished()
++                    };
++                    if finished { break; }
++                    assert!(Instant::now() < deadline, "released readers did not reach real EOF");
++                    thread::sleep(FOREGROUND_POLL_INTERVAL);
++                }
++                // is_finished joins no JoinHandle and removes no registry
++                // entry. The actual normal admission below must do that work.
++                assert!(!owner.lock().unwrap().capture_complete);
++                assert!(runtime.foreground_processes.lock().unwrap().contains_key(&registration_id));
++                assert!(fs::read_to_string(&spool).unwrap().contains("later-tail"));
++                match boundary {
++                    StreamRecoveryBoundary::Shell => {
++                        let result = runtime.shell(&foreground_args("printf normal-admission")).unwrap();
++                        assert!(matches!(result.result,
++                            Some(shell_result::Result::Success(result))
++                                if result.stdout == "normal-admission"));
++                    }
++                    StreamRecoveryBoundary::Stream => {
++                        let mut events = Vec::new();
++                        runtime.shell_stream_live(
++                            80, "normal-admission", &foreground_args("printf normal-admission"),
++                            &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
++                        ).expect("actual normal stream admission");
++                        let stdout = events.iter().filter_map(|event| match &event.element {
++                            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                                message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                                    event: Some(shell_stream::Event::Stdout(stdout)),
++                                })), ..
++                            })) => Some(stdout.data.as_str()),
++                            _ => None,
++                        }).collect::<String>();
++                        assert_eq!(stdout, "normal-admission");
++                        assert!(events.iter().any(|event| matches!(&event.element,
++                            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
++                                message: Some(exec_client_message::Message::ShellStream(ShellStream {
++                                    event: Some(shell_stream::Event::Exit(_)),
++                                })), ..
++                            })))));
++                    }
++                    StreamRecoveryBoundary::Stop => unreachable!(),
++                }
++                assert!(!runtime.stopping.load(Ordering::Acquire),
++                    "normal admission, not shutdown, must observe late completion");
++            }
++        }
++        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
++        assert!(!spool.exists(), "observed recovery removes its own spool");
++        let mut state = owner.lock().unwrap();
++        assert!(state.capture_complete);
++        assert!(state.stream_recovery.is_none(), "both JoinHandles were observed");
++        state.signal(true).unwrap();
++        assert_eq!(state.signals_sent, 0, "late cleanup never re-signals a reaped PID");
++    }
++
++    #[test]
++    fn foreground_capture_stream_unwind_retains_readers_until_later_eof() {
++        assert_stream_unwind_recovery(StreamRecoveryBoundary::Stop);
++    }
++
++    #[test]
++    fn foreground_capture_stream_late_eof_is_observed_by_normal_admission() {
++        assert_stream_unwind_recovery(StreamRecoveryBoundary::Shell);
++        assert_stream_unwind_recovery(StreamRecoveryBoundary::Stream);
++    }
++
+     #[test]
+     fn foreground_capture_interrupted_read_retries_without_losing_bytes() {
+         struct InterruptedOnce {
+@@ -3490,11 +4271,14 @@ mod tests {
+             thread::sleep(Duration::from_millis(10));
+         };
+         let owner = {
+-            let processes = handle.runtime.foreground_pids.lock().expect("foreground owner");
+-            match processes.get(&pid) {
+-                Some(ForegroundProcess::Capture(owner)) => Arc::clone(owner),
+-                _ => panic!("published PID must belong to the actual foreground capture"),
+-            }
++            let processes = handle.runtime.foreground_processes.lock().expect("foreground owner");
++            processes.values().find_map(|(registered_pid, process)| {
++                match process {
++                    ForegroundProcess::Capture(owner) if *registered_pid == pid =>
++                        Some(Arc::clone(owner)),
++                    _ => None,
++                }
++            }).expect("published PID must belong to the actual foreground capture")
+         };
+         {
+             let mut child = owner.lock().expect("owned child");

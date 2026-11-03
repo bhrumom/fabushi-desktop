@@ -1,0 +1,252 @@
+{
+  "schema": "ocrm-frozen-source-review-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 2,
+  "contract": "BXR-SHELL-CAPTURE-v1 / SC02-R2",
+  "repository": "bhrumom/fabushi-desktop",
+  "subject": {
+    "commit": "00bb59e487e55b89cb41bc9d25b14e3b707e9b6a",
+    "tree": "206cb590550ac71497b5a79227d3f752368ea90c",
+    "role": "actual integrated immutable source candidate; latest exceptional stream recovery not yet executed"
+  },
+  "original_base": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+  "previous_source_candidate": "152467880098cd87581ca279be4d2bc872a7620b",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "paths": [
+    {
+      "path": "source/box-exec-daemon/src/server.rs",
+      "sha": "20b6a1635c091a5cacbc0bbdabff17cdc041e90f"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "sha": "40cb3b4e8a629e36b04ecb6654035d868b6b57bb"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "sha": "f8c163b0e3679fe7ac7fbd8d6d2103c037b22886"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+      "sha": "85c03a40ad4e65993e26cc09f1b7f00d50885fc6"
+    },
+    {
+      "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+      "sha": "23941b650376d23c07c67064f49c083bf7db8689"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "sha": "073e031c67647c06a848f6ade737b8fca5b1399b"
+    },
+    {
+      "path": "docs/specs/g11-box-browser-wire-completion.md",
+      "sha": "707256fe48cae8ac3667464bbf1bfa5c1ece6e53"
+    }
+  ],
+  "diffs": [
+    {
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r2/full.diff",
+      "bytes": 215040,
+      "sha256": "9150dba3f1329634937e6d6b802cde9267713276039f4d96f5a3e5fef204e85c",
+      "base": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+      "carrier": "65240ec8a5f15dfa0b881ba22808da4c87a1c78b",
+      "files": [
+        {
+          "path": "docs/specs/g11-box-browser-wire-completion.md",
+          "sha": "707256fe48cae8ac3667464bbf1bfa5c1ece6e53",
+          "status": "modified",
+          "additions": 74,
+          "deletions": 0,
+          "observedAdditions": 74,
+          "observedDeletions": 0,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+          "sha": "85c03a40ad4e65993e26cc09f1b7f00d50885fc6",
+          "status": "added",
+          "additions": 330,
+          "deletions": 0,
+          "observedAdditions": 330,
+          "observedDeletions": 0,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/parity-ledger.json",
+          "sha": "f8c163b0e3679fe7ac7fbd8d6d2103c037b22886",
+          "status": "modified",
+          "additions": 52,
+          "deletions": 14,
+          "observedAdditions": 52,
+          "observedDeletions": 14,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "sha": "073e031c67647c06a848f6ade737b8fca5b1399b",
+          "status": "modified",
+          "additions": 42,
+          "deletions": 15,
+          "observedAdditions": 42,
+          "observedDeletions": 15,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+          "sha": "40cb3b4e8a629e36b04ecb6654035d868b6b57bb",
+          "status": "modified",
+          "additions": 158,
+          "deletions": 4,
+          "observedAdditions": 158,
+          "observedDeletions": 4,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "source/box-exec-daemon/src/server.rs",
+          "sha": "20b6a1635c091a5cacbc0bbdabff17cdc041e90f",
+          "status": "modified",
+          "additions": 1804,
+          "deletions": 299,
+          "observedAdditions": 1804,
+          "observedDeletions": 299,
+          "complete": true,
+          "patchOrigin": "exact line-text LCS transformation of independently fetched original/current source; both source reconstructions match byte-for-byte; no source execution or executable verification",
+          "originalBlob": "a40dc3b5f78e414c3ac302137668f1d5be8dc73f",
+          "currentBlob": "20b6a1635c091a5cacbc0bbdabff17cdc041e90f"
+        },
+        {
+          "path": "source/host/tests/box_exec_daemon_process_contract.rs",
+          "sha": "23941b650376d23c07c67064f49c083bf7db8689",
+          "status": "modified",
+          "additions": 435,
+          "deletions": 0,
+          "observedAdditions": 435,
+          "observedDeletions": 0,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        }
+      ],
+      "blob": "78518c73c7f43a5c53535b08c0dbb8ed70ba4f57"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r2/fix-delta.diff",
+      "bytes": 130803,
+      "sha256": "2c7bb59ecda399829e9e1e7caf80848c32d5a751bfcf1747d423f06b9f033102",
+      "base": "152467880098cd87581ca279be4d2bc872a7620b",
+      "carrier": "77cdc4ddc59b2daff358a9ef9f04acc23c2caf17",
+      "files": [
+        {
+          "path": "docs/specs/g11-box-browser-wire-completion.md",
+          "sha": "707256fe48cae8ac3667464bbf1bfa5c1ece6e53",
+          "status": "modified",
+          "additions": 74,
+          "deletions": 0,
+          "observedAdditions": 74,
+          "observedDeletions": 0,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+          "sha": "85c03a40ad4e65993e26cc09f1b7f00d50885fc6",
+          "status": "modified",
+          "additions": 90,
+          "deletions": 7,
+          "observedAdditions": 90,
+          "observedDeletions": 7,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/parity-ledger.json",
+          "sha": "f8c163b0e3679fe7ac7fbd8d6d2103c037b22886",
+          "status": "modified",
+          "additions": 28,
+          "deletions": 10,
+          "observedAdditions": 28,
+          "observedDeletions": 10,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+          "sha": "073e031c67647c06a848f6ade737b8fca5b1399b",
+          "status": "modified",
+          "additions": 22,
+          "deletions": 11,
+          "observedAdditions": 22,
+          "observedDeletions": 11,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+          "sha": "40cb3b4e8a629e36b04ecb6654035d868b6b57bb",
+          "status": "modified",
+          "additions": 9,
+          "deletions": 5,
+          "observedAdditions": 9,
+          "observedDeletions": 5,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        },
+        {
+          "path": "source/box-exec-daemon/src/server.rs",
+          "sha": "20b6a1635c091a5cacbc0bbdabff17cdc041e90f",
+          "status": "modified",
+          "additions": 1014,
+          "deletions": 230,
+          "observedAdditions": 1014,
+          "observedDeletions": 230,
+          "complete": true,
+          "patchOrigin": "GitHub compare API"
+        }
+      ],
+      "blob": "b725746ac49ae28eef283cf955b8ca4d607fb39f"
+    }
+  ],
+  "diff_carriers": {
+    "full": {
+      "sha": "65240ec8a5f15dfa0b881ba22808da4c87a1c78b",
+      "tree": "61a5c076aca6ac840c17e30dff50a432d52c1031",
+      "parent": "ca32f83f13a8aed439e9e3341d175405b1d1a655",
+      "sourceSubject": "00bb59e487e55b89cb41bc9d25b14e3b707e9b6a",
+      "role": "isolated scope diff carrier only; not execution or shipping subject"
+    },
+    "fix_delta": {
+      "sha": "77cdc4ddc59b2daff358a9ef9f04acc23c2caf17",
+      "tree": "446f112acd7367df6d16a6fcad934e9470e1ae94",
+      "parent": "152467880098cd87581ca279be4d2bc872a7620b",
+      "sourceSubject": "00bb59e487e55b89cb41bc9d25b14e3b707e9b6a",
+      "role": "isolated scope diff carrier only; not execution or shipping subject"
+    }
+  },
+  "scope_note": "Retain all seven original paths. The proper delta from the preceding reviewed source changes six paths; the complete original-base diff changes seven. Shared capture/ledger/RTM retain independent Plugin and LXR amendments and must be inspected for preservation, without attributing their product acceptance to this review. GitHub omitted the largest original-base server patch; its included patch was reconstructed only from independently fetched exact original/current source text, both complete byte reconstructions matched, and its addition/deletion totals match the API statistics. All other patches are complete API hunks whose observed additions/deletions match the API. The source transform did not execute source or tests. No binary/rename omission. Detached diff carriers are review conveniences, not execution or shipping subjects.",
+  "review_focus": [
+    "Actual foreground ordinary ShellArgs/MiniSwe capture enters one existing BoxExecRuntime owner; failures after possible entry remain typed execution unknown and existing Throw/Close through real Host/Runner, without replay or fabricated successful output.",
+    "Nonreusable ForegroundId keys every registration/removal/handoff in the existing registry; numeric PID is observational data. Examine exhaustion before spawn, exact Arc removal, lock ordering, stop overlap, duplicate numeric PID controls and active Stream owned Child signaling.",
+    "StreamRequest owns actual child and started worker handles before post-spawn fallible setup. Examine exceptional setup/emitter/poll/handoff/unwind, actual guard transfer to StreamRecovery, bounded TERM/KILL, no cached-PID signaling, no unbounded exceptional wait/join, and no lost receiver ownership on thread/send failure.",
+    "Completed exceptional recovery is removed only after actual reap plus all actual reader observations. Parent-owned handles are released; Drop and normal foreground admission reclaim completed entries without claiming pending reader EOF or introducing another registry/scheduler. Examine lock-release order and ordinary Capture exclusion.",
+    "Read complete affected production/test functions and call chains. Evaluate causal handoff input release after Backgrounded, actual TERM-ignore readiness, explicit inherited-pipe release, setup-failure repetition without stop, no-resignal and later ordinary/stream-admission recovery. Private test observer hooks must not replace actual effects/ownership.",
+    "Capture binds exact daemon/Host source and locked build/artifact identities, requires thirteen distinct unit names plus two actual Host/Runner consumer names and one disconnect name, retains existing seventy-seven BXR direct names and fourteen downstream custody names, and fails closed on missing/extra/duplicate/ignored cases."
+  ],
+  "open_boundaries": [
+    "Normal active Stream still has distinct TERM-only stop/abort and synchronous reader-join behavior; exceptional cleanup approval cannot accept that path.",
+    "BackgroundProcess raw-PID/reap/setup/stop/input ownership remains required follow-on work, not a scope waiver or full Box acceptance.",
+    "Raw byte bounds, generated Shell schema authority, private generated-HTML grant, actual durable Session/Attachment consumer wiring, all upstream source/dependency/license closure, real ecosystems/platform packages and full migration acceptance remain open."
+  ],
+  "requirements": [
+    "Fresh blind GENERAL and STRUCTURE, using the entire original scope and actual previous-candidate delta. Do not fetch prior review reports or arbitration decisions; judge frozen source independently.",
+    "Report MUST_FIX separately from NON_BLOCKING, exact anchors, failure sequence and smallest owner-preserving correction. State actual read depth and source-only limits; do not present contract/hunk reading as full-file reading.",
+    "Do not mutate production, shared schema/workflow/ledger/ref or run local/htch compilation, lint, parser, generator or tests. No Actions dispatch by reviewers. An optional new independent report blob may be created only after independent repository/authorization verification.",
+    "Prior source/test executions do not verify this subject. Exact-H affected compilation/contract/negative/wiring evidence is required separately; no final ACCEPT is asserted."
+  ]
+}
