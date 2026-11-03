@@ -39,6 +39,7 @@ on:
       - 'frontend/src/recovered/features/conversation/workspace/model.ts'
       - 'frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts'
       - 'frontend/src/production/coordinator-client.ts'
+      - 'frontend/src/recovered/features/root-resilience/connection-state.ts'
       - 'frontend/src/production/transcript-projection*'
       - 'frontend/src/recovered/features/conversation/workspace/draft-state.ts'
       - 'frontend/src/recovered/features/conversation/workspace/draft-recovery.contract.test.ts'
@@ -295,7 +296,7 @@ jobs:
         run: |
           set -euo pipefail
           cargo test --locked --manifest-path source/host/Cargo.toml --test session_gateway_contract shipping_human_ -- --nocapture 2>&1 | tee artifacts/native-message/session-gateway.log
-          grep -Eq 'test result: ok\. 76 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
+          grep -Eq 'test result: ok\. 77 passed; 0 failed; 0 ignored;' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens ... ok' artifacts/native-message/session-gateway.log
           grep -F 'test shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api ... ok' artifacts/native-message/session-gateway.log
@@ -309,7 +310,8 @@ jobs:
             shipping_human_committed_refresh_reaches_production_transcript_bus \
             shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids \
             shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins \
-            shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement; do
+            shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement \
+            shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart; do
             grep -Fx "test $case_name ... ok" artifacts/native-message/session-gateway.log
           done
       - name: Human resource upload size and bounded-read contracts
@@ -850,8 +852,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 42' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 42' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 43' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 43' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/transcript.log
@@ -915,8 +917,8 @@ jobs:
           ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-retry-port.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-retry-port.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry-port-bundle.log
           ./desktop/node_modules/.bin/esbuild frontend/src/production/human-message-submission.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/human-submission.test.mjs 2>&1 | tee artifacts/native-message-ui/human-submission-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/human-retry.test.mjs artifacts/native-message-ui/human-retry-port.test.mjs artifacts/native-message-ui/human-submission.test.mjs 2>&1 | tee artifacts/native-message-ui/human-retry.log
-          grep -Fx '# tests 40' artifacts/native-message-ui/human-retry.log
-          grep -Fx '# pass 40' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# tests 47' artifacts/native-message-ui/human-retry.log
+          grep -Fx '# pass 47' artifacts/native-message-ui/human-retry.log
           grep -Fx '# fail 0' artifacts/native-message-ui/human-retry.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/human-retry.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/human-retry.log
@@ -1005,21 +1007,21 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/author-recovery.json', 'utf8'));
-          fs.writeFileSync('../artifacts/native-message-ui/author-recovery-counts.json', JSON.stringify({ required: 22, actual: report.stats, errors: report.errors }, null, 2) + '\n');
-          assert.equal(report.stats.expected, 22, 'all twenty-two author and recovery cases must actually pass');
+          fs.writeFileSync('../artifacts/native-message-ui/author-recovery-counts.json', JSON.stringify({ required: 23, actual: report.stats, errors: report.errors }, null, 2) + '\n');
+          assert.equal(report.stats.expected, 23, 'all twenty-three author and recovery cases must actually pass');
           for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
           assert.deepEqual(report.errors, []);
           const cases = [];
           const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
           for (const suite of report.suites) walk(suite);
-          assert.equal(cases.length, 22);
+          assert.equal(cases.length, 23);
           for (const item of cases) {
             assert.equal(item.expectedStatus, 'passed');
             assert.equal(item.results.length, 1);
             assert.equal(item.results[0].status, 'passed');
             assert.equal(item.results[0].retry, 0);
           }
-          console.log('actual ProductionRenderer author/recovery: 22 passed, 0 failed, 0 skipped, 0 retries');
+          console.log('actual ProductionRenderer author/recovery: 23 passed, 0 failed, 0 skipped, 0 retries');
           NODE
       - name: Preserve exact renderer evidence
         if: always()

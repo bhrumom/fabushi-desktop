@@ -1,13 +1,24 @@
 import type { DesktopBridge } from "../recovered/contracts/desktop-bridge";
 import { commitComposerAttachments } from "../recovered/features/conversation/workspace/desktop";
-import type { ComposerSubmission } from "../recovered/features/conversation/workspace/submission";
+import type { ComposerSubmission, ComposerSubmissionPhase } from "../recovered/features/conversation/workspace/submission";
 import type { ProductionCoordinatorClient } from "./coordinator-client";
 
 export interface HumanComposerSubmissionOptions {
   readonly client: Pick<ProductionCoordinatorClient, "call">;
   readonly bridge: Pick<DesktopBridge, "commitStagedAttachments"> | null;
   readonly isCurrent: () => boolean;
+  readonly queuedOffline?: boolean;
   readonly onCommitted?: (originalPath: string) => void;
+}
+
+/** Preserve an observed pre-admission transport queue; a busy lane is not offline. */
+export function observeHumanOfflineQueueOrigin(
+  current: boolean,
+  phase: ComposerSubmissionPhase,
+  transportDown: boolean,
+  requestPosted: boolean,
+): boolean {
+  return current || (!requestPosted && phase === "queued" && transportDown);
 }
 
 /**
@@ -62,6 +73,7 @@ export async function sendHumanComposerSubmission(
     text: submission.prompt,
     clientNonce: submission.nonce,
     composedAtMs: submission.createdAtMs,
+    queuedOffline: options.queuedOffline === true,
     attachments: state.committedAttachments.map((attachment) => ({ ...attachment })),
     ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId }),
   }, {

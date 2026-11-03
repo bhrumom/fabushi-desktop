@@ -402,15 +402,25 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 Some(Value::Array(values)) => values.clone(),
                 Some(_) => return Err(SessionGatewayError::bad("invalid attachments")),
             };
+            let queued_offline = match args.get("queuedOffline") {
+                None => false,
+                Some(Value::Bool(value)) => *value,
+                Some(_) => return Err(SessionGatewayError::bad("queuedOffline must be a boolean")),
+            };
+            let composed_at_ms = optional_f64(args, "composedAtMs");
+            if queued_offline && !composed_at_ms.is_some_and(f64::is_finite) {
+                return Err(SessionGatewayError::bad("queuedOffline requires a finite composedAtMs"));
+            }
             required_string(args, "clientNonce").and_then(|client_nonce| {
                 session
-                    .append_human_message(
+                    .append_human_message_with_queue_origin(
                         conversation_id,
                         text,
                         client_nonce,
-                        optional_f64(args, "composedAtMs"),
+                        composed_at_ms,
                         reply_to_id,
                         &attachments,
+                        queued_offline,
                     )
                     .map_err(SessionGatewayError::internal)
             })

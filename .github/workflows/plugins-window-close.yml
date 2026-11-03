@@ -11,11 +11,15 @@ on:
       - source/host/src/extensions/transcript/extension.rs
       - source/host/src/extensions/transcript/roster_emit.rs
       - frontend/src/production/ProductionRenderer.tsx
+      - frontend/src/production/coordinator-client.ts
+      - frontend/src/recovered/features/root-resilience/connection-state.ts
       - frontend/src/production/model.ts
       - frontend/src/production/transcript-projection.ts
       - frontend/src/production/human-message-retry.ts
       - frontend/src/production/human-message-submission.ts
       - frontend/src/recovered/features/conversation/workspace/draft-state.ts
+      - frontend/src/recovered/features/conversation/workspace/model.ts
+      - frontend/src/recovered/features/conversation/workspace/transcript.tsx
       - frontend/src/recovered/features/conversation/workspace/submission.ts
       - source/shared/client-persistence-store.ts
       - frontend/src/recovered/features/conversation/workspace/reply-thread-controller.ts

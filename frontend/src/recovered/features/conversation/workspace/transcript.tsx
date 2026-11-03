@@ -8,7 +8,7 @@ import { TranscriptAttachmentGallery } from "./media-viewer";
 import { MermaidDiagram } from "./mermaid";
 import { createPromptEditorExtensions } from "./rich-text-editor";
 import type { AttachmentBytesResult, AttachmentMedia } from "../../../contracts/desktop-bridge";
-import type { ConversationTranscriptEntry, TranscriptComputerHandoff, TranscriptMessage, TranscriptThinking, TranscriptToolCall } from "./model";
+import { shouldShowSentWhileOfflineNotice, type ConversationTranscriptEntry, type TranscriptComputerHandoff, type TranscriptMessage, type TranscriptThinking, type TranscriptToolCall } from "./model";
 import type { TranscriptCardEntry } from "../cards/transcript-card/protocol";
 import { TranscriptNoticeCard } from "../cards/notice/view";
 import { TranscriptCardRootEntry } from "../cards/transcript-card/root";
@@ -802,8 +802,8 @@ export function ConversationTranscript({ entries, hasOlder = false, isLoadingOld
                 {messageLink != null && messageUrlCards != null ? <LinkCardView isGroupStart={messageAdjacency.isGroupStart} provider={messageUrlCards} url={messageLink} /> : entry.isStreaming && entry.role === "assistant" && !entry.text ? <StreamingMessage /> : entry.role === "assistant" ? <AssistantMessageContent channel={entry.channel} images={entry.images} isSourceTrusted={entry.isSourceTrusted} isStreaming={entry.isStreaming} text={entry.text} /> : <UserMessageContent richText={entry.richText} text={entry.text} />}
                 {renderMessageReactionPills?.(reactionPillProps)}
                 {entry.attachments?.length ? <TranscriptAttachmentGallery adjacency={messageAdjacency} attachments={entry.attachments} downloadAttachment={downloadAttachment} readAttachmentBytes={readAttachmentBytes} resolveMedia={resolveAttachmentMedia} role={entry.role} /> : null}
-                {entry.delivery === "queued" && entry.composedAtMs == null ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
-                {entry.role === "user" && !failed && entry.composedAtMs != null ? <SentWhileOfflineNotice composedAtMs={entry.composedAtMs} /> : null}
+                {entry.delivery === "queued" && (entry.authorKind === "human" || entry.composedAtMs == null) ? <QueuedSendNotice entry={entry} isTransportDown={isTransportDown} onCancel={onCancelQueuedSend} /> : null}
+                {shouldShowSentWhileOfflineNotice(entry) ? <SentWhileOfflineNotice composedAtMs={entry.composedAtMs} /> : null}
                 {failed ? <FailedSendActions entry={entry} onDelete={onDeleteFailedSend} onResend={onResendFailedSend} /> : null}
               </div>
             </MessageActionAnchor>

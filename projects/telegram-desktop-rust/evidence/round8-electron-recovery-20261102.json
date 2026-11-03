@@ -2,12 +2,12 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-03 00:23:41 UTC",
+  "recorded_at": "2026-11-03 00:57:20 UTC",
   "upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
   "repository": "bhrumom/fabushi-desktop",
   "intended_checkpoint": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
   "temporary_review_ref": "historical only; containing change targets original checkpoint",
-  "parent": "10b9e42435f8d6e834088321fdeea78b9b6c0154",
+  "parent": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
   "scope": "Actual Human IPC / SQLite and process reopen through current existing owner",
   "spec": "docs/specs/fbcp-native-message-reconciliation.md#nmr-electron-01--actual-human-ipc-and-process-restart-qualification",
   "production_code_change": "Same batch adds durable original-draft binding in the existing account owner and common canonical observer; no additional message owner.",
@@ -373,7 +373,7 @@
   "acceptance": {
     "accepted": false,
     "independent_acceptance": false,
-    "current_containing_head": "pending; exact808 failure retained"
+    "current_containing_head": "New runtime recovery candidate requires its own frozen-H actual Electron/Host execution. B6 failed0/2 Human remains failed; H98 Mac started but no terminal result at preparation."
   },
   "limitations": [
     "This is static review of authored tests, not evidence of any executed test, compiler success or product acceptance.",
@@ -1030,7 +1030,662 @@
     },
     "method": "Verify exact artifact metadata and downloaded archive SHA256, read existing JSON attachments/selected redacted UI context/trace method timing without executing any archive content; no raw CI log, environment, headers, token or source storage payload publication.",
     "product_execution": false,
-    "status": "Authored; containing-H execution required.",
-    "output_boundary": "Page-console messages are never copied; only event kind/level/lifetime/time and fixed diagnostic marker booleans are output. Required Human attachments must resolve uniquely within the four known archive roots; incomplete evidence fails explicitly."
+    "status": "success; read-only inspection only",
+    "output_boundary": "Page-console messages are never copied; only event kind/level/lifetime/time and fixed diagnostic marker booleans are output. Required Human attachments must resolve uniquely within the four known archive roots; incomplete evidence fails explicitly.",
+    "terminal": {
+      "schema": "round8-electron-artifact-observation-v1",
+      "source_head": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+      "source_run": 41548150741,
+      "artifact_id": 13192011555,
+      "archive_sha256": "078e876c152384a3ce7cfae64f516b589a3cd4da59384878cd383be0cc59f4fb",
+      "archive_bytes": 14283099,
+      "archive_digest_verified": true,
+      "inspection_head": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+      "inspection_run": 41552586086,
+      "inspection_job": 125643585002,
+      "inspection_conclusion": "success",
+      "raw_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125643585002/logs",
+      "product_execution": false,
+      "images_visually_reviewed": false,
+      "excluded_interpretations": [
+        "Whole error-context label counts and selected lines include source expectations outside the Page snapshot; they are not used as proof of rendered labels.",
+        "No raw console, environment, tokens, headers, storage contents, screenshots or source attachments are recopied here."
+      ],
+      "plugins": {
+        "actual": 2,
+        "passed": 2,
+        "failed": 0,
+        "retries": 0,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "human": [
+        {
+          "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+          "status": "failed",
+          "retry": 0,
+          "total_http_requests": 105,
+          "human_http_requests": 13,
+          "human_authorization_all_matched": true,
+          "human_device_all_matched": true,
+          "unexpected_http_count": 89,
+          "unexpected_http_paths": [
+            "/aiserver.v1.AnalyticsService/BootstrapStatsig",
+            "/aiserver.v1.DashboardService/ListMarketplacePlugins",
+            "/fabushi-agent-network-e2e-login",
+            "/favicon.ico",
+            "/aiserver.v1.DashboardService/GetUserPrivacyMode",
+            "/aiserver.v1.DashboardService/GetAvailableMcpServers",
+            "/aiserver.v1.DashboardService/GetEffectiveUserPlugins",
+            "/aiserver.v1.GrokBotService/EnsureSandBox",
+            "/sand-box/local-exec-daemon-credential",
+            "/aiserver.v1.AnalyticsService/SubmitLogs",
+            "/aiserver.v1.GrokBotService/WatchSandBoxMigration"
+          ],
+          "held_response_count": 0,
+          "canonical_service_row_count": 2,
+          "page_error_count": 0,
+          "ipc_account_reads": [
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "offline-first",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            },
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "offline-reopened",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            },
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "offline-reopened",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            }
+          ],
+          "dom_attachment_counts": {
+            "canonical-before-offline-close-dom": {
+              "row_count": 1,
+              "composer_length": 0,
+              "scheme": "file"
+            },
+            "offline-reopened-local-history-dom": {
+              "row_count": 1,
+              "composer_length": 0,
+              "scheme": "file"
+            },
+            "service-restored-new-send-dom": {
+              "row_count": 2,
+              "composer_length": 0,
+              "scheme": "file"
+            }
+          },
+          "shutdown_observations": [
+            {
+              "lifetime": "offline-first",
+              "actualMode": "ElectronApplication.close",
+              "exitCode": 0,
+              "remaining_count": 0
+            },
+            {
+              "lifetime": "offline-reopened",
+              "actualMode": "ElectronApplication.close",
+              "exitCode": 0,
+              "remaining_count": 0
+            }
+          ]
+        },
+        {
+          "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+          "status": "failed",
+          "retry": 0,
+          "total_http_requests": 55,
+          "human_http_requests": 0,
+          "human_authorization_all_matched": null,
+          "human_device_all_matched": null,
+          "unexpected_http_count": 52,
+          "unexpected_http_paths": [
+            "/aiserver.v1.AnalyticsService/BootstrapStatsig",
+            "/aiserver.v1.DashboardService/ListMarketplacePlugins",
+            "/aiserver.v1.DashboardService/GetUserPrivacyMode",
+            "/fabushi-agent-network-e2e-login",
+            "/aiserver.v1.DashboardService/GetAvailableMcpServers",
+            "/favicon.ico",
+            "/aiserver.v1.DashboardService/GetEffectiveUserPlugins",
+            "/aiserver.v1.GrokBotService/EnsureSandBox",
+            "/sand-box/local-exec-daemon-credential",
+            "/aiserver.v1.AnalyticsService/SubmitLogs",
+            "/aiserver.v1.GrokBotService/WatchSandBoxMigration"
+          ],
+          "held_response_count": 0,
+          "canonical_service_row_count": 0,
+          "page_error_count": 0,
+          "ipc_account_reads": [
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "held-first",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            }
+          ],
+          "dom_attachment_counts": {
+            "held-first-failure-dom": {
+              "row_count": 0,
+              "composer_length": 0,
+              "scheme": "file"
+            }
+          },
+          "shutdown_observations": []
+        }
+      ],
+      "limits": [
+        "Human test1 reached durable offline reopen/service restoration but failed its unknown auxiliary-request oracle; it is still a failed case.",
+        "Human test2 observed logged-in IPC with zero Human HTTP and failed waiting for the peer before sending. The source-proven missing runtime recovery path and fixture AppHost isolation both require new-H execution; neither is asserted as the sole failure cause.",
+        "This inspection executes no product and supplies no live Worker, signed package, full migration or independent ACCEPT."
+      ]
+    }
+  },
+  "observed_exact_1bc_feed_reconciliation": {
+    "head": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+    "run": 41552585826,
+    "job": 125643584554,
+    "actual": 120,
+    "passed": 120,
+    "failed": 0,
+    "ignored": 0,
+    "receipt_blob": "a0b23affa81171ebe7b876cc4acf4c23fad5cfcd",
+    "does_not_qualify_actual_electron": true
+  },
+  "runtime_transport_recovery_candidate": {
+    "requirement": "NMR-TRANSPORT-RECOVERY-01a..e / NMR-AC-TRANSPORT-RECOVERY-01",
+    "frozen_spec": {
+      "head": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "blob": "04a92d2b22acbec7b8f8fad9872515e7a07568d7"
+    },
+    "readonly_source_audit": {
+      "initial": "4cb35f9cac0dc0465c3ca7226fb9ff29bd00aeeb",
+      "fanout_and_current_state_design": "2331c4357576b3cb7273d6ef94d25900e70e6406"
+    },
+    "production_owner": "Existing createCoordinatorClient -> createCoordinatorConnectionController -> ProductionRenderer refreshRoster -> existing Session Human sync and Transcript; no RPC/new authority/automatic user-mutation replay.",
+    "renderer_blob": "fb528a5ffba155e770f3b9a844b66a6781dc0ef0",
+    "renderer_change": "Initial ready is an unobserved-state fallback; all transport/account-reset entrances update the synchronous transport ref, and render no longer writes that authority. Current-state client replay handles effect restart while down.",
+    "authored_counts": {
+      "retained_port": 4,
+      "additional_port": 6,
+      "required_port": 10,
+      "retry_group": 46,
+      "retained_author": 22,
+      "additional_author": 1,
+      "required_author": 23,
+      "required_ui_total": 201
+    },
+    "authored_case_names": [
+      "runtime Host replacement waits for the current Gateway transport before notifying recovery",
+      "runtime same-generation reconnects once and rejects stale or terminal-generation transitions",
+      "runtime informational and malformed frames cannot advance the generation or sequence fence",
+      "Coordinator port replacement resets runtime epochs while lifecycle events preserve pending RPC settlement",
+      "an in-flight roster retry is replaced after same-generation transport recovery and ignores its late result",
+      "transport retry handoff is account-scoped, single-flight and inert after disposal"
+    ],
+    "authored_browser_case": "NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the active Human draft after a held Retry",
+    "ui_blobs": {
+      "spec": "8d92d40fe90bb44591d6479d968eaa2c6d2b4394",
+      "fixture": "ce348b591609e5f40416c635ef49a31f4af4254f",
+      "diff": "acd11f601fa11baa2d94d922fc80f50c6925ded9"
+    },
+    "mac_fixture": {
+      "base": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+      "blob": "98d04e5413b9d1ac6f85efcbb174343f39c6e86a",
+      "diff": "17120aa69a2a001813177f585bad341509ec322c",
+      "scope": "Nine exact auxiliary POST404 contracts and explicit login landing/favicon; Human-only FABUSHI_APP_DATA isolation. Strict unknown method/path/query and original test bodies/counts/retry0 remain."
+    },
+    "ledger": {
+      "run": 41553869494,
+      "job": 125647839396,
+      "harness_sha": "f5499f671c5be9aa824416c0832f855d3647d786",
+      "input_blob": "25cf6dbdea41d48dc57df1f252d256772750362a",
+      "output_blob": "500edb6bb536e385e7e91b61177d43cd9ade2e12",
+      "output_sha256": "791a11b586036a72f27f1ff55cffada57df0144903b55a364b9b0765892d4a11",
+      "artifact": 13193588437,
+      "artifact_digest": "e1657cd4977e3fbae511b1e923e34a686eb1a62e493ee4e58c115481bfcd2c67",
+      "chars": 3709136,
+      "changedRows": [
+        "FBCP-NMR-001"
+      ],
+      "otherRootFieldsEqual": true,
+      "productValidation": false,
+      "refUpdated": false
+    },
+    "execution": "pending containing-H Actions",
+    "acceptance": false,
+    "required_counts": {
+      "reconciliation": {
+        "human": 77,
+        "total": 121,
+        "previous_exact_head_passed": 120
+      },
+      "ui": {
+        "projection": 43,
+        "human_retry": 47,
+        "browser_projection": 13,
+        "author_recovery": 23,
+        "total": 203
+      },
+      "actual_electron": {
+        "plugins": 2,
+        "human": 2
+      },
+      "source": {
+        "node": 161,
+        "python": 37,
+        "schema_expected_errors": 0,
+        "candidate": "must remain unaccepted-candidate-consistent"
+      }
+    },
+    "candidate_blobs": {
+      "frontend/src/production/coordinator-client.ts": "f78211396f2821989d90914d5b22f4d7c28a9f2b",
+      "frontend/src/recovered/features/root-resilience/connection-state.ts": "7c2cf9c0233aa1598128e2ad24927b1adfe3ede0",
+      "frontend/src/production/human-message-retry-port.contract.test.ts": "068fa2ceee047b36f0c5ebe8c34ea5501daab0ac",
+      "frontend/src/production/ProductionRenderer.tsx": "8e3723e7208bbad9fc80c6b6bb4ad849dc54d722",
+      "desktop/e2e/native-message-author-recovery.spec.ts": "8d92d40fe90bb44591d6479d968eaa2c6d2b4394",
+      "desktop/e2e/fixtures/native-message-author-recovery.tsx": "ce348b591609e5f40416c635ef49a31f4af4254f",
+      "source/host/src/extensions/session/production.rs": "74a43082ed4be5370cf38af2a0477957ece2c8a1",
+      "source/host/src/extensions/session/gateway.rs": "5ad7493f3e198d4cbcf2739b9ce58710834386ae",
+      "source/host/tests/session_gateway_contract.rs": "d613e9f5579a6f9156e0acd71fa5e993310692ef",
+      "frontend/src/production/human-message-submission.ts": "f6a52a166a83a9d3d19eb471ebeb62321692d981",
+      "frontend/src/production/human-message-submission.contract.test.ts": "1d014aaf8a6a42f11084d54326b24415da0032f7",
+      "frontend/src/production/model.ts": "7bc5b30f01f5c0cc48907c7960e6ad3b9e83055e",
+      "frontend/src/recovered/features/conversation/workspace/model.ts": "c546fd40fe60e0fb0aa1eb402bbd24922a298c3b",
+      "frontend/src/recovered/features/conversation/workspace/transcript.tsx": "d3af9728a0ae50200be2809316d18ba27f66e628",
+      "frontend/src/production/transcript-projection.contract.test.ts": "0a1934890722ee077934ec6428ceef4a2b531e07",
+      "desktop/e2e/fixtures/native-message-projection.tsx": "c3ecddb060cd6ade6c04d06ea3698770afcc5e9a",
+      "desktop/e2e/native-message-projection.spec.ts": "90d24b4adee4f31655b65da488173f2754285fbf",
+      "desktop/e2e/agent-network-responsive.spec.ts": "2f45027c5ad68e6c70b2211c5b85e59dfd12706a",
+      "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md": "9a147d7f4cc2f7e9b06ce5996e5ef2988e374190",
+      ".github/workflows/native-service-contracts.yml": "c7bedfc5462a1f05262cc724cf8f377a7f5b6337",
+      ".github/workflows/plugins-window-close.yml": "e4523c7d786bb282e9eec1aeee375efa5fd463ea",
+      "projects/telegram-desktop-rust/parity-ledger.json": "d5f16f98d6ae28342c9e06a3b17069121769aa79"
+    },
+    "accepted": false
+  },
+  "observed_exact_98_terminal": {
+    "schemaVersion": 1,
+    "kind": "round8-exact-head-electron-terminal-and-message-metadata-diagnosis",
+    "repository": "bhrumom/fabushi-desktop",
+    "headSha": "98be438bad69f9982c503e5a3442f721307c85ce",
+    "observedAt": "2026-11-03T00:44:00.203Z",
+    "run": {
+      "id": 41550895126,
+      "jobId": 125637914634,
+      "jobName": "plugins-close-pointer",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41550895126",
+      "updatedAt": "2026-11-03T00:40:37Z"
+    },
+    "source": {
+      "spec": "desktop/e2e/agent-network-responsive.spec.ts",
+      "specBlob": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+      "workflowBlob": "e8c1955c3cf2446da9262f09092c0fe16db3de10",
+      "fullApiSourceReadback": true
+    },
+    "build": {
+      "electron": "success",
+      "host": "success",
+      "renderer": "success",
+      "desktopRuntime": "success",
+      "exactHumanBinaryBinding": "success",
+      "lockedFfmpegInstallation": "success"
+    },
+    "counts": {
+      "plugins": {
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "retries": 0,
+        "jsonAudit": "success"
+      },
+      "human": {
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "skipped": 0,
+        "retries": 0,
+        "source": "complete line reporter; two unique cases; workers=1 and retries=0; final 2 failed"
+      }
+    },
+    "plugins": [
+      "shipping Plugins close 1024x684 uses a real pointer and preserves the window-control band",
+      "shipping Plugins close 1280x900 uses a real pointer and preserves the window-control band"
+    ],
+    "human": [
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+        "status": "failed",
+        "lifetimesLaunched": [
+          "offline-first"
+        ],
+        "reached": [
+          "actual Electron, video readiness, preload and trace startup",
+          "real browser login and authenticated Human conversation",
+          "real UI Send and controlled service canonical message:1",
+          "canonical row uniqueness check before body assertion"
+        ],
+        "failure": {
+          "helper": "assertHumanCanonicalUi",
+          "sourceLine": 912,
+          "caseLine": 1260,
+          "error": "expect(locator).toHaveText(expected) failed",
+          "scope": ".sand-message group",
+          "difference": "Received text is the complete expected message plus Sent while offline timestamp metadata",
+          "timeoutMs": 10000
+        },
+        "notReached": [
+          "first canonical delivery/time/placeholder assertions after the body check",
+          "canonical SQLite assertion",
+          "planned offline shutdown and same-directory reopen",
+          "remote503 local-history recovery",
+          "service recovery and second Send",
+          "final unknown-HTTP and page-error assertions"
+        ]
+      },
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+        "status": "failed",
+        "lifetimesLaunched": [
+          "held-first",
+          "held-replay-reopened",
+          "new-draft-reopened"
+        ],
+        "reached": [
+          "real first UI Send, saved draft identity and local Human author/nonce binding before held receipt",
+          "remote commit while original response is held",
+          "first real process close and zero-owned-survivors assertion",
+          "same-directory second process with restored saved account and durable same-nonce Host replay",
+          "exact canonical original A UI and single SQLite row",
+          "draft, draftId, recovery, recoveryId and submission binding empty before any new editor action",
+          "new B through originalText -> differentText -> originalText with new persisted draftId",
+          "second real process close and zero-owned-survivors assertion",
+          "third real process restores B with equal full persisted state and original canonical A",
+          "release on original closed socket does not erase B, change its identity or send it",
+          "B real UI Send has a nonce different from A and canonical message:2 row exists"
+        ],
+        "failure": {
+          "helper": "assertHumanCanonicalUi",
+          "sourceLine": 912,
+          "caseLine": 1473,
+          "error": "expect(locator).toHaveText(expected) failed",
+          "scope": ".sand-message group for fresh canonical message:2",
+          "difference": "Received text is the complete expected B message plus Sent while offline timestamp metadata",
+          "timeoutMs": 10000
+        },
+        "notReached": [
+          "fresh B canonical delivery/time/placeholder assertions after the body check",
+          "final two-row SQLite uniqueness and two-service-message assertions",
+          "final empty Composer assertion",
+          "planned third-lifetime graceful close oracle",
+          "final unknown-HTTP and page-error assertions"
+        ]
+      }
+    ],
+    "capture": {
+      "actualHumanLifetimes": 4,
+      "traceStartsSucceeded": 4,
+      "traceStopsSucceeded": 4,
+      "humanVideoAttachmentsObserved": 4,
+      "appCloseCallsSucceeded": 4,
+      "strictPlannedCloseAndNoSurvivorsAssertionsReached": 2,
+      "failureCleanupLifetimes": [
+        "offline-first",
+        "new-draft-reopened"
+      ],
+      "startupBoundary": "All four progressed beyond real video path, DCL and preload readiness to tracing and Human UI actions",
+      "execDaemonContaminationMessagesObserved": 0,
+      "mediaVisuallyReviewed": false,
+      "archiveEntriesInspected": false
+    },
+    "diagnosis": {
+      "fixtureOracle": {
+        "classification": "test oracle scope defect",
+        "evidence": {
+          "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+          "blob": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+          "bodyLines": [
+            543,
+            546
+          ],
+          "groupLines": [
+            791,
+            808
+          ]
+        },
+        "finding": "UserMessageContent owns one .sand-message-prose body. The enclosing .sand-message intentionally includes metadata, attachments, reactions and failure state; exact message equality must target the body."
+      },
+      "productionMetadata": {
+        "classification": "production semantic defect, independently unresolved by selector precision",
+        "finding": "Every Human send passes creation time as composedAtMs, and the live pending feed projects this as Sent while offline without evidence that creation occurred offline. The complete canonical body is not corrupt.",
+        "anchors": [
+          {
+            "path": "frontend/src/production/human-message-submission.ts",
+            "blob": "1948f46323e756c11ecc98d9ce6df603acedafa2",
+            "lines": [
+              60,
+              66
+            ],
+            "finding": "sendHumanMessage unconditionally includes composedAtMs:submission.createdAtMs"
+          },
+          {
+            "path": "source/host/src/extensions/session/production.rs",
+            "blob": "ade01bc58ca2684b6b6b4c7ce1c6ad1e8741e600",
+            "lines": [
+              3975,
+              3986
+            ],
+            "finding": "pending Human entry persists composedAtMs independently of offline origin"
+          },
+          {
+            "path": "frontend/src/production/model.ts",
+            "blob": "22517acfe87f173c282f3b823913cda9b9e654fe",
+            "lines": [
+              430,
+              445
+            ],
+            "finding": "projection maps a finite composedAtMs/queuedAtMs directly"
+          },
+          {
+            "path": "frontend/src/production/transcript-projection.ts",
+            "blob": "32d328a58c960a7f5e29fddc1d4a8ec455d7a9e3",
+            "lines": [
+              54,
+              75
+            ],
+            "finding": "merge preserves existing fields absent from the incoming canonical projection"
+          },
+          {
+            "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+            "blob": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+            "lines": [
+              805,
+              807
+            ],
+            "finding": "non-failed user row with composedAtMs shows SentWhileOfflineNotice"
+          }
+        ],
+        "boundary": "All Sends in these two cases are composed while connected. Holding an HTTP receipt or reopening a process does not prove offline composition."
+      },
+      "authorizedFixtureCandidate": {
+        "base": "98d04e5413b9d1ac6f85efcbb174343f39c6e86a",
+        "blob": "2f45027c5ad68e6c70b2211c5b85e59dfd12706a",
+        "diffBlob": "cf74af3f802418696f85668a6957c34650c64bc5",
+        "fullApiReadback": true,
+        "changes": "One exact .sand-message-prose body plus retained canonical/delivery/timestamp/placeholder assertions and explicit zero offline-origin notice. No case, count, timing, retry or process behavior changes.",
+        "executed": false,
+        "productionFixOwnedByIntegrator": true
+      }
+    },
+    "artifact": {
+      "id": 13193688966,
+      "name": "plugins-close-pointer-98be438bad69f9982c503e5a3442f721307c85ce",
+      "sizeBytes": 29212658,
+      "digest": "sha256:a3d016a62b74574705f30f84c382d921418c5c94309963e267bd4f3804b17b37",
+      "headSha": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "expired": false,
+      "apiMetadataVerified": true,
+      "archiveDigestIndependentlyCalculated": false
+    },
+    "fullLog": {
+      "decodedCharactersRead": 366824,
+      "splitLinesRead": 4540,
+      "originalLocation": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125637914634/logs",
+      "rawCopyUploaded": false
+    },
+    "limits": [
+      "This run contains the durable Human feed change, but neither Human case passed.",
+      "b6 read-only artifact inspection is distinct evidence and cannot substitute for H98 ZIP inspection.",
+      "No online deployment, afterId=0 active Worker, supported package, image review, full migration or independent ACCEPT claim.",
+      "The earlier b6 missing-peer/reconnect gap is not disproved by this attempt reaching later actions; its independent production contract remains separately required."
+    ]
+  },
+  "offline_origin_candidate": {
+    "requirement": "NMR-OFFLINE-ORIGIN-01a..e / NMR-AC-OFFLINE-ORIGIN-01",
+    "frozen_spec": {
+      "head": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "blob": "04a92d2b22acbec7b8f8fad9872515e7a07568d7"
+    },
+    "diagnosed_actual_mac": {
+      "head": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "run": 41550895126,
+      "job": 125637914634,
+      "receipt_blob": "1b9bd861f08915691b70abe851b31af83b468fef",
+      "plugins_passed": 2,
+      "human_executed": 2,
+      "human_passed": 0,
+      "human_failed": 2,
+      "retries": 0,
+      "full_job_log_read": true,
+      "full_job_log_characters": 366824
+    },
+    "production_chain": "Existing Human TranscriptSubmissionScope guarded onPhase observes real transport-down queuing before any Host frame; sendHumanComposerSubmission sends explicit boolean; existing Session gateway validates; existing SQLite owner fixes first intent metadata; authorized nonce settlement retains origin and original composition time; actual ProductionRenderer projection and Transcript JSX consume canonical origin.",
+    "semantics": [
+      "An online immediate or busy-lane send carries false. Timestamp alone never establishes Human offline origin. Agent display semantics and normal admission/send journal remain unchanged.",
+      "Present nonboolean origin rejects at the gateway; true needs a finite composedAtMs. The old six-argument Session public wrapper remains compatible.",
+      "Once a nonce has a retained intent, repeated requests cannot promote or demote its origin or replace original time. Possible-admission retry still sends only conversationId/clientNonce.",
+      "Only same-local-author/same-nonce validated provenance is copied into canonical settlement. Server timestamp, late receipt, known-row refresh and actual close/reopen retain their existing authority.",
+      "Malformed retained origin preserves seq/id/full SQLite bytes, blocks unsafe POST, but adds no global history preflight and permits unrelated bounded history progress.",
+      "Human sent-while-offline JSX requires explicit true, canonical sent identity and finite time. Pending/queued rows do not claim sent; authoritative false clears stale cache inference.",
+      "Mac exact-body assertions now target the unique .sand-message-prose while separately requiring zero offline notices for online Sends. Original canonical ID/time/delivery/placeholder/count/retry-zero oracles remain."
+    ],
+    "candidate_blobs": {
+      "frontend/src/production/ProductionRenderer.tsx": "8e3723e7208bbad9fc80c6b6bb4ad849dc54d722",
+      "source/host/src/extensions/session/production.rs": "74a43082ed4be5370cf38af2a0477957ece2c8a1",
+      "source/host/src/extensions/session/gateway.rs": "5ad7493f3e198d4cbcf2739b9ce58710834386ae",
+      "source/host/tests/session_gateway_contract.rs": "d613e9f5579a6f9156e0acd71fa5e993310692ef",
+      "frontend/src/production/human-message-submission.ts": "f6a52a166a83a9d3d19eb471ebeb62321692d981",
+      "frontend/src/production/human-message-submission.contract.test.ts": "1d014aaf8a6a42f11084d54326b24415da0032f7",
+      "frontend/src/production/model.ts": "7bc5b30f01f5c0cc48907c7960e6ad3b9e83055e",
+      "frontend/src/recovered/features/conversation/workspace/model.ts": "c546fd40fe60e0fb0aa1eb402bbd24922a298c3b",
+      "frontend/src/recovered/features/conversation/workspace/transcript.tsx": "d3af9728a0ae50200be2809316d18ba27f66e628",
+      "frontend/src/production/transcript-projection.contract.test.ts": "0a1934890722ee077934ec6428ceef4a2b531e07",
+      "desktop/e2e/fixtures/native-message-projection.tsx": "c3ecddb060cd6ade6c04d06ea3698770afcc5e9a",
+      "desktop/e2e/native-message-projection.spec.ts": "90d24b4adee4f31655b65da488173f2754285fbf",
+      "desktop/e2e/agent-network-responsive.spec.ts": "2f45027c5ad68e6c70b2211c5b85e59dfd12706a"
+    },
+    "static_evidence": {
+      "design": "3747cae275672260a2ecd96040707d0353824985",
+      "host_boundary": "c0aae72b78b06a6f149e31c332e2e9c97c888fa3",
+      "helper_implementation": "f1f27bf11d9fa472e71fea5f8e95e98ecf1861b0",
+      "host_diff": "17236f7e2065877feb13c40caa5f878565f734e3",
+      "independent_host_gateway_renderer_review": "f765531feb9d4c5ef3974e1b88066bdf51633ba7",
+      "projection_implementation": "53630a11b45980dce91115d04dbfc3ec05b4ed9e",
+      "projection_diff": "ab464e09343ee1c9e67c0bfeced1470d09b66b56",
+      "mac_body_oracle_diff": "cf74af3f802418696f85668a6957c34650c64bc5",
+      "api_full_readback": true,
+      "execution": false,
+      "host_implementation_and_helper_review": "4761c0b05e81548fc61433884719e961080160ca",
+      "independent_projection_review": "c42866bf33e7be5e53b0b3fe6e867f09b07ce9fb",
+      "outcome": "No static blocker found in reviewed diffs; execution and acceptance pending."
+    },
+    "required_actual_counts": {
+      "reconciliation": {
+        "human": 77,
+        "total": 121,
+        "previous_exact_head_passed": 120
+      },
+      "ui": {
+        "projection": 43,
+        "human_retry": 47,
+        "browser_projection": 13,
+        "author_recovery": 23,
+        "total": 203
+      },
+      "actual_electron": {
+        "plugins": 2,
+        "human": 2
+      },
+      "source": {
+        "node": 161,
+        "python": 37,
+        "schema_expected_errors": 0,
+        "candidate": "must remain unaccepted-candidate-consistent"
+      }
+    },
+    "harness_boundaries": {
+      "browser_13": "Existing unlisted RPC fallback-null remains; this fixture has explicit new Human boolean/time boundary checks. It is not a strict-unknown-RPC or native SQLite/process-restart proof.",
+      "author_23": "Strict unknown RPC retained; the new runtime recovery case has no reload/focus/chat-switch shortcut.",
+      "actual_mac": "Strict unknown method/path/query retained. Nine named auxiliary POST404 contracts plus explicit login/favicon and Human-only AppHost root isolation are fixture repairs, not a service success substitution.",
+      "legacy_data": "Reviewed native Human pending/canonical/fallback constructors all stamp authorKind:human. Unknown historical records lacking authorKind are not certified; the general SQLite reader does not backfill that identity. No speculative repair or Agent behavior change is included."
+    },
+    "execution": "authored and static-reviewed only at preparation; containing-commit GitHub Actions must actually execute",
+    "accepted": false
+  },
+  "current_canonical_ledger_integration": {
+    "harness_sha": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+    "input_blob": "25cf6dbdea41d48dc57df1f252d256772750362a",
+    "ops_blob": "e35d73662071d5488b840ce3a0639402cc53ea78",
+    "reviewed_base": "f5499f671c5be9aa824416c0832f855d3647d786",
+    "output_blob": "d5f16f98d6ae28342c9e06a3b17069121769aa79",
+    "output_sha256": "9792c68f3bebd118c65e2b4fbdf9aa3428c11985de14d21d90a3b6ff9018b3d5",
+    "changed_rows": [
+      "FBCP-NMR-001"
+    ],
+    "authored_ui_cases": 23,
+    "normalized_target_paths": 0,
+    "normalized_target_symbols": 0,
+    "product_validation": false,
+    "source_acceptance": false,
+    "commit_created": false,
+    "ref_updated": false,
+    "integration_condition": "Root API reads the full input/output and matches the current canonical input before force=false expected-head CAS.",
+    "run": 41555599067,
+    "job": 125653605784,
+    "artifact_log": [
+      "SHA256 digest of uploaded artifact zip is 981b7c244a0954114fa782181ee96248ed57415905dbb1b2c7c5bb0f70624c1e",
+      "Artifact round8-transport-ledger-object-36ae38b3791c7c07bf6e4e4907a96265881d0c2f.zip successfully finalized. Artifact ID 13195010713",
+      "Artifact round8-transport-ledger-object-36ae38b3791c7c07bf6e4e4907a96265881d0c2f has been successfully uploaded! Final size is 573459 bytes. Artifact ID is 13195010713"
+    ],
+    "full_api_readback": true,
+    "chars": 3712580,
+    "changed_rows_confirmed": [
+      "FBCP-NMR-001"
+    ],
+    "non_row_fields_unchanged": true,
+    "historical_scalars_unchanged": true,
+    "target_paths": 63,
+    "target_symbols": 71,
+    "other_183_rows_unchanged": true,
+    "source_reviews_16_unchanged": true,
+    "installed_in_containing_tree": true,
+    "temporary_helpers_removed_in_containing_tree": true
   }
 }

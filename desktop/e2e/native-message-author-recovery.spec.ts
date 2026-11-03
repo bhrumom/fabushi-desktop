@@ -19,7 +19,7 @@ const browserDiagnostics = new WeakMap<Page, {
 let server: ViteDevServer | undefined;
 let origin = '';
 
-// Twenty-two actual Chromium cases. No skip, retry or mock renderer path.
+// Twenty-three actual Chromium cases. No skip, retry or mock renderer path.
 test.describe.configure({ retries: 0, timeout: 90_000 });
 test.use({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
 
@@ -1207,4 +1207,181 @@ test('NMR-UI-01 background transcript recovery preserves Plugins until explicit 
   expect(await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.requests.filter((request) =>
     request.method === 'sendPrompt' || request.method === 'sendHumanMessage' || request.method === 'retryHumanMessage'))).toEqual([]);
   await milestone(page, info, 'explicit-navigation-closes-Plugins-without-duplicating-pending-tail');
+});
+
+test('NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the active Human draft after a held Retry', async ({ page }, info) => {
+  await openAlice(page, info);
+  await loadOlder(page);
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.releaseRefreshes());
+  await drainUi(page);
+
+  const counts = () => page.evaluate(() => {
+    const requests = window.nativeMessageAuthorRecoveryFixture.requests;
+    return {
+      roster: requests.filter((request) => request.method === 'listAgents').length,
+      humanSync: requests.filter((request) => request.method === 'syncHumanConversations').length,
+      transcript: requests.filter((request) => request.method === 'getHumanConversationTranscript'
+        && request.args.conversationId === 'human:a').length,
+    };
+  });
+  const heldRosters = () => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.diagnostics().heldAgentRosters);
+  const runtime = (event: Parameters<Window['nativeMessageAuthorRecoveryFixture']['runtimeLifecycle']>[0]) =>
+    page.evaluate((value) => window.nativeMessageAuthorRecoveryFixture.runtimeLifecycle(value), event);
+  const reconnectNotice = page.locator('.sand-agents-reconnect-notice');
+  const initialUrl = page.url();
+  const initialDiagnostics = await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.diagnostics());
+  const currentPorts = initialDiagnostics.endpoints.filter((endpoint) => !endpoint.closed);
+  expect(currentPorts).toHaveLength(1);
+  expect(initialDiagnostics.mountCount).toBe(1);
+  const portId = currentPorts[0].id;
+
+  // Establish the actual native runtime epoch on the already serving port.
+  // A Host process being alive is not yet a connected Gateway event stream.
+  const beforeEpoch = await counts();
+  expect(await runtime({ type: 'host.lifecycle', lifecycle: 'running', generation: 1, sequence: 1 })).toBe(portId);
+  expect(await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 1, sequence: 2 })).toBe(portId);
+  await expect.poll(counts).toEqual({
+    roster: beforeEpoch.roster + 1, humanSync: beforeEpoch.humanSync + 1, transcript: beforeEpoch.transcript + 1,
+  });
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.releaseRefreshes());
+  await expect.poll(() => domIds(page)).toEqual(historyIds);
+  await drainUi(page);
+
+  const text = 'Keep this complete Human draft while the native transport recovers.';
+  await selectReply(page, 'human-server-message:104');
+  await editor(page).fill(text);
+  await expect.poll(async () => (await clientDraft(page))?.draft?.prompt).toBe(text);
+  const draftBefore = await clientDraft(page);
+  expect(draftBefore.draft.replyToId).toBe('human-server-message:104');
+  expect(draftBefore.draft.richText).toEqual(expect.any(String));
+  expect(draftBefore.draftId).toEqual(expect.any(String));
+  const expectedIds = [...historyIds];
+  const expectRetained = async () => {
+    await expect(page.getByRole('button', { name: 'Alice', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect.poll(() => domIds(page)).toEqual(expectedIds);
+    await expect(editor(page)).toHaveText(text);
+    await expect(page.getByRole('button', { name: 'Cancel reply', exact: true })).toBeVisible();
+    expect(await clientDraft(page)).toEqual(draftBefore);
+    expect(page.url()).toBe(initialUrl);
+    const diagnostic = await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.diagnostics());
+    expect(diagnostic.mountCount).toBe(1);
+    expect(diagnostic.endpoints).toHaveLength(1);
+    expect(diagnostic.endpoints[0]).toMatchObject({ id: portId, closed: false });
+  };
+  const finishCurrentRoster = async (index: number, before: Awaited<ReturnType<typeof counts>>, entryId: string, content: string) => {
+    // The response goes through the actual Coordinator client and Root scope
+    // fence. Only that accepted current attempt may start Human convergence.
+    await page.evaluate((position) => window.nativeMessageAuthorRecoveryFixture.releaseAgentRoster(position), index);
+    await expect.poll(counts).toEqual({
+      roster: before.roster + 1, humanSync: before.humanSync + 1, transcript: before.transcript + 1,
+    });
+    await expect.poll(() => page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.pending().refreshes)).toBe(1);
+    await expect(messageRow(page, entryId)).toHaveCount(0);
+    await expectRetained();
+    await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.releaseRefreshes());
+    expectedIds.push(entryId);
+    await expect(messageRow(page, entryId)).toContainText(content);
+    await expectRetained();
+  };
+
+  // Replace the Host without navigating or handing the renderer another port.
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.holdAgentRosterReads());
+  const beforeHost = await counts();
+  await runtime({ type: 'host.lifecycle', lifecycle: 'stopped', generation: 1, sequence: 3 });
+  await expect(reconnectNotice).toBeVisible();
+  await expectRetained();
+  await runtime({ type: 'host.lifecycle', lifecycle: 'running', generation: 2, sequence: 4 });
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.appendServiceOnly(
+    'human:a', 'human-server-message:106', 'History recovered from the replacement Host',
+  ));
+  await drainUi(page);
+  expect(await counts(), 'Host running alone cannot start the recovery read').toEqual(beforeHost);
+  await expect(messageRow(page, 'human-server-message:106')).toHaveCount(0);
+  await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 5 });
+  await expect.poll(async () => (await heldRosters()).length).toBe(1);
+  expect(await counts()).toEqual({ ...beforeHost, roster: beforeHost.roster + 1 });
+  await expectRetained();
+  await finishCurrentRoster(0, beforeHost, 'human-server-message:106', 'History recovered from the replacement Host');
+  await milestone(page, info, 'native-Host-replacement-refreshes-Human-without-navigation');
+
+  // A reconnect of the same Gateway generation needs the same production
+  // refresh path; a process-generation-only notification would miss this row.
+  const beforeSse = await counts();
+  await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-down', generation: 2, sequence: 6 });
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.appendServiceOnly(
+    'human:a', 'human-server-message:107', 'History recovered after the same Host SSE reconnect',
+  ));
+  await expectRetained();
+  await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 7 });
+  await expect.poll(async () => (await heldRosters()).length).toBe(2);
+  expect(await counts()).toEqual({ ...beforeSse, roster: beforeSse.roster + 1 });
+  await finishCurrentRoster(1, beforeSse, 'human-server-message:107', 'History recovered after the same Host SSE reconnect');
+  await milestone(page, info, 'same-generation-SSE-restores-the-active-Human-cache');
+
+  // Make the existing Retry UI available by failing a real roster RPC. Never
+  // inject controller state or call its retry callback from the fixture.
+  const beforeFailure = await counts();
+  await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-down', generation: 2, sequence: 8 });
+  await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 9 });
+  await expect.poll(async () => (await heldRosters()).length).toBe(3);
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.rejectAgentRoster(
+    2, 'The native roster is temporarily unavailable before the user Retry',
+  ));
+  await expect(reconnectNotice.getByRole('button', { name: 'Retry', exact: true })).toBeEnabled();
+  expect(await counts()).toEqual({ ...beforeFailure, roster: beforeFailure.roster + 1 });
+  await expectRetained();
+  await reconnectNotice.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect.poll(async () => (await heldRosters()).length).toBe(4);
+  await expect(reconnectNotice.getByRole('button', { name: 'Retrying…', exact: true })).toBeDisabled();
+  const oldRetry = (await heldRosters())[3];
+  expect(oldRetry.settled).toBe(false);
+  expect(oldRetry.request).toMatchObject({ method: 'listAgents', args: {}, accountId: '1', portId });
+
+  const beforeHandoff = await counts();
+  await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-down', generation: 2, sequence: 10 });
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.appendServiceOnly(
+    'human:a', 'human-server-message:108', 'The new Retry owns the post-reconnect Human refresh',
+  ));
+  await runtime({ type: 'gateway.lifecycle', lifecycle: 'transport-connected', generation: 2, sequence: 11 });
+  // Controller subscribes before Root. The replacement must begin after the
+  // complete transport fanout, otherwise Root captures an obsolete generation.
+  await expect.poll(async () => (await heldRosters()).length).toBe(5);
+  const newRetry = (await heldRosters())[4];
+  expect(newRetry.settled).toBe(false);
+  expect(newRetry.request).toMatchObject({ method: 'listAgents', args: {}, accountId: '1', portId });
+  expect(newRetry.request.sequence).toBeGreaterThan(oldRetry.request.sequence);
+  expect(newRetry.request.requestId).not.toBe(oldRetry.request.requestId);
+  expect(await counts()).toEqual({ ...beforeHandoff, roster: beforeHandoff.roster + 1 });
+  await expect(reconnectNotice.getByRole('button', { name: 'Retrying…', exact: true })).toBeDisabled();
+  await expectRetained();
+
+  await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.rejectAgentRoster(
+    3, 'Stale pre-reconnect roster reply must stay inert',
+  ));
+  await drainUi(page);
+  expect((await heldRosters())[3].settled).toBe(true);
+  expect((await heldRosters())[4].settled).toBe(false);
+  expect(await counts(), 'The superseded Retry cannot start Human sync or consume the current attempt')
+    .toEqual({ ...beforeHandoff, roster: beforeHandoff.roster + 1 });
+  await expect(reconnectNotice.getByRole('button', { name: 'Retrying…', exact: true })).toBeDisabled();
+  await expect(page.getByText('Stale pre-reconnect roster reply must stay inert', { exact: false })).toHaveCount(0);
+  await expectRetained();
+  await milestone(page, info, 'late-old-Retry-cannot-clear-the-current-recovery');
+
+  await finishCurrentRoster(4, beforeHandoff, 'human-server-message:108', 'The new Retry owns the post-reconnect Human refresh');
+  await expect(reconnectNotice).toHaveCount(0);
+  await drainUi(page);
+  await expectRetained();
+  const final = await page.evaluate(() => window.nativeMessageAuthorRecoveryFixture.diagnostics());
+  expect(final.heldAgentRosters).toHaveLength(5);
+  expect(final.heldAgentRosters.every((pending) => pending.settled)).toBe(true);
+  expect(final.requests.filter((request) => request.method === 'sendPrompt'
+    || request.method === 'sendHumanMessage' || request.method === 'retryHumanMessage')).toEqual([]);
+  const runtimeFrames = final.frames.filter((entry) =>
+    (entry.frame as { family?: string }).family === 'runtime');
+  expect(runtimeFrames).toHaveLength(11);
+  expect(runtimeFrames.every((entry) => entry.portId === portId && entry.dropped === false)).toBe(true);
+  expect(runtimeFrames.map((entry) => (entry.frame as { payload: { sequence: number } }).payload.sequence))
+    .toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+  await milestone(page, info, 'current-Retry-completes-Human-sync-and-Transcript-with-retained-draft');
 });

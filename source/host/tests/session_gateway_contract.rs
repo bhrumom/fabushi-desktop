@@ -9388,3 +9388,293 @@ fn shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement()
     drop((final_owner, replacement_owner, owner, runtime, manager));
     let _ = fs::remove_dir_all(root);
 }
+
+
+#[test]
+fn shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart() {
+    // The existing gateway must reject malformed first observations before
+    // either SQLite staging or an actual HTTP request.
+    {
+        let root = temp_root("human-offline-origin-admission");
+        let (url, stop, server) = spawn_human_no_request_fixture();
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+            .as_str().expect("conversation id").to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("existing SQLite owner");
+        let metadata = owner.read_metadata().expect("metadata before rejected origin");
+        let original = json!({
+            "conversationId":id,"text":"invalid origin must not stage","clientNonce":"origin-admission",
+            "composedAtMs":1000.0,"attachments":[]
+        });
+        for marker in [json!(null), json!("true"), json!(1), json!([]), json!({})] {
+            let mut args = original.clone();
+            args["queuedOffline"] = marker.clone();
+            let result = dispatch_production_session_gateway_call(&runtime, "sendHumanMessage", &args)
+                .expect("registered Human send");
+            assert!(matches!(result, Err(SessionGatewayError::BadRequest(_))),
+                "present origin must be a boolean: {marker}");
+            assert!(owner.get_transcript_entries().expect("no malformed pending row").is_empty());
+        }
+        for composed in [None, Some(json!(null)), Some(json!("1000"))] {
+            let mut args = original.clone();
+            args["queuedOffline"] = json!(true);
+            match composed {
+                Some(value) => { args["composedAtMs"] = value; }
+                None => { args.as_object_mut().unwrap().remove("composedAtMs"); }
+            }
+            let result = dispatch_production_session_gateway_call(&runtime, "sendHumanMessage", &args)
+                .expect("registered Human send");
+            assert!(matches!(result, Err(SessionGatewayError::BadRequest(_))),
+                "true origin requires a finite numeric composition time");
+        }
+        for composed in [None, Some(f64::NAN), Some(f64::INFINITY), Some(f64::NEG_INFINITY)] {
+            let result = runtime.append_human_message_with_queue_origin(
+                &id, "invalid native origin", "origin-direct-admission", composed, None, &[], true,
+            );
+            assert!(result.expect_err("native callers share origin admission").contains("finite composedAtMs"));
+        }
+        assert!(owner.get_transcript_entries().expect("all rejected sends stay unstaged").is_empty());
+        assert_eq!(owner.read_metadata().expect("unchanged conversation"), metadata);
+        stop.send(()).expect("stop active origin admission listener");
+        assert!(server.join().expect("origin admission HTTP requests").is_empty(),
+            "malformed gateway and native inputs perform zero HTTP");
+        runtime.shutdown(); drop(owner); drop(runtime);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    // A real failed first POST records origin once. A caller using the same
+    // nonce after a physical close/reopen cannot replace either that observation
+    // or the original composition time. Sync wins a held duplicate receipt.
+    for (label, initial_origin) in [
+        ("online", Some(false)), ("legacy-timestamp", None), ("offline", Some(true)),
+    ] {
+        let root = temp_root(&format!("human-offline-origin-{label}"));
+        let nonce = format!("origin-{label}");
+        let text = format!("retain the original {label} composition");
+        let composed_at_ms = if initial_origin == Some(true) { -12.5 } else { 1234.5 };
+        let remote = fixture_remote_human_message(77, 1, 2, &text, Some(&nonce), json!([]));
+        let mut refreshed = remote.clone();
+        refreshed["readAt"] = json!("2026-10-05T01:05:00Z");
+        let mut after_restart = refreshed.clone();
+        after_restart["readAt"] = json!("2026-10-05T01:06:00Z");
+        let (seen, accepted) = std::sync::mpsc::channel();
+        let (release, resume) = std::sync::mpsc::channel();
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Disconnect,
+            HumanMessageFixtureReply::Deferred(
+                Box::new(HumanMessageFixtureReply::Json(201,
+                    json!({"success":true,"message":remote.clone()}))), seen, resume,
+            ),
+            // The existing bounded sync replays the admitted nonce, then reads
+            // the current history while the earlier POST response remains held.
+            HumanMessageFixtureReply::Json(200,
+                json!({"success":true,"deduplicated":true,"message":remote.clone()})),
+            HumanMessageFixtureReply::Json(200,
+                json!({"success":true,"data":{"messages":[refreshed]}})),
+            HumanMessageFixtureReply::Json(200,
+                json!({"success":true,"data":{"messages":[after_restart]}})),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+            .as_str().expect("conversation id").to_owned();
+        let mut args = json!({
+            "conversationId":id,"text":text,"clientNonce":nonce,
+            "composedAtMs":composed_at_ms,"attachments":[]
+        });
+        if let Some(origin) = initial_origin { args["queuedOffline"] = json!(origin); }
+        assert!(dispatch_production_session_gateway_call(&runtime, "sendHumanMessage", &args)
+            .expect("registered first send").is_err(), "a lost response leaves a durable intent");
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("first SQLite owner");
+        let pending = owner.get_transcript_entries().expect("persisted original intent");
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0]["id"], format!("human-message:{nonce}"));
+        assert_eq!(pending[0]["delivery"], "pending");
+        assert_eq!(pending[0]["composedAtMs"], json!(composed_at_ms));
+        if initial_origin == Some(true) {
+            assert_eq!(pending[0]["queuedOffline"], true);
+        } else {
+            assert!(pending[0].get("queuedOffline").is_none(),
+                "online and timestamp-only callers retain the existing row shape");
+        }
+        runtime.shutdown();
+        assert!(owner.is_closed(), "the original SQLite owner really closes");
+        drop(owner); drop(runtime);
+
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.read_human_conversation_transcript(&id).expect("pure pending reopen"), pending);
+        let owner = reopened.open_human_conversation_db_owner(&id).expect("replacement SQLite owner");
+        args["queuedOffline"] = json!(initial_origin != Some(true));
+        args["composedAtMs"] = json!(9000.0);
+        let sending = {
+            let runtime = Arc::clone(&reopened); let args = args.clone();
+            thread::spawn(move || dispatch(&runtime, "sendHumanMessage", args))
+        };
+        accepted.recv_timeout(std::time::Duration::from_secs(15)).expect("replacement POST is actually held");
+        let in_flight = owner.get_transcript_entries().expect("original intent during duplicate POST");
+        assert_eq!(in_flight.len(), 1);
+        assert_eq!(in_flight[0]["delivery"], "dispatching");
+        assert_eq!(in_flight[0].get("queuedOffline"), pending[0].get("queuedOffline"),
+            "a repeated caller cannot promote or demote the first origin");
+        assert_eq!(in_flight[0]["composedAtMs"], pending[0]["composedAtMs"]);
+
+        let synced = reopened.sync_human_conversation(&id).expect("existing replay and bounded history settle");
+        assert_eq!(synced.len(), 1);
+        let canonical = synced[0].clone();
+        assert_eq!(canonical["id"], "human-server-message:77");
+        assert_eq!(canonical["clientNonce"], nonce);
+        assert_eq!(canonical["delivery"], "sent");
+        assert_eq!(canonical.get("queuedOffline"), pending[0].get("queuedOffline"));
+        assert_eq!(canonical["composedAtMs"], pending[0]["composedAtMs"]);
+        assert_eq!(canonical["timestampMs"], json!(chrono::DateTime::parse_from_rfc3339(
+            remote["createdAt"].as_str().unwrap()).unwrap().timestamp_millis() as f64),
+            "server time stays canonical instead of being replaced by composition time");
+        assert_eq!(canonical["readAt"], "2026-10-05T01:05:00Z");
+        release.send(()).expect("release the old receipt after canonical history");
+        assert_eq!(sending.join().expect("held send thread"), canonical,
+            "late acknowledgement returns the full current durable settlement");
+        assert!(owner.get_transcript_entry_by_id(&format!("human-message:{nonce}"))
+            .expect("old pending identity lookup").is_none());
+        assert_eq!(dispatch(&reopened, "retryHumanMessage",
+            json!({"conversationId":id,"clientNonce":nonce})), canonical,
+            "canonical identity-only retry does not replay payload or origin");
+        assert_eq!(dispatch(&reopened, "sendHumanMessage", args), canonical,
+            "an already canonical nonce cannot be rebound by new origin or time");
+        reopened.shutdown();
+        assert!(owner.is_closed());
+        drop(owner); drop(reopened);
+
+        let recovered = human_message_fixture_runtime(&root, &url);
+        assert_eq!(recovered.read_human_conversation_transcript(&id).expect("canonical close/reopen"), vec![canonical.clone()]);
+        let refreshed = recovered.sync_human_conversation(&id).expect("known canonical refresh after restart");
+        assert_eq!(refreshed.len(), 1);
+        let mut expected = canonical;
+        expected["readAt"] = json!("2026-10-05T01:06:00Z");
+        assert_eq!(refreshed, vec![expected.clone()], "known history preserves exact local provenance");
+        assert_eq!(dispatch(&recovered, "retryHumanMessage",
+            json!({"conversationId":id,"clientNonce":nonce})), expected);
+        recovered.shutdown(); drop(recovered);
+        let requests = server.join().expect("origin settlement HTTP fixture");
+        assert_eq!(requests.len(), 5, "three same-nonce POSTs and two bounded history reads");
+        for request in &requests[..3] {
+            assert!(request.starts_with("POST /api/social/messages "));
+            let body = fixture_request_json(request);
+            assert_eq!(body, fixture_request_json(&requests[0]), "external service identity and payload remain unchanged");
+            assert!(body.get("queuedOffline").is_none() && body.get("composedAtMs").is_none(),
+                "local origin metadata does not expand the external service API");
+        }
+        assert!(requests[3].starts_with("GET /api/social/messages?") && requests[3].contains("&afterId=0"));
+        assert!(requests[4].starts_with("GET /api/social/messages?") && requests[4].contains("&afterId=0"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    // Historical timestamp-only intents remain retryable, and an explicitly
+    // stored false value is retained as false rather than being inferred true.
+    for retained_origin in [None, Some(false)] {
+        let root = temp_root(if retained_origin.is_some() { "human-origin-retained-false" } else { "human-origin-retained-legacy" });
+        let nonce = "retained-origin";
+        let remote = fixture_remote_human_message(78, 1, 2, "retained legacy intent", Some(nonce), json!([]));
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Json(201, json!({"success":true,"message":remote})),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+            .as_str().expect("conversation id").to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("retained intent owner");
+        let mut pending = pending_reply_fixture_row(nonce, "retained legacy intent", None);
+        if let Some(origin) = retained_origin { pending["queuedOffline"] = json!(origin); }
+        assert!(owner.append_transcript_entry(&pending).expect("retain historical input"));
+        let settled = dispatch(&runtime, "retryHumanMessage", json!({"conversationId":id,"clientNonce":nonce}));
+        assert_eq!(settled["id"], "human-server-message:78");
+        assert_eq!(settled.get("queuedOffline"), pending.get("queuedOffline"));
+        assert_eq!(settled["composedAtMs"], pending["composedAtMs"]);
+        runtime.shutdown(); drop(owner); drop(runtime);
+        let recovered = human_message_fixture_runtime(&root, &url);
+        assert_eq!(recovered.read_human_conversation_transcript(&id).expect("retained canonical origin"), vec![settled.clone()]);
+        assert_eq!(dispatch(&recovered, "retryHumanMessage",
+            json!({"conversationId":id,"clientNonce":nonce})), settled);
+        recovered.shutdown(); drop(recovered);
+        let requests = server.join().expect("retained-origin retry fixture");
+        assert_eq!(requests.len(), 1);
+        assert!(requests[0].starts_with("POST /api/social/messages "));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    // Invalid retained markers must not dispatch a send or be overwritten by
+    // history without local provenance. Independent bounded reads still progress:
+    // this is not a global history preflight or a block on unrelated peer rows.
+    for (label, marker, composed) in [
+        ("null", json!(null), Some(json!(1234.0))),
+        ("string", json!("true"), Some(json!(1234.0))),
+        ("number", json!(1), Some(json!(1234.0))),
+        ("array", json!([]), Some(json!(1234.0))),
+        ("object", json!({}), Some(json!(1234.0))),
+        ("true-no-time", json!(true), None),
+        ("true-null-time", json!(true), Some(json!(null))),
+        ("true-string-time", json!(true), Some(json!("1234"))),
+    ] {
+        let root = temp_root(&format!("human-origin-damaged-{label}"));
+        let nonce = "damaged-origin";
+        let text = "retain the original damaged origin";
+        let peer = fixture_remote_human_message(88, 2, 1, "independent peer history", None, json!([]));
+        let remote = fixture_remote_human_message(89, 1, 2, text, Some(nonce), json!([]));
+        let (seen, accepted) = std::sync::mpsc::channel();
+        let (release, resume) = std::sync::mpsc::channel();
+        release.send(()).expect("the observed history response is not artificially held");
+        let (url, server) = spawn_human_message_fixture(vec![
+            HumanMessageFixtureReply::Deferred(Box::new(HumanMessageFixtureReply::Json(200,
+                json!({"success":true,"data":{"messages":[peer.clone()]}}))), seen, resume),
+            HumanMessageFixtureReply::Json(200,
+                json!({"success":true,"data":{"messages":[peer,remote]}})),
+        ]);
+        let runtime = human_message_fixture_runtime(&root, &url);
+        let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+            .as_str().expect("conversation id").to_owned();
+        let owner = runtime.open_human_conversation_db_owner(&id).expect("damaged intent owner");
+        let mut pending = pending_reply_fixture_row(nonce, text, None);
+        pending["queuedOffline"] = marker;
+        pending["retainedLocalMetadata"] = json!({"case":label,"never":"erase this intent"});
+        match composed {
+            Some(value) => { pending["composedAtMs"] = value; }
+            None => { pending.as_object_mut().unwrap().remove("composedAtMs"); }
+        }
+        assert!(owner.append_transcript_entry(&pending).expect("seed retained invalid provenance"));
+        let db = rusqlite::Connection::open_with_flags(forward_db_path(&root, &id),
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).expect("independent durable origin observation");
+        let raw_intent = || db.query_row(
+            "SELECT seq, id, entry FROM transcript_entries WHERE id = ?1",
+            [format!("human-message:{nonce}")],
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?)),
+        ).expect("retained complete intent bytes");
+        let raw_before = raw_intent();
+        let retry = dispatch_production_session_gateway_call(&runtime, "retryHumanMessage",
+            &json!({"conversationId":id,"clientNonce":nonce})).expect("registered identity-only retry");
+        assert!(retry.is_err(), "malformed retained origin is not dispatched: {label}");
+        assert!(matches!(accepted.try_recv(), Err(std::sync::mpsc::TryRecvError::Empty)),
+            "identity-only rejection performs zero HTTP: {label}");
+        assert_eq!(owner.get_transcript_entries().expect("intent retained after rejection"), vec![pending.clone()]);
+        assert_eq!(raw_intent(), raw_before, "rejected retry preserves physical identity and bytes: {label}");
+
+        let independent = runtime.sync_human_conversation(&id).expect("unrelated bounded history still progresses");
+        accepted.recv_timeout(std::time::Duration::from_secs(15)).expect("the actual history GET reaches the service");
+        assert_eq!(independent.len(), 2);
+        assert_eq!(independent.iter().find(|entry| entry["id"] == pending["id"]), Some(&pending));
+        assert!(independent.iter().any(|entry| entry["id"] == "human-server-message:88"));
+        assert_eq!(raw_intent(), raw_before);
+        let error = runtime.sync_human_conversation(&id)
+            .expect_err("remote canonical data cannot supply missing validation for damaged local origin");
+        assert!(error.contains("origin"), "{label}: {error}");
+        assert_eq!(owner.get_transcript_entries().expect("remote cannot overwrite damaged local intent"), independent);
+        assert_eq!(raw_intent(), raw_before, "history refusal retains the original bytes: {label}");
+        assert!(owner.get_transcript_entry_by_id("human-server-message:89").expect("no false canonical remap").is_none());
+        runtime.shutdown(); drop(owner); drop(runtime);
+        let reopened = human_message_fixture_runtime(&root, &url);
+        assert_eq!(reopened.read_human_conversation_transcript(&id).expect("reopen keeps damaged intent"), independent);
+        assert_eq!(raw_intent(), raw_before);
+        reopened.shutdown(); drop(reopened); drop(db);
+        let requests = server.join().expect("retained-origin bounded HTTP fixture");
+        assert_eq!(requests.len(), 2, "only the two explicit bounded history reads execute: {label}");
+        assert!(requests.iter().all(|request| request.starts_with("GET /api/social/messages?")
+            && request.contains("&afterId=0")), "invalid origin never dispatches an unsafe POST: {label}");
+        let _ = fs::remove_dir_all(root);
+    }
+}

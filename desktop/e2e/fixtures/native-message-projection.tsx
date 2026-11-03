@@ -100,10 +100,14 @@ function receive(request: Request) {
       break;
     case 'openAgentTail': case 'getAgentTranscriptTail': value = { entries: [] }; break;
     case 'sendHumanMessage': {
+      if (typeof request.args.queuedOffline !== 'boolean'
+        || typeof request.args.composedAtMs !== 'number' || !Number.isFinite(request.args.composedAtMs)) {
+        throw new Error('Human fixture requires explicit boolean offline origin and finite composition time');
+      }
       const remoteMessageId = String(100 + sends.length);
       const entry = row(`human-server-message:${remoteMessageId}`, String(request.args.text), {
         authorId: account.kind === 'logged-in' ? account.authId : '', clientNonce: request.args.clientNonce,
-        remoteMessageId,
+        remoteMessageId, queuedOffline: request.args.queuedOffline, composedAtMs: request.args.composedAtMs,
       });
       sends.push({ request, value: entry });
       sendPositions.set(request.requestId, transcript.length);
@@ -193,6 +197,7 @@ const bridge = optionalCapability('', {
 const fixture = {
   requests,
   approvalClears,
+  canonicalRows: () => clone([...rows]),
   pending: () => ({ initials: initials.length, older: older.length, refreshes: refreshes.length, sends: sends.length, reactions: reactions.length, forwards: forwards.length, sendRosterRefreshes: sendRosterRefreshes.length }),
   releaseInitial(newestFirst = false) {
     holdInitial = false;
@@ -219,16 +224,39 @@ const fixture = {
     for (const field of omittedFields) delete eventEntry[field];
     emit({ type: 'updated', agentId: id, before, entry: eventEntry });
   },
+  publishPendingSend(index = 0) {
+    const pending = sends[index];
+    if (pending == null) throw new Error('No pending send');
+    const id = String(pending.request.args.conversationId);
+    const entry: Row = {
+      ...clone(pending.value as Row), id: `human-message:${pending.request.args.clientNonce}`,
+      delivery: 'pending', timestampMs: pending.request.args.composedAtMs,
+    };
+    delete entry.remoteMessageId;
+    const transcript = rows.get(id) ?? [];
+    if (transcript.some((candidate) => candidate.id === entry.id)) throw new Error('Native pending row already published');
+    transcript.splice(sendPositions.get(pending.request.requestId) ?? transcript.length, 0, entry);
+    rows.set(id, transcript);
+    persistRows();
+    emit({ type: 'updated', agentId: id, before: { id: `pending-${pending.request.args.clientNonce}` }, entry });
+    return entry.id;
+  },
   publishSend(index = 0) {
     const pending = sends[index];
     if (pending == null) throw new Error('No pending send');
     const id = String(pending.request.args.conversationId);
     const entry = clone(pending.value as Row);
     const transcript = rows.get(id) ?? [];
-    if (!transcript.some((candidate) => candidate.id === entry.id)) transcript.splice(sendPositions.get(pending.request.requestId) ?? transcript.length, 0, entry);
+    const localId = `human-message:${pending.request.args.clientNonce}`;
+    const localIndex = transcript.findIndex((candidate) => candidate.id === localId
+      && candidate.authorId === entry.authorId && candidate.clientNonce === entry.clientNonce);
+    if (!transcript.some((candidate) => candidate.id === entry.id)) {
+      if (localIndex >= 0) transcript.splice(localIndex, 1, entry);
+      else transcript.splice(sendPositions.get(pending.request.requestId) ?? transcript.length, 0, entry);
+    }
     rows.set(id, transcript);
     persistRows();
-    emit({ type: 'updated', agentId: id, before: { id: `pending-${pending.request.args.clientNonce}` }, entry });
+    emit({ type: 'updated', agentId: id, before: { id: localIndex >= 0 ? localId : `pending-${pending.request.args.clientNonce}` }, entry });
     return entry.id;
   },
   peerCollision(index = 0) {

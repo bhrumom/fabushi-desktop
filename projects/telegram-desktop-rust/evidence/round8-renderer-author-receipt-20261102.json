@@ -2,7 +2,7 @@
   "format_version": 1,
   "task_id": "20bf9475-a885-4314-b509-bea53ef8849f",
   "round": 8,
-  "recorded_at": "2026-11-03 00:23:30 UTC",
+  "recorded_at": "2026-11-03 00:57:20 UTC",
   "scope": "NMR-UI-01 / NMR-AC-UI-01: existing ProductionRenderer Human author, cache, queue and asynchronous settlement",
   "upstream": {
     "repository": "telegramdesktop/tdesktop",
@@ -13,13 +13,13 @@
   "repository": "bhrumom/fabushi-desktop",
   "branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
   "main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
-  "integration_base": "6e2f1c3728ac29cae3b460e2a4ec7deb7719d01b",
+  "integration_base": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
   "publication": {
     "force": false,
-    "expected_sha": "98be438bad69f9982c503e5a3442f721307c85ce",
+    "expected_sha": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
     "full_remote_sha_and_content_readback_required": true,
     "containing_commit": "Resolve from actual containing Git commit; no self-reference.",
-    "validation_at_preparation": "H98 native79 executed78pass1fail; source contract and candidate passed in unaccepted mode. The new lifecycle fixture-only repair requires its containing-H Actions. Actual Mac b6 still failed0/2 Human."
+    "validation_at_preparation": "H1bc exact120 reconciliation and194 UI passed; H98 Source161+37/schema0 and unaccepted-candidate checks passed. H98 actual Mac Plugins2 pass/Human0of2 fail. New121/203/actualMac2+2 and shipping require containing-H terminal evidence."
   },
   "source_guard_delivery": {
     "sha": "59308cf3cee48213278c52e4ad60bfd9250fb545",
@@ -569,7 +569,7 @@
     "complete": false,
     "accepted": false,
     "independent_acceptance": "not-run",
-    "current_batch_execution": "H98 failed79-case executed prefix78/1; complete120 not reached. Fixture repair not-run at preparation; UI and Mac/shipping remain separate required results."
+    "current_batch_execution": "Feed and retained UI qualified at exact1bc120/120+194/194. New runtime/Retry integration201 UI and actualMac2+2/shipping still require exact containing-H execution."
   },
   "recent_message_prerequisite": {
     "head": "106bb95ba97ef7722e9523285783824393039bc0",
@@ -2615,54 +2615,84 @@
   },
   "requirements_audit": [
     {
-      "id": "1-fixed-source-and-complete-accounting",
-      "state": "incomplete",
-      "evidence": "U unchanged; lock41 repositories/40 edges/16381 recursive Git entries. External downloads/generated/LFS/legal and source acceptance remain open."
+      "requirement": "原始 run 41413368942 exact5d53 双消息终态/全日志/计数",
+      "state": "done",
+      "evidence": "previous exact5d534898b99e98ac6c24006c85a028626b8c94bc success jobs125171295853/125171296298; full reads preserved in current receipt"
     },
     {
-      "id": "2-risk-tiered-understanding",
-      "state": "incomplete",
-      "evidence": "FMEP-SOURCE-01/schema/validator implemented and scoped tests passed at59308cf; current ledger16 reviews only2 complete. No unread/unknown zero claim."
+      "requirement": "current AGENTS/SOT/twoSpecs/FMEP/latestmain/branch/source lock/ledger/uncommitted",
+      "state": "done with offline boundary",
+      "evidence": "Current repository authorities/FMEP previously fully read and retained; live main5528062177e3865eef60a073a066cca144f9e3e8 re-read at00:10 UTC. H98be438bad69f9982c503e5a3442f721307c85ce API files/Spec/full ledger read. Local executor remains offline; no claim of clean local uncommitted work."
     },
     {
-      "id": "3-current-owner-and-real-wiring",
-      "state": "exact808 scoped behavior passed; background/capture follow-up pending",
-      "evidence": "Existing ProductionRenderer -> Coordinator -> Production Session/Native HTTP/SQLite; same main-process client persistence owner. No replacement database/runtime introduced; full source responsibilities remain open."
+      "requirement": "1 固定U并全量来源/依赖/生成/资源/工具/法律登记",
+      "state": "partial",
+      "evidence": "U=f985723b552b30fe1c17d377d57f44e61a15a8c4 retained; inventory16381/root6895; candidate and external/generated/legal closure incomplete"
     },
     {
-      "id": "4-closed-user-behavior-batches",
-      "state": "exact808 scoped behavior passed; background/capture follow-up pending",
-      "evidence": "History/page/race current owners plus durable draft binding, failure/retry/cancel/restore and actual UI/Electron oracles in this batch. Full forwarding/reply/media/scheduled/group/search scope not globally accepted."
+      "requirement": "2 风险分层来源审查无漏功能/无伪阅读",
+      "state": "partial",
+      "evidence": "source_reviews16:2complete14pending; unknown/unreadnull retained; source161+37/schema0 passes bounded only Source candidate H98 terminal success is unaccepted-candidate-consistent, not accepted."
     },
     {
-      "id": "5-preserve-bot-and-existing-owners",
-      "state": "full regression incomplete",
-      "evidence": "Preserve current Agent/approval/Tools/Plugins/forward/current retry and concurrency code; existing gates retained. Full signed-platform/Bot regression remains open."
+      "requirement": "3 unique existing production owners and actual wiring",
+      "state": "production candidates implemented; current-H execution pending",
+      "evidence": "H1bc actual120/120 includes Human76/new4 and6400/32 restart through production TranscriptExtension. New scoped Host/Gateway runtime to existing Renderer recovery contract frozenf549; implementation/6port+1browser in progress. Runtime/client/controller/root and6port+1browser authored. ActualH98Mac newfalseofflinebadge leadsNMR-OFFLINE-ORIGIN-01 firstsendorigin→durablecanonical→projection batch frozen36ae; notyetexecuted. Runtime+origin now actual candidate blobs, full API readback; no Actions pass claimed for candidates."
     },
     {
-      "id": "6-parallel-path-isolation",
-      "state": "performed for this batch",
-      "evidence": "Agents created only reviewed path blobs; root alone updates common Spec/RTM/workflow/ledger/tree/ref using explicit parent and force=false expected_sha."
+      "requirement": "4 batch entrance/rules/permissions/persistence/service/event/UI/error/restart",
+      "state": "feed verified; runtime and explicit-origin production/test candidates implemented",
+      "evidence": "H1bc actual120; H98UI194 actualpass. Actualb6MacPlugins2pass/Human0of2 failure; fixtureaux404/AppHostroot repairs authored. New runtime/controller/root+heldRetryRenderercase being integrated. Remotechanges/liveafter0 open. H98actualMacPlugins2/Human0of2 terminal (body+badge), originfix and unchangedMac2+2 scope inprogress."
     },
     {
-      "id": "7-GitHub-Actions-only-validation",
-      "state": "performed; only GitHub Actions execution used, follow-up containing-H required",
-      "evidence": "No local executable validation. Immutable old failure/pass counts retained; new H must execute its actual gates."
+      "requirement": "5 existingowner/allBot retention/oldpath data-safe exit",
+      "state": "partial",
+      "evidence": "Social37; retainedFFI15+ignored1; Electron100; fullBot/olddata migration/complete retirement remains"
     },
     {
-      "id": "8-causal-failure-handling",
-      "state": "performed for observed failures",
-      "evidence": "Pure case31 oracle identity corrected; TS2698 delivery predicate narrowed to boolean; real pointer CSS fix preserved; skipped browsers not counted. No rerun-to-green."
+      "requirement": "6 sharedcontracts stable main-integrator/nonoverlapagents",
+      "state": "done for batch",
+      "evidence": "sharedschema unchanged; mainCAS andledgertransport preserve183 rows; independentreviews; boundedpaths"
     },
     {
-      "id": "9-one-inventory-ledger-RTM",
-      "state": "same canonical records reconciled; new containing-H checker required",
-      "evidence": "One ledger/RTM:33 explicit trace mappings;4 target paths/16 actual declaration spellings corrected only in FBCP-NMR-001;183 other rows/source metadata/flags preserved. Exact808 source158/schema37 passed; new shared actual-checkout case is pending."
+      "requirement": "7 frozenH Actions only minimaltests/push CAS",
+      "state": "Actions-only frozen batches",
+      "evidence": "H1bcnative120/UI194success;H98source161+37schema0passed;shippingslotsqueued. Runtime+offline-origin preparation36ae exactcontract/ledgerobjectverified but no productexecution."
     },
     {
-      "id": "10-full-final-acceptance",
-      "state": "incomplete",
-      "evidence": "Active compatible backend deployment, complete source/legal, supported signed packages, full visual/a11y/locale/security/performance/soak/upgrade/rollback/Bot and independent ACCEPT remain open."
+      "requirement": "8 classify failures/independenttasks/no rerunpickgreen",
+      "state": "done ongoing",
+      "evidence": "old808 Plugins backgroundnavigation production bug; Human prebusiness trace/video init environment/harness inference; minimalfix22/ffmpeg; attempts1"
+    },
+    {
+      "requirement": "9 singleinventory/ledger/RTM schema actualconsistency",
+      "state": "bounded candidate remains unaccepted",
+      "evidence": "Ledger input25cf stillcanonicaluntilintegration; GHA41555599067 producedd5f16f98d6ae28342c9e06a3b17069121769aa79, full3712580chars read, onlyNMR63paths71symbols append, all183otherrows/source_reviews16/globalfields/historicalscalarsunchanged. Sourcevalidator mustexecutecontainingH."
+    },
+    {
+      "requirement": "10 finalcandidate services/platform/UI/a11y/security/perf/soak/rollback/Bot/independentACCEPT",
+      "state": "not complete",
+      "evidence": "services/package/device/signing/fullsource/independentACCEPT open"
+    },
+    {
+      "requirement": "6400/32 persistedresume/reactionconcurrency/lateack/restart negatives",
+      "state": "pass exact1bc",
+      "evidence": "run41552585826/job125643584554120pass,Human76 containsfull6400/32,short32nd,resume,reactionconcurrency/lateack/restart negatives;receipt a0b23affa81171ebe7b876cc4acf4c23fad5cfcd."
+    },
+    {
+      "requirement": "Transcript cache pagination merge/oldmessage refresh/UIElectron",
+      "state": "cache/feed verified bounded; actual transport recovery and Electron pending",
+      "evidence": "H1bcHost120/UI194passed. H98actualMac2Plugins/0of2Human fail atbody/offlinebadges; actualsecondcase reached3processes/originalAretirement/same-textB/newnonce butlaterfinalassertsnotreached. Newruntime andexplicitorigin batches prepared; remotechangefeed/deploymentnotproved."
+    },
+    {
+      "requirement": "forcefalseexpected_sha CAS/currentroundcloudreadback/fullSHA",
+      "state": "done through preparation36ae; final product integration pending",
+      "evidence": "Latest36ae38b3791c7c07bf6e4e4907a96265881d0c2f forcefalse expectedf549 CAS; fullremoteSHA/tree3contentsreadbacktrue. Productcandidateblobsreadbacktrue but finalintegratedcommitpending."
+    },
+    {
+      "requirement": "final status template",
+      "state": "next required",
+      "evidence": "Fullsource/service/platform/remotechange/Bot/independentACCEPT and unexecuted newtransport gates precludecomplete; continue realimplementation/CI."
     }
   ],
   "observed_exact_808_execution": {
@@ -8799,10 +8829,337 @@
       }
     },
     "ui": {
-      "job": 125637914323,
-      "status": "in_progress",
-      "conclusion": null,
-      "scope": "Author22 step was still active at the latest read; no complete194 pass claim"
+      "schema": "fabushi.actions-ui-terminal-receipt.v1",
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "run_id": 41550895037,
+      "run_attempt": 1,
+      "event": "push",
+      "job_id": 125637914323,
+      "job_name": "native-message-ui",
+      "job_status": "completed",
+      "job_conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41550895037/job/125637914323",
+      "evidence": {
+        "full_job_log_fetched": true,
+        "full_job_log_characters": 149026,
+        "full_job_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125637914323/logs",
+        "actual_checkout_sha_observed": "98be438bad69f9982c503e5a3442f721307c85ce",
+        "artifact": {
+          "id": 13193436755,
+          "name": "native-message-ui-98be438bad69f9982c503e5a3442f721307c85ce",
+          "size_in_bytes": 95976850,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13193436755",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13193436755/zip",
+          "expired": false,
+          "created_at": "2026-11-03T00:24:55Z",
+          "expires_at": "2027-02-01T00:10:15Z",
+          "updated_at": "2026-11-03T00:24:55Z",
+          "digest": "sha256:5024a14213997d9c6512bcf962377c00fb1171a0062cb08759429d0e6ddaacf6",
+          "workflow_run": {
+            "id": 41550895037,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "98be438bad69f9982c503e5a3442f721307c85ce"
+          }
+        }
+      },
+      "actual": {
+        "total_executed": 194,
+        "total_passed": 194,
+        "total_failed": 0,
+        "tap_executed": 159,
+        "tap_groups": [
+          {
+            "label": "Transcript projection/pagination",
+            "tests": 42,
+            "pass": 42,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 42
+          },
+          {
+            "label": "Persisted drafts",
+            "tests": 14,
+            "pass": 14,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 14
+          },
+          {
+            "label": "Client persistence owner",
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 5
+          },
+          {
+            "label": "Restored reply scope",
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 5
+          },
+          {
+            "label": "Durable Human cursor",
+            "tests": 19,
+            "pass": 19,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 19
+          },
+          {
+            "label": "Human retry/Coordinator boundary",
+            "tests": 40,
+            "pass": 40,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 40
+          },
+          {
+            "label": "Forward settlement",
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 9
+          },
+          {
+            "label": "Forward dialog",
+            "tests": 17,
+            "pass": 17,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 17
+          },
+          {
+            "label": "Production Transcript cache",
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 8
+          }
+        ],
+        "playwright_groups": [
+          {
+            "label": "ProductionRenderer history/account/restart",
+            "executed": 13,
+            "cases": [
+              {
+                "ordinal": 1,
+                "title": "NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (light)"
+              },
+              {
+                "ordinal": 2,
+                "title": "NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (dark)"
+              },
+              {
+                "ordinal": 3,
+                "title": "NMR-26 an initial tail cannot overwrite an identity remap and later empty-row mutation"
+              },
+              {
+                "ordinal": 4,
+                "title": "NMR-26 a canonical clear fences an initial tail that returns after the fresh empty page"
+              },
+              {
+                "ordinal": 5,
+                "title": "NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (page-first)"
+              },
+              {
+                "ordinal": 6,
+                "title": "NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (refresh-first)"
+              },
+              {
+                "ordinal": 7,
+                "title": "NMR-26 a peer nonce collision, delayed receipt and roster failure preserve the successful canonical send"
+              },
+              {
+                "ordinal": 8,
+                "title": "NMR-26 logout cancels the in-flight renderer epoch before another account sends in the same conversation"
+              },
+              {
+                "ordinal": 9,
+                "title": "NMR-26 logout cancels the queued renderer epoch before another account sends in the same conversation"
+              },
+              {
+                "ordinal": 10,
+                "title": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation"
+              },
+              {
+                "ordinal": 11,
+                "title": "NMR-26 a disconnected Human send queues and reconnect dispatches it exactly once"
+              },
+              {
+                "ordinal": 12,
+                "title": "UI-NMR-NAMED-FORWARD-001 real settlement survives roster failure and clears on account change"
+              },
+              {
+                "ordinal": 13,
+                "title": "UI-NMR-RETIRED-FORWARD-NAMES-001 old-account reply cannot publish names after an account round trip"
+              }
+            ],
+            "unique_cases": 13,
+            "unique_ordinals": 13,
+            "summary": "  13 passed (45.9s)",
+            "passed": 13,
+            "failed": 0,
+            "skipped": 0,
+            "flaky": 0,
+            "retries": 0,
+            "json_count_and_each_result_audit_executed": true
+          },
+          {
+            "label": "ProductionRenderer author/draft recovery",
+            "executed": 22,
+            "cases": [
+              {
+                "ordinal": 1,
+                "title": "NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (light)"
+              },
+              {
+                "ordinal": 2,
+                "title": "NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (dark)"
+              },
+              {
+                "ordinal": 3,
+                "title": "NMR-UI-01 an initial tail cannot overwrite mutations received before any row was cached"
+              },
+              {
+                "ordinal": 4,
+                "title": "NMR-UI-01 overlapping older and full reads preserve newer feed changes (page-first)"
+              },
+              {
+                "ordinal": 5,
+                "title": "NMR-UI-01 overlapping older and full reads preserve newer feed changes (refresh-first)"
+              },
+              {
+                "ordinal": 6,
+                "title": "NMR-UI-01 peer nonce and late successful receipt preserve the originating conversation canonical row"
+              },
+              {
+                "ordinal": 7,
+                "title": "NMR-UI-01 logout and account replacement fence old send and page replies"
+              },
+              {
+                "ordinal": 8,
+                "title": "NMR-UI-01 old-page reaction settlement cannot overwrite a later empty Human message"
+              },
+              {
+                "ordinal": 9,
+                "title": "NMR-UI-01 retained peer nonce, assistant and unscoped Human rows never consume a local send or its recoverable failure"
+              },
+              {
+                "ordinal": 10,
+                "title": "NMR-UI-01 late semantic refusal remains an error without demoting sent content or restoring an unsent draft"
+              },
+              {
+                "ordinal": 11,
+                "title": "NMR-UI-01 late Agent retry approval completion cannot erase a newer failed send recovery"
+              },
+              {
+                "ordinal": 12,
+                "title": "NMR-UI-01 same-nonce Human retry preserves a newer draft with identical text (feed-first)"
+              },
+              {
+                "ordinal": 13,
+                "title": "NMR-UI-01 same-nonce Human retry preserves a newer draft with identical text (receipt-first)"
+              },
+              {
+                "ordinal": 14,
+                "title": "NMR-UI-01 pre-frame Human retry resumes the original input and partial attachment commits"
+              },
+              {
+                "ordinal": 15,
+                "title": "NMR-DRAFT-01 a failed submission binding write admits zero message RPC and retains the original retry input"
+              },
+              {
+                "ordinal": 16,
+                "title": "NMR-DRAFT-01 canonical history before delayed draft restore retires only the recorded original identity"
+              },
+              {
+                "ordinal": 17,
+                "title": "NMR-DRAFT-01 queued Agent cancellation preserves restored reply and partial attachment progress"
+              },
+              {
+                "ordinal": 18,
+                "title": "NMR-UI-01 clear invalidates old pages, send failure and reaction receipt before the same row ID is reused"
+              },
+              {
+                "ordinal": 19,
+                "title": "NMR-UI-01 A to B to A cannot reuse the old callback lifetime even when conversation and row IDs match"
+              },
+              {
+                "ordinal": 20,
+                "title": "NMR-UI-01 root disposal releases its port and old work cannot enter a new renderer instance"
+              },
+              {
+                "ordinal": 21,
+                "title": "NMR-UI-01 the same renderer keeps Agent tool expansion and real attachment staging controls"
+              },
+              {
+                "ordinal": 22,
+                "title": "NMR-UI-01 background transcript recovery preserves Plugins until explicit navigation"
+              }
+            ],
+            "unique_cases": 22,
+            "unique_ordinals": 22,
+            "summary": "  22 passed (12.0m)",
+            "passed": 22,
+            "failed": 0,
+            "skipped": 0,
+            "flaky": 0,
+            "retries": 0,
+            "json_count_and_each_result_audit_executed": true
+          }
+        ],
+        "production_renderer_compile_step": {
+          "name": "Compile actual production renderer",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        "executed_audit_output": [
+          "actual ProductionRenderer: 13 passed, 0 failed, 0 skipped, 0 retries",
+          "actual ProductionRenderer author/recovery: 22 passed, 0 failed, 0 skipped, 0 retries"
+        ]
+      },
+      "counting_method": "Each TAP suite is counted only within its TAP version 13 through # duration_ms block; grep echoes of the same summaries are excluded. Each Playwright group has exact unique ordinal and title counts, its final passed summary, then the actually executed JSON audit success line. The JSON audit requires all results passed exactly once with retry0 and zero unexpected/flaky/skipped/errors.",
+      "resolved_prior_fixture_failure": {
+        "prior_head": "487083725db93109b0d3d2b4bdddd483d148ba30",
+        "prior_job_id": 125624458465,
+        "case": "NMR-UI-01 background transcript recovery preserves Plugins until explicit navigation",
+        "result_at_this_head": "passed as actual case22; complete22 JSON audit also passed",
+        "scope": "Controlled fixture now implements the existing empty getPluginSyncStatus contract; actual background-overlay assertions were preserved."
+      },
+      "limits": [
+        "This is the actual production Renderer with controlled browser/Coordinator fixtures and focused behavior tests, not signed Electron package or deployed-service acceptance.",
+        "No screenshots or videos were visually reviewed by this evidence reader.",
+        "Other H98 jobs retain their own outcomes, including the separately recorded Human lifecycle fixture failure; UI success does not make the whole Native run successful.",
+        "H1bc UI and shipping results are separate and are not inferred from this H98 success.",
+        "No rerun, local test, production mutation or ref write performed."
+      ]
     },
     "shipping": {
       "job": 125637914212,
@@ -9115,7 +9472,1662 @@
     },
     "method": "Verify exact artifact metadata and downloaded archive SHA256, read existing JSON attachments/selected redacted UI context/trace method timing without executing any archive content; no raw CI log, environment, headers, token or source storage payload publication.",
     "product_execution": false,
-    "status": "Authored; containing-H execution required.",
-    "output_boundary": "Page-console messages are never copied; only event kind/level/lifetime/time and fixed diagnostic marker booleans are output. Required Human attachments must resolve uniquely within the four known archive roots; incomplete evidence fails explicitly."
+    "status": "Executed successfully at exact1bc; helper removed only after preserving terminal identity. This is artifact inspection, not product verification.",
+    "output_boundary": "Page-console messages are never copied; only event kind/level/lifetime/time and fixed diagnostic marker booleans are output. Required Human attachments must resolve uniquely within the four known archive roots; incomplete evidence fails explicitly.",
+    "terminal": {
+      "schema": "round8-electron-artifact-observation-v1",
+      "source_head": "b6eaa5020c0d886e40e8477673d30673bd732be8",
+      "source_run": 41548150741,
+      "artifact_id": 13192011555,
+      "archive_sha256": "078e876c152384a3ce7cfae64f516b589a3cd4da59384878cd383be0cc59f4fb",
+      "archive_bytes": 14283099,
+      "archive_digest_verified": true,
+      "inspection_head": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+      "inspection_run": 41552586086,
+      "inspection_job": 125643585002,
+      "inspection_conclusion": "success",
+      "raw_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125643585002/logs",
+      "product_execution": false,
+      "images_visually_reviewed": false,
+      "excluded_interpretations": [
+        "Whole error-context label counts and selected lines include source expectations outside the Page snapshot; they are not used as proof of rendered labels.",
+        "No raw console, environment, tokens, headers, storage contents, screenshots or source attachments are recopied here."
+      ],
+      "plugins": {
+        "actual": 2,
+        "passed": 2,
+        "failed": 0,
+        "retries": 0,
+        "flaky": 0,
+        "skipped": 0
+      },
+      "human": [
+        {
+          "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+          "status": "failed",
+          "retry": 0,
+          "total_http_requests": 105,
+          "human_http_requests": 13,
+          "human_authorization_all_matched": true,
+          "human_device_all_matched": true,
+          "unexpected_http_count": 89,
+          "unexpected_http_paths": [
+            "/aiserver.v1.AnalyticsService/BootstrapStatsig",
+            "/aiserver.v1.DashboardService/ListMarketplacePlugins",
+            "/fabushi-agent-network-e2e-login",
+            "/favicon.ico",
+            "/aiserver.v1.DashboardService/GetUserPrivacyMode",
+            "/aiserver.v1.DashboardService/GetAvailableMcpServers",
+            "/aiserver.v1.DashboardService/GetEffectiveUserPlugins",
+            "/aiserver.v1.GrokBotService/EnsureSandBox",
+            "/sand-box/local-exec-daemon-credential",
+            "/aiserver.v1.AnalyticsService/SubmitLogs",
+            "/aiserver.v1.GrokBotService/WatchSandBoxMigration"
+          ],
+          "held_response_count": 0,
+          "canonical_service_row_count": 2,
+          "page_error_count": 0,
+          "ipc_account_reads": [
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "offline-first",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            },
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "offline-reopened",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            },
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "offline-reopened",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            }
+          ],
+          "dom_attachment_counts": {
+            "canonical-before-offline-close-dom": {
+              "row_count": 1,
+              "composer_length": 0,
+              "scheme": "file"
+            },
+            "offline-reopened-local-history-dom": {
+              "row_count": 1,
+              "composer_length": 0,
+              "scheme": "file"
+            },
+            "service-restored-new-send-dom": {
+              "row_count": 2,
+              "composer_length": 0,
+              "scheme": "file"
+            }
+          },
+          "shutdown_observations": [
+            {
+              "lifetime": "offline-first",
+              "actualMode": "ElectronApplication.close",
+              "exitCode": 0,
+              "remaining_count": 0
+            },
+            {
+              "lifetime": "offline-reopened",
+              "actualMode": "ElectronApplication.close",
+              "exitCode": 0,
+              "remaining_count": 0
+            }
+          ]
+        },
+        {
+          "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+          "status": "failed",
+          "retry": 0,
+          "total_http_requests": 55,
+          "human_http_requests": 0,
+          "human_authorization_all_matched": null,
+          "human_device_all_matched": null,
+          "unexpected_http_count": 52,
+          "unexpected_http_paths": [
+            "/aiserver.v1.AnalyticsService/BootstrapStatsig",
+            "/aiserver.v1.DashboardService/ListMarketplacePlugins",
+            "/aiserver.v1.DashboardService/GetUserPrivacyMode",
+            "/fabushi-agent-network-e2e-login",
+            "/aiserver.v1.DashboardService/GetAvailableMcpServers",
+            "/favicon.ico",
+            "/aiserver.v1.DashboardService/GetEffectiveUserPlugins",
+            "/aiserver.v1.GrokBotService/EnsureSandBox",
+            "/sand-box/local-exec-daemon-credential",
+            "/aiserver.v1.AnalyticsService/SubmitLogs",
+            "/aiserver.v1.GrokBotService/WatchSandBoxMigration"
+          ],
+          "held_response_count": 0,
+          "canonical_service_row_count": 0,
+          "page_error_count": 0,
+          "ipc_account_reads": [
+            {
+              "kind": "real-preload-ipc-read",
+              "lifetime": "held-first",
+              "method": "cursorAccount.getStatus",
+              "account_kind": "logged-in",
+              "fixture_account_matches": true
+            }
+          ],
+          "dom_attachment_counts": {
+            "held-first-failure-dom": {
+              "row_count": 0,
+              "composer_length": 0,
+              "scheme": "file"
+            }
+          },
+          "shutdown_observations": []
+        }
+      ],
+      "limits": [
+        "Human test1 reached durable offline reopen/service restoration but failed its unknown auxiliary-request oracle; it is still a failed case.",
+        "Human test2 observed logged-in IPC with zero Human HTTP and failed waiting for the peer before sending. The source-proven missing runtime recovery path and fixture AppHost isolation both require new-H execution; neither is asserted as the sole failure cause.",
+        "This inspection executes no product and supplies no live Worker, signed package, full migration or independent ACCEPT."
+      ]
+    }
+  },
+  "observed_exact_1bc_execution": {
+    "head": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+    "native_run": 41552585826,
+    "reconciliation": {
+      "schema": "fabushi.actions-terminal-receipt.v1",
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+      "run_id": 41552585826,
+      "run_attempt": 1,
+      "event": "push",
+      "job_id": 125643584554,
+      "job_name": "native-message-reconciliation",
+      "job_status": "completed",
+      "job_conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41552585826/job/125643584554",
+      "evidence": {
+        "full_job_log_fetched": true,
+        "full_job_log_characters": 464015,
+        "full_job_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125643584554/logs",
+        "actual_checkout_sha_observed": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+        "artifact": {
+          "id": 13193422518,
+          "name": "native-message-reconciliation-1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+          "size_in_bytes": 48585,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13193422518",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13193422518/zip",
+          "expired": false,
+          "created_at": "2026-11-03T00:29:01Z",
+          "expires_at": "2027-02-01T00:24:10Z",
+          "updated_at": "2026-11-03T00:29:01Z",
+          "digest": "sha256:1283f7e9b3c415379181d9f999c0086198782de7caf958578df82d397c2bc847",
+          "workflow_run": {
+            "id": 41552585826,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852"
+          }
+        },
+        "test_path": "source/host/tests/session_gateway_contract.rs",
+        "test_blob": "b04cca295c12bdc1b05bc239f7c5e773ad110f42",
+        "test_content_full_readback_matches_reviewed_candidate": true
+      },
+      "actual": {
+        "total": {
+          "executed": 120,
+          "passed": 120,
+          "failed": 0,
+          "ignored": 0
+        },
+        "groups": [
+          {
+            "label": "Transcript compaction/recovery",
+            "status": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 161,
+            "duration_seconds": 0,
+            "actual_case_lines": [
+              "test transcript_mirror::conversation_state_binary::tests::conversation_compaction_epoch_counts_external_and_self_summaries ... ok",
+              "test transcript_mirror::conversation_state_binary::tests::recovery_fields_decode_token_details_and_turn_timing ... ok",
+              "test transcript_mirror::conversation_state_binary::tests::stale_token_details_can_be_removed_without_reencoding_other_fields ... ok"
+            ],
+            "case_lines_observed": 3
+          },
+          {
+            "label": "Human ingress/settlement/restart",
+            "status": "ok",
+            "passed": 76,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 15,
+            "duration_seconds": 112.78,
+            "actual_case_lines": [
+              "test shipping_human_activity_write_failure_keeps_committed_rows_and_repairs_after_restart ... ok",
+              "test shipping_human_committed_refresh_reaches_production_transcript_bus ... ok",
+              "test shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_committed_page ... ok",
+              "test shipping_human_agent_handoff_and_history_download_keep_activity_monotonic ... ok",
+              "test shipping_human_equal_timestamp_pagination_keeps_cursor_through_refresh_reaction_and_restart ... ok",
+              "test shipping_human_concurrent_reactions_serialize_one_conversation_without_blocking_another ... ok",
+              "test shipping_human_forward_active_batch_does_not_block_destination_or_unrelated_history ... ok",
+              "test shipping_human_direct_reply_targets_reject_corrupt_identity_before_staging ... ok",
+              "test shipping_human_forward_attachment_snapshot_respects_source_policy_and_normalized_privacy ... ok",
+              "test shipping_human_forward_attachment_bytes_survive_process_kill_and_source_cache_replacement ... ok",
+              "test shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_destinations ... ok",
+              "test shipping_human_forward_legacy_unpinned_attachments_fail_without_blocking_history_or_rebinding_bytes ... ok",
+              "test shipping_human_forward_invalid_attachment_inputs_and_snapshot_staging_fail_before_post ... ok",
+              "test shipping_human_forward_process_kill_preserves_complete_intent_before_first_post ... ok",
+              "test shipping_human_forward_pending_ownership_survives_missing_versions_and_rejects_unreadable_sources ... ok",
+              "test shipping_human_forward_restart_corruption_fails_closed_and_recovers_exact_journal ... ok",
+              "test shipping_human_forward_recovery_reports_storage_failures_and_preserves_account_policy ... ok",
+              "test shipping_human_forward_missing_or_corrupt_snapshot_retains_intent_until_exact_byte_repair ... ok",
+              "test shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope ... ok",
+              "test shipping_human_forward_restart_sync_recovers_unsubmitted_target_and_original_snapshot ... ok",
+              "test shipping_human_history_cursor_echo_rejects_legacy_and_conflicting_backend_pages ... ok",
+              "test shipping_human_history_rejects_damaged_checkpoint_before_any_network_request ... ok",
+              "test shipping_human_forward_sqlite_failures_stop_initial_and_progress_dispatch ... ok",
+              "test shipping_human_history_rejects_oversized_page_before_persisting_coverage ... ok",
+              "test shipping_human_history_unversioned_checkpoint_rebuilds_only_after_qualified_page ... ok",
+              "test shipping_human_known_refresh_preserves_omitted_reactions_and_clears_explicit_empty ... ok",
+              "test shipping_human_late_invalid_send_acknowledgements_stay_rejected_without_rolling_back_settlement ... ok",
+              "test shipping_human_late_send_acknowledgement_preserves_newer_reaction_and_read_receipt ... ok",
+              "test shipping_human_late_send_transport_failure_returns_durable_settlement_after_restart ... ok",
+              "test shipping_human_legacy_peer_nonce_is_safe_in_reactions_and_local_send ... ok",
+              "test shipping_human_invalid_persisted_reaction_intents_are_retained_without_http_after_restart ... ok",
+              "test shipping_human_historical_reply_aliases_require_unique_local_canonical_parent ... ok",
+              "test shipping_human_oversized_upload_stays_pending_across_restart_and_recovers_same_nonce ... ok",
+              "test shipping_human_pending_reply_chain_recovers_after_restart_in_canonical_order ... ok",
+              "test shipping_human_midpage_resource_failure_replays_durable_prefix_after_restart ... ok",
+              "test shipping_human_reaction_intent_survives_failed_http_and_replays_once_after_restart ... ok",
+              "test shipping_human_reaction_missing_summary_does_not_acknowledge_intent ... ok",
+              "test shipping_human_malformed_history_ids_preserve_page_checkpoint_and_recover_after_restart ... ok",
+              "test shipping_human_reaction_rejects_credential_change_while_response_body_is_streaming ... ok",
+              "test shipping_human_reaction_rejects_midflight_credential_rotation_and_recovers_after_restart ... ok",
+              "test shipping_human_reaction_gateway_rejects_invalid_targets_and_emoji_before_staging_intent ... ok",
+              "test shipping_human_reaction_restart_replays_already_applied_intent_without_retoggling ... ok",
+              "test shipping_human_reaction_summaries_preserve_allowed_states_and_exact_unicode_after_restart ... ok",
+              "test shipping_human_reaction_toggles_backend_truth_and_updates_canonical_transcript ... ok",
+              "test shipping_human_reaction_toggle_rejects_without_mutation_and_recovers_after_restart ... ok",
+              "test shipping_human_reaction_unconfirmed_success_keeps_intent_until_restart_replay ... ok",
+              "test shipping_human_reaction_rechecks_current_target_after_http_without_overwriting_newer_fields ... ok",
+              "test shipping_human_reply_identity_transaction_rolls_back_children_and_recovers_after_reopen ... ok",
+              "test shipping_human_read_receipts_compare_rfc3339_instants_and_reject_invalid_ingress_before_resources ... ok",
+              "test shipping_human_retry_fences_account_and_issuer_changes_and_restores_durable_failure ... ok",
+              "test shipping_human_reaction_waits_for_inflight_history_before_deriving_desired_state ... ok",
+              "test shipping_human_retry_preserves_forward_source_policy_and_refuses_generic_ownership_bypass ... ok",
+              "test shipping_human_retry_reopens_attachment_reply_and_coalesces_same_nonce_without_reupload ... ok",
+              "test shipping_human_roster_binds_active_user_before_http_and_preserves_compatible_api ... ok",
+              "test shipping_human_roster_recovery_attempts_failed_forward_once_per_invocation_and_reopens ... ok",
+              "test shipping_human_send_fences_credential_rotation_while_waiting_to_settle_after_http ... ok",
+              "test shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reupload ... ok",
+              "test shipping_human_roster_rejects_six_streaming_credential_rotations_before_effects_and_recovers ... ok",
+              "test shipping_human_send_rejects_changed_account_before_message_or_resource_dispatch ... ok",
+              "test shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity ... ok",
+              "test shipping_human_send_rejects_midflight_credential_changes_and_recovers_after_restart ... ok",
+              "test shipping_human_snapshot_cursor_survives_pending_settlement_and_authoritative_anchor_refresh ... ok",
+              "test shipping_human_sync_keeps_peer_nonce_separate_through_local_settlement_and_restart ... ok",
+              "test shipping_human_sync_recovers_multi_device_gap_until_known_remote_overlap ... ok",
+              "test shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation ... ok",
+              "test shipping_human_sync_rejects_canonical_ack_duplicates_with_missing_or_changed_nonce ... ok",
+              "test shipping_human_sync_rejects_foreign_participants_before_resources_or_overlap ... ok",
+              "test shipping_human_sync_rejects_conflicting_local_acknowledgements_before_resource_access ... ok",
+              "test shipping_human_sync_retries_resource_gap_after_restart_before_later_overlap ... ok",
+              "test shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_time_inserts ... ok",
+              "test shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement ... ok",
+              "test shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids ... ok",
+              "test shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins ... ok",
+              "test shipping_human_sync_rejects_invalid_reactions_before_resources_and_known_overlap ... ok",
+              "test shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart ... ok",
+              "test shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync ... ok"
+            ],
+            "case_lines_observed": 76
+          },
+          {
+            "label": "resource upload bounds",
+            "status": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 161,
+            "duration_seconds": 0.23,
+            "actual_case_lines": [
+              "test extensions::session::native_messaging::native_message_resource_upload_tests::byte_upload_rejects_empty_and_oversize_before_credentials_or_http ... ok",
+              "test extensions::session::native_messaging::native_message_resource_upload_tests::growth_after_metadata_observation_consumes_at_most_limit_plus_one ... ok",
+              "test extensions::session::native_messaging::native_message_resource_upload_tests::exact_service_limit_is_readable_but_empty_and_read_errors_are_rejected ... ok"
+            ],
+            "case_lines_observed": 3
+          },
+          {
+            "label": "Human creation",
+            "status": "ok",
+            "passed": 14,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 150,
+            "duration_seconds": 0.25,
+            "actual_case_lines": [
+              "test extensions::session::production::human_creation_tests::distinct_worker_creators_keep_first_committed_metadata_and_independent_owners ... ok",
+              "test extensions::session::production::human_creation_tests::busy_initializer_after_schema_open_preserves_directory_and_allows_same_worker_retry ... ok",
+              "test extensions::session::production::human_creation_tests::cached_owner_with_missing_identity_never_relabels_retained_data ... ok",
+              "test extensions::session::production::human_creation_tests::human_format_probe_preserves_posix_locks_against_an_external_writer ... ok",
+              "test extensions::session::production::human_creation_tests::existing_empty_directory_and_schema_only_store_resume_without_replacing_files ... ok",
+              "test extensions::session::production::human_creation_tests::initializer_refusal_reuses_valid_metadata_and_an_already_published_reader_owner ... ok",
+              "test extensions::session::production::human_creation_tests::first_initializer_refuses_identityless_kv_transcript_or_blob_without_adoption ... ok",
+              "test extensions::session::production::human_creation_tests::reader_published_after_initialization_keeps_its_arc_and_durable_state ... ok",
+              "test extensions::session::production::human_creation_tests::refused_initializer_after_schema_open_preserves_directory_and_allows_same_worker_retry ... ok",
+              "test extensions::session::production::human_creation_tests::retained_wal_creation_keeps_committed_identity_and_transcript_after_reopen ... ok",
+              "test extensions::session::production::human_creation_tests::storage_error_at_initializer_preserves_directory_and_allows_same_worker_retry ... ok",
+              "test extensions::session::production::human_creation_tests::same_pair_waits_before_open_while_other_pair_progresses_and_state_survives_restart ... ok",
+              "test extensions::session::production::human_creation_tests::malformed_or_foreign_metadata_is_preserved_and_rejected_with_or_without_cached_owner ... ok",
+              "test extensions::session::production::human_creation_tests::corrupt_or_notadb_creation_preserves_original_database_sidecars_and_siblings ... ok"
+            ],
+            "case_lines_observed": 14
+          },
+          {
+            "label": "Human storage initialization",
+            "status": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 161,
+            "duration_seconds": 0.02,
+            "actual_case_lines": [
+              "test extensions::session::agent_db::human_creation_storage_tests::held_metadata_transaction_preserves_first_commit_in_the_waiting_initializer ... ok",
+              "test extensions::session::agent_db::human_creation_storage_tests::distinct_handles_initialize_one_complete_metadata_winner_and_preserve_it_on_reopen ... ok",
+              "test extensions::session::agent_db::human_creation_storage_tests::held_durable_row_transactions_prevent_missing_metadata_adoption_after_commit ... ok"
+            ],
+            "case_lines_observed": 3
+          },
+          {
+            "label": "forward sharebox",
+            "status": "ok",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 163,
+            "duration_seconds": 0.03,
+            "actual_case_lines": [
+              "test extensions::session::production::sharebox_shipping_tests::shipping_human_forward_reuses_session_owner_across_retry_and_restart ... ok"
+            ],
+            "case_lines_observed": 1
+          },
+          {
+            "label": "forward journal/CAS",
+            "status": "ok",
+            "passed": 12,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 152,
+            "duration_seconds": 1.79,
+            "actual_case_lines": [
+              "test extensions::session::forward_batch_journal::tests::bad_forward_journal_versions_and_destinations_fail_closed ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_attachment_capture_keeps_original_bytes_and_metadata_after_source_loss_and_reopen ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_attachment_capture_bounds_count_size_and_regular_file_inputs_before_acceptance ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_attachment_legacy_journal_remains_loadable_without_fabricating_byte_evidence ... ok",
+              "test extensions::session::forward_batch_journal::tests::concurrent_forward_metadata_writers_have_one_durable_winner_and_recover ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_attachment_paths_are_account_scoped_and_reject_aliases_and_symlinks ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_nonce_is_account_issuer_and_destination_scoped ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_attachment_publication_never_overwrites_and_cleans_only_its_owned_temporary ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_attachment_reader_rejects_missing_or_corrupt_snapshots_without_source_fallback ... ok",
+              "test extensions::session::forward_batch_journal::tests::stale_forward_metadata_observation_cannot_erase_other_batch ... ok",
+              "test extensions::session::forward_batch_journal::tests::stale_same_batch_snapshot_cannot_regress_completed_destination ... ok",
+              "test extensions::session::forward_batch_journal::tests::forward_attachment_exact_resource_byte_limit_remains_supported ... ok"
+            ],
+            "case_lines_observed": 12
+          },
+          {
+            "label": "Agent nonce",
+            "status": "ok",
+            "passed": 4,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 0,
+            "duration_seconds": 0,
+            "actual_case_lines": [
+              "test concurrent_nonce_cannot_coalesce_different_agent_or_prompt ... ok",
+              "test conflicting_reply_and_attachments_are_rejected_without_mutating_admission ... ok",
+              "test accepted_nonce_stays_durable_and_failed_in_flight_nonce_can_retry ... ok",
+              "test identical_concurrent_nonce_is_coalesced_without_second_dispatch ... ok"
+            ],
+            "case_lines_observed": 4
+          },
+          {
+            "label": "settlement credential fencing",
+            "status": "ok",
+            "passed": 3,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 161,
+            "duration_seconds": 0.01,
+            "actual_case_lines": [
+              "test extensions::session::production::human_send_settlement_credential_tests::shipping_human_settlement_credential_unchanged_retains_the_existing_lock ... ok",
+              "test extensions::session::production::human_send_settlement_credential_tests::shipping_human_settlement_credential_rejection_preserves_the_original_refusal ... ok",
+              "test extensions::session::production::human_send_settlement_credential_tests::shipping_human_settlement_credential_rotation_after_completed_http_is_rejected ... ok"
+            ],
+            "case_lines_observed": 3
+          },
+          {
+            "label": "gateway HTTP owner",
+            "status": "ok",
+            "passed": 1,
+            "failed": 0,
+            "ignored": 0,
+            "measured": 0,
+            "filtered_out": 14,
+            "duration_seconds": 0.11,
+            "actual_case_lines": [
+              "test gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_closed ... ok"
+            ],
+            "case_lines_observed": 1
+          }
+        ],
+        "new_feed_cases": [
+          "test shipping_human_committed_refresh_reaches_production_transcript_bus ... ok",
+          "test shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement ... ok",
+          "test shipping_human_transcript_feed_reads_current_owner_and_deduplicates_ids ... ok",
+          "test shipping_human_transcript_feed_rejects_foreign_roots_agents_and_unauthorized_origins ... ok"
+        ],
+        "budget_and_resume_cases": [
+          "test shipping_human_after_id_checkpoint_resumes_after_restart_without_replaying_committed_page ... ok",
+          "test shipping_human_6400_messages_use_exact_32_page_budget_and_resume_after_restart ... ok",
+          "test shipping_human_short_32nd_page_defers_latest_refresh_to_next_sync ... ok"
+        ],
+        "summary_lines": [
+          "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 161 filtered out; finished in 0.00s",
+          "test result: ok. 76 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 112.78s",
+          "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 161 filtered out; finished in 0.23s",
+          "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 150 filtered out; finished in 0.25s",
+          "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 161 filtered out; finished in 0.02s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 163 filtered out; finished in 0.03s",
+          "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 152 filtered out; finished in 1.79s",
+          "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+          "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 161 filtered out; finished in 0.01s",
+          "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.11s"
+        ],
+        "job_steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Bind exact source and batch",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run dtolnay/rust-toolchain@stable",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Install existing Linux Host native dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Transcript compaction and recovery registration contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Human ingress, settlement and restart contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Human resource upload size and bounded-read contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Concurrent Human creation and non-destructive initialization recovery",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Durable forwarding sharebox owner contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          },
+          {
+            "name": "Durable forwarding journal and stale-write CAS contracts",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 12
+          },
+          {
+            "name": "Preserve Agent send nonce boundary",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 13
+          },
+          {
+            "name": "Prove completed HTTP credential fencing at settlement",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 14
+          },
+          {
+            "name": "Authenticated forward and identity-only retry gateway HTTP contract",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 15
+          },
+          {
+            "name": "Diagnose locked Session dependency drift (no acceptance)",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 16
+          },
+          {
+            "name": "Preserve exact batch evidence",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 17
+          },
+          {
+            "name": "Post Run Swatinem/rust-cache@v2",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 33
+          },
+          {
+            "name": "Post Run actions/checkout@v6",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 34
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 35
+          }
+        ]
+      },
+      "resolved_failure": {
+        "prior_head": "98be438bad69f9982c503e5a3442f721307c85ce",
+        "prior_run_id": 41550895037,
+        "prior_job_id": 125637913950,
+        "prior_failure_receipt_blob": "f328a0855f5e00531a05f2f754475b57b684c37a",
+        "candidate_static_review_blob": "d8348cbe224cfb4ce9cdab4dd89e3888014f62fa",
+        "test": "shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement",
+        "test_only_fix": "Uses normal public Session owner reopening after manager disposal, asserts distinct live owner and reads committed row before releasing old copied callback; after replacement disposal obtains a third distinct live owner for a real commit and full readback. Preserves all bus and no-HTTP assertions.",
+        "actual_result": "passed at this containing exact H; all 76 Human cases and all later 41 cases executed and passed"
+      },
+      "limits": [
+        "This is Ubuntu controlled Host/SQLite/loopback HTTP integration execution; no deployed backend or signed-package acceptance.",
+        "The copied-callback case covers same-Session normal owner replacement after disposal, not an actual fresh Host/Electron process restart.",
+        "No local test, htch-runtime validation, Actions rerun, ref write or source change was performed by this evidence reader.",
+        "Source contract/candidate results remain bound to their recorded H98; they are not reattributed to this H.",
+        "Shipping compile, Renderer UI, real Electron process recovery and supported-platform gates have separate evidence and are not certified by this job.",
+        "Complete source/legal accounting, active afterId=0 deployment, complete migration closure and independent ACCEPT remain outside this receipt."
+      ]
+    },
+    "ui": {
+      "schema": "fabushi.actions-ui-terminal-receipt.v1",
+      "repository": "bhrumom/fabushi-desktop",
+      "head_sha": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+      "run_id": 41552585826,
+      "run_attempt": 1,
+      "event": "push",
+      "job_id": 125643584508,
+      "job_name": "native-message-ui",
+      "job_status": "completed",
+      "job_conclusion": "success",
+      "job_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41552585826/job/125643584508",
+      "evidence": {
+        "full_job_log_fetched": true,
+        "full_job_log_characters": 149021,
+        "full_job_log_endpoint": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125643584508/logs",
+        "actual_checkout_sha_observed": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+        "artifact": {
+          "id": 13192994087,
+          "name": "native-message-ui-1bcdae6dffa038768250daa41fc4f7c0ff9c6852",
+          "size_in_bytes": 98195554,
+          "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13192994087",
+          "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13192994087/zip",
+          "expired": false,
+          "created_at": "2026-11-03T00:39:50Z",
+          "expires_at": "2027-02-01T00:24:10Z",
+          "updated_at": "2026-11-03T00:39:50Z",
+          "digest": "sha256:8e704ef5ffa8dc4d270c4fd92018cf3dcd2cdd071188db0ccb6861a923bbe510",
+          "workflow_run": {
+            "id": 41552585826,
+            "repository_id": 1375312893,
+            "head_repository_id": 1375312893,
+            "head_branch": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+            "head_sha": "1bcdae6dffa038768250daa41fc4f7c0ff9c6852"
+          }
+        }
+      },
+      "actual": {
+        "total_executed": 194,
+        "total_passed": 194,
+        "total_failed": 0,
+        "tap_executed": 159,
+        "tap_groups": [
+          {
+            "label": "Transcript projection/pagination",
+            "cases": [
+              "NMR-49 dispatching Human text and attachments stay pending until settlement",
+              "NMR-49 existing Human and Agent delivery projections remain unchanged",
+              "NMR-26 late initial tail keeps a same-ID edit, reaction, and newer append",
+              "NMR-26 duplicate initial IDs and nonce acknowledgement retain one canonical send",
+              "NMR-26 feed baseline cannot roll back a same-ID Agent terminal event",
+              "NMR-26 tail merge preserves cached older updates in canonical order",
+              "NMR-26 disjoint tail stays between cached history and events first seen during the read",
+              "NMR-26 complete refresh updates unchanged rows but preserves post-request events",
+              "NMR-26 older page overlap deduplicates IDs without reverting current row state",
+              "NMR-26 accepted pages commit to the root cache and resume the exclusive cursor on reopen",
+              "NMR-26 update of an unloaded old row wins over an in-flight page",
+              "NMR-26 loaded older row refresh retains order and the next-page cursor",
+              "NMR-26 account and conversation changes fence stale rows and request completion",
+              "NMR-26 clear/reset prevents a late page from repopulating the transcript",
+              "NMR-26 authoritative complete refresh supersedes an older request",
+              "NMR-26 failed history load preserves rows and retries the same cursor once",
+              "NMR-26 synchronous fetch failure cannot leave pagination permanently busy",
+              "NMR-26 viewport anchoring and disposal reject stale asynchronous effects",
+              "Human transcript correlation isolates authors while retaining Host and optimistic send settlement",
+              "HRR-05 canonical Human attachment collections replace local paths in either merge order",
+              "Human older pages cannot resurrect a settled pending row in the root cache",
+              "NMR-26 an intermediate row commit cannot consume an older-page viewport anchor",
+              "NMR-26 a late first reaction response cannot replace a later mutation settlement",
+              "NMR-26 an authoritative event wins over an outstanding reaction RPC response",
+              "NMR-26 account generation fences a reaction across logout and return to the same identity",
+              "NMR-26 independent conversation and message reactions retain their completion scope",
+              "NMR-26 current reaction failures report once and obsolete failures cannot replace recovery feedback",
+              "NMR-26 deferred reaction state and error updates recheck events, clear and account generation",
+              "NMR-26 Human reaction settlement and a later event refresh an older row without moving it",
+              "NMR-26 disposed reaction completion cannot mutate the renderer or show a stale error",
+              "NMR-26 Human empty snapshots clear content and resources while Agent partial echoes retain them",
+              "NMR-26 peer and missing-author nonces cannot reconcile a local Human placeholder",
+              "NMR-26 before-ID canonicalization and a delayed receipt preserve one newer settled Human row",
+              "NMR-26 overlapping older windows preserve canonical anchors and loaded/in-flight identity updates",
+              "NMR-UI-01 retained peer nonce cannot consume a local initial or full baseline acknowledgement",
+              "NMR-UI-01 local echo eligibility rejects peer assistant unscoped and dispatching rows",
+              "NMR-UI-01 a receipt without a canonical event promotes the local pending row without changing its peer",
+              "NMR-UI-01 buffered mutations preserve author identity and the latest canonical ID",
+              "NMR-UI-01 completing an older page cannot consume a concurrent full-refresh mutation",
+              "NMR-UI-01 installing the initial cursor does not discard its pending mutation overlay",
+              "NMR-UI-01 receipt buffers expire across account return clear and disposal generations",
+              "NMR-UI-01 Agent attachment fragments retain their text identity and delivery merge"
+            ],
+            "tests": 42,
+            "pass": 42,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 42
+          },
+          {
+            "label": "Persisted drafts",
+            "cases": [
+              "NMR-DRAFT-01 binding durability precedes the caller's first dispatch",
+              "NMR-DRAFT-01 a failed binding write rejects dispatch and can be retried durably",
+              "NMR-DRAFT-01 a newly instantiated store retires only the persisted original draft once",
+              "NMR-DRAFT-01 repeating a nonce cannot retarget an edited then identical new draft",
+              "NMR-DRAFT-01 wrong author account conversation and nonce cannot retire ownership",
+              "NMR-DRAFT-01 restore preserves pending canonical observation and independent conversation edits",
+              "NMR-DRAFT-01 legacy and malformed binding metadata preserve valid V1 draft and recovery content",
+              "NMR-DRAFT-01 account ABA rejects an old binding completion before dispatch",
+              "NMR-DRAFT-01 disposal fences pending bindings and old restore writes from a newer store",
+              "NMR-DRAFT-01 failure recovery keeps a stable persisted ID and cannot adopt the newer composer",
+              "NMR-DRAFT-01 failure-created draft ownership survives restart without capturing an unrelated draft",
+              "NMR-DRAFT-01 failed settlement persistence remains retryable across restart and newer edits",
+              "NMR-DRAFT-01 empty drafts retain bindings but explicit forget cannot revive them during restore or reopen",
+              "NMR-DRAFT-01 an older settlement cannot clear a replacement recovery or bind a foreign failure"
+            ],
+            "tests": 14,
+            "pass": 14,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 14
+          },
+          {
+            "label": "Client persistence owner",
+            "cases": [
+              "NMR-DRAFT-01 persistence preserves ordinary read write remove and actual ENOENT absence",
+              "NMR-DRAFT-01 persistence propagates read I/O failures without hiding retained content",
+              "NMR-DRAFT-01 persistence never caches an empty or partial index after directory or stat failure",
+              "NMR-DRAFT-01 persistence retains the indexed blob after failed removal and allows retry",
+              "NMR-DRAFT-01 the main persistence owner orders an admitted old write before replacement restore and B"
+            ],
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 5
+          },
+          {
+            "label": "Restored reply scope",
+            "cases": [
+              "NMR-DRAFT-01 scoped restored reply preserves complete submission input",
+              "NMR-DRAFT-01 restored reply rejects account conversation and absent scope identities",
+              "NMR-DRAFT-01 current selection wins and an account switch cannot expose its old target",
+              "NMR-DRAFT-01 explicit reply cancellation preserves recovery content and prevents restored target reuse",
+              "NMR-DRAFT-01 a disposed reply controller cannot consume a persisted draft target"
+            ],
+            "tests": 5,
+            "pass": 5,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 5
+          },
+          {
+            "label": "Durable Human cursor",
+            "cases": [
+              "Human retry admits only exact durable identities and bounds nonce UTF-8 bytes",
+              "Human retry reply must be a canonical settled Human message",
+              "Human transcript cursors preserve the opaque traversal beside the physical anchor",
+              "Human transcript cursor admission rejects malformed scope and continuation without coercion",
+              "Telegram authorization projection accepts typed challenge, issue, and bounded backoff",
+              "Telegram authorization projection rejects malformed or unbounded state",
+              "remaining Telegram auth lifecycle methods share the canonical projection contract",
+              "timeline event registry validates protocol rows and descriptions",
+              "transcript feed fanout shares one subscription and validates entry identity",
+              "hidden chat mutations rollback permanent failures and hold transport failures for reconnect",
+              "find-in-chat searches visible text, wraps navigation and resets on scope",
+              "routine history formats status and relative/zoned timestamps",
+              "composer draft restore does not overwrite a staged attachment added while persistence is loading",
+              "forward recipient keyboard policy preserves picker boundaries and submit semantics",
+              "Human opaque history cursors survive projection, root-cache commits and cached conversation reopen",
+              "Human failed history retries preserve the exact token and the latest committed row overlay",
+              "Human opaque history rejects stale account ABA results and their buffered updates",
+              "Human replacement initial history clears the prior token and failed-read overlays",
+              "Agent pagination retains its sequence-only request and viewport anchor"
+            ],
+            "tests": 19,
+            "pass": 19,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 19
+          },
+          {
+            "label": "Human retry/Coordinator boundary",
+            "cases": [
+              "actual Coordinator retry frame carries only durable identities and validates canonical replies",
+              "queued initial readiness rechecks account and selection lifetime before posting a retry frame",
+              "resolved initial ready does not admit an expired retry queued on reconnect readiness",
+              "expired retry refuses immediately while an existing unguarded Agent call keeps its transport",
+              "HRR-05 retry sends only the original identities and settles through the existing projection and acknowledgement",
+              "HRR-05 canonical retry replaces committed attachment paths with the complete Host resource collection",
+              "HRR-05 omitted or empty canonical retry attachments clear the local collection and stay empty after stale reads",
+              "HRR-05 Human attachment replacement preserves Agent incremental and missing-attachment merges",
+              "HRR-05 canonical numeric remote identity is projected without changing the authoritative response",
+              "HRR-05 rapid duplicate clicks share one pending UI attempt before and after dispatch",
+              "HRR-05 failure retains the same row, reply, attachment and nonce for a subsequent retry",
+              "HRR-05 synchronous client failure releases the attempt for retry",
+              "HRR-05 malformed or mismatched settlements retain failure and cannot reconcile an echo",
+              "HRR-05 a current pending or dispatching Host result is not falsely acknowledged as sent",
+              "HRR-05 an original optimistic Human failure retries without reading projected content or attachment paths",
+              "HRR-05 invalid local identities never dispatch or mint replacement identities",
+              "HRR-06 changing conversation while retry awaits preserves the replacement view",
+              "HRR-06 the actual selection owner fences A to B to A even without a render or open-request increment",
+              "HRR-06 reopening the same selected conversation fences the prior open-request generation",
+              "HRR-06 account A to B to A cannot publish a late result into a replacement lifetime",
+              "HRR-06 logout and layout-unmount fences are immediate, before passive disposal",
+              "HRR-06 cancellation before the dispatch microtask releases its flight without effects",
+              "HRR-07 a possibly posted author-bound optimistic Human row retries through the real durable controller",
+              "HRR-06 a queued-ready production client admits no retry frame after account or selection replacement",
+              "HRR-06 deferred success and notice updaters recheck account and selection lifetimes",
+              "HRR-06 deferred failure and notice cannot overwrite a later successful retry",
+              "HRR-06 deferred pending feedback cannot regress a completed current attempt",
+              "HRR-05 a canonical transcript event wins over a late retry error and deferred retry feedback",
+              "HRR-05 same nonce in different conversations has separate flights and no cross-view settlement",
+              "HRR-06 disposal drops late results, errors and deferred updaters without another request",
+              "HRR-05 persisted pending Human errors expose Retry while preserving all projected content",
+              "HRR-05 malformed, foreign, canonical and Agent shapes do not acquire Human Retry from error metadata",
+              "Human Composer partial commit failure resumes the same queue input and never recommits acknowledged files",
+              "Human Composer disconnect before the real initial frame retains non-admission and recovers the same first send",
+              "Human Composer lost reply or throwing post cannot downgrade a possibly admitted message to payload resend",
+              "Human Composer scope expiry during retry commit retains progress without stale queue callbacks or frame",
+              "Human Composer offline retry joins its queued flight and expired admission cannot flush a replacement frame",
+              "Human Composer durable retry fences reconnect readiness and late settlement without forgetting possible admission",
+              "Human retry callbacks carry their explicit attempt while original Agent queue callbacks and order remain unchanged",
+              "explicit Human retry never captures or releases the current composer busy state across selection replacement"
+            ],
+            "tests": 40,
+            "pass": 40,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 40
+          },
+          {
+            "label": "Forward settlement",
+            "cases": [
+              "current forward success projects notice and roster",
+              "mixed settlement retains failed count and current roster",
+              "account switch before settlement prevents every projection",
+              "late successful roster response cannot repopulate a new account",
+              "late rejected roster request cannot alter a new account or rollback notice",
+              "single and paired confirmations retain their distinct destination names",
+              "missing or blank labels and larger fanout retain accurate count feedback",
+              "unconfirmed outcomes remain honest and still refresh the current roster",
+              "returning to the same account cannot revive a named settlement from its old epoch"
+            ],
+            "tests": 9,
+            "pass": 9,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 9
+          },
+          {
+            "label": "Forward dialog",
+            "cases": [
+              "current forward closes and settles exactly once",
+              "account switch prevents old success from closing B dialog",
+              "logout prevents late error from being displayed",
+              "A B A reuse still rejects old settlement",
+              "closed dialog discards old search",
+              "replaced source discards old search",
+              "unmount synchronously invalidates root generation",
+              "late rejected search cannot display error in reopened dialog",
+              "rapid double-submit dispatches only once",
+              "partial retry only sends failed destination with stable identity",
+              "hidden selected recipients keep submission names across renamed retries and consumer mutation",
+              "query change does not invalidate valid submit",
+              "credential refresh does not replace account dialog lifetime",
+              "ambiguous missing duplicate and unexpected settlements retain the frozen retry intent",
+              "recipient limit stays editable and counts selections outside the current search",
+              "closing a pending forward retires presentation without cancelling or settling a reopened intent",
+              "late searches preserve send failure and retry destinations even when selected rows are hidden"
+            ],
+            "tests": 17,
+            "pass": 17,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 17
+          },
+          {
+            "label": "Production Transcript cache",
+            "cases": [
+              "UI-NMR-OLDER-RETRY-001 failure pauses automatic pages; keyboard and single-flight retries preserve the root cache",
+              "UI-NMR-INITIAL-RETRY-VIEWPORT-001 first-load Retry binds the replacement DOM viewport before prepend",
+              "UI-NMR-REFRESH-PAGE-RACE-001 a full reconnect refresh preserves live events and fences the late older response",
+              "UI-NMR-CLEAR-PAGE-001 authoritative clear fences an in-flight retry while a fresh first page remains usable",
+              "UI-NMR-ACCOUNT-PAGE-001 another account reusing the conversation ID rejects the old retry failure",
+              "UI-NMR-CONVERSATION-PAGE-001 switching conversations discards a late retry and retains the original cached cursor",
+              "UI-NMR-UNMOUNT-PAGE-001 unmount disposes the actual client and ignores a late retry rejection",
+              "UI-NMR-FIND-PAGE-FAILURE-001 finding an unloaded match stops after one failed page and permits explicit Retry"
+            ],
+            "tests": 8,
+            "pass": 8,
+            "fail": 0,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "actual_unique_cases": 8
+          }
+        ],
+        "playwright_groups": [
+          {
+            "label": "ProductionRenderer history/account/restart",
+            "executed": 13,
+            "cases": [
+              {
+                "ordinal": 1,
+                "title": "NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (light)"
+              },
+              {
+                "ordinal": 2,
+                "title": "NMR-26 production transcript preserves paged edits and empty rows through tail refresh and switching (dark)"
+              },
+              {
+                "ordinal": 3,
+                "title": "NMR-26 an initial tail cannot overwrite an identity remap and later empty-row mutation"
+              },
+              {
+                "ordinal": 4,
+                "title": "NMR-26 a canonical clear fences an initial tail that returns after the fresh empty page"
+              },
+              {
+                "ordinal": 5,
+                "title": "NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (page-first)"
+              },
+              {
+                "ordinal": 6,
+                "title": "NMR-26 an older page and full refresh arriving after mutations cannot restore stale content (refresh-first)"
+              },
+              {
+                "ordinal": 7,
+                "title": "NMR-26 a peer nonce collision, delayed receipt and roster failure preserve the successful canonical send"
+              },
+              {
+                "ordinal": 8,
+                "title": "NMR-26 logout cancels the in-flight renderer epoch before another account sends in the same conversation"
+              },
+              {
+                "ordinal": 9,
+                "title": "NMR-26 logout cancels the queued renderer epoch before another account sends in the same conversation"
+              },
+              {
+                "ordinal": 10,
+                "title": "NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation"
+              },
+              {
+                "ordinal": 11,
+                "title": "NMR-26 a disconnected Human send queues and reconnect dispatches it exactly once"
+              },
+              {
+                "ordinal": 12,
+                "title": "UI-NMR-NAMED-FORWARD-001 real settlement survives roster failure and clears on account change"
+              },
+              {
+                "ordinal": 13,
+                "title": "UI-NMR-RETIRED-FORWARD-NAMES-001 old-account reply cannot publish names after an account round trip"
+              }
+            ],
+            "unique_cases": 13,
+            "unique_ordinals": 13,
+            "summary": "  13 passed (43.9s)"
+          },
+          {
+            "label": "ProductionRenderer author/draft recovery",
+            "executed": 22,
+            "cases": [
+              {
+                "ordinal": 1,
+                "title": "NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (light)"
+              },
+              {
+                "ordinal": 2,
+                "title": "NMR-UI-01 paged Human edits and empty fields survive tail refresh and conversation switching (dark)"
+              },
+              {
+                "ordinal": 3,
+                "title": "NMR-UI-01 an initial tail cannot overwrite mutations received before any row was cached"
+              },
+              {
+                "ordinal": 4,
+                "title": "NMR-UI-01 overlapping older and full reads preserve newer feed changes (page-first)"
+              },
+              {
+                "ordinal": 5,
+                "title": "NMR-UI-01 overlapping older and full reads preserve newer feed changes (refresh-first)"
+              },
+              {
+                "ordinal": 6,
+                "title": "NMR-UI-01 peer nonce and late successful receipt preserve the originating conversation canonical row"
+              },
+              {
+                "ordinal": 7,
+                "title": "NMR-UI-01 logout and account replacement fence old send and page replies"
+              },
+              {
+                "ordinal": 8,
+                "title": "NMR-UI-01 old-page reaction settlement cannot overwrite a later empty Human message"
+              },
+              {
+                "ordinal": 9,
+                "title": "NMR-UI-01 retained peer nonce, assistant and unscoped Human rows never consume a local send or its recoverable failure"
+              },
+              {
+                "ordinal": 10,
+                "title": "NMR-UI-01 late semantic refusal remains an error without demoting sent content or restoring an unsent draft"
+              },
+              {
+                "ordinal": 11,
+                "title": "NMR-UI-01 late Agent retry approval completion cannot erase a newer failed send recovery"
+              },
+              {
+                "ordinal": 12,
+                "title": "NMR-UI-01 same-nonce Human retry preserves a newer draft with identical text (feed-first)"
+              },
+              {
+                "ordinal": 13,
+                "title": "NMR-UI-01 same-nonce Human retry preserves a newer draft with identical text (receipt-first)"
+              },
+              {
+                "ordinal": 14,
+                "title": "NMR-UI-01 pre-frame Human retry resumes the original input and partial attachment commits"
+              },
+              {
+                "ordinal": 15,
+                "title": "NMR-DRAFT-01 a failed submission binding write admits zero message RPC and retains the original retry input"
+              },
+              {
+                "ordinal": 16,
+                "title": "NMR-DRAFT-01 canonical history before delayed draft restore retires only the recorded original identity"
+              },
+              {
+                "ordinal": 17,
+                "title": "NMR-DRAFT-01 queued Agent cancellation preserves restored reply and partial attachment progress"
+              },
+              {
+                "ordinal": 18,
+                "title": "NMR-UI-01 clear invalidates old pages, send failure and reaction receipt before the same row ID is reused"
+              },
+              {
+                "ordinal": 19,
+                "title": "NMR-UI-01 A to B to A cannot reuse the old callback lifetime even when conversation and row IDs match"
+              },
+              {
+                "ordinal": 20,
+                "title": "NMR-UI-01 root disposal releases its port and old work cannot enter a new renderer instance"
+              },
+              {
+                "ordinal": 21,
+                "title": "NMR-UI-01 the same renderer keeps Agent tool expansion and real attachment staging controls"
+              },
+              {
+                "ordinal": 22,
+                "title": "NMR-UI-01 background transcript recovery preserves Plugins until explicit navigation"
+              }
+            ],
+            "unique_cases": 22,
+            "unique_ordinals": 22,
+            "summary": "  22 passed (13.2m)"
+          }
+        ],
+        "production_renderer_compile_step": {
+          "name": "Compile actual production renderer",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12
+        },
+        "executed_audit_output": [
+          "actual ProductionRenderer: 13 passed, 0 failed, 0 skipped, 0 retries",
+          "actual ProductionRenderer author/recovery: 22 passed, 0 failed, 0 skipped, 0 retries"
+        ]
+      },
+      "counting_method": "Each TAP suite is counted only within its TAP version 13 through # duration_ms block; grep echoes of the same summaries are excluded. Each Playwright group has exact unique ordinal and title counts, its final passed summary, then the actually executed JSON audit success line. The JSON audit requires all results passed exactly once with retry0 and zero unexpected/flaky/skipped/errors.",
+      "resolved_prior_fixture_failure": {
+        "prior_head": "487083725db93109b0d3d2b4bdddd483d148ba30",
+        "prior_job_id": 125624458465,
+        "case": "NMR-UI-01 background transcript recovery preserves Plugins until explicit navigation",
+        "result_at_this_head": "passed as actual case22; complete22 JSON audit also passed",
+        "scope": "Controlled fixture now implements the existing empty getPluginSyncStatus contract; actual background-overlay assertions were preserved."
+      },
+      "limits": [
+        "This receipt is bound only to H 1bcdae6dffa038768250daa41fc4f7c0ff9c6852 and attempt 1; H98 results remain separate evidence.",
+        "The pending NMR-TRANSPORT-RECOVERY-01 production candidates, six new contract cases and browser case 23 are not contained or tested by this run.",
+        "The shipping compile job 125643584668 remained queued at this observation; this is not whole-workflow or migration acceptance.",
+        "Playwright browser cases use the existing real ProductionRenderer and controlled external Host/port fixture; they do not qualify real service deployment, physical Host restart or final supported packages."
+      ]
+    },
+    "shipping": {
+      "job": 125643584668,
+      "status": "queued",
+      "actual_test_count": 0
+    },
+    "actual_mac": {
+      "new_run": false,
+      "reason": "No actual Mac target input changed at the lifecycle-fixture/inspection preparation commit."
+    }
+  },
+  "runtime_transport_recovery": {
+    "requirement": "NMR-TRANSPORT-RECOVERY-01a..e / NMR-AC-TRANSPORT-RECOVERY-01",
+    "frozen_spec": {
+      "head": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "blob": "04a92d2b22acbec7b8f8fad9872515e7a07568d7"
+    },
+    "readonly_source_audit": {
+      "initial": "4cb35f9cac0dc0465c3ca7226fb9ff29bd00aeeb",
+      "fanout_and_current_state_design": "2331c4357576b3cb7273d6ef94d25900e70e6406"
+    },
+    "production_owner": "Existing createCoordinatorClient -> createCoordinatorConnectionController -> ProductionRenderer refreshRoster -> existing Session Human sync and Transcript; no RPC/new authority/automatic user-mutation replay.",
+    "renderer_blob": "8e3723e7208bbad9fc80c6b6bb4ad849dc54d722",
+    "renderer_change": "Initial ready is an unobserved-state fallback; all transport/account-reset entrances update the synchronous transport ref, and render no longer writes that authority. Current-state client replay handles effect restart while down.",
+    "authored_counts": {
+      "retained_port": 4,
+      "additional_port": 6,
+      "required_port": 10,
+      "retry_group": 47,
+      "retained_author": 22,
+      "additional_author": 1,
+      "required_author": 23,
+      "required_ui_total": 203,
+      "additional_offline_origin_submission": 1,
+      "additional_offline_origin_projection": 1
+    },
+    "authored_case_names": [
+      "runtime Host replacement waits for the current Gateway transport before notifying recovery",
+      "runtime same-generation reconnects once and rejects stale or terminal-generation transitions",
+      "runtime informational and malformed frames cannot advance the generation or sequence fence",
+      "Coordinator port replacement resets runtime epochs while lifecycle events preserve pending RPC settlement",
+      "an in-flight roster retry is replaced after same-generation transport recovery and ignores its late result",
+      "transport retry handoff is account-scoped, single-flight and inert after disposal"
+    ],
+    "authored_browser_case": "NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the active Human draft after a held Retry",
+    "ui_blobs": {
+      "spec": "8d92d40fe90bb44591d6479d968eaa2c6d2b4394",
+      "fixture": "ce348b591609e5f40416c635ef49a31f4af4254f",
+      "diff": "acd11f601fa11baa2d94d922fc80f50c6925ded9"
+    },
+    "mac_fixture": {
+      "base": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+      "blob": "2f45027c5ad68e6c70b2211c5b85e59dfd12706a",
+      "diff": "17120aa69a2a001813177f585bad341509ec322c",
+      "scope": "Nine exact auxiliary POST404 and explicit login/favicon; Human-only FABUSHI_APP_DATA; unique prose body plus independent online-zero-offline-label assertion. Original test bodies/counts/retry-zero and strict unknown HTTP remain.",
+      "prior_fixture_blob": "98d04e5413b9d1ac6f85efcbb174343f39c6e86a",
+      "body_oracle_diff": "cf74af3f802418696f85668a6957c34650c64bc5"
+    },
+    "ledger": {
+      "harness_sha": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+      "input_blob": "25cf6dbdea41d48dc57df1f252d256772750362a",
+      "ops_blob": "e35d73662071d5488b840ce3a0639402cc53ea78",
+      "reviewed_base": "f5499f671c5be9aa824416c0832f855d3647d786",
+      "output_blob": "d5f16f98d6ae28342c9e06a3b17069121769aa79",
+      "output_sha256": "9792c68f3bebd118c65e2b4fbdf9aa3428c11985de14d21d90a3b6ff9018b3d5",
+      "changed_rows": [
+        "FBCP-NMR-001"
+      ],
+      "authored_ui_cases": 23,
+      "normalized_target_paths": 0,
+      "normalized_target_symbols": 0,
+      "product_validation": false,
+      "source_acceptance": false,
+      "commit_created": false,
+      "ref_updated": false,
+      "integration_condition": "Root API reads the full input/output and matches the current canonical input before force=false expected-head CAS.",
+      "run": 41555599067,
+      "job": 125653605784,
+      "artifact_log": [
+        "SHA256 digest of uploaded artifact zip is 981b7c244a0954114fa782181ee96248ed57415905dbb1b2c7c5bb0f70624c1e",
+        "Artifact round8-transport-ledger-object-36ae38b3791c7c07bf6e4e4907a96265881d0c2f.zip successfully finalized. Artifact ID 13195010713",
+        "Artifact round8-transport-ledger-object-36ae38b3791c7c07bf6e4e4907a96265881d0c2f has been successfully uploaded! Final size is 573459 bytes. Artifact ID is 13195010713"
+      ],
+      "full_api_readback": true,
+      "chars": 3712580,
+      "changed_rows_confirmed": [
+        "FBCP-NMR-001"
+      ],
+      "non_row_fields_unchanged": true,
+      "historical_scalars_unchanged": true,
+      "target_paths": 63,
+      "target_symbols": 71,
+      "other_183_rows_unchanged": true,
+      "source_reviews_16_unchanged": true,
+      "installed_in_containing_tree": true,
+      "temporary_helpers_removed_in_containing_tree": true
+    },
+    "execution": "not-run at integration preparation; exact containing-H Actions required",
+    "acceptance": false,
+    "previous_uninstalled_ledger_preparation": {
+      "run": 41553869494,
+      "job": 125647839396,
+      "harness_sha": "f5499f671c5be9aa824416c0832f855d3647d786",
+      "input_blob": "25cf6dbdea41d48dc57df1f252d256772750362a",
+      "output_blob": "500edb6bb536e385e7e91b61177d43cd9ade2e12",
+      "output_sha256": "791a11b586036a72f27f1ff55cffada57df0144903b55a364b9b0765892d4a11",
+      "artifact": 13193588437,
+      "artifact_digest": "e1657cd4977e3fbae511b1e923e34a686eb1a62e493ee4e58c115481bfcd2c67",
+      "chars": 3709136,
+      "changedRows": [
+        "FBCP-NMR-001"
+      ],
+      "otherRootFieldsEqual": true,
+      "productValidation": false,
+      "refUpdated": false
+    }
+  },
+  "backend_transport_preparation_readonly": {
+    "observed_at": "2026-11-03T00:38:32Z",
+    "repository": "bhrumom/fabushi-backend",
+    "pr": 137,
+    "state": "open",
+    "draft": true,
+    "merged": false,
+    "main": "687718ce9e0083aa124d29005bcce4051d357919",
+    "head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "latest_runs": [
+      41510861859,
+      41510852280
+    ],
+    "latest_created_at": "2026-11-02T19:32:24Z",
+    "changed_since_prior_evidence": false,
+    "limits": "Current PR/main/run metadata unchanged; existing main/last historical handler reject afterId=0, compatible PR remains draft/unmerged. Prior readiness jobs were skipped; active Worker still unqueried. No merge/deploy/login/account/service probe."
+  },
+  "offline_origin_followup": {
+    "requirement": "NMR-OFFLINE-ORIGIN-01a..e / NMR-AC-OFFLINE-ORIGIN-01",
+    "frozen_spec": {
+      "head": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "blob": "04a92d2b22acbec7b8f8fad9872515e7a07568d7"
+    },
+    "diagnosed_actual_mac": {
+      "head": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "run": 41550895126,
+      "job": 125637914634,
+      "receipt_blob": "1b9bd861f08915691b70abe851b31af83b468fef",
+      "plugins_passed": 2,
+      "human_executed": 2,
+      "human_passed": 0,
+      "human_failed": 2,
+      "retries": 0,
+      "full_job_log_read": true,
+      "full_job_log_characters": 366824
+    },
+    "production_chain": "Existing Human TranscriptSubmissionScope guarded onPhase observes real transport-down queuing before any Host frame; sendHumanComposerSubmission sends explicit boolean; existing Session gateway validates; existing SQLite owner fixes first intent metadata; authorized nonce settlement retains origin and original composition time; actual ProductionRenderer projection and Transcript JSX consume canonical origin.",
+    "semantics": [
+      "An online immediate or busy-lane send carries false. Timestamp alone never establishes Human offline origin. Agent display semantics and normal admission/send journal remain unchanged.",
+      "Present nonboolean origin rejects at the gateway; true needs a finite composedAtMs. The old six-argument Session public wrapper remains compatible.",
+      "Once a nonce has a retained intent, repeated requests cannot promote or demote its origin or replace original time. Possible-admission retry still sends only conversationId/clientNonce.",
+      "Only same-local-author/same-nonce validated provenance is copied into canonical settlement. Server timestamp, late receipt, known-row refresh and actual close/reopen retain their existing authority.",
+      "Malformed retained origin preserves seq/id/full SQLite bytes, blocks unsafe POST, but adds no global history preflight and permits unrelated bounded history progress.",
+      "Human sent-while-offline JSX requires explicit true, canonical sent identity and finite time. Pending/queued rows do not claim sent; authoritative false clears stale cache inference.",
+      "Mac exact-body assertions now target the unique .sand-message-prose while separately requiring zero offline notices for online Sends. Original canonical ID/time/delivery/placeholder/count/retry-zero oracles remain."
+    ],
+    "candidate_blobs": {
+      "frontend/src/production/ProductionRenderer.tsx": "8e3723e7208bbad9fc80c6b6bb4ad849dc54d722",
+      "source/host/src/extensions/session/production.rs": "74a43082ed4be5370cf38af2a0477957ece2c8a1",
+      "source/host/src/extensions/session/gateway.rs": "5ad7493f3e198d4cbcf2739b9ce58710834386ae",
+      "source/host/tests/session_gateway_contract.rs": "d613e9f5579a6f9156e0acd71fa5e993310692ef",
+      "frontend/src/production/human-message-submission.ts": "f6a52a166a83a9d3d19eb471ebeb62321692d981",
+      "frontend/src/production/human-message-submission.contract.test.ts": "1d014aaf8a6a42f11084d54326b24415da0032f7",
+      "frontend/src/production/model.ts": "7bc5b30f01f5c0cc48907c7960e6ad3b9e83055e",
+      "frontend/src/recovered/features/conversation/workspace/model.ts": "c546fd40fe60e0fb0aa1eb402bbd24922a298c3b",
+      "frontend/src/recovered/features/conversation/workspace/transcript.tsx": "d3af9728a0ae50200be2809316d18ba27f66e628",
+      "frontend/src/production/transcript-projection.contract.test.ts": "0a1934890722ee077934ec6428ceef4a2b531e07",
+      "desktop/e2e/fixtures/native-message-projection.tsx": "c3ecddb060cd6ade6c04d06ea3698770afcc5e9a",
+      "desktop/e2e/native-message-projection.spec.ts": "90d24b4adee4f31655b65da488173f2754285fbf",
+      "desktop/e2e/agent-network-responsive.spec.ts": "2f45027c5ad68e6c70b2211c5b85e59dfd12706a"
+    },
+    "static_evidence": {
+      "design": "3747cae275672260a2ecd96040707d0353824985",
+      "host_boundary": "c0aae72b78b06a6f149e31c332e2e9c97c888fa3",
+      "helper_implementation": "f1f27bf11d9fa472e71fea5f8e95e98ecf1861b0",
+      "host_diff": "17236f7e2065877feb13c40caa5f878565f734e3",
+      "independent_host_gateway_renderer_review": "f765531feb9d4c5ef3974e1b88066bdf51633ba7",
+      "projection_implementation": "53630a11b45980dce91115d04dbfc3ec05b4ed9e",
+      "projection_diff": "ab464e09343ee1c9e67c0bfeced1470d09b66b56",
+      "mac_body_oracle_diff": "cf74af3f802418696f85668a6957c34650c64bc5",
+      "api_full_readback": true,
+      "execution": false,
+      "host_implementation_and_helper_review": "4761c0b05e81548fc61433884719e961080160ca",
+      "independent_projection_review": "c42866bf33e7be5e53b0b3fe6e867f09b07ce9fb",
+      "outcome": "No static blocker found in reviewed diffs; execution and acceptance pending."
+    },
+    "required_actual_counts": {
+      "reconciliation": {
+        "human": 77,
+        "total": 121,
+        "previous_exact_head_passed": 120
+      },
+      "ui": {
+        "projection": 43,
+        "human_retry": 47,
+        "browser_projection": 13,
+        "author_recovery": 23,
+        "total": 203
+      },
+      "actual_electron": {
+        "plugins": 2,
+        "human": 2
+      },
+      "source": {
+        "node": 161,
+        "python": 37,
+        "schema_expected_errors": 0,
+        "candidate": "must remain unaccepted-candidate-consistent"
+      }
+    },
+    "harness_boundaries": {
+      "browser_13": "Existing unlisted RPC fallback-null remains; this fixture has explicit new Human boolean/time boundary checks. It is not a strict-unknown-RPC or native SQLite/process-restart proof.",
+      "author_23": "Strict unknown RPC retained; the new runtime recovery case has no reload/focus/chat-switch shortcut.",
+      "actual_mac": "Strict unknown method/path/query retained. Nine named auxiliary POST404 contracts plus explicit login/favicon and Human-only AppHost root isolation are fixture repairs, not a service success substitution.",
+      "legacy_data": "Reviewed native Human pending/canonical/fallback constructors all stamp authorKind:human. Unknown historical records lacking authorKind are not certified; the general SQLite reader does not backfill that identity. No speculative repair or Agent behavior change is included."
+    },
+    "execution": "authored and static-reviewed only at preparation; containing-commit GitHub Actions must actually execute",
+    "accepted": false
+  },
+  "observed_exact_98_mac_execution": {
+    "schemaVersion": 1,
+    "kind": "round8-exact-head-electron-terminal-and-message-metadata-diagnosis",
+    "repository": "bhrumom/fabushi-desktop",
+    "headSha": "98be438bad69f9982c503e5a3442f721307c85ce",
+    "observedAt": "2026-11-03T00:44:00.203Z",
+    "run": {
+      "id": 41550895126,
+      "jobId": 125637914634,
+      "jobName": "plugins-close-pointer",
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41550895126",
+      "updatedAt": "2026-11-03T00:40:37Z"
+    },
+    "source": {
+      "spec": "desktop/e2e/agent-network-responsive.spec.ts",
+      "specBlob": "375a23265bd6b7f09e5cb5b9db3fff47a28cc7a9",
+      "workflowBlob": "e8c1955c3cf2446da9262f09092c0fe16db3de10",
+      "fullApiSourceReadback": true
+    },
+    "build": {
+      "electron": "success",
+      "host": "success",
+      "renderer": "success",
+      "desktopRuntime": "success",
+      "exactHumanBinaryBinding": "success",
+      "lockedFfmpegInstallation": "success"
+    },
+    "counts": {
+      "plugins": {
+        "executed": 2,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "retries": 0,
+        "jsonAudit": "success"
+      },
+      "human": {
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "skipped": 0,
+        "retries": 0,
+        "source": "complete line reporter; two unique cases; workers=1 and retries=0; final 2 failed"
+      }
+    },
+    "plugins": [
+      "shipping Plugins close 1024x684 uses a real pointer and preserves the window-control band",
+      "shipping Plugins close 1280x900 uses a real pointer and preserves the window-control band"
+    ],
+    "human": [
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC retains a canonical row across offline same-directory reopen",
+        "status": "failed",
+        "lifetimesLaunched": [
+          "offline-first"
+        ],
+        "reached": [
+          "actual Electron, video readiness, preload and trace startup",
+          "real browser login and authenticated Human conversation",
+          "real UI Send and controlled service canonical message:1",
+          "canonical row uniqueness check before body assertion"
+        ],
+        "failure": {
+          "helper": "assertHumanCanonicalUi",
+          "sourceLine": 912,
+          "caseLine": 1260,
+          "error": "expect(locator).toHaveText(expected) failed",
+          "scope": ".sand-message group",
+          "difference": "Received text is the complete expected message plus Sent while offline timestamp metadata",
+          "timeoutMs": 10000
+        },
+        "notReached": [
+          "first canonical delivery/time/placeholder assertions after the body check",
+          "canonical SQLite assertion",
+          "planned offline shutdown and same-directory reopen",
+          "remote503 local-history recovery",
+          "service recovery and second Send",
+          "final unknown-HTTP and page-error assertions"
+        ]
+      },
+      {
+        "title": "NMR-ELECTRON-01 actual Human IPC replays a committed nonce after held-receipt process reopen",
+        "status": "failed",
+        "lifetimesLaunched": [
+          "held-first",
+          "held-replay-reopened",
+          "new-draft-reopened"
+        ],
+        "reached": [
+          "real first UI Send, saved draft identity and local Human author/nonce binding before held receipt",
+          "remote commit while original response is held",
+          "first real process close and zero-owned-survivors assertion",
+          "same-directory second process with restored saved account and durable same-nonce Host replay",
+          "exact canonical original A UI and single SQLite row",
+          "draft, draftId, recovery, recoveryId and submission binding empty before any new editor action",
+          "new B through originalText -> differentText -> originalText with new persisted draftId",
+          "second real process close and zero-owned-survivors assertion",
+          "third real process restores B with equal full persisted state and original canonical A",
+          "release on original closed socket does not erase B, change its identity or send it",
+          "B real UI Send has a nonce different from A and canonical message:2 row exists"
+        ],
+        "failure": {
+          "helper": "assertHumanCanonicalUi",
+          "sourceLine": 912,
+          "caseLine": 1473,
+          "error": "expect(locator).toHaveText(expected) failed",
+          "scope": ".sand-message group for fresh canonical message:2",
+          "difference": "Received text is the complete expected B message plus Sent while offline timestamp metadata",
+          "timeoutMs": 10000
+        },
+        "notReached": [
+          "fresh B canonical delivery/time/placeholder assertions after the body check",
+          "final two-row SQLite uniqueness and two-service-message assertions",
+          "final empty Composer assertion",
+          "planned third-lifetime graceful close oracle",
+          "final unknown-HTTP and page-error assertions"
+        ]
+      }
+    ],
+    "capture": {
+      "actualHumanLifetimes": 4,
+      "traceStartsSucceeded": 4,
+      "traceStopsSucceeded": 4,
+      "humanVideoAttachmentsObserved": 4,
+      "appCloseCallsSucceeded": 4,
+      "strictPlannedCloseAndNoSurvivorsAssertionsReached": 2,
+      "failureCleanupLifetimes": [
+        "offline-first",
+        "new-draft-reopened"
+      ],
+      "startupBoundary": "All four progressed beyond real video path, DCL and preload readiness to tracing and Human UI actions",
+      "execDaemonContaminationMessagesObserved": 0,
+      "mediaVisuallyReviewed": false,
+      "archiveEntriesInspected": false
+    },
+    "diagnosis": {
+      "fixtureOracle": {
+        "classification": "test oracle scope defect",
+        "evidence": {
+          "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+          "blob": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+          "bodyLines": [
+            543,
+            546
+          ],
+          "groupLines": [
+            791,
+            808
+          ]
+        },
+        "finding": "UserMessageContent owns one .sand-message-prose body. The enclosing .sand-message intentionally includes metadata, attachments, reactions and failure state; exact message equality must target the body."
+      },
+      "productionMetadata": {
+        "classification": "production semantic defect, independently unresolved by selector precision",
+        "finding": "Every Human send passes creation time as composedAtMs, and the live pending feed projects this as Sent while offline without evidence that creation occurred offline. The complete canonical body is not corrupt.",
+        "anchors": [
+          {
+            "path": "frontend/src/production/human-message-submission.ts",
+            "blob": "1948f46323e756c11ecc98d9ce6df603acedafa2",
+            "lines": [
+              60,
+              66
+            ],
+            "finding": "sendHumanMessage unconditionally includes composedAtMs:submission.createdAtMs"
+          },
+          {
+            "path": "source/host/src/extensions/session/production.rs",
+            "blob": "ade01bc58ca2684b6b6b4c7ce1c6ad1e8741e600",
+            "lines": [
+              3975,
+              3986
+            ],
+            "finding": "pending Human entry persists composedAtMs independently of offline origin"
+          },
+          {
+            "path": "frontend/src/production/model.ts",
+            "blob": "22517acfe87f173c282f3b823913cda9b9e654fe",
+            "lines": [
+              430,
+              445
+            ],
+            "finding": "projection maps a finite composedAtMs/queuedAtMs directly"
+          },
+          {
+            "path": "frontend/src/production/transcript-projection.ts",
+            "blob": "32d328a58c960a7f5e29fddc1d4a8ec455d7a9e3",
+            "lines": [
+              54,
+              75
+            ],
+            "finding": "merge preserves existing fields absent from the incoming canonical projection"
+          },
+          {
+            "path": "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+            "blob": "dc872faf27520f839e0ab79c58ec4e2b216cdbaf",
+            "lines": [
+              805,
+              807
+            ],
+            "finding": "non-failed user row with composedAtMs shows SentWhileOfflineNotice"
+          }
+        ],
+        "boundary": "All Sends in these two cases are composed while connected. Holding an HTTP receipt or reopening a process does not prove offline composition."
+      },
+      "authorizedFixtureCandidate": {
+        "base": "98d04e5413b9d1ac6f85efcbb174343f39c6e86a",
+        "blob": "2f45027c5ad68e6c70b2211c5b85e59dfd12706a",
+        "diffBlob": "cf74af3f802418696f85668a6957c34650c64bc5",
+        "fullApiReadback": true,
+        "changes": "One exact .sand-message-prose body plus retained canonical/delivery/timestamp/placeholder assertions and explicit zero offline-origin notice. No case, count, timing, retry or process behavior changes.",
+        "executed": false,
+        "productionFixOwnedByIntegrator": true
+      }
+    },
+    "artifact": {
+      "id": 13193688966,
+      "name": "plugins-close-pointer-98be438bad69f9982c503e5a3442f721307c85ce",
+      "sizeBytes": 29212658,
+      "digest": "sha256:a3d016a62b74574705f30f84c382d921418c5c94309963e267bd4f3804b17b37",
+      "headSha": "98be438bad69f9982c503e5a3442f721307c85ce",
+      "expired": false,
+      "apiMetadataVerified": true,
+      "archiveDigestIndependentlyCalculated": false
+    },
+    "fullLog": {
+      "decodedCharactersRead": 366824,
+      "splitLinesRead": 4540,
+      "originalLocation": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/jobs/125637914634/logs",
+      "rawCopyUploaded": false
+    },
+    "limits": [
+      "This run contains the durable Human feed change, but neither Human case passed.",
+      "b6 read-only artifact inspection is distinct evidence and cannot substitute for H98 ZIP inspection.",
+      "No online deployment, afterId=0 active Worker, supported package, image review, full migration or independent ACCEPT claim.",
+      "The earlier b6 missing-peer/reconnect gap is not disproved by this attempt reaching later actions; its independent production contract remains separately required."
+    ]
+  },
+  "final_transport_origin_candidate": {
+    "base": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+    "tree_base": "75d372feb59f5e3d25466c602a613983c671dbea",
+    "spec": {
+      "head": "36ae38b3791c7c07bf6e4e4907a96265881d0c2f",
+      "path": "docs/specs/fbcp-native-message-reconciliation.md",
+      "blob": "04a92d2b22acbec7b8f8fad9872515e7a07568d7"
+    },
+    "candidate_blobs": {
+      "frontend/src/production/coordinator-client.ts": "f78211396f2821989d90914d5b22f4d7c28a9f2b",
+      "frontend/src/recovered/features/root-resilience/connection-state.ts": "7c2cf9c0233aa1598128e2ad24927b1adfe3ede0",
+      "frontend/src/production/human-message-retry-port.contract.test.ts": "068fa2ceee047b36f0c5ebe8c34ea5501daab0ac",
+      "frontend/src/production/ProductionRenderer.tsx": "8e3723e7208bbad9fc80c6b6bb4ad849dc54d722",
+      "desktop/e2e/native-message-author-recovery.spec.ts": "8d92d40fe90bb44591d6479d968eaa2c6d2b4394",
+      "desktop/e2e/fixtures/native-message-author-recovery.tsx": "ce348b591609e5f40416c635ef49a31f4af4254f",
+      "source/host/src/extensions/session/production.rs": "74a43082ed4be5370cf38af2a0477957ece2c8a1",
+      "source/host/src/extensions/session/gateway.rs": "5ad7493f3e198d4cbcf2739b9ce58710834386ae",
+      "source/host/tests/session_gateway_contract.rs": "d613e9f5579a6f9156e0acd71fa5e993310692ef",
+      "frontend/src/production/human-message-submission.ts": "f6a52a166a83a9d3d19eb471ebeb62321692d981",
+      "frontend/src/production/human-message-submission.contract.test.ts": "1d014aaf8a6a42f11084d54326b24415da0032f7",
+      "frontend/src/production/model.ts": "7bc5b30f01f5c0cc48907c7960e6ad3b9e83055e",
+      "frontend/src/recovered/features/conversation/workspace/model.ts": "c546fd40fe60e0fb0aa1eb402bbd24922a298c3b",
+      "frontend/src/recovered/features/conversation/workspace/transcript.tsx": "d3af9728a0ae50200be2809316d18ba27f66e628",
+      "frontend/src/production/transcript-projection.contract.test.ts": "0a1934890722ee077934ec6428ceef4a2b531e07",
+      "desktop/e2e/fixtures/native-message-projection.tsx": "c3ecddb060cd6ade6c04d06ea3698770afcc5e9a",
+      "desktop/e2e/native-message-projection.spec.ts": "90d24b4adee4f31655b65da488173f2754285fbf",
+      "desktop/e2e/agent-network-responsive.spec.ts": "2f45027c5ad68e6c70b2211c5b85e59dfd12706a",
+      "projects/fabushi-communication-platform/quality/requirements-traceability-matrix.md": "9a147d7f4cc2f7e9b06ce5996e5ef2988e374190",
+      ".github/workflows/native-service-contracts.yml": "c7bedfc5462a1f05262cc724cf8f377a7f5b6337",
+      ".github/workflows/plugins-window-close.yml": "e4523c7d786bb282e9eec1aeee375efa5fd463ea",
+      "projects/telegram-desktop-rust/parity-ledger.json": "d5f16f98d6ae28342c9e06a3b17069121769aa79"
+    },
+    "full_blob_api_reads": true,
+    "deletions": [
+      ".github/checkpoint-ledger-ops-round8-transport.json",
+      ".github/workflows/checkpoint-ledger-object-round8-transport.yml",
+      ".github/workflows/checkpoint-round8-electron-artifact-inspection.yml"
+    ],
+    "validation": "pending exact containing commit",
+    "required_counts": {
+      "reconciliation": {
+        "human": 77,
+        "total": 121,
+        "previous_exact_head_passed": 120
+      },
+      "ui": {
+        "projection": 43,
+        "human_retry": 47,
+        "browser_projection": 13,
+        "author_recovery": 23,
+        "total": 203
+      },
+      "actual_electron": {
+        "plugins": 2,
+        "human": 2
+      },
+      "source": {
+        "node": 161,
+        "python": 37,
+        "schema_expected_errors": 0,
+        "candidate": "must remain unaccepted-candidate-consistent"
+      }
+    },
+    "accepted": false
   }
 }

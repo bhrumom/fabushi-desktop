@@ -2228,6 +2228,21 @@ impl ProductionSessionWorkers {
             .map_err(|error| format!("remote Human message timestamp is invalid: {error}"))?
             .timestamp_millis() as f64;
         let entry_id = format!("human-server-message:{remote_id}");
+        if sender_id == local_human_id {
+            // Validate only this message's existing local provenance. A corrupt
+            // intent is retained; it cannot be overwritten by a remote snapshot
+            // that carries no evidence of the original queue observation.
+            let local_origin = existing.iter().find(|candidate|
+                candidate.get("id").and_then(serde_json::Value::as_str) == Some(entry_id.as_str())
+                    && candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id))
+                .or_else(|| remote.client_request_id.as_deref().map(str::trim)
+                    .filter(|nonce| !nonce.is_empty()).and_then(|nonce| existing.iter().find(|candidate|
+                        candidate.get("authorId").and_then(serde_json::Value::as_str) == Some(local_human_id)
+                            && candidate.get("clientNonce").and_then(serde_json::Value::as_str) == Some(nonce))));
+            if let Some(current) = local_origin {
+                Self::validate_human_queue_origin(current)?;
+            }
+        }
         let mut entry = serde_json::json!({
             "id": entry_id,
             "kind": "message",
@@ -2369,6 +2384,16 @@ impl ProductionSessionWorkers {
                     Some("pending" | "dispatching")
                 ) {
                     return Err("local Human message already uses the server clientRequestId without a retryable settlement state".into());
+                }
+                let origin = Self::validate_human_queue_origin(current)?;
+                let object = entry.as_object_mut().expect("remote Human message is an object");
+                if let Some(origin) = origin {
+                    object.insert("queuedOffline".into(), serde_json::json!(origin));
+                }
+                if let Some(composed) = current.get("composedAtMs").filter(|value|
+                    value.as_f64().is_some_and(f64::is_finite))
+                {
+                    object.insert("composedAtMs".into(), composed.clone());
                 }
                 let settled = owner
                     .settle_transcript_entry_identity(current_id, &entry)
@@ -2634,7 +2659,7 @@ impl ProductionSessionWorkers {
             let attachments = entry.get("attachments").and_then(serde_json::Value::as_array).cloned().unwrap_or_default();
             let _ = self.append_human_message_with_context(
                 conversation_id, text, nonce, composed, reply, &attachments,
-                entry.get("forwardContext"), Some(&_exclusive),
+                entry.get("forwardContext"), Some(&_exclusive), false,
             );
         }
         let peer = self.peer_human_id_from_metadata(&metadata)?;
@@ -3315,7 +3340,7 @@ impl ProductionSessionWorkers {
                 }
                 self.append_human_message_from_intent(
                     &destination_id, &batch.text, &nonce, None, None,
-                    &batch.attachments, Some(&batch.context), None, require_existing,
+                    &batch.attachments, Some(&batch.context), None, require_existing, false,
                 )
             })();
             match result {
@@ -3668,7 +3693,7 @@ impl ProductionSessionWorkers {
                 snapshot.get("composedAtMs").and_then(serde_json::Value::as_f64),
                 snapshot.get("replyToId").and_then(serde_json::Value::as_str),
                 snapshot.get("attachments").and_then(serde_json::Value::as_array).map(Vec::as_slice).unwrap_or(&[]),
-                None, None, true,
+                None, None, true, false,
             )
         })();
         let result = result.and_then(|settled| {
@@ -3704,6 +3729,20 @@ impl ProductionSessionWorkers {
         result
     }
 
+    fn validate_human_queue_origin(entry: &serde_json::Value) -> Result<Option<bool>, String> {
+        let origin = match entry.get("queuedOffline") {
+            None => None,
+            Some(serde_json::Value::Bool(value)) => Some(*value),
+            Some(_) => return Err("Human queuedOffline origin must be a boolean".into()),
+        };
+        if origin == Some(true) && !entry.get("composedAtMs")
+            .and_then(serde_json::Value::as_f64).is_some_and(f64::is_finite)
+        {
+            return Err("Human offline queue origin requires a finite composedAtMs".into());
+        }
+        Ok(origin)
+    }
+
     fn human_retry_entry<'a>(
         entries: &'a [serde_json::Value], account: &str, client_nonce: &str,
     ) -> Result<&'a serde_json::Value, String> {
@@ -3720,6 +3759,7 @@ impl ProductionSessionWorkers {
         {
             return Err("Human retry intent is not a local Human message".into());
         }
+        Self::validate_human_queue_origin(entry)?;
         let content = entry.get("content").and_then(serde_json::Value::as_str)
             .ok_or_else(|| "Human retry persisted content is invalid".to_string())?;
         let attachments = match entry.get("attachments") {
@@ -3789,6 +3829,21 @@ impl ProductionSessionWorkers {
         reply_to_id: Option<&str>,
         attachments: &[serde_json::Value],
     ) -> Result<serde_json::Value, String> {
+        self.append_human_message_with_queue_origin(
+            conversation_id, text, client_nonce, composed_at_ms, reply_to_id, attachments, false,
+        )
+    }
+
+    pub fn append_human_message_with_queue_origin(
+        &self,
+        conversation_id: &str,
+        text: &str,
+        client_nonce: &str,
+        composed_at_ms: Option<f64>,
+        reply_to_id: Option<&str>,
+        attachments: &[serde_json::Value],
+        queued_offline: bool,
+    ) -> Result<serde_json::Value, String> {
         self.append_human_message_with_context(
             conversation_id,
             text,
@@ -3798,6 +3853,7 @@ impl ProductionSessionWorkers {
             attachments,
             None,
             None,
+            queued_offline,
         )
     }
 
@@ -3811,10 +3867,11 @@ impl ProductionSessionWorkers {
         attachments: &[serde_json::Value],
         forward_context: Option<&serde_json::Value>,
         held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
+        queued_offline: bool,
     ) -> Result<serde_json::Value, String> {
         self.append_human_message_from_intent(
             conversation_id, text, client_nonce, composed_at_ms, reply_to_id, attachments,
-            forward_context, held_conversation_guard, false,
+            forward_context, held_conversation_guard, false, queued_offline,
         )
     }
 
@@ -3829,6 +3886,7 @@ impl ProductionSessionWorkers {
         forward_context: Option<&serde_json::Value>,
         held_conversation_guard: Option<&std::sync::MutexGuard<'_, ()>>,
         require_existing: bool,
+        queued_offline: bool,
     ) -> Result<serde_json::Value, String> {
         let sender_id = self.local_human_id()?;
         let text = text.trim();
@@ -3841,6 +3899,9 @@ impl ProductionSessionWorkers {
         }
         if client_nonce.len() > 200 {
             return Err("sendHumanMessage clientNonce is too long".into());
+        }
+        if queued_offline && !composed_at_ms.is_some_and(f64::is_finite) {
+            return Err("Human offline queue origin requires a finite composedAtMs".into());
         }
         let serial = self.human_message_lock(conversation_id)?;
         let mut staging_guard = if held_conversation_guard.is_none() {
@@ -3913,6 +3974,7 @@ impl ProductionSessionWorkers {
             entry.get("authorId").and_then(serde_json::Value::as_str) == Some(sender_id)
                 && entry.get("clientNonce").and_then(serde_json::Value::as_str) == Some(client_nonce)
         }) {
+            Self::validate_human_queue_origin(entry)?;
             if forward_context.is_none()
                 && entry.get("remoteMessageId").is_none()
                 && self.pending_human_forward_is_batch_owned(conversation_id, entry)?
@@ -3986,6 +4048,7 @@ impl ProductionSessionWorkers {
                     "delivery": "pending",
                 });
                 let object = entry.as_object_mut().expect("Human pending message must be an object");
+                if queued_offline { object.insert("queuedOffline".into(), serde_json::json!(true)); }
                 if let Some(reply_id) = normalized_reply { object.insert("replyToId".into(), serde_json::json!(reply_id)); }
                 if !normalized_attachments.is_empty() { object.insert("attachments".into(), serde_json::Value::Array(normalized_attachments.clone())); }
                 if let Some(context) = forward_context { object.insert("forwardContext".into(), context.clone()); }
@@ -4224,6 +4287,7 @@ impl ProductionSessionWorkers {
         let object = entry
             .as_object_mut()
             .ok_or_else(|| "native Human message projection failed".to_string())?;
+        if queued_offline { object.insert("queuedOffline".into(), serde_json::json!(true)); }
         if let Some(reply_id) = normalized_reply {
             object.insert("replyToId".into(), serde_json::json!(reply_id));
         }

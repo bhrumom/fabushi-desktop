@@ -5,7 +5,7 @@ import type { CoordinatorPortBridge, DesktopBridge, TransferredCoordinatorPort }
 import { createComposerSubmissionQueue, composerSubmissionBusyState, type ComposerSubmission, type ComposerSubmissionPhase,
   type ComposerSubmissionRecord } from "../recovered/features/conversation/workspace/submission";
 import { createCoordinatorClient, COORDINATOR_PROTOCOL_VERSION } from "./coordinator-client";
-import { sendHumanComposerSubmission } from "./human-message-submission";
+import { observeHumanOfflineQueueOrigin, sendHumanComposerSubmission } from "./human-message-submission";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -48,6 +48,7 @@ function portFixture() {
         : new Promise<RequestFrame>((resolve) => waiting.push(resolve)),
       ready: () => emit({ kind: "lifecycle", phase: "ready", protocolVersion: COORDINATOR_PROTOCOL_VERSION }),
       disconnect: () => listeners.get("close")!({}),
+      transport: (state: "connected" | "down") => emit({ kind: "event", family: "coordinator-transport-state", payload: { state } }),
       reply: (request: RequestFrame, value: unknown) => emit({ kind: "reply", requestId: request.requestId,
         outcome: { status: "ok", value } }),
       fail: (request: RequestFrame) => emit({ kind: "reply", requestId: request.requestId,
@@ -126,7 +127,7 @@ test("Human Composer partial commit failure resumes the same queue input and nev
   const request = await port.nextRequest();
   assert.equal(request.method, "sendHumanMessage");
   assert.deepEqual(request.args, { conversationId: input.agentId, text: "Original body", clientNonce: input.nonce,
-    composedAtMs: 1234, replyToId: "human-server-message:8", attachments: [
+    composedAtMs: 1234, queuedOffline: false, replyToId: "human-server-message:8", attachments: [
       { path: "/committed/first.txt", name: "first.txt" }, { path: "/committed/second.txt", name: "second.txt" },
     ] });
   assert.deepEqual(commits.map((call) => call.paths), [["/staged/first"], ["/staged/second"], ["/staged/second"]]);
@@ -162,7 +163,7 @@ test("Human Composer disconnect before the real initial frame retains non-admiss
   const request = await secondPort.nextRequest();
   assert.equal(request.method, "sendHumanMessage");
   assert.deepEqual(request.args, { conversationId: input.agentId, text: input.prompt, clientNonce: input.nonce,
-    composedAtMs: input.createdAtMs, attachments: [], replyToId: input.replyToId });
+    composedAtMs: input.createdAtMs, queuedOffline: false, attachments: [], replyToId: input.replyToId });
   secondPort.reply(request, canonical(input));
   assert.equal(await retry.completion, "sent");
   assert.deepEqual(f.inputs, [input, input]);
@@ -442,5 +443,196 @@ test("explicit Human retry never captures or releases the current composer busy 
       assert.equal(busy, false, "only the current ordinary operation releases its busy state");
     }
     queue.dispose(); ports.client.dispose();
+  }
+});
+
+test("Human Composer offline origin follows observed transport queuing and survives retries without marking online busy sends", { timeout: 10_000 }, async () => {
+  function originFixture(bridge: Pick<DesktopBridge, "commitStagedAttachments"> | null = null) {
+    const ports = portFixture();
+    let transportDown = true;
+    const scopes = new Map<string, { input: ComposerSubmission; queuedOffline: boolean }>();
+    const observed: { nonce: string; phase: ComposerSubmissionPhase; queuedOffline: boolean; requestPosted: boolean }[] = [];
+    const queue = createComposerSubmissionQueue({
+      isTransportDown: () => transportDown,
+      onPhase(input) {
+        const scope = scopes.get(input.nonce);
+        assert.ok(scope, "the original Human submission scope owns its observation");
+        const requestPosted = scope.input.humanDispatch?.requestPosted === true;
+        scope.queuedOffline = observeHumanOfflineQueueOrigin(scope.queuedOffline, input.phase, transportDown, requestPosted);
+        observed.push({ nonce: input.nonce, phase: input.phase, queuedOffline: scope.queuedOffline, requestPosted });
+      },
+      async send(input, admission) {
+        const scope = scopes.get(input.nonce);
+        assert.ok(scope);
+        await sendHumanComposerSubmission(input, {
+          client: ports.client, bridge, queuedOffline: scope.queuedOffline,
+          isCurrent: () => admission?.isCurrent?.() !== false,
+        });
+      },
+    });
+    const stopTransport = ports.client.subscribeTransport((state) => {
+      transportDown = state === "down";
+      if (!transportDown) queue.flush();
+    });
+    const port = ports.connect(); port.ready();
+    return {
+      ports, port, queue, observed,
+      submit(input: ComposerSubmission) {
+        assert.equal(scopes.has(input.nonce), false);
+        scopes.set(input.nonce, { input, queuedOffline: false });
+        return queue.submit(input);
+      },
+      origin(nonce: string) {
+        const scope = scopes.get(nonce);
+        assert.ok(scope);
+        return scope.queuedOffline;
+      },
+      dispose() { queue.dispose(); stopTransport(); ports.client.dispose(); },
+    };
+  }
+
+  {
+    const f = originFixture();
+    const input = originalSubmission();
+    const sending = f.submit(input);
+    const request = await f.port.nextRequest();
+    assert.equal(request.method, "sendHumanMessage");
+    assert.equal(request.args.queuedOffline, false, "an immediate online send carries an explicit negative origin");
+    assert.equal(request.args.composedAtMs, input.createdAtMs, "general composition time is retained");
+    assert.equal(f.origin(input.nonce), false);
+    f.port.reply(request, canonical(input));
+    assert.equal(await sending.completion, "sent");
+    f.dispose();
+  }
+
+  {
+    const f = originFixture();
+    const input = originalSubmission();
+    f.port.transport("down");
+    const sending = f.submit(input);
+    assert.equal(f.port.requests.length, 0);
+    assert.equal(f.origin(input.nonce), true);
+    assert.deepEqual(f.observed.at(-1), {
+      nonce: input.nonce, phase: "queued", queuedOffline: true, requestPosted: false,
+    }, "the actual queue phase and current transport jointly establish origin");
+    f.port.transport("connected");
+    const request = await f.port.nextRequest();
+    assert.equal(request.method, "sendHumanMessage");
+    assert.equal(request.args.queuedOffline, true);
+    assert.equal(request.args.composedAtMs, 1234, "reconnect cannot replace the original composition time");
+    f.port.reply(request, canonical(input));
+    assert.equal(await sending.completion, "sent");
+    assert.equal(f.origin(input.nonce), true);
+    f.dispose();
+  }
+
+  {
+    const f = originFixture();
+    const first = originalSubmission();
+    const second = { ...originalSubmission(), nonce: "online-busy-second", createdAtMs: 2234 };
+    const a = f.submit(first);
+    const b = f.submit(second);
+    assert.equal(f.queue.snapshot().find((record) => record.nonce === second.nonce)?.phase, "queued");
+    assert.deepEqual(f.observed.at(-1), {
+      nonce: second.nonce, phase: "queued", queuedOffline: false, requestPosted: false,
+    }, "an online busy lane is queued without observing transport loss");
+    const firstRequest = await f.port.nextRequest();
+    assert.equal(firstRequest.args.queuedOffline, false);
+    assert.equal(f.port.requests.length, 1);
+    f.port.reply(firstRequest, canonical(first));
+    assert.equal(await a.completion, "sent");
+    const secondRequest = await f.port.nextRequest();
+    assert.equal(secondRequest.method, "sendHumanMessage");
+    assert.equal(secondRequest.args.clientNonce, second.nonce);
+    assert.equal(secondRequest.args.queuedOffline, false);
+    assert.equal(secondRequest.args.composedAtMs, second.createdAtMs);
+    f.port.reply(secondRequest, { ...canonical(second), id: "human-server-message:10", remoteMessageId: "10" });
+    assert.equal(await b.completion, "sent");
+    assert.equal(f.origin(second.nonce), false);
+    assert.equal(f.port.requests.length, 2);
+    f.dispose();
+  }
+
+  {
+    const commits: string[] = [];
+    let failSecond = true;
+    const f = originFixture({
+      async commitStagedAttachments(paths, names) {
+        commits.push(paths[0]);
+        if (paths[0] === "/staged/second" && failSecond) { failSecond = false; return null; }
+        return ["/committed/" + names[0]];
+      },
+    });
+    const input = originalSubmission([
+      { path: "/staged/first", name: "first.txt" },
+      { path: "/staged/second", name: "second.txt" },
+    ]);
+    const initial = f.submit(input);
+    assert.equal(await initial.completion, "failed");
+    assert.equal(f.port.requests.length, 0);
+    assert.equal(input.humanDispatch?.requestPosted, false);
+    assert.equal(f.origin(input.nonce), false);
+    f.port.transport("down");
+    const retry = f.queue.retryFailed(input.nonce, { isCurrent: () => true });
+    assert.ok(retry);
+    const duplicate = f.queue.retryFailed(input.nonce, { isCurrent: () => true });
+    assert.ok(duplicate);
+    assert.equal(duplicate.completion, retry.completion);
+    assert.equal(f.origin(input.nonce), true, "pre-frame failure can subsequently observe a genuine offline queue");
+    assert.equal(f.port.requests.length, 0);
+    f.port.transport("connected");
+    const request = await f.port.nextRequest();
+    assert.equal(request.method, "sendHumanMessage", "non-admitted intent continues its original first send");
+    assert.deepEqual(request.args, {
+      conversationId: input.agentId, text: input.prompt, clientNonce: input.nonce,
+      composedAtMs: input.createdAtMs, queuedOffline: true, replyToId: input.replyToId,
+      attachments: [
+        { path: "/committed/first.txt", name: "first.txt" },
+        { path: "/committed/second.txt", name: "second.txt" },
+      ],
+    });
+    assert.deepEqual(commits, ["/staged/first", "/staged/second", "/staged/second"]);
+    assert.deepEqual(input.attachments, [
+      { path: "/staged/first", name: "first.txt" },
+      { path: "/staged/second", name: "second.txt" },
+    ]);
+    assert.equal(input.createdAtMs, 1234);
+    f.port.reply(request, canonical(input));
+    assert.equal(await retry.completion, "sent");
+    assert.equal(await duplicate.completion, "sent");
+    assert.equal(f.port.requests.length, 1);
+    f.dispose();
+  }
+
+  for (const initiallyOffline of [false, true]) {
+    const f = originFixture();
+    const input = originalSubmission();
+    if (initiallyOffline) f.port.transport("down");
+    const initial = f.submit(input);
+    if (initiallyOffline) f.port.transport("connected");
+    const request = await f.port.nextRequest();
+    assert.equal(request.method, "sendHumanMessage");
+    assert.equal(request.args.queuedOffline, initiallyOffline);
+    assert.equal(request.args.composedAtMs, input.createdAtMs);
+    assert.equal(input.humanDispatch?.requestPosted, true);
+    f.port.disconnect();
+    assert.equal(await initial.completion, "failed");
+    const retry = f.queue.retryFailed(input.nonce, { isCurrent: () => true });
+    assert.ok(retry);
+    assert.deepEqual(f.observed.at(-1), {
+      nonce: input.nonce, phase: "queued", queuedOffline: initiallyOffline, requestPosted: true,
+    }, "a late disconnect after possible admission cannot rewrite original origin");
+    const replacement = f.ports.connect(); replacement.ready();
+    const repeated = await replacement.nextRequest();
+    assert.equal(repeated.method, "retryHumanMessage");
+    assert.deepEqual(repeated.args, { conversationId: input.agentId, clientNonce: input.nonce },
+      "possible admission continues only by the two durable identities, never new timestamp or origin");
+    replacement.reply(repeated, canonical(input));
+    assert.equal(await retry.completion, "sent");
+    assert.equal(f.origin(input.nonce), initiallyOffline);
+    assert.equal(input.createdAtMs, 1234);
+    assert.equal(f.port.requests.length, 1);
+    assert.equal(replacement.requests.length, 1);
+    f.dispose();
   }
 });

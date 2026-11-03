@@ -340,16 +340,32 @@ test('NMR-26 a disconnected Human send queues and reconnect dispatches it exactl
   await loadOlder(page);
   await page.evaluate(() => window.nativeMessageFixture.disconnect());
   await page.locator('[contenteditable="true"]').fill('Queued during disconnection');
+  const beforeQueue = await page.evaluate(() => Date.now());
   await page.getByRole('button', { name: 'Send message', exact: true }).click();
   const pending = page.locator('[data-entry-id^="pending-"]');
   await expect(pending).toHaveCount(1);
   await expect(pending).toContainText('Queued during disconnection');
   await expect(pending).toContainText('Will send when reconnected');
+  await expect(pending.locator('.sand-message-prose')).toHaveText('Queued during disconnection');
+  await expect(pending.locator('.sand-sent-while-offline-notice')).toHaveCount(0);
+  const afterQueue = await page.evaluate(() => Date.now());
   expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage').length)).toBe(0);
   await milestone(page, info, 'queued-with-transport-down');
 
   await page.evaluate(() => window.nativeMessageFixture.reconnect());
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+  const request = await page.evaluate(() => window.nativeMessageFixture.requests.find((entry) => entry.method === 'sendHumanMessage'));
+  expect(request?.args.queuedOffline).toBe(true);
+  expect(typeof request?.args.composedAtMs).toBe('number');
+  expect(request!.args.composedAtMs).toBeGreaterThanOrEqual(beforeQueue);
+  expect(request!.args.composedAtMs).toBeLessThanOrEqual(afterQueue);
+  const nativePendingId = await page.evaluate(() => window.nativeMessageFixture.publishPendingSend());
+  const nativePending = messageRow(page, nativePendingId);
+  await expect(nativePending).toHaveAttribute('data-pending', 'true');
+  await expect(nativePending.locator('.sand-message-prose')).toHaveText('Queued during disconnection');
+  await expect(nativePending.locator('.sand-sent-while-offline-notice')).toHaveCount(0);
+  await expect(messageRow(page, 'human-server-message:100')).toHaveCount(0);
+  await milestone(page, info, 'offline-origin-pending-is-not-yet-sent');
   await page.evaluate(() => {
     window.nativeMessageFixture.reconnect();
     window.nativeMessageFixture.publishSend();
@@ -361,6 +377,47 @@ test('NMR-26 a disconnected Human send queues and reconnect dispatches it exactl
   expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'sendHumanMessage').length)).toBe(1);
   await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'human-server-message:100']);
   await milestone(page, info, 'queued-send-settled-after-reconnect');
+
+  const expectCanonicalOrigin = async () => {
+    const record = await page.evaluate(() => window.nativeMessageFixture.canonicalRows()
+      .find(([id]) => id === 'human:a')?.[1].find((entry) => entry.id === 'human-server-message:100'));
+    expect(record).toMatchObject({
+      id: 'human-server-message:100', authorKind: 'human', authorId: 'local',
+      clientNonce: request!.args.clientNonce, queuedOffline: true, composedAtMs: request!.args.composedAtMs, delivery: 'sent',
+    });
+    const canonical = messageRow(page, 'human-server-message:100');
+    await expect(canonical).toHaveCount(1);
+    await expect(canonical.locator('.sand-message-prose')).toHaveCount(1);
+    await expect(canonical.locator('.sand-message-prose')).toHaveText('Queued during disconnection');
+    await expect(canonical).not.toHaveAttribute('data-pending', 'true');
+    await expect(canonical).not.toHaveAttribute('data-failed', 'true');
+    await expect(canonical.locator('time')).toHaveAttribute('datetime', new Date(Number(record!.timestampMs)).toISOString());
+    await expect(canonical.locator('.sand-sent-while-offline-notice')).toHaveCount(1);
+    await expect(canonical.locator('.sand-sent-while-offline-notice')).toContainText('Sent while offline ·');
+    expect(record!.timestampMs).not.toBe(record!.composedAtMs);
+  };
+  await expectCanonicalOrigin();
+  await page.evaluate(() => window.nativeMessageFixture.reconnect());
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().refreshes)).toBeGreaterThan(0);
+  await page.evaluate(() => window.nativeMessageFixture.releaseRefreshes());
+  await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'human-server-message:100']);
+  await expectCanonicalOrigin();
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((entry) => entry.method === 'sendHumanMessage').length)).toBe(1);
+
+  // A new renderer has no previous projection cache. The external fixture's
+  // canonical service rows survive this reload; this is not a native Host,
+  // SQLite or process-restart acceptance claim.
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Alice', exact: true })).toBeVisible();
+  await expect(messageRow(page, 'human-server-message:100')).toBeVisible();
+  await expectCanonicalOrigin();
+  await page.evaluate(() => window.nativeMessageFixture.reconnect());
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().refreshes)).toBeGreaterThan(0);
+  await page.evaluate(() => window.nativeMessageFixture.releaseRefreshes());
+  await expect.poll(() => domIds(page)).toEqual(['m1', 'm2', 'm3', 'm4', 'm5', 'human-server-message:100']);
+  await expectCanonicalOrigin();
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((entry) => entry.method === 'sendHumanMessage'))).toEqual([]);
+  await milestone(page, info, 'offline-origin-after-canonical-refresh-and-renderer-reopen');
 });
 
 async function startNamedForwardToBob(page: Page) {

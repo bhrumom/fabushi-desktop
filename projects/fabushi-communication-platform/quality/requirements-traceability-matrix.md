@@ -835,3 +835,39 @@ Round8 follow-up after exact808: `openAgent` keeps the existing selection/Transc
 | NMR-FEED-01c | Session performs indexed per-ID reads without a recursive Human mutation lock, full-history replay, HTTP, creation or writes; commit-before-publication remains authoritative. | The existing complete6400/32-page/reopen test keeps its original budget, deadline, ordering and durable checkpoints while exercising the same production projection; no extra logical message owner. |
 | NMR-FEED-01d | The extension's admission fence covers read/publication; Drop closes it and explicitly unsubscribes before manager disposal. | `shipping_human_transcript_feed_disposes_copied_callbacks_before_replacement` holds a real registry dispatch snapshot, retires the old observer, then proves exactly one replacement publication. |
 | NMR-AC-FEED-01 | Four additional `shipping_human_` cases join the original72 (authored total76); containing-H Actions must actually execute them with the retained consumers. | Static audited chain44792fe02191a56c7a729d67436423ed252ae081 /1698bf8c3273ea092dfbc1133da7769af6f1c2b0 is provenance only. Remote revisions/tombstones, arbitrary-old changes, physical Human deletion/clear, reaction409 recovery, deployed afterId=0 and full migration/independent ACCEPT remain open. |
+
+
+### NMR-TRANSPORT-RECOVERY-01 — Existing runtime availability and roster Retry
+
+| Requirement | Current owner and production connection | Required bounded oracle |
+|---|---|---|
+| NMR-TRANSPORT-RECOVERY-01a / NMR-TRANSPORT-RECOVERY-01b | Rust Coordinator runtime lifecycle -> existing Electron carrier -> production Coordinator client -> existing transport subscriptions. Classify before generation/sequence; Gateway SSE establishes availability; terminal Host and old-port events cannot resurrect an obsolete episode. | Six additional actual client/controller port cases, including same-generation down/up, missed down/new generation, informational/malformed watermark poisoning, discovery failure and unchanged pending RPC settlement. |
+| NMR-TRANSPORT-RECOVERY-01c | Existing connection controller keeps one account-scoped Retry obligation, retires old request identity and starts its replacement only after listener fanout. ProductionRenderer advances synchronous transport generation/state first. | Held old success/failure/finally cannot clear replacement Retrying or suppress current listAgents -> Human sync -> active Transcript. Account ABA/dispose do not replay across owners. |
+| NMR-TRANSPORT-RECOVERY-01d | Current transport is replayed by the same client to new subscribers; controller and Renderer treat initial ready only as an unobserved-state fallback. Existing Transcript, selection and draft authorities remain. | Actual browser case `NMR-TRANSPORT-RECOVERY-01 runtime Host and SSE recovery preserve the active Human draft after a held Retry`: real runtime envelopes, visible Retry, retained paged cache/selection/draft and service-only new rows; no reload/focus/chat-switch recovery trigger. |
+| NMR-TRANSPORT-RECOVERY-01e | Existing actual Electron fixture isolates AppHost with FABUSHI_APP_DATA and retains explicit unavailable404 auxiliary behavior. No production success is fabricated. | Original Plugins2/Human2, strict unknown method/path/query oracle, no added retry/timeouts/reload. Port1337 conflict and actual process recovery require their own execution evidence. |
+| NMR-AC-TRANSPORT-RECOVERY-01 | Frozen contract at f5499f671c5be9aa824416c0832f855d3647d786; same canonical FBCP-NMR-001 ledger row. | Authored retry46 and author23 preserve all previous cases; exact containing-H Actions only. Prior H1bc reconciliation120/120 and H98 UI194/194 remain attached to those exact inputs; neither is new runtime recovery evidence. |
+
+No source/legal coverage or release/independent acceptance changes. Active
+afterId=0 deployment, remote revisions/tombstones/old-message discovery,
+reaction409 recovery, signed platforms and full Bot/UI/a11y/security/performance/
+soak/upgrade/rollback remain open. The existing round8 renderer/Electron receipts
+retain old failures, fixture causes, full-log endpoints, actual counts and
+frozen artifact identities.
+
+
+### NMR-OFFLINE-ORIGIN-01 — Explicit Human queue origin
+
+| Requirement | Existing production owner and invariant | Bounded behavioral oracle |
+|---|---|---|
+| NMR-OFFLINE-ORIGIN-01a | Existing TranscriptSubmissionScope records observed transport queuing before possible Human admission; original nonce/time/input remain in the current queue. Online busy queue and held receipts do not prove offline. | `Human Composer offline origin follows observed transport queuing and survives retries without marking online busy sends` uses actual queue/observer/Coordinator frames; original8 plus1 =9, combined retry47. Agent dispatch and admission semantics remain. |
+| NMR-OFFLINE-ORIGIN-01b | Existing sendHumanMessage accepts optional strict boolean queuedOffline; true requires finite composedAtMs. Existing identity-only retry cannot carry or replace origin. | Gateway rejects malformed/null marker and true without finite time before staging/HTTP; ordinary legacy arguments remain compatible. |
+| NMR-OFFLINE-ORIGIN-01c | Existing Session/SQLite first intent fixes origin; same-author/nonce canonical remap preserves explicit evidence and original composed time while server timestamp stays authoritative. | `shipping_human_offline_origin_is_explicit_and_survives_settlement_and_restart` adds1 Human case (77/total121), including reopen, refresh, immutable nonce and damaged-origin retention. Ordinary bounded GET remains allowed; no added global history preflight. |
+| NMR-OFFLINE-ORIGIN-01d | Current projection carries explicit origin; actual Transcript calls shouldShowSentWhileOfflineNotice. Human canonical sent/true/time are required; old timestamp/side-map/cache values cannot infer origin. | `NMR-OFFLINE-ORIGIN-01 Human offline labels require an explicit origin and canonical sent state` adds1 (43). Existing browser13 offline case adds actual queued/pending/sent and canonical-refresh/reopen badge controls. Agent rules remain. |
+| NMR-OFFLINE-ORIGIN-01e | Actual Electron reads one existing prose body and independently checks canonical/delivery/time/no-placeholder and online zero-badge invariants. | Original Human2/Plugins2 counts, real process/draft checks and retries0 remain. The H98 failure receipt1b9bd861f08915691b70abe851b31af83b468fef distinguishes oracle scope from the real presentation defect. |
+| NMR-AC-OFFLINE-ORIGIN-01 | Contract frozen at36ae38b3791c7c07bf6e4e4907a96265881d0c2f; no new owner or external service field. | Complete UI203 and reconciliation121 are authored targets pending exact containing-H Actions; Mac2+2/shipping remain required. |
+
+The older browser13 harness retains its existing unlisted-RPC null fallback;
+this origin extension validates only its explicit Human-send boundary. The
+author23 harness and actual Mac gate retain their own strict unknown-call
+oracles. This bounded evidence is not a whole-renderer RPC contract acceptance.
+All source/service/package/Bot/quality/independent acceptance gaps remain.

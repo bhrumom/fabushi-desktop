@@ -19,6 +19,20 @@ const execFileAsync = promisify(execFile);
 const humanAccountId = 'fabushi-e2e-account';
 const humanPeerId = 'fabushi-e2e-peer';
 const humanPeerName = 'Human restart peer';
+// These exact background dependencies remain unavailable in the Human fixture.
+// Keep their real 404 behavior without classifying declared failures as unknown
+// HTTP contracts. This does not qualify Plugins, cloud Box or telemetry success.
+const humanUnavailablePostPaths = new Set([
+  '/aiserver.v1.AnalyticsService/BootstrapStatsig',
+  '/aiserver.v1.AnalyticsService/SubmitLogs',
+  '/aiserver.v1.DashboardService/ListMarketplacePlugins',
+  '/aiserver.v1.DashboardService/GetUserPrivacyMode',
+  '/aiserver.v1.DashboardService/GetAvailableMcpServers',
+  '/aiserver.v1.DashboardService/GetEffectiveUserPlugins',
+  '/aiserver.v1.GrokBotService/EnsureSandBox',
+  '/aiserver.v1.GrokBotService/WatchSandBoxMigration',
+  '/sand-box/local-exec-daemon-credential',
+]);
 interface HumanHttpRequest {
   sequence: number;
   phase: string;
@@ -331,6 +345,27 @@ async function ensureE2eAuthBackend(): Promise<string> {
         response.end(JSON.stringify({ success: true, calls: [] }));
         return;
       }
+      if (human != null && trace != null) {
+        if (trace.method === 'POST' && humanUnavailablePostPaths.has(trace.path)) {
+          human.events.push({
+            at: Date.now(), kind: 'controlled-auxiliary-unavailable', request: trace.sequence,
+            phase: human.phase, method: trace.method, path: trace.path, status: 404,
+          });
+          humanHttpReply(human, trace, response, 404, { error: 'not-found' });
+          return;
+        }
+        if (trace.method === 'GET' && trace.path === '/fabushi-agent-network-e2e-login') {
+          response.setHeader('content-type', 'text/html; charset=utf-8');
+          response.statusCode = 200;
+          response.end('<!doctype html><title>Fabushi test sign in</title><p>Return to the desktop app.</p>');
+          return;
+        }
+        if (trace.method === 'GET' && trace.path === '/favicon.ico') {
+          response.statusCode = 204;
+          response.end();
+          return;
+        }
+      }
       if (human != null && trace != null) human.unexpected.push({
         request: trace.sequence, detail: 'unimplemented HTTP endpoint', method: trace.method, path: trace.path,
       });
@@ -388,6 +423,7 @@ async function launchDesktopApp(appDataDir: string, capture?: { info: TestInfo; 
         // and may read/write only this test-owned production data directory.
         FABUSHI_CI_ACCOUNT_SESSION_FILE: '',
         SAND_DATA_ROOT: path.join(appDataDir, 'sand-data'),
+        FABUSHI_APP_DATA: path.join(appDataDir, 'feature-app-data'),
       }),
     },
   });
@@ -909,12 +945,17 @@ const humanRow = (page: Page, id: string) => humanTranscript(page).locator('[dat
 async function assertHumanCanonicalUi(page: Page, message: HumanRemoteMessage) {
   const row = humanRow(page, 'human-server-message:' + message.id);
   await expect(row).toHaveCount(1);
-  await expect(row.locator('.sand-message')).toHaveText(message.text);
+  const body = row.locator('.sand-message-prose');
+  await expect(body).toHaveCount(1);
+  await expect(body).toHaveText(message.text);
   await expect(row).not.toHaveAttribute('data-pending', 'true');
   await expect(row).not.toHaveAttribute('data-failed', 'true');
   await expect(row.locator('time')).toHaveAttribute('datetime', message.createdAt);
   await expect(humanRow(page, 'human-message:' + message.clientRequestId)).toHaveCount(0);
   await expect(humanRow(page, 'pending-' + message.clientRequestId)).toHaveCount(0);
+  // These cases compose every Send while connected; a held receipt is not
+  // evidence that the user composed the message while offline.
+  await expect(row.locator('.sand-sent-while-offline-notice')).toHaveCount(0);
 }
 
 async function sendHumanThroughUi(lifetime: HumanLifetime, scenario: HumanElectronScenario, text: string) {

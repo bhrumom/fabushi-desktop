@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { ConversationTranscriptEntry, TranscriptMessage } from "../recovered/features/conversation/workspace/model.ts";
-import { coalesceProjectedUserAttachmentTurns, projectTranscriptEntry } from "./model.ts";
+import { shouldShowSentWhileOfflineNotice, type ConversationTranscriptEntry, type TranscriptMessage } from "../recovered/features/conversation/workspace/model.ts";
+import { coalesceProjectedUserAttachmentTurns, projectTranscriptEntry, projectTranscriptPageResult } from "./model.ts";
 import {
   createTranscriptPaginationController,
   mergeOlderTranscriptEntries,
@@ -1063,3 +1063,102 @@ test("NMR-UI-01 Agent attachment fragments retain their text identity and delive
 
 });
 
+
+test("NMR-OFFLINE-ORIGIN-01 Human offline labels require an explicit origin and canonical sent state", () => {
+  const composedAtMs = 1_700_000_000_123;
+  const remoteAtMs = composedAtMs + 60_000;
+  const canonical = {
+    id: "human-server-message:44", kind: "message", role: "user", authorKind: "human", authorId: "self",
+    clientNonce: "offline-intent", remoteMessageId: "44", content: "Retain the complete original input",
+    timestampMs: remoteAtMs, composedAtMs, delivery: "sent",
+  };
+  const project = (value: Record<string, unknown>): TranscriptMessage => {
+    const entry = projectTranscriptEntry(value, 0, "Alice", "human:a");
+    assert.ok(entry?.kind === "message");
+    return entry;
+  };
+  const offline = project({ ...canonical, queuedOffline: true });
+  assert.equal(offline.queuedOffline, true);
+  assert.equal(offline.composedAtMs, composedAtMs);
+  assert.equal(offline.timestampMs, remoteAtMs);
+  assert.equal(shouldShowSentWhileOfflineNotice(offline), true);
+
+  // Missing, explicit false and invalid flags are negative observations. The
+  // authoritative projection must not let a stale cache's true flag win.
+  for (const marker of [undefined, false, null, "true", 1, [], {}]) {
+    const raw = { ...canonical, ...(marker === undefined ? {} : { queuedOffline: marker }) };
+    const original = structuredClone(raw);
+    const projected = project(raw);
+    assert.equal(projected.queuedOffline, false);
+    assert.equal(projected.composedAtMs, composedAtMs);
+    assert.equal(shouldShowSentWhileOfflineNotice(projected), false);
+    for (const stale of [
+      offline,
+      { ...offline, id: "pending-offline-intent", remoteMessageId: undefined, delivery: "pending" as const },
+    ]) {
+      const merged = mergeAuthoritativeTranscriptMessage(stale, projected);
+      assert.equal(merged.queuedOffline, false);
+      assert.equal(merged.composedAtMs, composedAtMs);
+      assert.equal(merged.timestampMs, remoteAtMs);
+      assert.equal(shouldShowSentWhileOfflineNotice(merged), false);
+    }
+    assert.deepEqual(raw, original);
+  }
+
+  for (const delivery of ["queued", "pending", "dispatching", "failed"]) {
+    const projected = project({ ...canonical, queuedOffline: true, delivery });
+    assert.equal(projected.queuedOffline, true);
+    assert.equal(projected.composedAtMs, composedAtMs);
+    assert.equal(shouldShowSentWhileOfflineNotice(projected), false, delivery);
+  }
+  for (const patch of [
+    { composedAtMs: undefined }, { composedAtMs: Number.NaN }, { composedAtMs: Infinity },
+    { remoteMessageId: undefined }, { remoteMessageId: "0" }, { remoteMessageId: "different" },
+    { id: "human-message:offline-intent" }, { id: "human-server-message:45" }, { role: "assistant" },
+  ]) {
+    assert.equal(shouldShowSentWhileOfflineNotice(project({ ...canonical, queuedOffline: true, ...patch })), false);
+  }
+  const queuedAlias = project({ ...canonical, composedAtMs: undefined, queuedAtMs: composedAtMs });
+  assert.equal(queuedAlias.composedAtMs, composedAtMs);
+  assert.equal(queuedAlias.queuedOffline, false);
+  assert.equal(shouldShowSentWhileOfflineNotice(queuedAlias), false);
+
+  const pending = project({
+    ...canonical, id: "human-message:offline-intent", remoteMessageId: undefined,
+    queuedOffline: true, delivery: "pending", timestampMs: composedAtMs,
+  });
+  const settled = mergeAuthoritativeTranscriptMessage(pending, offline);
+  assert.equal(settled.id, canonical.id);
+  assert.equal(settled.clientNonce, canonical.clientNonce);
+  assert.equal(settled.queuedOffline, true);
+  assert.equal(settled.composedAtMs, composedAtMs);
+  assert.equal(settled.timestampMs, remoteAtMs);
+  assert.equal(shouldShowSentWhileOfflineNotice(settled), true);
+  const reopened = project(JSON.parse(JSON.stringify({ ...canonical, queuedOffline: true })));
+  assert.equal(shouldShowSentWhileOfflineNotice(reopened), true);
+
+  for (const marker of [undefined, false, true]) {
+    const page = projectTranscriptPageResult({
+      entries: [{ ...canonical, composedAtMs: undefined, ...(marker === undefined ? {} : { queuedOffline: marker }) }],
+      sentWhileOfflineAtMsByEntryId: { [canonical.id]: composedAtMs },
+    }, "Alice", "human:a");
+    const entry = row(page.entries, canonical.id);
+    assert.equal(entry.composedAtMs, composedAtMs, "A page may retain general time without inventing origin");
+    assert.equal(entry.queuedOffline, marker === true);
+    assert.equal(shouldShowSentWhileOfflineNotice(entry), marker === true);
+  }
+
+  // Preserve the existing Agent behavior, including its page-side timestamp
+  // map. Human canonical requirements do not become Agent delivery rules.
+  const agentRaw = { id: "agent-message", kind: "message", role: "user", content: "Agent input", timestampMs: remoteAtMs };
+  const agentPage = projectTranscriptPageResult({
+    entries: [agentRaw], sentWhileOfflineAtMsByEntryId: { "agent-message": composedAtMs },
+  }, "Agent", "agent:a");
+  const agent = row(agentPage.entries, "agent-message");
+  assert.equal(agent.queuedOffline, undefined);
+  assert.equal(agent.composedAtMs, composedAtMs);
+  assert.equal(shouldShowSentWhileOfflineNotice(agent), true);
+  assert.equal(shouldShowSentWhileOfflineNotice({ ...agent, delivery: "pending" }), true);
+  assert.equal(shouldShowSentWhileOfflineNotice({ ...agent, delivery: "queued" }), true);
+  assert.equal(shouldShowSentWhileOfflineNotice({ ...agent, delivery: "failed" }), false);
+});

@@ -14,7 +14,14 @@ export const COORDINATOR_PROTOCOL_VERSION = 1;
 export const COORDINATOR_TRANSPORT_STATE_FAMILY = "coordinator-transport-state";
 
 type EventListener = (payload: unknown) => void;
-type TransportListener = (state: "connected" | "down") => void;
+type TransportState = "connected" | "down";
+type TransportListener = (state: TransportState) => void;
+
+interface RuntimeTransportObservation {
+  readonly generation: number;
+  readonly sequence: number;
+  readonly action: "starting" | "terminal" | "connected" | "down";
+}
 
 interface PendingCall {
   method: string;
@@ -31,6 +38,24 @@ export class CoordinatorCallError extends Error {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function runtimeTransportObservation(value: unknown): RuntimeTransportObservation | null {
+  if (!isRecord(value)) return null;
+  let action: RuntimeTransportObservation["action"];
+  if (value.type === "host.lifecycle") {
+    if (value.lifecycle === "running") action = "starting";
+    else if (value.lifecycle === "stopped" || value.lifecycle === "circuit-open" || value.lifecycle === "spawn-failed") action = "terminal";
+    else return null;
+  } else if (value.type === "gateway.lifecycle") {
+    if (value.lifecycle === "transport-connected") action = "connected";
+    else if (value.lifecycle === "transport-down" || value.lifecycle === "discovery-timeout" || value.lifecycle === "rediscovery-failed") action = "down";
+    else return null;
+  } else return null;
+  const { generation, sequence } = value;
+  if (typeof generation !== "number" || !Number.isSafeInteger(generation) || generation <= 0
+    || typeof sequence !== "number" || !Number.isSafeInteger(sequence) || sequence <= 0) return null;
+  return { generation, sequence, action };
 }
 
 function validateReply(method: string, value: unknown): unknown {
@@ -90,6 +115,43 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   let nextRequestId = 0;
   let disposed = false;
   let serving = false;
+  let currentTransport: TransportState | null = null;
+  let runtimeGeneration: number | null = null;
+  let runtimeSequence = 0;
+  let runtimeTerminal = false;
+  let runtimeState: TransportState | null = null;
+  const publishTransport = (state: TransportState, newEpisode = false) => {
+    if (currentTransport === state && !newEpisode) return;
+    currentTransport = state;
+    for (const listener of [...transportListeners]) listener(state);
+  };
+  const resetRuntimeEpoch = () => {
+    runtimeGeneration = null;
+    runtimeSequence = 0;
+    runtimeTerminal = false;
+    runtimeState = null;
+  };
+  const observeRuntimeTransport = (payload: unknown) => {
+    // Informational/unknown frames cannot poison a meaningful observation's
+    // generation or sequence, even when their counters are much larger.
+    const observation = runtimeTransportObservation(payload);
+    if (observation == null) return;
+    const newerGeneration = runtimeGeneration == null || observation.generation > runtimeGeneration;
+    if (runtimeGeneration != null && observation.generation < runtimeGeneration) return;
+    if (!newerGeneration && observation.sequence <= runtimeSequence) return;
+    if (!newerGeneration && runtimeTerminal
+      && (observation.action === "connected" || observation.action === "starting")) return;
+    if (newerGeneration) {
+      resetRuntimeEpoch();
+      runtimeGeneration = observation.generation;
+    }
+    runtimeSequence = observation.sequence;
+    if (observation.action === "terminal") runtimeTerminal = true;
+    const state = observation.action === "connected" ? "connected" : "down";
+    const newEpisode = newerGeneration || runtimeState !== state;
+    runtimeState = state;
+    publishTransport(state, newEpisode);
+  };
   let resolveReady = () => {};
   let rejectReady = (_reason: unknown) => {};
   const makeReady = () => new Promise<void>((resolve, reject) => {
@@ -111,7 +173,7 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     port = null;
     serving = false;
     rejectCalls(reason);
-    for (const listener of transportListeners) listener("down");
+    publishTransport("down");
     currentReady = makeReady();
     currentReady.catch(() => {});
     claim?.request();
@@ -127,7 +189,9 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       if (value.protocolVersion !== COORDINATOR_PROTOCOL_VERSION) return disconnect(expectedPort, "coordinator protocol version mismatch");
       serving = true;
       resolveReady();
-      for (const listener of transportListeners) listener("connected");
+      // Protocol readiness remains the bootstrap fallback for runtime events
+      // emitted before the Renderer handshake, not a replacement for newer state.
+      if (runtimeGeneration == null) publishTransport("connected");
       return;
     }
     if (value.kind === "lifecycle" && value.phase === "shutdown") return disconnect(expectedPort, "coordinator requested shutdown");
@@ -149,7 +213,9 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
     }
     if (value.kind === "event" && typeof value.family === "string") {
       if (value.family === COORDINATOR_TRANSPORT_STATE_FAMILY && isRecord(value.payload) && (value.payload.state === "connected" || value.payload.state === "down")) {
-        for (const listener of transportListeners) listener(value.payload.state);
+        publishTransport(value.payload.state, true);
+      } else if (value.family === "runtime") {
+        observeRuntimeTransport(value.payload);
       }
       for (const listener of eventListeners.get(value.family) ?? []) listener(value.payload);
     }
@@ -164,9 +230,11 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       port = nextPort;
       previousPort?.close();
       serving = false;
+      resetRuntimeEpoch();
       if (replacesLivePort) {
         currentReady = makeReady();
         currentReady.catch(() => {});
+        publishTransport("down");
       }
       nextPort.addEventListener("message", (event) => handleMessage(nextPort, event.data));
       nextPort.addEventListener("close", () => disconnect(nextPort, "coordinator port closed"));
@@ -228,7 +296,9 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
       return () => listeners.delete(listener);
     },
     subscribeTransport(listener) {
+      if (disposed) return () => {};
       transportListeners.add(listener);
+      if (currentTransport != null) listener(currentTransport);
       return () => transportListeners.delete(listener);
     },
     dispose() {

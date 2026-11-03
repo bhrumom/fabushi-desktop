@@ -238,7 +238,10 @@ export interface TranscriptMessage {
   authorKind?: "human";
   authorId?: string;
   remoteMessageId?: string;
+  /** General composition time; it does not by itself prove offline origin. */
   composedAtMs?: number;
+  /** Explicit Host-owned Human origin, independent of a busy online queue. */
+  queuedOffline?: boolean;
   isStreaming?: boolean;
   replyToId?: string;
   // @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=5083971
@@ -251,6 +254,18 @@ export interface TranscriptMessage {
   adjacency?: SendMessageTextAdjacency;
   /** Exact send-message:text projection retained for its mounted transcript seam. */
   sendMessageText?: import("../cards/transcript-card/send-message-text").SendMessageTextProjection;
+}
+
+/** Agent timestamp behavior is retained; Human status requires durable origin. */
+export function shouldShowSentWhileOfflineNotice(
+  entry: TranscriptMessage,
+): entry is TranscriptMessage & { composedAtMs: number } {
+  if (entry.role !== "user" || entry.delivery === "failed" || entry.composedAtMs == null) return false;
+  if (entry.authorKind !== "human") return true;
+  return entry.queuedOffline === true && entry.delivery === "sent"
+    && Number.isFinite(entry.composedAtMs)
+    && typeof entry.remoteMessageId === "string" && /^[1-9][0-9]*$/.test(entry.remoteMessageId)
+    && entry.id === `human-server-message:${entry.remoteMessageId}`;
 }
 
 export type TranscriptToolCallStatus = "pending" | "running" | "done" | "failed" | "error" | "aborted";

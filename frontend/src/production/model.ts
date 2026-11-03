@@ -436,7 +436,12 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
       ? String(value.remoteMessageId)
       : undefined;
   const transcriptAuthor = {
-    ...(value.authorKind === "human" ? { authorKind: "human" as const } : {}),
+    ...(value.authorKind === "human" ? {
+      authorKind: "human" as const,
+      // Missing/legacy/malformed origin is authoritative absence, not a cue to
+      // retain a previous local offline guess during canonical merging.
+      queuedOffline: value.queuedOffline === true,
+    } : {}),
     ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
     ...(humanRemoteMessageId === undefined ? {} : { remoteMessageId: humanRemoteMessageId }),
   };

@@ -2,9 +2,53 @@
 
 > 2026-11-02：下述历史快照不代表当前生产状态；使用前按 FMEP-001 §12 核对当前批次实际入口与 owner，并增量更新。当前已有原生 Human 消息生产接线，旧“未实现”行不能作为新建平行 owner 的依据；完整迁移仍未验收。
 
-Date: 2026-11-02
+Date: 2026-11-03
 Spec: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Complete: false
+
+## Round8 — production feed verified; runtime recovery and explicit offline origin
+
+Exact `1bcdae6dffa038768250daa41fc4f7c0ff9c6852` run41552585826 passed
+reconciliation120/120 (Human76, all4 production Transcript feed cases, full6400/32,
+durable continuation/restart) and UI194/194 with Renderer compile. Source
+run41550895137 at `98be438bad69f9982c503e5a3442f721307c85ce` passed Node161,
+Python37/schema0 and unaccepted-candidate consistency; those are bounded older-input
+results, not approval of the new containing commit.
+
+The frozen NMR-TRANSPORT-RECOVERY-01 batch connects actual Host/Gateway runtime
+lifecycle to the existing client/controller/Renderer recovery path, fences
+generation/sequence/terminal state and stale held Retry results, and defers a
+replacement roster request until listener fanout finishes. The actual Renderer
+case retains current paged history and the complete Human draft without reload,
+focus or chat switching.
+
+H98 actual Mac run41550895126/job125637914634 passed Plugins2 but failed both
+Human cases at canonical-body assertions: the row included an incorrect offline
+notice. The second case reached three real process lifetimes, durable A settlement,
+original A draft retirement and a distinct same-text B before its final assertions
+failed. No Human pass is inferred from that partial progress. NMR-OFFLINE-ORIGIN-01
+now carries an explicit observation through the existing submission scope, gateway,
+SQLite intent, canonical settlement, projection and JSX. Repeated nonce/retry/late
+receipt/reopen cannot change first origin or composition time. Online and legacy
+timestamp-only native Human rows remain unmarked; pending rows never claim sent.
+The actual Mac body oracle uses unique prose and independently requires zero
+offline notices for online sends.
+
+New authored gates require Human77/reconciliation121, projection43/retry47,
+browser13/author23 (UI203), actual Mac Plugins2+Human2 and shipping at the containing
+H. These counts are requirements, not executed passes. The browser13 fixture
+retains its existing fallback-null boundary; author23 and actual Mac strict
+unknown-call checks remain. Native Human constructors are reviewed; unknown old
+records without authorKind and legacy Telegram data are not certified.
+
+Fixed U and all183 other ledger rows/source-review fields remain unchanged.
+Canonical ledger d5f16f98d6ae28342c9e06a3b17069121769aa79 appends only NMR owner,
+contract and test anchors; all acceptance flags remain false. Active backend
+afterId=0 deployment is unverified (PR137/main unchanged at2026-11-03T00:38:32Z).
+Remote revisions/tombstones/old-message discovery, reaction409 recovery, complete
+source/legal, signed supported platforms, full Bot/UI/a11y/security/performance/
+soak/upgrade/rollback and independent ACCEPT remain open. Existing round8 receipts
+retain actual results, failures, artifact identities and exact candidate inputs.
 
 ## Round30 — forward feedback and recovery qualification
 

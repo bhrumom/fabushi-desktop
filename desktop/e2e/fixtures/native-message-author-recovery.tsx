@@ -558,13 +558,13 @@ const bridge = optionalCapability('', {
   resolveAttachmentMedia: async () => null,
 }) as DesktopBridge;
 
-function append(conversationId: string, entry: FixtureRow) {
+function append(conversationId: string, entry: FixtureRow, publish = true) {
   const transcript = rows.get(conversationId) ?? [];
   if (transcript.some((existing) => existing.id === entry.id)) throw new Error('Duplicate fixture entry: ' + entry.id);
   transcript.push(clone(entry));
   rows.set(conversationId, transcript);
   touch(conversationId, entry.id);
-  emit({ type: 'appended', agentId: conversationId, entry: clone(entry) });
+  if (publish) emit({ type: 'appended', agentId: conversationId, entry: clone(entry) });
 }
 function mountRoot() {
   if (root != null) throw new Error('Fixture renderer is already mounted');
@@ -607,6 +607,16 @@ const fixture = {
     canonicalServiceRows: [...rows],
   }),
   releaseInitial() { holdInitial = false; for (const pending of initials) if (!pending.settled) reply(pending); },
+  holdAgentRosterReads() {
+    if (holdAgentRoster) throw new Error('Agent roster reads are already held');
+    holdAgentRoster = true;
+  },
+  releaseAgentRoster(index: number) {
+    reply(pendingAt(agentRosters, index, 'Agent roster'));
+  },
+  rejectAgentRoster(index: number, message: string) {
+    reply(pendingAt(agentRosters, index, 'Agent roster'), { code: 'HOST_UNREACHABLE', message });
+  },
   releaseAgentRosters() {
     holdAgentRoster = false;
     for (const pending of agentRosters) if (!pending.settled) reply(pending);
@@ -747,6 +757,26 @@ const fixture = {
     }
     reply(pending);
   },
+  runtimeLifecycle(event:
+    | { type: 'host.lifecycle'; lifecycle: 'running' | 'stopped'; generation: number; sequence: number }
+    | { type: 'gateway.lifecycle'; lifecycle: 'transport-connected' | 'transport-down'; generation: number; sequence: number }
+  ) {
+    const active = endpoints.filter((endpoint) => !endpoint.closed);
+    if (active.length !== 1 || !Number.isSafeInteger(event.generation) || event.generation < 1
+      || !Number.isSafeInteger(event.sequence) || event.sequence < 1) {
+      throw new Error('Runtime lifecycle requires one current port and positive native counters');
+    }
+    // Match CoordinatorState::lifecycle/gateway_lifecycle on the real data
+    // channel. Do not call the renderer's transport or retry callbacks.
+    const payload = {
+      ...event, timestamp: new Date().toISOString(),
+      ...(event.type === 'host.lifecycle' ? {
+        state: event.lifecycle === 'running' ? 'running' : 'stopped', recoverable: true,
+      } : {}),
+    };
+    deliver(active[0], { kind: 'event', family: 'runtime', payload });
+    return active[0].id;
+  },
   disconnect() {
     for (const endpoint of endpoints) if (!endpoint.closed) {
       deliver(endpoint, { kind: 'event', family: 'coordinator-transport-state', payload: { state: 'down' } });
@@ -765,6 +795,11 @@ const fixture = {
   },
   appendCurrent(id: string, entryId: string, content: string) {
     append(id, row(entryId, content, { authorId: id === 'human:b' ? '3' : '2' }));
+  },
+  appendServiceOnly(id: string, entryId: string, content: string) {
+    // A missed external service update is observable only through a later
+    // actual sync/read; no transcript event or renderer state is injected.
+    append(id, row(entryId, content, { authorId: id === 'human:b' ? '3' : '2' }), false);
   },
   setAccount(authId: string | null, entryId = 'human-server-message:901', content = 'New account conversation') {
     accountEpoch += 1;

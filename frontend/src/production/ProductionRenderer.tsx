@@ -106,7 +106,7 @@ import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } f
 import { settleForwardProjection } from "./forward-settlement";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
 import { createHumanMessageRetryController } from "./human-message-retry";
-import { sendHumanComposerSubmission } from "./human-message-submission";
+import { observeHumanOfflineQueueOrigin, sendHumanComposerSubmission } from "./human-message-submission";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
 import type { CommandPaletteCommand } from "./command-palette-model";
 import { createCommandPaletteMessageProvider, type CommandPaletteMessage } from "./command-palette-message-provider";
@@ -329,6 +329,8 @@ type TranscriptSubmissionScope = TranscriptOperationScope & {
   invalidate(): void;
   invalidated: boolean;
   canonicalSettled: boolean;
+  /** Proven by this existing queue scope before possible Human admission. */
+  humanQueuedOffline: boolean;
   draftOwnership?: TranscriptDraftOwnership;
   /** Acknowledged Agent attachment commits stay with the existing queue scope. */
   agentCommittedAttachments?: DraftAttachment[];
@@ -1039,8 +1041,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const pendingTranscriptReceiptsRef = useRef(new Set<TranscriptReadUpdateBuffer>());
   const transcriptConversationGenerationsRef = useRef(new Map<string, number>());
   const submissionScopesRef = useRef(new Map<string, TranscriptSubmissionScope>());
+  // Transport callbacks own synchronous admission; render only projects state.
   const transportRef = useRef<TransportState>(transport);
-  transportRef.current = transport;
   activeAgentIdRef.current = activeAgentId;
   accountRef.current = account;
   findInChatOpenRef.current = findInChatOpen;
@@ -1123,6 +1125,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       cancelled: new Promise<void>((resolve) => { cancel = resolve; }),
       invalidated: false,
       canonicalSettled: false,
+      humanQueuedOffline: false,
       invalidate() { scope.invalidated = true; cancel(); },
       onSettled() { settleTranscriptDraft(scope); },
     };
@@ -1349,7 +1352,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       pendingTranscriptReceiptsRef.current.add(receipt);
       try {
         const result = await sendHumanComposerSubmission(submission, {
-          client, bridge, isCurrent,
+          client, bridge, isCurrent, queuedOffline: scope.humanQueuedOffline,
           onCommitted: (originalPath) => { if (isCurrent()) stagedPaths.current.delete(originalPath); },
         });
         if (!receipt.isCurrent()) throw new Error("Transcript send scope was cleared");
@@ -1474,6 +1477,12 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     onPhase: (submission) => {
       const scope = submissionScope(submission);
       if (scope == null || scope.invalidated || !isTranscriptScopeCurrent(scope) || submission.isCurrentAttempt?.() === false) return;
+      if (typeof scope.humanAuthorId === "string" && !scope.canonicalSettled) {
+        scope.humanQueuedOffline = observeHumanOfflineQueueOrigin(
+          scope.humanQueuedOffline, submission.phase, transportRef.current !== "connected",
+          submission.humanDispatch?.requestPosted === true,
+        );
+      }
       const composerBusy = composerSubmissionBusyState(submission);
       setPendingSendScopes((current) => {
         if (composerBusy === undefined || submission.isCurrentAttempt?.() === false) return current;
@@ -3206,25 +3215,35 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const lifecycleGeneration = ++clientLifecycleGenerationRef.current;
     const accountScopeGeneration = accountScopeGenerationRef.current;
     let active = true;
+    let transportObserved = false;
     const isCurrent = () => active
       && clientLifecycleGenerationRef.current === lifecycleGeneration
       && accountScopeGenerationRef.current === accountScopeGeneration;
     client.ready.then(() => {
-      if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+      // The client replays known transport state to new subscriptions. Initial
+      // readiness must not reverse a later Host/Gateway loss or duplicate its
+      // recovery after this account effect starts again.
+      if (!isCurrent() || transportObserved || accountRef.current?.kind !== "logged-in") return;
       transportScopeGenerationRef.current += 1;
+      transportRef.current = "connected";
       setTransport("connected");
       void refreshRoster().catch((error: unknown) => setNotice(error instanceof Error ? error.message : String(error)));
       void refreshAgentNetworkAvailability();
     }, () => {
-      if (!isCurrent() || accountRef.current?.kind !== "logged-in") return;
+      if (!isCurrent() || transportObserved || accountRef.current?.kind !== "logged-in") return;
       transportScopeGenerationRef.current += 1;
+      transportRef.current = "down";
       setTransport("down");
       setRosterLoadFailed(true);
     });
     const stopTransport = client.subscribeTransport((state) => {
       if (!isCurrent()) return;
+      transportObserved = true;
       transportScopeGenerationRef.current += 1;
-      setTransport(state === "connected" ? "connected" : "down");
+      // Advance both synchronous admission fences before the connection owner
+      // starts a queued retry after the transport-listener fanout.
+      transportRef.current = state;
+      setTransport(state);
       if (state === "down") {
         setRosterLoadFailed(true);
         setIsRosterRetrying(false);
@@ -3733,7 +3752,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         setAsyncTasksAgentId(null);
         asyncTasksReturnFocusRef.current = null;
         setWorkspaceRoute(null); setCommandPaletteOpen(false);
-        setTransport(client == null ? "browser" : "connecting");
+        transportRef.current = client == null ? "browser" : "connecting";
+        setTransport(transportRef.current);
         openAgentRequestGenerationRef.current += 1;
       }
       accountIdentityRef.current = identity;
