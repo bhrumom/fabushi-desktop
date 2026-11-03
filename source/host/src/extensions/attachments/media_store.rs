@@ -1038,6 +1038,22 @@ mod cleanup {
         now: SystemTime,
         before_remove: &mut impl FnMut(&Path) -> io::Result<()>,
     ) -> Result<(), String> {
+        run_with_directory_admission_hook(
+            root, ttl, options, now, before_remove, &mut |_| {},
+        )
+    }
+
+    // Windows directory substitution must precede any open descendants. This
+    // private seam keeps admitted handles live and lets the same traversal's
+    // ordinary identity recheck decide whether to retain or refuse the branch.
+    fn run_with_directory_admission_hook(
+        root: &Path,
+        ttl: Duration,
+        options: &CleanOldMediaOptions,
+        now: SystemTime,
+        before_remove: &mut impl FnMut(&Path) -> io::Result<()>,
+        after_directory_admission: &mut impl FnMut(&Path),
+    ) -> Result<(), String> {
         let root: PathBuf = std::path::absolute(root)
             .map_err(|error| format!("Failed to resolve media root: {error}"))?
             .components()
@@ -1060,6 +1076,7 @@ mod cleanup {
             seen: HashSet::new(),
             retain: false,
         }];
+        after_directory_admission(&stack[0].path);
 
         loop {
             if retain_changed_branch(&mut stack)? {
@@ -1174,6 +1191,7 @@ mod cleanup {
                     })();
                     if let Ok(child) = child {
                         stack.push(child);
+                        after_directory_admission(&stack[index + 1].path);
                         continue;
                     }
                 }
@@ -1755,9 +1773,13 @@ mod cleanup {
                 let replacement = if symlink { fixture.0.join("outside") } else { root.join("cache") };
                 let successor = replacement.join(&relative);
                 let mut replaced = false;
+                #[cfg(unix)]
+                let replace_at = target.clone();
+                #[cfg(windows)]
+                let replace_at = root.join("cache");
 
-                run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
-                    if path == target.as_path() && !replaced {
+                let mut replace_directory = |path: &Path| {
+                    if path == replace_at.as_path() && !replaced {
                         fs::rename(root.join("cache"), &retired).unwrap();
                         fs::create_dir_all(successor.parent().unwrap()).unwrap();
                         fs::write(&successor, b"successor media").unwrap();
@@ -1770,8 +1792,18 @@ mod cleanup {
                         }
                         replaced = true;
                     }
+                };
+                #[cfg(unix)]
+                let result = run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
+                    replace_directory(path);
                     Ok(())
-                }).unwrap();
+                });
+                #[cfg(windows)]
+                let result = super::run_with_directory_admission_hook(
+                    &root, Duration::from_secs(60), &options(), now,
+                    &mut |_| Ok(()), &mut replace_directory,
+                );
+                result.unwrap();
 
                 assert!(replaced);
                 assert_eq!(fs::read(retired.join(&relative)).unwrap(), b"original media");
@@ -1791,17 +1823,30 @@ mod cleanup {
             let relative = target.strip_prefix(&root).unwrap().to_path_buf();
             let retired = fixture.0.join("retired-media");
             let mut replaced = false;
+            #[cfg(unix)]
+            let replace_at = target.clone();
+            #[cfg(windows)]
+            let replace_at = root.clone();
 
-            let result = run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
-                if path == target.as_path() && !replaced {
+            let mut replace_directory = |path: &Path| {
+                if path == replace_at.as_path() && !replaced {
                     fs::rename(&root, &retired).unwrap();
                     fs::create_dir_all(target.parent().unwrap()).unwrap();
                     fs::write(&target, b"successor media").unwrap();
                     set_modified(&target, old);
                     replaced = true;
                 }
+            };
+            #[cfg(unix)]
+            let result = run(&root, Duration::from_secs(60), &options(), now, &mut |path| {
+                replace_directory(path);
                 Ok(())
             });
+            #[cfg(windows)]
+            let result = super::run_with_directory_admission_hook(
+                &root, Duration::from_secs(60), &options(), now,
+                &mut |_| Ok(()), &mut replace_directory,
+            );
 
             assert!(replaced);
             assert!(result.unwrap_err().contains("Media root identity"));

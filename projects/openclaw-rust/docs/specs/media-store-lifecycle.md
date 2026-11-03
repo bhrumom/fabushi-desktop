@@ -335,3 +335,45 @@ nonzero-command and capture-error controls before accepting either real command.
 Those synthetic oracle controls are explicitly distinct from product execution.
 Record raw working-copy hashes and their Git-normalized blob identities so a
 Windows checkout's line endings cannot silently break exact-H input binding.
+
+
+### Windows substitution-fixture correction (MSL-WINDOWS-FIX-01)
+
+The exact-H `8cf6143501b8c69b051d98df05f3ed523b364268` Windows
+Actions owner group failed two fixtures before substitution:
+`cleanup_refuses_replaced_ancestor` and `cleanup_refuses_replaced_root`
+received native error 5 (`PermissionDenied`) while renaming a directory
+whose descendants were already open. Preserve this failed result as
+`TEST_FLAW`; the six other owner cases and all sixteen integration cases
+are narrower positive evidence and do not turn this platform gate green.
+
+The replacement oracle must actually rename the admitted original and
+create the expired successor. On Windows, inject that mutation immediately
+after admission of the directory being replaced, before opening any of
+its descendants. The production traversal must then execute its ordinary
+identity recheck: a changed root errors; a changed child retains its branch
+and allows an unrelated branch to progress. Both original and successor
+bytes must survive. The ancestor control still covers a directory successor
+and a real directory symlink successor. Unix retains its existing mutation
+at the leaf removal boundary, where ancestor rename is supported.
+
+Use one owner-private traversal implementation with a no-op directory
+admission callback in ordinary production. Keep the existing removal hook
+and all its reobservation/error semantics. Invoke the extra private hook
+after a root or child is admitted, before the next ordinary `current` check.
+Do not release or weaken retained handles, change share flags, substitute
+mock traversal, catch setup denial as success, skip a required case, or
+remove any existing preservation/refusal assertion. A callback is solely a
+deterministic observation/mutation seam, with no new product API or owner.
+
+The Windows rename constraint is the documented FileRenameInformation
+open-descendant rule in [MS-FSA §2.1.5.15.12][MSL-WINDOWS-RENAME] and
+[§2.1.4.2][MSL-WINDOWS-OPEN-DESCENDANTS]. Attributing the observed error to
+specific retained descendant handles is a source-backed inference; the
+failed Actions log contains no native handle trace. Execute the unchanged
+strict eight-owner/sixteen-consumer Windows selection on a new exact H.
+Existing Linux and macOS selections remain applicable to the shared loop;
+no prior-H green is transferred to this correction.
+
+[MSL-WINDOWS-RENAME]: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/87f86c9b-6c2a-4803-84b7-131a74a434fa
+[MSL-WINDOWS-OPEN-DESCENDANTS]: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fsa/133840e4-778e-44ca-9b41-da2323615075
