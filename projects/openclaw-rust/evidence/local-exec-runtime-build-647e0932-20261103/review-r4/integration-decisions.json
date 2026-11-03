@@ -1,0 +1,22 @@
+{
+  "schema": "ocrm-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "subject": "5dafe0ac8cfc18bd97dd9a743d30be54600f9227",
+  "subject_tree": "6036e50832267d1a28f8049a51a72c555815e8e2",
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "findings": [
+    {
+      "id": "LDB-R4-INTEGRATION-REFERENCE-ROW-BOUNDARY",
+      "decision": "FIX",
+      "classification": "integration implementation defect",
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "observed": "Two recovery decision references were appended to OCRM-RESP-INFRA-RUST-OPENCLAW-CRATES-001 and OCRM-RESP-EXEC-RUNNER-TIMEOUT-001. Intended NODE-HOST-LOCAL-RUNTIME-PROJECTION and EXEC-PROCESS-SPAWN records lacked them.",
+      "cause": "Integration located evidence_refs after id without first constraining lookup to the containing record; evidence_refs precedes id in this ledger.",
+      "resolution": "Restart ledger edit from the current parent. Locate the complete enclosing responsibility object for each intended ID, add only that object's recovery reference, and compare every responsibility object and all other top-level data against parent. Remove no concurrent BGC content; preserve all statuses.",
+      "evidence": "Both independent integration lenses identified the same row placement. Root independently inspected the four exact record IDs and reference membership.",
+      "limits": "Candidate ref was never published. This correction changes evidence mapping only; capture/workflow code is unchanged and product execution remains pending."
+    }
+  ],
+  "runtime": "not-run",
+  "global_flags_promoted": false
+}
