@@ -1,0 +1,55 @@
+{
+  "schema": "ocrm-lossless-base64-artifact-carrier-v1",
+  "artifactId": 13207619380,
+  "subjectSha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "originalRepositoryPath": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip",
+  "originalGitBlob": "643ee5f5b44ca9c1a10dfeef4ad5e3a7ada90741",
+  "originalBytes": 4951968,
+  "originalSha256": "75178fb1e14b9f4219b0417e2f5fa917fd2a16347a3862e1c3ebc76eea507e23",
+  "base64Characters": 6602624,
+  "purpose": "Lossless full-content readback when the repository file connector omits content for files over 1 MiB and its blob wrappers reject non-UTF-8. The original ZIP remains unchanged. Concatenate the text parts in order, remove their terminating LF, then base64 decode. These are an encoding of the original archive bytes, not re-generated test evidence.",
+  "parts": [
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip.base64-parts/part-01.txt",
+      "gitBlob": "9509c7f83c50d331e25e7f48b4f9f677964a39fd",
+      "base64Offset": 0,
+      "base64Length": 1000000
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip.base64-parts/part-02.txt",
+      "gitBlob": "2a6476f34daf0b4df7cfcd807bc9a8f68b9756e6",
+      "base64Offset": 1000000,
+      "base64Length": 1000000
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip.base64-parts/part-03.txt",
+      "gitBlob": "d3cdd0af9f81380b2e144c628deedb8794adba16",
+      "base64Offset": 2000000,
+      "base64Length": 1000000
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip.base64-parts/part-04.txt",
+      "gitBlob": "22887ac9d67146682590f8d600aa7b0fea3947ae",
+      "base64Offset": 3000000,
+      "base64Length": 1000000
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip.base64-parts/part-05.txt",
+      "gitBlob": "5a0bf038767bba16feafcea4e4f3d538b64964fa",
+      "base64Offset": 4000000,
+      "base64Length": 1000000
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip.base64-parts/part-06.txt",
+      "gitBlob": "d340624ff83260a1e783db29e4cd716a92f0fd92",
+      "base64Offset": 5000000,
+      "base64Length": 1000000
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/source/artifacts/source-authority-13207619380.zip.base64-parts/part-07.txt",
+      "gitBlob": "8c521bfbc538cda958ebc3f05a50874d25bf0e8c",
+      "base64Offset": 6000000,
+      "base64Length": 602624
+    }
+  ]
+}

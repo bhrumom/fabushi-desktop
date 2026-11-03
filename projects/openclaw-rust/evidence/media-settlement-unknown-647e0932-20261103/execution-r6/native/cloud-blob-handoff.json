@@ -1,0 +1,110 @@
+{
+  "schema": "native-evidence-cloud-blob-handoff-v1",
+  "created_for": "bhrumom/fabushi-desktop",
+  "subject_commit": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "subject_tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+  "runtime_run_id": 41586608776,
+  "run_attempt": 1,
+  "execution_cutoff_utc": "2026-11-03 06:05:39 UTC",
+  "report_and_snapshot_readback_phase_utc": "2026-11-03 06:13:47 UTC",
+  "intended_directory": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/native/",
+  "archive_scope": "Only the authored corrected report and four complete cached structured API snapshots have newly created Git blob objects. No tree, commit, branch or ledger was changed by this agent. Root owns later integration.",
+  "verified_blob_objects": [
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/native/terminal-assessment.md",
+      "blob_sha": "5dd74632d3b670839b38e4b693eac86038c2150d",
+      "encoding": "utf-8",
+      "utf8_bytes": 20062,
+      "full_readback_matches": true,
+      "content_kind": "Authored terminal assessment, with corrected delivery state. Not a raw receipt."
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/native/artifacts-060438.structured.json",
+      "blob_sha": "d25ae34b488f67bc0d369ad5c52dc48f17c08503",
+      "encoding": "utf-8",
+      "utf8_bytes": 4499,
+      "snapshot_utc": "2026-11-03 06:04:38 UTC",
+      "source": "purpose-built github_fetch_workflow_run_artifacts run 41586608776",
+      "representation": "Complete cached tool structuredContent serialized with JSON.stringify(..., null, 2) and one final LF; not raw HTTP bytes.",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/native/windows-steps-060438.structured.json",
+      "blob_sha": "99835e31062ec64eeed0c8441b231e9ced4ce4b2",
+      "encoding": "utf-8",
+      "utf8_bytes": 1249,
+      "snapshot_utc": "2026-11-03 06:04:38 UTC",
+      "source": "purpose-built github_fetch_workflow_job_steps job 125753467680",
+      "representation": "Complete cached tool structuredContent serialized with JSON.stringify(..., null, 2) and one final LF; not raw HTTP bytes.",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/native/artifacts-060539.structured.json",
+      "blob_sha": "d3e6d618d76d7e0f7ae4cfe9dbb6455e3ece4247",
+      "encoding": "utf-8",
+      "utf8_bytes": 5408,
+      "snapshot_utc": "2026-11-03 06:05:39 UTC",
+      "source": "purpose-built github_fetch_workflow_run_artifacts run 41586608776",
+      "representation": "Complete cached tool structuredContent serialized with JSON.stringify(..., null, 2) and one final LF; not raw HTTP bytes.",
+      "full_readback_matches": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/native/windows-steps-060539.structured.json",
+      "blob_sha": "2e757e085630a904cc6f7840a7f47d8f79eb9c87",
+      "encoding": "utf-8",
+      "utf8_bytes": 1395,
+      "snapshot_utc": "2026-11-03 06:05:39 UTC",
+      "source": "purpose-built github_fetch_workflow_job_steps job 125753467680",
+      "representation": "Complete cached tool structuredContent serialized with JSON.stringify(..., null, 2) and one final LF; not raw HTTP bytes.",
+      "full_readback_matches": true
+    }
+  ],
+  "raw_artifact_sources": [
+    {
+      "platform": "Linux",
+      "artifact_id": 13208536790,
+      "artifact_name": "ocrm-media-cleanup-Linux-8621173a53d1f46f7dc613c1b2e162c3350b94bc-41586608776-1",
+      "zip_bytes": 141373,
+      "zip_sha256": "1a1e43152d88b5e15a51303f2cd42fb69055af6cf00a43af5bbfcdf4b58d09bb",
+      "receipt_sha256": "e72676fe2baa23db29fdcf07f6bd8a51807a8db720308331305978c633c314bf",
+      "binding_sha256": "74902a4aaff367582e26c71d745f1174d053faca24850510e49d522d234bf529",
+      "recovered_file_id": "file_000000004ebc81fd83b3e4836175cf8b",
+      "mime_type": "application/zip",
+      "download_reference_recovered": true,
+      "response_includes_base64": false,
+      "response_includes_member_bytes": false,
+      "response_includes_embedded_resource": false,
+      "response_includes_resource_link": false,
+      "zip_receipt_raw_logs_binding_blob_created": false,
+      "original_contents_in_functions_store": false,
+      "workspace_bytes_saved_before_disconnect": true,
+      "workspace_currently_unavailable": true
+    },
+    {
+      "platform": "Windows",
+      "artifact_id": 13208900865,
+      "artifact_name": "ocrm-media-cleanup-Windows-8621173a53d1f46f7dc613c1b2e162c3350b94bc-41586608776-1",
+      "zip_bytes": 148493,
+      "zip_sha256": "2d7f714f7d751b9949b0b0aca78e18407528ccb9be619fd1c495d292c86a341b",
+      "receipt_sha256": "a6bcdb2e2c85b057d94bdfdddd4c42dd9ca51e7f0343d3891a3ceec6c42a4456",
+      "binding_sha256": "e5912e699cf6f81d6d4ea5322b42c62ac0d4dcc0a835aab82f1603e17403ab02",
+      "recovered_file_id": "file_00000000257c8230a848d7b7b8d0e698",
+      "mime_type": "application/zip",
+      "download_reference_recovered": true,
+      "response_includes_base64": false,
+      "response_includes_member_bytes": false,
+      "response_includes_embedded_resource": false,
+      "response_includes_resource_link": false,
+      "zip_receipt_raw_logs_binding_blob_created": false,
+      "original_contents_in_functions_store": false,
+      "workspace_bytes_saved_before_disconnect": true,
+      "workspace_currently_unavailable": true
+    }
+  ],
+  "raw_archive_limit": "The raw ZIPs, extracted receipts, raw logs and complete binding JSON were saved in the workspace before it became unavailable. Their bytes are not cached in this agent's functions.store, and are not reconstructed or claimed as newly Git-archived evidence. Native acceptance is the completed prior exact-byte assessment, supported by the remote artifacts and preserved identities.",
+  "tooling_limit": "Recovered download responses return only opaque file references and temporary download URLs, with no base64, member content, embedded resource or resource-link block. No compatible direct binary reader for those file IDs is exposed. Signed URLs are excluded.",
+  "previous_pending_report_sha256": "99391bc1cb452d1e544b0c7eb829ac95edff9ba63b8a2cc57d1dc0a3894b4c5f",
+  "no_ci_started": true,
+  "no_executor_retried": true,
+  "no_branch_updated": true
+}

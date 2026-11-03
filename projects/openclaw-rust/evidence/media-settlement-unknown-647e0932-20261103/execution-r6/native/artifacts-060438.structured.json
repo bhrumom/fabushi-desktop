@@ -1,0 +1,99 @@
+{
+  "artifacts": [
+    {
+      "id": 13208605506,
+      "name": "ocrm-plugin-edge-8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+      "size_in_bytes": 10462,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208605506",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208605506/zip",
+      "expired": false,
+      "created_at": "2026-11-03T05:54:55Z",
+      "expires_at": "2027-02-01T05:54:21Z",
+      "updated_at": "2026-11-03T05:54:55Z",
+      "digest": "sha256:2ed965cd505711ad9ddd8768173f0886e7c6d51d7400321a3fa58793e5a15fd3",
+      "workflow_run": {
+        "id": 41586608776,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc"
+      }
+    },
+    {
+      "id": 13208585755,
+      "name": "ocrm-config-restore-linux-8621173a53d1f46f7dc613c1b2e162c3350b94bc-41586608776-1",
+      "size_in_bytes": 47258,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208585755",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208585755/zip",
+      "expired": false,
+      "created_at": "2026-11-03T05:56:25Z",
+      "expires_at": "2027-02-01T05:54:21Z",
+      "updated_at": "2026-11-03T05:56:25Z",
+      "digest": "sha256:0c3233133743169ab61583f06a0f72200f28bd524f3055c4e46c4060cfa9926b",
+      "workflow_run": {
+        "id": 41586608776,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc"
+      }
+    },
+    {
+      "id": 13208536790,
+      "name": "ocrm-media-cleanup-Linux-8621173a53d1f46f7dc613c1b2e162c3350b94bc-41586608776-1",
+      "size_in_bytes": 141373,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208536790",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208536790/zip",
+      "expired": false,
+      "created_at": "2026-11-03T06:01:22Z",
+      "expires_at": "2027-02-01T05:54:21Z",
+      "updated_at": "2026-11-03T06:01:22Z",
+      "digest": "sha256:1a1e43152d88b5e15a51303f2cd42fb69055af6cf00a43af5bbfcdf4b58d09bb",
+      "workflow_run": {
+        "id": 41586608776,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc"
+      }
+    },
+    {
+      "id": 13208112542,
+      "name": "ocrm-mab-8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+      "size_in_bytes": 10838,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208112542",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13208112542/zip",
+      "expired": false,
+      "created_at": "2026-11-03T05:54:57Z",
+      "expires_at": "2027-02-01T05:54:21Z",
+      "updated_at": "2026-11-03T05:54:57Z",
+      "digest": "sha256:965e53531c07de664164eae8176a65dae7c45e7358492d2444bb2a2079d44de8",
+      "workflow_run": {
+        "id": 41586608776,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc"
+      }
+    },
+    {
+      "id": 13207189724,
+      "name": "ocrm-openclaw-notice-8621173a53d1f46f7dc613c1b2e162c3350b94bc-41586608776-1",
+      "size_in_bytes": 3839,
+      "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13207189724",
+      "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13207189724/zip",
+      "expired": false,
+      "created_at": "2026-11-03T05:54:43Z",
+      "expires_at": "2027-02-01T05:54:21Z",
+      "updated_at": "2026-11-03T05:54:43Z",
+      "digest": "sha256:73de9863bae02955e72e9fd42d14c373da996d8c12b6a73f5db9fb649e42997d",
+      "workflow_run": {
+        "id": 41586608776,
+        "repository_id": 1375312893,
+        "head_repository_id": 1375312893,
+        "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+        "head_sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc"
+      }
+    }
+  ]
+}

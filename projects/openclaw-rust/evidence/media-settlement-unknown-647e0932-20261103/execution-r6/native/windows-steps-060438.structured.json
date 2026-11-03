@@ -1,0 +1,58 @@
+{
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 1
+    },
+    {
+      "name": "Run actions/checkout@v6",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 2
+    },
+    {
+      "name": "Bind exact tested HEAD",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 3
+    },
+    {
+      "name": "Run dtolnay/rust-toolchain@stable",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 4
+    },
+    {
+      "name": "Run Swatinem/rust-cache@v2",
+      "status": "completed",
+      "conclusion": "success",
+      "number": 5
+    },
+    {
+      "name": "Execute media cleanup owner and real service contracts",
+      "status": "in_progress",
+      "conclusion": null,
+      "number": 6
+    },
+    {
+      "name": "Upload exact-subject media cleanup evidence",
+      "status": "pending",
+      "conclusion": null,
+      "number": 7
+    },
+    {
+      "name": "Post Run Swatinem/rust-cache@v2",
+      "status": "pending",
+      "conclusion": null,
+      "number": 13
+    },
+    {
+      "name": "Post Run actions/checkout@v6",
+      "status": "pending",
+      "conclusion": null,
+      "number": 14
+    }
+  ]
+}

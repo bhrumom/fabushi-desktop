@@ -73,3 +73,196 @@ Actual failure38697503722, Host generated_production.rs encode_exec_server_messa
 send_connect_server_stream and daemonserver.rs frozen enum/route/resolve_path read
 from current canonical main. User requests completing real G11 environment and all
 remaining conditions; this repair is necessary to run the existing production path.
+
+## BW07–BW12: Box response completion and outcome custody (BXR-v1)
+
+Status: implementation contract, 2026-11-03; execution and acceptance pending.
+Task: OCRM 647e0932-bea4-4113-9a61-65ae3db58955, round 1.
+Implementation base: 72b6ed8b6e91a0ac7e0588fd9492a7d30c535079;
+fixed OpenClaw U: 1440bb1771372334bea23d7642bb52deb7db1845.
+This is a necessary existing-owner public contract under OCRM-M10/M11 and a
+dependency of OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001, not completion of
+that media responsibility or a new runtime owner.
+
+### Problem and source boundary
+
+The real daemon echoes request id and exec_id and emits StreamClose(request.id).
+The Host currently discards data identity, ignores close/heartbeat identity,
+takes the first length-delimited field as a payload (including metadata tag15),
+and accepts a Connect body without an end envelope. A transport EOF can
+therefore expose unrelated or incomplete Shell/Write/Read output as a result.
+ForeverBox also converts the resulting transport errors to ordinary Tool errors,
+losing the distinction between refusal and an execution whose outcome is unknown.
+
+The reviewed frozen schema uses request/response id1 and exec_id15; response
+metadata also includes local_execution_time_ms39 and hook_additional_contexts45.
+ShellResult metadata101–104 is separate from its result oneof. The Host currently
+sends empty exec_id, and the daemon's proto3 encoder legitimately omits id0 and
+empty strings. These defaults remain compatible. Existing test peers that omit
+nonzero identity or StreamClose are incomplete fixtures, not an external
+compatibility exemption. Uninspected external peer compatibility stays unaccepted.
+
+The original Shell .proto/reserved-tag history is not available in this tree.
+local_exec.proto supplies the separate local-exec generator and uses Struct
+placeholders for ordinary Shell; it is not a Box ShellSuccess schema authority.
+BXR-v1 allocates no tags, changes no wire schema or generated TS, and does not
+produce raw stdout bytes, a generated-HTML grant, a private capture receipt,
+a second execution lease, or a new persistence record.
+
+### Requirements and shared interface version BXR-v1
+
+- BW07 / BXR01 — Decode the entire existing ExecClientMessage and distinguish its
+  declared payload oneof from metadata, regardless of field order. Preserve data
+  identity in the existing generic envelope:
+  `ExecClientMessage { id: u64, exec_id: String, message: ClientMessage }`.
+  Parse omitted scalar/string identity as 0/empty. Known identity fields with a
+  wrong wire type, contradictory repeated identity, ambiguous multiple payloads,
+  malformed fields or an absent supported envelope are errors. Ignore well-formed
+  unknown metadata according to the frozen schema boundary; do not treat arbitrary
+  length-delimited metadata as a RawResource. Decode ShellResult's declared
+  result separately from its metadata as the adjacent affected boundary.
+
+- BW08 / BXR02 — BoxRemoteExecManager remains the sole per-accessor request-ID
+  allocator and response-correlation owner. Before serialization/transport, refuse
+  IDs outside the existing uint32 wire range instead of truncating, saturating or
+  reusing a value. Preserve the existing create_exec_instance(ctx, serialize(id))
+  call shape. BXR-v1 still sends empty exec_id; every received data exec_id must
+  equal that actual empty request value. No new nonce or permissive nonempty/empty
+  fallback is introduced. Every data, heartbeat and close must match the allocated
+  request ID. Throw's omitted optional ID is the same proto3 default0 and must
+  match the request; a foreign Throw cannot become this request's remote error.
+  Retain matching Throw's error/stack/code fields as an error, never success.
+
+- BW09 / BXR03 — A successful manager return requires exactly one matching
+  StreamClose after the response data. Reject data/control after close, duplicate
+  close, missing close, empty/unsupported control and identity mismatch. Multiple
+  ordered data messages remain legal for the existing streaming resource path.
+  One-shot Shell/Write/Read/ComputerUse/RawResource accessors require exactly one
+  expected operation result; mixed or duplicate results cannot be silently
+  filtered with find_map. Preserve the operation owner's existing tag mapping;
+  this batch does not guess mappings for every unsupported raw resource.
+  Matching Throw remains a failure and does not fabricate successful completion.
+
+- BW10 / BXR04 — The existing Exec HTTP/Connect reader must prove complete
+  framing. Require exactly one legal Connect end envelope, reject missing/end
+  duplicates, unsupported flag bits, malformed end objects, trailing data and
+  truncated frames. Retain the remote Connect error detail as a failure.
+  For chunked HTTP require the terminating zero chunk, complete trailer terminator
+  and no trailing unconsumed bytes; preserve valid chunk extensions and trailers.
+  Validate a declared Content-Length against the exact received body; reject
+  conflicting/ambiguous framing. A close-delimited response may still be consumed,
+  but TCP EOF alone never replaces StreamClose plus Connect-end. Use checked
+  length arithmetic. Keep existing authentication, request limits, unary15s and
+  Exec120s idle deadlines and never retry a dispatched call.
+
+- BW11 / BXR05 — Preserve uncertainty through the existing production error path.
+  Add `BoxRemoteExecError::IdExhausted` (before dispatch) and
+  `BoxRemoteExecError::ProtocolViolation(&'static str)` (after transport).
+  Add `ProductionBoxTransportError::ExecutionOutcomeUnknown(
+  Box<ProductionBoxTransportError>)` at the first attempted request write:
+  every write/flush/read/framing/status/decode failure after that boundary is
+  wrapped once, retaining its cause. URL/header/connection/setup refusal before
+  that boundary is not promoted to unknown.
+  Expose `ProductionBoxExecError::outcome_unknown() -> bool`: true for wrapped
+  transport uncertainty, protocol violations, RemoteThrow, InvalidResult and
+  MissingResult; false for IdExhausted, pre-dispatch transport failures,
+  ProtectedPath and NoMonitor. ForeverBox's actual Shell, timed/background Shell,
+  Read, Write and ComputerUse consumers preserve this as the existing
+  ProviderSessionError::ToolOutcomeUnknown. A stream with no terminal operation
+  result or an invalid post-execution background identifier is also unknown.
+  The real Runner bridge must retain that class through its effect-custody
+  consumer. No retry, new admission, successful settlement, cleanup authority or
+  generated origin may be inferred from an unknown result.
+
+- BW12 / BXR06 — Keep real daemon and current Fabushi consumers connected.
+  Preserve bare request compatibility, valid default-zero/default-empty peers,
+  successful text/binary Read, Write, Shell, multi-data ShellStream, background
+  handoff, matching Throw and the existing protected-path/no-monitor controls.
+  At least one exact-H Actions positive must use the production accessor against
+  the actual daemon, including a nonzero request after a first call; mirrored
+  fake codecs alone are insufficient. Real external providers/platforms not
+  exercised remain pending, not mock-accepted.
+
+### Ownership, implementation and recovery
+
+The existing Host box_remote_accessor.rs owns correlation and the per-call
+Open/Closed response state. generated_production.rs owns wire/framing and phase
+classification. The daemon remains the producer; ForeverBox runner_tools.rs
+continues to project its results into the existing Runner port and Tool outcome.
+There is no new scheduler, Agent loop, Session store, protocol service, persistent
+lease or permission truth. React/Electron business logic is unchanged.
+
+The root integrator owns the shared envelope/error contract, spec, composition,
+workflow/capture and canonical ledger/RTM amendments. Independent changes use
+disjoint paths and the exact shared BXR-v1 contract. Implement and review one
+coherent source/consumer/test batch; freeze its final H before the affected
+Actions set. No local or htch compilation, parser, test, generator or validation.
+
+On disconnect, malformed completion or post-write error, return unknown and
+leave existing operation/resource reconciliation to its owner. This batch
+does not add cancellation wiring to a socket, promise child stdout EOF, reclaim
+a shared daemon, or grant late work new attempt authority. Restart creates a
+fresh accessor/connection and does not replay an ambiguous prior mutation.
+No database migration is needed. Rollback is an atomic source batch revert;
+it must not silently reinstate automatic retries or weaken preserved media
+custody. Diagnostics identify protocol phase/category without adding credentials,
+whole command lines or response byte dumps.
+
+### Direct test oracles and acceptance
+
+Extend existing Box manager and generated-production contract targets. Required
+positive/negative families are: default0/empty and nonzero sequential IDs;
+metadata before/after payload and ShellResult metadata; correct multi-data stream;
+wrong data/heartbeat/close/Throw identity; uint32 exhaustion before any call;
+missing/duplicate close; data after close; missing/duplicate/end-after-data and
+unknown Connect flags; truncated headers/frames/chunks/trailers; valid trailers;
+declared-length mismatch; contradictory framing; matching Throw detail; wrong,
+missing or multiple one-shot result kinds; pre-write refusal versus post-write
+loss; exactly one request despite a lost completion; ForeverBox and the actual
+Runner's ToolOutcomeUnknown preservation; actual production accessor-to-daemon
+Shell/Write/Read success with a nonzero request and binary bytes.
+
+Keep all existing valid assertions and repair simplified test peers to echo the
+decoded request identity and close it. A cancellation test observed to use
+`echo $ > abort-pid.txt` is not an accepted PID/death oracle: if brought into
+this batch's claimed coverage, repair it to a real parsed positive PID and
+prove it was alive before disconnect. Do not claim cancellation from that
+historical test name alone.
+
+Reuse rust-desktop-runtime.yml and its existing Linux Host/daemon cache and
+portable capture. The selected execution set must compile the affected ordinary
+Host, run all affected manager/accessor/ForeverBox/Runner targets, and run the
+real daemon contract. Bind the exact command, required names, count, exit,
+complete log/artifact, source inputs and H/U. No empty missing-name list, zero-test
+success or unchanged historical receipt substitutes for a direct positive.
+Keep source G01/G02 scoped authority and independent fresh general/structure
+source review separate from runtime evidence. Campaign failures use the existing
+classification/recovery policy; no rerun-until-green.
+
+BXR acceptance requires every family above and the affected existing regressions
+at the final H, plus independent source-review convergence. Source-ready or
+native-only success does not accept actual App, packages, external providers,
+generated HTML, all platforms, OCRM AC01–AC24/G01–G12 or global completion flags.
+
+### Exact source provenance and retained unknowns
+
+At H862, the independently read protocol inputs were server.rs
+a40dc3b5f78e414c3ac302137668f1d5be8dc73f; generated_production.rs
+81f5a74dbf0ebc3700f177639bdd875f8c00eb56; box_remote_accessor.rs
+fd74139f8e75e9635c85faf43de2637bbcbe4686; runner_tools.rs
+c38b3dda53e5d9eccb1581ed3bd6ec38599f7ff6; exec_pb.ts
+b3d569d1ad5f923444d472a08efb8bad58c5941f; shell_exec_pb.ts
+43079a2f5df12a5f570589ce312fd7fcfb71bd1f; exec_service_pb.ts
+da743f25c6a21ec38d1fdeb83dd5fc7f96c12b6f. The four Rust owner blob identities remain unchanged
+at base72b6; the manager, codec and ForeverBox source bodies were re-read there.
+Runner box_tool_access.rs changed
+with the incoming MCP work and is separately re-read at blob
+7d856c9f39bf50642d3d757451f0cc954bc47b1b. Incoming changes are preserved.
+
+The protocol assessor returned its complete report in the task conversation;
+its final local report write could not be confirmed after workspace loss.
+This appendix records the implementation contract and exact source anchors; it
+does not invent a saved full-report hash. Raw stdout fidelity, reader EOF/error,
+output caps, attempt-to-socket cancellation, private generated-origin grants and
+Session persistence remain explicit later work. Generated field contracts are
+not claimed as original generator-input or full upstream closure evidence.
