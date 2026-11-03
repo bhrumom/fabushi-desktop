@@ -1658,6 +1658,7 @@
         "source/node-agent-coordinator/src/local_exec/supervisor.rs::LocalExecDaemonRuntime"
       ],
       "evidence_refs": [
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h8190-recovery-decisions.json",
         "source/host/src/extensions/node_host/runtime_state.rs",
         "source/host/app/src/main.rs",
         "projects/openclaw-rust/dossiers/node-host-scoped.md",
@@ -9754,6 +9755,7 @@
         "source/node-agent-coordinator/src/local_exec/supervisor.rs::LocalExecDaemonRuntime"
       ],
       "evidence_refs": [
+        "projects/openclaw-rust/evidence/local-exec-runtime-build-647e0932-20261103/h8190-recovery-decisions.json",
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
         "source/host/tests/external_machine_shipping_contract.rs",
         "source/host/tests/openclaw_chat_cron_node_contract.rs",

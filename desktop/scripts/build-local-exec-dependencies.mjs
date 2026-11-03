@@ -415,14 +415,70 @@ async function installedInputs(desktopRoot, target, gypRoot) {
   return { files: sorted(files), sources, lock, lockSha: hash(lockBytes) };
 }
 async function copySource(source, destination) {
+  assertFiles(source.members, "package source members");
+  const root = await lstat(source.root);
+  check(root.isDirectory() && !root.isSymbolicLink(), "package source root must be an ordinary directory");
+  const canonicalRoot = await realpath(source.root);
   await mkdir(destination, { recursive: true });
   for (const member of source.members) {
-    const bytes = await regularBytes(path.join(source.root, member.path));
+    const input = path.join(source.root, member.path);
+    check(await realpath(input) === path.join(canonicalRoot, member.path),
+      "redirected package source input: " + member.path);
+    const bytes = await regularBytes(input);
     check(same(fileIdentity(member.path, bytes), member), "package source changed while copying: " + member.path);
     const output = path.join(destination, member.path);
     await mkdir(path.dirname(output), { recursive: true });
-    await writeFile(output, bytes);
+    await writeFile(output, bytes, { flag: "wx" });
   }
+}
+async function copyNativePackageSources(sources, destination) {
+  check(sources instanceof Map && same([...sources.keys()].sort(), PACKAGES.map(p => p.name).sort()),
+    "incomplete or unexpected native package source set");
+  for (const pinned of PACKAGES) {
+    const source = sources.get(pinned.name);
+    check(source && typeof source.root === "string" && path.isAbsolute(source.root), "invalid native package source root: " + pinned.name);
+    await copySource(source, path.join(destination, pinned.name));
+    if (SUPPORT.has(pinned.name)) await copySource(source, path.join(destination, "node_modules", pinned.name));
+  }
+  const binding = path.join(destination, "tree-sitter/binding.gyp");
+  await writeFile(binding, patchTreeSitterBinding(await readFile(binding, "utf8")));
+}
+async function copyDeclaredBuildFile(buildRoot, candidate, member) {
+  const input = path.join(buildRoot, member.path);
+  check(await realpath(input) === input, "redirected declared native build input: " + member.path);
+  const bytes = await regularBytes(input);
+  check(same(fileIdentity(member.path, bytes), member), "declared native build input changed: " + member.path);
+  const output = path.join(candidate, member.path);
+  await mkdir(path.dirname(output), { recursive: true });
+  await writeFile(output, bytes, { flag: "wx" });
+}
+
+/** Build-owner assembly only: neither compiler execution nor a native-load claim.
+ * GYP may generate files outside package/build. Never turn that mutable build
+ * tree into a shipping stage or relabel its byproducts as package source.
+ */
+export async function assembleLocalExecDependencyCandidate({ work, sources, headers, nativeOutputs }) {
+  const owner = await lstat(work);
+  check(path.isAbsolute(work) && owner.isDirectory() && !owner.isSymbolicLink() && await realpath(work) === work,
+    "candidate assembly requires the ordinary owned work directory");
+  const buildRoot = path.join(work, "build");
+  const build = await lstat(buildRoot);
+  check(build.isDirectory() && !build.isSymbolicLink() && await realpath(buildRoot) === buildRoot,
+    "candidate assembly requires its ordinary owned build directory");
+  assertFiles(headers.files, "declared header files");
+  check(headers.files.every(f => f.path.startsWith(".headers/")), "header member escaped the owned header directory");
+  const currentHeaders = (await inventory(path.join(buildRoot, ".headers"))).map(f => ({ ...f, path: ".headers/" + f.path }));
+  check(same(currentHeaders, headers.files), "headers changed during native build");
+  assertFiles(nativeOutputs, "declared native build outputs");
+  check(same(nativeOutputs.map(f => f.path), NATIVE_PATHS.slice().sort()) && nativeOutputs.every(f => f.bytes > 0),
+    "unexpected or missing declared native build outputs");
+  const candidate = path.join(work, "candidate");
+  // Exclusive creation refuses a stale or redirected candidate. Only declared
+  // members are copied; the entire build tree remains available on failure.
+  await mkdir(candidate);
+  await copyNativePackageSources(sources, candidate);
+  for (const member of [...headers.files, ...nativeOutputs]) await copyDeclaredBuildFile(buildRoot, candidate, member);
+  return candidate;
 }
 const DOWNLOAD_PROGRAM = String.raw`
 const fs = require("node:fs/promises");
@@ -533,18 +589,13 @@ async function buildStage(desktopRoot, target, gypRoot, workRoot) {
     }
   }
   const receipt = await withOwnedNativeBuildWork({ stageRoot, domain: target.domain, workRoot }, async (work) => {
-    const candidate = path.join(work, "candidate");
-    await mkdir(candidate);
+    const buildRoot = path.join(work, "build");
+    await mkdir(buildRoot);
     let published = false;
     try {
-      for (const pinned of PACKAGES) {
-        await copySource(before.sources.get(pinned.name), path.join(candidate, pinned.name));
-        if (SUPPORT.has(pinned.name)) await copySource(before.sources.get(pinned.name), path.join(candidate, "node_modules", pinned.name));
-      }
-      const binding = path.join(candidate, "tree-sitter/binding.gyp");
-      await writeFile(binding, patchTreeSitterBinding(await readFile(binding, "utf8")));
-      const headers = await downloadHeaders(candidate, target, desktopRoot, gypRoot);
-      const nativeHeaderRoot = path.join(candidate, ".headers", target.runtime.version);
+      await copyNativePackageSources(before.sources, buildRoot);
+      const headers = await downloadHeaders(buildRoot, target, desktopRoot, gypRoot);
+      const nativeHeaderRoot = path.join(buildRoot, ".headers", target.runtime.version);
       const env = cleanEnvironment("node");
       env.npm_config_build_from_source = "true";
       env.npm_config_runtime = target.domain;
@@ -553,27 +604,25 @@ async function buildStage(desktopRoot, target, gypRoot, workRoot) {
       // Refuse a PATH-selected Node different from the actual build interpreter.
       const pathNode = await runOwnedChild("node", ["-p", "process.execPath"], { cwd: desktopRoot, env, timeoutMs: 30000, maxOutputBytes: 65536 });
       check(hash(await regularBytes(pathNode.stdout.trim())) === hash(await regularBytes(process.execPath)), "PATH node differs from build Node");
+      const nativeOutputs = [];
       for (const [index, name] of ["tree-sitter", "tree-sitter-bash"].entries()) {
-        const packageRoot = path.join(candidate, name);
+        const packageRoot = path.join(buildRoot, name);
         await runOwnedChild(process.execPath, [path.join(gypRoot, "bin/node-gyp.js"), "rebuild", "--directory=" + packageRoot,
           "--release", "--target=" + target.runtime.version, "--arch=" + target.runtime.arch, "--nodedir=" + nativeHeaderRoot,
-          "--devdir=" + path.join(candidate, ".headers")], { cwd: candidate, env, timeoutMs: 600000, forward: true });
+          "--devdir=" + path.join(buildRoot, ".headers")], { cwd: buildRoot, env, timeoutMs: 600000, forward: true });
         const generated = await readFile(path.join(packageRoot, "build/config.gypi"), "utf8");
         const config = JSON.parse(generated.replace(/^#.*\n/, ""));
         check(path.resolve(config.variables.nodedir) === nativeHeaderRoot && config.variables.target_arch === target.runtime.arch,
           "node-gyp used an unowned header directory or architecture");
-        const native = await regularBytes(path.join(candidate, NATIVE_PATHS[index]));
+        const native = await regularBytes(path.join(buildRoot, NATIVE_PATHS[index]));
         check(native.length > 0, "native build output is empty");
-        // Preserve sources/legal artifacts, discard only compiler intermediates and
-        // alternative native lookup locations, then retain the exact built binary.
-        await rm(path.join(packageRoot, "build"), { recursive: true });
-        await mkdir(path.dirname(path.join(candidate, NATIVE_PATHS[index])), { recursive: true });
-        await writeFile(path.join(candidate, NATIVE_PATHS[index]), native);
+        nativeOutputs.push(fileIdentity(NATIVE_PATHS[index], native));
       }
       const after = await installedInputs(desktopRoot, target, gypRoot);
       check(same(before.files, after.files), "installed inputs changed during native build");
-      const currentHeaders = (await inventory(path.join(candidate, ".headers"))).map(f => ({ ...f, path: ".headers/" + f.path }));
-      check(same(currentHeaders, headers.files), "headers changed during native build");
+      const candidate = await assembleLocalExecDependencyCandidate({
+        work, sources: before.sources, headers, nativeOutputs: sorted(nativeOutputs),
+      });
       const stageFiles = await inventory(candidate);
       const buildInputs = sorted([...before.files, ...headerInputs(headers)]);
       const receipt = {

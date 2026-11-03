@@ -1,0 +1,85 @@
+{
+  "schema": "ocrm-source-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 3,
+  "repository": "bhrumom/fabushi-desktop",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+  "subject": {
+    "commit": "140c1f0da2bb9b0510f0ac3a53363e6ea5782629",
+    "tree": "65c1147ea4b7091525f412f3d00e98bcae17afa0",
+    "parent": "b1dc0c733252a06c91c862435373eb98002fd2cc"
+  },
+  "review_packet_commit": "779b9bbcaf72c5d836cbb1fe9744b6304cb67698",
+  "scope_manifest": "scope.json",
+  "full_diff": "full.diff",
+  "fix_delta": "fix-delta.diff",
+  "decision_record": "../h8190-recovery-decisions.json",
+  "decisions_resolved": [
+    "LDB-8190-STAGE-GENERATED-MEMBERS",
+    "LDB-8190-TAP-SUMMARY-DIRECTIVE"
+  ],
+  "reviews": [
+    {
+      "lens": "general",
+      "actor": "/root/ldb_r3_general",
+      "model_requested": "gpt-6-astra",
+      "effort_requested": "xhigh",
+      "override_tool_accepted": true,
+      "backend_independently_introspected": false,
+      "verdict": "NO_FINDINGS",
+      "fresh": true,
+      "blind_to_prior_reviews_and_arbitration": true,
+      "coverage": "Complete four-file fix delta; full builder/verifier/probe/assembly/publication, all 26 native contracts and fixture, capture/oracles/retention, build/runtime/startup consumers and relevant workflow; complete 38-path scope available as context."
+    },
+    {
+      "lens": "structure/reuse and evidence consumers",
+      "actor": "/root/ldb_r3_structure",
+      "model_requested": "gpt-6.1-sol",
+      "effort_requested": "xhigh",
+      "override_tool_accepted": true,
+      "backend_independently_introspected": false,
+      "verdict": "NO_FINDINGS",
+      "fresh": true,
+      "blind_to_prior_reviews_and_arbitration": true,
+      "coverage": "Complete four-file fix delta and scope manifest; complete current builder, native contracts and fixture, capture, Electron build/runtime checker/startup/daemon/package consumers; focused loader, ledger, RTM, launch/resolver and workflow context."
+    }
+  ],
+  "read_limit": "This focused re-review does not claim a new deep read of every full-scope path or every full-diff hunk. Referenced recovery decisions were not supplied to or consulted by either reviewer.",
+  "integration": {
+    "parent": "b8c1d3c667a08f12f1a5d2c304438e1ab1634727",
+    "parent_tree": "1be7dab2eefffe6b84000d4bb50a8db832fb8a6b",
+    "delta_old_blobs_match": true,
+    "other_full_scope_paths_unchanged": 34,
+    "concurrent_changes_preserved": [
+      "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md",
+      "projects/openclaw-rust/docs/specs/session-model-default-reset.md",
+      "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/source-contract.json",
+      "projects/openclaw-rust/evidence/custody-recovery-647e0932-20261103/execution-r1/assessment.json",
+      "b8c1d3c667a08f12f1a5d2c304438e1ab1634727: acknowledged model-reset wire authority"
+    ]
+  },
+  "source_verdict": "converged",
+  "runtime": {
+    "state": "not-run-at-recovery-subject",
+    "required": "Freeze integrated H and run the existing focused Linux LocalExec and renderer Actions checks once as the causal recovery campaign; inspect exact-H source authority, commands, exits, names and retained artifacts.",
+    "prior_failure": {
+      "subject": "8190dc963ae2e633cc6dbbd93de39e7e0da7619f",
+      "run_id": 41629309257,
+      "attempt": 1,
+      "conclusion": "failure",
+      "classification": [
+        "IMPL_BUG: generated nested compiler output entered the stage",
+        "TEST_FLAW: zero TAP todo summary was classified as a directive"
+      ]
+    },
+    "evidence_carry_forward": "Historical positives retain their original H. Builder/oracle changes invalidate transfer of the affected old checks to integrated H; source review is not runtime or package acceptance."
+  },
+  "acceptance": {
+    "verification": "pending-integrated-actions",
+    "global_flags_promoted": false,
+    "G01_G12": "unaccepted",
+    "AC01_AC24": "unaccepted",
+    "remaining": "Full shell/LS parity and legacy business migration, physical devices/platform packages, full source closure and final independent acceptance remain open."
+  }
+}

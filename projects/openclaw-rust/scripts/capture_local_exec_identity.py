@@ -75,7 +75,12 @@ NATIVE_NAMES = [
     "LDB owned child runner rejects spawn errors and nonzero close",
     "LDB owned child deadline cleanup leaves an unrelated process alive",
     "LDB owned child runner waits for close without signaling an exited child",
-    "LDB owned native build failure retains only its bound work root"
+    "LDB owned native build failure retains only its bound work root",
+    "LDB fresh assembly preserves declared inputs and excludes compiler byproducts",
+    "LDB assembled stage rejects generated sources behind rewritten receipts",
+    "LDB fresh assembly refuses changed source header and native inputs",
+    "LDB fresh assembly refuses unsafe or incomplete declared build inputs",
+    "LDB fresh assembly refuses redirected inputs and occupied candidates"
 ]
 STARTUP_NAMES = [
     "ldb Host resolver preserves packaged development and explicit override mappings",
@@ -191,7 +196,10 @@ def tap_assessment(text, command_exit, capture_exit, required_names=TAP_NAMES):
                 and numbers == list(range(1, count + 1)) and plans == [count]
                 and re.findall(r"^TAP version 13$", text, re.MULTILINE) == ["TAP version 13"]
                 and all(summaries[key] == [value] for key, value in expected.items())
-                and not re.search(r"^\s*(?:not ok\b|Bail out!)|#\s*(?:SKIP|TODO)\b", text, re.MULTILINE | re.IGNORECASE))
+                and not re.search(r"^\s*(?:not ok\b|Bail out!)", text, re.MULTILINE | re.IGNORECASE)
+                # A summary such as "# todo 0" is not a result-line directive.
+                and not re.search(r"^\s*(?:ok|not ok)\b[^\n]*#[ \t]*(?:SKIP|TODO)\b",
+                                  text, re.MULTILINE | re.IGNORECASE))
     return {"required_positive_names": required_names, "observed_positive_names": observed,
             "positive_numbers": numbers, "plans": plans,
             "complete_summaries": summaries, "oracle_accepted": accepted}
@@ -212,11 +220,14 @@ def qualify_oracles():
         ("rust-partial-summary", rust_assessment, rust.split("test result:")[0], 0, 0, False),
         ("rust-nonzero-exit", rust_assessment, rust, 9, 0, False),
         ("tap-positive", tap_assessment, tap, 0, 0, True),
+        ("tap-crlf-zero-todo-summary", tap_assessment, tap.replace("\n", "\r\n"), 0, 0, True),
         ("tap-zero", tap_assessment, "", 0, 0, False),
         ("tap-duplicate-name", tap_assessment, tap.replace(TAP_NAMES[1], TAP_NAMES[0]), 0, 0, False),
         ("tap-missing-name", tap_assessment, tap.replace("ok 1 - " + TAP_NAMES[0] + "\n", ""), 0, 0, False),
         ("tap-skipped", tap_assessment, tap.replace("# skipped 0", "# skipped 1"), 0, 0, False),
         ("tap-cancelled", tap_assessment, tap.replace("# cancelled 0", "# cancelled 1"), 0, 0, False),
+        ("tap-nonzero-todo-summary", tap_assessment, tap.replace("# todo 0", "# todo 1"), 0, 0, False),
+        ("tap-skip-directive", tap_assessment, tap.replace(TAP_NAMES[0], TAP_NAMES[0] + " # SKIP"), 0, 0, False),
         ("tap-todo-directive", tap_assessment, tap.replace(TAP_NAMES[0], TAP_NAMES[0] + " # TODO"), 0, 0, False),
         ("tap-duplicate-summary", tap_assessment, tap + "# pass 4\n", 0, 0, False),
         ("tap-wrong-plan", tap_assessment, tap.replace("1..4", "1..5"), 0, 0, False),
@@ -252,6 +263,19 @@ def qualify_oracles():
         ]:
             controls.append({"control": label + "-" + suffix, "expected": expected,
                              "observed": tap_assessment(value, code, capture, names)["oracle_accepted"]})
+    # Make directive-bearing names part of the expected name set. These controls
+    # must be rejected by directive syntax, not accidentally by name mismatch.
+    for label, names in (("tap", TAP_NAMES), ("native", NATIVE_NAMES), ("startup", STARTUP_NAMES)):
+        count = len(names)
+        for directive in ("SKIP", "TODO", "skip", "todo"):
+            declared = [names[0] + " # " + directive, *names[1:]]
+            directed = "TAP version 13\n" + "".join(
+                "ok " + str(number) + " - " + name + "\n" for number, name in enumerate(declared, 1))
+            directed += ("1.." + str(count) + "\n# tests " + str(count) + "\n# suites 0\n# pass "
+                         + str(count) + "\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n")
+            controls.append({"control": label + "-declared-name-directive-" + directive,
+                             "expected": False,
+                             "observed": tap_assessment(directed, 0, 0, declared)["oracle_accepted"]})
     return {"scope": "Synthetic result-oracle qualification; not product execution.",
             "controls": controls, "accepted": all(x["expected"] == x["observed"] for x in controls)}
 
