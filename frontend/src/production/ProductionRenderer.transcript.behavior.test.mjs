@@ -1073,10 +1073,12 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
 
 test("command_palette_searches_human_conversations_messages_and_files_and_paginates_older_targets", { timeout: 60_000 }, async (t) => {
   const f = await fixture(t, { globalSearch: true });
-  const initial = await f.request(TAIL, { conversationId: A, beforeSeq: null });
-  await f.resolveRequest(initial, historyPage(messages(41, 64), 41, ALPHA_41));
-  await f.expectRows(ids(41, 64));
-  await f.frames();
+  await f.loadInitial();
+  const first = await f.request(TAIL, { conversationId: A, beforeSeq: 41, beforeCursor: ALPHA_41 });
+  await f.resolveRequest(first, historyPage(messages(31, 40), 31, ALPHA_21));
+  await f.expectRows(ids(31, 64));
+  await f.scroll(10_000);
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 31 }), 0);
 
   const palette = f.page.getByRole("dialog", { name: "Search", exact: true });
   await f.page.getByRole("button", { name: "Search", exact: true }).click();
@@ -1119,14 +1121,14 @@ test("command_palette_searches_human_conversations_messages_and_files_and_pagina
   await fileOption.waitFor();
   assert.match(await messageOption.innerText(), /Alpha to you/);
   assert.match(await fileOption.innerText(), /Beta/);
-  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 41 }), 0);
+  assert.equal(await f.count(TAIL, { conversationId: A, beforeSeq: 31 }), 0);
 
   await messageOption.click();
   await palette.waitFor({ state: "detached" });
 
-  const page2 = await f.request(TAIL, { conversationId: A, beforeSeq: 41, beforeCursor: ALPHA_41 }, initial.id);
-  await f.resolveRequest(page2, historyPage(messages(21, 40), 21, ALPHA_21));
-  const page3 = await f.request(TAIL, { conversationId: A, beforeSeq: 21, beforeCursor: ALPHA_21 }, page2.id);
+  const page2 = await f.request(TAIL, { conversationId: A, beforeSeq: 31, beforeCursor: ALPHA_21 }, first.id);
+  await f.resolveRequest(page2, historyPage(messages(21, 30), 21, ALPHA_1));
+  const page3 = await f.request(TAIL, { conversationId: A, beforeSeq: 21, beforeCursor: ALPHA_1 }, page2.id);
   await f.resolveRequest(page3, historyPage(messages(1, 20)));
   await f.expectRows(ids(1, 64));
   await f.frames();
