@@ -211,6 +211,7 @@ const fixture = {
     transcript.push(entry);
     rows.set('human:a', transcript);
     persistRows();
+    emit({ type: 'appended', agentId: 'human:a', entry });
     return entry.id;
   },
   failRetry(index = 0, message = 'fixture: retry failed') {

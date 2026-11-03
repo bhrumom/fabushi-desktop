@@ -288,16 +288,22 @@ for (const oldPhase of ['in-flight', 'queued']) {
 test('NMR-26 old-row reaction commands settle the page cache and cannot overwrite a later empty-row mutation', async ({ page }, info) => {
   await openAlice(page);
   await loadOlder(page);
-  await messageRow(page, 'm1').hover();
-  await messageRow(page, 'm1').getByRole('button', { name: 'Add reaction', exact: true }).click();
-  await messageRow(page, 'm1').getByRole('button', { name: 'React with 👍', exact: true }).click();
+  const firstAddReaction = messageRow(page, 'm1').getByRole('button', { name: 'Add reaction', exact: true });
+  await firstAddReaction.focus();
+  await firstAddReaction.press('Enter');
+  const firstReaction = messageRow(page, 'm1').getByRole('button', { name: 'React with 👍', exact: true });
+  await firstReaction.focus();
+  await firstReaction.press('Enter');
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(1);
   await page.evaluate(() => window.nativeMessageFixture.settleReaction());
   await expect(messageRow(page, 'm1').locator('.sand-reaction-pill')).toContainText('👍');
 
-  await messageRow(page, 'm2').hover();
-  await messageRow(page, 'm2').getByRole('button', { name: 'Add reaction', exact: true }).click();
-  await messageRow(page, 'm2').getByRole('button', { name: 'React with ❤️', exact: true }).click();
+  const secondAddReaction = messageRow(page, 'm2').getByRole('button', { name: 'Add reaction', exact: true });
+  await secondAddReaction.focus();
+  await secondAddReaction.press('Enter');
+  const secondReaction = messageRow(page, 'm2').getByRole('button', { name: 'React with ❤️', exact: true });
+  await secondReaction.focus();
+  await secondReaction.press('Enter');
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().reactions)).toBe(2);
   await page.evaluate(() => {
     window.nativeMessageFixture.mutate('human:a', 'm2', { content: '', attachments: [], reactions: [] });
@@ -339,6 +345,7 @@ test('NMR-50 persisted Human dispatch failure survives renderer restart; resend 
 test('NMR-50 retry single-flight is account-scoped and stale A-B-A replies cannot alter the restored row', async ({ page }, info) => {
   await page.goto(`${origin}/native-message-projection.html`);
   const failedId = await page.evaluate(() => window.nativeMessageFixture.seedFailedIntent('shared-account-retry-nonce'));
+  await page.reload();
   await page.getByRole('button', { name: 'Alice', exact: true }).click();
   const failedRow = messageRow(page, failedId);
   await expect(failedRow.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
