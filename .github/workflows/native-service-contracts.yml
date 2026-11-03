@@ -9,6 +9,7 @@ on:
       - 'source/host/Cargo.lock'
       - 'source/host/app/Cargo.lock'
       - 'frontend/src/production/ProductionRenderer.tsx'
+      - 'frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx'
       - 'frontend/src/production/ProductionRenderer.transcript.*'
       - 'frontend/src/recovered/features/conversation/workspace/transcript.tsx'
       - 'desktop/transcript-test.html'
