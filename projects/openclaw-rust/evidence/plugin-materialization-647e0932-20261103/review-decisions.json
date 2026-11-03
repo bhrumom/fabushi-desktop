@@ -1,0 +1,219 @@
+{
+  "format": "OCRM-bounded-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "review_base": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+  "source_rounds": [
+    {
+      "round": 1,
+      "snapshot_tree": "e9569789cc65760dc41403fefe42261b6b7a5c0f",
+      "scope_manifest": "plugin-custody-r1/manifest.json",
+      "reviewers": [
+        {
+          "name": "/root/plugin_custody_general_r1",
+          "model": "configured parent GPT-6 Astra Pro",
+          "effort": "xhigh",
+          "verdict": "FINDINGS",
+          "report": "plugin-custody-r1/general-review.md"
+        },
+        {
+          "name": "/root/plugin_custody_structure_r1",
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "verdict": "APPROVE source-only",
+          "report": "plugin-custody-r1/structure-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "id": "PM-R1-G1",
+          "severity": "P2",
+          "decision": "FIX",
+          "recorded_before_fix": true,
+          "symbol": "DefaultPluginCacheManager.materializeToCache / cacheDirectoryState",
+          "scenario": "A local cache conflict or filesystem error whose path contains an auth-denial phrase is sent as failure.errorMessage; Host/Rust classify the path text as a remote authorization refusal and suppress valid fallback.",
+          "rationale": "Cache-owned diagnostics must not acquire permission meaning. Neutralize all newly owned cache I/O phases using controlled phase/state/code and retain raw errors as causes, while preserving genuine backend installer failures and all custody/refusal invariants.",
+          "required_control": "Actual Host loader under an auth-like data root: initial and during-install incomplete collisions plus reserved-marker failure preserve bytes, fail materialization and keep authBlocked empty. Existing real remote denial plus failed cleanup must retain canonical ID 41."
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "base": "113c32276b99ed668be095e0be6ed164dffdf46d",
+      "snapshot_tree": "c217f0f20090d75213c45602d6f333139c6f25ed",
+      "scope_manifest": "plugin-custody-r2/manifest.json",
+      "reviewers": [
+        {
+          "name": "/root/plugin_custody_general_r2",
+          "model": "inherited GPT-6 Astra Pro",
+          "effort": "xhigh",
+          "verdict": "APPROVE source-only",
+          "report": "plugin-custody-r2/general-review.md"
+        },
+        {
+          "name": "/root/plugin_custody_structure_r2",
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "verdict": "APPROVE source-only",
+          "report": "plugin-custody-r2/structure-review.md"
+        }
+      ],
+      "findings": [],
+      "closed_findings": [
+        "PM-R1-G1"
+      ]
+    },
+    {
+      "round": 3,
+      "base": "54b32b96ff827f4fee56fed494c866ca8c8b53ec",
+      "snapshot_tree": "4f9c45c13151c58a2cfa784032cfdae4c0269578",
+      "scope_manifest": "plugin-custody-r3/manifest.json",
+      "reviewers": [
+        {
+          "name": "/root/plugin_custody_general_r3",
+          "model": "inherited GPT-6 Astra Pro",
+          "effort": "xhigh",
+          "context": "fork_turns=none",
+          "verdict": "CHANGES REQUESTED source-only",
+          "report": "plugin-custody-r3/general-review.md"
+        },
+        {
+          "name": "/root/plugin_custody_structure_r3",
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "context": "fork_turns=none",
+          "verdict": "APPROVE source-only",
+          "report": "plugin-custody-r3/structure-review.md"
+        }
+      ],
+      "findings": [
+        {
+          "id": "G-R3-01",
+          "severity": "P1",
+          "decision": "FIX",
+          "recorded_before_fix": true,
+          "scenario": "An original Git authorization denial plus cleanup ETIMEDOUT becomes timeout under the SDK regex classifier, so the preserved Host clone-category guard omits the canonical denial. Incoming EACCES/EPERM/EROFS display classification creates the same primary-category risk for cleanup permission errors.",
+          "rationale": "Preserve the primary failure category using the existing AggregateError primary cause at the SDK classification boundary, while keeping the complete diagnostic and raw cleanup cause. Retain native filesystem permission-code classification from the incoming changes, including actual error.code; do not relax Host or Rust typed auth admission.",
+          "required_control": "Controlled native cleanup failures ETIMEDOUT and EACCES through actual materializer, SDK failure record and actual Host loader retain the canonical clone denial; ordinary primary failures remain unblocked. Preserve real ENOTDIR residue control and all incoming local filesystem/remote clone negatives and positives."
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "base": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+      "snapshot_tree": "77fa185818b171a5b3829fc54104a0beec9ad8b4",
+      "scope_manifest": "plugin-custody-r4/manifest.json",
+      "reviewers": [
+        {
+          "name": "/root/plugin_custody_general_r4",
+          "model": "inherited GPT-6 Astra Pro",
+          "effort": "xhigh",
+          "context": "fork_turns=none; no model/effort override",
+          "verdict": "APPROVE source-only",
+          "report": "plugin-custody-r4/general-review.md"
+        },
+        {
+          "name": "/root/plugin_custody_structure_r4",
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "context": "fork_turns=none; actual accepted model/effort overrides",
+          "verdict": "APPROVE source-only",
+          "report": "plugin-custody-r4/structure-review.md"
+        }
+      ],
+      "findings": [],
+      "closed_findings": [
+        "PM-R1-G1",
+        "G-R3-01"
+      ],
+      "root_assessment": "Full reports read. Both reviewers inspected complete declared changes and needed real SDK/Host/Rust/Coordinator consumers. This closes source findings in this bounded repair, not executable evidence, upstream closure or full unit acceptance."
+    }
+  ],
+  "local_executable_validation": false,
+  "execution_status": "R4 source review converged; exact published candidate H Actions pending",
+  "broad_unit_verified": false,
+  "global_flags_changed": false,
+  "integration": {
+    "review_base": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+    "publication_base": "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74",
+    "publication_base_tree": "a0dceefeae75fccd7ab5aec143f6d651f7cf2fd3",
+    "live_main": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "reviewed_tree": "77fa185818b171a5b3829fc54104a0beec9ad8b4",
+    "scope": "Ten exact frozen paths. New publication inherits all other remote base paths rather than older local worktree files.",
+    "incoming_preservation": "Retain DTR scope/auth/HTTP controls, prior-root recovery, typed Rust user_git_access, Host clone-only admission, three native filesystem-code SDK controls, real remote denial and staged-publication controls. LFA shared Rust media admission and actual App/Session/channel consumers are inherited from fdb without being relabeled as plugin-reviewed or tested. f82 adds device review/Actions evidence only; exact plugin inputs are unchanged. a2a adds only five LFA review/readback evidence files; retain all without changing the ten reviewed plugin input blobs.",
+    "sdk_consolidation": "Incoming inline staging is delegated to the one existing cache materializer. Original successor-byte/control names and valid assertions are retained.",
+    "delivered_media_commit": "8e5cee76ebbe6e748dc6a8dc87d73142bf04109b",
+    "execution_claim": "Pending exact published candidate H Actions. Source review is not executable or final acceptance.",
+    "incoming_evidence_only_heads": [
+      "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+      "a2a0c9ef326c1ddeb09b4f9180267fdaeb21db74"
+    ]
+  },
+  "integration_decisions": [
+    {
+      "id": "PM-INCOMING-54B",
+      "decision": "FIX",
+      "recorded_before_integration_edit": true,
+      "incoming_commits": [
+        "cd3430db43ca22b66ab0ee8b401c0aa3f9f2da44",
+        "94edb3025eb2a41381a97ed0833c7544217d15ca",
+        "370c6680b6b8c072615875d72be67ca0e45ebe45",
+        "54b32b96ff827f4fee56fed494c866ca8c8b53ec"
+      ],
+      "rationale": "Preserve the incoming Host clone-category admission guard and local-permission negative. Reconcile the incoming inline loader staging into the existing reviewed cache adapter, which additionally isolates stages outside the Rust prune traversal, refuses markers/symlinks/incomplete collisions and reuses complete winners. Preserve the incoming late-failure test. Genuine remote-denial fixtures must include the existing SDK clone-category context rather than presenting a bare permission phrase as remote provenance. Use the actual SDK MarketplaceLoadFailure type because the incoming Host guard reads errorType absent from its hand-written parameter type.",
+      "required_controls": "Retain incoming SDK late-failure and Host local-permission assertions; retain the original canonical-ID denial test as an explicit clone-transport positive; retain cleanup double-failure control with the same explicit clone category; all nine custody positives and existing all-bundle TAP controls remain. Freeze R3 complete scope and obtain fresh blind reviews."
+    },
+    {
+      "id": "PM-INCOMING-687",
+      "decision": "FIX",
+      "recorded_before_integration_edit": true,
+      "incoming_base": "687f0dd83047f9c3c2e9d6b0a6a766def4060459",
+      "rationale": "Preserve incoming Rust typed error-kind authority, SDK EACCES and explicit remote-clone controls. The 687 test patch leaves an unwrapped top-level EACCES test body and duplicate test bodies; retain each valid behavior once with its original test name and restore the missing test wrapper. The failed-publication test must collide during installation so staging cleanup is actually reached, expect the controlled incomplete-target refusal and compare the version child (not plugin slug) in the version parent. Retain protected bytes and add the exact owned-stage disappearance assertion. No valid production or permission assertion is removed."
+    }
+  ],
+  "integration_history": [
+    {
+      "base": "fee4f179b640489774208fa3ce653a3868b641bf",
+      "preserved_incoming": [
+        "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+        "fee4f179b640489774208fa3ce653a3868b641bf"
+      ],
+      "workflow_delta": "Preserve the unrelated prior-root recovery step and failed-fixture credential exclusion from fee4f179. Plugin receipt changes are identical to the independently reviewed R2 delta; production/test/spec/ledger/RTM blobs remain R2 identities.",
+      "execution_claim": "pending exact final H Actions; these are source reviews",
+      "delivered_media_commit": "8e5cee76ebbe6e748dc6a8dc87d73142bf04109b"
+    }
+  ],
+  "authority_revalidation": {
+    "ref": "f82ce24474131cc5fb92b29329b77ce86f58dac5",
+    "method": "GitHub API contents readback identities match the current read local authorities; no stale discovery U substituted",
+    "files": [
+      {
+        "path": "AGENTS.md",
+        "sha": "e4682748087759b2d4bb2b3a47916b6148e8a6f2"
+      },
+      {
+        "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "sha": "3748d734b10c9ed5b2d948467fbaa9483f1dd306"
+      },
+      {
+        "path": "docs/specs/openclaw-rust-equivalence-migration.md",
+        "sha": "69c9667af2328e20a1fba09ebf80c5aab4d5c336"
+      },
+      {
+        "path": "projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md",
+        "sha": "1f0ecfb239f840df5e2ce5237029a78d945b4b9e"
+      },
+      {
+        "path": "projects/openclaw-rust/module-map.md",
+        "sha": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3"
+      },
+      {
+        "path": "projects/openclaw-rust/management/prompts/full-fusion-batch.md",
+        "sha": "5ff7894d245588ed539ab075b09215a2f1a82716"
+      }
+    ],
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  }
+}

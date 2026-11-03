@@ -1,0 +1,10 @@
+M	.github/workflows/rust-desktop-runtime.yml
+A	projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md
+A	projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json
+M	projects/openclaw-rust/parity-ledger.json
+M	projects/openclaw-rust/requirements-traceability-matrix.json
+M	source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts
+M	source/electron-main/mcp/host-plugin-skills-loader.ts
+M	source/packages/cursor-plugins/cursor-marketplace.ts
+M	source/packages/cursor-plugins/loader.contract.test.ts
+M	source/packages/cursor-plugins/loader.ts

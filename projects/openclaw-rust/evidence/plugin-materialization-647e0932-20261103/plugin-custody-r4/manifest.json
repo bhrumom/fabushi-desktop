@@ -1,0 +1,35 @@
+{
+  "repository_root": "/workspace/scratch/425c55809bda/fabushi-desktop",
+  "base_commit": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+  "starting_head": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "scope_mode": "ten explicit plugin paths, preserving full incoming production and LFA scopes in base; complete scoped source acquired",
+  "snapshot_tree": "77fa185818b171a5b3829fc54104a0beec9ad8b4",
+  "prior_snapshot_tree": "4f9c45c13151c58a2cfa784032cfdae4c0269578",
+  "paths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+    "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json",
+    "projects/openclaw-rust/parity-ledger.json",
+    "projects/openclaw-rust/requirements-traceability-matrix.json",
+    "source/packages/cursor-plugins/cursor-marketplace.ts",
+    "source/packages/cursor-plugins/loader.ts",
+    "source/packages/cursor-plugins/loader.contract.test.ts",
+    "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+    "source/electron-main/mcp/host-plugin-skills-loader.ts"
+  ],
+  "blob_ids": {
+    ".github/workflows/rust-desktop-runtime.yml": "b97a3a2622620078b7654862c0b33ac47230cca6",
+    "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md": "6252635f8a7d1abeae26bc4913e3e4fb134d9e89",
+    "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json": "3f2bff7e4a56142690f3d5b30dc41c6472c23bce",
+    "projects/openclaw-rust/parity-ledger.json": "1e56a25479e1390cb98c36d130b68f09946dc0bc",
+    "projects/openclaw-rust/requirements-traceability-matrix.json": "7475cee0643fc0e52ddc9bd2cf303aee884c0956",
+    "source/packages/cursor-plugins/cursor-marketplace.ts": "6a2433588b5f17f3609e6ca85e4aa0f2a8612e21",
+    "source/packages/cursor-plugins/loader.ts": "f0028c8fbecc602828fb6ed48dce9fd77855102c",
+    "source/packages/cursor-plugins/loader.contract.test.ts": "fa41d87a2e9f8b03ca7d8125309a96673d57482e",
+    "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts": "b8ff7fbdf1c8ff540fa4eaf1b9e798d12077d722",
+    "source/electron-main/mcp/host-plugin-skills-loader.ts": "d81e1da13c9b39f4e2943ab48e8b9073bb8dc987"
+  },
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "no_local_executable_validation": true,
+  "base_import": "Exact GitHub API tree/commit and changed scoped blobs verified by Git object identities. Unchanged unrelated evidence blobs may remain unhydrated locally; complete ten-path diff and required plugin adjacent sources are available."
+}

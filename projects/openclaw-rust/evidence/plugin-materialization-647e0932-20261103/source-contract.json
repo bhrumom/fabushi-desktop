@@ -1,0 +1,198 @@
+{
+  "contract": "OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "upstream": {
+    "repository": "https://github.com/openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "discovery_base": "071aeb6af1b223cceee9d81b5f7df3bad484d5a4",
+  "implementation_base": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "integration_base": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+  "concurrent_preservation": "Retain incoming device token-rotation scope/refusal recovery, prior-root recovery, guarded Windows media normalization, Host clone-only refusal, SDK filesystem error and remote denial controls, and Rust typed auth-kind authority. Public workflow/helper/ledger/RTM integration is serial; source review and exact final H execution remain separate.",
+  "responsibility_id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
+  "unit_id": "OCRM-UNIT-SKILLS-001",
+  "purpose": "Repair the existing SDK materialization I/O so a late failed attempt cannot erase a subsequent completed plugin directory, without adding an installation or permission owner.",
+  "owner_chain": [
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "role": "Canonical Skills lifecycle, eligibility, snapshot publication, uninstall custody and committed pruning"
+    },
+    {
+      "path": "source/host/src/workflows/workflow_store.rs",
+      "role": "Existing Session/Runner skill-file projection and refusal-aware consumer"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
+      "role": "Existing Host request correlation and transport settlement"
+    },
+    {
+      "path": "source/node-agent-coordinator/src/control_port_client.rs",
+      "role": "Waiter retirement on timeout; remote filesystem work is not cancelled"
+    },
+    {
+      "path": "source/electron-main/mcp/host-plugin-skills-loader.ts",
+      "role": "Existing immutable-per-pass account/source bridge, actual installPath projection and pruneOldVersions=false"
+    },
+    {
+      "path": "source/packages/cursor-plugins/loader.ts",
+      "role": "Existing SDK listing/materialization/parser caller"
+    },
+    {
+      "path": "source/packages/cursor-plugins/cursor-marketplace.ts",
+      "role": "Existing cache filesystem adapter; attempt-local staging and complete publication only"
+    }
+  ],
+  "behavioral_requirements": {
+    "PM-01": "Each installation writes to an exclusive staging sibling outside the Rust installed-cache prune subtree.",
+    "PM-02": "A completed marker and complete staged directory precede atomic publication; plugin-provided markers are conflicts.",
+    "PM-03": "Completed winners may be reused; incomplete, non-directory and symlink collisions are preserved and refused.",
+    "PM-04": "A failed or losing attempt cleans only its owned staging. Cleanup failure remains explicit and cannot replace or invent a canonical authorization denial.",
+    "PM-05": "Actual final installPath, canonical IDs, empty/unavailable distinctions and default/true/false prune semantics remain unchanged.",
+    "PM-06": "Cache-owned conflicts and filesystem failures expose neutral phase/state/code diagnostics with raw causes retained; arbitrary local paths cannot manufacture a remote authorization denial. Real installer errors remain unchanged.",
+    "PM-07": "Cleanup diagnostics cannot change the SDK primary error category: classify the existing AggregateError primary cause, retain full raw errors and complete projected diagnostic, preserve typed Host/Rust denial guards, and recognize native local permission error codes. Ordinary neutral cache-I/O wrappers remain opaque."
+  },
+  "upstream_source_observations": [
+    {
+      "path": "src/plugins/install-shared.ts",
+      "blob_sha": "6549ffb326548bbc23c723ddba925bafb14a54ed",
+      "read_range": [
+        1,
+        498
+      ],
+      "relevant_boundary": "installPluginDirectoryIntoExtensions passes staged validation and deferred transaction ownership to the existing package installer"
+    },
+    {
+      "path": "src/plugins/install.runtime.ts",
+      "blob_sha": "75f233a9245fed7d7a73a21c0e709252edf2e6c0",
+      "read_range": [
+        1,
+        29
+      ],
+      "relevant_boundary": "Actual re-export to infra/install-package-dir.ts"
+    },
+    {
+      "path": "src/infra/install-package-dir.ts",
+      "blob_sha": "8b66768a0171af8779ae3181503549505c0d3bd9",
+      "read_range": [
+        1,
+        758
+      ],
+      "relevant_boundary": "Unique staging, publication receipt, ownership/identity checks and rollback quarantine before recursive cleanup"
+    },
+    {
+      "path": "src/infra/package-update-filesystem.ts",
+      "blob_sha": "84d0b7476c15e9b7d2febb829ca2dd6e761c2903",
+      "read_range": [
+        1,
+        760
+      ],
+      "relevant_boundary": "movePackageRoot carries authority and publication receipts to platform operations"
+    },
+    {
+      "path": "src/plugins/install-transaction.ts",
+      "blob_sha": "fd4c96164d7713d9f8b50c3bc58854de13182a1a",
+      "read_range": [
+        1,
+        283
+      ],
+      "relevant_boundary": "Publication authority, deferred settlement and retained rollback progress remain distinct"
+    },
+    {
+      "path": "src/plugins/plugin-cache.ts",
+      "blob_sha": "ed175464e52c7725bf97eb02e4b472bd900349e1",
+      "read_range": [
+        1,
+        550
+      ],
+      "relevant_boundary": "Retired runtime work cannot borrow successor promise identity; not a directory installation owner"
+    },
+    {
+      "path": "src/plugins/plugin-cache-files.ts",
+      "blob_sha": "afe7990dc87e3c5e661eca2cf3698f13bf14d020",
+      "read_range": [
+        1,
+        470
+      ],
+      "relevant_boundary": "Metadata/path identity and safe-open contracts do not prove installation publication"
+    }
+  ],
+  "source_review_limits": {
+    "reader": "independent source-scope worker /root/wfx_general_review, configured parent model, xhigh",
+    "method": "Direct GitHub connector reads at fixed U; returned Git blob identities compared with the existing canonical inventory. Listed file-text ranges were read; recursive dependency and platform acceptance are not claimed.",
+    "historical_dossier": "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+    "historical_fact_preserved": "The dossier records earlier full-text reads of six plugin/skill/uninstall blobs while their canonical source_review rows remain unread/deep/pending. Its workspace-skill-loader historical blob is not the fixed-U blob.",
+    "unresolved": [
+      "fs-safe atomic/remove implementations and all platform behavior",
+      "install-safe-path and mutation-authority implementations and wider lease/recovery closure",
+      "all Git/npm/source-plan install entrypoints",
+      "materialization identity collisions in existing lossy cache keys",
+      "stale positive publication after account or uninstall retirement"
+    ],
+    "canonical_source_review_changed": false,
+    "global_completion_flags_changed": false,
+    "full_unit_verified": false,
+    "note": "These bounded source observations support this target I/O repair. They do not materialize source_review states, map the entire installation family to SKILLS or establish full OpenClaw plugin parity."
+  },
+  "validation_contract": {
+    "environment": "GitHub Actions only; no local or htch-runtime executable validation",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "job": "renderer",
+    "build": [
+      "npm",
+      "--prefix",
+      "desktop",
+      "run",
+      "build:electron",
+      "--",
+      "--plugin-skills-contracts"
+    ],
+    "actual_test_bundles": [
+      "desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs",
+      "desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
+    ],
+    "required_new_positive_tests": [
+      "SDK late failed materialization preserves the completed winner and a fresh cache hit",
+      "SDK concurrent successful materializations reuse the first completed directory",
+      "SDK incomplete and non-directory cache targets are preserved without installation",
+      "SDK a target appearing during materialization is preserved without publication",
+      "SDK a failed materialization removes only its owned staging directory",
+      "SDK marker and publication failures do not report a successful materialization",
+      "Host late failed materialization preserves a zero-skill winner and a fresh cache hit",
+      "Host staging cleanup failure preserves the canonical authorization denial",
+      "Host cache-owned materialization failures cannot create authorization denials",
+      "SDK cleanup I/O failures preserve the primary load category and raw causes",
+      "Host cleanup I/O failures preserve canonical remote denial and recovery"
+    ],
+    "receipt": ".evidence/ocrm-plugin-edge.json",
+    "log": ".evidence/ocrm-plugin-edge.tap",
+    "oracle": "Every named positive occurs exactly once; every TAP test passes with zero failures, cancellations, skipped or TODO tests. The existing pipefail test command must succeed before receipt creation. Receipt binds exact H/tree, fixed U and changed source/spec/test inputs.",
+    "adjacent_rust_controls": "Keep existing plugin_skills sync/cache/uninstall, workflow/Session admission and Coordinator timeout-retirement selections. Node success is not Rust execution evidence.",
+    "execution_status": "pending exact candidate H",
+    "acceptance_status": "pending",
+    "scope_limit": "Controlled installation and exact-stage cleanup I/O faults through real SDK/Host/filesystem consumers, retaining the real ENOTDIR residue control. Injected ETIMEDOUT/EACCES is not proof of native timeout occurrence, real marketplace/account compatibility, arbitrary filesystem-writer safety, remote cancellation, crash-residue cleanup or supported-platform package acceptance."
+  },
+  "superseded_local_work": "An equivalent WFX extraction was already published by another session as e19a0a265e400a4c9b1d96520c84fb612a3843e8 and materialized to integration base 3438eb5bac755c399c9ec686414bbb4c0816888d. This batch adopts its existing capture_portable_contracts.py without creating a duplicate runner.",
+  "incoming_integration": {
+    "base": "fdb0f6acb06165b6f2796961186e06a2de98c229",
+    "preserved": [
+      "Host clone-category guard and local-permission negative",
+      "SDK older-failed-install successor-byte control",
+      "Rust explicit user_git_access error kind; no prose-derived auth block",
+      "SDK filesystem EACCES control",
+      "Host explicit remote clone listing denial",
+      "Device large-scope canonicalization and HTTP14 selection",
+      "Delivered Rust Windows drive-pipe normalization and consumer tests",
+      "LFA shared media-reference admission and actual SendMessage/AgentManagement/Session consumers; preserve its separate pending review/execution state"
+    ],
+    "consolidation": "Inline staging from94edb302 is delegated to the existing cache adapter; only one materialization owner implementation.",
+    "typed_consumer": "Host authBlocksFromFailures reuses MarketplaceLoadFailure, including errorType.",
+    "remote_denial_oracle": "Canonical-ID and cleanup double-failure controls retain an explicit Git clone category; bare permission diagnostics remain local/unclassified.",
+    "execution_status": "R4 source review and final exact H Actions pending",
+    "filesystem_controls": "Retain EACCES, EPERM and EROFS named SDK controls from6637beb50c6c227b32563d0c80db98869bd3ca9d."
+  }
+}

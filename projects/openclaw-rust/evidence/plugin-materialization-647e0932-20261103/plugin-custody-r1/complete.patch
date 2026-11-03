@@ -1,0 +1,1253 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 6cdef39587b810e5d5478e4d6954594fe13cd570..815e7cde3c0cc8a472044382a71eb40f47e77055 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -4673,6 +4673,21 @@ jobs:
+           tap = tap_path.read_text()
+           for name in router_cases:
+               assert re.search(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap), "Missing successful router control: " + name
++          materialization_cases = [
++              "SDK late failed materialization preserves the completed winner and a fresh cache hit",
++              "SDK concurrent successful materializations reuse the first completed directory",
++              "SDK incomplete and non-directory cache targets are preserved without installation",
++              "SDK a target appearing during materialization is preserved without publication",
++              "SDK a failed materialization removes only its owned staging directory",
++              "SDK marker and publication failures do not report a successful materialization",
++              "Host late failed materialization preserves a zero-skill winner and a fresh cache hit",
++              "Host staging cleanup failure preserves the canonical authorization denial",
++          ]
++          materialization_occurrences = {
++              name: len(re.findall(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap))
++              for name in materialization_cases
++          }
++          assert all(count == 1 for count in materialization_occurrences.values()), "Missing or duplicate successful materialization control"
+           counts = {}
+           for label in ("tests", "pass", "fail", "cancelled", "skipped", "todo"):
+               matches = re.findall(r"(?m)^# " + label + r" ([0-9]+)$", tap)
+@@ -4700,6 +4715,12 @@ jobs:
+                       "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+                       "source/shared/rpc/coordinator-main.ts",
+                       "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++                      "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
++                      "source/packages/cursor-plugins/cursor-marketplace.ts",
++                      "source/packages/cursor-plugins/loader.ts",
++                      "source/packages/cursor-plugins/loader.contract.test.ts",
++                      "source/electron-main/mcp/host-plugin-skills-loader.ts",
++                      "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts",
+                       "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+                       "projects/openclaw-rust/docs/specs/inference-router-settings-bridge.md",
+                       "source/electron-main/main-edge.ts",
+@@ -4714,6 +4735,11 @@ jobs:
+               "desktop_mcp_intent_scope": "Actual registered IPC, production adapter and lazy Coordinator port under controlled remote I/O: one uninstall request, retained arguments and display result, confirmation before settings, no fallback/retry or extra refresh after false/error/settings failure or replacement leg. Rust confirmation/admission and native ingress require separately bound evidence; this renderer receipt asserts no native-job result. Live accounts and process-loss revocation remain open.",
+               "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test", "mcp-runtime.contract.test"],
+               "node_contract_result": "passed",
++              "materialization_attempt_custody_contract": "OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1",
++              "materialization_attempt_custody_result": "passed",
++              "materialization_attempt_custody_required_tests": materialization_cases,
++              "materialization_attempt_custody_positive_occurrences": materialization_occurrences,
++              "materialization_attempt_custody_scope": "Actual SDK cache publisher and Host loader with deterministic held installation I/O, real directories, sentinel bytes and subsequent cache consumers. A failed attempt removes only its own staging directory; completed winners, incomplete and non-directory collisions are retained. This Linux Node receipt does not establish Rust admission, remote cancellation, process-crash cleanup, cross-account authorization, real marketplace or macOS/Windows package acceptance.",
+               "runner_mcp_carrier_target": "coordinator-control-server.contract.test",
+               "runner_mcp_carrier_result": "passed",
+               "model_settings_bridge_contract": "OCRM-MODEL-BRIDGE-v1",
+diff --git a/projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md b/projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..9bed3b08589fdf0f10fc870c1a86adb5c5d974ad
+--- /dev/null
++++ b/projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md
+@@ -0,0 +1,240 @@
++# Plugin materialization attempt custody
++
++Contract: `OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1`  
++Finding: `PS-MATERIALIZE-CUSTODY-01`  
++Status: implementation authored; independent review and exact-H Actions pending  
++Implementation base: `0e845ce1679e0cdf95346adc54f5d58bf06464e8`  
++Discovery base: `071aeb6af1b223cceee9d81b5f7df3bad484d5a4`  
++Fixed U: `1440bb1771372334bea23d7642bb52deb7db1845`
++
++## Problem and actual production flow
++
++The shipping Host composes `CoordinatorPluginSkillsLoader` and the existing
++`SandPluginSkillsService`. Its lifecycle request reaches the existing Electron
++`createHostPluginSkillsLoader`, then `loadFromMarketplaceSource` and
++`DefaultPluginCacheManager`. At the discovery/implementation bases the SDK
++creates the shared final cache directory before installation, calls
++`installPlugin` in that directory, and
++recursively removes it when installation or completion-marker writing fails.
++
++Coordinator `control_command` waits 15 seconds. `call_control_command` retires
++only its local waiter on timeout; it does not cancel Electron work. Each
++lifecycle event has its own Coordinator worker, and the Electron control server
++dispatches asynchronous executors independently. Thus an old materialization A
++can remain active after its Host sync fails. A subsequent legitimate refresh B
++can finish the same plugin/version and commit its snapshot before A fails. A's
++unconditional removal then deletes B's actual files and completion marker.
++The real workflow reader subsequently loses the committed skill. A plugin with
++zero skills can likewise lose its command and manifest files.
++
++This is distinct from `PS-N1`, already repaired by
++`PS-CACHE-RETENTION-01`: Rust retains actual successful install paths when it
++prunes after a valid complete commit. That repair and its controls are retained.
++The Rust publication and successor locks do not order a late SDK failure's
++filesystem deletion after its remote waiter has retired.
++
++## Ownership and scope
++
++`SandPluginSkillsService` remains the only product lifecycle/admission owner:
++canonical listing, authentication denials, uninstall custody, publisher facts,
++fallback, snapshot publication, positive release and committed pruning remain
++in Rust. Session and `FileWorkflowStore` remain the actual skill consumers.
++
++The existing SDK cache manager owns only materialization I/O: allocate the
++attempt's temporary directory, install its files, publish complete files and
++clean only the attempt's own temporary output. A temporary directory is not
++an installed-state index, grant, permission registry or lifecycle generation.
++No new service, scheduler, cancellation protocol, dependency or cache schema is
++introduced. The loader continues returning the actual final `installPath`.
++
++Allowed paths are exactly:
++
++- This specification.
++- `source/packages/cursor-plugins/cursor-marketplace.ts`.
++- `source/packages/cursor-plugins/loader.ts`.
++- `source/packages/cursor-plugins/loader.contract.test.ts`.
++- `source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts`.
++
++The integrator owns shared workflow/receipt selection, task/ledger/RTM changes,
++independent review, publication and exact-H Actions. No local or htch-runtime
++executable validation is allowed.
++
++## Requirements
++
++- **PM-01 — owned attempt.** A cache miss installs into a unique directory
++  allocated with `mkdtemp` by the existing cache manager. The real backend gets
++  this directory rather than the final cache directory. Staging is a sibling
++  of the configured cache root, outside the subtree traversed by Rust's
++  two-level installed-plugin pruner. It is created on the parent filesystem;
++  publication requires an atomic same-filesystem rename. An unsupported
++  cross-device/symlink mount topology fails explicitly through the existing
++  per-entry error path; never fall back to copying partially visible files.
++- **PM-02 — complete publication.** After installation succeeds, write the
++  reserved `.cache-complete` marker in the owned staging directory, then
++  publish the complete nonempty directory by rename to the existing deterministic
++  cache path. No successful result or final marker may describe partially
++  installed files. A pre-existing marker in staged plugin content is a conflict,
++  not authority to follow a symlink or overwrite an unknown marker.
++- **PM-03 — collision behavior.** Inspect an existing final target without
++  following a target-directory or completion-marker symlink. A real directory
++  with a regular completion marker is a completed cache entry under the
++  unchanged cache-key contract and may be reused. A non-directory, incomplete
++  directory, nonregular marker or unreadable target fails without removing or
++  changing it. Check before installation and again immediately before rename.
++  If a competing SDK publisher wins the rename race, reuse its target only
++  after observing the same complete-directory condition; otherwise report
++  failure. No existing final directory is recursively removed or merged by this
++  operation.
++- **PM-04 — cleanup ownership.** On installation, marker or publication failure,
++  and when reusing another completed publisher's target, remove only this
++  invocation's owned staging directory. A successful rename transfers that
++  directory to the final path and ends staging ownership; do not attempt a
++  later removal using the old staging name. Cleanup failure remains an error,
++  not evidence that the temporary output disappeared. If the primary operation
++  already failed, preserve its original message and cause while also reporting
++  cleanup failure and unknown residual state. Expose only a controlled I/O code
++  in neutral cleanup text; retain the full cleanup error in the aggregate, not
++  in the message parsed by existing auth classifiers. A failed cleanup must
++  neither mask a canonical authorization denial nor introduce one through its
++  message or path. Preserve completed final
++  bytes, old versions and unrelated temporary/file paths.
++- **PM-05 — loader and lifecycle compatibility.** The SDK loader calls the
++  new cache-manager materialization operation and then reads the returned final
++  path with its existing parser. Retain canonical `pluginDbId`, per-entry error
++  reporting, unavailable-versus-empty behavior and ordinary cache hits. Explicit
++  `pruneOldVersions: false` still suppresses both SDK prune sites; omission and
++  true keep their current behavior. Host still supplies false. Rust retains
++  its complete-pass/denial/publication gates, zero-skill retention, successor
++  protection, pending-uninstall preservation and authoritative-empty retirement.
++  Existing standalone extraction, cache-completion, version enumeration and
++  explicit-removal interfaces keep their purposes. Exact-source caller search
++  found no production `extractToCache` caller; changing that separate public
++  operation merely to reuse the new helper is outside this repair.
++
++### Atomicity limit
++
++The cooperating SDK publishers create final entries only by renaming complete,
++nonempty directories. Directory rename makes their completion visible as one
++filesystem operation; a later publisher cannot merge into or overwrite the
++nonempty completed winner. The target inspections also reject incomplete and
++non-directory collisions already present or created while installation runs.
++
++The standard Node directory-rename interface does not provide a portable
++no-replace compare-and-swap primitive. This contract therefore does not claim
++protection from an arbitrary non-cooperating filesystem writer inserting an
++empty directory after the final target check but before rename, or from an
++external actor replacing a parent/symlink or deleting completed files. Adding
++a persistent lock/index or moving product policy into Electron is not an
++authorized workaround for that broader problem.
++
++## Interface and implementation
++
++Add to `DefaultPluginCacheManager`:
++
++```ts
++materializeToCache(
++  args: PluginCacheKey,
++  install: (stagingDir: string) => Promise<void>,
++): Promise<string>
++```
++
++It returns the existing final path after its own complete publication or a
++verified complete winner. A private inspection helper distinguishes missing,
++complete, incomplete and non-directory cache entries. The existing `isCached`
++uses that helper while preserving its boolean fail-soft surface; the
++materialization operation propagates conflicts and I/O failures.
++
++Create the staging directory under the lexical absolute cache-root parent;
++create only the required final parent directories after staging is complete.
++The renamed directory already contains the completion marker. Track whether
++the attempt still owns staging so a successful rename never schedules deletion
++of a newly reused temporary name. The SDK loader replaces its direct mkdir/install/
++marker/rm block with the single materialization call.
++
++## Verification and acceptance
++
++Author tests against actual `loadFromMarketplaceSource`,
++`DefaultPluginCacheManager` and `createHostPluginSkillsLoader`; control only
++remote listing/install I/O. Use explicit bounded barriers, not sleeps or a
++copied installation/reconciliation algorithm. The primary defect must be
++detectable in actual bytes and cache behavior, not just call counters.
++
++Required oracles:
++
++1. **PM-O01 late failed attempt:** A enters installation and waits; B for the
++   same key/version actually completes; inspect B's returned final file bytes
++   and sentinel; release A with a real per-entry install failure; B remains
++   complete and byte-identical. A fresh third load hits those bytes without
++   reinstalling. Cover both the actual SDK loader and the actual Host loader,
++   including a zero-skill Host plugin with real command/manifest files.
++2. **PM-O02 completed winner:** hold A, complete B, then let A finish
++   successfully with distinguishable attempt bytes. Both calls resolve to the
++   completed B directory; A neither replaces nor mixes B's files. Its temporary
++   directory disappears. A subsequent cache hit preserves the winner.
++3. **PM-O03 collisions:** a pre-existing incomplete directory, file target and
++   invalid marker remain byte-identical and trigger no installation. Actual
++   target-directory and marker symlinks are rejected without changing either
++   the link or the referenced directory/marker bytes. Also
++   create an incomplete target during a held/controlled install; publication
++   fails, preserves that target and cleans only this attempt's staging.
++4. **PM-O04 isolated failure:** a single failed install removes only its own
++   partial staging, leaves no newly complete final cache entry, and preserves
++   a seeded prior version and unrelated sentinel output. Preserve canonical
++   failure ID and existing `pruneOldVersions: false` assertions.
++5. **PM-O05 publication and marker errors:** make the final parent unusable or
++   provide a staged reserved-marker collision. The pass reports per-entry
++   failure with no claimed successful plugin or fresh final cache entry;
++   owned staging is cleaned and foreign bytes remain unchanged.
++6. **PM-O06 cleanup failure:** cause installation to fail with a real canonical
++   authorization denial, then make owned-staging cleanup fail through a
++   controlled I/O fault inside the fixture's exclusive parent. The actual Host
++   must still return the same canonical `authBlocked` identity, preserve the
++   primary denial in `loadError`, and explicitly expose unsuccessful cleanup
++   with unknown residue. A paired ordinary-install-error case deliberately uses
++   an auth-like fixture directory name in the real cleanup error's path; it
++   must retain `authBlocked: []`. Assert that protected residue actually remains
++   and no successful install path or final completion is reported.
++7. Preserve all existing default/false/true SDK pruning tests and the real
++   Host loader's listing, identity/currentness, canonical-denial and zero-skill
++   path controls. Retain the existing Rust lifecycle/cache/workflow tests and
++   Coordinator `timeout_retires_only_owned_waiter_while_remote_effect_continues`
++   contract; they establish adjacent boundaries but do not replace PM-O01.
++
++The existing Node contract selectors compile these two test files with shipping
++Electron options and dependency resolution. The integrator selects/records the
++new named positives on the final H and obtains independent general and
++permission/lifetime/oracle review. No parent-H result or test-source addition
++is execution evidence. Approval requires the new actual oracles and applicable
++existing controls in GitHub Actions on the same candidate H.
++
++## Failure, recovery, rollout and remaining work
++
++No permission cache migration is required. Existing complete version directories
++are reused; ambiguous/incomplete destinations fail and preserve their bytes.
++Interrupted or crashed attempts can leave uniquely named staging siblings.
++This batch does not discover, delete or claim recovery of those residues, and
++does not automatically remove incomplete legacy final directories. The ordinary
++load failure metadata remains the observability surface. Rollback reintroduces
++the old failed-attempt deletion risk and is not lifecycle acceptance.
++
++This repair does not revoke an already-admitted old success, cancel remote
++materialization, fence all post-response account changes, repair lossy cache-key
++identity collisions, add artifact signatures/digests, alter version GC or
++complete filesystem-alias/cross-process/packaged-platform acceptance. A future
++authoritative pass/ticket or revocation contract belongs to the existing Rust
++publication/uninstall-observation owner and its current relay, not a new
++Electron lifecycle or permission truth.
++
++## Provenance
++
++Authority: root `AGENTS.md`, OCRM source of truth and main §17;
++`plugin-skills-snapshot-admission.md`; the current MCP/runtime parity contract;
++the existing Plugins/Marketplace owner inventory; and exact target production
++reads at the bases above. The four existing code/test paths are unchanged
++between the discovery and implementation bases and had no uncommitted content
++when this worker acquired them.
++
++Reuse fixed-U `dossiers/snapshot-skills-scoped.md` with its recorded read limits.
++This target I/O repair adds no upstream product requirement, relabels no source
++reading, and changes no inventory/ledger/RTM or global completion flags. Tests
++are authored only until the integrator records exact-H execution.
+diff --git a/projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..72254c0fbee23ec0692be38c557b94dbe2eea7cc
+--- /dev/null
++++ b/projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json
+@@ -0,0 +1,174 @@
++{
++  "contract": "OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1",
++  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
++  "round": 1,
++  "upstream": {
++    "repository": "https://github.com/openclaw/openclaw",
++    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
++    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
++  },
++  "discovery_base": "071aeb6af1b223cceee9d81b5f7df3bad484d5a4",
++  "implementation_base": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
++  "integration_base": "3438eb5bac755c399c9ec686414bbb4c0816888d",
++  "responsibility_id": "OCRM-RESP-SKILLS-RUNTIME-LIBRARY-001",
++  "unit_id": "OCRM-UNIT-SKILLS-001",
++  "purpose": "Repair the existing SDK materialization I/O so a late failed attempt cannot erase a subsequent completed plugin directory, without adding an installation or permission owner.",
++  "owner_chain": [
++    {
++      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
++      "role": "Canonical Skills lifecycle, eligibility, snapshot publication, uninstall custody and committed pruning"
++    },
++    {
++      "path": "source/host/src/workflows/workflow_store.rs",
++      "role": "Existing Session/Runner skill-file projection and refusal-aware consumer"
++    },
++    {
++      "path": "source/host/src/extensions/mcp/coordinator_relay.rs",
++      "role": "Existing Host request correlation and transport settlement"
++    },
++    {
++      "path": "source/node-agent-coordinator/src/control_port_client.rs",
++      "role": "Waiter retirement on timeout; remote filesystem work is not cancelled"
++    },
++    {
++      "path": "source/electron-main/mcp/host-plugin-skills-loader.ts",
++      "role": "Existing immutable-per-pass account/source bridge, actual installPath projection and pruneOldVersions=false"
++    },
++    {
++      "path": "source/packages/cursor-plugins/loader.ts",
++      "role": "Existing SDK listing/materialization/parser caller"
++    },
++    {
++      "path": "source/packages/cursor-plugins/cursor-marketplace.ts",
++      "role": "Existing cache filesystem adapter; attempt-local staging and complete publication only"
++    }
++  ],
++  "behavioral_requirements": {
++    "PM-01": "Each installation writes to an exclusive staging sibling outside the Rust installed-cache prune subtree.",
++    "PM-02": "A completed marker and complete staged directory precede atomic publication; plugin-provided markers are conflicts.",
++    "PM-03": "Completed winners may be reused; incomplete, non-directory and symlink collisions are preserved and refused.",
++    "PM-04": "A failed or losing attempt cleans only its owned staging. Cleanup failure remains explicit and cannot replace or invent a canonical authorization denial.",
++    "PM-05": "Actual final installPath, canonical IDs, empty/unavailable distinctions and default/true/false prune semantics remain unchanged."
++  },
++  "upstream_source_observations": [
++    {
++      "path": "src/plugins/install-shared.ts",
++      "blob_sha": "6549ffb326548bbc23c723ddba925bafb14a54ed",
++      "read_range": [
++        1,
++        498
++      ],
++      "relevant_boundary": "installPluginDirectoryIntoExtensions passes staged validation and deferred transaction ownership to the existing package installer"
++    },
++    {
++      "path": "src/plugins/install.runtime.ts",
++      "blob_sha": "75f233a9245fed7d7a73a21c0e709252edf2e6c0",
++      "read_range": [
++        1,
++        29
++      ],
++      "relevant_boundary": "Actual re-export to infra/install-package-dir.ts"
++    },
++    {
++      "path": "src/infra/install-package-dir.ts",
++      "blob_sha": "8b66768a0171af8779ae3181503549505c0d3bd9",
++      "read_range": [
++        1,
++        758
++      ],
++      "relevant_boundary": "Unique staging, publication receipt, ownership/identity checks and rollback quarantine before recursive cleanup"
++    },
++    {
++      "path": "src/infra/package-update-filesystem.ts",
++      "blob_sha": "84d0b7476c15e9b7d2febb829ca2dd6e761c2903",
++      "read_range": [
++        1,
++        760
++      ],
++      "relevant_boundary": "movePackageRoot carries authority and publication receipts to platform operations"
++    },
++    {
++      "path": "src/plugins/install-transaction.ts",
++      "blob_sha": "fd4c96164d7713d9f8b50c3bc58854de13182a1a",
++      "read_range": [
++        1,
++        283
++      ],
++      "relevant_boundary": "Publication authority, deferred settlement and retained rollback progress remain distinct"
++    },
++    {
++      "path": "src/plugins/plugin-cache.ts",
++      "blob_sha": "ed175464e52c7725bf97eb02e4b472bd900349e1",
++      "read_range": [
++        1,
++        550
++      ],
++      "relevant_boundary": "Retired runtime work cannot borrow successor promise identity; not a directory installation owner"
++    },
++    {
++      "path": "src/plugins/plugin-cache-files.ts",
++      "blob_sha": "afe7990dc87e3c5e661eca2cf3698f13bf14d020",
++      "read_range": [
++        1,
++        470
++      ],
++      "relevant_boundary": "Metadata/path identity and safe-open contracts do not prove installation publication"
++    }
++  ],
++  "source_review_limits": {
++    "reader": "independent source-scope worker /root/wfx_general_review, configured parent model, xhigh",
++    "method": "Direct GitHub connector reads at fixed U; returned Git blob identities compared with the existing canonical inventory. Listed file-text ranges were read; recursive dependency and platform acceptance are not claimed.",
++    "historical_dossier": "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
++    "historical_fact_preserved": "The dossier records earlier full-text reads of six plugin/skill/uninstall blobs while their canonical source_review rows remain unread/deep/pending. Its workspace-skill-loader historical blob is not the fixed-U blob.",
++    "unresolved": [
++      "fs-safe atomic/remove implementations and all platform behavior",
++      "install-safe-path and mutation-authority implementations and wider lease/recovery closure",
++      "all Git/npm/source-plan install entrypoints",
++      "materialization identity collisions in existing lossy cache keys",
++      "stale positive publication after account or uninstall retirement"
++    ],
++    "canonical_source_review_changed": false,
++    "global_completion_flags_changed": false,
++    "full_unit_verified": false,
++    "note": "These bounded source observations support this target I/O repair. They do not materialize source_review states, map the entire installation family to SKILLS or establish full OpenClaw plugin parity."
++  },
++  "validation_contract": {
++    "environment": "GitHub Actions only; no local or htch-runtime executable validation",
++    "workflow": ".github/workflows/rust-desktop-runtime.yml",
++    "job": "renderer",
++    "build": [
++      "npm",
++      "--prefix",
++      "desktop",
++      "run",
++      "build:electron",
++      "--",
++      "--plugin-skills-contracts"
++    ],
++    "actual_test_bundles": [
++      "desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs",
++      "desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs",
++      "desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs",
++      "desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs",
++      "desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs"
++    ],
++    "required_new_positive_tests": [
++      "SDK late failed materialization preserves the completed winner and a fresh cache hit",
++      "SDK concurrent successful materializations reuse the first completed directory",
++      "SDK incomplete and non-directory cache targets are preserved without installation",
++      "SDK a target appearing during materialization is preserved without publication",
++      "SDK a failed materialization removes only its owned staging directory",
++      "SDK marker and publication failures do not report a successful materialization",
++      "Host late failed materialization preserves a zero-skill winner and a fresh cache hit",
++      "Host staging cleanup failure preserves the canonical authorization denial"
++    ],
++    "receipt": ".evidence/ocrm-plugin-edge.json",
++    "log": ".evidence/ocrm-plugin-edge.tap",
++    "oracle": "Every named positive occurs exactly once; every TAP test passes with zero failures, cancellations, skipped or TODO tests. The existing pipefail test command must succeed before receipt creation. Receipt binds exact H/tree, fixed U and changed source/spec/test inputs.",
++    "adjacent_rust_controls": "Keep existing plugin_skills sync/cache/uninstall, workflow/Session admission and Coordinator timeout-retirement selections. Node success is not Rust execution evidence.",
++    "execution_status": "pending exact candidate H",
++    "acceptance_status": "pending",
++    "scope_limit": "Controlled installation I/O plus real SDK/Host/filesystem consumers; no claim of real marketplace/account, arbitrary filesystem writers, remote cancellation, crash-residue cleanup or supported-platform package acceptance."
++  },
++  "superseded_local_work": "An equivalent WFX extraction was already published by another session as e19a0a265e400a4c9b1d96520c84fb612a3843e8 and materialized to integration base 3438eb5bac755c399c9ec686414bbb4c0816888d. This batch adopts its existing capture_portable_contracts.py without creating a duplicate runner."
++}
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 9882c933017908bca392a5635e87fd35e1c2d3fd..3664d087b3b48d9880c7c2ef4420d51efeb4051a 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -32930,6 +32930,8 @@
+         "source/host/tests/openclaw_snapshot_skills_contract.rs",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
++        "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json",
+         "source/host/tests/plugin_skills_contract.rs",
+         "source/host/tests/host_bundle_and_plugin_cache_contract.rs",
+         "source/host/tests/workflow_store_contract.rs",
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 90771a61291a948500a7fb0f732b573b545883d6..850d262cf6c23068eca92a46da5b2bf56c17877b 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -90,6 +90,7 @@
+         "source/host/tests/production_checkpoint_restart_contract.rs",
+         "source/host/tests/production_agent_checkpoint_contract.rs",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+         "source/host/src/extensions/session/production_fresh_append_tests.rs",
+@@ -416,6 +417,7 @@
+         "source/host/tests/production_checkpoint_restart_contract.rs",
+         "source/host/tests/production_agent_checkpoint_contract.rs",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+         "source/host/src/extensions/session/production_fresh_append_tests.rs",
+@@ -611,6 +613,7 @@
+         "projects/openclaw-rust/dossiers/transcript-round56-settings-gateway-ingress-and-worker-writers-20261024.md",
+         "source/host/tests/settings_service_contract.rs",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+         "source/shared/node/mcp/mcp-manager.ts",
+@@ -1239,6 +1242,7 @@
+         "projects/openclaw-rust/docs/specs/session-lifecycle-delete-fence.md",
+         "projects/openclaw-rust/dossiers/upstream-current-session-lifecycle-delta-20261031.md",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+         "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+@@ -1446,6 +1450,7 @@
+         "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md",
+         "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "source/host/tests/mcp_service_contract.rs",
+         "source/host/tests/mcp_coordinator_relay_contract.rs",
+@@ -1899,6 +1904,7 @@
+         "source/host/tests/production_checkpoint_restart_contract.rs",
+         "source/host/tests/production_agent_checkpoint_contract.rs",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+         "source/host/src/extensions/session/production_fresh_append_tests.rs",
+@@ -2689,6 +2695,7 @@
+         "source/host/tests/openclaw_plugins_automations_contract.rs",
+         "projects/openclaw-rust/dossiers/cron-automations-heartbeat-scoped.md",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+         "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+@@ -2903,6 +2910,7 @@
+         "projects/openclaw-rust/dossiers/media-understanding-attachments-select-scoped.md",
+         "projects/openclaw-rust/dossiers/media-understanding-entry-capabilities-scoped.md",
+         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
++        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
+         "source/host/tests/mcp_service_contract.rs",
+         "source/host/tests/mcp_coordinator_relay_contract.rs",
+diff --git a/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts b/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts
+index 073861390511014fe297267e4163c8ad9b09e97c..eac0a2afe1134a7054ea39d0231c9609f9c3ed8c 100644
+--- a/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts
++++ b/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts
+@@ -1,7 +1,7 @@
+ import assert from "node:assert/strict";
+-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
++import { lstat, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+ import { tmpdir } from "node:os";
+-import { dirname, join } from "node:path";
++import { basename, dirname, join } from "node:path";
+ import test, { type TestContext } from "node:test";
+ 
+ import {
+@@ -13,16 +13,19 @@ import { buildOriginTokenGitConfig } from "../../packages/cursor-plugins/origin-
+ import type { FabushiSession } from "../../product/fabushi/fabushi-account-policy.js";
+ import { FabushiAuthService } from "../../product/fabushi/fabushi-account-service.js";
+ import { getSandInferenceBackendUrl } from "../../shared/node/cursor-backend/cursor-inference.js";
++import { COORDINATOR_PROTOCOL_VERSION, type CoordinatorFrame } from "../../shared/rpc/coordinator-port.js";
+ import {
+   ACCESS_TOKEN_SECRET_KEY,
+   REFRESH_TOKEN_SECRET_KEY,
+   SandCursorAuthService,
+ } from "../account/cursor-auth.js";
++import { createCoordinatorControlServer } from "../coordinator/coordinator-control-server.js";
+ import {
+   createHostPluginSkillsLoader,
+   HOST_PLUGIN_SKILLS_CURRENT_USER_TIMEOUT_MS,
+   HOST_PLUGIN_SKILLS_EFFECTIVE_PLUGINS_TIMEOUT_MS,
+   type HostPluginSkillsDashboardClient,
++  type HostPluginSkillsLoadResult,
+   type HostPluginSkillsLoaderDeps,
+ } from "./host-plugin-skills-loader.js";
+ 
+@@ -39,9 +42,11 @@ async function fixture(
+   response: (accessToken: string) => Promise<unknown>,
+   createMarketplaceClient?: ClientFactory,
+   identity: IdentityFixture = {},
++  rootComponent?: string,
+ ) {
+-  const sandRootDir = await mkdtemp(join(tmpdir(), "fabushi-host-plugin-skills-"));
+-  t.after(async () => await rm(sandRootDir, { recursive: true, force: true }));
++  const fixtureRoot = await mkdtemp(join(tmpdir(), "fabushi-host-plugin-skills-"));
++  const sandRootDir = rootComponent === undefined ? fixtureRoot : join(fixtureRoot, rootComponent);
++  t.after(async () => await rm(fixtureRoot, { recursive: true, force: true }));
+   let listings = 0;
+   let currentUserLookups = 0;
+   const load = createHostPluginSkillsLoader({
+@@ -244,6 +249,117 @@ test("Host returns the actual SDK install path for a zero-skill plugin with dott
+   assert.equal(await readFile(join(installed.installPath, ".cache-complete"), "utf8"), "");
+ });
+ 
++test("Host late failed materialization preserves a zero-skill winner and a fresh cache hit", { timeout: 10_000 }, async (t) => {
++  const commandBytes = "Review the completed plugin without changing its files.";
++  const entry = effectivePlugin("db-zero-custody", "review.tools", JSON.stringify({
++    commands: [{ name: "review", content: commandBytes, isActive: true }],
++  }));
++  entry.plugin.marketplace.name = "market.place";
++  const entered = Promise.withResolvers<void>();
++  const release = Promise.withResolvers<void>();
++  const stages: string[] = [];
++  let installs = 0;
++  const host = await fixture(t, async () => ({ plugins: [entry] }), withInstall(async (_entry, stage, actual) => {
++    stages.push(stage);
++    installs += 1;
++    await actual();
++    if (installs === 1) {
++      await writeFile(join(stage, "commands", "review.md"), "older uncommitted command");
++      entered.resolve();
++      await release.promise;
++      throw new Error("late Host install failure after caller retirement");
++    }
++  }));
++  const oldSkill = await seedOldVersion(host.cache, "retained");
++  type Reply = Extract<CoordinatorFrame, { kind: "reply" }>;
++  const pending = new Map<string, (reply: Reply) => void>();
++  const problems: string[] = [];
++  let olderReplied = false;
++  // The shipping control server dispatches B while A's remote executor still
++  // runs. The Rust timeout/retired-waiter oracle remains a separate control.
++  const server = createCoordinatorControlServer({
++    post(frame) {
++      if (frame.kind !== "reply") return;
++      if (frame.requestId === "custody-older") olderReplied = true;
++      const receive = pending.get(frame.requestId);
++      assert.ok(receive, `unexpected control reply ${frame.requestId}`);
++      receive(frame);
++    },
++    executors: { loadHostPluginSkills: () => host.load() },
++    onEvent: {},
++    onProblem: (detail) => { problems.push(detail); },
++  });
++  t.after(() => server.dispose());
++  server.handleMessage({ kind: "lifecycle", phase: "hello", protocolVersion: COORDINATOR_PROTOCOL_VERSION });
++  const request = (requestId: string): Promise<HostPluginSkillsLoadResult> => {
++    const reply = Promise.withResolvers<Reply>();
++    pending.set(requestId, reply.resolve);
++    server.handleMessage({ kind: "request", requestId, method: "loadHostPluginSkills", args: {} });
++    return reply.promise.then((frame) => {
++      assert.ok(frame.outcome.status === "ok", "the actual Host executor must return per-entry failures as snapshot metadata");
++      return frame.outcome.value as HostPluginSkillsLoadResult;
++    });
++  };
++  const older = request("custody-older");
++  try {
++    await Promise.race([
++      entered.promise,
++      older.then(() => { throw new Error("The first Host materialization must remain held."); }),
++    ]);
++    const winner = await request("custody-winner");
++    assert.equal(olderReplied, false, "the real control server must not serialize independent materializers");
++    assert.deepEqual(winner.listedPluginIds, ["db-zero-custody"]);
++    assert.deepEqual(winner.listedCacheKeys, [{ marketplaceSlug: "market.place", pluginId: "review.tools" }]);
++    assert.deepEqual(winner.authBlocked, []);
++    assert.equal(winner.plugins.length, 1);
++    const installed = winner.plugins[0]!;
++    assert.equal(installed.identifier.pluginDbId, "db-zero-custody");
++    assert.ok(installed.identifier.version);
++    assert.equal(installed.loadError, undefined);
++    assert.deepEqual(installed.skills, []);
++    const key = { marketplaceSlug: "market.place", pluginId: "review.tools", version: installed.identifier.version };
++    assert.equal(installed.installPath, host.cache.getCacheDir(key));
++    assert.equal(dirname(installed.installPath), join(host.cache.cacheRoot, "market_place", "review_tools"));
++    const manifestBytes = JSON.stringify({ name: "review.tools", commands: ["commands/review.md"] }, null, 2);
++    const assertWinnerBytes = async () => {
++      assert.equal(await readFile(join(installed.installPath, "commands", "review.md"), "utf8"), commandBytes);
++      assert.equal(await readFile(join(installed.installPath, ".cursor-plugin", "plugin.json"), "utf8"), manifestBytes);
++      assert.equal(await readFile(join(installed.installPath, ".cache-complete"), "utf8"), "");
++      assert.equal(await host.cache.isCached(key), true);
++    };
++    await assertWinnerBytes();
++    assert.equal(stages.length, 2);
++    assert.notEqual(stages[0], stages[1]);
++    for (const stage of stages) assert.equal(dirname(stage), dirname(host.cache.cacheRoot));
++
++    release.resolve();
++    const failed = await older;
++    assert.deepEqual(failed.listedPluginIds, ["db-zero-custody"]);
++    assert.deepEqual(failed.authBlocked, []);
++    assert.equal(failed.plugins[0]?.identifier.pluginDbId, "db-zero-custody");
++    assert.match(failed.plugins[0]?.loadError ?? "", /late Host install failure/);
++    assert.equal(failed.plugins[0]?.installPath, "");
++    assert.deepEqual(failed.plugins[0]?.skills, []);
++    await assertWinnerBytes();
++    for (const stage of stages) await assert.rejects(lstat(stage), { code: "ENOENT" });
++
++    const fresh = await request("custody-fresh");
++    assert.deepEqual(fresh.listedPluginIds, ["db-zero-custody"]);
++    assert.deepEqual(fresh.authBlocked, []);
++    assert.equal(fresh.plugins[0]?.identifier.pluginDbId, "db-zero-custody");
++    assert.equal(fresh.plugins[0]?.installPath, installed.installPath);
++    assert.equal(fresh.plugins[0]?.loadError, undefined);
++    assert.deepEqual(fresh.plugins[0]?.skills, []);
++    await assertWinnerBytes();
++    assert.equal(installs, 2, "a fresh actual Host call must hit the completed SDK cache");
++    assert.equal(await readFile(oldSkill, "utf8"), "Previous committed skill bytes.\n");
++    assert.deepEqual(problems, []);
++  } finally {
++    release.resolve();
++    await older;
++  }
++});
++
+ test("Host preserves opaque strings and bigint IDs above the safe-number range exactly", async (t) => {
+   const ids = ["01", "Db/Identity: A", "case", "CASE", 1, Number.MAX_SAFE_INTEGER, 18_446_744_073_709_551_615n];
+   const host = await fixture(t, async () => ({
+@@ -281,6 +397,57 @@ test("Host authorization failures use the canonical DB ID when the slug matches
+   assert.equal(await readFile(healthyOldSkill, "utf8"), "Previous committed skill bytes.\n");
+ });
+ 
++test("Host staging cleanup failure preserves the canonical authorization denial", async (t) => {
++  for (const authDenied of [true, false]) {
++    const installMessage = authDenied ? "Permission denied (publickey)." : "remote endpoint disconnected";
++    const logs: string[] = [];
++    let stagingDir = "";
++    let retainedParent = "";
++    const host = await fixture(t, async () => ({
++      plugins: [effectivePlugin("41", "7", "{}")],
++    }), withInstall(async (_entry, stage, actual) => {
++      stagingDir = stage;
++      await actual();
++      // Only this fixture's exclusive plugins parent moves. Making its old name
++      // a file forces rm(stage) to fail with ENOTDIR even under privileged CI.
++      const stagingParent = dirname(stage);
++      retainedParent = `${stagingParent}-retained`;
++      await rename(stagingParent, retainedParent);
++      await writeFile(stagingParent, "owned fixture parent is unavailable");
++      throw new Error(installMessage);
++    }), { log: (message) => { logs.push(message); } }, authDenied ? undefined : "permission denied");
++    await seedOldVersion(host.cache, "7");
++    const result = await host.load();
++
++    assert.deepEqual(result.listedPluginIds, ["41"]);
++    assert.deepEqual(result.authBlocked, authDenied
++      ? [{ pluginId: "41", pluginName: "7", marketplaceName: "cursor-public" }]
++      : [], "a cleanup error/path cannot create or hide a canonical Git-auth denial");
++    assert.equal(result.plugins.length, 1);
++    const failed = result.plugins[0]!;
++    assert.equal(failed.identifier.pluginDbId, "41");
++    assert.equal(failed.loadError?.split("\n")[0], installMessage);
++    assert.match(failed.loadError ?? "", /Plugin cache staging cleanup failed; residual state unknown/);
++    assert.match(failed.loadError ?? "", /ENOTDIR/);
++    assert.doesNotMatch(failed.loadError ?? "", /\.plugin-cache-install-/);
++    if (!authDenied) {
++      assert.match(stagingDir, /permission denied/);
++      assert.doesNotMatch(failed.loadError ?? "", /permission denied/i);
++    }
++    assert.equal(failed.installPath, "");
++    assert.deepEqual(failed.skills, []);
++    assert.equal(dirname(stagingDir), dirname(host.cache.cacheRoot));
++    assert.equal(await readFile(dirname(stagingDir), "utf8"), "owned fixture parent is unavailable");
++    await assert.rejects(lstat(stagingDir), { code: "ENOTDIR" });
++    const retainedStage = join(retainedParent, basename(stagingDir));
++    assert.equal(await readFile(join(retainedStage, ".cursor-plugin", "plugin.json"), "utf8"), JSON.stringify({ name: "7" }, null, 2));
++    await assert.rejects(lstat(join(retainedStage, ".cache-complete")), { code: "ENOENT" });
++    assert.equal(await host.cache.isCached({ marketplaceSlug: "cursor-public", pluginId: "7", version: failed.identifier.version }), false);
++    assert.equal(await readFile(join(retainedParent, "cache", "cursor-public", "7", "previous-version", "SKILL.md"), "utf8"), "Previous committed skill bytes.\n");
++    assert.ok(logs.some((message) => message.includes(installMessage) && message.includes("residual state unknown")));
++  }
++});
++
+ test("Host refuses an SDK auth denial without canonical identity instead of guessing from a slug or name", async (t) => {
+   let failureId: string | undefined;
+   const host = await fixture(t, async () => ({ plugins: [effectivePlugin("7", "7")] }), (getResponse, options) => {
+diff --git a/source/packages/cursor-plugins/cursor-marketplace.ts b/source/packages/cursor-plugins/cursor-marketplace.ts
+index bfbf8a160f1c4d76cd927fa401fabc371c876187..7a81a13f425da7973f30e0fdcd1fbbb2b5fd17d0 100644
+--- a/source/packages/cursor-plugins/cursor-marketplace.ts
++++ b/source/packages/cursor-plugins/cursor-marketplace.ts
+@@ -1,5 +1,5 @@
+-import { mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
+-import { join } from "node:path";
++import { lstat, mkdir, mkdtemp, readdir, rename, rm, writeFile } from "node:fs/promises";
++import { dirname, join, resolve } from "node:path";
+ import { Readable } from "node:stream";
+ import { pipeline } from "node:stream/promises";
+ import { createGunzip } from "node:zlib";
+@@ -15,6 +15,12 @@ export interface PluginCacheKey {
+   readonly version?: string;
+ }
+ 
++type CacheDirectoryState = "missing" | "complete" | "incomplete" | "not-directory";
++
++function isMissingPathError(error: unknown): boolean {
++  return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
++}
++
+ function sanitizePluginCacheMarketplaceSlug(raw: string): string {
+   return raw.replace(/[^a-zA-Z0-9_-]/g, "_");
+ }
+@@ -69,15 +75,95 @@ export class DefaultPluginCacheManager {
+   }
+ 
+   async isCached(args: PluginCacheKey): Promise<boolean> {
+-    const cacheDir = this.getCacheDir(args);
+     try {
+-      const stats = await stat(join(cacheDir, PLUGIN_CACHE_SENTINEL));
+-      return stats.isFile();
++      return await this.cacheDirectoryState(this.getCacheDir(args)) === "complete";
+     } catch {
+       return false;
+     }
+   }
+ 
++  private async cacheDirectoryState(cacheDir: string): Promise<CacheDirectoryState> {
++    try {
++      if (!(await lstat(cacheDir)).isDirectory()) return "not-directory";
++    } catch (error) {
++      if (isMissingPathError(error)) return "missing";
++      throw error;
++    }
++    try {
++      return (await lstat(join(cacheDir, PLUGIN_CACHE_SENTINEL))).isFile()
++        ? "complete"
++        : "incomplete";
++    } catch (error) {
++      if (isMissingPathError(error)) return "incomplete";
++      throw error;
++    }
++  }
++
++  async materializeToCache(
++    args: PluginCacheKey,
++    install: (stagingDir: string) => Promise<void>,
++  ): Promise<string> {
++    const cacheDir = this.getCacheDir(args);
++    const initial = await this.cacheDirectoryState(cacheDir);
++    if (initial === "complete") return cacheDir;
++    if (initial !== "missing") throw new Error(`Plugin cache target is ${initial}: ${cacheDir}`);
++
++    // Rust prunes inside cacheRoot. Keep an in-progress attempt outside that
++    // tree, on its parent filesystem, and require atomic directory publication.
++    const stagingParent = dirname(resolve(this.cacheRoot));
++    await mkdir(stagingParent, { recursive: true });
++    const stagingDir = await mkdtemp(join(stagingParent, ".plugin-cache-install-"));
++    let ownsStaging = true;
++    let primaryFailure: { readonly error: unknown } | undefined;
++    try {
++      await install(stagingDir);
++      // Plugin-supplied markers (including symlinks) are not completion proof.
++      await writeFile(join(stagingDir, PLUGIN_CACHE_SENTINEL), "", { flag: "wx" });
++
++      const current = await this.cacheDirectoryState(cacheDir);
++      if (current === "complete") return cacheDir;
++      if (current !== "missing") throw new Error(`Plugin cache target is ${current}: ${cacheDir}`);
++      await mkdir(dirname(cacheDir), { recursive: true });
++      try {
++        // Every cooperating SDK publisher renames a complete nonempty directory;
++        // a concurrent winner is never merged into or recursively removed here.
++        await rename(stagingDir, cacheDir);
++      } catch (error) {
++        if (await this.cacheDirectoryState(cacheDir) === "complete") return cacheDir;
++        throw error;
++      }
++      ownsStaging = false;
++      return cacheDir;
++    } catch (error) {
++      primaryFailure = { error };
++      throw error;
++    } finally {
++      // After rename the old temporary name is no longer ours to clean.
++      if (ownsStaging) {
++        try {
++          await rm(stagingDir, { recursive: true, force: true });
++        } catch (cleanupError) {
++          const cleanupCode = typeof cleanupError === "object" && cleanupError !== null && "code" in cleanupError
++            && typeof cleanupError.code === "string" && /^E[A-Z0-9]+$/.test(cleanupError.code) ? cleanupError.code : "unknown";
++          // Do not let a cleanup message or path create a new Git-auth denial.
++          // The complete cleanup error remains available in errors/cause.
++          const cleanupMessage = `Plugin cache staging cleanup failed; residual state unknown (I/O code: ${cleanupCode}).`;
++          if (primaryFailure !== undefined) {
++            const primary = primaryFailure.error;
++            // Host and Rust classify canonical auth denials from the message.
++            // Keep that failure visible as well as the unsuccessful cleanup.
++            throw new AggregateError(
++              [primary, cleanupError],
++              `${primary instanceof Error ? primary.message : String(primary)}\n${cleanupMessage}`,
++              { cause: primary },
++            );
++          }
++          throw new Error(cleanupMessage, { cause: cleanupError });
++        }
++      }
++    }
++  }
++
+   async extractToCache(
+     args: PluginCacheKey & { readonly tarball: Uint8Array },
+   ): Promise<string> {
+diff --git a/source/packages/cursor-plugins/loader.contract.test.ts b/source/packages/cursor-plugins/loader.contract.test.ts
+index db3fc136dd0740f165e01587fb3b0c07f7be9ec9..8e94c74b16bdc0364d66adc625c33b5a4cb761c2 100644
+--- a/source/packages/cursor-plugins/loader.contract.test.ts
++++ b/source/packages/cursor-plugins/loader.contract.test.ts
+@@ -1,7 +1,7 @@
+ import assert from "node:assert/strict";
+-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
++import { lstat, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+ import { tmpdir } from "node:os";
+-import { join } from "node:path";
++import { dirname, join } from "node:path";
+ import test, { type TestContext } from "node:test";
+ 
+ import type { BackendPluginEntry } from "./backend-marketplace-client.js";
+@@ -22,7 +22,7 @@ class ObservedCacheManager extends DefaultPluginCacheManager {
+ async function cacheFixture(t: TestContext): Promise<ObservedCacheManager> {
+   const root = await mkdtemp(join(tmpdir(), "fabushi-plugin-loader-"));
+   t.after(async () => await rm(root, { recursive: true, force: true }));
+-  return new ObservedCacheManager(undefined, { cacheRoot: root });
++  return new ObservedCacheManager(undefined, { cacheRoot: join(root, "cache") });
+ }
+ 
+ function entry(overrides: Partial<BackendPluginEntry> = {}): BackendPluginEntry {
+@@ -37,6 +37,14 @@ function entry(overrides: Partial<BackendPluginEntry> = {}): BackendPluginEntry
+   };
+ }
+ 
++function cacheKey(plugin: BackendPluginEntry) {
++  return {
++    marketplaceSlug: plugin.marketplace!.name,
++    pluginId: plugin.pluginId,
++    version: plugin.version,
++  };
++}
++
+ async function writeSkill(directory: string, name: string): Promise<string> {
+   await mkdir(directory, { recursive: true });
+   const path = join(directory, "SKILL.md");
+@@ -219,3 +227,285 @@ test("SDK version-resolution failures reach the Host with their canonical DB ID"
+   assert.equal(result.plugins[0]?.loadError, failure.errorMessage);
+   assert.deepEqual(cache.prunes, []);
+ });
++
++test("SDK late failed materialization preserves the completed winner and a fresh cache hit", { timeout: 10_000 }, async (t) => {
++  const cache = await cacheFixture(t);
++  const plugin = entry();
++  const key = cacheKey(plugin);
++  const targetDir = cache.getCacheDir(key);
++  const entered = Promise.withResolvers<void>();
++  const release = Promise.withResolvers<void>();
++  const stages: string[] = [];
++  let installs = 0;
++  const client: MarketplaceLoaderClient = {
++    async listEnabledPlugins() { return { plugins: [plugin] }; },
++    async installPlugin(_plugin, stagingDir) {
++      stages.push(stagingDir);
++      installs += 1;
++      if (installs === 1) {
++        await writeSkill(stagingDir, "unfinished-skill");
++        entered.resolve();
++        await release.promise;
++        throw new Error("late install failure after caller retirement");
++      }
++      await writeSkill(stagingDir, "winning-skill");
++    },
++  };
++  const load = () => loadFromMarketplaceSource({
++    client, userId: "fixture-user", pruneOldVersions: false,
++    cacheManager: new DefaultPluginCacheManager(undefined, { cacheRoot: cache.cacheRoot }),
++  });
++  const older = load();
++  try {
++    await Promise.race([
++      entered.promise,
++      older.then(() => { throw new Error("The first load must remain inside installation."); }),
++    ]);
++    assert.equal(await cache.isCached(key), false);
++    const winner = await load();
++    const winnerBytes = "---\nname: winning-skill\ndescription: Fixture skill\n---\n\nwinning-skill instructions.\n";
++    assert.deepEqual(winner.failures, []);
++    assert.equal(winner.plugins[0]?.installPath, targetDir);
++    assert.equal(winner.plugins[0]?.skills[0]?.path, "SKILL.md");
++    assert.equal(winner.plugins[0]?.skills[0]?.content, winnerBytes);
++    assert.equal(await readFile(join(targetDir, "SKILL.md"), "utf8"), winnerBytes);
++    assert.equal(await readFile(join(targetDir, ".cache-complete"), "utf8"), "");
++    assert.equal(stages.length, 2);
++    assert.notEqual(stages[0], stages[1]);
++    for (const stage of stages) {
++      assert.equal(dirname(stage), dirname(cache.cacheRoot), "Rust pruning cannot traverse an in-progress sibling");
++      assert.notEqual(stage, targetDir);
++    }
++
++    release.resolve();
++    const failed = await older;
++    assert.equal(failed.failures.length, 1);
++    assert.equal(failed.failures[0]?.pluginDbId, plugin.pluginDbId);
++    assert.match(failed.plugins[0]?.loadError ?? "", /late install failure/);
++    assert.equal(failed.plugins[0]?.installPath, "");
++    assert.equal(await readFile(join(targetDir, "SKILL.md"), "utf8"), winnerBytes);
++    assert.equal(await readFile(join(targetDir, ".cache-complete"), "utf8"), "");
++    assert.equal(await cache.isCached(key), true);
++    for (const stage of stages) await assert.rejects(lstat(stage), { code: "ENOENT" });
++
++    const fresh = await load();
++    assert.deepEqual(fresh.failures, []);
++    assert.equal(fresh.plugins[0]?.installPath, targetDir);
++    assert.equal(fresh.plugins[0]?.skills[0]?.path, "SKILL.md");
++    assert.equal(fresh.plugins[0]?.skills[0]?.content, winnerBytes);
++    assert.equal(installs, 2, "a later refresh must consume the completed cache without reinstalling");
++  } finally {
++    release.resolve();
++    await older;
++  }
++});
++
++test("SDK concurrent successful materializations reuse the first completed directory", { timeout: 10_000 }, async (t) => {
++  const cache = await cacheFixture(t);
++  const plugin = entry();
++  const targetDir = cache.getCacheDir(cacheKey(plugin));
++  const entered = Promise.withResolvers<void>();
++  const release = Promise.withResolvers<void>();
++  const stages: string[] = [];
++  let installs = 0;
++  const client: MarketplaceLoaderClient = {
++    async listEnabledPlugins() { return { plugins: [plugin] }; },
++    async installPlugin(_plugin, stagingDir) {
++      stages.push(stagingDir);
++      installs += 1;
++      if (installs === 1) {
++        await writeSkill(stagingDir, "late-skill");
++        await writeFile(join(stagingDir, "late-only.txt"), "must not enter the winner");
++        entered.resolve();
++        await release.promise;
++      } else {
++        await writeSkill(stagingDir, "winning-skill");
++      }
++    },
++  };
++  const load = () => loadFromMarketplaceSource({ client, userId: "fixture-user", cacheManager: cache, pruneOldVersions: false });
++  const older = load();
++  try {
++    await Promise.race([
++      entered.promise,
++      older.then(() => { throw new Error("The earlier successful attempt must remain held."); }),
++    ]);
++    const winner = await load();
++    const winnerBytes = "---\nname: winning-skill\ndescription: Fixture skill\n---\n\nwinning-skill instructions.\n";
++    assert.deepEqual(winner.failures, []);
++    assert.equal(winner.plugins[0]?.installPath, targetDir);
++    assert.equal(winner.plugins[0]?.skills[0]?.content, winnerBytes);
++    release.resolve();
++    const late = await older;
++    assert.deepEqual(late.failures, []);
++    assert.equal(late.plugins[0]?.installPath, targetDir);
++    assert.equal(late.plugins[0]?.skills[0]?.path, "SKILL.md");
++    assert.equal(late.plugins[0]?.skills[0]?.content, winnerBytes);
++    assert.equal(await readFile(join(targetDir, "SKILL.md"), "utf8"), winnerBytes);
++    assert.equal(await readFile(join(targetDir, ".cache-complete"), "utf8"), "");
++    await assert.rejects(lstat(join(targetDir, "late-only.txt")), { code: "ENOENT" });
++    for (const stage of stages) await assert.rejects(lstat(stage), { code: "ENOENT" });
++    const fresh = await load();
++    assert.deepEqual(fresh.failures, []);
++    assert.equal(fresh.plugins[0]?.skills[0]?.content, winnerBytes);
++    assert.equal(installs, 2);
++  } finally {
++    release.resolve();
++    await older;
++  }
++});
++
++test("SDK incomplete and non-directory cache targets are preserved without installation", async (t) => {
++  for (const kind of ["incomplete", "not-directory", "directory-marker", "target-symlink", "marker-symlink"] as const) {
++    const cache = await cacheFixture(t);
++    const plugin = entry();
++    const key = cacheKey(plugin);
++    const targetDir = cache.getCacheDir(key);
++    await mkdir(dirname(targetDir), { recursive: true });
++    let protectedPath = targetDir;
++    let protectedLink: string | undefined;
++    let linkedMarker: string | undefined;
++    if (kind === "target-symlink") {
++      const linkedDirectory = join(dirname(cache.cacheRoot), "linked-content");
++      await mkdir(linkedDirectory);
++      linkedMarker = join(linkedDirectory, ".cache-complete");
++      await writeFile(linkedMarker, "linked completion-marker bytes");
++      await symlink(linkedDirectory, targetDir, "dir");
++      protectedLink = targetDir;
++      protectedPath = join(linkedDirectory, "foreign.txt");
++    } else if (kind !== "not-directory") {
++      await mkdir(targetDir);
++      protectedPath = join(targetDir, "foreign.txt");
++      if (kind === "directory-marker") {
++        await mkdir(join(targetDir, ".cache-complete"));
++        protectedPath = join(targetDir, ".cache-complete", "foreign.txt");
++      } else if (kind === "marker-symlink") {
++        protectedPath = join(dirname(cache.cacheRoot), "linked-marker");
++        protectedLink = join(targetDir, ".cache-complete");
++        await symlink(protectedPath, protectedLink, "file");
++      }
++    }
++    await writeFile(protectedPath, "foreign collision bytes");
++    let installs = 0;
++    const result = await loadFromMarketplaceSource({
++      client: {
++        async listEnabledPlugins() { return { plugins: [plugin] }; },
++        async installPlugin() { installs += 1; },
++      },
++      userId: "fixture-user", cacheManager: cache, pruneOldVersions: false,
++    });
++    assert.equal(installs, 0, kind);
++    assert.equal(result.failures.length, 1, kind);
++    assert.equal(result.failures[0]?.pluginDbId, plugin.pluginDbId);
++    assert.match(result.plugins[0]?.loadError ?? "", /Plugin cache target is/);
++    assert.equal(result.plugins[0]?.installPath, "");
++    assert.equal(await readFile(protectedPath, "utf8"), "foreign collision bytes");
++    if (protectedLink !== undefined) assert.equal((await lstat(protectedLink)).isSymbolicLink(), true);
++    if (linkedMarker !== undefined) assert.equal(await readFile(linkedMarker, "utf8"), "linked completion-marker bytes");
++    assert.equal(await cache.isCached(key), false);
++    assert.deepEqual(cache.prunes, []);
++  }
++});
++
++test("SDK a target appearing during materialization is preserved without publication", async (t) => {
++  const cache = await cacheFixture(t);
++  const plugin = entry();
++  const key = cacheKey(plugin);
++  const targetDir = cache.getCacheDir(key);
++  let stagingDir = "";
++  const result = await loadFromMarketplaceSource({
++    client: {
++      async listEnabledPlugins() { return { plugins: [plugin] }; },
++      async installPlugin(_plugin, stage) {
++        stagingDir = stage;
++        await writeSkill(stage, "unpublished-skill");
++        await mkdir(targetDir, { recursive: true });
++        await writeFile(join(targetDir, "foreign.txt"), "a different incomplete installation");
++      },
++    },
++    userId: "fixture-user", cacheManager: cache, pruneOldVersions: false,
++  });
++  assert.equal(result.failures.length, 1);
++  assert.match(result.plugins[0]?.loadError ?? "", /Plugin cache target is incomplete/);
++  assert.equal(result.plugins[0]?.installPath, "");
++  assert.equal(await readFile(join(targetDir, "foreign.txt"), "utf8"), "a different incomplete installation");
++  await assert.rejects(lstat(join(targetDir, "SKILL.md")), { code: "ENOENT" });
++  await assert.rejects(lstat(join(targetDir, ".cache-complete")), { code: "ENOENT" });
++  await assert.rejects(lstat(stagingDir), { code: "ENOENT" });
++  assert.equal(await cache.isCached(key), false);
++  assert.deepEqual(cache.prunes, []);
++});
++
++test("SDK a failed materialization removes only its owned staging directory", async (t) => {
++  const cache = await cacheFixture(t);
++  const plugin = entry();
++  const key = cacheKey(plugin);
++  const oldSkill = await seedOldVersion(cache, plugin);
++  const oldBytes = await readFile(oldSkill, "utf8");
++  const unrelated = await mkdtemp(join(dirname(cache.cacheRoot), ".plugin-cache-install-"));
++  await writeFile(join(unrelated, "foreign.txt"), "another attempt's bytes");
++  let stagingDir = "";
++  const result = await loadFromMarketplaceSource({
++    client: {
++      async listEnabledPlugins() { return { plugins: [plugin] }; },
++      async installPlugin(_plugin, stage) {
++        stagingDir = stage;
++        await writeSkill(stage, "partial-skill");
++        throw new Error("install failed after writing partial bytes");
++      },
++    },
++    userId: "fixture-user", cacheManager: cache, pruneOldVersions: false,
++  });
++  assert.equal(result.failures.length, 1);
++  assert.equal(result.failures[0]?.pluginDbId, plugin.pluginDbId);
++  assert.match(result.plugins[0]?.loadError ?? "", /install failed after writing partial bytes/);
++  assert.equal(result.plugins[0]?.installPath, "");
++  assert.deepEqual(result.plugins[0]?.skills, []);
++  assert.equal(dirname(stagingDir), dirname(cache.cacheRoot));
++  assert.notEqual(stagingDir, unrelated);
++  await assert.rejects(lstat(stagingDir), { code: "ENOENT" });
++  await assert.rejects(lstat(cache.getCacheDir(key)), { code: "ENOENT" });
++  assert.equal(await cache.isCached(key), false);
++  assert.equal(await readFile(oldSkill, "utf8"), oldBytes);
++  assert.equal(await readFile(join(unrelated, "foreign.txt"), "utf8"), "another attempt's bytes");
++  assert.deepEqual(cache.prunes, []);
++});
++
++test("SDK marker and publication failures do not report a successful materialization", async (t) => {
++  for (const failureAt of ["marker", "parent"] as const) {
++    const cache = await cacheFixture(t);
++    const plugin = entry();
++    const key = cacheKey(plugin);
++    const targetDir = cache.getCacheDir(key);
++    let stagingDir = "";
++    const result = await loadFromMarketplaceSource({
++      client: {
++        async listEnabledPlugins() { return { plugins: [plugin] }; },
++        async installPlugin(_plugin, stage) {
++          stagingDir = stage;
++          await writeSkill(stage, "unpublished-skill");
++          if (failureAt === "marker") {
++            await writeFile(join(stage, ".cache-complete"), "plugin-provided marker");
++          } else {
++            await mkdir(dirname(dirname(targetDir)), { recursive: true });
++            await writeFile(dirname(targetDir), "foreign final parent");
++          }
++        },
++      },
++      userId: "fixture-user", cacheManager: cache, pruneOldVersions: false,
++    });
++    assert.equal(result.failures.length, 1, failureAt);
++    assert.equal(result.failures[0]?.pluginDbId, plugin.pluginDbId);
++    assert.ok(result.plugins[0]?.loadError, failureAt);
++    assert.equal(result.plugins[0]?.installPath, "");
++    assert.deepEqual(result.plugins[0]?.skills, []);
++    assert.equal(await cache.isCached(key), false);
++    await assert.rejects(lstat(stagingDir), { code: "ENOENT" });
++    if (failureAt === "parent") {
++      assert.equal(await readFile(dirname(targetDir), "utf8"), "foreign final parent");
++    } else {
++      await assert.rejects(lstat(targetDir), { code: "ENOENT" });
++    }
++    assert.deepEqual(cache.prunes, []);
++  }
++});
+diff --git a/source/packages/cursor-plugins/loader.ts b/source/packages/cursor-plugins/loader.ts
+index 39bc3330391e7ff7eb3b9835479b73b3df66ef83..0d9ead685ecde665d3c5041a5c962e5909c1b443 100644
+--- a/source/packages/cursor-plugins/loader.ts
++++ b/source/packages/cursor-plugins/loader.ts
+@@ -1,4 +1,4 @@
+-import { lstat, mkdir, readFile, readdir, realpath, rm, stat } from "node:fs/promises";
++import { lstat, readFile, readdir, realpath, stat } from "node:fs/promises";
+ import { basename, extname, join, resolve } from "node:path";
+ import grayMatter from "gray-matter";
+ import { detectHooksSchema, transformClaudeHooksToConfig, type CursorHooksConfig } from "../hooks/claude-code-mapper.js";
+@@ -123,7 +123,11 @@ export async function loadFromMarketplaceSource(options: MarketplaceLoadOptions)
+       const cacheKey = `${slug}/${entry.pluginId}`; let record = versionsByKey.get(cacheKey); if (!record) { record = { slug, pluginId: entry.pluginId, versions: [] }; versionsByKey.set(cacheKey, record); } record.versions.push(entry.version);
+       const cacheArgs = { marketplaceSlug: slug, pluginId: entry.pluginId, version: entry.version }; let installPath: string;
+       if (await cacheManager.isCached(cacheArgs)) { installPath = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Found cached plugin: ${entry.pluginId} at ${installPath}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); }
+-      else { const targetDir = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Plugin missing from cache, installing: ${entry.pluginId} at ${targetDir}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); await mkdir(targetDir, { recursive: true }); try { await client.installPlugin(entry, targetDir); await cacheManager.markCacheComplete(cacheArgs); } catch (error) { try { await rm(targetDir, { recursive: true, force: true }); } catch {} throw error; } installPath = targetDir; }
++      else {
++        const targetDir = cacheManager.getCacheDir(cacheArgs);
++        pluginLogger.log("info", `loadFromMarketplaceSource: Plugin missing from cache, installing: ${entry.pluginId} at ${targetDir}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id });
++        installPath = await cacheManager.materializeToCache(cacheArgs, (stagingDir) => client.installPlugin(entry, stagingDir));
++      }
+       const marketplaceName = entry.marketplace?.name, sourceType = marketplaceName !== undefined && marketplaceName !== "cursor-public" && marketplaceName.length > 0 ? "cursor-third-party" : "cursor-first-party", sourceInfo: MarketplacePluginSourceInfo = { name: entry.name, version: entry.version, pluginDbId: entry.pluginDbId, configuredVariables: entry.configuredVariables, marketplace: marketplaceName, marketplaceDbId: entry.marketplaceDbId, isTeamRequired: entry.isTeamRequired };
+       plugins.push(await loadCursorPluginFromPath(installPath, sourceType, sourceInfo, { log: pluginLogger })); if (pruneOldVersions !== false) try { await cacheManager.pruneOldVersions({ marketplaceSlug: slug, pluginId: entry.pluginId, keepVersions: [entry.version] }); } catch {}
+     } catch (error) {

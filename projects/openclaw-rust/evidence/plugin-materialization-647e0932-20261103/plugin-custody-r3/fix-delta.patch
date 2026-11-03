@@ -1,0 +1,218 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 611a90ede329a6c75250cd26cef5b5446953651c..4390b005bc02152fb332d97630327b73ded50c36 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -4282,6 +4282,15 @@ jobs:
+               print(json.dumps(receipt, indent=2), flush=True)
+           sys.exit(0 if receipt["result"] == "passed" else 1)
+           PY
++      - name: Prove historical prior-root recovery through the current Host and shipping App
++        id: prior_root_identity
++        if: ${{ steps.automation_app.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
++        env:
++          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
++          CARGO_TARGET_DIR: ${{ github.workspace }}/source/host/target
++          CARGO_BUILD_JOBS: '1'
++        shell: bash
++        run: python3 projects/openclaw-rust/scripts/capture_prior_root_contracts.py
+       - name: Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache
+         id: link_preview_gateway
+         if: ${{ always() && steps.native_paths.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
+@@ -4430,12 +4439,12 @@ jobs:
+           raise SystemExit(0 if accepted else 1)
+           PY
+       - name: Preserve failed owned native-path and Automation fixtures
+-        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
++        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.prior_root_identity.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
+         shell: bash
+         run: |
+           set -euo pipefail
+           if [ -d "$NATIVE_PATH_FIXTURES" ]; then
+-            tar -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/owned-fixtures.tar .
++            tar --exclude='original-turn-credential.json' -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/owned-fixtures.tar .
+           fi
+       - name: Upload native SQLite path evidence
+         if: ${{ always() && steps.native_paths.outcome != 'skipped' }}
+diff --git a/projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md b/projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md
+index 04d958bd916dcc9ac73a8c835a219fa995ba4ac2..6e9ea946688f1b6efd44251ea5220001d4582a98 100644
+--- a/projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md
++++ b/projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md
+@@ -124,6 +124,19 @@ executable validation is allowed.
+   owned-staging cleanup also fails. No public Host/Rust error protocol or
+   classifier changes are part of this correction (`PM-R1-G1`).
+ 
++The integrated base `54b32b96ff827f4fee56fed494c866ca8c8b53ec` also carries
++the Host's clone-category guard from `cd3430db43ca22b66ab0ee8b401c0aa3f9f2da44`.
++Preserve that guard and its local-permission negative. The canonical-ID and
++cleanup-failure denial controls supply an explicit Git clone transport error,
++which the unchanged SDK classifier categorizes as `clone`; a bare permission
++phrase is not that producer contract. Reuse `MarketplaceLoadFailure` at the
++Host consumer so its `errorType` access follows the actual SDK type. Preserve
++the incoming late-failure cleanup test from `370c6680b6b8c072615875d72be67ca0e45ebe45`.
++The inline staging introduced at `94edb3025eb2a41381a97ed0833c7544217d15ca`
++is consolidated into this cache adapter, retaining its attempt-isolation
++behavior and adding the collision, pruning-boundary and cleanup requirements
++above; there is only one materialization implementation.
++
+ ### Atomicity limit
+ 
+ The cooperating SDK publishers create final entries only by renaming complete,
+diff --git a/projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json
+index 03a75a39030828df94716fc5074156c7f3ca3193..c856e08b147e595b91da8b4a4ed4dc9ec2a372b8 100644
+--- a/projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json
+@@ -173,5 +173,16 @@
+     "acceptance_status": "pending",
+     "scope_limit": "Controlled installation I/O plus real SDK/Host/filesystem consumers; no claim of real marketplace/account, arbitrary filesystem writers, remote cancellation, crash-residue cleanup or supported-platform package acceptance."
+   },
+-  "superseded_local_work": "An equivalent WFX extraction was already published by another session as e19a0a265e400a4c9b1d96520c84fb612a3843e8 and materialized to integration base 3438eb5bac755c399c9ec686414bbb4c0816888d. This batch adopts its existing capture_portable_contracts.py without creating a duplicate runner."
++  "superseded_local_work": "An equivalent WFX extraction was already published by another session as e19a0a265e400a4c9b1d96520c84fb612a3843e8 and materialized to integration base 3438eb5bac755c399c9ec686414bbb4c0816888d. This batch adopts its existing capture_portable_contracts.py without creating a duplicate runner.",
++  "incoming_integration": {
++    "base": "54b32b96ff827f4fee56fed494c866ca8c8b53ec",
++    "preserved": [
++      "Host clone-category guard and local-permission negative",
++      "SDK older-failed-install successor-byte control"
++    ],
++    "consolidation": "Inline staging from94edb302 is delegated to the existing cache adapter; only one materialization owner implementation.",
++    "typed_consumer": "Host authBlocksFromFailures reuses MarketplaceLoadFailure, including errorType.",
++    "remote_denial_oracle": "Canonical-ID and cleanup double-failure controls retain an explicit Git clone category; bare permission diagnostics remain local/unclassified.",
++    "execution_status": "pending exact final H Actions"
++  }
+ }
+diff --git a/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts b/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts
+index 14424f4ccc44586a4810f3ccfea16d22d184cc34..7b94d6388549f4459c19b8231e3336a63ab1e995 100644
+--- a/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts
++++ b/source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts
+@@ -375,7 +375,7 @@ test("Host preserves opaque strings and bigint IDs above the safe-number range e
+   assert.deepEqual(result.publisherFacts["18446744073709551615"], { publisherUserId: 8, marketplaceTeamId: 5 });
+ });
+ 
+-test("Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID", async (t) => {
++test("local install permission failures never become remote authorization blocks", async (t) => {
+   const host = await fixture(t, async () => ({
+     plugins: [effectivePlugin("41", "7", "{}"), effectivePlugin("7", "healthy", "{}")],
+   }), withInstall(async (entry, _targetDir, actual) => {
+@@ -387,7 +387,7 @@ test("Host authorization failures use the canonical DB ID when the slug matches
+   const result = await host.load();
+ 
+   assert.deepEqual(result.listedPluginIds, ["41", "7"]);
+-  assert.deepEqual(result.authBlocked, [{ pluginId: "41", pluginName: "7", marketplaceName: "cursor-public" }]);
++  assert.deepEqual(result.authBlocked, [], "install/cache permission errors are not remote Git authorization decisions");
+   assert.equal(result.plugins[0]?.identifier.pluginDbId, "41");
+   assert.match(result.plugins[0]?.loadError ?? "", /Permission denied/);
+   assert.equal(result.plugins[1]?.identifier.pluginDbId, "7");
+@@ -397,9 +397,31 @@ test("Host authorization failures use the canonical DB ID when the slug matches
+   assert.equal(await readFile(healthyOldSkill, "utf8"), "Previous committed skill bytes.\n");
+ });
+ 
++test("Host authorization failures use the canonical DB ID when the slug matches another plugin's DB ID", async (t) => {
++  const host = await fixture(t, async () => ({
++    plugins: [effectivePlugin("41", "7", "{}"), effectivePlugin("7", "healthy", "{}")],
++  }), withInstall(async (entry, _targetDir, actual) => {
++    if (entry.pluginDbId === "41") throw new Error("git clone failed: Permission denied (publickey).");
++    await actual();
++  }));
++  const deniedOldSkill = await seedOldVersion(host.cache, "7");
++  const healthyOldSkill = await seedOldVersion(host.cache, "healthy");
++  const result = await host.load();
++
++  assert.deepEqual(result.listedPluginIds, ["41", "7"]);
++  assert.deepEqual(result.authBlocked, [{ pluginId: "41", pluginName: "7", marketplaceName: "cursor-public" }]);
++  assert.equal(result.plugins[0]?.identifier.pluginDbId, "41");
++  assert.match(result.plugins[0]?.loadError ?? "", /git clone failed: Permission denied/);
++  assert.equal(result.plugins[1]?.identifier.pluginDbId, "7");
++  assert.equal(result.plugins[1]?.loadError, undefined);
++  assert.deepEqual(result.plugins[1]?.skills, []);
++  assert.equal(await readFile(deniedOldSkill, "utf8"), "Previous committed skill bytes.\n");
++  assert.equal(await readFile(healthyOldSkill, "utf8"), "Previous committed skill bytes.\n");
++});
++
+ test("Host staging cleanup failure preserves the canonical authorization denial", async (t) => {
+   for (const authDenied of [true, false]) {
+-    const installMessage = authDenied ? "Permission denied (publickey)." : "remote endpoint disconnected";
++    const installMessage = authDenied ? "git clone failed: Permission denied (publickey)." : "remote endpoint disconnected";
+     const logs: string[] = [];
+     let stagingDir = "";
+     let retainedParent = "";
+diff --git a/source/electron-main/mcp/host-plugin-skills-loader.ts b/source/electron-main/mcp/host-plugin-skills-loader.ts
+index 8dda78d123c44a94da93887582fec7508ef5dbc1..d81e1da13c9b39f4e2943ab48e8b9073bb8dc987 100644
+--- a/source/electron-main/mcp/host-plugin-skills-loader.ts
++++ b/source/electron-main/mcp/host-plugin-skills-loader.ts
+@@ -8,7 +8,7 @@ import {
+ } from "../../packages/cursor-plugins/backend-marketplace-client.js";
+ import { DefaultPluginCacheManager } from "../../packages/cursor-plugins/cursor-marketplace.js";
+ import { classifyCloneError } from "../../packages/cursor-plugins/marketplace-cache.js";
+-import { loadFromMarketplaceSource, type MarketplaceLoaderClient } from "../../packages/cursor-plugins/loader.js";
++import { loadFromMarketplaceSource, type MarketplaceLoadFailure, type MarketplaceLoaderClient } from "../../packages/cursor-plugins/loader.js";
+ import { buildOriginTokenGitConfig } from "../../packages/cursor-plugins/origin-git-auth.js";
+ import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
+ import {
+@@ -100,12 +100,7 @@ function canonicalPluginDbId(value: unknown): string | undefined {
+ }
+ 
+ function authBlocksFromFailures(
+-  failures: readonly {
+-    readonly pluginDbId?: string;
+-    readonly pluginName: string;
+-    readonly marketplaceName?: string;
+-    readonly errorMessage: string;
+-  }[],
++  failures: readonly MarketplaceLoadFailure[],
+ ): HostPluginSkillsLoadResult["authBlocked"] {
+   const seen = new Set<string>();
+   const blocks: Array<{
+@@ -114,7 +109,11 @@ function authBlocksFromFailures(
+     marketplaceName?: string;
+   }> = [];
+   for (const failure of failures) {
+-    if (classifyCloneError(failure.errorMessage) !== "user_git_access") continue;
++    // Only clone/install transport failures can represent a user's remote Git
++    // authorization refusal. Local cache I/O can contain the same words
++    // (for example EACCES: permission denied) and must never become an
++    // authorization decision.
++    if (failure.errorType !== "clone" || classifyCloneError(failure.errorMessage) !== "user_git_access") continue;
+     const id = failure.pluginDbId;
+     if (typeof id !== "string" || canonicalPluginDbId(id) === undefined) {
+       throw new Error("Plugin Skills authorization failure has no valid canonical plugin ID.");
+diff --git a/source/packages/cursor-plugins/loader.contract.test.ts b/source/packages/cursor-plugins/loader.contract.test.ts
+index 8e94c74b16bdc0364d66adc625c33b5a4cb761c2..45f17992d5d5f7f01e75f0a892704e1fadab3a89 100644
+--- a/source/packages/cursor-plugins/loader.contract.test.ts
++++ b/source/packages/cursor-plugins/loader.contract.test.ts
+@@ -205,6 +205,37 @@ test("SDK installation failure retains canonical identity and old files during a
+   }), false);
+ });
+ 
++test("an older failed install cannot remove a successor published cache directory", async (t) => {
++  const cache = await cacheFixture(t);
++  const plugin = entry();
++  const olderEntered = Promise.withResolvers<void>();
++  const releaseOlder = Promise.withResolvers<void>();
++  const older: MarketplaceLoaderClient = {
++    async listEnabledPlugins() { return { plugins: [plugin] }; },
++    async installPlugin(_entry, targetDir) {
++      olderEntered.resolve();
++      await releaseOlder.promise;
++      await writeSkill(targetDir, "older-partial");
++      throw new Error("older install failed after timeout");
++    },
++  };
++  const newer: MarketplaceLoaderClient = {
++    async listEnabledPlugins() { return { plugins: [plugin] }; },
++    async installPlugin(_entry, targetDir) { await writeSkill(targetDir, "successor-skill"); },
++  };
++  const olderPass = loadFromMarketplaceSource({ client: older, userId: "fixture-user", cacheManager: cache, pruneOldVersions: false });
++  await olderEntered.promise;
++  const newerPass = await loadFromMarketplaceSource({ client: newer, userId: "fixture-user", cacheManager: cache, pruneOldVersions: false });
++  assert.equal(newerPass.failures.length, 0);
++  assert.equal(newerPass.plugins[0]?.skills[0]?.name, "successor-skill");
++  releaseOlder.resolve();
++  const olderResult = await olderPass;
++  assert.equal(olderResult.failures.length, 1);
++  assert.equal(await cache.isCached({ marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version }), true);
++  const published = cache.getCacheDir({ marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version });
++  assert.match(await readFile(join(published, "SKILL.md"), "utf8"), /successor-skill instructions/);
++});
++
+ test("SDK version-resolution failures reach the Host with their canonical DB ID", async (t) => {
+   const cache = await cacheFixture(t);
+   const failure = {

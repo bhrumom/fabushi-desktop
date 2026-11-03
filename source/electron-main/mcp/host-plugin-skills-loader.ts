@@ -8,7 +8,7 @@ import {
 } from "../../packages/cursor-plugins/backend-marketplace-client.js";
 import { DefaultPluginCacheManager } from "../../packages/cursor-plugins/cursor-marketplace.js";
 import { classifyCloneError } from "../../packages/cursor-plugins/marketplace-cache.js";
-import { loadFromMarketplaceSource, type MarketplaceLoaderClient } from "../../packages/cursor-plugins/loader.js";
+import { loadFromMarketplaceSource, type MarketplaceLoadFailure, type MarketplaceLoaderClient } from "../../packages/cursor-plugins/loader.js";
 import { buildOriginTokenGitConfig } from "../../packages/cursor-plugins/origin-git-auth.js";
 import { DashboardService } from "../../packages/proto/generated/aiserver/v1/dashboard_connect.js";
 import {
@@ -100,12 +100,7 @@ function canonicalPluginDbId(value: unknown): string | undefined {
 }
 
 function authBlocksFromFailures(
-  failures: readonly {
-    readonly pluginDbId?: string;
-    readonly pluginName: string;
-    readonly marketplaceName?: string;
-    readonly errorMessage: string;
-  }[],
+  failures: readonly MarketplaceLoadFailure[],
 ): HostPluginSkillsLoadResult["authBlocked"] {
   const seen = new Set<string>();
   const blocks: Array<{

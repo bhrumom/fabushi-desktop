@@ -32996,6 +32996,8 @@
         "source/host/tests/openclaw_snapshot_skills_contract.rs",
         "projects/openclaw-rust/dossiers/snapshot-skills-scoped.md",
         "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+        "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json",
         "source/host/tests/plugin_skills_contract.rs",
         "source/host/tests/host_bundle_and_plugin_cache_contract.rs",
         "source/host/tests/workflow_store_contract.rs",

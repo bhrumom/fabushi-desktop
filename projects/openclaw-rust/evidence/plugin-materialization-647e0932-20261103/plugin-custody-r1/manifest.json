@@ -1,0 +1,31 @@
+{
+  "repository_root": "/workspace/scratch/425c55809bda/fabushi-desktop",
+  "base_commit": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+  "starting_head": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "scope_mode": "explicit paths on verified live base; preserve other workers",
+  "snapshot_tree": "e9569789cc65760dc41403fefe42261b6b7a5c0f",
+  "paths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+    "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json",
+    "projects/openclaw-rust/parity-ledger.json",
+    "projects/openclaw-rust/requirements-traceability-matrix.json",
+    "source/packages/cursor-plugins/cursor-marketplace.ts",
+    "source/packages/cursor-plugins/loader.ts",
+    "source/packages/cursor-plugins/loader.contract.test.ts",
+    "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts"
+  ],
+  "blob_ids": {
+    ".github/workflows/rust-desktop-runtime.yml": "815e7cde3c0cc8a472044382a71eb40f47e77055",
+    "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md": "9bed3b08589fdf0f10fc870c1a86adb5c5d974ad",
+    "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json": "72254c0fbee23ec0692be38c557b94dbe2eea7cc",
+    "projects/openclaw-rust/parity-ledger.json": "3664d087b3b48d9880c7c2ef4420d51efeb4051a",
+    "projects/openclaw-rust/requirements-traceability-matrix.json": "850d262cf6c23068eca92a46da5b2bf56c17877b",
+    "source/packages/cursor-plugins/cursor-marketplace.ts": "7a81a13f425da7973f30e0fdcd1fbbb2b5fd17d0",
+    "source/packages/cursor-plugins/loader.ts": "0d9ead685ecde665d3c5041a5c962e5909c1b443",
+    "source/packages/cursor-plugins/loader.contract.test.ts": "8e94c74b16bdc0364d66adc625c33b5a4cb761c2",
+    "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts": "eac0a2afe1134a7054ea39d0231c9609f9c3ed8c"
+  },
+  "no_local_executable_validation": true,
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845"
+}

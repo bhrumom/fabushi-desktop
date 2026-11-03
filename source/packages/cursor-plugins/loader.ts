@@ -1,10 +1,10 @@
-import { lstat, mkdir, mkdtemp, readFile, readdir, realpath, rename, rm, stat, writeFile } from "node:fs/promises";
-import { basename, dirname, extname, join, resolve } from "node:path";
+import { lstat, readFile, readdir, realpath, stat } from "node:fs/promises";
+import { basename, extname, join, resolve } from "node:path";
 import grayMatter from "gray-matter";
 import { detectHooksSchema, transformClaudeHooksToConfig, type CursorHooksConfig } from "../hooks/claude-code-mapper.js";
 import { validateHooksConfig } from "../hooks/validators/hooksConfig.js";
 import { PluginComponentDiscovery, type PluginComponentDescriptor, type PluginFileFetcher } from "./component-discovery.js";
-import { DefaultPluginCacheManager, PLUGIN_CACHE_SENTINEL } from "./cursor-marketplace.js";
+import { DefaultPluginCacheManager } from "./cursor-marketplace.js";
 import { isPathSafe, parsePluginManifest, PLUGIN_MANIFEST_PATHS, type PluginManifest, type PluginVariableSchema } from "./manifest-parser.js";
 import { resolvePluginMcpConfigPaths, resolvePluginMcpConfigWithManifestLookup, type McpParserOptions, type ResolvedMcpConfig } from "./mcp-parser.js";
 import { expandPluginVariables } from "./plugin-variables.js";
@@ -31,7 +31,26 @@ export type PluginHooksResult = { config: CursorHooksConfig; sourcePath?: string
 async function isSymlink(filePath: string): Promise<boolean> { try { return (await lstat(filePath)).isSymbolicLink(); } catch { return false; } }
 async function readFileNoSymlink(filePath: string): Promise<string> { if (await isSymlink(filePath)) throw new Error(`Refusing to read symlink: ${filePath}`); return readFile(filePath, "utf-8"); }
 async function checkFileSize(filePath: string): Promise<void> { const stats = await stat(filePath); if (stats.size > MAX_FILE_SIZE) throw new Error(`File ${filePath} exceeds maximum size of ${MAX_FILE_SIZE} bytes`); }
-function classifyLoadError(error: unknown): "timeout" | "clone" | "manifest" | "parse" | "install" | "unknown" { const message = error instanceof Error ? error.message : String(error); if (/\bEACCES\b|\bEPERM\b|\bEROFS\b/.test(message)) return "install"; if (/timed?\s*out/i.test(message)) return "timeout"; if (/clone|fetch|git/i.test(message)) return "clone"; if (/manifest|marketplace\.json/i.test(message)) return "manifest"; if (/parse|invalid|malformed/i.test(message)) return "parse"; if (/install|download|copy/i.test(message)) return "install"; return "unknown"; }
+function classifyLoadError(error: unknown): "timeout" | "clone" | "manifest" | "parse" | "install" | "unknown" {
+  // A materialization cleanup failure adds diagnostics, not a new primary
+  // category. Ordinary cache-I/O wrappers remain opaque so native path text
+  // cannot acquire authorization meaning through their causes.
+  const aggregateCauses = new Set<AggregateError>();
+  while (error instanceof AggregateError && Object.hasOwn(error, "cause")) {
+    if (aggregateCauses.has(error)) break;
+    aggregateCauses.add(error);
+    error = error.cause;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+  if (code === "EACCES" || code === "EPERM" || code === "EROFS" || /\bEACCES\b|\bEPERM\b|\bEROFS\b/.test(message)) return "install";
+  if (/timed?\s*out/i.test(message)) return "timeout";
+  if (/clone|fetch|git/i.test(message)) return "clone";
+  if (/manifest|marketplace\.json/i.test(message)) return "manifest";
+  if (/parse|invalid|malformed/i.test(message)) return "parse";
+  if (/install|download|copy/i.test(message)) return "install";
+  return "unknown";
+}
 
 export function createLocalPluginFileFetcher(basePath: string, options?: { symlinkTargetRoot?: string | undefined }): PluginFileFetcher {
   const fileContentCache = new Map<string, string>(), resolvedBasePath = resolve(basePath), resolvedSymlinkTargetRoot = resolve(options?.symlinkTargetRoot ?? resolvedBasePath), allowedRealPath = realpath(resolvedSymlinkTargetRoot).catch(() => resolvedSymlinkTargetRoot);
@@ -123,7 +142,11 @@ export async function loadFromMarketplaceSource(options: MarketplaceLoadOptions)
       const cacheKey = `${slug}/${entry.pluginId}`; let record = versionsByKey.get(cacheKey); if (!record) { record = { slug, pluginId: entry.pluginId, versions: [] }; versionsByKey.set(cacheKey, record); } record.versions.push(entry.version);
       const cacheArgs = { marketplaceSlug: slug, pluginId: entry.pluginId, version: entry.version }; let installPath: string;
       if (await cacheManager.isCached(cacheArgs)) { installPath = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Found cached plugin: ${entry.pluginId} at ${installPath}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); }
-      else { const targetDir = cacheManager.getCacheDir(cacheArgs); pluginLogger.log("info", `loadFromMarketplaceSource: Plugin missing from cache, installing: ${entry.pluginId} at ${targetDir}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id }); await mkdir(dirname(targetDir), { recursive: true }); const stagingDir = await mkdtemp(join(dirname(targetDir), `.${basename(targetDir)}.install-`)); try { await client.installPlugin(entry, stagingDir); await writeFile(join(stagingDir, PLUGIN_CACHE_SENTINEL), ""); await rename(stagingDir, targetDir); } catch (error) { try { await rm(stagingDir, { recursive: true, force: true }); } catch {} throw error; } installPath = targetDir; }
+      else {
+        const targetDir = cacheManager.getCacheDir(cacheArgs);
+        pluginLogger.log("info", `loadFromMarketplaceSource: Plugin missing from cache, installing: ${entry.pluginId} at ${targetDir}`, { marketplaceSlug: slug, pluginId: entry.pluginId, gitRef: entry.version, marketplaceId: entry.marketplace?.id });
+        installPath = await cacheManager.materializeToCache(cacheArgs, (stagingDir) => client.installPlugin(entry, stagingDir));
+      }
       const marketplaceName = entry.marketplace?.name, sourceType = marketplaceName !== undefined && marketplaceName !== "cursor-public" && marketplaceName.length > 0 ? "cursor-third-party" : "cursor-first-party", sourceInfo: MarketplacePluginSourceInfo = { name: entry.name, version: entry.version, pluginDbId: entry.pluginDbId, configuredVariables: entry.configuredVariables, marketplace: marketplaceName, marketplaceDbId: entry.marketplaceDbId, isTeamRequired: entry.isTeamRequired };
       plugins.push(await loadCursorPluginFromPath(installPath, sourceType, sourceInfo, { log: pluginLogger })); if (pruneOldVersions !== false) try { await cacheManager.pruneOldVersions({ marketplaceSlug: slug, pluginId: entry.pluginId, keepVersions: [entry.version] }); } catch {}
     } catch (error) {

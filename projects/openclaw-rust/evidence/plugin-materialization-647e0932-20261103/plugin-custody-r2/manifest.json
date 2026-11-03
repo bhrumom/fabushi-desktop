@@ -1,0 +1,33 @@
+{
+  "repository_root": "/workspace/scratch/425c55809bda/fabushi-desktop",
+  "base_commit": "113c32276b99ed668be095e0be6ed164dffdf46d",
+  "starting_head": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "scope_mode": "same explicit nine paths; exact current base; unrelated media correction excluded",
+  "snapshot_tree": "c217f0f20090d75213c45602d6f333139c6f25ed",
+  "prior_snapshot_tree": "e9569789cc65760dc41403fefe42261b6b7a5c0f",
+  "paths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
+    "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json",
+    "projects/openclaw-rust/parity-ledger.json",
+    "projects/openclaw-rust/requirements-traceability-matrix.json",
+    "source/packages/cursor-plugins/cursor-marketplace.ts",
+    "source/packages/cursor-plugins/loader.ts",
+    "source/packages/cursor-plugins/loader.contract.test.ts",
+    "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts"
+  ],
+  "blob_ids": {
+    ".github/workflows/rust-desktop-runtime.yml": "611a90ede329a6c75250cd26cef5b5446953651c",
+    "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md": "04d958bd916dcc9ac73a8c835a219fa995ba4ac2",
+    "projects/openclaw-rust/evidence/plugin-materialization-647e0932-20261103/source-contract.json": "03a75a39030828df94716fc5074156c7f3ca3193",
+    "projects/openclaw-rust/parity-ledger.json": "d3e99f9b1c5ef77755d394110700f07de9c35ed8",
+    "projects/openclaw-rust/requirements-traceability-matrix.json": "3722bc58b292c84c7157e09e2f95dd89b59f6765",
+    "source/packages/cursor-plugins/cursor-marketplace.ts": "6a2433588b5f17f3609e6ca85e4aa0f2a8612e21",
+    "source/packages/cursor-plugins/loader.ts": "0d9ead685ecde665d3c5041a5c962e5909c1b443",
+    "source/packages/cursor-plugins/loader.contract.test.ts": "8e94c74b16bdc0364d66adc625c33b5a4cb761c2",
+    "source/electron-main/mcp/host-plugin-skills-loader.contract.test.ts": "14424f4ccc44586a4810f3ccfea16d22d184cc34"
+  },
+  "no_local_executable_validation": true,
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "concurrent_base_changes": "Media recovery carriers and DTR at113c preserved; complete.patch is only this batch; scoped fix-delta also includes their incoming shared workflow/ledger/RTM context."
+}
