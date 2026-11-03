@@ -592,6 +592,34 @@ pub fn configured_inference_provider(settings_path: &Path) -> Option<InferencePr
     .find_map(|value| value.as_str().and_then(InferenceProvider::parse))
 }
 
+/// A cancelled pre-worker admission has no worker terminal to await. Only the
+/// exact Host response for this stream carries that disposition; a malformed
+/// or unrelated response remains a start failure.
+pub fn require_runner_start_acceptance(
+    response: &Value,
+    expected_stream_id: &str,
+) -> Result<(), Failure> {
+    if !expected_stream_id.trim().is_empty()
+        && response.get("streamId").and_then(Value::as_str) == Some(expected_stream_id)
+    {
+        match (
+            response.get("accepted").and_then(Value::as_bool),
+            response.get("cancelled"),
+        ) {
+            (Some(false), Some(Value::Bool(true))) => {
+                return Err(Failure::new(
+                    "INFERENCE_PROVIDER_CANCELLED", "Host Runner was cancelled before start",
+                ));
+            }
+            (Some(true), None | Some(Value::Bool(false))) => return Ok(()),
+            _ => {}
+        }
+    }
+    Err(Failure::new(
+        "INFERENCE_RUNNER_REJECTED", "Host Runner did not accept the routed provider request",
+    ))
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RunnerInferenceEvent {
     Delta { content: String },

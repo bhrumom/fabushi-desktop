@@ -13,6 +13,7 @@ use crate::extensions::session::agent_db::{
 use crate::extensions::session::session_paths::resolve_internal_send_route;
 use crate::extensions::session::production::ProductionSessionWorkers;
 use crate::sand_activity::{ActivityUpdate, AgentActivity};
+use crate::runner::routed_provider_runtime::RoutedProviderCancellation;
 
 use super::async_task_union::{AsyncTask, merge_async_tasks};
 use super::ack_obligations::{AckObligations, AckRedrivePreparation, AckRedriveTrigger};
@@ -115,7 +116,7 @@ pub fn classify_send_dispatch(
     ))
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone)]
 struct RoutedTurnLease {
     agent_id: String,
     ticket: UserTurnTicket,
@@ -124,6 +125,40 @@ struct RoutedTurnLease {
     human_handoff_conversation_id: Option<String>,
     original_input: Option<RoutedOriginalInput>,
     original_work: Option<OriginalTurnReference>,
+    cancellation: RoutedProviderCancellation,
+    start_claimed: bool,
+    preparation_admitted: bool,
+}
+
+/// An existing live lease's unique start claimant. Private identity fields
+/// prevent a request payload or a different runtime from creating authority.
+pub struct RoutedTurnStartControl {
+    agent_id: String,
+    stream_id: String,
+    ticket: UserTurnTicket,
+    generation: u64,
+    cancellation: RoutedProviderCancellation,
+}
+
+impl RoutedTurnStartControl {
+    pub fn cancellation(&self) -> RoutedProviderCancellation {
+        self.cancellation.clone()
+    }
+
+    pub fn agent_id(&self) -> &str { &self.agent_id }
+    pub fn stream_id(&self) -> &str { &self.stream_id }
+
+    fn matches(&self, lease: &RoutedTurnLease) -> bool {
+        self.agent_id == lease.agent_id && self.ticket == lease.ticket
+            && self.generation == lease.generation
+            && self.cancellation.shares_cancellation_with(&lease.cancellation)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoutedTurnStartState {
+    Ready,
+    Cancelled,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -977,6 +1012,9 @@ impl ProductionTranscriptRuntime {
                                 human_handoff_conversation_id: human_handoff_conversation_id.clone(),
                                 original_input: original_routed_input(args, &input, nonce.as_deref(), &context),
                                 original_work: None,
+                                cancellation: RoutedProviderCancellation::default(),
+                                start_claimed: false,
+                                preparation_admitted: false,
                             },
                         );
                     }
@@ -1017,6 +1055,109 @@ impl ProductionTranscriptRuntime {
         }
     }
 
+    /// Take retirement responsibility before checking cancellation/currentness.
+    /// Even a cancelled or scheduler-stale lease must reach its own guard.
+    pub fn capture_routed_turn_start(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+    ) -> Result<RoutedTurnStartControl, ProductionSendError> {
+        let mut state = self.lock_state();
+        let lease = state.routed_turn_leases.get_mut(stream_id).ok_or_else(|| {
+            ProductionSendError::Rejected("routed provider stream has no admitted Host turn lease".into())
+        })?;
+        if lease.agent_id != agent_id || lease.start_claimed {
+            return Err(ProductionSendError::Conflict("routed turn start is foreign or already claimed".into()));
+        }
+        lease.start_claimed = true;
+        Ok(RoutedTurnStartControl {
+            agent_id: agent_id.to_string(), stream_id: stream_id.to_string(),
+            ticket: lease.ticket.clone(), generation: lease.generation,
+            cancellation: lease.cancellation.clone(),
+        })
+    }
+
+    fn routed_start_state(
+        state: &RuntimeState,
+        control: &RoutedTurnStartControl,
+    ) -> Result<RoutedTurnStartState, ProductionSendError> {
+        let lease = state.routed_turn_leases.get(&control.stream_id).ok_or_else(|| {
+            ProductionSendError::Rejected("routed turn start lease is no longer present".into())
+        })?;
+        if !control.matches(lease) || !lease.start_claimed
+            || state.turn_dispatch.active_generation_for(&lease.ticket) != Some(lease.generation)
+        {
+            return Err(ProductionSendError::Conflict("routed turn start control is stale or foreign".into()));
+        }
+        Ok(if lease.cancellation.is_cancelled() {
+            RoutedTurnStartState::Cancelled
+        } else {
+            RoutedTurnStartState::Ready
+        })
+    }
+
+    pub fn check_routed_turn_start(
+        &self,
+        control: &RoutedTurnStartControl,
+    ) -> Result<RoutedTurnStartState, ProductionSendError> {
+        Self::routed_start_state(&self.lock_state(), control)
+    }
+
+    /// Orders preparation admission against explicit cancellation. It grants
+    /// entry, not rollback of preparation already admitted before a later stop.
+    pub fn admit_routed_turn_preparation(
+        &self,
+        control: &RoutedTurnStartControl,
+    ) -> Result<RoutedTurnStartState, ProductionSendError> {
+        let mut state = self.lock_state();
+        let disposition = Self::routed_start_state(&state, control)?;
+        if disposition == RoutedTurnStartState::Ready {
+            let lease = state.routed_turn_leases.get_mut(&control.stream_id)
+                .expect("checked under the same owner lock");
+            if lease.preparation_admitted {
+                return Err(ProductionSendError::Conflict("routed turn preparation is already admitted".into()));
+            }
+            lease.preparation_admitted = true;
+        }
+        Ok(disposition)
+    }
+
+    pub fn cancel_routed_turn_lease(
+        &self,
+        stream_id: &str,
+        expected_agent_id: Option<&str>,
+        reason: &str,
+    ) -> bool {
+        self.request_routed_turn_cancellation(stream_id, expected_agent_id, reason).unwrap_or(false)
+    }
+
+    /// Presence and first-change are distinct: a present lease remains the
+    /// authority even when already cancelled or outside the requested agent.
+    /// A caller must not reselect a later registry incarnation after this.
+    pub fn request_routed_turn_cancellation(
+        &self,
+        stream_id: &str,
+        expected_agent_id: Option<&str>,
+        reason: &str,
+    ) -> Option<bool> {
+        let state = self.lock_state();
+        state.routed_turn_leases.get(stream_id)
+            .map(|lease| expected_agent_id.is_none_or(|agent| lease.agent_id == agent)
+                && lease.cancellation.cancel(reason))
+    }
+
+    pub fn routed_stream_ids_for_agent(&self, agent_id: &str) -> Vec<String> {
+        let mut streams = self.lock_state().routed_turn_leases.iter()
+            .filter_map(|(stream, lease)| (lease.agent_id == agent_id).then(|| stream.clone()))
+            .collect::<Vec<_>>();
+        streams.sort();
+        streams
+    }
+
+    pub fn routed_agent_id_for_stream(&self, stream_id: &str) -> Option<String> {
+        self.lock_state().routed_turn_leases.get(stream_id).map(|lease| lease.agent_id.clone())
+    }
+
     /// Attach the already checked Session and actual resolved Native model to
     /// the original accepted input, without reading Session under this mutex.
     pub fn bind_original_turn_model(
@@ -1037,7 +1178,7 @@ impl ProductionTranscriptRuntime {
         {
             return Err(ProductionSendError::Conflict("original turn lease is stale or foreign".into()));
         }
-        if self.is_quiescing_for_upgrade() {
+        if self.is_quiescing_for_upgrade() || lease.cancellation.is_cancelled() {
             return Ok(None);
         }
         let Some(input) = lease.original_input.as_ref() else { return Ok(None); };
@@ -1074,18 +1215,38 @@ impl ProductionTranscriptRuntime {
         stream_id: &str,
         now_ms: u64,
     ) -> Result<Option<RoutedTurnSettlement>, ProductionSendError> {
+        self.settle_routed_turn_inner(agent_id, stream_id, None, now_ms)
+    }
+
+    pub fn settle_routed_turn_control(
+        &self,
+        control: &RoutedTurnStartControl,
+        now_ms: u64,
+    ) -> Result<Option<RoutedTurnSettlement>, ProductionSendError> {
+        self.settle_routed_turn_inner(&control.agent_id, &control.stream_id, Some(control), now_ms)
+    }
+
+    fn settle_routed_turn_inner(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        control: Option<&RoutedTurnStartControl>,
+        now_ms: u64,
+    ) -> Result<Option<RoutedTurnSettlement>, ProductionSendError> {
         let mut state = self.lock_state();
-        let Some(lease) = state.routed_turn_leases.remove(stream_id) else {
+        let Some(lease) = state.routed_turn_leases.get(stream_id) else {
             return Ok(None);
         };
+        if control.is_some_and(|control| !control.matches(lease)) {
+            return Ok(None);
+        }
         if lease.agent_id != agent_id {
-            state
-                .routed_turn_leases
-                .insert(stream_id.to_string(), lease);
             return Err(ProductionSendError::Conflict(format!(
                 "routed stream lease agent mismatch: {stream_id}"
             )));
         }
+        let lease = state.routed_turn_leases.remove(stream_id)
+            .expect("identity checked under the same owner lock");
         let (settlement, next) = state
             .turn_dispatch
             .settle_and_start_next(&lease.ticket, lease.generation, now_ms);

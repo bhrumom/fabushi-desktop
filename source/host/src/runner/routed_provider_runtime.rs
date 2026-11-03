@@ -64,6 +64,10 @@ impl RoutedProviderCancellation {
         &self.cancelled
     }
 
+    pub(crate) fn shares_cancellation_with(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.cancelled, &other.cancelled)
+    }
+
     pub fn reason(&self) -> Option<String> {
         self.reason.lock().ok().and_then(|reason| reason.clone())
     }
@@ -95,7 +99,7 @@ impl RoutedProviderTaskRegistry {
         &self,
         stream_id: &str,
     ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
-        self.register_internal(None, stream_id)
+        self.register_internal(None, stream_id, RoutedProviderCancellation::default())
     }
 
     pub fn register_for_agent(
@@ -103,19 +107,34 @@ impl RoutedProviderTaskRegistry {
         agent_id: &str,
         stream_id: &str,
     ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        self.register_for_agent_with_cancellation(
+            agent_id,
+            stream_id,
+            RoutedProviderCancellation::default(),
+        )
+    }
+
+    /// Index the admitted turn's existing token without resetting cancellation.
+    pub fn register_for_agent_with_cancellation(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        cancellation: RoutedProviderCancellation,
+    ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
         let agent_id = agent_id.trim();
         if agent_id.is_empty() {
             return Err(ProviderSessionError::Protocol(
                 "Runner provider agent id is empty".into(),
             ));
         }
-        self.register_internal(Some(agent_id.to_string()), stream_id)
+        self.register_internal(Some(agent_id.to_string()), stream_id, cancellation)
     }
 
     fn register_internal(
         &self,
         agent_id: Option<String>,
         stream_id: &str,
+        cancellation: RoutedProviderCancellation,
     ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
         let stream_id = stream_id.trim();
         if stream_id.is_empty() {
@@ -134,7 +153,6 @@ impl RoutedProviderTaskRegistry {
                 "Runner provider stream already exists: {stream_id}"
             )));
         }
-        let cancellation = RoutedProviderCancellation::default();
         active.insert(
             stream_id.to_string(),
             ActiveRoutedProviderTask {
@@ -152,6 +170,22 @@ impl RoutedProviderTaskRegistry {
             .ok()
             .and_then(|active| active.get(stream_id).cloned())
             .is_some_and(|task| task.cancellation.cancel(reason))
+    }
+
+    pub fn cancel_for_agent(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        reason: impl Into<String>,
+    ) -> bool {
+        let reason = reason.into();
+        let cancellation = self.active.lock().ok().and_then(|active| {
+            active.get(stream_id)
+                .filter(|task| task.agent_id.as_deref() == Some(agent_id))
+                .map(|task| task.cancellation.clone())
+        });
+        // The captured token remains the target if the stream is replaced.
+        cancellation.is_some_and(|cancellation| cancellation.cancel(reason))
     }
 
     pub fn agent_id_for_stream(&self, stream_id: &str) -> Option<String> {

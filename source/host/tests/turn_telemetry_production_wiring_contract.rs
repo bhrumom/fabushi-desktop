@@ -88,13 +88,26 @@ fn shipping_host_wires_frozen_turn_telemetry_sources() {
     for needle in [
         "runner_registry.agent_id_for_stream(stream_id)",
         "transcript_runtime.is_agent_running(agent_id)",
-        "runner_registry.cancel_stream(stream_id, reason)",
+        "let cancelled = cancel_routed_stream_request(",
+        "runner_registry, transcript_runtime, stream_id, cancelled_agent_id.as_deref(), reason,",
         "let fields = TurnInterruptFields {",
         "had_active_run: cancelled,",
         "was_in_flight,",
         "telemetry_logs.report_turn_interrupt(&fields)",
     ] {
         assert!(request.contains(needle), "request helper must report live registry/runtime interruption facts: {needle}");
+    }
+    let cancellation = production
+        .split("fn cancel_routed_stream_request(").nth(1)
+        .expect("actual shared cancellation helper")
+        .split("fn request_openclaw_chat_abort(").next().unwrap();
+    for needle in [
+        "transcript_runtime.request_routed_turn_cancellation(stream_id, agent_id, reason)",
+        "return changed;",
+        "runner_registry.cancel_stream_for_agent(agent_id, stream_id, reason)",
+        "runner_registry.cancel_stream(stream_id, reason)",
+    ] {
+        assert!(cancellation.contains(needle), "cancellation must use the captured lease or existing registry owner: {needle}");
     }
 
     for needle in [

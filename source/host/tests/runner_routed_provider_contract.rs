@@ -14,7 +14,7 @@ use mahayana_host_runtime::extensions::transcript::runner_registry::{
 use mahayana_host_runtime::runner::production_turn_run_shell_adapter::RoutedProviderCheckpointStore;
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, ROUTED_MCP_PROTOCOL_VERSION,
-    RoutedProviderTaskRegistry, RoutedToolBridge, start_routed_mcp_server,
+    RoutedProviderCancellation, RoutedProviderTaskRegistry, RoutedToolBridge, start_routed_mcp_server,
 };
 use serde_json::{Value, json};
 
@@ -117,6 +117,166 @@ fn runner_provider_registry_cancels_by_stream_and_retires_finished_runs() {
     assert_eq!(registry.active_count(), 0);
     assert!(!registry.cancel("stream-cancel", "late request"));
     assert_eq!(cancellation.reason().as_deref(), Some("user cancelled"));
+}
+
+#[test]
+fn runner_provider_registry_preserves_supplied_cancellation_and_registration_identity() {
+    let registry = RoutedProviderTaskRegistry::default();
+    let admitted = RoutedProviderCancellation::default();
+    assert!(admitted.cancel("cancelled before registration"));
+    let attached = registry
+        .register_for_agent_with_cancellation("agent-a", "shared-stream", admitted.clone())
+        .expect("attach the cancelled admitted token");
+    assert!(attached.is_cancelled());
+    assert_eq!(attached.reason().as_deref(), Some("cancelled before registration"));
+    assert!(!registry.cancel("shared-stream", "late reason"));
+    assert_eq!(registry.active_count(), 1, "attachment and cancellation retain the task");
+
+    let rejected = RoutedProviderCancellation::default();
+    assert!(registry
+        .register_for_agent_with_cancellation("agent-b", "shared-stream", rejected.clone())
+        .is_err());
+    assert_eq!(registry.agent_id_for_stream("shared-stream").as_deref(), Some("agent-a"));
+    assert_eq!(registry.cancel_agent("agent-b", "foreign cancellation"), 0);
+    assert!(!registry.cancel_for_agent("agent-b", "shared-stream", "foreign stream cancellation"));
+    assert!(!rejected.is_cancelled());
+    assert_eq!(admitted.reason().as_deref(), Some("cancelled before registration"));
+    assert_eq!(registry.active_count(), 1);
+
+    registry.finish("shared-stream");
+    assert_eq!(registry.active_count(), 0);
+    let replacement = RoutedProviderCancellation::default();
+    let attached_replacement = registry
+        .register_for_agent_with_cancellation("agent-b", "shared-stream", replacement.clone())
+        .expect("a retired stream can attach a new token");
+    assert!(!attached_replacement.is_cancelled());
+    assert!(!admitted.cancel("old owner retries cancellation"));
+    assert!(!registry.cancel_for_agent("agent-a", "shared-stream", "old agent retries cancellation"));
+    assert!(!registry.cancel_for_agent("agent-b", "missing-stream", "unknown stream"));
+    assert!(!replacement.is_cancelled(), "retired token cannot cancel its replacement");
+    assert!(registry.cancel_for_agent("agent-b", "shared-stream", "replacement cancelled"));
+    assert!(!registry.cancel_for_agent("agent-b", "shared-stream", "duplicate cancellation"));
+    assert!(replacement.is_cancelled());
+    assert_eq!(attached_replacement.reason().as_deref(), Some("replacement cancelled"));
+    assert_eq!(registry.active_count(), 1);
+    registry.finish("shared-stream");
+    assert_eq!(registry.active_count(), 0);
+}
+
+#[test]
+fn runner_provider_registry_rejects_empty_supplied_token_identity() {
+    let registry = RoutedProviderTaskRegistry::default();
+    for (agent, stream) in [("", "stream"), ("  ", "stream"), ("agent", ""), ("agent", "  ")] {
+        let token = RoutedProviderCancellation::default();
+        assert!(registry
+            .register_for_agent_with_cancellation(agent, stream, token.clone())
+            .is_err());
+        assert!(!token.is_cancelled());
+        assert_eq!(registry.active_count(), 0);
+    }
+}
+
+#[test]
+fn transcript_runner_registry_shares_direct_and_group_cancellation_across_attachment() {
+    for group_member in [false, true] {
+        for cancel_at in ["before", "lease-after", "registry-after"] {
+            let registry = TranscriptRunnerRegistry::default();
+            let admitted = RoutedProviderCancellation::default();
+            let stream = format!("shared-{group_member}-{cancel_at}");
+            if cancel_at == "before" {
+                assert!(admitted.cancel("cancelled before registration"));
+            }
+            let attached = if group_member {
+                registry.register_group_member_with_cancellation("agent-a", &stream, admitted.clone())
+            } else {
+                registry.register_routed_provider_with_cancellation("agent-a", &stream, true, admitted.clone())
+            }.expect("attach the admitted token");
+            assert_eq!(registry.agent_id_for_stream(&stream).as_deref(), Some("agent-a"));
+            assert_eq!(registry.active_count(), 1);
+
+            let foreign = RoutedProviderCancellation::default();
+            let duplicate = if group_member {
+                registry.register_group_member_with_cancellation("agent-b", &stream, foreign.clone())
+            } else {
+                registry.register_routed_provider_with_cancellation("agent-b", &stream, false, foreign.clone())
+            };
+            assert!(duplicate.is_err());
+            assert!(!foreign.is_cancelled());
+            assert_eq!(registry.agent_id_for_stream(&stream).as_deref(), Some("agent-a"));
+            assert!(!registry.cancel_stream_for_agent("agent-b", &stream, "foreign cancellation"));
+
+            let expected_reason = match cancel_at {
+                "before" => "cancelled before registration",
+                "lease-after" => {
+                    assert!(admitted.cancel("cancelled through lease after registration"));
+                    "cancelled through lease after registration"
+                }
+                "registry-after" => {
+                    assert!(registry.cancel_stream_for_agent("agent-a", &stream, "cancelled through registry"));
+                    "cancelled through registry"
+                }
+                _ => unreachable!(),
+            };
+            assert!(admitted.is_cancelled());
+            assert!(attached.is_cancelled());
+            assert_eq!(admitted.reason().as_deref(), Some(expected_reason));
+            assert_eq!(attached.reason().as_deref(), Some(expected_reason));
+            assert!(!registry.cancel_stream(&stream, "duplicate cancellation"));
+            assert!(!registry.cancel_stream_for_agent("agent-a", &stream, "duplicate scoped cancellation"));
+            assert_eq!(attached.reason().as_deref(), Some(expected_reason));
+            assert_eq!(registry.active_count(), 1, "cancellation never retires the task");
+            let current = if group_member {
+                registry.current_group_member_stream_id_for_agent("agent-a")
+            } else {
+                registry.current_routed_stream_id_for_agent("agent-a")
+            };
+            assert_eq!(current.as_deref(), Some(stream.as_str()));
+
+            registry.finish_routed_provider(&stream);
+            assert_eq!(registry.active_count(), 0);
+            assert!(registry.agent_id_for_stream(&stream).is_none());
+            assert!(registry.current_routed_stream_id_for_agent("agent-a").is_none());
+            assert!(registry.current_group_member_stream_id_for_agent("agent-a").is_none());
+            assert!(!registry.cancel_stream(&stream, "late cancellation"));
+            assert_eq!(admitted.reason().as_deref(), Some(expected_reason));
+        }
+    }
+}
+
+#[test]
+fn transcript_runner_registry_scoped_cancel_visits_both_registries_and_rejects_replacement() {
+    let registry = TranscriptRunnerRegistry::default();
+    let direct = RoutedProviderCancellation::default();
+    let group = RoutedProviderCancellation::default();
+    registry
+        .register_routed_provider_with_cancellation("agent-a", "both-stream", false, direct.clone())
+        .expect("direct task");
+    registry
+        .register_group_member_with_cancellation("agent-a", "both-stream", group.clone())
+        .expect("independent group task");
+    assert!(!registry.cancel_stream_for_agent("agent-b", "both-stream", "foreign cancellation"));
+    assert!(!direct.is_cancelled());
+    assert!(!group.is_cancelled());
+    assert!(registry.cancel_stream_for_agent("agent-a", "both-stream", "scoped cancellation"));
+    assert!(direct.is_cancelled());
+    assert!(group.is_cancelled(), "a matching direct task must not short-circuit the group task");
+    assert_eq!(direct.reason().as_deref(), Some("scoped cancellation"));
+    assert_eq!(group.reason().as_deref(), Some("scoped cancellation"));
+    assert!(!registry.cancel_stream_for_agent("agent-a", "both-stream", "duplicate cancellation"));
+    assert_eq!(registry.active_count(), 2, "requesting cancellation preserves both tasks");
+
+    registry.finish_routed_provider("both-stream");
+    let replacement = RoutedProviderCancellation::default();
+    registry
+        .register_group_member_with_cancellation("agent-b", "both-stream", replacement.clone())
+        .expect("new owner for the retired stream");
+    assert!(!registry.cancel_stream_for_agent("agent-a", "both-stream", "old agent cancellation"));
+    assert!(!replacement.is_cancelled());
+    assert!(registry.cancel_stream_for_agent("agent-b", "both-stream", "replacement cancellation"));
+    assert_eq!(replacement.reason().as_deref(), Some("replacement cancellation"));
+    assert_eq!(registry.active_count(), 1);
+    registry.finish_routed_provider("both-stream");
+    assert_eq!(registry.active_count(), 0);
 }
 
 #[test]

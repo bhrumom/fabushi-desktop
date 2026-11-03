@@ -306,12 +306,13 @@ impl FailureReadinessFixture {
         deps.transcript_runtime.accept_routed_send(&admission_args, |_| {
             Ok::<_, shipping::ProductionSendError>(shipping::PersistedSendContext::default())
         }).map_err(|error| error.to_string())?;
-        deps.transcript_runtime.begin_provider_run_with_kind(&self.agent_id, false);
-        let cancellation = deps.runner_registry.register_routed_provider(&self.agent_id, &stream)
-            .map_err(|error| error.to_string())?;
         let mut lease = shipping::RoutedTurnLeaseGuard::new(
             Arc::clone(&deps.transcript_runtime), self.agent_id.clone(), stream.clone(), deps.events.clone(),
-        );
+        ).map_err(|error| error.to_string())?;
+        deps.transcript_runtime.begin_provider_run_with_kind(&self.agent_id, false);
+        let cancellation = deps.runner_registry.register_routed_provider_with_cancellation(
+            &self.agent_id, &stream, false, lease.control.cancellation(),
+        ).map_err(|error| error.to_string())?;
         let receiver = deps.events.subscribe();
         if send {
             let entry = deps.transcript_runtime.append_generated_send_message_entry(

@@ -192,10 +192,22 @@ fn test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation() {
         .find("\n    fn call_openclaw_cron_list(")
         .map(|offset| abort_start + offset)
         .expect("shipping chat.abort function boundary exists");
-    let shipping_abort = &SHIPPING_HOST_MAIN[abort_start..abort_end];
-    assert!(shipping_abort.contains("active_stream_ids_for_agent"));
+    let dispatch = &SHIPPING_HOST_MAIN[abort_start..abort_end];
+    assert!(dispatch.contains("request_openclaw_chat_abort(args, &self.runner_registry, &self.transcript_runtime)"),
+        "the actual Gateway returns the shared cancellation helper's result");
+    let production = SHIPPING_HOST_MAIN.split("\n#[cfg(test)]\nmod tests {").next().unwrap();
+    let shipping_abort = production.split("fn request_openclaw_chat_abort(").nth(1)
+        .expect("shipping abort implementation")
+        .split("fn request_agent_cancellation(").next().unwrap();
+    let streams = production.split("fn routed_cancellation_streams(").nth(1)
+        .expect("actual lease/worker enumeration")
+        .split("fn cancel_routed_stream_request(").next().unwrap();
+    assert!(shipping_abort.contains("routed_cancellation_streams(runner_registry, transcript_runtime, agent_id)"));
+    assert!(streams.contains("transcript_runtime.routed_stream_ids_for_agent(agent_id)"));
+    assert!(streams.contains("runner_registry.active_stream_ids_for_agent(agent_id)"));
+    assert!(streams.contains("streams.dedup()"));
     assert!(shipping_abort.contains("or_else(|| args.get(\"sessionId\"))"));
-    assert!(shipping_abort.contains("cancel_stream(run_id, \"rpc\")"));
+    assert!(shipping_abort.contains("cancel_routed_stream_request(runner_registry, transcript_runtime, run_id, Some(agent_id), \"rpc\")"));
     assert!(shipping_abort.contains("requested_run_id"));
     assert!(shipping_abort.contains("is_none_or"));
     assert!(shipping_abort.contains("chat.abort runId must be a non-empty string"));

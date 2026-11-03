@@ -396,6 +396,9 @@ jobs:
               "source/node-agent-coordinator/src/main.rs",
               "source/node-agent-coordinator/tests/coordinator_contract.rs",
               "source/node-agent-coordinator/tests/production_protocol.rs",
+              "source/node-agent-coordinator/src/inference_router.rs",
+              "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+              "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
               "source/electron-main/adapters/attachment-gateway.ts",
               "source/electron-main/attachments/attachments.ts",
               "source/electron-main/coordinator/coordinator-main-port-client.ts",
@@ -405,11 +408,13 @@ jobs:
               "source/host/tests/background_wakes_production_contract.rs",
               "source/host/app/src/tests/channel_failure_handoff_tests.rs",
               "source/host/app/src/tests/channel_failure_readiness_tests.rs",
+              "source/host/app/src/tests/routed_preentry_cancellation_tests.rs",
               "source/host/app/src/tests/channel_host_lane_tests.rs",
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
               "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
               "source/host/src/extensions/transcript/pending_wake_rearm.rs",
               "source/host/src/extensions/transcript/production_runtime.rs",
+              "source/host/src/extensions/transcript/runner_registry.rs",
               "source/host/tests/pending_wake_rearm_contract.rs",
               "source/host/tests/durable_recovery_stores_contract.rs",
               "source/host/tests/transcript_manager_contract.rs",
@@ -426,6 +431,9 @@ jobs:
               "source/host/tests/production_turn_input_projection_contract.rs",
               "source/host/tests/turn_toolset_contract.rs",
               "source/host/tests/runner_routed_provider_contract.rs",
+              "source/host/tests/openclaw_chat_cron_node_contract.rs",
+              "source/host/tests/turn_telemetry_production_wiring_contract.rs",
+              "source/host/tests/group_member_runner_deletion_production_contract.rs",
               "source/host/tests/openclaw_channel_delivery_contract.rs",
               "source/host/tests/external_machine_tool_contract.rs",
               "source/host/tests/sand_generate_image_tool_contract.rs",
@@ -950,6 +958,10 @@ jobs:
               tests::original_turn_recovery_tests::original_turn_marker_requalifies_actual_saved_custody_before_acknowledgment \
               tests::original_turn_recovery_tests::original_turn_ack_gate_retains_due_timer_attempt_and_bytes_until_marker_releases \
               tests::original_turn_recovery_tests::original_turn_checked_marker_migration_calls_no_consumer_for_invalid_whole_image \
+              tests::routed_preentry_cancellation_tests::routed_preentry_public_cancellation_stops_actual_start_before_model_and_preserves_input \
+              tests::routed_preentry_cancellation_tests::routed_preentry_cancel_after_model_capture_refuses_permission_and_allows_next_turn \
+              tests::routed_preentry_cancellation_tests::routed_preentry_late_registration_shares_cancellation_and_retains_custody_until_guard \
+              tests::routed_preentry_cancellation_tests::routed_preentry_stale_and_foreign_controls_cannot_retire_reused_stream \
               tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects \
               tests::listener_connect_resume_is_hidden_handoff_with_stable_nonce \
               tests::upgrade_marker_handoff_preserves_kickstart_intent_on_failure \
@@ -1272,6 +1284,8 @@ jobs:
             --test routed_send_acceptance_contract \
             --test transcript_extension_contract \
             --test turn_telemetry_production_wiring_contract \
+            --test openclaw_chat_cron_node_contract \
+            --test group_member_runner_deletion_production_contract \
             --test production_turn_run_shell_adapter_contract \
             --test runner_effect_custody_contract \
             --test mcp_meta_tools_contract \
@@ -1734,7 +1748,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          coordinator_command=(cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract --test production_protocol)
+          coordinator_command=(cargo test --locked --manifest-path source/node-agent-coordinator/Cargo.toml --test coordinator_contract --test mcp_lifecycle_relay_contract --test runner_tool_relay_contract --test production_protocol --test inference_host_boundary_contract)
           mkdir -p .evidence
           coordinator_status=0
           "${coordinator_command[@]}" > .evidence/coordinator-command.log 2>&1 || coordinator_status=$?
@@ -1827,6 +1841,9 @@ jobs:
                       "source/node-agent-coordinator/src/mcp_lifecycle_relay.rs",
                       "source/node-agent-coordinator/tests/mcp_lifecycle_relay_contract.rs",
                       "source/node-agent-coordinator/tests/production_protocol.rs",
+                      "source/node-agent-coordinator/src/inference_router.rs",
+                      "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+                      "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
                       "source/shared/rpc/coordinator-main.ts",
                   )
               },
@@ -1868,6 +1885,15 @@ jobs:
           all_exits = [line.split("\t") for line in (root / "command-exit-codes.tsv").read_text().splitlines()]
           exits = [row for row in all_exits if row[0] == "integration-contracts"]
           required_host = [
+              "test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation",
+              "shipping_host_wires_frozen_turn_telemetry_sources",
+              "group_member_registry_is_independent_and_preemption_state_is_consumable",
+              "shipping_group_member_turn_preemption_and_deletion_use_the_independent_owner",
+              "deletion_drain_tracks_pending_exclusive_turn_dispatch_until_all_lanes_settle",
+              "runner_provider_registry_preserves_supplied_cancellation_and_registration_identity",
+              "runner_provider_registry_rejects_empty_supplied_token_identity",
+              "transcript_runner_registry_shares_direct_and_group_cancellation_across_attachment",
+              "transcript_runner_registry_scoped_cancel_visits_both_registries_and_rejects_replacement",
               "shipping_gateway_dispatches_desktop_mcp_to_the_existing_service_before_fallback",
               "desktop_mcp_dispatch_oracle_rejects_wrong_owner_ignored_result_and_dead_delegation",
               "native_link_preview_registration_keeps_inventory_and_owner",
@@ -1883,6 +1909,8 @@ jobs:
           required_coordinator = [
               "native_link_preview_carrier_reserves_cache_paths_for_main_data",
               "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash",
+              "runner_start_acceptance_preserves_exact_started_and_cancelled_outcomes",
+              "runner_start_cancellation_rejects_malformed_foreign_and_contradictory_replies",
           ]
           required_app = [
               "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
@@ -1921,7 +1949,7 @@ jobs:
               and all(not case["missing_or_nonunique_positive_results"] for case in executions))
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
-          receipt.update({"contract": "LPG-v1", "executions": executions,
+          receipt.update({"contract": "LPG-v1/PRC-v1", "executions": executions,
               "host_command": (root / "integration-contracts.command.txt").read_text().strip(),
               "host_exit_records": exits, "coordinator_command": coordinator["command"],
               "result": "passed" if accepted else "failed",
@@ -2045,6 +2073,8 @@ jobs:
               "fabushi_credential_context_scope": "One Responses transport permits token/expiry rotation only within its captured issuer/user/device/session and complete endpoint. Real loopback file-swap refusals and shipping Runner classification preserve typed permanent failures through advisory watchdog cancellation. Explicit user cancellation and unknown-effect custody retain their precedence. This does not pin unrelated new attempts or processes, revoke in-flight successful requests, or prove real account/provider compatibility.",
               "shipping_model_admission_test": "tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects",
               "shipping_model_admission_result": "passed",
+              "runner_preentry_cancellation_contract": "PRC-v1",
+              "runner_preentry_cancellation_scope": "Actual accepted-lease cancellation and owner-bound admission/registry/retirement. Controlled local oracles do not establish original-turn restart, external termination, real services or complete UI/platform acceptance.",
               "shipping_host_startup_admission_contract": "HSA-v1",
               "shipping_host_startup_admission_target": "source/host/app:startup_admission_contract",
               "shipping_host_startup_admission_result": "passed",
@@ -2087,7 +2117,7 @@ jobs:
               "shipping_runner_terminal_tests": ["tests::routed_provider_cancel_request_waits_for_worker_terminal", "tests::routed_provider_cancellation_only_marks_superseded_connectors", "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation", "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts", "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary", "tests::automation_terminal_event_maps_runner_settlement_without_guessing"],
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
-              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "connector_secret_store_contract", "widget_responses_full_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
+              "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "openclaw_chat_cron_node_contract", "group_member_runner_deletion_production_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "connector_secret_store_contract", "widget_responses_full_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
               "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
               "original_turn_completion_contract": "ORT-v1",
@@ -2726,6 +2756,8 @@ jobs:
               "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
               "source/host/src/extensions/transcript/pending_wake_rearm.rs",
               "source/host/src/extensions/transcript/production_runtime.rs",
+              "source/host/src/extensions/transcript/runner_registry.rs",
+              "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
               "source/host/src/extensions/transcript/transcript_manager.rs",
               "source/host/src/extensions/session/production.rs",
               "source/host/src/extensions/memory/memory_service.rs",
@@ -2786,6 +2818,9 @@ jobs:
               "source/host/tests/production_turn_input_projection_contract.rs",
               "source/host/tests/turn_toolset_contract.rs",
               "source/host/tests/runner_routed_provider_contract.rs",
+              "source/host/tests/openclaw_chat_cron_node_contract.rs",
+              "source/host/tests/turn_telemetry_production_wiring_contract.rs",
+              "source/host/tests/group_member_runner_deletion_production_contract.rs",
               "source/host/tests/openclaw_channel_delivery_contract.rs",
               "source/host/tests/external_machine_tool_contract.rs",
               "source/host/tests/sand_generate_image_tool_contract.rs",
@@ -3010,6 +3045,10 @@ jobs:
                   "explicit_empty_subagent_does_not_observe_catalog_discovery_failure",
               ]),
               ("received-catalog-runtime", base + ["--test", "runner_routed_provider_contract", "--", "--test-threads=1"], [
+                  "runner_provider_registry_preserves_supplied_cancellation_and_registration_identity",
+                  "runner_provider_registry_rejects_empty_supplied_token_identity",
+                  "transcript_runner_registry_shares_direct_and_group_cancellation_across_attachment",
+                  "transcript_runner_registry_scoped_cancel_visits_both_registries_and_rejects_replacement",
                   "received_catalog::invalid_refresh_clears_old_tools_until_valid_or_empty_recovery",
                   "received_catalog::ordinary_unavailability_preserves_last_wins_public_alias_and_real_results",
                   "received_catalog::unresolved_catalog_fault_survives_unavailable_refresh",
@@ -3017,6 +3056,13 @@ jobs:
                   "received_catalog::worker_join_failure_cannot_erase_recorded_refusal_or_return_clean_observation",
                   "received_catalog::claude_process::production_claude_catalog_fault_survives_cli_and_retry_boundaries",
                   "received_catalog::claude_process::production_claude_catalog_refusal_retains_completed_success_and_server_error_without_replay",
+              ]),
+              ("preentry-cancellation-wiring", base + ["--no-fail-fast", "--test", "openclaw_chat_cron_node_contract", "--test", "turn_telemetry_production_wiring_contract", "--test", "group_member_runner_deletion_production_contract", "--", "--test-threads=1"], [
+                  "test_ocrm_chat_o05_abort_invokes_runner_registry_cancellation",
+                  "shipping_host_wires_frozen_turn_telemetry_sources",
+                  "group_member_registry_is_independent_and_preemption_state_is_consumable",
+                  "shipping_group_member_turn_preemption_and_deletion_use_the_independent_owner",
+                  "deletion_drain_tracks_pending_exclusive_turn_dispatch_until_all_lanes_settle",
               ]),
               ("received-catalog-retry", base + ["--lib", "runner::production_turn_run_shell_adapter::tests::received_mcp_catalog_permanent_retry_policy_preserves_custody_precedence", "--", "--exact", "--test-threads=1"], [
                   "runner::production_turn_run_shell_adapter::tests::received_mcp_catalog_permanent_retry_policy_preserves_custody_precedence",
@@ -3036,7 +3082,7 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1"],
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -3370,11 +3416,14 @@ jobs:
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
               "source/host/app/src/tests/channel_failure_handoff_tests.rs",
               "source/host/app/src/tests/channel_failure_readiness_tests.rs",
+              "source/host/app/src/tests/routed_preentry_cancellation_tests.rs",
               "source/host/app/src/tests/channel_host_lane_tests.rs",
               "source/host/src/extensions/transcript/background_wakes.rs",
               "source/host/src/extensions/transcript/sand_pending_wake_store.rs",
               "source/host/src/extensions/transcript/pending_wake_rearm.rs",
               "source/host/src/extensions/transcript/production_runtime.rs",
+              "source/host/src/extensions/transcript/runner_registry.rs",
+              "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
               "source/host/src/extensions/transcript/transcript_manager.rs",
               "projects/openclaw-rust/docs/specs/device-pairing-startup-durability.md",
               "source/host/app/tests/startup_admission_contract.rs",
@@ -3397,7 +3446,7 @@ jobs:
               "source/host/src/runner/routed_provider_runtime.rs",
           ]
           receipt = {
-              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1",
+              "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
@@ -3409,7 +3458,7 @@ jobs:
               "rustc": subprocess.check_output(["rustc", "--version", "--verbose"], text=True),
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "commands": [], "cases": [], "result": "failed",
-              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. MCP cases exercise the actual Coordinator relay list decoder, typed secret-free whole-catalog refusal and accepted-wire compatibility with zero execution/review calls. Actual normal Host startup additionally covers profile custody and durable pairing admission before its existing daemon stop, with file-backed token/revision persistence and fixture-owned storage repair. Full startup, linked production package, live Gateway/device transport, real external provider/backend/client, macOS and whole-platform acceptance remain open. Mandatory raw-source CAS, legacy covered-slot, metadata/open races and unknown write effects remain open.",
+              "scope": "Actual Linux App cfg(not(test)) check, linked App test harness and exact Automation shipping-helper/mapper/backend callback cases with controlled external transport and executor, including late strict-invalid history custody, reopen and explicit repair, plus real public Settings dispatcher/owner secret and revision-input refusal, newer-default persistence across reopen and callback controls. Also executes exact shipping channel readiness, handoff and Host-lane/CWR cases through real Settings/Session/marker owners with controlled final Runner and transport I/O. MCP cases exercise the actual Coordinator relay list decoder, typed secret-free whole-catalog refusal and accepted-wire compatibility with zero execution/review calls. PRC-v1 exercises three shipping cancellation helpers and actual early start refusal, model-capture admission, shared late token and generation-bound retirement, with existing worker terminal controls; no original-turn restart or real provider effects are claimed. Actual normal Host startup additionally covers profile custody and durable pairing admission before its existing daemon stop, with file-backed token/revision persistence and fixture-owned storage repair. Full startup, linked production package, live Gateway/device transport, real external provider/backend/client, macOS and whole-platform acceptance remain open. Mandatory raw-source CAS, legacy-slot reconciliation, metadata/open races and unknown write effects remain open.",
           }
           def save():
               (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -3539,6 +3588,22 @@ jobs:
                   "tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch",
                   "tests::received_mcp_catalog_preserves_accepted_wire_values_and_order",
               ]
+              required += ["tests::routed_preentry_cancellation_tests::" + name for name in [
+                  "routed_preentry_public_cancellation_stops_actual_start_before_model_and_preserves_input",
+                  "routed_preentry_cancel_after_model_capture_refuses_permission_and_allows_next_turn",
+                  "routed_preentry_late_registration_shares_cancellation_and_retains_custody_until_guard",
+                  "routed_preentry_stale_and_foreign_controls_cannot_retire_reused_stream",
+              ]]
+              required += [
+                  "tests::model_admission_refusals_release_the_accepted_lease_before_permission_effects",
+                  "tests::routed_provider_cancel_request_waits_for_worker_terminal",
+                  "tests::routed_provider_cancellation_only_marks_superseded_connectors",
+                  "tests::routed_provider_terminal_snapshot_resists_late_success_and_failure_cancellation",
+                  "tests::routed_provider_terminal_preserves_waiting_review_and_delivery_facts",
+                  "tests::routed_provider_terminal_keeps_real_guard_custody_after_local_retirement",
+                  "tests::routed_provider_terminal_custody_refuses_missing_and_foreign_reports",
+                  "tests::routed_provider_terminal_shipping_wiring_preserves_finalization_boundary",
+              ]
               receipt["required_tests"] = required
               save()
               for index, name in enumerate(required):
@@ -3620,6 +3685,9 @@ jobs:
               "source/node-agent-coordinator/src/carrier.rs", "source/node-agent-coordinator/src/main.rs",
               "source/node-agent-coordinator/tests/coordinator_contract.rs",
               "source/node-agent-coordinator/tests/production_protocol.rs",
+              "source/node-agent-coordinator/src/inference_router.rs",
+              "source/node-agent-coordinator/tests/inference_host_boundary_contract.rs",
+              "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
               "source/shared/rpc/coordinator-main.ts",
               "source/electron-main/attachments/attachments.ts",
               "source/electron-main/adapters/attachment-gateway.ts",
@@ -3640,6 +3708,8 @@ jobs:
           coordinator_names = [
               "native_link_preview_carrier_reserves_cache_paths_for_main_data",
               "unix::shipping_coordinator_binary_enforces_protocol_and_settles_host_crash",
+              "runner_start_acceptance_preserves_exact_started_and_cancelled_outcomes",
+              "runner_start_cancellation_rejects_malformed_foreign_and_contradictory_replies",
           ]
           app_names = [
               "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
@@ -3651,14 +3721,14 @@ jobs:
                         "--test", "gateway_protocol_contract", "--test", "gateway_server_contract"], host_names),
               ("coordinator", ["cargo", "test", "--locked", "--no-fail-fast", "--target-dir", "source/host/target",
                         "--manifest-path", "source/node-agent-coordinator/Cargo.toml",
-                        "--test", "coordinator_contract", "--test", "production_protocol"], coordinator_names),
+                        "--test", "coordinator_contract", "--test", "production_protocol", "--test", "inference_host_boundary_contract"], coordinator_names),
               ("app", ["cargo", "test", "--locked", "--target-dir", "source/host/target",
                         "--manifest-path", "source/host/app/Cargo.toml", "--bin", "mahayana-app-host",
                         "tests::link_preview_gateway_tests::"], app_names),
           ]
           digest_inputs = lambda: {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs}
           receipt = {
-              "contract": "LPG-v1", "subject_commit": head,
+              "contract": "LPG-v1/PRC-v1-Coordinator", "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
               "run_id": os.environ["GITHUB_RUN_ID"], "run_attempt": os.environ["GITHUB_RUN_ATTEMPT"],

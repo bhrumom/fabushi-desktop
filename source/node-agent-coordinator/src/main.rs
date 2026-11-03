@@ -34,7 +34,7 @@ use mahayana_node_agent_coordinator::inference_router::{
     ActiveInferenceStreamRegistry, CoordinatorInferenceRouter, InferenceProvider,
     InferenceStreamSupersede, InferenceTaskQueue, InferenceTranscriptFile,
     RunnerInferenceEvent, StoredEntry, StoredRole, is_direct_user_send,
-    parse_host_routed_prompt_acceptance, parse_runner_inference_event,
+    parse_host_routed_prompt_acceptance, parse_runner_inference_event, require_runner_start_acceptance,
     agent_inbound_failure_gateway_args, agent_inbound_wake_prefers_urgent_queue,
     prepare_agent_inbound_wake_routes, redrive_agent_inbound_after_priority_preemption,
     should_append_user_message, should_await_turn,
@@ -2150,12 +2150,7 @@ fn execute_local_inference(
             "runner.startRoutedProvider",
             runner_args,
         )?;
-        if accepted.get("accepted").and_then(Value::as_bool) != Some(true) {
-            return Err(Failure::new(
-                "INFERENCE_RUNNER_REJECTED",
-                "Host Runner did not accept the routed provider request",
-            ));
-        }
+        require_runner_start_acceptance(&accepted, &stream_id)?;
         if state
             .active_inference_streams
             .mark_accepted(&agent_id, &stream_id)?

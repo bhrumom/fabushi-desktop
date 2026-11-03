@@ -919,3 +919,148 @@ integrated scope; authored tests do not establish runtime success. Fixed U,
 full product scope and all global flags remain unchanged. Original-turn disk
 claim/restore/settle, unknown-result reconciliation, real services, platforms
 and final G01–G12/AC01–AC24 acceptance remain open. No local/htch validation.
+
+## Accepted-turn cancellation before worker registration — PRC-v1
+
+Implementation base `7eb81e20b7dc2eac5a71516a9a0c78795d252e95`, fixed U
+`1440bb1771372334bea23d7642bb52deb7db1845`. Continue the existing Transcript
+lease, Runner cancellation token, App admission/finalizer and Coordinator
+consumer. No new runtime, scheduler, permission owner or durable store.
+
+Decision **PRC-01 — FIX / IMPL_BUG**: an accepted routed input already holds
+its Host lease and emits lifecycle started, but `runner.cancelRoutedProvider`,
+`interruptAgent` and `chat.abort` consult only the later worker registry.
+Before registration they return false and leave the input executable. The
+later registration creates an unrelated clean token. Decision **PRC-02 —
+FIX / IMPL_BUG**: the App guard settles by agent/stream without its captured
+ticket/generation; a stale guard must not retire a replacement lease.
+Decision **PRC-03 — FIX / IMPL_BUG**: a pre-worker cancellation must reach
+the existing cancelled consumer outcome. An ordinary start refusal would be
+recorded as inference failure; an accepted-false reply ignored by an internal
+waiter would wait for a worker that never started.
+
+Necessary source understanding reuses the exact-U full reads of
+`attempt-session-prepare.ts` (blob `b97bcf04649ea5787a341182123c62b20450bd6e`),
+`attempt-session-runtime-prepare.ts` (`da120eecf356c6b0e27d0add0b1b7e843bf747ec`),
+`attempt-session-settle.ts` (`e5735df007a1a469257c8797e6b2a2ce12e3ff0f`),
+`attempt-session-recovery.test.ts` (`de442b4724c1fdeebca5e820b71a8ff5842953f7`),
+and their checked original-input, permission, transcript-lifecycle and cleanup
+dependencies. These preserve cancellation/current-owner checks across
+preparation and real cleanup ownership; cleanup return is not proof of a
+stopped external effect. This is not a claim of complete upstream coverage.
+
+Literal source reads are appended to the existing `inventory/read-observations.json`
+with their exact U blobs and full line ranges; existing observations remain.
+Reader `/root/runner_restart_next_batch` fully read the four files above plus
+the following direct constraints. Root inspected the reported call-chain and
+matched the target consumers. Known observed edges do not assert recursive
+dependency closure or semantic coverage of all responsibilities in these files.
+
+| Exact-U path (under `src/agents/embedded-agent-runner/` unless stated) | Blob | Fully read lines |
+| --- | --- | --- |
+| `run/pre-persisted-user-turn.ts` | `346f5d38c39b9805a9f0f9c8768f0cb3c632cb82` | 1–623 |
+| `run/attempt-permission-prompt.ts` | `4d02a1608048625e944a6aa202096d727725c1ea` | 1–218 |
+| `run/attempt-transcript-lifecycle.ts` | `99daab9dec252a1826c09813e357704c66b3cea1` | 1–199 |
+| `run/attempt-subscription-cleanup.ts` | `c90c99156ecf10812708c221b014df9900a8ffe0` | 1–89 |
+| `wait-for-idle-before-flush.ts` | `9fa2d2954c1d3c9421a94ef5cdc22ad75b3cc3cb` | 1–40 |
+| `src/gateway/server-methods/chat-abort-handler.ts` | `5c24cf496ed11cea105887d1176f23468e461ec8` | 1–722 |
+| `src/gateway/server-methods/chat.ts` (navigation only) | `990a1bcba90efe1a66eed638dc3fac16fff4df83` | 1–81 |
+
+The four preparation/runtime/settlement/recovery sources above were read
+through lines 759/530/224/280 respectively. The abort handler captures the
+reserved preparation before awaiting, never reselects a successor by run ID,
+and distinguishes cancellation from physical cleanup and uncertain RPC return.
+Unexamined abort helper dependencies remain outside this bounded existing-owner
+repair and are not declared reviewed. The source materializer, not hand-edited
+shard counts, incorporates these literal observations in Actions.
+
+### Owner and entry contract
+
+- PRC-01: each admitted `RoutedTurnLease` creates one existing
+  `RoutedProviderCancellation`. A private-field start control captures its
+  agent, stream, ticket and generation, and the same token. Only one start
+  claimant may take its retirement responsibility. Capture rejects missing,
+  foreign or already-claimed leases; cancelled or scheduler-stale matching
+  leases still reach their guard so rejection cannot strand them.
+- PRC-02: capture the guard after parsing agent/stream and before fallible
+  Session/provider preparation. Recheck current identity and cancellation
+  before model/account reads and again at the owner admission boundary before
+  `permission.begin_turn`. Cancellation and preparation admission are ordered
+  under the existing Transcript mutex. Cancellation winning that boundary
+  causes no permission direction or subsequent preparation. Admission winning
+  first permits already-entered preparation; later cancellation is cooperative
+  and does not promise rollback of work that already happened.
+- PRC-03: model binding cannot swallow start-control rejection as optional
+  original-turn proof. Before provider-run/ACK/auto-review resources begin,
+  check the same control again. Later registration accepts its existing token
+  through `register_for_agent_with_cancellation`,
+  `register_routed_provider_with_cancellation` (including recovery shape), and
+  `register_group_member_with_cancellation`. Existing default-token wrappers
+  remain for direct users without a Transcript lease. A late attach must not
+  reset a prior cancellation, its first reason or first-change semantics.
+- PRC-04: the three actual cancellation commands include matching admitted
+  leases and registered workers, deduplicate stream identities, and preserve
+  agent/session route restrictions. A first cancellation returns true even
+  before registration; repeat/unknown/foreign requests return false. Unknown
+  streams create no future cancellation record. Cancellation alone never
+  removes the lease/registry entry, ends a run, opens the serial lane or emits
+  a provider completion. An owner admission/control, not an arbitrary reason
+  string or public request flag, governs execution and recovery rights.
+  A present live lease's captured token is authoritative even on a repeated
+  cancellation; do not reselect a later registry incarnation after cancelling
+  it. Only direct registry users with no live lease use the registry fallback.
+- PRC-05: guard retirement checks agent/stream/ticket/generation under the
+  same mutex before removal. The actual guard or worker finalizer retires
+  exactly its own lease; stale/foreign controls cannot release a successor.
+  The existing lifecycle ended and queue notifications follow actual retirement.
+- PRC-06: an internal typed pre-worker-cancelled start outcome is consumed by
+  every App caller. Gateway projection is `accepted:false,cancelled:true` for
+  the exact stream after guard retirement. The Coordinator maps only that
+  well-formed response to its existing `INFERENCE_PROVIDER_CANCELLED` outcome,
+  without writing an inference error or waiting for a nonexistent worker.
+  Group, Automation and revival callers use their existing aborted/no-execution
+  result contracts. Ordinary start errors and accepted workers keep existing
+  paths. No successful provider result or external effect receipt is invented.
+
+### Required Actions evidence and limits
+
+Decision **PRC-ORACLE-01 — FIX / TEST_FLAW** (direct source review, before
+repair): the existing chat-abort, turn-telemetry and App terminal-wiring checks
+assume inline cancellation or a direct worker-only registry call. Follow the
+actual Gateway delegation and lease-aware helper instead. Preserve the same
+session/run filtering, telemetry ownership, cancellation-only semantics and
+every finalizer-order assertion; execute both affected existing host targets.
+These source checks remain wiring evidence, separate from the actual-owner
+App cases below, and do not establish runtime success by themselves.
+
+Decision **PRC-ORACLE-02 — FIX / TEST_FLAW** (independent source integration
+review and root confirmation, before repair): the adjacent group-member
+deletion wiring oracle still requires the old default-token registration call.
+Require the actual group branch to pass the accepted lease's cancellation token
+to `register_group_member_with_cancellation`. Preserve every existing group
+isolation, preemption, deletion and serial-drain assertion. Select the complete
+three-test existing target in both scoped Host commands, require all three
+named positives, and bind its source hash in the existing receipts. This does
+not change the group owner or substitute source wiring for runtime evidence.
+
+Use the actual accepted lease, model-admission/late-attach helpers, real
+file-backed Session/Settings and current permission owner. Controlled barriers
+may pause production boundaries but may not supply their decisions. Require:
+all three public cancellation commands before registration; cancellation before
+model reading and after account/model capture but before permission; unchanged
+permission, retained original input, no downstream preparation/provider/tool
+effect on that refusal; late registration retaining the cancelled token;
+duplicate, foreign and stale-control negatives; no lane/lifecycle release on a
+cancel request; exact finalizer retirement and a later successful turn. Retain
+the existing registered-worker finalizer and model-refusal tests. Check the
+Coordinator's exact cancellation response, malformed/foreign response refusal,
+normal acceptance and ordinary rejection. Internal waiters must not wait after
+typed pre-worker cancellation. Run affected shipping compilation and contracts
+on one frozen H in the existing Actions workflow, preserving incoming gates.
+
+This closes a live accepted-before-registration boundary only. Durable
+original-turn claim/revoke/seal, controlled process restart, unknown external
+effects, all provider/channel compatibility and final OCRM gates remain open.
+The protected existing `routed_send_acceptance_contract.rs` draft is not part of
+this implementation. No global completion or scoped verified flag is promoted
+by authored code, source review or an unrelated passing H.

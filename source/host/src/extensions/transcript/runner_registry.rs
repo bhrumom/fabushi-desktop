@@ -110,9 +110,24 @@ impl TranscriptRunnerRegistry {
         stream_id: &str,
         recovery_shaped: bool,
     ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        self.register_routed_provider_with_cancellation(
+            agent_id,
+            stream_id,
+            recovery_shaped,
+            RoutedProviderCancellation::default(),
+        )
+    }
+
+    pub fn register_routed_provider_with_cancellation(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        recovery_shaped: bool,
+        cancellation: RoutedProviderCancellation,
+    ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
         let cancellation = self
             .routed_provider_tasks
-            .register_for_agent(agent_id, stream_id)?;
+            .register_for_agent_with_cancellation(agent_id, stream_id, cancellation)?;
         self.routed_supersede_state
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
@@ -144,9 +159,22 @@ impl TranscriptRunnerRegistry {
         agent_id: &str,
         stream_id: &str,
     ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
+        self.register_group_member_with_cancellation(
+            agent_id,
+            stream_id,
+            RoutedProviderCancellation::default(),
+        )
+    }
+
+    pub fn register_group_member_with_cancellation(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        cancellation: RoutedProviderCancellation,
+    ) -> Result<RoutedProviderCancellation, ProviderSessionError> {
         let cancellation = self
             .group_member_tasks
-            .register_for_agent(agent_id, stream_id)?;
+            .register_for_agent_with_cancellation(agent_id, stream_id, cancellation)?;
         self.note_current_stream(&self.current_group_member_streams, agent_id, stream_id);
         Ok(cancellation)
     }
@@ -166,6 +194,20 @@ impl TranscriptRunnerRegistry {
         let reason = reason.into();
         self.routed_provider_tasks.cancel(stream_id, reason.clone())
             || self.group_member_tasks.cancel(stream_id, reason)
+    }
+
+    pub fn cancel_stream_for_agent(
+        &self,
+        agent_id: &str,
+        stream_id: &str,
+        reason: impl Into<String>,
+    ) -> bool {
+        let reason = reason.into();
+        let routed = self.routed_provider_tasks
+            .cancel_for_agent(agent_id, stream_id, reason.clone());
+        let group_member = self.group_member_tasks
+            .cancel_for_agent(agent_id, stream_id, reason);
+        routed || group_member
     }
 
     pub fn agent_id_for_stream(&self, stream_id: &str) -> Option<String> {
