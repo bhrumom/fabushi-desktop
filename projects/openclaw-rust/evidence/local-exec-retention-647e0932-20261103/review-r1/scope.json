@@ -1,0 +1,160 @@
+{
+  "schema": "ocrm-frozen-source-review-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXR-v1",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "base_commit": "a3a58c9bb5804041e2c2dacc1d7c51a2561efd01",
+  "base_tree": "2e2ab4f91f3b9a57564fe011a7355f21ee53cb0a",
+  "candidate_commit": "aa6cf8435457ecff9893adb81ce58495763e51e1",
+  "candidate_tree": "97c2f686ed953c3218db7558028d5914f2040fcd",
+  "scope": "Complete six-file source delta for protected LocalExec operation retention and bounded reservation, private journal v3 recovery/migration, existing Host/bridge regressions and native capture; only two existing ledger responsibilities and R16/AC11/AC16 acquire contract references. No new runtime or wire.",
+  "fixed_upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "authority": {
+    "path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+    "commit": "a3a58c9bb5804041e2c2dacc1d7c51a2561efd01",
+    "blob": "59f624bce2f9552cd9bd1134c1ff6facb6ed6cfc"
+  },
+  "repository_instructions": {
+    "path": "AGENTS.md",
+    "blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2"
+  },
+  "diff": {
+    "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/review-r1/full.diff",
+    "blob": "cf7c83c68c40c4958eeb5cc1b933ec9ddbcc68cb",
+    "hunks": 35,
+    "reconstruction": "Each complete GitHub compare hunk was applied to the exact old source and matched the entire independently fetched candidate blob; no binary or rename changes."
+  },
+  "files": [
+    {
+      "path": "projects/openclaw-rust/evidence/local-exec-retention-647e0932-20261103/source-contract.json",
+      "old_blob": null,
+      "new_blob": "5bfe96af850152b7d4aa753fe27361f9b280d031",
+      "old_mode": null,
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "added",
+      "rename": false,
+      "binary": false,
+      "hunks": 1,
+      "adds": 117,
+      "dels": 0,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "old_blob": "181b42cbfe625c3315dfd98bebf4ea3bb83920e9",
+      "new_blob": "e3523e0399fa40b5a575c2af6c27061cbae8f804",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 10,
+      "dels": 6,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "old_blob": "c1af912a6e9d01920ec618450397206494583f59",
+      "new_blob": "3032697ec150cea8e36348180ee763c946f7fc5f",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 3,
+      "adds": 6,
+      "dels": 3,
+      "complete": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "old_blob": "1876291c37991e047704105fc104587e3c6cf364",
+      "new_blob": "9e9e49980faf730b5277a12fcf20f249430753a5",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 4,
+      "adds": 18,
+      "dels": 4,
+      "complete": true
+    },
+    {
+      "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "old_blob": "cdfda2d2ca8c25a5ae1d5b15656a53176bc8d5e9",
+      "new_blob": "8f99af02826365fb2d12971114ff5bf62551883e",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 21,
+      "adds": 675,
+      "dels": 43,
+      "complete": true
+    },
+    {
+      "path": "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "old_blob": "9ffcc5994757b16c75963bfc9efdeb37699d1cd9",
+      "new_blob": "84897a0934d4728a511abb9e6f6ac4948fc96b86",
+      "old_mode": "100644",
+      "new_mode": "100644",
+      "type": "blob",
+      "status": "modified",
+      "rename": false,
+      "binary": false,
+      "hunks": 2,
+      "adds": 484,
+      "dels": 6,
+      "complete": true
+    }
+  ],
+  "adjacent_scope": [
+    "source/host/src/extensions/local_exec/extension.rs",
+    "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+    "source/host/src/extensions/local_exec/local_exec_error.rs",
+    "source/host/src/extensions/local_exec/production.rs",
+    "source/host/src/runner/host_external_machine_dependencies.rs",
+    "source/host/tests/runner_effect_custody_contract.rs",
+    "source/host/app/src/tests/local_exec_outcome_tests.rs",
+    "source/host/src/durable_file_policy.rs",
+    "source/host/src/host_paths.rs",
+    "source/host/Cargo.toml",
+    "source/host/Cargo.lock",
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py"
+  ],
+  "review_plan": {
+    "general": {
+      "model": "configured parent model",
+      "effort": "xhigh"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh"
+    },
+    "fresh_blind_workers": true,
+    "max_rounds": 10,
+    "reason": "State ownership, concurrency, durable migration, unknown effect custody, cross-platform child isolation and exact evidence selection require high-risk review."
+  },
+  "execution": "not-run; executable validation only in GitHub Actions at the frozen shipping subject after required shared contract repairs; no local/htch validation",
+  "limits": [
+    "No new LXR runtime or acceptance evidence exists.",
+    "Source acquisition is not semantic reading; no canonical source depth or eight global flags are promoted.",
+    "LXO/LPI proofs and historical H14 media results remain attached to their own subjects.",
+    "Shared PluginSkills v2 source fixes, FileTransfer custody, real devices/providers, packaging/rollback and final global gates remain open."
+  ]
+}
