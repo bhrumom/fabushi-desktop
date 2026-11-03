@@ -1764,6 +1764,24 @@
         ".github/workflows/rust-desktop-runtime.yml"
       ],
       "rationale": "The incoming current-owner adaptation adds reset() to the existing composer submission queue. Account replacement advances its generation, retires queued renderer records and releases the local per-agent lane without cancelling any Host-admitted work. Disposal reuses that same retirement operation. ProductionRenderer supplies account-scoped submission records and invokes reset through its existing account lifecycle; late outcomes cannot requeue a prior account or block a fresh account behind its unresolved response. Existing send, offline queue, failure and Agent semantics remain on the original owner. The actual renderer fixture covers queued and in-flight account replacement; these authored contracts do not implement Human message Retry or prove complete packaged acceptance."
+    },
+    {
+      "referencePath": "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
+      "expectedBaseParityMode": "reference-copy",
+      "parityMode": "typescript-port",
+      "targetBlobSha": "2955fbb0754b62bf252cb3f8c12d7ee764c38f51",
+      "behavioralEvidence": [
+        "frontend/src/recovered/features/conversation/cards/transcript-card/reaction-picker.tsx",
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "frontend/src/production/ProductionRenderer.tsx"
+      ],
+      "testEvidence": [
+        "desktop/e2e/native-message-projection.spec.ts",
+        "frontend/src/recovered/features/reaction-system.contract.test.ts",
+        ".github/workflows/native-service-contracts.yml",
+        ".github/workflows/rust-desktop-runtime.yml"
+      ],
+      "rationale": "NMR-26 reaction-picker production adjustment at exact taskbfafe567: the original ordinary toolbar child placed the first emoji outside the visible viewport for older Human transcript rows. Keep the existing message Action, ReactionPicker, controller, Host and Session canonical reaction owners; only the visual picker is portaled to a viewport-bounded overlay with scroll/resize/content-position updates, focus restoration and keyboard loop. Controller-originated selection now completes the same onReacted callback as transport selection without changing the network mutation owner. Real Chromium NMR-26 exercises old-row click and settlement, bottom-of-transcript geometry, Escape/Tab focus behavior, and unchanged data/event assertions. Full packaged visual/a11y and independent acceptance remain open."
     }
   ]
 }
