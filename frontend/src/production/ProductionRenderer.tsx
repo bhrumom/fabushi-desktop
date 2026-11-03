@@ -3679,50 +3679,46 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   }, [acknowledgementController]);
 
   const resendFailedSend = useCallback(async (entry: TranscriptMessage) => {
-    const agentId = activeAgentIdRef.current;
-    if (client == null || !agentId) return;
-    const clientNonce = makeClientNonce();
-    const pendingId = `pending-${clientNonce}`;
-    const enteredAt = Date.now();
-    composerSubmissionQueue.discard(entry.clientNonce ?? "");
-    const retryAttachments = (entry.attachments ?? []).map(({ path, name }) => ({ path, name }));
-    const retried = entry.clientNonce != null && acknowledgementController.retryFailed({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
-      agentId,
-      nonce: entry.clientNonce,
-      freshNonce: clientNonce,
-      entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments)
-    });
-    if (!retried) acknowledgementController.insertOptimistic({
-      accountSlot: acknowledgementScopeRef.current.accountSlot,
-      agentId,
-      nonce: clientNonce,
-      entries: optimisticAcknowledgementEntries(clientNonce, retryAttachments),
-      phase: "pending"
-    });
+    const conversationId = activeAgentIdRef.current;
+    const clientNonce = entry.clientNonce;
+    if (client == null || !conversationId || !clientNonce || entry.delivery !== "failed") return;
+    // The durable Host outbox owns retry payload, nonce and uploaded resources.
+    // A renderer retry must never restage attachments or mint a new identity.
+    if (resendSubmissionNoncesRef.current.has(clientNonce)) return;
+    const accountSlot = acknowledgementScopeRef.current.accountSlot;
+    const accountGeneration = accountScopeGenerationRef.current;
+    const selectionGeneration = openAgentRequestGenerationRef.current;
+    if (accountSlot == null || selectionStore.get().currentAgentId !== conversationId) return;
+    const isCurrent = () => accountScopeGenerationRef.current === accountGeneration
+      && acknowledgementScopeRef.current.accountSlot === accountSlot
+      && activeAgentIdRef.current === conversationId
+      && selectionStore.get().currentAgentId === conversationId
+      && openAgentRequestGenerationRef.current === selectionGeneration;
+    resendSubmissionNoncesRef.current.add(clientNonce);
     setEntriesByAgent((current) => ({
       ...current,
-      [agentId]: (current[agentId] ?? []).map((candidate) => candidate.kind === "message" && candidate.id === entry.id
-        ? { ...candidate, id: pendingId, clientNonce, delivery: "pending", composedAtMs: undefined }
-        : candidate)
+      [conversationId]: (current[conversationId] ?? []).map((candidate) =>
+        candidate.kind === "message" && candidate.clientNonce === clientNonce
+          ? { ...candidate, delivery: "pending" }
+          : candidate)
     }));
-    const retrySubmission = {
-      nonce: clientNonce,
-      agentId,
-      prompt: entry.text.trim(),
-      attachments: retryAttachments,
-      createdAtMs: enteredAt
-    };
-    const retryAccountSlot = acknowledgementScopeRef.current.accountSlot;
-    const retryAccountGeneration = accountScopeGenerationRef.current;
-    submissionScopesRef.current.set(clientNonce, { generation: retryAccountGeneration, accountSlot: retryAccountSlot });
-    const journaledRetry = sendJournalApprovalLifecycle.resendFailed({ submission: retrySubmission, onJournaled: () => {} });
-    void journaledRetry.then((phase) => {
-      if (phase !== "sent") return;
-      if (accountScopeGenerationRef.current !== retryAccountGeneration || activeAgentIdRef.current !== retrySubmission.agentId || acknowledgementScopeRef.current.accountSlot !== retryAccountSlot) return;
-      composerDraftStore.clearRecovery(retrySubmission.agentId);
-    });
-  }, [client, composerDraftStore, composerSubmissionQueue, sendJournalApprovalLifecycle]);
+    try {
+      await client.call("retryHumanMessage", { conversationId, clientNonce });
+    } catch (error) {
+      if (isCurrent()) {
+        setEntriesByAgent((current) => ({
+          ...current,
+          [conversationId]: (current[conversationId] ?? []).map((candidate) =>
+            candidate.kind === "message" && candidate.clientNonce === clientNonce
+              ? { ...candidate, delivery: "failed" }
+              : candidate)
+        }));
+        setNotice(error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      resendSubmissionNoncesRef.current.delete(clientNonce);
+    }
+  }, [client, selectionStore]);
 
   const cancelQueuedSend = useCallback((entry: TranscriptMessage) => {
     if (entry.clientNonce != null && composerSubmissionQueue.cancelQueued(entry.clientNonce)) {
