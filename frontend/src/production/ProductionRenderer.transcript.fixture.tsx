@@ -32,14 +32,17 @@ function forbidden(name: string): never {
   unexpected.push(`desktop:${name}`);
   throw new Error(`Unexpected desktop operation: ${name}`);
 }
-const humans = [
-  { kind: "human", id: "human:alpha", title: "Alpha", participantIds: ["peer-alpha"], updatedAt: 2 },
-  { kind: "human", id: "human:beta", title: "Beta", participantIds: ["peer-beta"], updatedAt: 1 },
-];
+// Match the Host's persisted participantIds contract: exactly two distinct
+// string identities, with the currently authenticated local account first.
+function humanConversationsForAccount(accountId: string) {
+  return [
+    { kind: "human", id: "human:alpha", title: "Alpha", participantIds: [accountId, "peer-alpha"], updatedAt: 2 },
+    { kind: "human", id: "human:beta", title: "Beta", participantIds: [accountId, "peer-beta"], updatedAt: 1 },
+  ];
+}
 const controlled = new Set(["getHumanConversationTranscriptTail", "getHumanConversationTranscript", "searchHumanMessages"]);
 const fixedReplies: Record<string, unknown> = {
   listAgents: [], searchAgents: [], countAgents: 0,
-  listHumanConversations: humans, syncHumanConversations: humans,
   syncHumanConversation: null, syncHumanCalls: null, listCallSessions: [],
   listAllAutomations: [], getAgentAutomations: [], getAgentWorkflows: [],
   getTrays: [], getListenerIntegrations: { integrations: [] }, getAsyncTasks: [],
@@ -85,6 +88,8 @@ class FixturePort implements TransferredCoordinatorPort {
         (value) => respond({ status: "ok", value }),
         (message) => respond({ status: "failed", failure: { code: "fixture/read-failed", message: String(message) } }),
       );
+    } else if (request.method === "listHumanConversations" || request.method === "syncHumanConversations") {
+      queueMicrotask(() => respond({ status: "ok", value: humanConversationsForAccount(request.account) }));
     } else if (Object.prototype.hasOwnProperty.call(fixedReplies, request.method)) {
       queueMicrotask(() => respond({ status: "ok", value: fixedReplies[request.method] }));
     } else {
