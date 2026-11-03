@@ -28,6 +28,11 @@ import { OfficialMcpService } from "./official-mcp-service.js";
 import { SandUserSecretsStore } from "../secrets/user-secrets-store.js";
 import { createCoordinatorControlServer } from "../coordinator/coordinator-control-server.js";
 import {
+  createCoordinatorAccountRuntime,
+  type CoordinatorAccountBinding,
+  type CoordinatorAuthStatus,
+} from "../coordinator/coordinator-account-runtime.js";
+import {
   parseMcpRoutedOrigin,
   type CoordinatorControlSourceContext,
   type McpRoutedOrigin,
@@ -2027,13 +2032,75 @@ type OfficialAuthIo = {
   peekAccessToken(): Promise<string | null>;
 };
 type OfficialBrokerCall = { path: string; authorization: string | null; body: unknown };
+type OfficialProviderCall = { url: string; init: RequestInit; payload: { method: string; id?: number; params?: any } };
+type OfficialProviderTool = { name: string; description: string; inputSchema: Record<string, unknown> };
+
+function officialProviderReply(call: OfficialProviderCall, tools: readonly OfficialProviderTool[]): Response {
+  if (call.payload.method === "notifications/initialized") return new Response(null, { status: 202 });
+  const result = call.payload.method === "initialize" ? { protocolVersion: "2025-03-26" }
+    : call.payload.method === "tools/list" ? { tools }
+    : call.payload.method === "tools/call" ? { content: [{ type: "text", text: "official provider result" }], isError: false }
+    : assert.fail("unexpected official provider method");
+  return new Response(JSON.stringify({ jsonrpc: "2.0", id: call.payload.id, result }), {
+    headers: { "Content-Type": "application/json",
+      ...(call.payload.method === "initialize" ? { "Mcp-Session-Id": "official-dispatch-session" } : {}) },
+  });
+}
 
 // One event-loop turn drains the finite promise continuations released by an
 // owned I/O gate. Poll timers are invoked explicitly below; no elapsed delay
 // decides whether a production callback has completed.
 const drainOfficialContinuations = () => new Promise<void>(resolve => setImmediate(resolve));
 
+function officialAccountOwnerFixture(t: TestContext) {
+  const controls: {
+    transition?: (transition: { previousSlot: string; nextSlot: string | null }) => Promise<void>;
+  } = {};
+  const authorizations: string[] = [];
+  const captures: CoordinatorAccountBinding[] = [];
+  const problems: string[] = [];
+  const events: string[] = [];
+  let runtimeSequence = 0;
+  const owner = createCoordinatorAccountRuntime<CoordinatorAuthStatus>({
+    createRuntime() {
+      const id = ++runtimeSequence;
+      events.push("create:" + id);
+      return {
+        requestRendererPort() {},
+        revokeRendererPortRequest() { events.push("revoke-renderer:" + id); },
+        restart: async () => { events.push("restart:" + id); },
+        dispose: async () => { events.push("dispose:" + id); },
+      };
+    },
+    authorizeAccount: async slot => { authorizations.push(slot); return true; },
+    revokeRefusedAccount: async () => ({ kind: "revoked", status: { kind: "logged-out" } }),
+    prepareAccountTransition: async transition => { await controls.transition?.(transition); },
+    resetAccountState() {},
+    revokeMainDataPort() {},
+    deliverStatus() {},
+    onProblem: detail => { problems.push(detail); },
+  });
+  const ready = owner.start({ kind: "logged-in", authId: "official-lifetime-a" });
+  t.after(async () => {
+    await owner.dispose();
+    assert.deepEqual(problems, [], "the real account owner completed its controlled lifecycle");
+  });
+  return {
+    owner, controls, authorizations, captures, events, ready,
+    observe: (slot: string | null) => owner.observe(slot == null
+      ? { kind: "logged-out" } : { kind: "logged-in", authId: slot }),
+    captureOutputAccountBinding(): McpDispatchAssertion {
+      const binding = owner.captureCurrentBinding();
+      assert.ok(binding, "the real Coordinator account owner must have a current binding");
+      binding.assertCurrent();
+      captures.push(binding);
+      return () => { binding.assertCurrent(); return undefined; };
+    },
+  };
+}
+
 function officialProductionFixture(t: TestContext) {
+  const account = officialAccountOwnerFixture(t);
   const root = mkdtempSync(join(tmpdir(), "fabushi-official-lifetime-"));
   const previousRoot = process.env.SAND_DATA_ROOT;
   const previousBackend = process.env.FABUSHI_API_BASE_URL;
@@ -2065,6 +2132,9 @@ function officialProductionFixture(t: TestContext) {
   const vault = new Map<string, string>();
   const writes: Array<{ path: string; value: string }> = [];
   const broker: OfficialBrokerCall[] = [];
+  const provider: OfficialProviderCall[] = [];
+  const tools: OfficialProviderTool[] = [];
+  const reads: string[] = [];
   const broadcasts: Array<{ channel: string; value: unknown }> = [];
   const refreshes: unknown[][] = [];
   const tokenRequests: string[] = [];
@@ -2076,9 +2146,10 @@ function officialProductionFixture(t: TestContext) {
     nextService?: () => Promise<OfficialAuthIo>;
     nextToken?: () => Promise<string | null>;
     nextPeek?: () => Promise<string | null>;
-    nextRead?: () => void;
+    nextRead?: () => void | Promise<void>;
     nextWrite?: (write: { path: string; value: string }) => Promise<void>;
     broker?: (call: OfficialBrokerCall) => Promise<Response> | Response | undefined;
+    provider?: (call: OfficialProviderCall) => Promise<Response> | Response | undefined;
     broadcast?: () => void;
   } = {};
   const auth: OfficialAuthIo = {
@@ -2106,10 +2177,15 @@ function officialProductionFixture(t: TestContext) {
   };
   t.mock.method(SandUserSecretsStore.prototype, "reveal", async function (this: SandUserSecretsStore, key: string) {
     assert.equal(key, "OFFICIAL_MCP_INSTALLS");
-    const value = vault.get(storePath(this)) ?? null;
+    const path = storePath(this);
+    reads.push(path);
+    const value = vault.get(path) ?? null;
     const next = controls.nextRead;
     controls.nextRead = undefined;
-    next?.();
+    const completion = next?.();
+    // Existing void hooks keep their original synchronous timing. Only a
+    // deliberately returned promise adds an await to this native I/O port.
+    if (completion !== undefined) await completion;
     return value;
   });
   t.mock.method(SandUserSecretsStore.prototype, "upsert", async function (this: SandUserSecretsStore, entries: Readonly<Record<string, string>>) {
@@ -2145,11 +2221,11 @@ function officialProductionFixture(t: TestContext) {
       return json({});
     }
     assert.equal(url.href, "https://api.githubcopilot.com/mcp/", "unexpected provider network I/O");
-    const payload = JSON.parse(String(init.body));
-    if (payload.method === "notifications/initialized") return new Response(null, { status: 202 });
-    if (payload.method === "initialize") return json({ jsonrpc: "2.0", id: payload.id, result: { protocolVersion: "2025-03-26" } });
-    assert.equal(payload.method, "tools/list");
-    return json({ jsonrpc: "2.0", id: payload.id, result: { tools: [] } });
+    const call: OfficialProviderCall = { url: url.href, init, payload: JSON.parse(String(init.body)) };
+    provider.push(call);
+    const controlled = controls.provider?.(call);
+    if (controlled !== undefined) return await controlled;
+    return officialProviderReply(call, tools);
   });
   const originalSetTimeout = globalThis.setTimeout;
   const originalClearTimeout = globalThis.clearTimeout;
@@ -2170,6 +2246,7 @@ function officialProductionFixture(t: TestContext) {
 
   const context = {
     machineId: "official-lifetime-machine",
+    requireCoordinator: () => ({ getAccountRuntime: () => account.owner }),
     settings: { settingsStore: new SandSettingsStore(join(root, "settings.json")) },
     requireAccount: () => ({
       getAuthService: async () => {
@@ -2198,6 +2275,11 @@ function officialProductionFixture(t: TestContext) {
   const ports = createProductionMcpOAuthPorts();
   const adapter = createProductionMcpOAuthAdapter(ports).create(context);
   cleanupAdapter = adapter;
+  const install = async (values?: Record<string, string>) => {
+    await account.ready;
+    await account.owner.whenIdle();
+    return await adapter.installHostMcpPlugin({ entryId: OFFICIAL_ID, ...(values == null ? {} : { values }) });
+  };
   const runPoll = () => {
     assert.equal(polls.size, 1, "one actual official authorization poll must be scheduled");
     const [handle, callback] = polls.entries().next().value!;
@@ -2205,12 +2287,17 @@ function officialProductionFixture(t: TestContext) {
     callback();
   };
   return {
-    adapter, auth, controls, calls, broker, broadcasts, refreshes, tokenRequests, writes, vault, runPoll, dispose, json,
-    token, switchAccount: () => { subject = "official-lifetime-b"; },
+    adapter, auth, controls, calls, broker, provider, tools, reads, broadcasts, refreshes, tokenRequests, writes, vault, runPoll, dispose, json, account,
+    token, switchAccount: (nextSubject = "official-lifetime-b") => {
+      subject = nextSubject;
+      // Match auth wiring: observation retires the old owner synchronously.
+      // Individual cases control transition I/O, including the MCP reset edge.
+      account.observe(nextSubject);
+    },
     fallbackRefresh: (...args: [] | [unknown]) => ports.resolveRuntimeDeps(context).refreshHostMcp(...args),
-    install: (values?: Record<string, string>) => adapter.installHostMcpPlugin({ entryId: OFFICIAL_ID, ...(values == null ? {} : { values }) }),
+    install,
     authenticate: () => adapter.authenticateHostMcpServer({ serverId: OFFICIAL_ID, accountKey: "default", forceReauth: true }),
-    async ready() { await adapter.installHostMcpPlugin({ entryId: OFFICIAL_ID }); await drainOfficialContinuations(); },
+    async ready() { await install(); await drainOfficialContinuations(); },
   };
 }
 
@@ -2574,3 +2661,934 @@ for (const result of ["success", "failure"] as const) {
     }
   });
 }
+
+
+const OFFICIAL_DISPATCH_TOKEN = "official-dispatch-provider-token";
+const OFFICIAL_DISPATCH_ERROR = "Official MCP call failed or authorization changed. The call was not retried; confirm its outcome before retrying a write.";
+const OFFICIAL_DISPATCH_TOOLS: readonly OfficialProviderTool[] = [
+  { name: "read_issue", description: "Read an issue", inputSchema: { type: "object" } },
+  { name: "write_issue", description: "Write an issue", inputSchema: { type: "object" } },
+];
+const officialDispatchOptions = { concurrency: false, timeout: 10_000 };
+
+function officialCallEntries(calls: readonly OfficialProviderCall[]) {
+  return calls.filter(call => call.payload.method === "tools/call");
+}
+function assertOfficialDispatchError(value: unknown): void {
+  assert.ok(value instanceof McpResult);
+  assert.deepEqual(value.toJson(), generatedMcpResultFactory.error(OFFICIAL_DISPATCH_ERROR).toJson());
+}
+function assertOfficialDispatchSuccess(value: unknown, isError = false): asserts value is McpResult {
+  assert.ok(value instanceof McpResult);
+  assert.ok(value.result.case === "success");
+  assert.equal(value.result.value.isError, isError);
+}
+
+async function prepareOfficialDispatch(fixture: ReturnType<typeof officialProductionFixture>): Promise<void> {
+  fixture.tools.push(...OFFICIAL_DISPATCH_TOOLS);
+  await fixture.install({ ACCESS_TOKEN: OFFICIAL_DISPATCH_TOKEN });
+  await drainOfficialContinuations();
+}
+async function officialDispatchRequest(
+  fixture: ReturnType<typeof officialProductionFixture>,
+  source: CoordinatorControlSourceContext,
+  toolName = "read_issue",
+  args: unknown = { issue: 17, nested: { values: [null, false, 1.25, "literal"] } },
+) {
+  const catalog = await fixture.adapter.listRoutedTools(source);
+  assert.ok(Array.isArray(catalog));
+  const row = catalog.find((value: any) => value.providerIdentifier === OFFICIAL_ID && value.toolName === toolName);
+  assert.ok(row, "the actual default production chain must publish the requested official descriptor");
+  const origin = parseMcpRoutedOrigin(row.origin);
+  assert.ok(origin);
+  assert.equal(origin.coordinatorSourceId, source.sourceId);
+  assert.equal(row.name, OFFICIAL_ID + "_" + toolName);
+  return { providerIdentifier: row.providerIdentifier, name: row.name, toolName: row.toolName,
+    args, toolCallId: "official-dispatch-call", agentId: "official-dispatch-agent", origin };
+}
+
+for (const boundary of ["vault", "initialize", "notification", "pagination"] as const) {
+  test("OF-T1 default official source retirement at " + boundary + " refuses tools/call and permits a fresh source", officialDispatchOptions, async t => {
+    const fixture = officialProductionFixture(t);
+    const old = nativeRoutedSource(t);
+    const fresh = nativeRoutedSource(t);
+    const entered = deferred<void>();
+    const release = deferred<void>();
+    let operation: Promise<unknown> | undefined;
+    try {
+      await prepareOfficialDispatch(fixture);
+      const request = await officialDispatchRequest(fixture, old.source);
+      const before = fixture.provider.length;
+      if (boundary === "vault") {
+        fixture.controls.nextRead = async () => { entered.resolve(); await release.promise; };
+      } else {
+        let held = false;
+        const method = boundary === "notification" ? "notifications/initialized"
+          : boundary === "pagination" ? "tools/list" : "initialize";
+        fixture.controls.provider = async call => {
+          if (held || call.payload.method !== method) return officialProviderReply(call, fixture.tools);
+          held = true;
+          entered.resolve();
+          await release.promise;
+          if (boundary === "pagination") return fixture.json({
+            jsonrpc: "2.0", id: call.payload.id,
+            result: { tools: [OFFICIAL_DISPATCH_TOOLS[0]], nextCursor: "official-page-2" },
+          });
+          return officialProviderReply(call, fixture.tools);
+        };
+      }
+      operation = fixture.adapter.executeRoutedTool(request, old.source);
+      await entered.promise;
+      old.server.dispose();
+      assert.throws(old.source.assertCurrent, McpOriginRetiredError);
+      release.resolve();
+      assertOriginRejected(await operation);
+      assert.equal(officialCallEntries(fixture.provider).length, 0, "refusal proves zero tool-call fetch entries");
+      assert.equal(fixture.provider.length - before,
+        boundary === "vault" ? 0 : boundary === "initialize" ? 1 : boundary === "notification" ? 2 : 3,
+        "initialization/discovery entries are counted separately from tool effects");
+      fixture.controls.provider = undefined;
+      const current = await officialDispatchRequest(fixture, fresh.source);
+      assert.equal(current.origin.mcpAttemptId, request.origin.mcpAttemptId, "source retirement does not replace the current manager");
+      assert.notEqual(current.origin.coordinatorSourceId, request.origin.coordinatorSourceId);
+      assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(current, fresh.source));
+      assert.equal(officialCallEntries(fixture.provider).length, 1);
+      assert.deepEqual(officialCallEntries(fixture.provider)[0]!.payload.params, { name: current.toolName, arguments: current.args });
+    } finally {
+      release.resolve();
+      await Promise.allSettled(operation == null ? [] : [operation]);
+      await fixture.dispose();
+    }
+  });
+}
+
+test("OF-T1 default official Attempt reset cannot dispatch or borrow B after a held vault read", officialDispatchOptions, async t => {
+  const fixture = officialProductionFixture(t);
+  const old = nativeRoutedSource(t);
+  const fresh = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const release = deferred<void>();
+  let operation: Promise<unknown> | undefined;
+  try {
+    await prepareOfficialDispatch(fixture);
+    const request = await officialDispatchRequest(fixture, old.source);
+    const before = fixture.provider.length;
+    fixture.controls.nextRead = async () => { entered.resolve(); await release.promise; };
+    operation = fixture.adapter.executeRoutedTool(request, old.source);
+    await entered.promise;
+    await fixture.adapter.resetMcpManager();
+    assert.equal(old.source.assertCurrent(), undefined, "only the Attempt was retired");
+    const nativeBeforeReplay = { ...fixture.calls, reads: fixture.reads.length, provider: fixture.provider.length };
+    assertOriginRejected(await fixture.adapter.executeRoutedTool(request, old.source));
+    assert.deepEqual({ ...fixture.calls, reads: fixture.reads.length, provider: fixture.provider.length }, nativeBeforeReplay,
+      "stale intake cannot start native I/O or construct a replacement");
+    release.resolve();
+    assertOfficialDispatchError(await operation);
+    assert.equal(fixture.provider.length, before, "the disposed old service makes no provider handoff");
+    assert.equal(officialCallEntries(fixture.provider).length, 0);
+    const current = await officialDispatchRequest(fixture, fresh.source);
+    assert.notEqual(current.origin.mcpAttemptId, request.origin.mcpAttemptId);
+    const beforeSecondReplay = fixture.provider.length;
+    assertOriginRejected(await fixture.adapter.executeRoutedTool(request, old.source));
+    assert.equal(fixture.provider.length, beforeSecondReplay, "an existing B cannot authorize A's origin");
+    assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(current, fresh.source));
+    assert.equal(officialCallEntries(fixture.provider).length, 1);
+  } finally {
+    release.resolve();
+    await Promise.allSettled(operation == null ? [] : [operation]);
+    await fixture.dispose();
+  }
+});
+
+// Direct native I/O controls for the final resource boundary. The real service
+// owns every snapshot, inventory request, fence, send and result conversion.
+function officialDispatchServiceFixture(t: TestContext, captureOutputAccountBinding?: () => McpDispatchAssertion) {
+  const scope = "c".repeat(64);
+  let stored = "{}";
+  const calls: OfficialProviderCall[] = [];
+  const controls: {
+    nextRead?: (value: string) => Promise<string | null>;
+    provider?: (call: OfficialProviderCall) => Response | Promise<Response> | undefined;
+  } = {};
+  const service = new OfficialMcpService({
+    ...(captureOutputAccountBinding == null ? {} : { captureOutputAccountBinding }),
+    getScope: () => Promise.resolve(scope),
+    read: current => {
+      assert.equal(current, scope);
+      const next = controls.nextRead;
+      controls.nextRead = undefined;
+      // Return the owned promise directly: the ordering controls below bind to
+      // this actual read -> state -> fence -> request continuation chain.
+      return next == null ? Promise.resolve(stored) : next(stored);
+    },
+    write: async (current, value) => { assert.equal(current, scope); stored = value; },
+    fetch: (url, init) => {
+      const call: OfficialProviderCall = { url, init, payload: JSON.parse(String(init.body)) };
+      calls.push(call);
+      return Promise.resolve(controls.provider?.(call) ?? officialProviderReply(call, OFFICIAL_DISPATCH_TOOLS));
+    },
+  });
+  t.after(() => service.dispose());
+  return { service, calls, controls,
+    ready: () => service.install(OFFICIAL_ID, { ACCESS_TOKEN: OFFICIAL_DISPATCH_TOKEN }) };
+}
+
+test("OF-T2 official final send refuses retirement after its last awaited fence fulfills", officialDispatchOptions, async t => {
+  const fixture = officialDispatchServiceFixture(t);
+  const old = nativeRoutedSource(t);
+  const fresh = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const read = deferred<string | null>();
+  const retired = deferred<void>();
+  let saved = "";
+  let notifications = 0;
+  let operation: Promise<unknown> | undefined;
+  try {
+    await fixture.ready();
+    fixture.controls.provider = call => {
+      if (call.payload.method === "notifications/initialized" && ++notifications === 2) {
+        fixture.controls.nextRead = value => {
+          saved = value;
+          // Register this read reaction before state() awaits the promise.
+          // It queues the first microtask behind state's continuation; that
+          // queues the second behind fence's continuation and ahead of the
+          // resumed request. Retirement therefore follows the last fence
+          // fulfillment but precedes the final send, without elapsed delays.
+          void read.promise.then(() => queueMicrotask(() => queueMicrotask(() => {
+            old.server.dispose();
+            retired.resolve();
+          })));
+          entered.resolve();
+          return read.promise;
+        };
+      }
+      return undefined;
+    };
+    operation = fixture.service.execute(OFFICIAL_ID, "read_issue", { edge: "last-fence" }, old.source.assertCurrent);
+    await entered.promise;
+    assert.equal(officialCallEntries(fixture.calls).length, 0);
+    assert.equal(old.source.assertCurrent(), undefined);
+    read.resolve(saved);
+    await retired.promise;
+    assertOriginRejected(await operation);
+    assert.deepEqual(fixture.calls.map(call => call.payload.method), [
+      "initialize", "notifications/initialized", "tools/list", "initialize", "notifications/initialized",
+    ]);
+    fixture.controls.provider = undefined;
+    assertOfficialDispatchSuccess(await fixture.service.execute(OFFICIAL_ID, "read_issue", {}, fresh.source.assertCurrent));
+    assert.equal(officialCallEntries(fixture.calls).length, 1);
+  } finally {
+    read.resolve(saved);
+    await Promise.allSettled(operation == null ? [] : [operation]);
+  }
+});
+
+test("OF-T2 official payload serialization retires the source before the final fetch guard", officialDispatchOptions, async t => {
+  const fixture = officialDispatchServiceFixture(t);
+  const old = nativeRoutedSource(t);
+  const fresh = nativeRoutedSource(t);
+  await fixture.ready();
+  let serializations = 0;
+  const args = { toJSON() {
+    serializations += 1;
+    old.server.dispose();
+    return { nested: { original: [false, null, 7] } };
+  } };
+  assertOriginRejected(await fixture.service.execute(OFFICIAL_ID, "read_issue", args, old.source.assertCurrent));
+  assert.equal(serializations, 1);
+  assert.equal(officialCallEntries(fixture.calls).length, 0);
+  assert.equal(fixture.calls.length, 5, "only the completed inventory and call preparation entered fetch");
+  assertOfficialDispatchSuccess(await fixture.service.execute(OFFICIAL_ID, "read_issue", { current: true }, fresh.source.assertCurrent));
+  assert.equal(officialCallEntries(fixture.calls).length, 1);
+});
+
+
+test("OF-T3 default official concurrent sources keep separate assertions and refusal witnesses", officialDispatchOptions, async t => {
+  const fixture = officialProductionFixture(t);
+  const old = nativeRoutedSource(t);
+  const current = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const release = deferred<void>();
+  let operation: Promise<unknown> | undefined;
+  try {
+    await prepareOfficialDispatch(fixture);
+    const requestA = await officialDispatchRequest(fixture, old.source, "read_issue", { invocation: "A" });
+    const requestB = await officialDispatchRequest(fixture, current.source, "read_issue", { invocation: "B" });
+    assert.equal(requestA.origin.mcpAttemptId, requestB.origin.mcpAttemptId);
+    fixture.controls.nextRead = async () => { entered.resolve(); await release.promise; };
+    operation = fixture.adapter.executeRoutedTool(requestA, old.source);
+    await entered.promise;
+    old.server.dispose();
+    assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(requestB, current.source));
+    release.resolve();
+    assertOriginRejected(await operation);
+    assert.deepEqual(officialCallEntries(fixture.provider).map(call => call.payload.params),
+      [{ name: "read_issue", arguments: { invocation: "B" } }]);
+    assert.equal(current.source.assertCurrent(), undefined);
+    assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool({ ...requestB, args: { invocation: "B-again" } }, current.source));
+    assert.deepEqual(officialCallEntries(fixture.provider).map(call => call.payload.params.arguments.invocation), ["B", "B-again"]);
+  } finally {
+    release.resolve();
+    await Promise.allSettled(operation == null ? [] : [operation]);
+    await fixture.dispose();
+  }
+});
+
+for (const failure of ["owner-typed", "matching-text", "credential-typed", "serialization-typed", "entered-fetch-typed"] as const) {
+  test("OF-T3 official refusal provenance distinguishes " + failure, officialDispatchOptions, async t => {
+    const fixture = officialDispatchServiceFixture(t);
+    const origin = nativeRoutedSource(t);
+    await fixture.ready();
+    let assertions = 0;
+    const assertion: McpDispatchAssertion = () => {
+      assertions += 1;
+      if (failure === "matching-text") throw new Error(MCP_ORIGIN_RETIRED);
+      return origin.source.assertCurrent();
+    };
+    let args: unknown = { invocation: failure };
+    if (failure === "owner-typed") origin.server.dispose();
+    if (failure === "credential-typed") {
+      fixture.controls.nextRead = () => { throw new McpOriginRetiredError(); };
+    }
+    if (failure === "serialization-typed") {
+      args = { toJSON() { throw new McpOriginRetiredError(); } };
+    }
+    if (failure === "entered-fetch-typed") {
+      fixture.controls.provider = call => {
+        if (call.payload.method === "tools/call") throw new McpOriginRetiredError();
+        return undefined;
+      };
+    }
+    const result = await fixture.service.execute(OFFICIAL_ID, "read_issue", args, assertion);
+    if (failure === "owner-typed") assertOriginRejected(result);
+    else assertOfficialDispatchError(result);
+    assert.equal(officialCallEntries(fixture.calls).length, failure === "entered-fetch-typed" ? 1 : 0);
+    assert.equal(assertions, failure === "credential-typed" ? 0
+      : failure === "serialization-typed" ? 5 : failure === "entered-fetch-typed" ? 6 : 1);
+    assert.equal(fixture.calls.length, failure === "serialization-typed" ? 5 : failure === "entered-fetch-typed" ? 6 : 0,
+      "only the owner's final typed assertion proves a known pre-call refusal");
+    fixture.controls.provider = undefined;
+    const fresh = nativeRoutedSource(t);
+    const before = officialCallEntries(fixture.calls).length;
+    assertOfficialDispatchSuccess(await fixture.service.execute(OFFICIAL_ID, "read_issue", { recovered: true }, fresh.source.assertCurrent));
+    assert.equal(officialCallEntries(fixture.calls).length, before + 1, "a refusal witness never leaks into the next invocation");
+  });
+}
+
+for (const outcome of ["success", "server-error", "transport-failure", "http-failure", "jsonrpc-failure"] as const) {
+  test("OF-T4 default official entered " + outcome + " retains custody after source-only retirement", officialDispatchOptions, async t => {
+    const fixture = officialProductionFixture(t);
+    const old = nativeRoutedSource(t);
+    const entered = deferred<OfficialProviderCall>();
+    const response = deferred<Response>();
+    let operation: Promise<unknown> | undefined;
+    try {
+      await prepareOfficialDispatch(fixture);
+      const request = await officialDispatchRequest(fixture, old.source);
+      const vaultBefore = [...fixture.vault.entries()];
+      const writesBefore = fixture.writes.length;
+      const brokerBefore = fixture.broker.length;
+      const start = fixture.provider.length;
+      fixture.controls.provider = call => {
+        if (call.payload.method === "tools/call") { entered.resolve(call); return response.promise; }
+        return undefined;
+      };
+      operation = fixture.adapter.executeRoutedTool(request, old.source);
+      const call = await entered.promise;
+      assert.equal(officialCallEntries(fixture.provider).length, 1);
+      assert.deepEqual(call.payload.params, { name: request.toolName, arguments: request.args });
+      old.server.dispose();
+      assert.equal(call.init.signal?.aborted, false, "retiring the source does not dispose the current Official service");
+      if (outcome === "transport-failure") response.reject(new Error("lost provider reply " + OFFICIAL_DISPATCH_TOKEN));
+      else if (outcome === "http-failure") response.resolve(new Response(OFFICIAL_DISPATCH_TOKEN, { status: 503 }));
+      else if (outcome === "jsonrpc-failure") response.resolve(fixture.json({
+        jsonrpc: "2.0", id: call.payload.id, error: { code: -32000, message: OFFICIAL_DISPATCH_TOKEN },
+      }));
+      else response.resolve(fixture.json({
+        jsonrpc: "2.0", id: call.payload.id,
+        result: { content: [{ type: "text", text: "original private result " + OFFICIAL_DISPATCH_TOKEN }],
+          isError: outcome === "server-error" },
+      }));
+      const result = await operation;
+      if (outcome === "success" || outcome === "server-error") {
+        assertOfficialDispatchSuccess(result, outcome === "server-error");
+        assert.match(JSON.stringify(result.toJson()), /original private result \[redacted\]/);
+      } else assertOfficialDispatchError(result);
+      assert.ok(result instanceof McpResult);
+      assert.doesNotMatch(JSON.stringify(result.toJson()), new RegExp(OFFICIAL_DISPATCH_TOKEN));
+      assert.deepEqual(fixture.provider.slice(start).map(entry => entry.payload.method),
+        ["initialize", "notifications/initialized", "tools/list", "initialize", "notifications/initialized", "tools/call"],
+        "entered settlement does not retry or start replacement preparation");
+      assert.equal(officialCallEntries(fixture.provider).length, 1);
+      assert.equal(fixture.writes.length, writesBefore);
+      assert.equal(fixture.broker.length, brokerBefore);
+      assert.deepEqual([...fixture.vault.entries()], vaultBefore);
+      fixture.controls.provider = undefined;
+      const fresh = nativeRoutedSource(t);
+      const current = await officialDispatchRequest(fixture, fresh.source);
+      assert.equal(current.origin.mcpAttemptId, request.origin.mcpAttemptId);
+      assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(current, fresh.source));
+      assert.equal(officialCallEntries(fixture.provider).length, 2, "only an explicit fresh invocation adds another call");
+    } finally {
+      response.resolve(fixture.json({ jsonrpc: "2.0", id: 2, result: { content: [] } }));
+      await Promise.allSettled(operation == null ? [] : [operation]);
+      await fixture.dispose();
+    }
+  });
+}
+
+for (const fence of ["account-switch", "uninstall", "credential-revision", "service-reset"] as const) {
+  test("OF-T5 default official " + fence + " suppresses private output after tools/call entry", officialDispatchOptions, async t => {
+    const fixture = officialProductionFixture(t);
+    const source = nativeRoutedSource(t);
+    const entered = deferred<OfficialProviderCall>();
+    const response = deferred<Response>();
+    let operation: Promise<unknown> | undefined;
+    try {
+      await prepareOfficialDispatch(fixture);
+      const request = await officialDispatchRequest(fixture, source.source);
+      fixture.controls.provider = call => {
+        if (call.payload.method === "tools/call") { entered.resolve(call); return response.promise; }
+        return undefined;
+      };
+      operation = fixture.adapter.executeRoutedTool(request, source.source);
+      const call = await entered.promise;
+      assert.equal(officialCallEntries(fixture.provider).length, 1);
+      if (fence === "account-switch") fixture.switchAccount();
+      else if (fence === "uninstall") await fixture.adapter.uninstallHostMcpPlugin(OFFICIAL_ID);
+      else if (fence === "credential-revision") await fixture.install({ ACCESS_TOKEN: "official-replacement-provider-token" });
+      else await fixture.adapter.resetMcpManager();
+      assert.equal(source.source.assertCurrent(), undefined, "these controls exercise the independent account/install/service fences");
+      assert.equal(call.init.signal?.aborted, fence === "service-reset");
+      response.resolve(fixture.json({
+        jsonrpc: "2.0", id: call.payload.id,
+        result: { content: [{ type: "text", text: "must-suppress-private-official-output" }],
+          structuredContent: { private: "must-suppress-private-structured-output" } },
+      }));
+      const result = await operation;
+      assertOfficialDispatchError(result);
+      assert.ok(result instanceof McpResult);
+      assert.doesNotMatch(JSON.stringify(result.toJson()), /must-suppress-private/);
+      assert.equal(officialCallEntries(fixture.provider).length, 1, "fencing cannot authorize replay");
+      fixture.controls.provider = undefined;
+      await fixture.install({ ACCESS_TOKEN: "official-replacement-provider-token" });
+      const fresh = nativeRoutedSource(t);
+      const current = await officialDispatchRequest(fixture, fresh.source);
+      if (fence === "service-reset") assert.notEqual(current.origin.mcpAttemptId, request.origin.mcpAttemptId);
+      else assert.equal(current.origin.mcpAttemptId, request.origin.mcpAttemptId);
+      assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(current, fresh.source));
+      assert.equal(officialCallEntries(fixture.provider).length, 2);
+      assert.equal(new Headers(officialCallEntries(fixture.provider)[1]!.init.headers).get("Authorization"),
+        "Bearer official-replacement-provider-token");
+    } finally {
+      response.resolve(fixture.json({ jsonrpc: "2.0", id: 2, result: { content: [] } }));
+      await Promise.allSettled(operation == null ? [] : [operation]);
+      await fixture.dispose();
+    }
+  });
+}
+
+test("OF-T5 default official dispatch retains raw disable, provider credential, protocol and redaction contracts", officialDispatchOptions, async t => {
+  const fixture = officialProductionFixture(t);
+  const source = nativeRoutedSource(t);
+  try {
+    await prepareOfficialDispatch(fixture);
+    const disabled = await officialDispatchRequest(fixture, source.source);
+    const [path, value] = [...fixture.vault.entries()][0]!;
+    const stored = JSON.parse(value);
+    // The native vault I/O supplies a persisted disabled record. The real
+    // Official service still owns both listing filtration and call admission.
+    stored[OFFICIAL_ID].disabledTools = ["read_issue"];
+    stored[OFFICIAL_ID].revision = "official-disabled-fixture-revision";
+    fixture.vault.set(path, JSON.stringify(stored));
+    const before = fixture.provider.length;
+    assertOfficialDispatchError(await fixture.adapter.executeRoutedTool(disabled, source.source));
+    assert.equal(fixture.provider.length, before, "a retained descriptor cannot bypass its raw-name disable record");
+    assert.equal(officialCallEntries(fixture.provider).length, 0);
+    const catalog = await fixture.adapter.listRoutedTools(source.source);
+    assert.ok(Array.isArray(catalog));
+    assert.deepEqual(catalog.filter((row: any) => row.providerIdentifier === OFFICIAL_ID).map((row: any) => row.toolName), ["write_issue"]);
+    const args = { nested: { list: [null, false, 3.25, { literal: "unchanged" }] }, url: "https://untrusted.example/argument-only" };
+    const current = await officialDispatchRequest(fixture, source.source, "write_issue", args);
+    assert.equal(current.origin.mcpAttemptId, disabled.origin.mcpAttemptId);
+    fixture.controls.provider = call => call.payload.method === "tools/call" ? fixture.json({
+      jsonrpc: "2.0", id: call.payload.id,
+      result: { content: [{ type: "text", text: "echo " + OFFICIAL_DISPATCH_TOKEN }],
+        structuredContent: { [OFFICIAL_DISPATCH_TOKEN]: { value: OFFICIAL_DISPATCH_TOKEN } } },
+    }) : undefined;
+    const result = await fixture.adapter.executeRoutedTool(current, source.source);
+    assertOfficialDispatchSuccess(result);
+    assert.equal(officialCallEntries(fixture.provider).length, 1);
+    assert.deepEqual(officialCallEntries(fixture.provider)[0]!.payload, {
+      jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "write_issue", arguments: args },
+    });
+    assert.doesNotMatch(JSON.stringify(result.toJson()), new RegExp(OFFICIAL_DISPATCH_TOKEN));
+    assert.match(JSON.stringify(result.toJson()), /\[redacted\]/);
+    for (const call of fixture.provider) {
+      assert.equal(call.url, "https://api.githubcopilot.com/mcp/");
+      assert.equal(call.init.method, "POST");
+      assert.equal(call.init.redirect, "error");
+      const headers = new Headers(call.init.headers);
+      assert.equal(headers.get("Authorization"), "Bearer " + OFFICIAL_DISPATCH_TOKEN);
+      assert.notEqual(headers.get("Authorization"), "Bearer " + fixture.token());
+      if (call.payload.method !== "initialize") {
+        assert.equal(headers.get("Mcp-Session-Id"), "official-dispatch-session");
+        assert.equal(headers.get("MCP-Protocol-Version"), "2025-03-26");
+      }
+    }
+    assert.deepEqual(fixture.broker, [], "manual provider credentials do not authorize a broker request");
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+test("OF-T5 default official reset during its final output read suppresses private settlement", officialDispatchOptions, async t => {
+  const fixture = officialProductionFixture(t);
+  const source = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const release = deferred<void>();
+  let postResponseReads = 0;
+  let operation: Promise<unknown> | undefined;
+  try {
+    await prepareOfficialDispatch(fixture);
+    const request = await officialDispatchRequest(fixture, source.source);
+    const start = fixture.provider.length;
+    const vaultBefore = [...fixture.vault.entries()];
+    fixture.controls.provider = call => {
+      if (call.payload.method !== "tools/call") return undefined;
+      // The first read after this response belongs to request()'s final
+      // fence. Arm the next hook there so only execute()'s output fence
+      // is held, after request() has removed its controller from pending.
+      fixture.controls.nextRead = () => {
+        postResponseReads += 1;
+        fixture.controls.nextRead = () => {
+          postResponseReads += 1;
+          entered.resolve();
+          return release.promise;
+        };
+      };
+      return fixture.json({
+        jsonrpc: "2.0", id: call.payload.id,
+        result: {
+          content: [{ type: "text", text: "must-suppress-final-read-private-content" }],
+          structuredContent: { private: "must-suppress-final-read-private-structured" },
+        },
+      });
+    };
+    operation = fixture.adapter.executeRoutedTool(request, source.source);
+    await entered.promise;
+    assert.equal(postResponseReads, 2);
+    assert.equal(officialCallEntries(fixture.provider).length, 1);
+    const call = officialCallEntries(fixture.provider)[0]!;
+    assert.deepEqual(call.payload.params, { name: request.toolName, arguments: request.args });
+    assert.ok(call.init.signal);
+    assert.equal(call.init.signal.aborted, false);
+
+    await fixture.adapter.resetMcpManager();
+    assert.equal(source.source.assertCurrent(), undefined, "the native source itself remains current");
+    assert.equal(call.init.signal.aborted, false,
+      "request() already removed this completed call from pending; abort cannot mask the output fence");
+    assert.deepEqual([...fixture.vault.entries()], vaultBefore,
+      "reset leaves the original matching install revision intact");
+    // The existing native read fixture captured its text before entering
+    // this gate, so release returns the original matching revision.
+    release.resolve();
+    const result = await operation;
+    assertOfficialDispatchError(result);
+    assert.ok(result instanceof McpResult);
+    assert.doesNotMatch(JSON.stringify(result.toJson()), /must-suppress-final-read-private/);
+    assert.equal(postResponseReads, 2);
+    assert.equal(officialCallEntries(fixture.provider).length, 1);
+    assert.deepEqual(fixture.provider.slice(start).map(entry => entry.payload.method), [
+      "initialize", "notifications/initialized", "tools/list",
+      "initialize", "notifications/initialized", "tools/call",
+    ], "late suppression cannot retry or prepare a replacement invocation");
+    assert.equal(call.init.signal.aborted, false);
+
+    fixture.controls.provider = undefined;
+    const fresh = nativeRoutedSource(t);
+    const current = await officialDispatchRequest(fixture, fresh.source);
+    assert.notEqual(current.origin.coordinatorSourceId, request.origin.coordinatorSourceId);
+    assert.notEqual(current.origin.mcpAttemptId, request.origin.mcpAttemptId);
+    assert.equal(officialCallEntries(fixture.provider).length, 1,
+      "constructing and listing the replacement does not replay the original call");
+    assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(current, fresh.source));
+    assert.equal(officialCallEntries(fixture.provider).length, 2,
+      "only the explicit fresh invocation enters the replacement provider call");
+    assert.deepEqual(officialCallEntries(fixture.provider)[1]!.payload.params,
+      { name: current.toolName, arguments: current.args });
+  } finally {
+    release.resolve();
+    await Promise.allSettled(operation == null ? [] : [operation]);
+    await fixture.dispose();
+  }
+});
+
+test("OF-T5 official disposal after final fence fulfillment suppresses private settlement", officialDispatchOptions, async t => {
+  const fixture = officialDispatchServiceFixture(t);
+  const source = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const read = deferred<string | null>();
+  const disposed = deferred<void>();
+  let saved: string | null = null;
+  let postResponseReads = 0;
+  let operation: Promise<unknown> | undefined;
+  try {
+    await fixture.ready();
+    fixture.controls.provider = call => {
+      if (call.payload.method !== "tools/call") return undefined;
+      fixture.controls.nextRead = value => {
+        postResponseReads += 1;
+        fixture.controls.nextRead = value => {
+          postResponseReads += 1;
+          saved = value;
+          // Register before state() awaits this exact port promise.
+          // The first queued microtask follows state's continuation;
+          // the second follows fence's continuation and precedes the
+          // resumed execute(). A check only inside fence() is too early.
+          void read.promise.then(() => queueMicrotask(() => queueMicrotask(() => {
+            fixture.service.dispose();
+            disposed.resolve();
+          })));
+          entered.resolve();
+          return read.promise;
+        };
+        return Promise.resolve(value);
+      };
+      return new Response(JSON.stringify({
+        jsonrpc: "2.0", id: call.payload.id,
+        result: {
+          content: [{ type: "text", text: "must-suppress-final-continuation-private-content" }],
+          structuredContent: { private: "must-suppress-final-continuation-private-structured" },
+        },
+      }), { headers: { "Content-Type": "application/json" } });
+    };
+    operation = fixture.service.execute(
+      OFFICIAL_ID, "read_issue", { edge: "final-output-continuation" }, source.source.assertCurrent,
+    );
+    await entered.promise;
+    assert.equal(postResponseReads, 2);
+    assert.equal(typeof saved, "string");
+    assert.equal(source.source.assertCurrent(), undefined);
+    assert.equal(officialCallEntries(fixture.calls).length, 1);
+    const call = officialCallEntries(fixture.calls)[0]!;
+    assert.deepEqual(call.payload.params,
+      { name: "read_issue", arguments: { edge: "final-output-continuation" } });
+    assert.ok(call.init.signal);
+    assert.equal(call.init.signal.aborted, false);
+
+    read.resolve(saved);
+    await disposed.promise;
+    assert.equal(source.source.assertCurrent(), undefined,
+      "only the Official service lifetime ended; source currentness is not the output fence");
+    assert.equal(call.init.signal.aborted, false,
+      "the completed request controller is no longer pending when service disposal runs");
+    const result = await operation;
+    assertOfficialDispatchError(result);
+    assert.ok(result instanceof McpResult);
+    assert.doesNotMatch(JSON.stringify(result.toJson()), /must-suppress-final-continuation-private/);
+    assert.equal(postResponseReads, 2);
+    assert.equal(officialCallEntries(fixture.calls).length, 1);
+    assert.deepEqual(fixture.calls.map(entry => entry.payload.method), [
+      "initialize", "notifications/initialized", "tools/list",
+      "initialize", "notifications/initialized", "tools/call",
+    ], "output suppression preserves the entered call without replay or additional provider preparation");
+    assert.equal(call.init.signal.aborted, false);
+  } finally {
+    read.resolve(saved);
+    await Promise.allSettled(operation == null ? [] : [operation]);
+  }
+});
+
+
+test("OF-T6 default official account departure during its final output read suppresses private settlement", officialDispatchOptions, async t => {
+  const fixture = officialProductionFixture(t);
+  const source = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const release = deferred<void>();
+  const transitionEntered = deferred<void>();
+  const transitionRelease = deferred<void>();
+  let postResponseReads = 0;
+  let resets = 0;
+  let operation: Promise<unknown> | undefined;
+  try {
+    await prepareOfficialDispatch(fixture);
+    const request = await officialDispatchRequest(fixture, source.source);
+    const bindingA = fixture.account.owner.captureCurrentBinding();
+    assert.ok(bindingA);
+    const start = fixture.provider.length;
+    const vaultBefore = [...fixture.vault.entries()];
+    fixture.account.controls.transition = async transition => {
+      assert.deepEqual(transition, { previousSlot: "official-lifetime-a", nextSlot: "official-lifetime-b" });
+      transitionEntered.resolve();
+      await transitionRelease.promise;
+      await fixture.adapter.resetMcpManager();
+      resets += 1;
+    };
+    fixture.controls.provider = call => {
+      if (call.payload.method !== "tools/call") return undefined;
+      fixture.controls.nextRead = () => {
+        postResponseReads += 1;
+        fixture.controls.nextRead = () => {
+          postResponseReads += 1;
+          entered.resolve();
+          return release.promise;
+        };
+      };
+      return fixture.json({
+        jsonrpc: "2.0", id: call.payload.id,
+        result: {
+          content: [{ type: "text", text: "must-suppress-account-private-content" }],
+          structuredContent: { private: "must-suppress-account-private-structured" },
+        },
+      });
+    };
+    operation = fixture.adapter.executeRoutedTool(request, source.source);
+    await entered.promise;
+    assert.equal(postResponseReads, 2);
+    assert.equal(officialCallEntries(fixture.provider).length, 1);
+    const call = officialCallEntries(fixture.provider)[0]!;
+    assert.ok(call.init.signal);
+    fixture.switchAccount();
+    assert.throws(() => bindingA.assertCurrent(), /no longer current/);
+    assert.equal(fixture.account.owner.captureCurrentBinding(), null,
+      "observe retires A synchronously before queued transition work");
+    await transitionEntered.promise;
+    assert.equal(resets, 0, "account cleanup is held before the actual MCP reset");
+    assert.equal(source.source.assertCurrent(), undefined);
+    assert.equal(call.init.signal.aborted, false);
+    assert.deepEqual([...fixture.vault.entries()], vaultBefore);
+
+    release.resolve();
+    const result = await operation;
+    assertOfficialDispatchError(result);
+    assert.ok(result instanceof McpResult);
+    assert.doesNotMatch(JSON.stringify(result.toJson()), /must-suppress-account-private/);
+    assert.equal(resets, 0, "the still-live service must enforce the retired account binding");
+    assert.equal(postResponseReads, 2);
+    assert.equal(call.init.signal.aborted, false,
+      "the completed request is no longer pending and no service disposal masked account retirement");
+    assert.equal(officialCallEntries(fixture.provider).length, 1);
+    assert.deepEqual(fixture.provider.slice(start).map(entry => entry.payload.method), [
+      "initialize", "notifications/initialized", "tools/list",
+      "initialize", "notifications/initialized", "tools/call",
+    ], "late account suppression does not retry or prepare another invocation");
+
+    fixture.controls.provider = undefined;
+    transitionRelease.resolve();
+    await fixture.account.owner.whenIdle();
+    assert.equal(resets, 1);
+    assert.throws(() => bindingA.assertCurrent(), /no longer current/);
+    await fixture.install({ ACCESS_TOKEN: "official-account-b-provider-token" });
+    const fresh = nativeRoutedSource(t);
+    const current = await officialDispatchRequest(fixture, fresh.source);
+    assert.notEqual(current.origin.mcpAttemptId, request.origin.mcpAttemptId);
+    assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(current, fresh.source));
+    assert.equal(officialCallEntries(fixture.provider).length, 2);
+    assert.equal(new Headers(officialCallEntries(fixture.provider)[1]!.init.headers).get("Authorization"),
+      "Bearer official-account-b-provider-token");
+    assert.deepEqual(fixture.account.authorizations, ["official-lifetime-a", "official-lifetime-b"]);
+  } finally {
+    release.resolve();
+    transitionRelease.resolve();
+    await Promise.allSettled(operation == null ? [] : [operation]);
+    await fixture.account.owner.whenIdle();
+    await fixture.dispose();
+  }
+});
+
+test("OF-T6 official account retirement after final fence fulfillment suppresses private settlement", officialDispatchOptions, async t => {
+  const account = officialAccountOwnerFixture(t);
+  const fixture = officialDispatchServiceFixture(t, account.captureOutputAccountBinding);
+  const source = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const read = deferred<string | null>();
+  const retired = deferred<void>();
+  const transitionRelease = deferred<void>();
+  let saved: string | null = null;
+  let postResponseReads = 0;
+  let operation: Promise<unknown> | undefined;
+  try {
+    await account.ready;
+    await fixture.ready();
+    account.controls.transition = async () => { await transitionRelease.promise; };
+    fixture.controls.provider = call => {
+      if (call.payload.method !== "tools/call") return undefined;
+      fixture.controls.nextRead = value => {
+        postResponseReads += 1;
+        fixture.controls.nextRead = value => {
+          postResponseReads += 1;
+          saved = value;
+          // As in OF-T2, state -> fence -> execute are the real await
+          // continuations. Observe after fence fulfills but before execute
+          // resumes; do not dispose the service or retire the native source.
+          void read.promise.then(() => queueMicrotask(() => queueMicrotask(() => {
+            account.observe("official-lifetime-b");
+            retired.resolve();
+          })));
+          entered.resolve();
+          return read.promise;
+        };
+        return Promise.resolve(value);
+      };
+      return new Response(JSON.stringify({
+        jsonrpc: "2.0", id: call.payload.id,
+        result: {
+          content: [{ type: "text", text: "must-suppress-account-continuation-private-content" }],
+          structuredContent: { private: "must-suppress-account-continuation-private-structured" },
+        },
+      }), { headers: { "Content-Type": "application/json" } });
+    };
+    operation = fixture.service.execute(OFFICIAL_ID, "read_issue", { edge: "account-final-continuation" }, source.source.assertCurrent);
+    assert.equal(account.captures.length, 1, "capture occurs before execute's first await");
+    await entered.promise;
+    assert.equal(postResponseReads, 2);
+    const call = officialCallEntries(fixture.calls)[0]!;
+    assert.ok(call.init.signal);
+    read.resolve(saved);
+    await retired.promise;
+    assert.equal(source.source.assertCurrent(), undefined);
+    assert.throws(() => account.captures[0]!.assertCurrent(), /no longer current/);
+    const result = await operation;
+    assertOfficialDispatchError(result);
+    assert.ok(result instanceof McpResult);
+    assert.doesNotMatch(JSON.stringify(result.toJson()), /must-suppress-account-continuation-private/);
+    assert.equal(account.captures.length, 1, "publication cannot recapture the account owner");
+    assert.equal(call.init.signal.aborted, false);
+    assert.equal(officialCallEntries(fixture.calls).length, 1);
+    assert.deepEqual(fixture.calls.map(entry => entry.payload.method), [
+      "initialize", "notifications/initialized", "tools/list",
+      "initialize", "notifications/initialized", "tools/call",
+    ]);
+
+    fixture.controls.provider = undefined;
+    transitionRelease.resolve();
+    await account.owner.whenIdle();
+    assertOfficialDispatchSuccess(await fixture.service.execute(
+      OFFICIAL_ID, "read_issue", { fresh: "account-b" }, source.source.assertCurrent,
+    ));
+    assert.equal(account.captures.length, 2);
+    assert.equal(officialCallEntries(fixture.calls).length, 2,
+      "the same undisposed service accepts only the explicit fresh-account invocation");
+  } finally {
+    read.resolve(saved);
+    transitionRelease.resolve();
+    await Promise.allSettled(operation == null ? [] : [operation]);
+    await account.owner.whenIdle();
+  }
+});
+
+for (const replacement of ["B", "A-after-B"] as const) {
+  test("OF-T6 official captured account A cannot borrow " + replacement + " at private output publication", officialDispatchOptions, async t => {
+    const account = officialAccountOwnerFixture(t);
+    const fixture = officialDispatchServiceFixture(t, account.captureOutputAccountBinding);
+    const source = nativeRoutedSource(t);
+    const entered = deferred<void>();
+    const read = deferred<string | null>();
+    let saved: string | null = null;
+    let postResponseReads = 0;
+    let operation: Promise<unknown> | undefined;
+    try {
+      await account.ready;
+      await fixture.ready();
+      fixture.controls.provider = call => {
+        if (call.payload.method !== "tools/call") return undefined;
+        fixture.controls.nextRead = value => {
+          postResponseReads += 1;
+          fixture.controls.nextRead = value => {
+            postResponseReads += 1;
+            saved = value;
+            entered.resolve();
+            return read.promise;
+          };
+          return Promise.resolve(value);
+        };
+        return new Response(JSON.stringify({
+          jsonrpc: "2.0", id: call.payload.id,
+          result: {
+            content: [{ type: "text", text: "must-suppress-replaced-account-private-content" }],
+            structuredContent: { private: "must-suppress-replaced-account-private-structured" },
+          },
+        }), { headers: { "Content-Type": "application/json" } });
+      };
+      operation = fixture.service.execute(OFFICIAL_ID, "read_issue", { original: "account-a" }, source.source.assertCurrent);
+      assert.equal(account.captures.length, 1, "capture precedes every asynchronous credential operation");
+      await entered.promise;
+      assert.equal(postResponseReads, 2);
+      account.observe("official-lifetime-b");
+      await account.owner.whenIdle();
+      if (replacement === "A-after-B") {
+        account.observe("official-lifetime-a");
+        await account.owner.whenIdle();
+      }
+      const currentBinding = account.owner.captureCurrentBinding();
+      assert.ok(currentBinding);
+      currentBinding.assertCurrent();
+      assert.notEqual(currentBinding.runtimeIdentity, account.captures[0]!.runtimeIdentity);
+      assert.throws(() => account.captures[0]!.assertCurrent(), /no longer current/);
+      assert.equal(source.source.assertCurrent(), undefined);
+      const call = officialCallEntries(fixture.calls)[0]!;
+      assert.ok(call.init.signal);
+      assert.equal(call.init.signal.aborted, false);
+      // Native vault/scope inputs remain the captured A snapshot. Only the
+      // existing account lifetime distinguishes replacement from continuity.
+      read.resolve(saved);
+      const result = await operation;
+      assertOfficialDispatchError(result);
+      assert.ok(result instanceof McpResult);
+      assert.doesNotMatch(JSON.stringify(result.toJson()), /must-suppress-replaced-account-private/);
+      assert.equal(account.captures.length, 1, "late publication never acquires the replacement binding");
+      assert.equal(officialCallEntries(fixture.calls).length, 1);
+      assert.equal(fixture.calls.length, 6);
+      assert.equal(call.init.signal.aborted, false);
+
+      fixture.controls.provider = undefined;
+      assertOfficialDispatchSuccess(await fixture.service.execute(
+        OFFICIAL_ID, "read_issue", { fresh: replacement }, source.source.assertCurrent,
+      ));
+      assert.equal(account.captures.length, 2);
+      assert.equal(officialCallEntries(fixture.calls).length, 2);
+      assert.deepEqual(account.authorizations, replacement === "B"
+        ? ["official-lifetime-a", "official-lifetime-b"]
+        : ["official-lifetime-a", "official-lifetime-b", "official-lifetime-a"]);
+    } finally {
+      read.resolve(saved);
+      await Promise.allSettled(operation == null ? [] : [operation]);
+      await account.owner.whenIdle();
+    }
+  });
+}
+
+test("OF-T6 default official refuses execution while the canonical account binding is unavailable", officialDispatchOptions, async t => {
+  const fixture = officialProductionFixture(t);
+  const source = nativeRoutedSource(t);
+  const entered = deferred<void>();
+  const release = deferred<void>();
+  try {
+    await prepareOfficialDispatch(fixture);
+    const request = await officialDispatchRequest(fixture, source.source);
+    fixture.account.controls.transition = async () => { entered.resolve(); await release.promise; };
+    fixture.switchAccount();
+    await entered.promise;
+    assert.equal(fixture.account.owner.captureCurrentBinding(), null);
+    assert.equal(source.source.assertCurrent(), undefined);
+    const before = { ...fixture.calls, reads: fixture.reads.length, provider: fixture.provider.length };
+    assertOfficialDispatchError(await fixture.adapter.executeRoutedTool(request, source.source));
+    assert.deepEqual({ ...fixture.calls, reads: fixture.reads.length, provider: fixture.provider.length }, before,
+      "missing canonical binding fails before credential I/O or any provider preparation");
+    assert.equal(officialCallEntries(fixture.provider).length, 0);
+    release.resolve();
+    await fixture.account.owner.whenIdle();
+    await fixture.install({ ACCESS_TOKEN: "official-account-b-provider-token" });
+    const fresh = nativeRoutedSource(t);
+    const current = await officialDispatchRequest(fixture, fresh.source);
+    assert.equal(current.origin.mcpAttemptId, request.origin.mcpAttemptId,
+      "this missing-binding control never disposes or replaces the MCP service");
+    assertOfficialDispatchSuccess(await fixture.adapter.executeRoutedTool(current, fresh.source));
+    assert.equal(officialCallEntries(fixture.provider).length, 1);
+  } finally {
+    release.resolve();
+    await fixture.account.owner.whenIdle();
+    await fixture.dispose();
+  }
+});

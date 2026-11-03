@@ -15,6 +15,7 @@ on:
         options:
           - full
           - ocrm-config
+          - ocrm-mcp-native
   push:
     branches:
       - main
@@ -73,6 +74,7 @@ concurrency:
 
 jobs:
   rust-host:
+    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -3191,6 +3193,7 @@ jobs:
           retention-days: 90
 
   config-restore-linux:
+    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
     name: OCRM installation key restore boundary / Linux
     runs-on: ubuntu-24.04
     timeout-minutes: 45
@@ -3351,6 +3354,7 @@ jobs:
           retention-days: 90
 
   sqlite-native-path:
+    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -4590,6 +4594,7 @@ jobs:
           retention-days: 90
 
   media-store-windows:
+    if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) }}
     name: OCRM media cleanup / Windows
     runs-on: windows-2025
     timeout-minutes: 45
@@ -4636,7 +4641,7 @@ jobs:
           retention-days: 90
 
   pressure-profiler-platform:
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
     name: Pressure profiler / ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -4692,7 +4697,7 @@ jobs:
           -- --exact --nocapture
 
   platform-worker:
-    if: ${{ (github.event_name != 'workflow_dispatch' || inputs.validation_scope != 'ocrm-config') && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+    if: ${{ (github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -4735,7 +4740,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
-      OCRM_PLUGIN_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && 'true' || 'false' }}
+      OCRM_PLUGIN_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && (inputs.validation_scope == 'ocrm-config' || inputs.validation_scope == 'ocrm-mcp-native')) || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -4886,6 +4891,7 @@ jobs:
             desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/coordinator-executors.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/official-mcp.contract.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/backend-mcp-origin.contract.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs \
             2>&1 | tee .evidence/ocrm-plugin-edge.tap
@@ -4893,7 +4899,7 @@ jobs:
         shell: bash
         env:
           PLUGIN_EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          DESKTOP_VALIDATION_SCOPE: ${{ inputs.validation_scope || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && 'ocrm-config') || 'full' }}
+          DESKTOP_VALIDATION_SCOPE: ${{ inputs.validation_scope || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):'))) && 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && 'ocrm-config') || 'full' }}
         run: |
           mkdir -p .evidence
           python3 - <<'PY'
@@ -4936,6 +4942,7 @@ jobs:
               "MCP origin: guarded refusal does not attach its assertion to shared listing, auth or unguarded execution",
               "MCP origin: default desktop facade forwards the assertion through its real HTTP client factory",
               "control executor routes gateway, MCP, WebAuthn, and telemetry without absorbing Host behavior",
+              "MCP results retain their discriminants through native ports and the shipping Rust carrier",
               "OD-02 captured Attempt is reserved once and stale lookup never constructs a replacement",
               "OD-02/05 stale and malformed origins cannot construct or borrow manager B",
               "OD-03 native origin stamping preserves malformed received catalogs and permissive row values",
@@ -4951,6 +4958,65 @@ jobs:
           mcp_origin_occurrences = {name: len(re.findall(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap))
               for name in mcp_origin_cases}
           assert all(count == 1 for count in mcp_origin_occurrences.values()), "Missing or duplicate successful MCP origin control"
+          official_dispatch_cases = [
+              "OF-T1 default official source retirement at vault refuses tools/call and permits a fresh source",
+              "OF-T1 default official source retirement at initialize refuses tools/call and permits a fresh source",
+              "OF-T1 default official source retirement at notification refuses tools/call and permits a fresh source",
+              "OF-T1 default official source retirement at pagination refuses tools/call and permits a fresh source",
+              "OF-T1 default official Attempt reset cannot dispatch or borrow B after a held vault read",
+              "OF-T2 official final send refuses retirement after its last awaited fence fulfills",
+              "OF-T2 official payload serialization retires the source before the final fetch guard",
+              "OF-T3 default official concurrent sources keep separate assertions and refusal witnesses",
+              "OF-T3 official refusal provenance distinguishes owner-typed",
+              "OF-T3 official refusal provenance distinguishes matching-text",
+              "OF-T3 official refusal provenance distinguishes credential-typed",
+              "OF-T3 official refusal provenance distinguishes serialization-typed",
+              "OF-T3 official refusal provenance distinguishes entered-fetch-typed",
+              "OF-T4 default official entered success retains custody after source-only retirement",
+              "OF-T4 default official entered server-error retains custody after source-only retirement",
+              "OF-T4 default official entered transport-failure retains custody after source-only retirement",
+              "OF-T4 default official entered http-failure retains custody after source-only retirement",
+              "OF-T4 default official entered jsonrpc-failure retains custody after source-only retirement",
+              "OF-T5 default official account-switch suppresses private output after tools/call entry",
+              "OF-T5 default official uninstall suppresses private output after tools/call entry",
+              "OF-T5 default official credential-revision suppresses private output after tools/call entry",
+              "OF-T5 default official service-reset suppresses private output after tools/call entry",
+              "OF-T5 default official dispatch retains raw disable, provider credential, protocol and redaction contracts",
+              "OF-T5 default official reset during its final output read suppresses private settlement",
+              "OF-T5 official disposal after final fence fulfillment suppresses private settlement",
+              "OF-T6 default official account departure during its final output read suppresses private settlement",
+              "OF-T6 official account retirement after final fence fulfillment suppresses private settlement",
+              "OF-T6 official captured account A cannot borrow B at private output publication",
+              "OF-T6 official captured account A cannot borrow A-after-B at private output publication",
+              "OF-T6 default official refuses execution while the canonical account binding is unavailable",
+          ]
+          official_dispatch_occurrences = {name: len(re.findall(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap))
+              for name in official_dispatch_cases}
+          assert all(count == 1 for count in official_dispatch_occurrences.values()), "Missing or duplicate successful Official dispatch control"
+          official_regression_cases = [
+              "catalog pins all nine upstream HTTPS endpoints and labels preview and credential setup",
+              "install without credential remains needsAuth and does not contact provider",
+              "OAuth completes into the scoped native vault and refreshes tools without returning credentials to UI",
+              "manual credential replacement cannot orphan an OAuth grant",
+              "account change during pending OAuth cancels delivery and cannot install into another account",
+              "expired OAuth refresh is single-flight, stays before provider calls, and fences account switches",
+              "disconnect clears local credentials even when upstream revocation fails",
+              "native broker confines Fabushi authorization to its origin and rejects foreign redirect URLs",
+              "real initialize/list/call uses only provider credential, negotiated protocol and session",
+              "disabled tools leave inventory and cannot execute; update preserves credential; lifecycle persists",
+              "SSE notifications and paginated tool inventory are correlated and decoded",
+              "repeated pagination cursor fails explicitly",
+              "authorization failures are honest and uncertain writes are never retried",
+              "account change fences in-flight provider output and isolates installed state",
+              "uninstall fences in-flight output and response strings redact provider token",
+              "legacy lookup failure leaves catalog visible with explicit partial-load warning",
+              "official Add installs then authenticates and opens the native broker URL",
+              "official Add stops on installation failure and exposes authorization or opener failures",
+              "official optional credentials do not intercept Add while required and legacy setup remains",
+          ]
+          official_regression_occurrences = {name: len(re.findall(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap))
+              for name in official_regression_cases}
+          assert all(count == 1 for count in official_regression_occurrences.values()), "Missing or duplicate successful Official MCP compatibility control"
           counts = {}
           for label in ("tests", "pass", "fail", "cancelled", "skipped", "todo"):
               matches = re.findall(r"(?m)^# " + label + r" ([0-9]+)$", tap)
@@ -4978,6 +5044,12 @@ jobs:
                       "source/electron-main/mcp/mcp-runtime.contract.test.ts",
                       "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
                       "source/electron-main/mcp/mcp-runtime.ts",
+                      "source/electron-main/mcp/official-mcp-service.ts",
+                      "source/electron-main/mcp/official-mcp-oauth.ts",
+                      "source/electron-main/mcp/official-mcp-vault.ts",
+                      "source/electron-main/mcp/official-mcp.contract.test.ts",
+                      "source/shared/node/mcp/fabushi-official-catalog.ts",
+                      "docs/specs/fabushi-official-mcp-marketplace.md",
                       "source/electron-main/mcp/desktop-mcp-manager.ts",
                       "source/electron-main/coordinator/coordinator-control-server.ts",
                       "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
@@ -5011,7 +5083,7 @@ jobs:
               "desktop_mcp_intent_contract": "OCRM-MCP-DESKTOP-INTENT-v1",
               "desktop_mcp_intent_result": "passed",
               "desktop_mcp_intent_scope": "Actual registered IPC, production adapter and lazy Coordinator port under controlled remote I/O: one uninstall request, retained arguments and display result, confirmation before settings, no fallback/retry or extra refresh after false/error/settings failure or replacement leg. Rust confirmation/admission and native ingress require separately bound evidence; this renderer receipt asserts no native-job result. Live accounts and process-loss revocation remain open.",
-              "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test", "mcp-runtime.contract.test", "coordinator-executors.test", "backend-mcp-origin.contract.test"],
+              "node_contract_targets": ["host-plugin-skills-loader.contract.test","loader.contract.test","coordinator-control-server.contract.test","coordinator-executors.test","mcp-runtime.contract.test","official-mcp.contract.test","backend-mcp-origin.contract.test","main-edge-model.contract.test"],
               "node_contract_result": "passed",
               "materialization_attempt_custody_contract": "OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1",
               "materialization_attempt_custody_result": "passed",
@@ -5033,6 +5105,14 @@ jobs:
               "mcp_account_retirement_result": "passed",
               "mcp_account_retirement_scope": "Real runtime reset, manager publication, captured-account projection, persistent settings and discovery denial under held I/O. Late first-load success/unavailable, established cache, held backend list, reentrant disposal and replacement-manager positives are local lifecycle evidence; live accounts, remote work cancellation and full Rust permission migration remain open.",
               "mcp_runtime_construction_contract": "MCP-RUNTIME-CONSTRUCTION-v1",
+              "official_dispatch_contract": "MCP-OFFICIAL-DISPATCH-v1",
+              "official_dispatch_result": "passed-scoped",
+              "official_dispatch_required_tests": official_dispatch_cases,
+              "official_dispatch_positive_occurrences": official_dispatch_occurrences,
+              "official_regression_required_tests": official_regression_cases,
+              "official_regression_positive_occurrences": official_regression_occurrences,
+              "official_dispatch_scope": "Actual default production adapter, MCP Attempt, facade, Official service and scoped vault mapping with controlled native I/O and provider fetch. Each invocation retains its original source/Attempt assertion through preparation and the final serialized provider handoff; witnessed refusal proves zero tools/call entries, not zero prior initialization/discovery/broker I/O. Exact named controls cover final continuation, serialization, concurrent isolation, typed-error provenance, entered settlement without replay, account/install/disposal private-output fences including reset during the final vault read, service disposal and canonical account-owner retirement at the final output continuation, held actual account cleanup, old-A versus B/A-after-B binding isolation, fail-closed unavailable account binding, disabled sibling policy and provider credential/protocol/redaction compatibility. Direct service controls target the real final send boundary without replacing that enforcement. This receipt does not establish actual provider/account compatibility, broker final admission, Box final boundary, same-manager atomic revocation, native credential epochs, complete Rust policy migration or full OCRM acceptance.",
+              "native_scope_excluded_results": "Host, platform, packaged and real-service results are not inferred from this native Electron campaign. Earlier valid evidence retains its original commit and input identity.",
               "mcp_origin_dispatch_contract": "MCP-ORIGIN-DISPATCH-v1",
               "mcp_origin_dispatch_result": "passed-scoped",
               "mcp_origin_dispatch_required_tests": mcp_origin_cases,

@@ -23737,7 +23737,12 @@
         "source/shared/node/cursor-backend/backend-mcp-origin.contract.test.ts",
         "source/host/src/runner/coordinator_tool_relay.rs",
         "source/host/tests/production_turn_input_projection_contract.rs",
-        "source/host/tests/mcp_state_executor_contract.rs"
+        "source/host/tests/mcp_state_executor_contract.rs",
+        "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        "docs/specs/fabushi-official-mcp-marketplace.md"
       ],
       "existing_owner_candidates": [
         {

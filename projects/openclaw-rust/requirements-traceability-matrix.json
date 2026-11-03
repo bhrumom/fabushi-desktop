@@ -660,7 +660,12 @@
         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        "docs/specs/fabushi-official-mcp-marketplace.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R09",
@@ -2192,7 +2197,12 @@
         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/electron-main/mcp/desktop-mcp-manager.ts",
+        "source/electron-main/mcp/official-mcp.contract.test.ts",
+        "docs/specs/fabushi-official-mcp-marketplace.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC09",

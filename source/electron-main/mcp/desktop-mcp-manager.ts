@@ -261,7 +261,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
       ...(await official?.routedTools() ?? []),
     ],
     executeRoutedTool: (request, assertDispatchCurrent) => official?.owns(request.providerIdentifier)
-      ? official.execute(request.providerIdentifier, request.toolName, request.args)
+      ? official.execute(request.providerIdentifier, request.toolName, request.args, assertDispatchCurrent)
       : discovery.executeTool(
       undefined,
       {

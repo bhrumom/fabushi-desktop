@@ -1,0 +1,196 @@
+{
+  "format_version": 1,
+  "project_id": "OCRM-001",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch_contract": "MCP-OFFICIAL-DISPATCH-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "frozen_base": {
+    "commit": "9eb2d5ef6f28116a2f6c4933e75794f94c2b991d",
+    "tree": "8a3f669a5d8d1d1d1d2faee834e8844c2c7cfce7"
+  },
+  "preimplementation_spec": {
+    "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+    "blob": "0b7e75c1fb59d4d3a758002a2a1b386908aab5ce",
+    "published_commit": "b35408891546694606ed0750c60af0302669aac9",
+    "full_remote_readback": true,
+    "corrective_contract": {
+      "blob": "6a5cb35b0dda9da87e4d995465070b4aa1fdff3b",
+      "durable_before_source_edit": true,
+      "branch_publication": "blocked by automatic approval review; explicit public dossier authorization requested and still pending"
+    }
+  },
+  "production_behavior": "A routed Official MCP invocation cannot use a retired control source or MCP Attempt after credential/discovery/protocol awaits. The existing native Official service checks the captured synchronous assertion immediately before each provider fetch after body preparation. A request-local typed witness distinguishes zero tools/call entry from an entered result with uncertain effects. Result publication also rechecks this service's own lifetime synchronously after the last awaited output fence, retaining private-output suppression if disposal completed during that fence or before its continuation. The default native composition captures the canonical Coordinator account binding before asynchronous execution and checks that same binding at publication; source-only retirement remains distinct from account departure.",
+  "chain": [
+    {
+      "role": "entry/producer",
+      "owner": "CoordinatorControlServer and production Coordinator/account binding",
+      "paths": [
+        "source/electron-main/coordinator/coordinator-control-server.ts",
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/electron-main/coordinator/coordinator-account-runtime.ts"
+      ],
+      "contract": "Native source is created outside serialized args and captured to exact account runtime."
+    },
+    {
+      "role": "admission/Attempt",
+      "owner": "existing production MCP adapter and runtime",
+      "paths": [
+        "source/electron-main/adapters/mcp-oauth.ts",
+        "source/electron-main/mcp/mcp-runtime.ts"
+      ],
+      "contract": "Use original source and captured Attempt; stale invocation does not construct or borrow replacement B."
+    },
+    {
+      "role": "routing",
+      "owner": "DesktopMcpManagerFacade",
+      "path": "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "contract": "Forward the same McpDispatchAssertion to the Official service; no new policy/permission owner."
+    },
+    {
+      "role": "resource/state/storage",
+      "owner": "OfficialMcpService plus existing encrypted scoped vault and OAuth adapter",
+      "paths": [
+        "source/electron-main/mcp/official-mcp-service.ts",
+        "source/electron-main/mcp/official-mcp-vault.ts",
+        "source/electron-main/mcp/official-mcp-oauth.ts"
+      ],
+      "contract": "Existing account/install/revision/service fences and pinned provider endpoint remain. Invocation-local witness; no persistent schema or dependency change. Final private output also requires the originally captured canonical account binding; no replacement acquisition or new lifetime owner."
+    },
+    {
+      "role": "consumer/settlement",
+      "owner": "existing generated MCP result, native reply, Rust relay/Runner",
+      "paths": [
+        "source/shared/node/mcp/mcp-result-factory.ts",
+        "source/electron-main/coordinator/coordinator-executors.ts",
+        "source/host/src/runner/coordinator_tool_relay.rs"
+      ],
+      "contract": "Pre-call witnessed retirement returns existing rejected arm. Source-only retirement after call entry preserves success/isError; transport/HTTP/JSON-RPC error remains unknown/generic. Account/install/service fences continue to suppress private late output. No retry."
+    }
+  ],
+  "source_review": {
+    "existing_dossier": "projects/openclaw-rust/dossiers/mcp-channel-tools-scoped.md#6-existing-mcp-lifecycle-relay-waiter-custody--2026-11-02",
+    "fixed_u_sources": [
+      {
+        "path": "src/mcp/tools-stdio-server.ts",
+        "blob": "ef5a603bce25ebe2247966c40932e8539ae80632"
+      },
+      {
+        "path": "src/mcp/tools-stdio-server.lifecycle.test.ts",
+        "blob": "c3d3ee2748857f4915245ce02c07a28860c89478"
+      }
+    ],
+    "qualification": "Reuse the fixed-U bounded closing/admission/custody source facts, not historical discovery identities or full recursive MCP equivalence. Native Official transport semantics come from the existing FMCP production owner/spec and its actual callers/consumers. No new read-complete, semantic authority or source closure claim.",
+    "depth": {
+      "production_and_oracles": "deep: actual adapter/Attempt/facade/service/vault/OAuth caller chains, concurrency, preparation/final send, outcome and private-output fences",
+      "generated": "contract: existing result factory/generated defaults/native clone and unchanged wire contract",
+      "workflow_and_build": "contract: existing shipping esbuild options, actual full native target selection, positive exact names and subject-bound receipt",
+      "ledger_and_rtm": "disposition: references only; state and all eight completion flags remain unchanged"
+    }
+  },
+  "mapping_qualification": {
+    "existing_responsibility_context": "OCRM-RESP-MCP-TOOLS-STDIO-SERVER-001",
+    "unit": "OCRM-UNIT-MCP-001",
+    "rtm": [
+      "OCRM-R09",
+      "OCRM-AC09"
+    ],
+    "meaning": "These references extend the existing shared native MCP lifecycle/custody context. This batch does not implement or wire the stdio server responsibility, does not claim native Official adapters satisfy its Rust target, and does not close upstream client/server/resources/prompts/subscription compatibility.",
+    "source_owner_unchanged": "source/host/src/extensions/mcp/tools_stdio_server.rs",
+    "wiring": "not-wired",
+    "verification": "not-run",
+    "acceptance": "pending"
+  },
+  "recovery": {
+    "cancellation": "Original source or Attempt retirement refuses subsequent fetch admission, but does not retract an entered provider request. Existing service disposal aborts only owned requests and retains conservative unknown outcomes.",
+    "restart": "No persistent migration; fresh source/Attempt positive controls use the existing owner. Stale descriptors cannot authorize replay.",
+    "rollback": "Restoring pre-change source reopens the admission gap and cannot undo remote effects."
+  },
+  "oracles": {
+    "new_exact_names": [
+      "OF-T1 default official source retirement at vault refuses tools/call and permits a fresh source",
+      "OF-T1 default official source retirement at initialize refuses tools/call and permits a fresh source",
+      "OF-T1 default official source retirement at notification refuses tools/call and permits a fresh source",
+      "OF-T1 default official source retirement at pagination refuses tools/call and permits a fresh source",
+      "OF-T1 default official Attempt reset cannot dispatch or borrow B after a held vault read",
+      "OF-T2 official final send refuses retirement after its last awaited fence fulfills",
+      "OF-T2 official payload serialization retires the source before the final fetch guard",
+      "OF-T3 default official concurrent sources keep separate assertions and refusal witnesses",
+      "OF-T3 official refusal provenance distinguishes owner-typed",
+      "OF-T3 official refusal provenance distinguishes matching-text",
+      "OF-T3 official refusal provenance distinguishes credential-typed",
+      "OF-T3 official refusal provenance distinguishes serialization-typed",
+      "OF-T3 official refusal provenance distinguishes entered-fetch-typed",
+      "OF-T4 default official entered success retains custody after source-only retirement",
+      "OF-T4 default official entered server-error retains custody after source-only retirement",
+      "OF-T4 default official entered transport-failure retains custody after source-only retirement",
+      "OF-T4 default official entered http-failure retains custody after source-only retirement",
+      "OF-T4 default official entered jsonrpc-failure retains custody after source-only retirement",
+      "OF-T5 default official account-switch suppresses private output after tools/call entry",
+      "OF-T5 default official uninstall suppresses private output after tools/call entry",
+      "OF-T5 default official credential-revision suppresses private output after tools/call entry",
+      "OF-T5 default official service-reset suppresses private output after tools/call entry",
+      "OF-T5 default official dispatch retains raw disable, provider credential, protocol and redaction contracts",
+      "OF-T5 default official reset during its final output read suppresses private settlement",
+      "OF-T5 official disposal after final fence fulfillment suppresses private settlement",
+      "OF-T6 default official account departure during its final output read suppresses private settlement",
+      "OF-T6 official account retirement after final fence fulfillment suppresses private settlement",
+      "OF-T6 official captured account A cannot borrow B at private output publication",
+      "OF-T6 official captured account A cannot borrow A-after-B at private output publication",
+      "OF-T6 default official refuses execution while the canonical account binding is unavailable"
+    ],
+    "existing_official_exact_names": [
+      "catalog pins all nine upstream HTTPS endpoints and labels preview and credential setup",
+      "install without credential remains needsAuth and does not contact provider",
+      "OAuth completes into the scoped native vault and refreshes tools without returning credentials to UI",
+      "manual credential replacement cannot orphan an OAuth grant",
+      "account change during pending OAuth cancels delivery and cannot install into another account",
+      "expired OAuth refresh is single-flight, stays before provider calls, and fences account switches",
+      "disconnect clears local credentials even when upstream revocation fails",
+      "native broker confines Fabushi authorization to its origin and rejects foreign redirect URLs",
+      "real initialize/list/call uses only provider credential, negotiated protocol and session",
+      "disabled tools leave inventory and cannot execute; update preserves credential; lifecycle persists",
+      "SSE notifications and paginated tool inventory are correlated and decoded",
+      "repeated pagination cursor fails explicitly",
+      "authorization failures are honest and uncertain writes are never retried",
+      "account change fences in-flight provider output and isolates installed state",
+      "uninstall fences in-flight output and response strings redact provider token",
+      "legacy lookup failure leaves catalog visible with explicit partial-load warning",
+      "official Add installs then authenticates and opens the native broker URL",
+      "official Add stops on installation failure and exposes authorization or opener failures",
+      "official optional credentials do not intercept Add while required and legacy setup remains"
+    ],
+    "retained": [
+      "Complete native plugin/Skills/runtime/backend/control-server targets, including all 28 exact origin/carrier positives",
+      "Complete production account/control/attachment targets, including three MCP origin account positives",
+      "Existing MO/OD/MB bodies unchanged; the one-shot void vault hook retains its synchronous timing"
+    ],
+    "final_output_disposal": "Actual default chain holds the last output vault read after the completed request controller has left pending; reset leaves source current and install revision intact, then must suppress private settlement without replay and permit an explicit fresh invocation. A real service promise-reaction control disposes after final fence fulfillment and before execute resumes, requiring the synchronous service-lifetime check after the last await. Both distinguish service disposal from source-only retirement after call entry.",
+    "account_output_binding": "The real Coordinator account owner drives held transition I/O and replacement lifetimes in the default native chain and real service controls. Captured binding, final output, zero replay and explicit fresh-account success are checked. Source-only entered-outcome controls remain required."
+  },
+  "verification": {
+    "environment": "GitHub Actions only; authored source has not been executed locally or in htch-runtime",
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "selection": "ocrm-mcp-native: manual scope or this writer branch push with fix(ocrm-mcp-native): prefix. Reuse shipping Electron build, full plugin/native account targets and existing source workflow. No Host/platform result inferred.",
+    "campaign": "One new Official changed-input native campaign combined with the one focused R3 oracle recovery; preserve H72/H862 unchanged-input proof with actual subjects.",
+    "status": "pending exact published H",
+    "scoped_g01_g02": "semantic authority/recursive coverage remain incomplete; no unit verified claim",
+    "independent_review": "R1 and R2 source rounds concluded. The current R3 candidate extends the production scope to the default native adapter and actual account-owner controls; fresh complete-scope and focused-delta review pending. Detailed R2 dossier branch publication is blocked by automatic approval; no source or execution acceptance is inferred."
+  },
+  "open_requirements": [
+    "Real provider/account compatibility and entitlement",
+    "Box final resource boundary",
+    "Broker final HTTP admission and native credential/session epochs",
+    "Same-manager install/registration atomic revocation",
+    "Full Rust policy/protocol migration and all applicable MCP functionality",
+    "Recursive dependencies/downloads/patches/generation/LFS/resources/legal closure",
+    "All applicable G01-G12 / AC01-AC24, real ecosystem/device/platform/UI/security/performance/soak/packages/upgrade/rollback and independent ACCEPT"
+  ],
+  "all_eight_global_flags_remain_false": true
+}

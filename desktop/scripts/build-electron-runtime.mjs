@@ -97,6 +97,7 @@ if (process.argv.includes("--plugin-skills-contracts")) {
     ["source/electron-main/coordinator/coordinator-control-server.contract.test.ts", "coordinator-control-server.contract.test.cjs"],
     ["source/electron-main/coordinator/coordinator-executors.test.ts", "coordinator-executors.test.cjs"],
     ["source/electron-main/mcp/mcp-runtime.contract.test.ts", "mcp-runtime.contract.test.cjs"],
+    ["source/electron-main/mcp/official-mcp.contract.test.ts", "official-mcp.contract.test.cjs"],
     ["source/shared/node/cursor-backend/backend-mcp-origin.contract.test.ts", "backend-mcp-origin.contract.test.cjs"],
     ["source/electron-main/main-edge-model.contract.test.ts", "main-edge-model.contract.test.cjs"],
     ["source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts", "coordinator-account-runtime.contract.test.cjs"],

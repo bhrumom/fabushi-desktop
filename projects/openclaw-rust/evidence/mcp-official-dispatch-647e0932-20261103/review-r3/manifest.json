@@ -1,0 +1,165 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 3,
+  "contract": "MCP-OFFICIAL-DISPATCH-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "base": "9eb2d5ef6f28116a2f6c4933e75794f94c2b991d",
+  "baseTree": "8a3f669a5d8d1d1d1d2faee834e8844c2c7cfce7",
+  "startingHead": "9eb2d5ef6f28116a2f6c4933e75794f94c2b991d",
+  "tree": "4e6925f3a52afd28b3f7eeeb262ad464dbdf71da",
+  "reviewCommit": "ea524e45cc5a058e01c8c2962778b5bf62bde35c",
+  "scopeMode": "complete original eight-path scope plus necessary default adapter contract extension",
+  "uncommittedScope": "The immutable API-created tree includes all nine current scoped candidates; no developer index or unrelated work was changed.",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "members": [
+    {
+      "path": "source/electron-main/mcp/official-mcp-service.ts",
+      "preimageBlob": "a27e63e6abc6c3555a802ed9222e8d53ae876bf6",
+      "blob": "24889e871aaab597ddcd3fa19c7285081762eb26",
+      "bytes": 25184,
+      "sha256": "75bfc18daae92cb91323ebd07fa3bf32d3772ef8af1565e323b6ee1d38d443d8",
+      "priorRoundBlob": "45fab10964d9429e689a1a133445773bc576d03a"
+    },
+    {
+      "path": "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "preimageBlob": "6b73527351ef9bb7a11e75c75dfc26f27a5002e1",
+      "blob": "01cc975d6eb6e2df5d4b93c5a829e02264fe0b7f",
+      "bytes": 15160,
+      "sha256": "224d3faa8c06e94db9377835c445eb1e6c21369d08d352084784f70339f8cfa8"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "preimageBlob": "7e523aef17d0d47f4291b28cc38984d11c52c066",
+      "blob": "3659cf93a8fd86b17e375e8998e0df68f61b410c",
+      "bytes": 171134,
+      "sha256": "c4a17e32687cbeb6d194ae1fa18a20b9595e518a4fb9277bec4e816c979ff244"
+    },
+    {
+      "path": "desktop/scripts/build-electron-runtime.mjs",
+      "preimageBlob": "effeffd58a684e803d64715494097c8b741f43c7",
+      "blob": "4dafbbf040c4b18d30bc5d8143a2be550ac2f8ef",
+      "bytes": 4501,
+      "sha256": "26776c62605b321383787d1da283c0d0593f349e2b79a4d2dba06e315edcdac4"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "preimageBlob": "21027a8dac6fc0b23959cf84c946f88fe24fad26",
+      "blob": "3ebde4395ab23389911e33042af22546fd8b21aa",
+      "bytes": 472954,
+      "sha256": "58040d52d4e49895d1d29c39e77502ca0a050cb4ab74aaa471c189db802dc67f"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "preimageBlob": "a5b005be86ceee0230448d16f24a0d7cadbbcb25",
+      "blob": "7d612adc87af6066d4dd8e70526ba56aedea1bf5",
+      "bytes": 1458324,
+      "sha256": "030eac616a31af6c9ad126c68be352d64c016f1375c9cccc0b34155723732c04"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "preimageBlob": "9a59949b150ef7f9b31ecbc45b2a65283074ec68",
+      "blob": "01b5a253d532d612b81e8c06e25c54c28a95dd3e",
+      "bytes": 163481,
+      "sha256": "b21b6cac07c60f918353ce1a7b034636a1ed020a673f9aa8e0909db9d60a1606"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+      "preimageBlob": null,
+      "blob": "b88b72aa9c26a1f4486ccce24c5585a629e3e342",
+      "bytes": 14652,
+      "sha256": "56dd2c927e85c9bba1f5cf066d36937678919e516c6efcfa4f039f1e52f721ff"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "preimageBlob": "1684a9cfafd02f6cdd96091b7b85d9efb3f3dbcc",
+      "blob": "8b4a37454aeb91190e161f1a113da36110ab7b8c",
+      "bytes": 31474,
+      "sha256": "daf8f8ab1c83e994566bf933f3485400acacf92a535f0c2949b6595251ac975b"
+    }
+  ],
+  "patch": {
+    "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/compare/9eb2d5ef6f28116a2f6c4933e75794f94c2b991d...ea524e45cc5a058e01c8c2962778b5bf62bde35c",
+    "paths": [
+      ".github/workflows/rust-desktop-runtime.yml",
+      "desktop/scripts/build-electron-runtime.mjs",
+      "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+      "projects/openclaw-rust/parity-ledger.json",
+      "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "source/electron-main/adapters/mcp-oauth.ts",
+      "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "source/electron-main/mcp/official-mcp-service.ts"
+    ],
+    "bytes": 109378,
+    "sha256": "e2b9de1c21da9c779f132eeabfbc7c08b7143ba59b3ff7bcfd91131024079202",
+    "allHunkCountsMatchApi": true,
+    "representation": "Complete text diff reconstructed from each compare file patch with status/path headers; all scope paths are text, no renames or binary entries. The API comparison is the durable review carrier. No denied R2 patch archive is republished."
+  },
+  "focusedDelta": {
+    "priorReview": "944badc413825d7fb01a0eedbb6355868b213653",
+    "carrier": "e62df98afb94eb86875ca8a3f2054455d6cb25b2",
+    "api": "https://api.github.com/repos/bhrumom/fabushi-desktop/compare/944badc413825d7fb01a0eedbb6355868b213653...e62df98afb94eb86875ca8a3f2054455d6cb25b2",
+    "paths": [
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/evidence/mcp-official-dispatch-647e0932-20261103/scope.json",
+      "source/electron-main/adapters/mcp-oauth.ts",
+      "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "source/electron-main/mcp/official-mcp-service.ts"
+    ],
+    "bytes": 37221,
+    "sha256": "ccc0027cf6b56e8b36ab2ab90577ceae780de230acc9225539f570fea3438a6c",
+    "allHunkCountsMatchApi": true,
+    "representation": "Complete text diff reconstructed from each compare file patch with status/path headers; all scope paths are text, no renames or binary entries. The API comparison is the durable review carrier. No denied R2 patch archive is republished."
+  },
+  "context": {
+    "authorities": [
+      {
+        "path": "AGENTS.md",
+        "blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2"
+      },
+      {
+        "path": "projects/openclaw-rust/SOURCE_OF_TRUTH.md",
+        "blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306"
+      },
+      {
+        "path": "docs/specs/openclaw-rust-equivalence-migration.md",
+        "blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336"
+      }
+    ],
+    "spec": {
+      "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+      "baseBlob": "0b7e75c1fb59d4d3a758002a2a1b386908aab5ce",
+      "correctiveContractBlob": "6a5cb35b0dda9da87e4d995465070b4aa1fdff3b",
+      "bothPrecedeApplicableEdits": true,
+      "correctiveContractBranchPublication": "blocked by automatic review; separate approved immutable object remains readable, publication is not claimed"
+    },
+    "actualAdjacent": [
+      "source/electron-main/adapters/mcp-oauth.ts",
+      "source/electron-main/mcp/mcp-runtime.ts",
+      "source/electron-main/mcp/official-mcp-oauth.ts",
+      "source/electron-main/mcp/official-mcp-vault.ts",
+      "source/electron-main/mcp/official-mcp.contract.test.ts",
+      "source/shared/node/mcp/mcp-result-factory.ts",
+      "source/shared/rpc/coordinator-port.ts",
+      "source/electron-main/coordinator/coordinator-control-server.ts",
+      "source/electron-main/coordinator/production-provider.ts",
+      "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+      "docs/specs/fabushi-official-mcp-marketplace.md",
+      "source/electron-main/coordinator/coordinator-account-runtime.ts",
+      "source/electron-main/coordinator/account-transition-cleanup.ts",
+      "source/electron-main/coordinator/cursor-auth-wiring.ts"
+    ],
+    "instruction": "Fresh blind review: inspect complete declared source scope and focused delta, not earlier reports or root decisions. Default adapter now supplies the existing canonical account binding to the actual service. No new runtime/permission/persistence owner. Check required existing outcomes and causal oracles independently.",
+    "noApplicableNestedInstructions": "Recursive review tree API is truncated=false; only root AGENTS and unrelated source/mahayana/codex-rs/tui/src/bottom_pane/AGENTS.md exist."
+  },
+  "execution": {
+    "localOrHtch": false,
+    "exactCandidateActions": "not-run",
+    "requiredOfficialNames": 30
+  },
+  "unitVerified": false,
+  "globalAcceptance": "pending; all eight flags remain false"
+}

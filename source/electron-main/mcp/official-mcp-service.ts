@@ -2,12 +2,19 @@ import { randomUUID } from "node:crypto";
 import { formatMcpCustomInstructionToolNote } from "../../shared/mcp-custom-instructions.js";
 import { officialMcpEntry } from "../../shared/node/mcp/fabushi-official-catalog.js";
 import { McpResult, McpSuccess } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
-import { generatedMcpResultFactory } from "../../shared/node/mcp/mcp-result-factory.js";
+import {
+  generatedMcpResultFactory,
+  MCP_ORIGIN_RETIRED,
+  McpOriginRetiredError,
+  type McpDispatchAssertion,
+} from "../../shared/node/mcp/mcp-result-factory.js";
 import type { OfficialMcpCredential, OfficialMcpOAuthPorts } from "./official-mcp-oauth.js";
 
 interface Install { token?: string; refreshToken?: string; expiresAt?: number; connectionId?: string; revision: string; disabledTools: string[]; instructions?: string }
 type State = Record<string, Install>;
 export interface OfficialMcpPorts {
+  /** Existing native account owner; capture once, never borrow its replacement. */
+  captureOutputAccountBinding?(): McpDispatchAssertion;
   getScope(): Promise<string>;
   read(scope: string): Promise<string | null>;
   write(scope: string, value: string): Promise<void>;
@@ -15,6 +22,8 @@ export interface OfficialMcpPorts {
   oauth?: OfficialMcpOAuthPorts;
 }
 interface RemoteTool { name: string; description?: string; inputSchema: unknown }
+interface RpcPayload { jsonrpc: "2.0"; method: string; id?: number; params?: unknown }
+type OfficialDispatchAssertion = (method: string) => undefined;
 class AuthRequired extends Error {}
 const MAX_BODY = 4 * 1024 * 1024;
 const TIMEOUT = 60_000;
@@ -157,15 +166,20 @@ export class OfficialMcpService {
       [key.split(token).join("[redacted]"), this.redact(item, token)]));
     return value;
   }
-  private async send(url: string, token: string, payload: unknown, signal: AbortSignal,
-    session?: string, protocol?: string): Promise<Response> {
-    const response = await this.ports.fetch(url, {
+  private async send(url: string, token: string, payload: RpcPayload, signal: AbortSignal,
+    session?: string, protocol?: string, beforeSend?: OfficialDispatchAssertion): Promise<Response> {
+    const request: RequestInit = {
       method: "POST", redirect: "error", signal,
       headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream",
         Authorization: `Bearer ${token}`, ...(session ? { "Mcp-Session-Id": session } : {}),
         ...(protocol ? { "MCP-Protocol-Version": protocol } : {}) },
       body: JSON.stringify(payload),
-    });
+    };
+    // Payload preparation can reenter native code. Admit only after it finishes,
+    // in the same continuation as the existing provider resource handoff.
+    this.requireActive();
+    beforeSend?.(payload.method);
+    const response = await this.ports.fetch(url, request);
     if (response.status === 401 || response.status === 403) { await response.body?.cancel(); throw new AuthRequired("Provider authorization required."); }
     if (!response.ok) { await response.body?.cancel(); throw new Error(`Official MCP service returned HTTP ${response.status}; the call was not retried.`); }
     return response;
@@ -210,7 +224,8 @@ export class OfficialMcpService {
     return message.result;
   }
   private async request(id: string, method: string, params: unknown,
-    expected?: Awaited<ReturnType<OfficialMcpService["snapshot"]>>) {
+    expected?: Awaited<ReturnType<OfficialMcpService["snapshot"]>>,
+    beforeSend?: OfficialDispatchAssertion) {
     const snap = expected ?? await this.credentialSnapshot(id), token = snap.install.token;
     if (!token) throw new AuthRequired("Provider authorization required.");
     const controller = new AbortController(); this.pending.add(controller);
@@ -218,26 +233,26 @@ export class OfficialMcpService {
     try {
       await this.fence(snap);
       const initResponse = await this.send(snap.entry.url, token, { jsonrpc: "2.0", id: 1, method: "initialize",
-        params: { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "Fabushi", version: "1.0.0" } } }, controller.signal);
+        params: { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "Fabushi", version: "1.0.0" } } }, controller.signal, undefined, undefined, beforeSend);
       const session = initResponse.headers.get("mcp-session-id") ?? undefined;
       const init = await this.response(initResponse, 1);
       if (typeof init.protocolVersion !== "string" || !["2024-11-05", "2025-03-26", "2025-06-18"].includes(init.protocolVersion))
         throw new Error("Unsupported MCP protocol version.");
       const notification = await this.send(snap.entry.url, token,
-        { jsonrpc: "2.0", method: "notifications/initialized" }, controller.signal, session, init.protocolVersion);
+        { jsonrpc: "2.0", method: "notifications/initialized" }, controller.signal, session, init.protocolVersion, beforeSend);
       await notification.body?.cancel();
       await this.fence(snap);
       const result = await this.response(await this.send(snap.entry.url, token,
-        { jsonrpc: "2.0", id: 2, method, params }, controller.signal, session, init.protocolVersion), 2);
+        { jsonrpc: "2.0", id: 2, method, params }, controller.signal, session, init.protocolVersion, beforeSend), 2);
       await this.fence(snap);
       return this.redact(result, token);
     } finally { clearTimeout(timeout); this.pending.delete(controller); }
   }
-  async tools(id: string): Promise<RemoteTool[]> {
+  async tools(id: string, beforeSend?: OfficialDispatchAssertion): Promise<RemoteTool[]> {
     const snap = await this.credentialSnapshot(id);
     const tools: RemoteTool[] = []; const seen = new Set<string>(); let cursor: string | undefined;
     for (let page = 0; page < 64; page++) {
-      const result = await this.request(id, "tools/list", cursor ? { cursor } : {}, snap);
+      const result = await this.request(id, "tools/list", cursor ? { cursor } : {}, snap, beforeSend);
       await this.fence(snap);
       if (!Array.isArray(result.tools)) throw new Error("Invalid MCP tool inventory.");
       for (const tool of result.tools) {
@@ -314,14 +329,32 @@ export class OfficialMcpService {
     await this.mutate(state => { state[id]!.instructions = instructions; state[id]!.revision = randomUUID(); }, snap);
     return { servers: await this.servers() };
   }
-  async execute(id: string, name: string, args: unknown) {
+  async execute(id: string, name: string, args: unknown, assertDispatchCurrent?: McpDispatchAssertion) {
+    // Only this invocation's final native guard can establish non-dispatch.
+    // Earlier discovery traffic is distinct from a tools/call effect.
+    let callEntered = false;
+    let originRefused = false;
+    const beforeSend: OfficialDispatchAssertion | undefined = assertDispatchCurrent == null ? undefined : method => {
+      try { assertDispatchCurrent(); }
+      catch (error) {
+        if (!callEntered && error instanceof McpOriginRetiredError) originRefused = true;
+        throw error;
+      }
+      if (method === "tools/call") callEntered = true;
+      return undefined;
+    };
     try {
+      const assertOutputAccountCurrent = this.ports.captureOutputAccountBinding?.();
       const snap = await this.credentialSnapshot(id);
       if (snap.install.disabledTools.includes(name)) throw new Error("Connector tool is disabled.");
-      if (!(await this.tools(id)).some(tool => tool.name === name)) throw new Error("Unknown connector tool.");
+      if (!(await this.tools(id, beforeSend)).some(tool => tool.name === name)) throw new Error("Unknown connector tool.");
       await this.fence(snap);
-      const result = await this.request(id, "tools/call", { name, arguments: args ?? {} }, snap);
+      const result = await this.request(id, "tools/call", { name, arguments: args ?? {} }, snap, beforeSend);
       await this.fence(snap);
+      // Publication uses the original account lifetime and this service.
+      // Control-source-only retirement does not invalidate an entered result.
+      this.requireActive();
+      assertOutputAccountCurrent?.();
       if (!Array.isArray(result.content)) throw new Error("Invalid MCP tool output.");
       const content = result.content.map((item: unknown) => generatedMcpResultFactory.textItem(
         object(item) && item.type === "text" && typeof item.text === "string" ? item.text : JSON.stringify(item)));
@@ -329,7 +362,10 @@ export class OfficialMcpService {
       if (snap.install.instructions?.trim()) content.unshift(generatedMcpResultFactory.textItem(
         formatMcpCustomInstructionToolNote(snap.entry.name, snap.install.instructions.trim())));
       return new McpResult({ result: { case: "success", value: new McpSuccess({ content, isError: result.isError === true }) } });
-    } catch { return generatedMcpResultFactory.error("Official MCP call failed or authorization changed. The call was not retried; confirm its outcome before retrying a write."); }
+    } catch {
+      if (originRefused && !callEntered) return generatedMcpResultFactory.rejected(MCP_ORIGIN_RETIRED);
+      return generatedMcpResultFactory.error("Official MCP call failed or authorization changed. The call was not retried; confirm its outcome before retrying a write.");
+    }
   }
   async authenticate(id: string, accountKey: string, forceReauth = false) {
     const snap = await this.snapshot(id);

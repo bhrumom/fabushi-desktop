@@ -254,7 +254,22 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
           const token = await auth.peekAccessToken?.();
           if (!token || !parseJwtPayload(token)?.sub) throw new Error("Sign in to Fabushi before connecting a service.");
           return accountCacheScope(token);
-        }), oauth: createOfficialMcpOAuthPorts({
+        }),
+        captureOutputAccountBinding: () => {
+          const runtime = context.requireCoordinator().getAccountRuntime?.() as {
+            captureCurrentBinding?: () => { assertCurrent(): void } | null;
+          } | null | undefined;
+          if (typeof runtime?.captureCurrentBinding !== "function") {
+            throw new Error("Official MCP account lifetime is unavailable.");
+          }
+          const binding = runtime.captureCurrentBinding();
+          if (binding == null || typeof binding.assertCurrent !== "function") {
+            throw new Error("Official MCP account lifetime is unavailable.");
+          }
+          binding.assertCurrent();
+          return () => { binding.assertCurrent(); return undefined; };
+        },
+        oauth: createOfficialMcpOAuthPorts({
           getAccessToken: async backendUrl => {
             const token = await options.getAccessToken({ backendUrl });
             if (!token) throw new Error("请先登录 Fabushi。");
