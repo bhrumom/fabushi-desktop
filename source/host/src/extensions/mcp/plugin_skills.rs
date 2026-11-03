@@ -8,12 +8,24 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use super::legacy_live_references::remove_workflow_live_references;
+use super::mcp_service::{
+    PluginUninstallIntent, PluginUninstallSettlement, is_canonical_uninstall_plugin_id,
+};
 use super::plugin_skills_cache::{
     PluginAuthBlock, PluginSkillRecord, PluginSkillsCache, PluginSkillsCacheWriteIndex,
     PluginSkillsSnapshot,
     get_plugin_skills_dir, get_plugins_root_dir, read_plugin_skills_cache,
     read_plugin_skills_snapshot, stage_plugin_skills_cache,
 };
+
+#[path = "plugin_skills_uninstall_state.rs"]
+mod uninstall_state;
+
+use uninstall_state::{
+    DurableUninstallImage, UninstallState, load_uninstall_image, persist_uninstall_image,
+};
+
+const UNINSTALL_RECOVERY_UNAVAILABLE: &str = "plugin uninstall recovery state is unavailable";
 
 pub const EFFECTIVE_PLUGINS_RPC_TIMEOUT_MS: u64 = 15_000;
 pub const CURRENT_USER_RPC_TIMEOUT_MS: u64 = 10_000;
@@ -375,7 +387,8 @@ struct PluginSkillsLiveAdmission {
 #[derive(Default)]
 struct PluginSkillsAdmissionState {
     denied: BTreeMap<String, PluginAuthBlock>,
-    confirmed_uninstalls: HashSet<String>,
+    durable: DurableUninstallImage,
+    recovery_fault: bool,
     // Each observation replaces this opaque identity. An active pass keeps its
     // Arc alive, preventing identity reuse without a counter or overflow case.
     uninstall_observation: Arc<()>,
@@ -386,8 +399,10 @@ impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
         self.state
             .lock()
             .map(|state| {
-                state.denied.contains_key(plugin_id)
-                    || state.confirmed_uninstalls.contains(plugin_id)
+                state.recovery_fault
+                    || state.denied.contains_key(plugin_id)
+                    || state.durable.state.confirmed.contains(plugin_id)
+                    || state.durable.state.pending.contains_key(plugin_id)
             })
             .unwrap_or(true)
     }
@@ -450,10 +465,24 @@ pub struct SandPluginSkillsService {
 
 impl SandPluginSkillsService {
     pub fn new(sand_root_dir: impl Into<PathBuf>, loader: Arc<dyn PluginSkillsLoader>) -> Self {
+        let sand_root_dir = sand_root_dir.into();
+        // Construction may read durable state. Production composition prepares
+        // this fresh candidate outside its binding lock and rechecks the owner
+        // before installation; same-root successors preserve the live reader.
+        let state = match load_uninstall_image(&get_plugin_skills_dir(&sand_root_dir)) {
+            Ok(durable) => PluginSkillsAdmissionState {
+                durable,
+                ..PluginSkillsAdmissionState::default()
+            },
+            Err(_) => PluginSkillsAdmissionState {
+                recovery_fault: true,
+                ..PluginSkillsAdmissionState::default()
+            },
+        };
         Self::with_admission(
-            sand_root_dir.into(),
+            sand_root_dir,
             loader,
-            Arc::new(PluginSkillsLiveAdmission::default()),
+            Arc::new(PluginSkillsLiveAdmission { state: Mutex::new(state) }),
         )
     }
 
@@ -480,34 +509,135 @@ impl SandPluginSkillsService {
         self.admission.clone()
     }
 
-    /// Import only a backend-confirmed uninstall of this exact canonical ID.
-    /// The fact is local admission state, not an authentication failure or a
-    /// persistent revocation. A later authoritative materialization may restore it.
-    pub fn observe_confirmed_uninstall(&self, plugin_id: &str) -> Result<(), String> {
-        if !is_canonical_plugin_id(plugin_id) {
-            return Err("confirmed plugin uninstall requires a canonical plugin ID".into());
+    /// Reserve durable negative admission before any external uninstall call.
+    /// This ticket is custody, not a claim that the remote mutation occurred.
+    pub fn begin_uninstall(&self, plugin_id: &str) -> Result<PluginUninstallIntent, String> {
+        if !is_canonical_uninstall_plugin_id(plugin_id) {
+            return Err("plugin uninstall requires a canonical plugin ID".into());
         }
         let _publication = self
             .publication
             .lock()
             .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        self.require_active_uninstall_owner()?;
+        let expected = self.uninstall_image()?;
+        if expected.state.pending.contains_key(plugin_id) {
+            return Err("plugin uninstall already has an unresolved intent".into());
+        }
+        let operation_id = loop {
+            let candidate = uuid::Uuid::new_v4().to_string();
+            if !expected.state.pending.values().any(|ticket| ticket == &candidate) {
+                break candidate;
+            }
+        };
+        let intent = PluginUninstallIntent {
+            plugin_id: plugin_id.to_string(),
+            operation_id,
+        };
+        let mut next = expected.state.clone();
+        next.pending.insert(intent.plugin_id.clone(), intent.operation_id.clone());
+        self.persist_uninstall_transition(&expected, &next)?;
+        Ok(intent)
+    }
+
+    pub fn settle_uninstall(
+        &self,
+        intent: &PluginUninstallIntent,
+        settlement: PluginUninstallSettlement,
+    ) -> Result<(), String> {
+        let _publication = self
+            .publication
+            .lock()
+            .map_err(|_| "plugin skills publication poisoned".to_string())?;
+        self.require_active_uninstall_owner()?;
+        let expected = self.uninstall_image()?;
+        if expected.state.pending.get(&intent.plugin_id) != Some(&intent.operation_id) {
+            return Err("plugin uninstall settlement does not match the current intent".into());
+        }
+        let mut next = expected.state.clone();
+        next.pending.remove(&intent.plugin_id);
+        if settlement == PluginUninstallSettlement::Removed {
+            next.confirmed.insert(intent.plugin_id.clone());
+        }
+        // NotRemoved is a known reply, not proof of no effect. Both negative
+        // settlements remove only this ticket, retaining any earlier refusal.
+        self.persist_uninstall_transition(&expected, &next)
+    }
+
+    fn require_active_uninstall_owner(&self) -> Result<(), String> {
         if self
             .state
             .lock()
             .map_err(|_| "plugin skills state poisoned".to_string())?
             .disposed
         {
-            return Err("plugin skills owner is disposed; confirmed uninstall was not observed".into());
+            return Err("plugin skills owner is disposed; uninstall state was not changed".into());
         }
-        // No service-state guard is held while updating the shared reader.
+        Ok(())
+    }
+
+    fn uninstall_image(&self) -> Result<DurableUninstallImage, String> {
+        let live = self.admission.state.lock()
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        if live.recovery_fault {
+            return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+        }
+        Ok(live.durable.clone())
+    }
+
+    // Caller holds P, but no service-state/admission guard during filesystem
+    // work. A failed write may already be visible, so latch refusal until a
+    // fresh owner can inspect a repaired or completed image. Never roll it back.
+    fn persist_uninstall_transition(
+        &self,
+        expected: &DurableUninstallImage,
+        next: &UninstallState,
+    ) -> Result<(), String> {
+        let durable = match persist_uninstall_image(
+            &get_plugin_skills_dir(&self.sand_root_dir), expected, next,
+        ) {
+            Ok(durable) => durable,
+            Err(_) => {
+                let mut live = self.admission.state.lock()
+                    .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+                live.recovery_fault = true;
+                live.uninstall_observation = Arc::new(());
+                return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+            }
+        };
         let mut live = self
             .admission
             .state
             .lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
-        live.confirmed_uninstalls.insert(plugin_id.to_string());
+        live.durable = durable;
         live.uninstall_observation = Arc::new(());
         Ok(())
+    }
+
+    pub fn uninstall_recovery_status(&self) -> Option<Value> {
+        let Ok(live) = self.admission.state.lock() else {
+            return Some(serde_json::json!({
+                "confirmedPluginIds": [], "pending": [],
+                "fault": "uninstall-state-unavailable",
+            }));
+        };
+        if !live.recovery_fault
+            && live.durable.state.confirmed.is_empty()
+            && live.durable.state.pending.is_empty()
+        {
+            return None;
+        }
+        let mut status = serde_json::json!({
+            "confirmedPluginIds": live.durable.state.confirmed.iter().collect::<Vec<_>>(),
+            "pending": live.durable.state.pending.iter().map(|(plugin_id, operation_id)| {
+                serde_json::json!({"pluginId": plugin_id, "operationId": operation_id})
+            }).collect::<Vec<_>>(),
+        });
+        if live.recovery_fault {
+            status["fault"] = Value::String("uninstall-state-unavailable".into());
+        }
+        Some(status)
     }
 
     pub(crate) fn sand_root_dir(&self) -> &Path {
@@ -599,11 +729,14 @@ impl SandPluginSkillsService {
     }
 
     fn uninstall_observation(&self) -> Result<Arc<()>, String> {
-        self.admission
+        let live = self.admission
             .state
             .lock()
-            .map(|live| Arc::clone(&live.uninstall_observation))
-            .map_err(|_| "plugin skills live admission poisoned".to_string())
+            .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        if live.recovery_fault {
+            return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+        }
+        Ok(Arc::clone(&live.uninstall_observation))
     }
 
     fn require_current_uninstall_observation(&self, observation: &Arc<()>) -> Result<(), String> {
@@ -612,8 +745,11 @@ impl SandPluginSkillsService {
             .state
             .lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        if live.recovery_fault {
+            return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+        }
         if !Arc::ptr_eq(&live.uninstall_observation, observation) {
-            return Err("plugin skills sync superseded by a confirmed uninstall".into());
+            return Err("plugin skills sync superseded by an uninstall observation".into());
         }
         Ok(())
     }
@@ -642,15 +778,19 @@ impl SandPluginSkillsService {
             .state
             .lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        if live.recovery_fault {
+            return Err(UNINSTALL_RECOVERY_UNAVAILABLE.into());
+        }
         if !Arc::ptr_eq(&live.uninstall_observation, observation) {
-            return Err("plugin skills sync superseded by a confirmed uninstall".into());
+            return Err("plugin skills sync superseded by an uninstall observation".into());
         }
         for block in blocks {
             live.denied.insert(block.plugin_id.clone(), block.clone());
         }
         Ok(Some((
             live.denied.values().cloned().collect(),
-            live.confirmed_uninstalls.clone(),
+            live.durable.state.confirmed.iter()
+                .chain(live.durable.state.pending.keys()).cloned().collect(),
         )))
     }
 
@@ -660,7 +800,7 @@ impl SandPluginSkillsService {
         successful_ids: &HashSet<String>,
         denied_ids: &HashSet<String>,
         observation: &Arc<()>,
-    ) -> Result<Option<(PluginSkillsSnapshot, bool)>, String> {
+    ) -> Result<Option<(PluginSkillsSnapshot, bool, Arc<()>, HashSet<String>)>, String> {
         // This service has one pass writer. Keep rename, strict readback and
         // positive release in one publication interval; a successor cannot be
         // constructed until it has claimed this predecessor's same lock.
@@ -684,6 +824,20 @@ impl SandPluginSkillsService {
         sync_tests::pause_at(&self.test_hooks.after_rename);
         let committed = read_plugin_skills_snapshot(get_plugin_skills_dir(&self.sand_root_dir))
             .ok_or_else(|| "could not read committed plugin skills snapshot".to_string())?;
+        // The cache has crossed its file/directory barriers and strict readback.
+        // Durable refusal release follows it, never precedes it. No admission
+        // guard spans the journal write or its read-before-replace check.
+        let expected = self.uninstall_image()?;
+        let mut next = expected.state.clone();
+        for id in successful_ids {
+            if !denied_ids.contains(id) && !next.pending.contains_key(id) {
+                next.confirmed.remove(id);
+            }
+        }
+        let durable_release = next != expected.state;
+        if durable_release {
+            self.persist_uninstall_transition(&expected, &next)?;
+        }
         let mut live = self
             .admission
             .state
@@ -691,14 +845,18 @@ impl SandPluginSkillsService {
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
         // A failed denial publication can leave the old allowed cache intact;
         // releasing its live refusal is still an observable admission change.
-        let mut released_live_refusal = false;
+        let mut released_live_refusal = durable_release;
         for id in successful_ids {
             if !denied_ids.contains(id) {
                 released_live_refusal |= live.denied.remove(id).is_some();
-                released_live_refusal |= live.confirmed_uninstalls.remove(id);
             }
         }
-        Ok(Some((committed, released_live_refusal)))
+        let committed_observation = Arc::clone(&live.uninstall_observation);
+        // Reporting describes this publication's admitted identities, even if
+        // a later observation changes admission before its callback runs. Keep
+        // the raw cache intact; unresolved tickets exclude both comparison sides.
+        let pending_for_report = live.durable.state.pending.keys().cloned().collect();
+        Ok(Some((committed, released_live_refusal, committed_observation, pending_for_report)))
     }
 
     fn prune_committed_if_current(
@@ -723,6 +881,11 @@ impl SandPluginSkillsService {
         // begun. Preserve that real commit/report, but never prune using the old
         // image after the new observation. An entered prune holds P first.
         if !Arc::ptr_eq(&self.uninstall_observation()?, observation) {
+            return Ok(());
+        }
+        if !self.uninstall_image()?.state.pending.is_empty() {
+            // A fresh listing cannot prove a pending remote operation quiescent.
+            // Keep materialized directories until custody is actually settled.
             return Ok(());
         }
         // Plain dispose does not revoke cleanup from an already committed pass.
@@ -852,7 +1015,7 @@ impl SandPluginSkillsService {
                 return Err(error);
             }
         };
-        let Some((live_blocks, confirmed_uninstalls)) =
+        let Some((live_blocks, uninstall_refusals)) =
             self.import_live_refusals_if_active(&loaded.auth_blocked, &observation)?
         else {
             return Ok(self.current());
@@ -911,7 +1074,7 @@ impl SandPluginSkillsService {
                     listed.contains(&record.plugin_id)
                         && !loaded_ids.contains(&record.plugin_id)
                         && !denied.contains(&record.plugin_id)
-                        && !confirmed_uninstalls.contains(&record.plugin_id)
+                        && !uninstall_refusals.contains(&record.plugin_id)
                 })
                 .cloned(),
         );
@@ -934,7 +1097,7 @@ impl SandPluginSkillsService {
         // Sample the callback before the publication fence. It may reenter or
         // dispose the service; no callback runs while publication is locked.
         let duration_ms = (self.now)().saturating_sub(started);
-        let Some((committed, released_live_refusal)) =
+        let Some((committed, released_live_refusal, committed_observation, pending_for_report)) =
             self.publish_snapshot_if_active(staged, &loaded_ids, &denied, &observation)?
         else {
             return Ok(self.current());
@@ -963,13 +1126,20 @@ impl SandPluginSkillsService {
                 )
                 .collect::<Vec<_>>();
             self.prune_committed_if_current(
-                &loaded.listed_cache_keys, &retained_paths, &observation,
+                &loaded.listed_cache_keys, &retained_paths, &committed_observation,
             )?;
         }
         if let Some(report) = &self.report_sync {
+            let admitted_records = records.iter()
+                .filter(|record| !pending_for_report.contains(&record.plugin_id))
+                .cloned().collect::<Vec<_>>();
+            let previous_admitted_records = previous_records.iter()
+                .filter(|record| !pending_for_report.contains(&record.plugin_id))
+                .cloned().collect::<Vec<_>>();
             let changed = previous.is_none()
                 || released_live_refusal
-                || skill_records_identity(&previous_records) != skill_records_identity(&records)
+                || skill_records_identity(&previous_admitted_records)
+                    != skill_records_identity(&admitted_records)
                 || previous.as_ref().and_then(|value| value.index.current_user_id)
                     != committed.index.current_user_id
                 || auth_blocks_identity(previous_blocks)
@@ -978,7 +1148,7 @@ impl SandPluginSkillsService {
                 trigger: trigger.into(),
                 outcome: "ok".into(),
                 changed,
-                skill_count: records.len(),
+                skill_count: admitted_records.len(),
                 duration_ms,
                 error_class: None,
             });

@@ -270,8 +270,23 @@ pub(crate) struct StagedPluginSkillsCache {
 impl StagedPluginSkillsCache {
     pub(crate) fn publish(self) -> Result<(), String> {
         fs::rename(&self.temporary_path, &self.destination_path)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        let parent = self.destination_path.parent()
+            .ok_or_else(|| "plugin skills cache has no parent directory".to_string())?;
+        sync_cache_directory(parent).map_err(|error| error.to_string())
     }
+}
+
+#[cfg(unix)]
+fn sync_cache_directory(path: &Path) -> std::io::Result<()> {
+    fs::File::open(path)?.sync_all()
+}
+
+#[cfg(not(unix))]
+fn sync_cache_directory(_path: &Path) -> std::io::Result<()> {
+    // Preserve the Host stores' std-only non-Unix limit: synced file plus
+    // atomic rename. A portable directory-handle barrier is unavailable here.
+    Ok(())
 }
 
 impl Drop for StagedPluginSkillsCache {
@@ -336,10 +351,10 @@ pub(crate) fn stage_plugin_skills_cache(
         temporary_path: temp.clone(),
         destination_path: path,
     };
-    let written = file.write_all(text.as_bytes());
-    drop(file);
-    written.map_err(|error| error.to_string())?;
+    file.write_all(text.as_bytes()).map_err(|error| error.to_string())?;
     chmod(&temp, AGENT_READABLE_SKILL_FILE_MODE).map_err(|error| error.to_string())?;
+    file.sync_all().map_err(|error| error.to_string())?;
+    drop(file);
     Ok(staged)
 }
 

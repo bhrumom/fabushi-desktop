@@ -284,6 +284,10 @@ jobs:
               "source/host/src/extensions/mcp/coordinator_relay.rs",
               "source/host/src/extensions/mcp/plugin_skills.rs",
               "source/host/src/extensions/mcp/plugin_skills_cache.rs",
+              "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+              "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+              "source/host/src/extensions/mcp/production.rs",
+              "source/host/src/host_production_extensions.rs",
               "source/host/src/gateway_server.rs",
               "source/host/src/host_gateway_api.rs",
               "source/host/app/src/main.rs",
@@ -1397,6 +1401,7 @@ jobs:
               extensions::inference::provider_session::fabushi_credential_context_tests \
               extensions::inference::codex_direct_responses::tests::provider_refusal_parser \
               extensions::mcp::plugin_skills::sync_tests \
+              extensions::mcp::plugin_skills::uninstall_state::tests \
               extensions::mcp::plugin_skills_cache::tests; do
               run_recovery_check "lib-${recovery_filter//::/_}" cargo test --locked --manifest-path source/host/Cargo.toml --lib "$recovery_filter" || recovery_status=1
             done
@@ -1404,6 +1409,101 @@ jobs:
             recovery_status=1
           fi
           exit "$recovery_status"
+      - name: Require durable plugin uninstall positives from existing macOS commands
+        if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, re, runpy, subprocess
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          read_command_evidence = runpy.run_path(str(root / "command-evidence.py"))["read_command_evidence"]
+          required_by_command = {
+              "integration-contracts": [
+                  "uninstall_reservation_failure_prevents_backend_mutation",
+                  "uninstall_close_after_reservation_settles_only_not_dispatched",
+                  "confirmed_uninstall_consumers::desktop_unknown_uninstall_retains_pending_and_denies_actual_consumers",
+                  "confirmed_uninstall_consumers::intent_persistence_failure_prevents_real_backend_dispatch",
+                  "confirmed_uninstall_consumers::pending_uninstall_cannot_be_released_by_fresh_sync",
+                  "confirmed_uninstall_consumers::uninstall_custody_survives_owned_process_exit_and_fresh_process_consumers",
+                  "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
+                  "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
+                  "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
+              ],
+              "lib-extensions_mcp_plugin_skills_sync_tests": [
+                  "extensions::mcp::plugin_skills::sync_tests::pending_uninstall_survives_fresh_sync_without_release_or_prune",
+                  "extensions::mcp::plugin_skills::sync_tests::pending_uninstall_reports_only_admitted_changes_at_publication",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_settlement_requires_the_exact_current_ticket_without_advancing_observation_on_refusal",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fresh_load",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_terminal_settlements_fence_loads_started_before_the_reply",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_loads_exact_pending_and_confirmed_facts_without_invoking_the_loader",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_fault_requires_a_fresh_owner_after_repair",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_preserves_a_valid_unmarked_image_until_an_explicit_transition",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_release_failure_after_valid_cache_publication_keeps_denial_and_files",
+                  "extensions::mcp::plugin_skills::sync_tests::pending_uninstall_same_root_successor_rejects_every_retired_settlement",
+              ],
+              "lib-extensions_mcp_plugin_skills_uninstall_state_tests": [
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::absent_legacy_load_has_no_filesystem_side_effects",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_and_empty_terminal_state_round_trip",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_creates_the_missing_directory_chain",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::image_only_initialization_remains_authoritative_until_explicit_transition",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::marker_without_image_and_invalid_markers_are_never_legacy",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::strict_object_format_rejects_unknown_duplicate_missing_and_mistyped_fields",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::semantic_duplicates_are_refused_but_confirmed_and_pending_may_overlap",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::canonical_plugin_and_operation_identity_is_required_on_read_and_write",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::writes_are_sorted_and_opaque_canonical_ids_are_preserved_exactly",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::exact_byte_drift_and_marker_loss_prevent_replacement",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::stale_image_and_corruption_cannot_overwrite_current_custody",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::nonregular_entries_are_preserved_as_recovery_faults",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::dangling_and_regular_file_symlinks_are_not_missing_or_authoritative_images",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::staging_cleanup_removes_only_a_successfully_created_owned_file",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::marker_publication_failure_does_not_erase_the_visible_image",
+              ],
+              "lib-extensions_mcp_coordinator_relay_lifecycle_tests": [
+                  "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff",
+              ],
+              "lib-host_production_extensions_plugin_skills_binding_tests": [
+                  "host_production_extensions::plugin_skills_binding_tests::fresh_host_binding_recovers_uninstall_custody_before_either_startup_order",
+                  "host_production_extensions::plugin_skills_binding_tests::prepared_disk_recovery_cannot_replace_a_newer_same_root_reader",
+                  "host_production_extensions::plugin_skills_binding_tests::initialized_uninstall_state_loss_blocks_the_real_host_binding",
+              ],
+          }
+          executions = []
+          for label, required in required_by_command.items():
+              log_path, command_path = root / (label + ".log"), root / (label + ".command.txt")
+              raw = log_path.read_bytes() if log_path.is_file() else b""
+              command = command_path.read_text().strip() if command_path.is_file() else ""
+              output = raw.decode("utf-8", errors="replace")
+              passed = re.findall(r"^test (\S+) \.\.\. ok$", output, re.MULTILINE)
+              missing = [name for name in required if passed.count(name) != 1]
+              evidence = read_command_evidence(root, label)
+              counts = [tuple(map(int, row)) for row in re.findall(
+                  r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", output)]
+              accepted = (bool(command) and evidence["accepted"] and not missing
+                  and bool(counts) and any(row[0] > 0 for row in counts) and all(row[1] == 0 for row in counts))
+              executions.append({"case": label, "command": command, "command_exit_records": evidence["command_exit_records"],
+                  "capture_exit_records": evidence["capture_exit_records"],
+                  "required_positive_names": required, "missing_or_nonunique_positive_results": missing,
+                  "summaries_passed_failed_ignored": counts, "log_sha256": hashlib.sha256(raw).hexdigest(),
+                  "oracle_accepted": accepted})
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+              and tree == subject["subject_tree"] and str(subject["run_id"]) == os.environ["GITHUB_RUN_ID"]
+              and str(subject["run_attempt"]) == os.environ["GITHUB_RUN_ATTEMPT"]
+              and all(case["oracle_accepted"] for case in executions))
+          receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
+          receipt.update({"contract": "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "executions": executions,
+              "result": "passed" if accepted else "failed",
+              "scope": "Existing MCP/Skills owner: durable pre-dispatch tickets, exact settlement, pending/unknown refusal, strict image/marker recovery, cache-before-release barriers, same-root handoff and actual Session/prompt consumers. Owned process exits and fresh consumer processes use controlled backend I/O. No remote receipt/quiescence reconciliation, account-switch identity, real ecosystem, hardware power-loss or packaged-platform acceptance."})
+          (root / "plugin-uninstall-recovery.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          raise SystemExit(0 if accepted else 1)
+          PY
       - name: Require checked channel completion positives from existing macOS commands
         if: ${{ always() && steps.ocrm_diagnostics.outcome == 'success' && (steps.ocrm_recovery.outcome == 'success' || steps.ocrm_recovery.outcome == 'failure') }}
         shell: bash
@@ -2118,8 +2218,10 @@ jobs:
               "runner_cancel_terminal_result": "passed",
               "integration_recovery_contract": "OCRM-CONFIG-INTEGRATION-RECOVERY-v1",
               "integration_recovery_contract_targets": ["production_turn_input_projection_contract", "production_turn_agent_owner_contract", "production_agent_store_contract", "production_agent_store_recovery_contract", "checkpoint_root_identity_contract", "generated_occurrence_codec_contract", "production_checkpoint_restart_contract", "canonical_checkpoint_recovery_contract", "session_conversation_state_contract", "transcript_mirror_production_provider_contract", "production_agent_checkpoint_contract", "session_production_contract", "runner_routed_provider_contract", "turn_toolset_contract", "external_machine_tool_contract", "sand_generate_image_tool_contract", "sand_multitask_todo_tool_contract", "sand_web_tools_contract", "turn_toolset_await_mcp_contract", "openclaw_channel_delivery_contract", "turn_runtime_recovery_contract", "transcript_dispatch_source_contract", "routed_send_acceptance_contract", "transcript_extension_contract", "turn_telemetry_production_wiring_contract", "openclaw_chat_cron_node_contract", "group_member_runner_deletion_production_contract", "production_turn_run_shell_adapter_contract", "runner_effect_custody_contract", "mcp_meta_tools_contract", "cursor_inference_transport_contract", "stream_attempt_outer_lifecycle_contract", "host_runner_composition_production_wiring_contract", "pending_wake_rearm_contract", "cloud_agent_pending_wake_rearm_production_contract", "background_work_contract", "background_wakes_production_contract", "durable_recovery_stores_contract", "transcript_manager_contract", "memory_gateway_authorization_contract", "channel_gateway_authorization_contract", "connector_secret_store_contract", "widget_responses_full_contract", "agent_content_search_contract", "roster_search_contract", "palette_message_gateway_contract", "memory_service_contract", "turn_memory_contract", "memory_synthesis_store_contract", "memory_synthesis_service_contract", "transcript_production_composition_contract", "host_upgrade_service_contract", "agent_lifecycle_kickstart_production_contract", "completion_revivals_contract", "automation_runtime_contract", "automation_run_path_contract", "automation_run_production_wiring_contract", "automation_event_fires_contract", "automation_store_contract", "automation_spend_guard_runtime_contract", "automation_lifecycle_production_wiring_contract", "automations_fire_delivery_contract", "automations_backend_contract", "host_upgrade_production_contract", "bootstrap_contract", "sand_host_production_wiring_contract", "cloud_workers_extension_contract", "gateway_protocol_contract", "gateway_server_contract", "device_pairing_contract", "shared_rooms_production_contract", "agent_session_contract", "agent_db_owner_contract", "agent_db_serde_contract", "agent_db_transcript_pages_contract", "host_storage_contract", "conversation_blob_db_recovery_contract", "agent_db_recovery_contract", "session_maintenance_contract", "session_gateway_contract", "agent_to_agent_messaging_contract", "plugin_skills_contract", "host_bundle_and_plugin_cache_contract", "workflow_store_contract", "workflow_commands_contract", "skill_publish_contract", "legacy_live_references_contract", "mcp_service_contract", "mcp_coordinator_relay_contract", "runner_coordinator_tool_relay_contract", "mcp_extension_contract", "mcp_production_contract", "agent_state_contract", "host_production_extensions_contract", "system_prompt_dynamic_sections_production_contract", "ack_obligations_contract", "ack_redrive_production_contract"],
-              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
+              "integration_recovery_lib_filters": ["host_lock::physical_guard_tests", "extensions::auth::credential_renewer::worker_exit_tests", "extensions::auth::auth_service::worker_exit_tests", "extensions::session::agent_db_recovery::physical_release_tests", "extensions::session::typed_replay::tests", "extensions::session::production_agent_store::checked_state_tests", "extensions::session::agent_db::fresh_append_tests", "extensions::session::production::fresh_append_tests", "extensions::session::gateway::fresh_append_tests", "extensions::session::agent_db::channel_inbound_append_tests", "extensions::transcript::sand_upgrade_resume_store::checked_marker_tests", "extensions::transcript::production_runtime::checked_upgrade_handoff_tests", "extensions::mcp::coordinator_relay::lifecycle_tests", "runner::coordinator_tool_relay::lifecycle_tests", "extensions::transcript::completion_revivals::idle_handoff_tests", "extensions::inference::typed_replay_serialization::tests", "runner::compaction_planning::tests", "runner::production_turn_run_shell_adapter::tests", "runner::tools::mcp_meta_tools::tests", "runner::turn_shape::tests", "extensions::inference::production::tests", "extensions::inference::provider_session::tests", "extensions::inference::provider_session::fabushi_credential_context_tests", "extensions::inference::codex_direct_responses::tests::provider_refusal_parser", "extensions::mcp::plugin_skills::sync_tests", "extensions::mcp::plugin_skills::uninstall_state::tests", "extensions::mcp::plugin_skills_cache::tests", "extensions::session::production::plugin_skills_admission_tests", "host_production_extensions::plugin_skills_binding_tests", "extensions::session::agent_db::original_turn_terminal_tests", "extensions::session::production::original_turn_terminal_tests", "extensions::transcript::sand_ack_obligation_store::checked_reads", "extensions::transcript::sand_pending_wake_store::checked_pending_wake_tests", "extensions::memory::production::append_read_tests", "gateway_server::tests::paired_device_event_filter_hides_host_mcp_requests_even_without_channel_selection", "extensions::settings::public_projection::tests", "host_secret_store::config_revision_key_publication_tests", "extensions::box_store_sync::production::tests::production_snapshot_categories_exclude_actual_workspace_installation_key", "extensions::box_store_sync::production::tests::pack_source_selection_excludes_installation_key_material"],
               "integration_recovery_result": "passed",
+              "plugin_uninstall_recovery_contract": "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1",
+              "plugin_uninstall_recovery_receipt": str(Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"], "plugin-uninstall-recovery.receipt.json")),
               "original_turn_completion_contract": "ORT-v1",
               "original_turn_fresh_process_parent": "production_checkpoint_restart_contract::original_turn_real_generated_completion_acknowledges_exact_marker_in_fresh_app_after_ack_repair",
               "original_turn_fresh_process_child": "tests::original_turn_recovery_tests::original_turn_shipping_ack_process_child",
@@ -2738,6 +2840,26 @@ jobs:
               "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
               "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+              "source/host/src/extensions/mcp/mcp_service.rs",
+              "source/host/src/extensions/mcp/production.rs",
+              "source/host/src/extensions/mcp/coordinator_relay.rs",
+              "source/host/src/extensions/mcp/plugin_skills.rs",
+              "source/host/src/extensions/mcp/plugin_skills_cache.rs",
+              "source/host/src/extensions/mcp/plugin_skills_uninstall_state.rs",
+              "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+              "source/host/src/host_production_extensions.rs",
+              "source/host/src/workflows/workflow_store.rs",
+              "source/host/tests/mcp_service_contract.rs",
+              "source/host/tests/plugin_skills_contract.rs",
+              "source/host/tests/host_bundle_and_plugin_cache_contract.rs",
+              "source/host/tests/workflow_store_contract.rs",
+              "source/host/tests/workflow_commands_contract.rs",
+              "source/host/tests/legacy_live_references_contract.rs",
+              "source/host/tests/mcp_coordinator_relay_contract.rs",
+              "source/host/tests/mcp_extension_contract.rs",
+              "source/host/tests/mcp_production_contract.rs",
+              "source/host/tests/host_production_extensions_contract.rs",
               "projects/openclaw-rust/docs/specs/roster-search-unicode-match.md",
               "source/host/src/extensions/content_search/agent_content_search.rs",
               "source/host/src/extensions/transcript/roster_search.rs",
@@ -3079,10 +3201,60 @@ jobs:
                   "test_channel_router_preserves_attachment_and_absent_operation_identity",
                   "test_ocrm_channel_o06_message_chunking_code_fence_preservation",
               ]),
+              ("plugin-uninstall-service", base + ["--no-fail-fast", "--test", "mcp_service_contract", "--test", "plugin_skills_contract", "--test", "host_bundle_and_plugin_cache_contract", "--test", "workflow_store_contract", "--test", "workflow_commands_contract", "--test", "legacy_live_references_contract", "--test", "mcp_coordinator_relay_contract", "--test", "mcp_extension_contract", "--test", "mcp_production_contract", "--test", "host_production_extensions_contract", "--", "--test-threads=1"], [
+                  "uninstall_reservation_failure_prevents_backend_mutation",
+                  "uninstall_close_after_reservation_settles_only_not_dispatched",
+                  "confirmed_uninstall_consumers::desktop_unknown_uninstall_retains_pending_and_denies_actual_consumers",
+                  "confirmed_uninstall_consumers::intent_persistence_failure_prevents_real_backend_dispatch",
+                  "confirmed_uninstall_consumers::pending_uninstall_cannot_be_released_by_fresh_sync",
+                  "confirmed_uninstall_consumers::uninstall_custody_survives_owned_process_exit_and_fresh_process_consumers",
+                  "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
+                  "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request",
+                  "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
+              ]),
+              ("plugin-uninstall-state", base + ["--lib", "extensions::mcp::plugin_skills::", "--", "--test-threads=1"], [
+                  "extensions::mcp::plugin_skills::sync_tests::pending_uninstall_survives_fresh_sync_without_release_or_prune",
+                  "extensions::mcp::plugin_skills::sync_tests::pending_uninstall_reports_only_admitted_changes_at_publication",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_settlement_requires_the_exact_current_ticket_without_advancing_observation_on_refusal",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_non_removal_preserves_prior_confirmed_and_auth_refusals",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_reservation_fences_an_old_load_or_staged_pass_but_not_its_queued_fresh_load",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_terminal_settlements_fence_loads_started_before_the_reply",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_loads_exact_pending_and_confirmed_facts_without_invoking_the_loader",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_fault_requires_a_fresh_owner_after_repair",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_recovery_preserves_a_valid_unmarked_image_until_an_explicit_transition",
+                  "extensions::mcp::plugin_skills::sync_tests::uninstall_release_failure_after_valid_cache_publication_keeps_denial_and_files",
+                  "extensions::mcp::plugin_skills::sync_tests::pending_uninstall_same_root_successor_rejects_every_retired_settlement",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::absent_legacy_load_has_no_filesystem_side_effects",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_and_empty_terminal_state_round_trip",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::first_transition_creates_the_missing_directory_chain",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::image_only_initialization_remains_authoritative_until_explicit_transition",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::marker_without_image_and_invalid_markers_are_never_legacy",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::strict_object_format_rejects_unknown_duplicate_missing_and_mistyped_fields",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::semantic_duplicates_are_refused_but_confirmed_and_pending_may_overlap",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::canonical_plugin_and_operation_identity_is_required_on_read_and_write",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::writes_are_sorted_and_opaque_canonical_ids_are_preserved_exactly",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::exact_byte_drift_and_marker_loss_prevent_replacement",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::stale_image_and_corruption_cannot_overwrite_current_custody",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::nonregular_entries_are_preserved_as_recovery_faults",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::dangling_and_regular_file_symlinks_are_not_missing_or_authoritative_images",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::staging_cleanup_removes_only_a_successfully_created_owned_file",
+                  "extensions::mcp::plugin_skills::uninstall_state::tests::marker_publication_failure_does_not_erase_the_visible_image",
+              ]),
+              ("plugin-uninstall-binding", base + ["--lib", "host_production_extensions::plugin_skills_binding_tests::", "--", "--test-threads=1"], [
+                  "host_production_extensions::plugin_skills_binding_tests::fresh_host_binding_recovers_uninstall_custody_before_either_startup_order",
+                  "host_production_extensions::plugin_skills_binding_tests::prepared_disk_recovery_cannot_replace_a_newer_same_root_reader",
+                  "host_production_extensions::plugin_skills_binding_tests::initialized_uninstall_state_loss_blocks_the_real_host_binding",
+              ]),
+              ("plugin-uninstall-relay-handoff", base + ["--lib", "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff", "--", "--exact", "--test-threads=1"], [
+                  "extensions::mcp::coordinator_relay::lifecycle_tests::desktop_confirmation_keeps_the_actual_reader_across_same_root_handoff",
+              ]),
+              ("plugin-cache-publication", base + ["--lib", "extensions::mcp::plugin_skills_cache::tests::", "--", "--test-threads=1"], []),
+              ("plugin-session-consumer", base + ["--lib", "extensions::session::production::plugin_skills_admission_tests::", "--", "--test-threads=1"], []),
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1"],
+              "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
               "live_custody_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1",
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},

@@ -501,12 +501,10 @@ impl PluginSkillsBinding {
         Ok(())
     }
 
-    fn prepare_service(
-        &mut self,
+    fn session_for_root(
+        &self,
         sand_root_dir: &Path,
-        loader: Arc<dyn PluginSkillsLoader>,
-        reporter: Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>,
-    ) -> Result<Arc<SandPluginSkillsService>, String> {
+    ) -> Result<Option<Arc<ProductionSessionWorkers>>, String> {
         let session = self.session.as_ref().map(|registered| {
             registered.upgrade()
                 .ok_or_else(|| "production Plugin Skills Session binding is unavailable".to_string())
@@ -516,6 +514,20 @@ impl PluginSkillsBinding {
                 return Err("production MCP root differs from the Session SAND root".into());
             }
         }
+        Ok(session)
+    }
+
+    fn prepare_service(
+        &mut self,
+        sand_root_dir: &Path,
+        loader: Arc<dyn PluginSkillsLoader>,
+        reporter: Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>,
+        prepared: SandPluginSkillsService,
+    ) -> Result<Arc<SandPluginSkillsService>, String> {
+        // Recovery was read outside this binding lock. Repeat root/currentness
+        // checks after that I/O; a concurrently installed same-root owner wins
+        // over the prepared disk snapshot and retains its shared reader/facts.
+        let session = self.session_for_root(sand_root_dir)?;
         // Root checks precede the one-shot retirement. Handoff takes old P/S
         // and performs no I/O or external callback while this binding is held.
         let service = match &self.latest {
@@ -525,9 +537,9 @@ impl PluginSkillsBinding {
             Some(previous) => {
                 // A registered Session cannot reach this different-root arm.
                 previous.retire_for_replacement()?;
-                SandPluginSkillsService::new(sand_root_dir.to_path_buf(), loader)
+                prepared
             }
-            None => SandPluginSkillsService::new(sand_root_dir.to_path_buf(), loader),
+            None => prepared,
         };
         let service = Arc::new(service.with_reporter(reporter));
         // Keep the newest owner even if binding refuses. A retry must never
@@ -555,9 +567,17 @@ fn prepare_plugin_skills_service(
     loader: Arc<dyn PluginSkillsLoader>,
     reporter: Arc<dyn Fn(PluginSkillsSyncEvent) + Send + Sync>,
 ) -> Result<Arc<SandPluginSkillsService>, String> {
+    {
+        let current = binding.lock()
+            .map_err(|_| "production Plugin Skills binding lock poisoned".to_string())?;
+        // Reject a known wrong root before filesystem reads. This short check
+        // does not replace the repeated check at installation after recovery.
+        current.session_for_root(sand_root_dir)?;
+    }
+    let prepared = SandPluginSkillsService::new(sand_root_dir, Arc::clone(&loader));
     binding.lock()
         .map_err(|_| "production Plugin Skills binding lock poisoned".to_string())?
-        .prepare_service(sand_root_dir, loader, reporter)
+        .prepare_service(sand_root_dir, loader, reporter, prepared)
 }
 
 pub struct ProductionHostExtensions {
@@ -1932,6 +1952,123 @@ mod plugin_skills_binding_tests {
         assert!(first.successor_with_loader(loader.clone()).is_err());
         assert_eq!(loader.calls.load(Ordering::SeqCst), 0,
             "a failed binding cannot start loading or authenticated polling");
+    }
+
+    #[test]
+    fn fresh_host_binding_recovers_uninstall_custody_before_either_startup_order() {
+        use crate::extensions::mcp::mcp_service::PluginUninstallSettlement;
+
+        for session_first in [true, false] {
+            for confirmed in [true, false] {
+                let profile = Profile::new();
+                let seed_loader = MutableLoader::new(profile.loaded());
+                let seed = SandPluginSkillsService::new(profile.sand(), seed_loader);
+                let rows = seed.sync("seed").unwrap();
+                let intent = seed.begin_uninstall("9").unwrap();
+                if confirmed {
+                    seed.settle_uninstall(&intent, PluginUninstallSettlement::Removed).unwrap();
+                }
+                let prior_reader = seed.admission_reader();
+                let expected_status = seed.uninstall_recovery_status().unwrap();
+                let cache = fs::read(profile.cache_path()).unwrap();
+                seed.dispose();
+                drop(seed);
+
+                let sessions = profile.sessions();
+                let record = sessions.materialize_new_session(None, "user", None).unwrap();
+                let retained_store = sessions.open_workflow_store(&record.id).unwrap();
+                let binding = Mutex::new(PluginSkillsBinding::default());
+                if session_first {
+                    register_plugin_skills_session(&binding, &sessions).unwrap();
+                }
+                let loader = MutableLoader::new(profile.loaded());
+                let recovered = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+                if !session_first {
+                    register_plugin_skills_session(&binding, &sessions).unwrap();
+                }
+                assert!(!Arc::ptr_eq(&prior_reader, &recovered.admission_reader()),
+                    "fresh Host must reconstruct its admission from durable state");
+                assert!(recovered.admission_reader().is_denied("9"));
+                assert_eq!(recovered.uninstall_recovery_status(), Some(expected_status));
+                assert!(recovered.current().is_empty());
+                assert!(retained_store.get(&rows[0].id).is_none());
+                assert!(sessions.open_workflow_store(&record.id).unwrap().get(&rows[0].id).is_none());
+                assert_eq!(fs::read(profile.cache_path()).unwrap(), cache);
+                assert_eq!(loader.calls.load(Ordering::SeqCst), 0,
+                    "recovering an uninstall does not trigger a loader or remote retry");
+                recovered.dispose();
+                sessions.shutdown();
+            }
+        }
+    }
+
+    #[test]
+    fn prepared_disk_recovery_cannot_replace_a_newer_same_root_reader() {
+        use crate::extensions::mcp::mcp_service::PluginUninstallSettlement;
+
+        let profile = Profile::new();
+        let sessions = profile.sessions();
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let binding = Mutex::new(PluginSkillsBinding::default());
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let loader = MutableLoader::new(profile.loaded());
+        let owner = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+        let rows = owner.sync("seed").unwrap();
+        let retained_store = sessions.open_workflow_store(&record.id).unwrap();
+        assert!(retained_store.get(&rows[0].id).is_some());
+
+        // This is the real disk preparation that can race an operation between
+        // the wrapper's first root check and its final binding lock acquisition.
+        let prepared = SandPluginSkillsService::new(profile.sand(), loader.clone());
+        assert!(prepared.uninstall_recovery_status().is_none());
+        let intent = owner.begin_uninstall("9").unwrap();
+        let reader = owner.admission_reader();
+        let status = owner.uninstall_recovery_status();
+        let successor = binding.lock().unwrap().prepare_service(
+            &profile.sand(), loader.clone(), no_reporter(), prepared,
+        ).unwrap();
+        assert!(Arc::ptr_eq(&reader, &successor.admission_reader()));
+        assert_eq!(successor.uninstall_recovery_status(), status);
+        assert!(retained_store.get(&rows[0].id).is_none());
+        assert!(owner.settle_uninstall(&intent, PluginUninstallSettlement::NotRemoved).is_err());
+        assert!(successor.admission_reader().is_denied("9"));
+        assert_eq!(successor.uninstall_recovery_status(), status);
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+        successor.dispose();
+        sessions.shutdown();
+    }
+
+    #[test]
+    fn initialized_uninstall_state_loss_blocks_the_real_host_binding() {
+        let profile = Profile::new();
+        let loader = MutableLoader::new(profile.loaded());
+        let seed = SandPluginSkillsService::new(profile.sand(), loader.clone());
+        let rows = seed.sync("seed").unwrap();
+        let cache = fs::read(profile.cache_path()).unwrap();
+        seed.dispose();
+        drop(seed);
+        let marker = get_plugin_skills_dir(profile.sand()).join("uninstall-state.version");
+        fs::write(&marker, b"1\n").unwrap();
+
+        let sessions = profile.sessions();
+        let record = sessions.materialize_new_session(None, "user", None).unwrap();
+        let retained_store = sessions.open_workflow_store(&record.id).unwrap();
+        let binding = Mutex::new(PluginSkillsBinding::default());
+        register_plugin_skills_session(&binding, &sessions).unwrap();
+        let recovered = prepare(&binding, &profile, Arc::clone(&loader)).unwrap();
+        assert!(recovered.admission_reader().is_denied("9"));
+        assert!(recovered.admission_reader().is_denied("unlisted-control"));
+        assert_eq!(recovered.uninstall_recovery_status().unwrap()["fault"],
+            serde_json::json!("uninstall-state-unavailable"));
+        assert!(recovered.sync("must-not-reset").is_err());
+        assert!(retained_store.get(&rows[0].id).is_none());
+        assert!(sessions.open_workflow_store(&record.id).unwrap().get(&rows[0].id).is_none());
+        assert_eq!(fs::read(profile.cache_path()).unwrap(), cache);
+        assert_eq!(fs::read(&marker).unwrap(), b"1\n");
+        assert!(!get_plugin_skills_dir(profile.sand()).join("uninstall-state.json").exists());
+        assert_eq!(loader.calls.load(Ordering::SeqCst), 1);
+        recovered.dispose();
+        sessions.shutdown();
     }
 
     struct ReadyAuth;

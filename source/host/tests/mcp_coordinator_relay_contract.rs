@@ -616,7 +616,7 @@ mod desktop_service_contracts {
         CoordinatorMcpManagerBackend, MCP_UNINSTALL_PLUGIN_METHOD,
     };
     use mahayana_host_runtime::extensions::mcp::mcp_service::{
-        McpHostService, McpManagerBackend,
+        McpHostService, McpManagerBackend, PluginSkillsPort, PluginUninstallIntent,
     };
     use mahayana_host_runtime::extensions::mcp::plugin_skills::SandPluginSkillsService;
     use mahayana_host_runtime::extensions::mcp::plugin_skills_cache::{
@@ -639,6 +639,13 @@ mod desktop_service_contracts {
         service: Arc<McpHostService>,
         payload: Value,
         skill_path: PathBuf,
+    }
+
+    #[derive(Debug, PartialEq)]
+    struct UninstallCustodySnapshot {
+        status: Value,
+        image: Vec<u8>,
+        marker: Vec<u8>,
     }
 
     impl RealService {
@@ -681,6 +688,41 @@ mod desktop_service_contracts {
 
         fn cache_path(&self) -> PathBuf {
             get_plugin_skills_cache_path(get_plugin_skills_dir(&self.root.0))
+        }
+
+        fn pending_uninstall(&self, plugin_id: &str) -> PluginUninstallIntent {
+            let status = PluginSkillsPort::status(self.skills.as_ref());
+            let pending = status["uninstallRecovery"]["pending"].as_array().unwrap();
+            assert_eq!(pending.len(), 1);
+            assert_eq!(pending[0]["pluginId"], plugin_id);
+            let operation_id = pending[0]["operationId"].as_str().unwrap().to_string();
+            assert_eq!(uuid::Uuid::parse_str(&operation_id).unwrap().to_string(), operation_id);
+            PluginUninstallIntent { plugin_id: plugin_id.to_string(), operation_id }
+        }
+
+        fn assert_uninstall_custody(&self, confirmed: &[&str], pending: &[&PluginUninstallIntent])
+            -> UninstallCustodySnapshot
+        {
+            let pending_rows = pending.iter().map(|intent| json!({
+                "pluginId":intent.plugin_id, "operationId":intent.operation_id,
+            })).collect::<Vec<_>>();
+            let status = PluginSkillsPort::status(self.skills.as_ref());
+            assert_eq!(status, if confirmed.is_empty() && pending.is_empty() {
+                json!({"authBlocked":[]})
+            } else {
+                json!({"authBlocked":[],"uninstallRecovery":{
+                    "confirmedPluginIds":confirmed, "pending":pending_rows,
+                }})
+            });
+            let directory = get_plugin_skills_dir(&self.root.0);
+            let image = fs::read(directory.join("uninstall-state.json")).unwrap();
+            assert_eq!(serde_json::from_slice::<Value>(&image).unwrap(), json!({
+                "formatVersion":1, "confirmedPluginIds":confirmed, "pending":pending_rows,
+            }));
+            let marker = fs::read(directory.join("uninstall-state.version")).unwrap();
+            assert_eq!(marker, b"1\n");
+            assert!(!self.skills.admission_reader().is_denied("unrelated-plugin-control"));
+            UninstallCustodySnapshot { status, image, marker }
         }
 
         fn seed(&self) {
@@ -871,8 +913,11 @@ mod desktop_service_contracts {
         let catalog = fixture.next(MCP_LIST_CATALOG_METHOD);
         fixture.resolve(&catalog, json!([]));
         let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        let intent = fixture.pending_uninstall("41");
+        fixture.assert_uninstall_custody(&[], &[&intent]);
         fixture.resolve(&uninstall, json!({"removed":true,"state":null}));
         assert!(finish(worker, result).unwrap_err().contains("requires servers"));
+        let confirmed = fixture.assert_uninstall_custody(&["41"], &[]);
         assert!(fixture.skills.admission_reader().is_denied("41"));
         assert!(fixture.skills.current().is_empty());
         assert_eq!(fixture.relay.pending_count(), 1);
@@ -881,20 +926,26 @@ mod desktop_service_contracts {
             "display failure must not start cleanup refresh");
 
         fixture.resolve(&old_load, fixture.payload.clone());
-        assert!(finish(old_worker, old_result).unwrap_err().contains("superseded by a confirmed uninstall"));
+        assert_eq!(finish(old_worker, old_result).unwrap_err(),
+            "plugin skills sync superseded by an uninstall observation");
         assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);
         assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
         assert!(fixture.skills.admission_reader().is_denied("41"));
         assert!(fixture.skills.current().is_empty());
+        assert_eq!(fixture.assert_uninstall_custody(&["41"], &[]), confirmed);
+        assert_eq!(fixture.relay.pending_count(), 0);
+        assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
 
         // Only a fresh post-fact materialization can release the actual reader.
         let skills = Arc::clone(&fixture.skills);
         let (worker, result) = spawn_operation(move || skills.sync("fresh-reinstall"));
         let fresh = fixture.next(MCP_LOAD_PLUGIN_SKILLS_METHOD);
+        assert_eq!(fixture.assert_uninstall_custody(&["41"], &[]), confirmed);
         fixture.resolve(&fresh, fixture.payload.clone());
         assert_eq!(finish(worker, result).unwrap().len(), 1);
         assert!(!fixture.skills.admission_reader().is_denied("41"));
         assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
+        fixture.assert_uninstall_custody(&[], &[]);
     }
 
     #[test]
@@ -905,6 +956,8 @@ mod desktop_service_contracts {
         current.seed();
         let old_before = fs::read(old.cache_path()).unwrap();
         let current_before = fs::read(current.cache_path()).unwrap();
+        let old_skill_before = fs::read(&old.skill_path).unwrap();
+        let current_skill_before = fs::read(&current.skill_path).unwrap();
 
         let service = Arc::clone(&old.service);
         let (old_worker, old_result) = spawn_operation(move || {
@@ -913,10 +966,16 @@ mod desktop_service_contracts {
         let catalog = old.next(MCP_LIST_CATALOG_METHOD);
         old.resolve(&catalog, json!([]));
         let old_request = old.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        let old_intent = old.pending_uninstall("41");
+        let old_pending = old.assert_uninstall_custody(&[], &[&old_intent]);
         old.relay.cancel_all("Host replaced");
         old.skills.dispose();
         old.service.dispose().unwrap();
         assert!(finish(old_worker, old_result).unwrap_err().contains("closed"));
+        assert_eq!(old.assert_uninstall_custody(&[], &[&old_intent]), old_pending);
+        assert!(old.skills.admission_reader().is_denied("41"));
+        assert!(old.skills.current().is_empty());
+        assert_eq!(old.relay.pending_count(), 0);
 
         let service = Arc::clone(&current.service);
         let (worker, result) = spawn_operation(move || {
@@ -925,10 +984,14 @@ mod desktop_service_contracts {
         let catalog = current.next(MCP_LIST_CATALOG_METHOD);
         current.resolve(&catalog, json!([]));
         let request = current.next(MCP_UNINSTALL_PLUGIN_METHOD);
+        let current_intent = current.pending_uninstall("41");
+        let current_pending = current.assert_uninstall_custody(&[], &[&current_intent]);
+        assert_ne!(current_intent.operation_id, old_intent.operation_id);
         // Both relays have served seed, catalog and uninstall in that order;
         // a sequence-only request identity would collide on this real waiter.
         assert!(old_request["payload"]["requestId"].as_str().unwrap().ends_with("-3"));
         assert!(request["payload"]["requestId"].as_str().unwrap().ends_with("-3"));
+        assert_ne!(old_request["payload"]["requestId"], request["payload"]["requestId"]);
         for stale in [
             json!({"requestId":old_request["payload"]["requestId"],"ok":true,
                 "result":{"removed":true,"state":{"servers":[]}}}),
@@ -937,15 +1000,27 @@ mod desktop_service_contracts {
             assert!(current.relay.resolve(&stale).is_err());
             assert_eq!(current.relay.pending_count(), 1);
             assert!(matches!(result.try_recv(), Err(mpsc::TryRecvError::Empty)));
-            assert!(!current.skills.admission_reader().is_denied("41"));
+            assert!(current.skills.admission_reader().is_denied("41"));
+            assert!(current.skills.current().is_empty());
+            assert_eq!(current.assert_uninstall_custody(&[], &[&current_intent]), current_pending);
+            assert_eq!(old.assert_uninstall_custody(&[], &[&old_intent]), old_pending);
+            assert_eq!(fs::read(old.cache_path()).unwrap(), old_before);
             assert_eq!(fs::read(current.cache_path()).unwrap(), current_before);
+            assert_eq!(fs::read(&old.skill_path).unwrap(), old_skill_before);
+            assert_eq!(fs::read(&current.skill_path).unwrap(), current_skill_before);
+            assert!(matches!(current.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+            assert!(matches!(old.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
         }
         current.resolve(&request, json!({"removed":true,"state":null}));
         assert!(finish(worker, result).unwrap_err().contains("requires servers"));
         assert!(current.skills.admission_reader().is_denied("41"));
-        assert!(!old.skills.admission_reader().is_denied("41"));
+        current.assert_uninstall_custody(&["41"], &[]);
+        assert!(old.skills.admission_reader().is_denied("41"));
+        assert_eq!(old.assert_uninstall_custody(&[], &[&old_intent]), old_pending);
         assert_eq!(fs::read(old.cache_path()).unwrap(), old_before);
         assert_eq!(fs::read(current.cache_path()).unwrap(), current_before);
+        assert_eq!(fs::read(&old.skill_path).unwrap(), old_skill_before);
+        assert_eq!(fs::read(&current.skill_path).unwrap(), current_skill_before);
         assert_eq!(current.relay.pending_count(), 0);
         assert!(matches!(current.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
         assert!(matches!(old.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
@@ -956,6 +1031,7 @@ mod desktop_service_contracts {
         let fixture = RealService::new();
         fixture.seed();
         let before = fs::read(fixture.cache_path()).unwrap();
+        let skill_before = fs::read(&fixture.skill_path).unwrap();
         let service = Arc::clone(&fixture.service);
         let (worker, result) = spawn_operation(move || {
             service.dispatch_desktop_command("uninstallMcpPlugin", &json!({"pluginId":"41"})).unwrap()
@@ -964,17 +1040,28 @@ mod desktop_service_contracts {
         fixture.resolve(&catalog, json!([]));
         let uninstall = fixture.next(MCP_UNINSTALL_PLUGIN_METHOD);
         assert_eq!(fixture.relay.pending_count(), 1);
+        let intent = fixture.pending_uninstall("41");
+        let pending = fixture.assert_uninstall_custody(&[], &[&intent]);
         fixture.relay.cancel_all("Host shutdown");
         fixture.skills.dispose();
         fixture.service.dispose().unwrap();
         assert!(finish(worker, result).unwrap_err().contains("closed"));
-        assert!(!fixture.skills.admission_reader().is_denied("41"),
-            "an unknown remote outcome cannot manufacture a confirmed uninstall");
+        assert!(fixture.skills.admission_reader().is_denied("41"));
+        assert!(fixture.skills.current().is_empty());
+        assert_eq!(fixture.assert_uninstall_custody(&[], &[&intent]), pending,
+            "an unknown remote outcome retains its exact pending ticket without a confirmed fact");
         assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);
-        assert!(fixture.relay.resolve(&json!({
-            "requestId":uninstall["payload"]["requestId"], "ok":true,
-            "result":{"removed":true,"state":{"servers":[]}},
-        })).is_err());
+        assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
+        for stale in [
+            json!({"requestId":uninstall["payload"]["requestId"], "ok":true,
+                "result":{"removed":true,"state":{"servers":[]}}}),
+            json!({"requestId":uninstall["payload"]["requestId"], "ok":false,"error":"late failure"}),
+        ] {
+            assert!(fixture.relay.resolve(&stale).is_err());
+            assert_eq!(fixture.assert_uninstall_custody(&[], &[&intent]), pending);
+            assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);
+            assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
+        }
         for (method, args) in [
             ("uninstallMcpPlugin", json!({"pluginId":"41"})),
             ("refreshMcp", json!({})),
@@ -983,6 +1070,9 @@ mod desktop_service_contracts {
         ] {
             assert!(fixture.service.dispatch_desktop_command(method, &args).unwrap()
                 .unwrap_err().contains("closed"));
+            assert_eq!(fixture.assert_uninstall_custody(&[], &[&intent]), pending);
+            assert_eq!(fs::read(fixture.cache_path()).unwrap(), before);
+            assert_eq!(fs::read(&fixture.skill_path).unwrap(), skill_before);
         }
         assert_eq!(fixture.relay.pending_count(), 0);
         assert!(matches!(fixture.requests.try_recv(), Err(mpsc::TryRecvError::Empty)));

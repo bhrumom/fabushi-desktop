@@ -856,3 +856,195 @@ unknown remote effects and real ecosystem/platform acceptance remain open.
 Rollback reintroduces the desktop bypass; it is not revocation acceptance.
 Current errors and sync status remain the observability surfaces. This bounded
 delivery cannot promote OCRM global flags or replace full FPM/OCRM acceptance.
+
+### Durable uninstall custody — OCRM-PLUGIN-UNINSTALL-RECOVERY-v1
+
+Decision **PS-RECOVERY-01 — FIX / IMPL_BUG**, at implementation base
+`aa5a448e5758bd2b46aed92e699f56861ad0acdc`; fixed U is unchanged. A confirmed
+uninstall followed by failed Skills refresh currently retains its refusal only
+in an Arc. A new Host creates an empty reader and admits the old cached Skill.
+The earlier shared-reader reopen tests remain valid same-process controls.
+This batch adds durable operation custody before the existing external mutation;
+it does not claim account-switch or unknown-remote-outcome reconciliation.
+
+The sole owner remains `SandPluginSkillsService`. `McpHostService` orchestrates
+the existing backend, while the existing Session/workflow reader enforces its
+negative admission. Add no permission registry, runtime, scheduler or retry.
+
+- **PR-01 — identity and intent.** Reuse the complete existing uninstall ID
+  language (including control, U+FEFF and leading-zero alias refusal). Before
+  the backend uninstall call, obtain the Skills owner and commit a unique UUID
+  intent for that exact ID. An unavailable/retired owner, unresolved same-ID
+  intent, invalid identity or failed persistence prevents that backend call.
+  The optional catalog lookup remains read-only. Intent reservation and all
+  phase changes advance the existing observation identity, fencing older loads.
+- **PR-02 — one persisted image.** In the existing `plugin-skills` directory,
+  privately store `uninstall-state.json` with exactly `formatVersion: 1`,
+  `confirmedPluginIds: string[]`, and `pending: {pluginId, operationId}[]`.
+  Confirmed and pending sets are distinct; a new pending operation may coexist
+  with an older confirmed fact for its ID. Reject duplicate fields/IDs/tickets,
+  unsupported versions, unknown fields, invalid canonical IDs and noncanonical
+  UUIDs. Use typed strict decoding, not a permissive Value map. Persist no token,
+  credential, payload, guessed account identity or authentication refusal.
+- **PR-03 — initialization and loss.** A missing image and missing
+  `uninstall-state.version` marker means legacy/uninitialized, with no invented
+  intent. The marker contains exactly `1\n`. A valid image without a marker is
+  an interrupted initialization and remains authoritative. A present marker
+  with a missing image, an invalid marker, or unreadable/invalid image is an
+  explicit recovery fault; preserve original bytes and deny plugin admission.
+  Ordinary user/managed workflows retain their rules. Never reset unknown data
+  to an empty image. The first intent writes the complete image before creating
+  the marker; both must satisfy their barriers before backend admission.
+- **PR-04 — publication and locks.** Use the existing publication lock and
+  unique create-new staging, file sync, atomic rename and parent-directory sync
+  pattern already used by Host durable stores. On platforms without the
+  standard-library directory barrier retain the established file-sync/rename
+  limit; hardware power-loss and packaged-platform acceptance remain unproved.
+  Read/check the current durable image before replacement; observed drift or
+  corruption refuses mutation. No state/admission/binding guard spans filesystem
+  I/O or external callbacks. A failure after publication is outcome-unknown;
+  keep a live recovery fault and do not authorize the external call or erase
+  the newly visible image. Only this operation's temporary file may be removed.
+- **PR-05 — actual outcome.** The internal protocol is
+  `begin_uninstall(id) -> PluginUninstallIntent {plugin_id, operation_id}` and
+  `settle_uninstall(intent, PluginUninstallSettlement)` where settlement is
+  `NotDispatched`, `NotRemoved` or `Removed`. Only an exact current ticket may
+  settle. The service can establish NotDispatched only before invoking the
+  backend; backend errors, malformed receipts, close and timeout remain pending
+  or unknown. A returned boolean false is NotRemoved, not proof of no effects.
+  NotDispatched/NotRemoved remove only that ticket and preserve prior confirmed
+  facts and auth refusals. Removed commits the confirmed fact before projection,
+  legacy cleanup or refresh. Display failure cannot discard known removal.
+  Failed settlement is an explicit error and does not report durable completion.
+- **PR-06 — no replay or premature release.** Pending/unknown IDs are denied
+  through current, warm and newly opened workflow reads. They cannot be released
+  by any ordinary sync, even one begun after reservation. Restart never replays
+  an uninstall. A confirmed fact may be released only by an authoritative fresh
+  materialization begun after its terminal observation, after valid cache
+  publication/readback and durable release of that fact. A pending operation
+  prevents release for the same ID. Preserve zero-Skill reinstall, unrelated
+  IDs, current-denial precedence, old-load fences and truthful changed reports.
+  Ensure the corresponding cache bytes satisfy the publication barrier before
+  making a durable positive release. Failure keeps the refusal and old files.
+- **PR-07 — fresh owner and handoff.** Fresh construction loads this image and
+  publishes either its exact negative admission or a recovery fault. Host
+  preparation performs recovery I/O outside `PluginSkillsBinding`, then repeats
+  root/current-owner checks when installing the prepared service. A same-root
+  successor keeps the existing reader and facts; it must not replace them with
+  an earlier disk read. Preserve one-shot retirement, startup ordering and
+  failed-binding retry. A retired predecessor cannot settle a late ticket.
+- **PR-08 — observability.** Extend the existing Skills status projection with
+  secret-free uninstall recovery state only when state/fault is present; keep
+  the empty healthy `{authBlocked: [...]}` shape. Expose pending/unknown and
+  confirmed IDs distinctly and a fixed fault reason. Do not label either as an
+  auth denial, an installation grant, or evidence that a remote effect stopped.
+
+The previous unknown/malformed-receipt controls must continue proving that no
+confirmed-uninstall fact is fabricated and that cache/materialized/user files
+are unchanged. Their prior post-dispatch eligible-Skill assertion is superseded
+by PR-05/06: an unknown mutation retains the pending denial. Isolate such cases
+in fresh fixtures, retain explicit NotRemoved availability, and retain every
+canonical-ID, projection, unrelated-workflow, lifecycle and successful-reinstall
+assertion. Missing owner now refuses before mutation, strengthening its previous
+post-confirmation error boundary; prove zero mutation calls explicitly.
+
+Required Actions oracles use the real service, durable image, lifecycle backend
+and Session/prompt consumers with controlled remote I/O. Cover intent write
+failure/zero dispatch; pending during fresh sync; all three settlements and
+unknown receipt variants; stale/wrong/retired tickets; confirmed-plus-new-pending
+preservation; invalid/duplicate/missing initialized state and repair; failed
+release; and normal reinstallation. Add an owned child-process oracle that exits
+after durable reservation, after backend entry without a receipt, and after
+known removal before successful refresh. A separate fresh process must enforce
+the refusal with no replay while allowed plugin/user/managed controls remain.
+Retain all original shared-Arc successor tests; they are not restart evidence.
+
+Root owns the contract, persistence/service protocol, production binding and
+existing workflow selections. A test author may own only the assigned existing
+contract file against PR-v1. Freeze the integrated tree and obtain independent
+permission/lifetime/oracle review before exact-H Actions acceptance. No local
+or htch-runtime execution. Keep OCRM inventory/ledger/RTM and global flags intact.
+
+Implementation proceeds on `c4106e419e0fa7a45a6fd255ba1a2c8587f9a0b7` after
+the preceding Todo fixture repair. The two public protocol types belong beside
+`PluginSkillsPort` in `mcp_service.rs`; the intent has public String fields and
+settlement takes `&PluginUninstallIntent`. Persistence may use the private
+`plugin_skills_uninstall_state.rs` submodule of `plugin_skills.rs`; it has no
+public service, separate writer or lifecycle. Its strict image/readback functions
+are called only under the existing Skills publication interval. A valid image
+without a marker is repaired only by a later explicit state transition, never
+by construction. While any operation is pending, ordinary refresh does not
+prune materialized plugin directories; no mere listing proves remote quiescence.
+
+The optional status object is `uninstallRecovery`, with sorted
+`confirmedPluginIds` and `pending` entries containing `pluginId` and
+`operationId`. When recovery is unsafe it also contains the fixed
+`fault: "uninstall-state-unavailable"`. These pending entries mean unresolved
+custody, including calls not yet entered; they are not an execution receipt.
+No state/fault means this additional object is absent. The earlier unit-test
+confirmed-observation setup must call the real begin/Removed settlement protocol;
+it must not retain a production bypass that can manufacture confirmed facts
+without a current ticket.
+
+Fixed-U evidence is bounded: `plugins-uninstall-command.ts`
+`7335cf4223b2b7c407f4edbeb333ac75c89e995d` (full 177 lines),
+`management-uninstall.ts` `6632dba917c5aa15904a530d3422bd34770488fb`
+(1–75, 81–127, 235–579), `plugins-mutations.ts`
+`ec54b9d35b6d0f91a79b859acb3fb8ed1a6d749d` (full 197 lines), and the
+already-read config writer/authority chain establish disabled intent before
+runtime/file effects and post-commit error distinction. This is not complete
+upstream source or platform parity. The target has no restart-queryable remote
+receipt or shared account/backend incarnation in its ports; unknown operations
+therefore remain visibly blocked until that existing-owner protocol is extended.
+Account-switch coordination, remote quiescence, UI install receipt handoff,
+already captured prompts/effects and real ecosystem/platform acceptance remain
+required later work. Rollback loses this protection and must not delete custody
+files or be represented as permission acceptance.
+
+#### PR-v1 frozen review decisions and integration
+
+The first complete ten-path review used base
+`c4106e419e0fa7a45a6fd255ba1a2c8587f9a0b7`, candidate
+`caaed8cc2141b99890c74b130679e28daf895d74`, tree
+`d8ce8bfe7832027718624b9b74a956d6d55a9ff3`. Fresh blind GENERAL on the
+configured model/xhigh and STRUCTURE/REUSE/PERFORMANCE on
+`gpt-6.1-sol`/xhigh read the complete scope and adjacent consumers. Source
+approval is not execution evidence. Their complete reports were read before
+these decisions or any review-driven repair:
+
+- **PS-RECOVERY-RELAY-01 — FIX / TEST_FLAW** (GENERAL G1, STRUCTURE S1).
+  The adjacent `mcp_coordinator_relay_contract.rs` and
+  `coordinator_relay.rs::lifecycle_tests` retain four superseded oracles:
+  the old observation error, pending-as-eligible assertions, and a mutation
+  expected after retirement. Add those two existing files to the same frozen
+  protocol scope. Preserve exact relay correlation, no fabricated confirmed
+  fact, no replay, unchanged cache/materialized bytes and unrelated admission.
+  Assert the actual pending ticket/image after unknown closure. A new call
+  through a retired owner must have zero mutation dispatch; a distinct call
+  admitted before handoff must retain its pending ticket when a late receipt
+  reaches the retired predecessor.
+- **PS-RECOVERY-REPORT-01 — FIX / IMPL_BUG** (GENERAL G2).
+  A successful pending-period refresh currently counts raw committed rows,
+  even though actual consumers exclude the pending ID. Freeze the pending
+  admission projection inside successful publication and compare both old
+  and new report identities through it. Pending-only materialization changes
+  must not change the admitted count/identity report; unrelated admitted,
+  publisher/auth and real refusal-release changes still do. Keep the raw cache,
+  zero-skill restoration and the completed-commit-before-later-observation
+  report. Never sample a later live reader in the reporting callback.
+- **PS-RECOVERY-CAPTURE-01 — FIX / TEST_FLAW** (integration assessment).
+  The new macOS receipt checked the command exit but omitted its separate
+  capture exit. A readable partial log with all required names could therefore
+  give that scoped receipt a false pass after capture failure. Reuse incoming
+  `command-evidence.py` and its thirteen controls: each scoped command needs
+  exactly one zero command record and one zero capture record. Preserve raw
+  logs, named positives, summaries, exact-H identity and whole-job failures.
+
+Concurrent `cdefdf78aedb0b23751226566d92c1480284bbf5` is adopted as the
+integration parent. Its Automation legacy-slot, Memory episode, Gateway grant
+and shared capture-oracle changes are preserved; the nine non-workflow authored
+paths were byte-identical during this transplant. Shared command/receipt
+metadata is the union, including all existing pairing controls. Fresh focused
+reviews cover these repairs and the integrated workflow before publication;
+the full twelve-path scope remains available as context. Exact-H Actions,
+complete source/dependency closure and final acceptance are still required.

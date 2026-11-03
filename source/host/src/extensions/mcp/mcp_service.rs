@@ -152,10 +152,40 @@ pub fn to_plugin_summary(
     })
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PluginUninstallIntent {
+    pub plugin_id: String,
+    pub operation_id: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PluginUninstallSettlement {
+    NotDispatched,
+    NotRemoved,
+    Removed,
+}
+
+pub(crate) fn is_canonical_uninstall_plugin_id(plugin_id: &str) -> bool {
+    // The remote manager converts decimal IDs through BigInt and trims U+FEFF.
+    // Exact-string admission must never reserve another alias for that effect.
+    let numeric_alias = plugin_id.len() > 1
+        && plugin_id.starts_with('0')
+        && plugin_id.bytes().all(|byte| byte.is_ascii_digit());
+    !plugin_id.is_empty()
+        && plugin_id.trim_matches(|ch: char| ch.is_whitespace() || ch == '\u{feff}') == plugin_id
+        && !plugin_id.chars().any(char::is_control)
+        && !numeric_alias
+}
+
 pub trait PluginSkillsPort: Send + Sync {
     fn sync(&self, trigger: &str) -> Result<Vec<Value>, String>;
     fn status(&self) -> Value;
-    fn observe_confirmed_uninstall(&self, plugin_id: &str) -> Result<(), String>;
+    fn begin_uninstall(&self, plugin_id: &str) -> Result<PluginUninstallIntent, String>;
+    fn settle_uninstall(
+        &self,
+        intent: &PluginUninstallIntent,
+        settlement: PluginUninstallSettlement,
+    ) -> Result<(), String>;
     fn remove_live_references(&self, source_urls: &[String]);
 }
 
@@ -365,22 +395,13 @@ impl McpHostService {
         plugin_id: &str,
         project: impl FnOnce(McpPluginUninstallOutcome) -> Result<Value, String>,
     ) -> Result<Value, String> {
-        // The legacy remote manager converts decimal IDs through BigInt while
-        // admission uses exact strings. Reject aliases before any remote I/O.
-        let numeric_alias = plugin_id.len() > 1
-            && plugin_id.starts_with('0')
-            && plugin_id.bytes().all(|byte| byte.is_ascii_digit());
-        // JavaScript's downstream trim also removes U+FEFF; Rust's Unicode
-        // whitespace property does not. Refuse aliases instead of observing a
-        // different key from the plugin the remote manager actually removes.
-        let padded = plugin_id.trim_matches(|ch: char| ch.is_whitespace() || ch == '\u{feff}')
-            != plugin_id;
-        if plugin_id.is_empty() || padded
-            || plugin_id.chars().any(char::is_control) || numeric_alias
-        {
+        if !is_canonical_uninstall_plugin_id(plugin_id) {
             return Err("plugin uninstall requires a canonical plugin ID".into());
         }
         self.ensure_active()?;
+        let skills = self.plugin_skills.as_ref().ok_or_else(|| {
+            "plugin uninstall was not dispatched: plugin skills owner is unavailable".to_string()
+        })?;
         let source_urls = self
             .backend
             .list_catalog(false)
@@ -397,23 +418,31 @@ impl McpHostService {
         // Catalog lookup can await a remote owner. Do not start a mutation if
         // this service closed while that lookup was in flight.
         self.ensure_active()?;
+        let intent = skills.begin_uninstall(plugin_id)?;
+        if let Err(error) = self.ensure_active() {
+            skills.settle_uninstall(&intent, PluginUninstallSettlement::NotDispatched)
+                .map_err(|settlement_error| format!(
+                    "plugin uninstall was not dispatched, but intent settlement failed: {settlement_error}"
+                ))?;
+            return Err(error);
+        }
+        // No backend error proves that a mutation did not occur. Keep the
+        // durable pending ticket on transport, close, timeout or malformed reply.
         let outcome = self.backend.uninstall_plugin_outcome(plugin_id)?;
-        let skills = if outcome.removed {
-            let skills = self.plugin_skills.as_ref().ok_or_else(|| {
-                "plugin uninstall confirmed, but local skill admission could not be retired: plugin skills owner is unavailable".to_string()
-            })?;
-            skills.observe_confirmed_uninstall(plugin_id).map_err(|error| {
-                format!("plugin uninstall confirmed, but local skill admission could not be retired: {error}")
-            })?;
-            Some(skills)
+        let removed = outcome.removed;
+        let settlement = if removed {
+            PluginUninstallSettlement::Removed
         } else {
-            None
+            PluginUninstallSettlement::NotRemoved
         };
+        skills.settle_uninstall(&intent, settlement).map_err(|error| {
+            format!("plugin uninstall reply received, but durable intent settlement failed: {error}")
+        })?;
         // A Desktop display error is returned only after the confirmation has
         // reached admission, but before cleanup or refresh. Runner's projection
         // ignores Desktop shape and keeps its existing follow-up behavior.
         let result = project(outcome)?;
-        if let Some(skills) = skills {
+        if removed {
             skills.remove_live_references(&source_urls);
             let _ = skills.sync("uninstall");
         }

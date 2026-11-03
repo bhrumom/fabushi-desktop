@@ -886,7 +886,7 @@ mod lifecycle_tests {
             )));
             let mut records = Vec::new();
             let mut files = Vec::new();
-            for id in ["41", "42"] {
+            for id in ["41", "42", "43"] {
                 let file = root.0.join(format!("plugins/cache/cursor/p{id}/v1/skills/retained/SKILL.md"));
                 fs::create_dir_all(file.parent().unwrap()).unwrap();
                 fs::write(&file, format!(
@@ -905,7 +905,7 @@ mod lifecycle_tests {
             }, || 1_000.0).unwrap();
             let cache_path = get_plugin_skills_cache_path(&cache_dir);
             let before = fs::read(&cache_path).unwrap();
-            let file_before = fs::read(&files[0]).unwrap();
+            let file_before = files.iter().map(|file| fs::read(file).unwrap()).collect::<Vec<_>>();
             let events = GatewayEventHub::default();
             let requests = events.subscribe();
             let old_relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
@@ -949,6 +949,29 @@ mod lifecycle_tests {
             worker.join().unwrap();
             assert!(retained.get("plugin-41-retained").is_none());
 
+            // This distinct operation genuinely enters the old backend before
+            // handoff. Its durable pending fact must survive a late receipt.
+            let (pending_worker, pending_result) = dispatch(Arc::clone(&old_service), "43");
+            settle(&old_relay, MCP_LIST_CATALOG_METHOD, json!([]));
+            let pending_request = requests.recv_timeout(ORACLE_TIMEOUT).unwrap();
+            assert_eq!(pending_request["payload"]["method"], MCP_UNINSTALL_PLUGIN_METHOD);
+            assert_eq!(pending_request["payload"]["args"], json!({"pluginId":"43"}));
+            let pending_status = old_skills.uninstall_recovery_status().unwrap();
+            assert_eq!(pending_status["confirmedPluginIds"], json!(["41"]));
+            let pending = pending_status["pending"].as_array().unwrap();
+            assert_eq!(pending.len(), 1);
+            assert_eq!(pending[0]["pluginId"], "43");
+            let operation_id = pending[0]["operationId"].as_str().unwrap();
+            assert_eq!(uuid::Uuid::parse_str(operation_id).unwrap().to_string(), operation_id);
+            let journal_path = cache_dir.join("uninstall-state.json");
+            let journal = fs::read(&journal_path).unwrap();
+            assert_eq!(serde_json::from_slice::<Value>(&journal).unwrap(), json!({
+                "formatVersion":1, "confirmedPluginIds":["41"], "pending":pending,
+            }));
+            assert_eq!(fs::read(cache_dir.join("uninstall-state.version")).unwrap(), b"1\n");
+            assert!(retained.get("plugin-43-retained").is_none());
+            assert!(matches!(pending_result.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
             let successor_relay = Arc::new(CoordinatorMcpLifecycleRelay::with_timeout(
                 events, REQUEST_TIMEOUT,
             ));
@@ -961,20 +984,38 @@ mod lifecycle_tests {
             assert!(retained.get("plugin-41-retained").is_none());
             assert!(workers.open_workflow_store(&agent.id).unwrap().get("plugin-41-retained").is_none());
             assert_eq!(retained.get("plugin-42-retained").unwrap().body, "BODY_42");
+            assert!(successor.admission_reader().is_denied("43"));
+            assert!(workers.open_workflow_store(&agent.id).unwrap().get("plugin-43-retained").is_none());
+            assert_eq!(successor.uninstall_recovery_status().unwrap(), pending_status);
 
-            // A retained predecessor can still receive a remote confirmation;
-            // the retired actual Skills port must refuse it, without writing
-            // through to its successor's live observation state.
+            old_relay.resolve(&json!({
+                "requestId":pending_request["payload"]["requestId"], "ok":true,
+                "result":{"removed":true,"state":null},
+            })).unwrap();
+            let late_error = pending_result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err();
+            pending_worker.join().unwrap();
+            assert!(late_error.contains("durable intent settlement failed") && late_error.contains("disposed"));
+            assert_eq!(old_skills.uninstall_recovery_status().unwrap(), pending_status);
+            assert_eq!(successor.uninstall_recovery_status().unwrap(), pending_status);
+            assert_eq!(fs::read(&journal_path).unwrap(), journal);
+            assert_eq!(old_relay.pending_count(), 0);
+            assert!(matches!(requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+            // A new call through that already-retired owner must stop before
+            // mutation. Keep 42 as the separate unaffected admission control.
             let (worker, result) = dispatch(Arc::clone(&old_service), "42");
             settle(&old_relay, MCP_LIST_CATALOG_METHOD, json!([]));
-            settle(&old_relay, MCP_UNINSTALL_PLUGIN_METHOD, json!({"removed":true,"state":null}));
             let error = result.recv_timeout(ORACLE_TIMEOUT).unwrap().unwrap_err();
             worker.join().unwrap();
-            assert!(error.contains("uninstall confirmed") && error.contains("disposed"));
+            assert_eq!(error, "plugin skills owner is disposed; uninstall state was not changed");
             assert!(!successor.admission_reader().is_denied("42"));
             assert_eq!(retained.get("plugin-42-retained").unwrap().body, "BODY_42");
+            assert_eq!(successor.uninstall_recovery_status().unwrap(), pending_status);
+            assert_eq!(fs::read(&journal_path).unwrap(), journal);
             assert_eq!(fs::read(&cache_path).unwrap(), before);
-            assert_eq!(fs::read(&files[0]).unwrap(), file_before);
+            for (file, expected) in files.iter().zip(&file_before) {
+                assert_eq!(fs::read(file).unwrap(), *expected);
+            }
             assert!(matches!(requests.try_recv(), Err(mpsc::TryRecvError::Empty)));
             old_relay.cancel_all("fixture complete");
             successor_relay.cancel_all("fixture complete");
