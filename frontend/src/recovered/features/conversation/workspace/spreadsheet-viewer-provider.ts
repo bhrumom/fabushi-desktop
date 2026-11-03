@@ -87,8 +87,9 @@ export function createSpreadsheetViewerProvider(actions: SpreadsheetViewerAction
           isCurrent(entryGeneration) ? result : null
         ).catch((error: unknown) => {
           if (!isCurrent(entryGeneration)) return null;
-          if (pendingRead?.promise === promise) pendingRead = null;
           throw error;
+        }).finally(() => {
+          if (pendingRead?.promise === promise) pendingRead = null;
         });
         pendingRead = { generation: entryGeneration, source, maxBytes, promise };
         return promise;

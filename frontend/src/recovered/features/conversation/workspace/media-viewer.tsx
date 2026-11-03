@@ -342,8 +342,9 @@ export function TranscriptAttachmentGallery({ attachments, adjacency, role, reso
       currentPreviewAttachment(previewToken, "pdf") == null ? null : result
     ).catch((error: unknown) => {
       if (currentPreviewAttachment(previewToken, "pdf") == null) return null;
-      if (pdfReadRef.current?.promise === promise) pdfReadRef.current = null;
       throw error;
+    }).finally(() => {
+      if (pdfReadRef.current?.promise === promise) pdfReadRef.current = null;
     });
     pdfReadRef.current = { token: previewToken, path, maxBytes, promise };
     return promise;

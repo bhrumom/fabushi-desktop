@@ -21,6 +21,8 @@ on:
       - frontend/src/recovered/features/conversation/workspace/model.ts
       - frontend/src/recovered/features/conversation/workspace/transcript.tsx
       - frontend/src/recovered/features/conversation/workspace/media-viewer.tsx
+      - frontend/src/recovered/features/conversation/workspace/pdf-viewer.css
+      - frontend/src/recovered/features/conversation/workspace/view.css
       - frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts
       - frontend/src/recovered/features/conversation/workspace/submission.ts
       - source/shared/client-persistence-store.ts

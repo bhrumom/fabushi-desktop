@@ -3591,17 +3591,12 @@ impl ProductionSessionWorkers {
         &self, source_id: &str, request_id: &str, requested: Option<&[String]>, require_existing: bool,
         account: &str, issuer: &str, _exclusive: &std::sync::MutexGuard<'_, ()>,
     ) -> Result<HumanForwardBatch, String> {
-        let owner = if require_existing {
-            self.open_human_forward_recovery_owner(source_id)?
-        } else {
-            self.open_human_conversation_db_owner(source_id)?
-        };
-        if require_existing {
-            // Structural validity is enough to recover the journal. The
-            // per-target authorize_forward_source call below is the policy
-            // boundary and durably records a canonical-pair denial.
-            Self::read_human_conversation_metadata(&owner, source_id, false)?;
-        }
+        // This lane delivers an existing account/issuer-bound journal. Its
+        // source may be revoked: load the retained intent and let per-target
+        // authorization below persist its denial without granting row authority.
+        // require_existing applies only to the destination outbox, so automatic
+        // recovery can still dispatch a previously unsubmitted target.
+        let owner = self.open_human_forward_recovery_owner(source_id)?;
         let mut batch = load_forward_batches(&owner, source_id)?.into_iter().find(|item|
             item.account_id == account && item.issuer == issuer && item.request_id == request_id
         ).ok_or_else(|| "forwardHumanMessage durable request was not found".to_string())?;

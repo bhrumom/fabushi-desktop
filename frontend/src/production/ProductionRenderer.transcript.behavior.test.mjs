@@ -421,6 +421,22 @@ async function refreshRoot(t, initialRows) {
   await f.frames();
   const editor = f.page.locator('.sand-chat-input-dock [contenteditable="true"]');
   assert.equal(await editor.count(), 1);
+  // promptEditorContent("", undefined) is one empty paragraph. Its trailing
+  // ProseMirror BR is a cursor placeholder, not a serialized prompt newline.
+  // Check the complete empty shape so whitespace, extra paragraphs, and empty
+  // inline tokens cannot be mistaken for an empty account/conversation draft.
+  const expectEmptyEditor = async (reason) => {
+    const shape = await editor.evaluate((element) => ({
+      text: element.textContent,
+      children: [...element.childNodes].map((node) => ({
+        name: node.nodeName, children: [...node.childNodes].map((child) => child.nodeName),
+      })),
+      trailingBreaks: element.querySelectorAll("br.ProseMirror-trailingBreak").length,
+    }));
+    assert.deepEqual(shape, {
+      text: "", children: [{ name: "P", children: ["BR"] }], trailingBreaks: 1,
+    }, reason);
+  };
   const row = (id) => f.page.locator('[data-entry-id="' + id + '"]');
   const update = (entry, conversationId = A) => f.call("event", "transcript", { type: "updated", agentId: conversationId, entry });
   const openFind = async (query) => {
@@ -461,7 +477,7 @@ async function refreshRoot(t, initialRows) {
     assert.equal(await f.count("sendMessage"), 0);
     assert.equal(await f.count("forwardHumanMessage"), 0);
   };
-  return { ...f, initial, editor, row, update, openFind, findState, resourceRequests,
+  return { ...f, initial, editor, expectEmptyEditor, row, update, openFind, findState, resourceRequests,
     resourceRequest, resourceCount, declareBytes, resolveResource, boundedRead, noSend };
 }
 
@@ -515,7 +531,7 @@ test("human_entry_refresh_requeries_search_and_discards_older_results", { timeou
   await f.resolveRequest(accountBTail, historyPage([accountBRow]));
   await f.expectRows([accountBRow.id]);
   await f.frames();
-  assert.equal((await f.editor.innerText()).trim(), "", "an old account's composer does not enter the new account");
+  await f.expectEmptyEditor("an old account's composer does not enter the new account");
   assert.equal(await f.count("searchHumanMessages"), beforeAccountSwitch,
     "scope reset must reject an old render's query before any request enters account B");
   await f.editor.fill("ACCOUNT_B_DRAFT");
@@ -645,9 +661,37 @@ test("human_entry_refresh_retires_removed_pdf_and_late_resource_reads", { timeou
   };
   await openPdf(pdfA);
   const retiredRead = await f.resourceRequest("readAttachmentBytes", pdfA.path);
-  const pdfDownload = pdf(pdfA.fileName).getByRole("button", { name: "Download file", exact: true });
-  await pdfDownload.focus();
-  await pdfDownload.press("Enter");
+  // The Linux fixture mounts the actual production WindowChrome. Reserving
+  // its existing titlebar band must keep the real button pointer-reachable;
+  // inspect hit testing without invoking any window-state operation.
+  const minimize = f.page.locator(".sand-window-controls").getByRole("button", { name: "Minimize", exact: true });
+  assert.equal(await minimize.count(), 1);
+  const chromeHit = await minimize.evaluate((button) => {
+    const viewer = document.querySelector(".sand-file-viewer");
+    const carrier = document.querySelector(".sand-cover-drag");
+    if (!(viewer instanceof HTMLElement) || !(carrier instanceof HTMLElement)) {
+      throw new Error("Actual file viewer and WindowChrome carrier must be mounted");
+    }
+    const buttonRect = button.getBoundingClientRect();
+    const chromeRect = carrier.getBoundingClientRect();
+    const viewerRect = viewer.getBoundingClientRect();
+    const centerX = buttonRect.left + buttonRect.width / 2;
+    const centerY = buttonRect.top + buttonRect.height / 2;
+    const hit = document.elementFromPoint(centerX, centerY);
+    return {
+      buttonWidth: buttonRect.width, buttonHeight: buttonRect.height, centerY,
+      chromeTop: chromeRect.top, chromeHeight: chromeRect.height, chromeBottom: chromeRect.bottom,
+      viewerTop: viewerRect.top, hitsMinimize: hit != null && button.contains(hit),
+      hitTag: hit?.tagName ?? null, hitClass: hit?.getAttribute("class") ?? null,
+    };
+  });
+  assert.ok(chromeHit.buttonWidth > 0 && chromeHit.buttonHeight > 0);
+  assert.equal(chromeHit.chromeTop, 0);
+  assert.equal(chromeHit.chromeHeight, 52);
+  assert.ok(chromeHit.centerY >= chromeHit.chromeTop && chromeHit.centerY < chromeHit.chromeBottom);
+  assert.equal(chromeHit.viewerTop, chromeHit.chromeBottom, "the actual preview begins below the existing titlebar band");
+  assert.equal(chromeHit.hitsMinimize, true, "the open preview must preserve actual Minimize pointer hit testing: " + JSON.stringify(chromeHit));
+  await pdf(pdfA.fileName).getByRole("button", { name: "Download file", exact: true }).click();
   const retiredDownload = await f.resourceRequest("downloadAttachment", pdfA.path);
   assert.deepEqual(retiredDownload.args, { source: pdfA.path, suggestedName: pdfA.fileName });
   await f.update({ ...entry, content: "unrelated text edit", attachments: [pdfB, { ...pdfA }] });
@@ -746,7 +790,7 @@ test("human_entry_refresh_retires_removed_pdf_and_late_resource_reads", { timeou
   await pdf(pdfB.fileName).waitFor({ state: "detached" });
   await f.frames();
   assert.equal(await row.locator(".sand-message-prose").innerText(), betaEntry.content);
-  assert.equal(await f.editor.innerText(), "");
+  await f.expectEmptyEditor("the cached Beta conversation does not inherit Alpha's draft");
   await openPdf(pdfB);
   const betaRead = await f.resourceRequest("readAttachmentBytes", pdfB.path, alphaRead.id);
   await f.boundedRead(alphaRead);
@@ -775,14 +819,33 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
   await f.declareBytes(sheet);
   await f.editor.fill("SHEET_DRAFT_MUST_SURVIVE");
   const viewer = f.page.getByRole("dialog", { name: sheet.fileName, exact: true });
-  const openSheet = async (entryId) => {
+  const sheetReads = async () => (await f.resourceRequests()).filter((request) =>
+    request.method === "readAttachmentBytes" && request.args.source === sheet.path);
+  const openSheet = async (entryId, account = "fixture-a") => {
+    const before = await sheetReads();
     const chip = f.row(entryId).getByRole("button", { name: "Open " + sheet.fileName, exact: true });
     await chip.focus();
     await chip.press("Enter");
     await viewer.waitFor();
+    // The real development bootstrap retains StrictMode. The current public
+    // provider coalesces its consumers into one external read for this fresh
+    // activation; observe that boundary before any source or row update.
+    await f.page.waitForFunction(({ source, count }) => window.__transcriptHarness.resources().filter((request) =>
+      request.method === "readAttachmentBytes" && request.args.source === source).length === count,
+    { source: sheet.path, count: before.length + 1 });
+    await f.frames();
+    const all = await sheetReads();
+    assert.equal(all.length, before.length + 1, "one fresh provider activation creates exactly one external read");
+    assert.deepEqual(all.slice(0, before.length).map((request) => request.id), before.map((request) => request.id));
+    const currentRead = all[before.length];
+    assert.deepEqual(currentRead.args, { source: sheet.path, maxBytes: RESOURCE_CAP });
+    assert.equal(currentRead.account, account);
+    assert.equal(currentRead.settled, false);
+    assert.equal(await viewer.getByText("Loading spreadsheet…", { exact: true }).count(), 1);
+    return currentRead;
   };
-  await openSheet(original.id);
-  const retiredRead = await f.resourceRequest("readAttachmentBytes", sheet.path);
+  const retiredRead = await openSheet(original.id);
+  const initialReadCount = await f.resourceCount("readAttachmentBytes", sheet.path);
   await viewer.getByRole("link", { name: "Download file", exact: true }).click();
   const retiredDownload = await f.resourceRequest("downloadAttachment", sheet.path);
   assert.deepEqual(retiredDownload.args, { source: sheet.path, suggestedName: sheet.fileName });
@@ -790,19 +853,21 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
   await f.update({ ...original, content: "TEXT_EDIT_WITH_SAME_RESOURCE", attachments: [spare, { ...sheet }] });
   await f.frames();
   assert.equal(await viewer.count(), 1);
-  assert.equal(await f.resourceCount("readAttachmentBytes", sheet.path), 1);
+  assert.equal(await f.resourceCount("readAttachmentBytes", sheet.path), initialReadCount,
+    "unrelated updates and source attachment reorder create no additional reads");
   await f.call("event", "transcript", { type: "snapshot", activeAgentId: A,
     entries: [shadow, { ...other, content: "UNRELATED_ROW_UPDATED" }, { ...original, content: "TEXT_EDIT_WITH_SAME_RESOURCE", attachments: [spare, sheet] }] });
   await f.expectRows([shadow.id, other.id, original.id]);
   assert.equal(await viewer.count(), 1, "entry reorder cannot change a valid resource owner");
+  assert.equal(await f.resourceCount("readAttachmentBytes", sheet.path), initialReadCount,
+    "full transcript row reorder creates no additional reads");
   assert.equal(await f.editor.innerText(), "SHEET_DRAFT_MUST_SURVIVE");
 
   await f.update({ ...original, attachments: [spare] });
   await viewer.waitFor({ state: "detached" });
   assert.equal(await f.row(shadow.id).getByRole("button", { name: "Open " + sheet.fileName, exact: true }).count(), 1,
     "the same path remains present in a different row but cannot keep the old source authorized");
-  await openSheet(shadow.id);
-  const shadowRead = await f.resourceRequest("readAttachmentBytes", sheet.path, retiredRead.id);
+  const shadowRead = await openSheet(shadow.id);
   await f.boundedRead(retiredRead);
   await f.resolveResource(retiredDownload, true);
   await f.frames();
@@ -819,14 +884,12 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
   const changedShadow = { ...shadow, attachments: [changedSheet] };
   await f.update(changedShadow);
   await viewer.waitFor({ state: "detached" });
-  await openSheet(shadow.id);
-  const changedRead = await f.resourceRequest("readAttachmentBytes", sheet.path, shadowRead.id);
+  const changedRead = await openSheet(shadow.id);
   await f.boundedRead(changedRead);
   await viewer.getByText("Spreadsheet too large to preview", { exact: true }).waitFor();
   await viewer.getByRole("button", { name: "Close preview", exact: true }).click();
   await viewer.waitFor({ state: "detached" });
-  await openSheet(shadow.id);
-  const accountARead = await f.resourceRequest("readAttachmentBytes", sheet.path, changedRead.id);
+  const accountARead = await openSheet(shadow.id);
   await f.call("switchAccount", "fixture-b");
   await viewer.waitFor({ state: "detached" });
   const accountBTail = await f.request(TAIL, { conversationId: A, beforeSeq: null, account: "fixture-b" }, f.initial.id);
@@ -834,10 +897,9 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
   await f.resolveRequest(accountBTail, historyPage([accountBEntry]));
   await f.expectRows([shadow.id]);
   await f.frames();
-  assert.equal(await f.editor.innerText(), "");
+  await f.expectEmptyEditor("a new account with the same row and resource does not inherit the old draft");
   await f.editor.fill("SHEET_ACCOUNT_B_DRAFT");
-  await openSheet(shadow.id);
-  const accountBRead = await f.resourceRequest("readAttachmentBytes", sheet.path, accountARead.id);
+  const accountBRead = await openSheet(shadow.id, "fixture-b");
   assert.equal(accountARead.account, "fixture-a");
   assert.equal(accountBRead.account, "fixture-b");
   await f.boundedRead(accountARead);
@@ -863,7 +925,7 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
     const provider = createSpreadsheetViewerProvider({
       readAttachmentBytes: (source, maxBytes) => {
         calls.push({ method: "read", source, maxBytes });
-        return new Promise((resolveRead) => pendingReads.push(resolveRead));
+        return new Promise((resolveRead, rejectRead) => pendingReads.push({ resolve: resolveRead, reject: rejectRead }));
       },
       downloadAttachment: (source, suggestedName) => {
         calls.push({ method: "download", source, suggestedName });
@@ -871,9 +933,16 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
       },
     });
     const attachment = { path: "provider-source.csv", name: "Provider.csv", mimeType: "text/csv", size: 16 };
+    const requireReadCount = (expected, reason) => {
+      const actual = calls.filter((call) => call.method === "read").length;
+      if (actual !== expected) throw new Error(reason + ": expected " + expected + " external reads, received " + actual);
+      return actual;
+    };
     const retired = provider.mount(attachment);
     if (retired == null) throw new Error("public spreadsheet provider did not mount");
     const oldRead = retired.readAttachmentBytes(attachment.path, cap);
+    const oldReadTwin = retired.readAttachmentBytes(attachment.path, cap);
+    const retiredReadCount = requireReadCount(1, "same pending activation must share one external read");
     const oldDownload = retired.onDownload();
     retired.close();
     const countAtClose = calls.length;
@@ -884,12 +953,48 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
     if (current == null) throw new Error("same-path provider reopening failed");
     retired.close();
     const oldCloseCannotRetireCurrent = current.isOpen();
-    pendingReads.shift()({ kind: "too-large", size: cap + 1 });
+    const currentReadPromise = current.readAttachmentBytes(attachment.path, cap);
+    const currentReadTwin = current.readAttachmentBytes(attachment.path, cap);
+    const currentReadCount = requireReadCount(2, "fresh activation owns one new pending boundary");
+
+    // Complete the OLD request while the NEW activation's slot is held.
+    // A stale finally must not clear the new slot: its third consumer still
+    // shares that pending boundary, regardless of adopting Promise identity.
+    pendingReads.shift().resolve({ kind: "too-large", size: cap + 1 });
     pendingDownloads.shift()(true);
     const oldResults = { read: await oldRead, download: await oldDownload };
-    const currentReadPromise = current.readAttachmentBytes(attachment.path, cap);
-    pendingReads.shift()({ kind: "too-large", size: cap + 1 });
-    const currentRead = await currentReadPromise;
+    const oldTwinResult = await oldReadTwin;
+    const currentAfterOldCompletion = current.readAttachmentBytes(attachment.path, cap);
+    const afterOldCompletionCount = requireReadCount(2, "old completion must not evict the current pending slot");
+    pendingReads.shift().resolve({ kind: "too-large", size: cap + 1 });
+    const [currentRead, currentTwinResult, currentThirdResult] = await Promise.all([
+      currentReadPromise, currentReadTwin, currentAfterOldCompletion,
+    ]);
+
+    // A settled success/null/failure is not a lifetime cache. Each explicit
+    // subsequent read dispatches once and only its concurrent consumer shares it.
+    const nullRead = current.readAttachmentBytes(attachment.path, cap);
+    const nullReadTwin = current.readAttachmentBytes(attachment.path, cap);
+    const afterSuccessCount = requireReadCount(3, "a completed success must release its pending slot");
+    pendingReads.shift().resolve(null);
+    const nullResults = await Promise.all([nullRead, nullReadTwin]);
+
+    const failure = new Error("CONTROLLED_PROVIDER_READ_FAILURE");
+    const failedRead = current.readAttachmentBytes(attachment.path, cap);
+    const failedReadTwin = current.readAttachmentBytes(attachment.path, cap);
+    const afterNullCount = requireReadCount(4, "a completed null result must release its pending slot");
+    // Attach BOTH error consumers before rejection; the pageerror oracle remains
+    // strict and the real provider must propagate the original current error.
+    const failuresObserved = Promise.all([failedRead, failedReadTwin].map((operation) =>
+      operation.then(() => false, (error) => error === failure)));
+    pendingReads.shift().reject(failure);
+    const failureResults = await failuresObserved;
+
+    const recoveredRead = current.readAttachmentBytes(attachment.path, cap);
+    const recoveredReadTwin = current.readAttachmentBytes(attachment.path, cap);
+    const afterErrorCount = requireReadCount(5, "a completed error must allow a fresh external read");
+    pendingReads.shift().resolve({ kind: "too-large", size: cap + 2 });
+    const recoveredResults = await Promise.all([recoveredRead, recoveredReadTwin]);
     const currentDownloadPromise = current.onDownload();
     pendingDownloads.shift()(true);
     const currentDownload = await currentDownloadPromise;
@@ -898,7 +1003,10 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
     const disposedRead = await current.readAttachmentBytes(attachment.path, cap);
     const disposedDownload = await current.onDownload();
     return { calls, closedRead, closedDownload, noDispatchAfterClose, oldCloseCannotRetireCurrent,
-      oldResults, currentRead, currentDownload, disposedRead, disposedDownload,
+      oldResults, oldTwinResult, currentRead, currentTwinResult, currentThirdResult,
+      nullResults, failureResults, recoveredResults, currentDownload, disposedRead, disposedDownload,
+      readCounts: { retiredReadCount, currentReadCount, afterOldCompletionCount, afterSuccessCount, afterNullCount, afterErrorCount },
+      allPublicRequestsSettled: pendingReads.length === 0 && pendingDownloads.length === 0,
       noDispatchAfterDispose: calls.length === countAtDispose, currentClosed: !current.isOpen() };
   }, { providerUrl, cap: RESOURCE_CAP });
   assert.deepEqual(providerEvidence, {
@@ -906,11 +1014,20 @@ test("human_entry_refresh_retires_spreadsheet_mount_when_source_changes", { time
       { method: "read", source: "provider-source.csv", maxBytes: RESOURCE_CAP },
       { method: "download", source: "provider-source.csv", suggestedName: "Provider.csv" },
       { method: "read", source: "provider-source.csv", maxBytes: RESOURCE_CAP },
+      { method: "read", source: "provider-source.csv", maxBytes: RESOURCE_CAP },
+      { method: "read", source: "provider-source.csv", maxBytes: RESOURCE_CAP },
+      { method: "read", source: "provider-source.csv", maxBytes: RESOURCE_CAP },
       { method: "download", source: "provider-source.csv", suggestedName: "Provider.csv" },
     ],
     closedRead: null, closedDownload: false, noDispatchAfterClose: true,
-    oldCloseCannotRetireCurrent: true, oldResults: { read: null, download: false },
-    currentRead: { kind: "too-large", size: RESOURCE_CAP + 1 }, currentDownload: true,
+    oldCloseCannotRetireCurrent: true, oldResults: { read: null, download: false }, oldTwinResult: null,
+    currentRead: { kind: "too-large", size: RESOURCE_CAP + 1 },
+    currentTwinResult: { kind: "too-large", size: RESOURCE_CAP + 1 },
+    currentThirdResult: { kind: "too-large", size: RESOURCE_CAP + 1 },
+    nullResults: [null, null], failureResults: [true, true],
+    recoveredResults: [{ kind: "too-large", size: RESOURCE_CAP + 2 }, { kind: "too-large", size: RESOURCE_CAP + 2 }],
+    readCounts: { retiredReadCount: 1, currentReadCount: 2, afterOldCompletionCount: 2, afterSuccessCount: 3, afterNullCount: 4, afterErrorCount: 5 },
+    allPublicRequestsSettled: true, currentDownload: true,
     disposedRead: null, disposedDownload: false, noDispatchAfterDispose: true, currentClosed: true,
   });
 });

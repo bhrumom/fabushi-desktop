@@ -6925,7 +6925,7 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
     let legacy_target_owner = legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap();
     assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
-    let legacy_participants = legacy_owner.get_metadata("participantIds").unwrap().unwrap();
+    let legacy_canonical_metadata = legacy_owner.read_kv("metadata").unwrap().unwrap();
     // Reproduce the actual pre-journal production nonce: SHA256 of the
     // request ID, one NUL byte, then this destination conversation ID.
     use sha2::Digest;
@@ -6953,18 +6953,32 @@ fn shipping_human_forward_pending_ownership_survives_missing_versions_and_reject
     // to prove restart cannot turn that readable source into permission to send.
     legacy_runtime.shutdown(); drop(legacy_target_owner); drop(legacy_owner); drop(legacy_runtime);
     let legacy_runtime = human_message_fixture_runtime(&legacy_root, &legacy_server.url);
-    let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source).unwrap();
+    assert!(legacy_runtime.open_human_conversation_db_owner(legacy_source).is_err(),
+        "ordinary cold admission refuses the revoked legacy source");
     let legacy_target_owner = legacy_runtime.open_human_conversation_db_owner(legacy_target).unwrap();
     assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
-    assert_eq!(legacy_owner.get_metadata("participantIds").unwrap(), Some(json!(["2", "9"])));
+    let legacy_revoked_metadata = read_forward_metadata_from_disk(&legacy_root, legacy_source);
+    assert_eq!(legacy_revoked_metadata["participantIds"], json!(["2", "9"]));
     let denied = legacy_runtime.sync_human_conversation(legacy_target)
         .expect_err("reopened genuine legacy intent must reauthorize source membership");
     assert!(denied.contains("participant"), "{denied}");
     assert_eq!(legacy_server.post_count(), 0);
     assert_eq!(legacy_target_owner.get_transcript_entries().unwrap(), vec![legacy_pending.clone()]);
-    assert!(legacy_owner.get_metadata("humanForwardBatches").unwrap().is_none());
+    assert!(legacy_revoked_metadata.get("humanForwardBatches").is_none());
+    assert_eq!(read_forward_metadata_from_disk(&legacy_root, legacy_source), legacy_revoked_metadata,
+        "legacy refusal preserves the complete revoked source metadata");
+    assert!(legacy_runtime.open_human_conversation_db_owner(legacy_source).is_err(),
+        "retained journal inspection never grants ordinary source authority");
 
-    assert!(legacy_owner.set_metadata("participantIds", legacy_participants).unwrap());
+    // Only after the refusal oracles, explicitly restore this test fixture's
+    // original metadata. Production recovery does not repair participant pairs.
+    let repair = rusqlite::Connection::open(forward_db_path(&legacy_root, legacy_source)).unwrap();
+    assert_eq!(repair.execute("UPDATE kv SET value = ?1 WHERE key = 'metadata'",
+        [legacy_canonical_metadata.as_str()]).unwrap(), 1);
+    drop(repair);
+    let legacy_owner = legacy_runtime.open_human_conversation_db_owner(legacy_source)
+        .expect("ordinary source authority returns only after explicit pair restoration");
+    assert_eq!(legacy_owner.read_kv("metadata").unwrap().as_deref(), Some(legacy_canonical_metadata.as_str()));
     let mut changed_source = legacy_owner.get_transcript_entries().unwrap().into_iter()
         .find(|entry| entry["id"].as_str() == Some(legacy_source_entry_id)).unwrap();
     changed_source["content"] = json!("source edited after the legacy intent was persisted");
@@ -8095,6 +8109,9 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
         }
         let original_participants = owner.read_metadata().expect("original metadata")
             .get("participantIds").cloned().expect("original participant pair");
+        let canonical_metadata = owner.read_metadata().expect("original canonical conversation metadata");
+        let canonical_raw_metadata = owner.read_kv("metadata").expect("original metadata bytes")
+            .expect("persisted canonical metadata");
         let participants = match label {
             "foreign-participants" => Some(json!(["2", "3"])),
             "participants-more-than-two" => Some(json!(["1", "2", "3"])),
@@ -8108,12 +8125,10 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
             assert!(owner.set_metadata("participantIds", participants).unwrap());
         }
         if label == "participants-rebound-peer" {
+            let rebound_metadata = owner.read_metadata().expect("rebound metadata");
             assert!(runtime.open_human_conversation_db_owner(&id).is_err(),
                 "a rebound peer must not retain authority through the original canonical directory");
-            let rebound_metadata = owner.read_metadata().expect("rebound metadata");
             assert_eq!(owner.read_metadata().expect("identity refusal is read-only"), rebound_metadata);
-            assert!(owner.set_metadata("participantIds", original_participants).unwrap(),
-                "restore the exact original canonical pair for the pure-reopen positive control");
         }
         let before = owner.get_transcript_entries().expect("original complete rows");
         let metadata = owner.read_metadata().expect("original conversation metadata");
@@ -8151,10 +8166,11 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
         subscription.unsubscribe();
         runtime.shutdown(); drop(owner); drop(runtime);
         let reopened = human_message_fixture_runtime(&root, &url);
-        if matches!(label, "participants-more-than-two" | "participants-duplicate-local"
+        if matches!(label, "foreign-participants" | "participants-rebound-peer"
+            | "participants-more-than-two" | "participants-duplicate-local"
             | "participants-empty-peer" | "participants-padded-peer") {
             assert!(reopened.open_human_conversation_db_owner(&id).is_err(),
-                "cold admission rejects malformed participant pairs: {label}");
+                "cold admission rejects invalid canonical participant pairs: {label}");
         } else {
             let owner = reopened.open_human_conversation_db_owner(&id).expect("pure reopen owner");
             assert_eq!(owner.get_transcript_entries().expect("reopened unchanged rows"), before, "{label}");
@@ -8162,6 +8178,24 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
         }
         assert_eq!(raw_rows(), raw_before, "reopen preserves the same physical identities: {label}");
         assert_eq!(raw_metadata(), raw_metadata_before, "reopen preserves retained metadata bytes: {label}");
+        if matches!(label, "foreign-participants" | "participants-rebound-peer") {
+            // The negative admission/retry/reopen checks above retain every
+            // original byte. This explicit fixture repair is a separate control.
+            let repair = rusqlite::Connection::open(forward_db_path(&root, &id))
+                .expect("explicit test-only participant restoration");
+            assert_eq!(repair.execute(
+                "UPDATE kv SET value = ?1 WHERE key = 'metadata' AND value = ?2",
+                rusqlite::params![canonical_raw_metadata, raw_metadata_before],
+            ).expect("restore the original metadata bytes"), 1);
+            drop(repair);
+            let restored = reopened.open_human_conversation_db_owner(&id)
+                .expect("ordinary reopen succeeds only after explicit canonical pair restoration");
+            assert_eq!(restored.read_metadata().unwrap(), canonical_metadata, "{label}");
+            assert_eq!(restored.get_metadata("participantIds").unwrap(), Some(original_participants), "{label}");
+            assert_eq!(restored.get_transcript_entries().unwrap(), before, "{label}");
+            assert_eq!(raw_rows(), raw_before, "restoration does not adopt or rewrite messages: {label}");
+            assert_eq!(raw_metadata(), canonical_raw_metadata, "restore exact original metadata: {label}");
+        }
         reopened.shutdown(); drop(reopened);
         drop(db);
         stop.send(()).expect("stop live retry admission listener");
@@ -8527,7 +8561,10 @@ fn shipping_human_forward_recovery_reports_storage_failures_and_preserves_accoun
         assert_eq!(source_owner.read_kv("metadata").unwrap(), retained);
         assert!(!source_owner.is_closed(), "failed validation must retain the cached handle");
         assert!(source_owner.write_kv("metadata", &canonical_raw).unwrap());
-        assert!(Arc::ptr_eq(&source_owner, &runtime.open_human_conversation_db_owner(source).unwrap()));
+        assert!(runtime.open_human_conversation_db_owner(source).is_err(),
+            "restored structural metadata still has a revoked canonical pair");
+        assert!(!source_owner.is_closed(), "ordinary refusal preserves the retained recovery handle");
+        assert_eq!(source_owner.read_metadata().unwrap(), source_metadata);
     }
     runtime.shutdown(); drop(source_owner); drop(candidate_owner); drop(runtime); drop(child);
 

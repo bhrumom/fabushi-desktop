@@ -1,0 +1,172 @@
+{
+  "format": "nmr-entry-refresh-repair-evidence-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+  "reviewed_production_base": "3a4af377451d915795466362b084247e05975101",
+  "frozen_contract": {
+    "commit": "5941ab3f126820b2ab585a1ac8bedda0a49c4f2b",
+    "path": "docs/specs/fbcp-native-message-reconciliation.md",
+    "blob": "e4d5e24a5a80fbadb5cae672570bef760ff62ebf"
+  },
+  "scope": [
+    "Existing retained-forward journal delivery may record per-target policy denial without ordinary canonical-pair message admission; destination require_existing semantics and strict new-intent authorization remain.",
+    "Invalid participant pairs stay invalid through retry, zero-HTTP/event, raw durable bytes and cold-open negative controls. Test-only exact metadata restoration is a separate later positive control.",
+    "PDF/media roots reserve the existing52px window-chrome band at their existing stacking level; actual PDF pointer click and real Minimize center hit testing remain.",
+    "Existing viewer reads share only matching pending operations; Promise-identity finally cleanup preserves newer generations and releases settled results.",
+    "Strict empty-editor shape, current-scope search, menu/resource retirement, original8 plus4 actual Renderer cases and public-provider settlement controls remain."
+  ],
+  "source_blobs": {
+    "source/host/src/extensions/session/production.rs": "29c1712b264f65e08a1369c676776084bf67c86f",
+    "source/host/tests/session_gateway_contract.rs": "4aa741ef53f7e8e6be0f7391ef59c5d719719a08",
+    "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs": "c4859c60b534d3dc924a48eca0cab0ebee758671",
+    "frontend/src/recovered/features/conversation/workspace/pdf-viewer.css": "b6b663eedabd4ef900fbbe5eebc36cddf72576ca",
+    "frontend/src/recovered/features/conversation/workspace/view.css": "1f4d71be47eed4e5ee0452959a39c1258dffd4f1",
+    "frontend/src/recovered/features/conversation/workspace/media-viewer.tsx": "b4464b51e894d511104be343ea82e9a16f39b49d",
+    "frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts": "67afaab704b0860ac64f719b425683d76da15637"
+  },
+  "static_reviews": [
+    {
+      "area": "retained-forward rebase",
+      "blob": "604b5ff06028a8ba51e0ab47c97e80da5989176d"
+    },
+    {
+      "area": "CSS and production import/chrome geometry",
+      "blob": "0e8e519350a335bda723fa2030780fbed1023192"
+    },
+    {
+      "area": "initial UI oracle and chrome controls",
+      "blob": "ecb623ca058b388c9d0498315ec3d9994083a0ec"
+    },
+    {
+      "area": "final shared-read and UI provider controls",
+      "blob": "dcdfa86573bd23f5f9f38883a285071c45b9777d"
+    }
+  ],
+  "prior_execution": {
+    "original_failure": {
+      "head": "a0e6cd2ded523f59add3a7ade6bd43890b448300",
+      "run": 41565477479,
+      "ui": {
+        "job": 125685842485,
+        "executed": 209,
+        "passed": 206,
+        "failed": 3,
+        "artifact": 13198736941
+      },
+      "reconciliation": {
+        "job": 125685842433,
+        "executed": 84,
+        "passed": 80,
+        "failed": 4,
+        "remaining_not_executed": 41,
+        "artifact": 13198896455
+      }
+    },
+    "latest_concurrent_failure": {
+      "head": "3a4af377451d915795466362b084247e05975101",
+      "nativeRun": 41566993215,
+      "human": {
+        "job": 125690779863,
+        "executed": 84,
+        "passed": 80,
+        "failed": 4,
+        "remainingNotExecuted": 41,
+        "artifact": 13198704131,
+        "digest": "d3d4d395a44b0ed5758433294b1dfe7005165ce5f899c15444a7ffd73bad6b83"
+      },
+      "ui": {
+        "job": 125690779956,
+        "executed": 209,
+        "passed": 207,
+        "failed": 2,
+        "artifact": 13198888761,
+        "digest": "4f86ec9fe06d9d08fcdcc0491d56a6201295ec90a9f7169c799939e891bb0fc3"
+      },
+      "source": {
+        "run": 41566993101,
+        "contractJob": 125690778731,
+        "node": 161,
+        "python": 37,
+        "schemaErrors": 0,
+        "candidateJob": 125690859096,
+        "candidateConclusion": "failure",
+        "candidateArtifact": 13200131952,
+        "candidateDigest": "540061bc620f93100512cfbfb9727df13ebb38f04e09fb1c8c1ce8257eab5ef0"
+      }
+    },
+    "traceability_correction": {
+      "head": "43529823ffc669d6118d79ea493c67cdd5f2be69",
+      "run": 41565715729,
+      "node_passed": 161,
+      "python_passed": 37,
+      "schema_errors": 0,
+      "candidate": "unaccepted-candidate-consistent"
+    }
+  },
+  "original_artifact_inspection": {
+    "harness_head": "5941ab3f126820b2ab585a1ac8bedda0a49c4f2b",
+    "run": 41567238725,
+    "job": 125691568272,
+    "tests_executed": 0,
+    "original_artifact": 13198736941,
+    "original_sha256": "081240c1b2edab848a5432e01cfdf66572f443c13b03f6cec0b5b067dce568dd",
+    "compact_artifact": 13198728946,
+    "compact_sha256": "3ef3d37ef2aaeb05bd452643067ec3f6feb9fd5ed2d36f46270fd8188428caf7",
+    "observations": "Three original browser records had zero diagnostics and unexpected calls. Spreadsheet held two reads and one download; PDF held one read and had no dispatched download. These are original-head diagnostics, not execution of the new coalescer."
+  },
+  "canonical_ledger": {
+    "prepared_in_run": 41567238725,
+    "job": 125691567961,
+    "input": "665f379284b8bda695b64c1f7364600384149a66",
+    "output": "b0e1a1eb20082c78c53dcc987aba38a84c074872",
+    "already_applied_by_parallel_commit": "a5bc9f52eab64547a3a35d74448e1be167e28bf9",
+    "exact_relation_appends": 14,
+    "affected_existing_rows": 5,
+    "other_rows_preserved": 179,
+    "source_reviews_preserved": true,
+    "source_review_records": 16,
+    "declared_complete": 6,
+    "declared_pending": 10,
+    "source_accepted": false,
+    "note": "Preserve the other session's four normalized reviews and adoption of the prepared blob. Counts describe records, not independent source acceptance; all global/historical/acceptance fields remain."
+  },
+  "containing_commit_validation": {
+    "status": "required_not_executed_at_commit_creation",
+    "reconciliation": 125,
+    "human_subset": 81,
+    "ui": 209,
+    "node_ui": 173,
+    "renderer_projection": 13,
+    "renderer_author": 23,
+    "renderer_behavior_subset": 12,
+    "desktop_owner": 40,
+    "electron": 100,
+    "actual_macos": {
+      "plugins": 2,
+      "human": 2
+    },
+    "source_contract": {
+      "node": 161,
+      "python": 37,
+      "schema_errors_required": 0,
+      "candidate_required": true
+    },
+    "policy": "GitHub Actions only; preserve shipping/peer/FFI/Windows gates, zero UI retries/skips, full failed logs and actual counts. Prior-head results cannot qualify these changed inputs."
+  },
+  "backend_readonly": {
+    "checked_main": "687718ce9e0083aa124d29005bcce4051d357919",
+    "main_handler": "6179f3ce8e223f4e0bd9664885871e134f4488a8",
+    "pr": 137,
+    "pr_head": "52fbf874d5fde1ad518e8f0e6497fe9cc1d3ba23",
+    "pr_handler": "fca0ed323b34fe767cad262af57cedcf0e71a79f",
+    "state": "open draft unmerged",
+    "after_id_zero": "Current main rejects explicit0; PR source accepts nonnegative decimal afterId. Active Worker/D1 deployment unverified. No backend write, deploy or authenticated service probe."
+  },
+  "remaining": [
+    "Canonical remote revisions/tombstones, arbitrary-old change discovery, reaction-intent cancellation, outbound edit/delete and dependent reply/forward policy.",
+    "Full fixed-U dependency/generated/resource/tool/legal/source closure and old-data mapping.",
+    "Supported signed packages, real deployed-service/device acceptance, complete Bot regression, visual/accessibility, timing/security/performance/soak/upgrade/rollback and independent ACCEPT."
+  ],
+  "storage": "Raw failure logs/browser diagnostics stay in exact Actions artifacts; this receipt contains public source identities, counts and bounded conclusions.",
+  "complete": false
+}

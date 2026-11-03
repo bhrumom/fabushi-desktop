@@ -20,6 +20,8 @@ on:
       - 'frontend/src/production/ProductionRenderer.transcript.*'
       - 'frontend/src/recovered/features/conversation/workspace/transcript.tsx'
       - 'frontend/src/recovered/features/conversation/workspace/media-viewer.tsx'
+      - 'frontend/src/recovered/features/conversation/workspace/pdf-viewer.css'
+      - 'frontend/src/recovered/features/conversation/workspace/view.css'
       - 'frontend/src/recovered/features/conversation/workspace/spreadsheet-viewer-provider.ts'
       - 'desktop/transcript-test.html'
       - 'desktop/transcript-test.ts'

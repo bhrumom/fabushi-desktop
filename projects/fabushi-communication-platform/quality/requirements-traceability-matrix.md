@@ -934,8 +934,8 @@ Oracle and invariants for FBCP-NMR-001:
 Frozen boundary: `docs/specs/fbcp-native-message-reconciliation.md#nmr-ui-entry-refresh-01--retire-dependent-ui-state-when-an-existing-human-row-changes`.
 Same Host/Transcript/Renderer owners; no revision/tombstone or remote deletion inference.
 Source tuple is shared by the existing workspace model, gallery and root spreadsheet
-mount. Future source changes in both viewer owners remain in the actual Native/UI
-and Mac workflow path filters.
+mount. Future source changes in both viewer owners and their PDF/media CSS remain in
+the actual Native/UI and Mac workflow path filters.
 
 | Requirement | Production entry | Required actual behavior evidence | Execution |
 | --- | --- | --- | --- |
@@ -952,3 +952,28 @@ reconciliation125, owner40, actualMac2+2 and all current gates stay mandatory.
 Legal bounded-read viewer lifetime controls do not establish parser/rendering
 acceptance. Fixed-U source, canonical mutation discovery, service deployment,
 signed platforms, all Bot/quality and independent ACCEPT remain open.
+
+Repair evidence: exact a0e6cd2ded523f59add3a7ade6bd43890b448300/run41565477479
+executed UI209 with206 passed/3 failed and reconciliation84 with80 passed/4
+failed; the remaining41 reconciliation cases did not execute. Source43529823/
+41565715729 passed161 Node/37 Python/schema0 and unaccepted candidate. Later
+6f7 source41566271637 rejected four redundant fields; current source3a4af377
+removed those fields, while14 exact review-to-responsibility relations still
+need the containing repair's source gate. No earlier result certifies this H.
+
+The repair keeps invalid participant metadata through retry and cold-reopen
+negative oracles; retained-forward journal access remains private and cannot
+admit ordinary source messages. The actual viewer pointer test also checks
+real window-control hit testing. Strict empty prompt shape and one external
+pending read per fresh coalesced provider activation replace the invalid test
+assumptions; no extra reads on updates/reorder and all late-result controls
+remain. Promise-identity settlement retires shared pending-read slots without
+clearing another generation. These source changes require new containing-H
+Actions; schema, counts and every existing gate stay intact. Compact evidence:
+projects/telegram-desktop-rust/evidence/round8-entry-refresh-repair-20261103.json.
+
+Latest concurrent3a4af377451d915795466362b084247e05975101/run41566993215
+executed reconciliation84 (80 passed/4 failed) and UI209 (207 passed/2 failed).
+Source41566993101 passed161/37/schema0, then candidate125690859096 rejected
+the first missing exact review relation. These are retained terminal failures,
+not qualification of the repair.
