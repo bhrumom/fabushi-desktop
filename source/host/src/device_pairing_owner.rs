@@ -64,6 +64,13 @@ fn invalid_stored_authority() -> GatewayCommandError {
     GatewayCommandError::Internal("stored pairing authority is invalid".into())
 }
 
+// The same fail-closed marker rule applies at fresh bearer lookup and to an
+// originally admitted proof. Floating zero and all other non-null values retire.
+fn token_entry_is_active(entry: &Value) -> bool {
+    entry.get("revokedAtMs")
+        .is_none_or(|value| value.is_null() || value.as_i64() == Some(0))
+}
+
 fn normalized_authority_strings(value: &Value) -> Option<Vec<String>> {
     let values = value.as_array()?;
     let mut normalized = Vec::new();
@@ -258,6 +265,13 @@ fn pending_request_is_compatible(
 }
 
 fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
+    bump_revision_with_existing_requirement(conn, false)
+}
+
+fn bump_revision_with_existing_requirement(
+    conn: &Connection,
+    require_existing: bool,
+) -> Result<u64, rusqlite::Error> {
     let now = now_ms();
     let current_val: Option<String> = conn
         .query_row(
@@ -267,6 +281,7 @@ fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
         )
         .optional()?;
     let current_rev = match current_val {
+        None if require_existing => return Err(rusqlite::Error::QueryReturnedNoRows),
         None => 0,
         Some(value) => value.trim_matches('"').parse::<u64>().map_err(|error| {
             rusqlite::Error::FromSqlConversionFailure(
@@ -281,12 +296,23 @@ fn bump_revision(conn: &Connection) -> Result<u64, rusqlite::Error> {
             "device pairing revision exhausted",
         )))
     })?;
-    conn.execute(
-        "INSERT INTO config_machine_state (state_key, value_json, updated_at_ms)
-         VALUES ('devicePairing.revision', ?1, ?2)
-         ON CONFLICT(state_key) DO UPDATE SET value_json = ?1, updated_at_ms = ?2",
-        params![format!("\"{next_rev}\""), now],
-    )?;
+    if require_existing {
+        let updated = conn.execute(
+            "UPDATE config_machine_state SET value_json = ?1, updated_at_ms = ?2
+             WHERE state_key = 'devicePairing.revision'",
+            params![format!("\"{next_rev}\""), now],
+        )?;
+        if updated != 1 {
+            return Err(rusqlite::Error::QueryReturnedNoRows);
+        }
+    } else {
+        conn.execute(
+            "INSERT INTO config_machine_state (state_key, value_json, updated_at_ms)
+             VALUES ('devicePairing.revision', ?1, ?2)
+             ON CONFLICT(state_key) DO UPDATE SET value_json = ?1, updated_at_ms = ?2",
+            params![format!("\"{next_rev}\""), now],
+        )?;
+    }
     Ok(next_rev)
 }
 
@@ -501,6 +527,7 @@ impl DevicePairingOwner {
                 };
                 if candidate.len() != token.len()
                     || !bool::from(candidate.as_bytes().ct_eq(token.as_bytes()))
+                    || !token_entry_is_active(entry)
                 {
                     continue;
                 }
@@ -1056,7 +1083,7 @@ impl DevicePairingOwner {
             ))?;
         if let Some((authorization, ceiling)) = paired {
             let caller = self.admit_paired_operator(
-                &tx, authorization, ceiling, "pairing revocation",
+                &tx, authorization, ceiling, "pairing revocation", "operator.write",
             )?;
             if !caller.allows("operator.admin") {
                 if caller.proof.device_id != device_id {
@@ -1131,6 +1158,127 @@ impl DevicePairingOwner {
         }))
     }
 
+    /// Trusted native dispatch retires one role credential, preserving the pair.
+    pub fn handle_token_revoke(&self, args: &Value) -> Result<Value, GatewayCommandError> {
+        self.revoke_token_with_authority(args, None, None)
+    }
+
+    /// `None` is reserved for callers already admitted as trusted native. The
+    /// optional singular header narrows both native and sealed paired authority.
+    pub fn revoke_token_with_authority(
+        &self,
+        args: &Value,
+        authorization: Option<&DeviceTokenAuthorization>,
+        scope_ceiling: Option<&str>,
+    ) -> Result<Value, GatewayCommandError> {
+        let invalid_request = || GatewayCommandError::BadRequest(
+            "device.token.revoke requires exactly deviceId and role strings".into(),
+        );
+        let fields = args.as_object().filter(|fields| fields.len() == 2)
+            .ok_or_else(invalid_request)?;
+        let device_id = fields.get("deviceId").and_then(Value::as_str)
+            .map(str::trim).filter(|value| !value.is_empty())
+            .ok_or_else(invalid_request)?;
+        let role = fields.get("role").and_then(Value::as_str)
+            .map(str::trim).filter(|value| !value.is_empty())
+            .ok_or_else(invalid_request)?;
+        let mut conn = self.conn.lock().map_err(|_| invalid_stored_authority())?;
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(|_| GatewayCommandError::Internal(
+                "failed to begin token revocation transaction".into(),
+            ))?;
+        let paired = authorization.map(|proof| self.admit_paired_operator(
+            &tx, proof, scope_ceiling, "token revocation", "operator.pairing",
+        )).transpose()?;
+        let native_ceiling = vec![scope_ceiling.unwrap_or("operator.admin").trim().to_owned()];
+        let allows = |scope: &str| paired.as_ref().map_or_else(
+            || role_scope_allows("operator", scope, &native_ceiling),
+            |caller| caller.allows(scope),
+        );
+        if !allows("operator.pairing") {
+            return Err(GatewayCommandError::Forbidden(
+                "token revocation requires operator pairing authority".into(),
+            ));
+        }
+        // Native admission has no paired self identity. A nonadmin native
+        // ceiling may manage a sufficiently narrow operator token; paired
+        // nonadmins are confined to their sealed device's operator credential.
+        if !allows("operator.admin")
+            && (role != "operator"
+                || paired.as_ref().is_some_and(|caller| caller.proof.device_id != device_id))
+        {
+            return Err(GatewayCommandError::Forbidden(
+                "token revocation target requires operator admin authority".into(),
+            ));
+        }
+        let target: Option<(String, Option<String>, String)> = tx.query_row(
+            "SELECT roles_json, role, tokens_json FROM device_pairing_paired WHERE device_id = ?1",
+            params![device_id],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        ).optional().map_err(|_| invalid_stored_authority())?;
+        let (roles, primary, tokens) = target.ok_or_else(|| GatewayCommandError::BadRequest(
+            "token revocation target does not exist".into(),
+        ))?;
+        let mut roles = stored_authority_strings(Some(&roles))?;
+        if let Some(primary) = primary.as_deref().map(str::trim).filter(|role| !role.is_empty()) {
+            if !roles.iter().any(|role| role == primary) {
+                roles.push(primary.to_owned());
+            }
+        }
+        if !roles.iter().any(|approved| approved == role) {
+            return Err(GatewayCommandError::BadRequest(
+                "token revocation role does not exist".into(),
+            ));
+        }
+        let mut tokens: Value = serde_json::from_str(&tokens)
+            .map_err(|_| invalid_stored_authority())?;
+        let entries = tokens.as_object_mut().ok_or_else(invalid_stored_authority)?;
+        let entry = entries.get_mut(role).ok_or_else(|| GatewayCommandError::BadRequest(
+            "token revocation entry does not exist".into(),
+        ))?;
+        let entry = entry.as_object_mut().ok_or_else(invalid_stored_authority)?;
+        if entry.get("role").and_then(Value::as_str) != Some(role)
+            || entry.get("token").and_then(Value::as_str).is_none_or(str::is_empty)
+        {
+            return Err(invalid_stored_authority());
+        }
+        if role == "operator" {
+            let scopes = entry.get("scopes").and_then(normalized_authority_strings)
+                .ok_or_else(invalid_stored_authority)?;
+            if !scopes.iter().all(|scope| allows(scope)) {
+                return Err(GatewayCommandError::Forbidden(
+                    "token revocation scopes exceed caller authority".into(),
+                ));
+            }
+        }
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).ok()
+            .and_then(|elapsed| i64::try_from(elapsed.as_millis()).ok())
+            .filter(|now| *now > 0)
+            .ok_or_else(|| GatewayCommandError::Internal(
+                "token revocation time is invalid".into(),
+            ))?;
+        entry.insert("revokedAtMs".into(), json!(now));
+        let updated = tx.execute(
+            "UPDATE device_pairing_paired SET tokens_json = ?1,
+                node_surface_json = CASE WHEN ?2 = 'node' THEN NULL ELSE node_surface_json END,
+                pending_node_surface_json = CASE WHEN ?2 = 'node' THEN NULL ELSE pending_node_surface_json END
+             WHERE device_id = ?3",
+            params![tokens.to_string(), role, device_id],
+        ).map_err(|_| GatewayCommandError::Internal("failed to retire device token".into()))?;
+        if updated != 1 {
+            return Err(GatewayCommandError::Internal(
+                "token revocation target changed before commit".into(),
+            ));
+        }
+        bump_revision_with_existing_requirement(&tx, true).map_err(|_| GatewayCommandError::Internal(
+            "failed to bump pairing revision".into(),
+        ))?;
+        tx.commit().map_err(|_| GatewayCommandError::Internal(
+            "failed to commit token revocation transaction".into(),
+        ))?;
+        Ok(json!({"deviceId": device_id, "role": role, "revokedAtMs": now}))
+    }
+
     /// Retained connections keep their originally admitted proof. Reading its
     /// current row neither refreshes the proof nor records user activity.
     pub fn validate_current_device_authorization(
@@ -1181,8 +1329,7 @@ impl DevicePairingOwner {
         let entry = tokens.get(&proof.role).ok_or_else(stale)?;
         let token = entry.get("token").and_then(Value::as_str).ok_or_else(stale)?;
         if entry.get("role").and_then(Value::as_str) != Some(proof.role.as_str())
-            || entry.get("revokedAtMs")
-                .is_some_and(|value| !value.is_null() && value.as_i64() != Some(0))
+            || !token_entry_is_active(entry)
             || !bool::from(token_fingerprint(token).ct_eq(&proof.token_sha256))
         {
             return Err(stale());
@@ -1199,6 +1346,7 @@ impl DevicePairingOwner {
         authorization: &'a DeviceTokenAuthorization,
         scope_ceiling: Option<&str>,
         operation: &str,
+        required_scope: &str,
     ) -> Result<PairedOperatorAuthority<'a>, GatewayCommandError> {
         let caller = self.current_pairing_record(conn, authorization)?;
         let proof = &authorization.proof;
@@ -1231,9 +1379,9 @@ impl DevicePairingOwner {
         let authority = PairedOperatorAuthority {
             proof, live_scopes, approved_scopes, header_ceiling,
         };
-        if !authority.allows("operator.write") {
+        if !authority.allows(required_scope) {
             return Err(GatewayCommandError::Forbidden(
-                format!("{operation} requires operator write authority"),
+                format!("{operation} requires {} authority", required_scope.replace('.', " ")),
             ));
         }
         Ok(authority)
@@ -1292,7 +1440,9 @@ impl DevicePairingOwner {
                 "Failed to begin token rotation transaction: {error}",
             )))?;
         let authority = paired.map(|(authorization, ceiling)| {
-            self.admit_paired_operator(&tx, authorization, ceiling, "token rotation")
+            self.admit_paired_operator(
+                &tx, authorization, ceiling, "token rotation", "operator.write",
+            )
         }).transpose()?;
         if let Some(caller) = authority.as_ref() {
             if (caller.proof.device_id != device_id || role != "operator")
@@ -1661,6 +1811,7 @@ impl DevicePairingOwner {
             "device.pair.reject" => self.handle_pair_reject(args),
             "device.pair.list" => self.handle_pair_list(args),
             "device.pair.revoke" => self.handle_pair_revoke(args),
+            "device.token.revoke" => self.handle_token_revoke(args),
             "device.pair.rotateToken" => self.handle_pair_rotate_token(args),
             "device.pair.setupCode" => self.handle_pair_setup_code(args),
             _ => Err(GatewayCommandError::UnknownMethod(format!(

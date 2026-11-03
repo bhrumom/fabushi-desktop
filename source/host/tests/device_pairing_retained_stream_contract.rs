@@ -4,6 +4,8 @@
 //! These cases do not claim to cancel an already dispatched process or ceremony,
 //! prove physical-device teardown, or replace the separate shipping App contracts.
 //! All executable verification belongs to exact-H GitHub Actions.
+//! Additive DRT-v1 cases exercise device.token.revoke through the same owner
+//! without changing the original fourteen DVR contracts below.
 
 use std::fs;
 use std::io::{self, BufRead, BufReader, Read, Write};
@@ -26,7 +28,7 @@ use mahayana_host_runtime::extensions::webauthn_proxy::webauthn_proxy_bridge::{
 };
 use mahayana_host_runtime::gateway_config::GatewayServerConfig;
 use mahayana_host_runtime::gateway_server::{
-    GatewayApi, GatewayBridgeClose, GatewayBridgeHub, GatewayCommandError, GatewayCommandReport,
+    GatewayApi, GatewayBridgeClose, GatewayBridgeHub, GatewayCommandContext, GatewayCommandError, GatewayCommandReport,
     GatewayEventHub, GatewayServer, GatewayServerDeps, SSE_HEARTBEAT_MS, start_gateway_server,
 };
 use mahayana_host_runtime::runner::coordinator_tool_relay::RUNNER_TOOL_REQUEST_EVENT_CHANNEL;
@@ -120,6 +122,7 @@ struct ApiObservations {
     checks: Mutex<Vec<Check>>,
     calls: AtomicUsize,
     reports: AtomicUsize,
+    token_revocations: AtomicUsize,
 }
 
 impl ApiObservations {
@@ -150,6 +153,17 @@ impl GatewayApi for Api {
 
     fn authenticate_device_token(&self, token: &str) -> Result<Option<DeviceTokenAuthorization>, GatewayCommandError> {
         self.owner().authenticate_device_token(token)
+    }
+
+    fn revoke_device_token(
+        &self,
+        args: Value,
+        authorization: Option<&DeviceTokenAuthorization>,
+        scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<Value, GatewayCommandError> {
+        self.observed.token_revocations.fetch_add(1, Ordering::SeqCst);
+        self.owner().revoke_token_with_authority(&args, authorization, scope_ceiling)
     }
 
     fn validate_paired_device_authorization(&self, proof: &DeviceTokenAuthorization) -> Result<(), GatewayCommandError> {
@@ -364,6 +378,7 @@ struct Fixture {
     events: GatewayEventHub,
     bridges: Bridges,
     shutdown_failed: bool,
+    native_authorization: Option<String>,
 }
 
 impl Fixture {
@@ -390,6 +405,7 @@ impl Fixture {
         let fixture = Self {
             root, db, server: Some(server), api: Some(api), closed: Some(closed), gates: Vec::new(),
             observed, events, bridges, shutdown_failed: false,
+            native_authorization: configured.then(|| format!("Bearer {SECRET}")),
         };
         fixture.pair(CALLER, &["operator", "node"], &["operator.read", "node.invoke"]);
         fixture.pair(OTHER, &["operator"], &["operator.read"]);
@@ -437,6 +453,32 @@ impl Fixture {
 
     fn revoke(&self, device: &str) {
         self.owner().handle_pair_revoke(&json!({"deviceId": device})).expect("commit real whole-device removal");
+    }
+
+    fn retire_role(&self, device: &str, role: &str) {
+        let token = self.token(device, role);
+        let calls = self.observed.calls.load(Ordering::SeqCst);
+        let bound = self.observed.token_revocations.load(Ordering::SeqCst);
+        let reports = self.observed.reports.load(Ordering::SeqCst);
+        let reply = request(self.port(), "POST", "/api/device.token.revoke",
+            &json!({"deviceId": device, "role": role}).to_string(), self.native_authorization.as_deref())
+            .expect("actual native HTTP selected-role retirement");
+        assert_eq!(reply.status, 200, "{}", reply.raw);
+        let timestamp = reply.body["revokedAtMs"].as_i64().filter(|value| *value > 0).expect("positive committed retirement timestamp");
+        assert_eq!(reply.body, json!({"deviceId": device, "role": role, "revokedAtMs": timestamp}));
+        assert!(!reply.raw.contains(&token));
+        assert!(!reply.raw.contains(SECRET));
+        assert_eq!(self.observed.calls.load(Ordering::SeqCst), calls, "DRT never falls back to generic dispatch");
+        assert_eq!(self.observed.token_revocations.load(Ordering::SeqCst), bound + 1);
+        assert_eq!(self.observed.reports.load(Ordering::SeqCst), reports + 1);
+        assert_eq!(self.token(device, role), token, "retirement preserves stored credential bytes");
+        let conn = Connection::open_with_flags(&self.db, OpenFlags::SQLITE_OPEN_READ_ONLY).expect("independent receipt observer");
+        let raw: String = conn.query_row("SELECT tokens_json FROM device_pairing_paired WHERE device_id = ?1", params![device], |row| row.get(0))
+            .expect("selected entry remains stored");
+        conn.close().expect("close receipt observer");
+        let entries: Value = serde_json::from_str(&raw).expect("committed role map");
+        assert_eq!(entries[role]["revokedAtMs"], timestamp);
+        assert!(self.owner().authenticate_device_token(&token).expect("fresh retired bearer lookup").is_none());
     }
 
     fn gate(&mut self, device: &str, role: &str, phase: Phase) -> GateControl {
@@ -1169,6 +1211,377 @@ fn retained_bridge_responses_admit_after_decode_before_effect_and_keep_native_an
             fixture.bridges.wait_closed(bridge, 1);
             fixture.bridges.assert_counts(bridge, 1, 1, 0);
             fixture.finish();
+        }
+    }
+}
+
+#[test]
+fn retained_token_revocation_closes_only_selected_role_and_preserves_live_reconnect_controls() {
+    for configured in [false, true] {
+        for gzip in [false, true] {
+            for selected_role in ["operator", "node"] {
+                let mut fixture = Fixture::new(configured, "127.0.0.1", false);
+                let other_role = if selected_role == "operator" { "node" } else { "operator" };
+                let token = fixture.token(CALLER, selected_role);
+                let peer_token = fixture.token(CALLER, other_role);
+                let other_token = fixture.token(OTHER, "operator");
+                let mut selected = fixture.open("/events", Some(&token), "", gzip);
+                let mut peer = fixture.open("/events", Some(&peer_token), "", gzip);
+                let mut other = fixture.open("/events", Some(&other_token), "", gzip);
+                let mut native = fixture.open("/events", configured.then_some(SECRET), "", gzip);
+                let ready = json!({"channel": "runtime", "payload": {"marker": "drt-four-live-streams"}});
+                fixture.events.publish(ready.clone());
+                for stream in [&mut selected, &mut peer, &mut other, &mut native] { assert_eq!(stream.data(), ready); }
+                let ready_check = fixture.observed.last(CALLER, selected_role);
+                let gate = fixture.gate(CALLER, selected_role, Phase::Before);
+                let queued = json!({"channel": "runtime", "payload": {"marker": "drt-selected-refusal"}});
+                fixture.events.publish(queued.clone());
+                event_gate_arrived(&gate, ready_check.at);
+                for stream in [&mut peer, &mut other, &mut native] { assert_eq!(stream.data(), queued); }
+                fixture.retire_role(CALLER, selected_role);
+                let committed = fixture.snapshot();
+                gate.release();
+                selected.empty_eof();
+                assert_eq!(fixture.observed.last(CALLER, selected_role).status, 401);
+                assert_eq!(fixture.token(CALLER, other_role), peer_token);
+                assert_eq!(fixture.token(OTHER, "operator"), other_token);
+                let refused = request(fixture.port(), "GET", "/events", "", Some(&format!("Bearer {token}")))
+                    .expect("real retired-role reconnect refusal");
+                assert_eq!(refused.status, 401);
+                assert!(!refused.raw.contains("text/event-stream"));
+                assert!(!refused.raw.contains("retry:"));
+                assert!(!refused.raw.contains(&token));
+                let mut reconnected_peer = fixture.open("/events", Some(&peer_token), "", gzip);
+                let next = json!({"channel": "runtime", "payload": {"marker": "drt-live-retained-and-reconnected-controls"}});
+                fixture.events.publish(next.clone());
+                for stream in [&mut peer, &mut other, &mut native, &mut reconnected_peer] { assert_eq!(stream.data(), next); }
+                selected.empty_eof();
+                assert_eq!(fixture.observed.last(CALLER, other_role).status, 200);
+                assert_eq!(fixture.observed.last(OTHER, "operator").status, 200);
+                assert_eq!(fixture.snapshot(), committed, "fresh/retained admission changes no committed pairing data");
+                assert_eq!(fixture.observed.calls.load(Ordering::SeqCst), 0);
+                assert_eq!(fixture.observed.token_revocations.load(Ordering::SeqCst), 1);
+                assert_eq!(fixture.observed.reports.load(Ordering::SeqCst), 1, "only the DRT command reports activity");
+                finish_streams(&mut fixture, &mut [&mut peer, &mut other, &mut native, &mut reconnected_peer]);
+            }
+        }
+    }
+}
+
+#[test]
+fn retained_token_revocation_respects_queued_and_prior_frame_admission() {
+    for phase in [Phase::Before, Phase::After] {
+        for change in ["selected", "other-role", "unchanged"] {
+            let mut fixture = Fixture::new(false, "127.0.0.1", false);
+            let token = fixture.token(CALLER, "operator");
+            let mut stream = fixture.open("/events?channels=runtime", Some(&token), "", false);
+            fixture.ready_event(&mut stream, "drt-before-frame-boundary");
+            let live = fixture.observed.last(CALLER, "operator");
+            let gate = fixture.gate(CALLER, "operator", phase);
+            let queued = json!({"channel": "runtime", "payload": {"marker": "drt-boundary-frame"}});
+            fixture.events.publish(queued.clone());
+            event_gate_arrived(&gate, live.at);
+            if phase == Phase::After { assert_eq!(fixture.observed.last(CALLER, "operator").status, 200); }
+            match change {
+                "selected" => fixture.retire_role(CALLER, "operator"),
+                "other-role" => fixture.retire_role(CALLER, "node"),
+                "unchanged" => {}
+                _ => unreachable!(),
+            }
+            let committed = fixture.snapshot();
+            gate.release();
+            if change == "selected" && phase == Phase::Before {
+                stream.empty_eof();
+            } else {
+                assert_eq!(stream.data(), queued, "admitted frame or unchanged role remains deliverable");
+                let next = json!({"channel": "runtime", "payload": {"marker": "drt-next-frame"}});
+                fixture.events.publish(next.clone());
+                if change == "selected" {
+                    stream.empty_eof();
+                } else {
+                    assert_eq!(stream.data(), next, "another role's retirement cannot invalidate this proof");
+                }
+            }
+            assert_eq!(fixture.snapshot(), committed);
+            assert_eq!(fixture.observed.last(CALLER, "operator").status, if change == "selected" { 401 } else { 200 });
+            if change != "selected" {
+                fixture.retire_role(CALLER, "operator");
+                fixture.events.publish(json!({"channel": "runtime", "payload": {"marker": "drt-final-refusal"}}));
+                stream.empty_eof();
+            }
+            fixture.events.publish(json!({"channel": "drt-prune"}));
+            assert_eq!(fixture.events.subscriber_count(), 0);
+            fixture.finish();
+        }
+    }
+    for channel in ["unselected", HOST_MCP_LIFECYCLE_REQUEST_EVENT_CHANNEL, RUNNER_TOOL_REQUEST_EVENT_CHANNEL] {
+        let mut fixture = Fixture::new(false, "127.0.0.1", false);
+        let token = fixture.token(CALLER, "operator");
+        let mut stream = fixture.open("/events?channels=runtime", Some(&token), "x-sand-slim-avatars: 1\r\n", false);
+        fixture.ready_event(&mut stream, "drt-before-filtered-wake");
+        let live = fixture.observed.last(CALLER, "operator");
+        let gate = fixture.gate(CALLER, "operator", Phase::Before);
+        fixture.events.publish(json!({"channel": channel, "payload": {"marker": "drt-filtered-frame"}}));
+        event_gate_arrived(&gate, live.at);
+        fixture.retire_role(CALLER, "operator");
+        let committed = fixture.snapshot();
+        gate.release();
+        stream.empty_eof();
+        assert_eq!(fixture.observed.last(CALLER, "operator").status, 401);
+        assert_eq!(fixture.snapshot(), committed);
+        fixture.events.publish(json!({"channel": "drt-prune-filtered"}));
+        assert_eq!(fixture.events.subscriber_count(), 0);
+        fixture.finish();
+    }
+}
+
+#[test]
+fn retained_token_revocation_quiet_heartbeat_keeps_other_role_and_native_live() {
+    assert_eq!(SSE_HEARTBEAT_MS, 15_000);
+    let mut fixture = Fixture::new(false, "127.0.0.1", false);
+    let operator_token = fixture.token(CALLER, "operator");
+    let node_token = fixture.token(CALLER, "node");
+    let mut selected = fixture.open("/events", Some(&operator_token), "", false);
+    let mut peer = fixture.open("/events", Some(&node_token), "", false);
+    let mut native = fixture.open("/events", None, "", false);
+    let marker = json!({"channel": "runtime", "payload": {"marker": "drt-last-before-quiet"}});
+    fixture.events.publish(marker.clone());
+    for stream in [&mut selected, &mut peer, &mut native] { assert_eq!(stream.data(), marker); }
+    let last_live = fixture.observed.last(CALLER, "operator");
+    fixture.retire_role(CALLER, "operator");
+    let committed = fixture.snapshot();
+    // No wake publication, sleep, shortened heartbeat or injected time follows
+    // this real HTTP commit. Only the production receive timeout may retire it.
+    selected.empty_eof();
+    let retired = fixture.observed.last(CALLER, "operator");
+    assert_eq!(retired.status, 401);
+    assert!(retired.at.duration_since(last_live.at) >= Duration::from_millis(SSE_HEARTBEAT_MS));
+    assert_eq!(peer.frame(), ":ping\n", "unselected role keeps its real heartbeat");
+    assert_eq!(native.frame(), ":ping\n", "genuine native stream keeps its real heartbeat");
+    assert_eq!(fixture.observed.last(CALLER, "node").status, 200);
+    assert_eq!(fixture.snapshot(), committed);
+    assert_eq!(fixture.observed.calls.load(Ordering::SeqCst), 0);
+    assert_eq!(fixture.observed.token_revocations.load(Ordering::SeqCst), 1);
+    assert_eq!(fixture.observed.reports.load(Ordering::SeqCst), 1);
+    finish_streams(&mut fixture, &mut [&mut peer, &mut native]);
+}
+
+#[test]
+fn retained_token_revocation_initial_admission_and_registration_drop_are_causal() {
+    for bridge in [None, Some(Bridge::LocalExec), Some(Bridge::WebAuthn)] {
+        let mut fixture = Fixture::new(true, "127.0.0.1", false);
+        let path = bridge.map(Bridge::requests).unwrap_or("/events");
+        let token = fixture.token(CALLER, "operator");
+        let gate = fixture.gate(CALLER, "operator", Phase::Before);
+        let port = fixture.port();
+        let bearer = format!("Bearer {token}");
+        let pending = Pending::start(&gate, move || request(port, "GET", path, "", Some(&bearer)));
+        gate.wait();
+        assert_eq!(fixture.events.subscriber_count(), 0);
+        for bridge in [Bridge::LocalExec, Bridge::WebAuthn] { fixture.bridges.assert_counts(bridge, 0, 0, 0); }
+        fixture.retire_role(CALLER, "operator");
+        let committed = fixture.snapshot();
+        gate.release();
+        let reply = pending.finish();
+        assert_eq!(reply.status, 401);
+        assert!(!reply.raw.contains("text/event-stream"));
+        assert!(!reply.raw.contains("retry:"));
+        assert!(!reply.raw.contains("welcome"));
+        assert!(!reply.raw.contains(&token));
+        assert_eq!(fixture.events.subscriber_count(), 0);
+        for bridge in [Bridge::LocalExec, Bridge::WebAuthn] { fixture.bridges.assert_counts(bridge, 0, 0, 0); }
+        let peer_token = fixture.token(CALLER, "node");
+        let mut peer = fixture.open(path, Some(&peer_token), "", false);
+        if let Some(bridge) = bridge {
+            assert_eq!(peer.data()["kind"], "welcome");
+            fixture.bridges.assert_counts(bridge, 1, 0, 1);
+        } else {
+            fixture.ready_event(&mut peer, "drt-unselected-initial-admission");
+        }
+        assert_eq!(fixture.snapshot(), committed);
+        finish_streams(&mut fixture, &mut [&mut peer]);
+        if let Some(bridge) = bridge {
+            fixture.bridges.wait_closed(bridge, 1);
+            fixture.bridges.assert_counts(bridge, 1, 1, 0);
+        }
+    }
+    enum InitialResult { Refused(Reply), Headers(Sse) }
+    for bridge in [Bridge::LocalExec, Bridge::WebAuthn] {
+        for admitted_headers in [false, true] {
+            let mut fixture = Fixture::new(true, "127.0.0.1", false);
+            let token = fixture.token(CALLER, "operator");
+            let gate = if admitted_headers { fixture.admitted_header_gate(bridge) } else { fixture.registration_gate(bridge) };
+            let port = fixture.port();
+            let pending_token = token.clone();
+            let pending = Pending::start(&gate, move || {
+                if admitted_headers {
+                    Sse::connect(port, bridge.requests(), Some(&pending_token), "", false).map(InitialResult::Headers)
+                } else {
+                    request(port, "GET", bridge.requests(), "", Some(&format!("Bearer {pending_token}"))).map(InitialResult::Refused)
+                }
+            });
+            gate.wait();
+            fixture.bridges.assert_counts(bridge, 1, 0, 1);
+            if admitted_headers { assert_eq!(fixture.observed.last(CALLER, "operator").status, 200); }
+            fixture.retire_role(CALLER, "operator");
+            let committed = fixture.snapshot();
+            gate.release();
+            match pending.finish() {
+                InitialResult::Refused(reply) => {
+                    assert!(!admitted_headers);
+                    assert_eq!(reply.status, 401);
+                    assert!(!reply.raw.contains("text/event-stream"));
+                    assert!(!reply.raw.contains("retry:"));
+                    assert!(!reply.raw.contains("welcome"));
+                    assert!(!reply.raw.contains(&token));
+                }
+                InitialResult::Headers(mut stream) => {
+                    assert!(admitted_headers);
+                    stream.empty_eof();
+                }
+            }
+            fixture.bridges.wait_closed(bridge, 1);
+            fixture.bridges.assert_counts(bridge, 1, 1, 0);
+            assert_eq!(fixture.observed.last(CALLER, "operator").status, 401);
+            let peer_token = fixture.token(CALLER, "node");
+            let mut peer = fixture.open(bridge.requests(), Some(&peer_token), "", false);
+            assert_eq!(peer.data()["kind"], "welcome");
+            fixture.bridges.assert_counts(bridge, 2, 1, 1);
+            assert_eq!(fixture.snapshot(), committed);
+            finish_streams(&mut fixture, &mut [&mut peer]);
+            fixture.bridges.wait_closed(bridge, 1);
+            fixture.bridges.assert_counts(bridge, 2, 2, 0);
+        }
+    }
+}
+
+#[test]
+fn retained_token_revocation_bridge_streams_drop_only_selected_role_once() {
+    for bridge in [Bridge::LocalExec, Bridge::WebAuthn] {
+        for selected_role in ["operator", "node"] {
+            let mut fixture = Fixture::new(true, "127.0.0.1", false);
+            let other_role = if selected_role == "operator" { "node" } else { "operator" };
+            let token = fixture.token(CALLER, selected_role);
+            let peer_token = fixture.token(CALLER, other_role);
+            let other_token = fixture.token(OTHER, "operator");
+            let mut selected = fixture.open(bridge.requests(), Some(&token), "", false);
+            let mut peer = fixture.open(bridge.requests(), Some(&peer_token), "", false);
+            let mut other = fixture.open(bridge.requests(), Some(&other_token), "", false);
+            let mut native = fixture.open(bridge.requests(), Some(SECRET), "", false);
+            for stream in [&mut selected, &mut peer, &mut other, &mut native] { assert_eq!(stream.data()["kind"], "welcome"); }
+            fixture.bridges.assert_counts(bridge, 4, 0, 4);
+            let ready = json!({"kind": "fixture-request", "marker": "drt-four-live-providers"});
+            fixture.bridges.hub(bridge).publish_request(ready.clone());
+            for stream in [&mut selected, &mut peer, &mut other, &mut native] { assert_eq!(stream.data(), ready); }
+            let live = fixture.observed.last(CALLER, selected_role);
+            let gate = fixture.gate(CALLER, selected_role, Phase::Before);
+            let queued = json!({"kind": "fixture-request", "marker": "drt-selected-provider-retirement"});
+            fixture.bridges.hub(bridge).publish_request(queued.clone());
+            event_gate_arrived(&gate, live.at);
+            for stream in [&mut peer, &mut other, &mut native] { assert_eq!(stream.data(), queued); }
+            fixture.retire_role(CALLER, selected_role);
+            let committed = fixture.snapshot();
+            gate.release();
+            selected.empty_eof();
+            fixture.bridges.wait_closed(bridge, 1);
+            fixture.bridges.assert_counts(bridge, 4, 1, 3);
+            let next = json!({"kind": "fixture-request", "marker": "drt-three-provider-survivors"});
+            fixture.bridges.hub(bridge).publish_request(next.clone());
+            for stream in [&mut peer, &mut other, &mut native] { assert_eq!(stream.data(), next); }
+            selected.empty_eof();
+            assert_eq!(fixture.observed.last(CALLER, selected_role).status, 401);
+            assert_eq!(fixture.observed.last(CALLER, other_role).status, 200);
+            assert_eq!(fixture.observed.last(OTHER, "operator").status, 200);
+            assert!(fixture.bridges.observed(bridge).submitted.lock().expect("responses").is_empty());
+            assert_eq!(fixture.snapshot(), committed);
+            fixture.stop_listener();
+            for stream in [&mut peer, &mut other, &mut native] { stream.empty_eof(); }
+            fixture.bridges.wait_closed(bridge, 3);
+            fixture.bridges.assert_counts(bridge, 4, 4, 0);
+            fixture.bridges.hub(bridge).publish_request(json!({"kind": "drt-prune-closed-providers"}));
+            assert_eq!(fixture.bridges.hub(bridge).request_subscriber_count(), 0);
+            fixture.finish();
+        }
+    }
+}
+
+#[test]
+fn retained_token_revocation_bridge_responses_preserve_unaffected_and_prior_admission() {
+    for bridge in [Bridge::LocalExec, Bridge::WebAuthn] {
+        for role in ["operator", "node"] {
+            for change in ["selected-before", "other-role", "unchanged", "selected-after"] {
+                let mut fixture = Fixture::new(true, "127.0.0.1", false);
+                let token = fixture.token(CALLER, role);
+                let peer_role = if role == "operator" { "node" } else { "operator" };
+                // The provider itself is genuinely native. Only the paired
+                // response's original proof is under this admission race.
+                let mut stream = fixture.open(bridge.requests(), Some(SECRET), "", false);
+                let welcome = stream.data();
+                assert_eq!(welcome["kind"], "welcome");
+                fixture.bridges.prepare_response_effect(bridge, &welcome["providerId"]);
+                let body = json!({"providerId": welcome["providerId"], "frames": [
+                    {"kind": "hello", "localRoot": "/fixture", "terminalsFolder": "terminals", "computerId": "fixture-computer", "label": "DRT fixture"},
+                    {"kind": "ping"},
+                ]}).to_string();
+                let before_decode = fixture.observed.len();
+                let malformed = request(fixture.port(), "POST", bridge.responses(), "{", Some(&format!("Bearer {token}")))
+                    .expect("malformed response body");
+                assert_eq!(malformed.status, 400);
+                assert_eq!(fixture.observed.len(), before_decode);
+                assert!(fixture.bridges.observed(bridge).submitted.lock().expect("responses").is_empty());
+                let phase = if change == "selected-after" { Phase::After } else { Phase::Before };
+                let gate = fixture.gate(CALLER, role, phase);
+                let port = fixture.port();
+                let pending_body = body.clone();
+                let bearer = format!("Bearer {token}");
+                let pending = Pending::start(&gate, move || request(port, "POST", bridge.responses(), &pending_body, Some(&bearer)));
+                gate.wait();
+                fixture.bridges.assert_response_effect(bridge, false);
+                assert!(fixture.bridges.observed(bridge).submitted.lock().expect("responses").is_empty());
+                match change {
+                    "selected-before" | "selected-after" => fixture.retire_role(CALLER, role),
+                    "other-role" => fixture.retire_role(CALLER, peer_role),
+                    "unchanged" => {}
+                    _ => unreachable!(),
+                }
+                let committed = fixture.snapshot();
+                gate.release();
+                let reply = pending.finish();
+                let accepted = change != "selected-before";
+                assert_eq!(reply.status, if accepted { 200 } else { 401 }, "{}", reply.raw);
+                assert!(!reply.raw.contains(&token));
+                if accepted { assert_eq!(reply.body, json!({"ok": true})); }
+                fixture.bridges.assert_response_effect(bridge, accepted);
+                assert_eq!(fixture.bridges.observed(bridge).submitted.lock().expect("responses").len(), usize::from(accepted));
+                assert_eq!(fixture.snapshot(), committed);
+                if change.starts_with("selected") {
+                    let refused = request(fixture.port(), "POST", bridge.responses(), &body, Some(&format!("Bearer {token}")))
+                        .expect("retired response reconnect");
+                    assert_eq!(refused.status, 401);
+                    assert_eq!(fixture.bridges.observed(bridge).submitted.lock().expect("responses").len(), usize::from(accepted));
+                }
+                let live_role = if change.starts_with("selected") { peer_role } else { role };
+                let live_token = fixture.token(CALLER, live_role);
+                let live = request(fixture.port(), "POST", bridge.responses(), &body, Some(&format!("Bearer {live_token}")))
+                    .expect("unaffected role response");
+                assert_eq!(live.status, 200);
+                fixture.bridges.assert_response_effect(bridge, true);
+                let checks_before_native = fixture.observed.len();
+                let native = request(fixture.port(), "POST", bridge.responses(), &body, Some(&format!("Bearer {SECRET}")))
+                    .expect("native response control");
+                assert_eq!(native.status, 200);
+                assert_eq!(fixture.observed.len(), checks_before_native);
+                assert_eq!(fixture.bridges.observed(bridge).submitted.lock().expect("responses").len(), usize::from(accepted) + 2);
+                assert_eq!(fixture.snapshot(), committed, "retained checks and response submission leave pairing state untouched");
+                assert_eq!(fixture.observed.calls.load(Ordering::SeqCst), 0);
+                assert_eq!(fixture.observed.token_revocations.load(Ordering::SeqCst), usize::from(change != "unchanged"));
+                assert_eq!(fixture.observed.reports.load(Ordering::SeqCst), usize::from(change != "unchanged"));
+                fixture.stop_listener();
+                stream.empty_eof();
+                fixture.bridges.wait_closed(bridge, 1);
+                fixture.bridges.assert_counts(bridge, 1, 1, 0);
+                fixture.finish();
+            }
         }
     }
 }

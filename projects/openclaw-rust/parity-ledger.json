@@ -9050,7 +9050,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Pairing token derivation, single-use auth key invalidation, and token rotation upon pairing refresh.",
+      "behavior": "Pairing token derivation, single-use auth key invalidation, authenticated rotation, and selected-role credential retirement through the existing durable DevicePairingOwner; fresh and retained admission observe the same retirement marker.",
       "blocker_ids": [
         "OCRM-BLOCK-GW-SCOPED-AUTHORITY-001",
         "OCRM-BLOCK-GW-INDEPENDENT-REVIEW-002"
@@ -9063,7 +9063,8 @@
       ],
       "evidence_refs": [
         "source/host/tests/network_enrollment_owner_contract.rs",
-        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md"
+        "projects/openclaw-rust/dossiers/gateway-router-device-authority-followup-20261022.md",
+        "projects/openclaw-rust/docs/specs/device-role-token-revocation.md"
       ],
       "existing_owner_candidates": [
         {
@@ -9108,18 +9109,22 @@
         "producer": "source/host/app/src/main.rs"
       },
       "invariants": [
-        "One-time authentication keys are invalidated immediately after worker start"
+        "One-time authentication keys are invalidated immediately after worker start",
+        "Selected-role retirement preserves unselected tokens, paired rows, pending requests and configuration; node surface columns are cleared only for selected node retirement.",
+        "An inactive revokedAtMs marker denies both fresh bearer lookup and retained proof validation; no successor credential or public projection refreshes the original proof."
       ],
-      "migration_rollback": "Single-use key clearing ensures forward secrecy",
+      "migration_rollback": "Single-use key clearing ensures forward secrecy; DRT-v1 uses existing token/surface columns without schema migration. Rollback must not restore a version that accepts tombstoned credentials without explicit credential retirement/migration.",
       "oracle_ids": [
         "OCRM-DEVICE-PAIRING-O04"
       ],
-      "owner_decision": "Reuse DevicePairingOwner rotateToken path with in-band and cross-device delivery policy",
+      "owner_decision": "Reuse DevicePairingOwner for rotation and selected-role retirement; Gateway and UnifiedGatewayApi carry the original paired proof and explicit native/header ceiling to the same transaction.",
       "postconditions": [
-        "Auth key set to None after worker launch"
+        "Auth key set to None after worker launch",
+        "DRT-v1: only selected revokedAtMs and, for node only, both node surface columns change with one existing revision increment and a successful commit; fresh and retained original credentials lose authority without deleting the pairing."
       ],
       "preconditions": [
-        "Valid enrollment state and one-time auth key"
+        "Valid enrollment state and one-time auth key",
+        "DRT-v1: closed deviceId/role request and existing selected role token; current sealed operator pairing authority or admitted native authority, intersected with the singular header ceiling."
       ],
       "required_evidence_dimensions": [
         "unit",
@@ -9138,7 +9143,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Low; prevents replay attacks with consumed keys",
+      "risk": "High: sealed credential currentness, intersected management authority, cross-device information disclosure, durable selected-role mutation and retained connection effects require deep review.",
       "selected_owner": "source/host/src/device_pairing_owner.rs",
       "source_refs": [
         {
@@ -9189,13 +9194,18 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/device_pairing_owner.rs",
-        "symbol": "DevicePairingOwner::handle_pair_rotate_token"
+        "symbol": "DevicePairingOwner::handle_pairing_command"
       },
       "tests": [
-        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o11_rotate_token_in_band_and_cross_device"
+        "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o11_rotate_token_in_band_and_cross_device",
+        "source/host/tests/device_role_token_revocation_authority_contract.rs",
+        "source/host/tests/device_role_token_revocation_gateway_contract.rs",
+        "source/host/tests/device_pairing_retained_stream_contract.rs",
+        "source/host/app/src/tests/device_pairing_revocation_tests.rs"
       ],
       "typed_contracts": [
-        "Single-use token invalidation"
+        "Single-use token invalidation",
+        "DRT-v1: device.token.revoke retires one existing role without removing the pairing; HTTP dispatch never falls back from bound authority to native dispatch."
       ],
       "unit_id": "OCRM-UNIT-DEVICE-PAIRING-001"
     },

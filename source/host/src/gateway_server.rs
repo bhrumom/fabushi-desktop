@@ -208,6 +208,20 @@ pub trait GatewayApi: Send + Sync + 'static {
         ))
     }
 
+    /// Selected-role retirement keeps both paired proofs and native header
+    /// ceilings bound to the durable owner. No caller uses generic dispatch.
+    fn revoke_device_token(
+        &self,
+        _args: Value,
+        _authorization: Option<&DeviceTokenAuthorization>,
+        _scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<Value, GatewayCommandError> {
+        Err(GatewayCommandError::Forbidden(
+            "device token revocation is not supported by this gateway adapter".into(),
+        ))
+    }
+
     /// Retained paired connections may only keep the credential admitted at
     /// ingress. The owner decides currentness; Gateway owns no permission state.
     fn validate_paired_device_authorization(
@@ -994,6 +1008,7 @@ fn is_mutating_openclaw_command(method: &str) -> bool {
             | "device.pair.reject"
             | "device.pair.revoke"
             | "device.pair.rotateToken"
+            | "device.token.revoke"
             | "device.pair.setupCode"
             | "chat.send"
             | "chat.abort"
@@ -1017,6 +1032,7 @@ fn is_operator_only_openclaw_command(method: &str) -> bool {
             | "device.pair.list"
             | "device.pair.revoke"
             | "device.pair.rotateToken"
+            | "device.token.revoke"
             | "device.pair.setupCode"
             | "chat.send"
             | "chat.abort"
@@ -1775,6 +1791,16 @@ fn handle_connection(
     }
 
     let requested_role = request.headers.get("x-sand-role").map(String::as_str);
+    if method == "device.token.revoke"
+        && device_authorization.is_none()
+        && requested_role.is_some_and(|role| role != "operator")
+    {
+        return respond_error(
+            &mut stream,
+            403,
+            "ROLE_MISMATCH: token revocation requires operator role",
+        );
+    }
     if let Some((access, family)) = NativeGatewayAccess::for_method(method) {
         if requested_role.is_some_and(|role| role != "operator")
             || device_authorization
@@ -1856,7 +1882,7 @@ fn handle_connection(
             && is_mutating_openclaw_command(method)
             // The bound owner below applies the current role/approval and
             // operator implications atomically, including admin-only grants.
-            && !matches!(method, "device.pair.rotateToken" | "device.pair.revoke")
+            && !matches!(method, "device.pair.rotateToken" | "device.pair.revoke" | "device.token.revoke")
             && !authorization
                 .scopes
                 .iter()
@@ -1960,6 +1986,14 @@ fn handle_connection(
     let started = Instant::now();
     let command_context = gateway_command_context(&request, authenticated, started);
     let result = match device_authorization.as_ref() {
+        authorization if method == "device.token.revoke" => {
+            deps.api.revoke_device_token(
+                args,
+                authorization,
+                request.headers.get("x-sand-scope").map(String::as_str),
+                &command_context,
+            )
+        }
         Some(authorization) if method == "device.pair.rotateToken" => {
             deps.api.rotate_paired_device_token(
                 args,

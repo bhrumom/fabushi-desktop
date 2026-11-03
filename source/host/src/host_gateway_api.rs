@@ -42,6 +42,7 @@ pub const OPENCLAW_GATEWAY_METHODS: &[&str] = &[
     "device.pair.list",
     "device.pair.revoke",
     "device.pair.rotateToken",
+    "device.token.revoke",
     "device.pair.setupCode",
     "node.register",
     "node.invoke",
@@ -71,6 +72,7 @@ pub fn openclaw_gateway_owner(method: &str) -> Option<HostGatewayOwner> {
         | "device.pair.list"
         | "device.pair.revoke"
         | "device.pair.rotateToken"
+        | "device.token.revoke"
         | "device.pair.setupCode"
         | "node.register"
         | "node.status"

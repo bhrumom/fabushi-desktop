@@ -4154,6 +4154,7 @@ impl UnifiedGatewayApi {
             | "device.pair.list"
             | "device.pair.revoke"
             | "device.pair.rotateToken"
+            | "device.token.revoke"
             | "device.pair.setupCode" => self.device_pairing.handle_pairing_command(method, &args),
             "config.get" => self.call_openclaw_config_get(&args),
             "config.set" => self.call_openclaw_config_set(&args),
@@ -13371,6 +13372,19 @@ impl GatewayApi for UnifiedGatewayApi {
             ));
         }
         Ok(())
+    }
+
+    fn revoke_device_token(
+        &self,
+        args: serde_json::Value,
+        authorization: Option<&mahayana_host_runtime::device_pairing_owner::DeviceTokenAuthorization>,
+        scope_ceiling: Option<&str>,
+        _context: &GatewayCommandContext,
+    ) -> Result<serde_json::Value, GatewayCommandError> {
+        self.transcript_runtime
+            .session_runtime()
+            .note_desktop_contact(started_at_ms() as f64);
+        self.device_pairing.revoke_token_with_authority(&args, authorization, scope_ceiling)
     }
 
     fn redeem_device_pairing_join_code(
