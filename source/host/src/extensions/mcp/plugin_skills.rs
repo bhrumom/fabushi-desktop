@@ -427,7 +427,6 @@ struct RefreshPass {
     uninstall_observation: Arc<()>,
     recovery_required: bool,
     uninstall_facts: UninstallState,
-    process_lock: Arc<AdmissionFileLock>,
 }
 
 struct RefreshGuard<'a> {
@@ -823,7 +822,6 @@ impl SandPluginSkillsService {
             uninstall_observation: Arc::clone(&live.uninstall_observation),
             recovery_required,
             uninstall_facts: expected.state.clone(),
-            process_lock,
         }))
     }
 
