@@ -511,13 +511,9 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 can_send_messages: conversation.permissions.can_send_messages,
                 can_send_media: conversation.permissions.can_send_media,
                 can_send_polls: conversation.permissions.can_send_polls,
-                // Conversation has no canonical send-other permission axis yet; fail closed
-                // whenever a caller requests that capability instead of assuming exposure.
-                can_send_other: false,
-                // Inline/game permissions are not yet represented by the canonical Conversation
-                // owner, so SearchRecipients refuses those typed requests until that owner exists.
-                can_send_inline: false,
-                can_send_games: false,
+                can_send_other: conversation.permissions.can_send_other,
+                can_send_inline: conversation.permissions.can_send_inline,
+                can_send_games: conversation.permissions.can_send_games,
                 community_forbidden: community_member.is_some_and(|member| {
                     matches!(member.status, MemberStatus::Left | MemberStatus::Banned)
                 }),
@@ -527,9 +523,12 @@ impl<S: MessagingStateStore> MessagingService<S> {
                     .is_some_and(|member| member.restrictions.send_media),
                 community_restrict_polls: restricted
                     .is_some_and(|member| member.restrictions.send_polls),
-                community_restrict_other: false,
-                community_restrict_inline: false,
-                community_restrict_games: false,
+                community_restrict_other: restricted
+                    .is_some_and(|member| member.restrictions.send_other),
+                community_restrict_inline: restricted
+                    .is_some_and(|member| member.restrictions.send_inline),
+                community_restrict_games: restricted
+                    .is_some_and(|member| member.restrictions.send_games),
                 channel_posting_allowed,
             },
             requirements,

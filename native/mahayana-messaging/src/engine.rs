@@ -640,6 +640,8 @@ pub enum EngineError {
     MediaSendPermissionDenied(ConversationId),
     #[error("conversation {0:?} does not allow sending polls")]
     PollSendPermissionDenied(ConversationId),
+    #[error("conversation {0:?} does not allow sending stickers, animations, or dice")]
+    OtherSendPermissionDenied(ConversationId),
     #[error("secret conversations must contain exactly two participants")]
     InvalidSecretConversation,
     #[error("secret conversations only accept encrypted secret content or service messages")]
@@ -666,6 +668,8 @@ pub enum EngineError {
     CommunityMediaRestricted(ConversationId),
     #[error("community {0:?} member is not allowed to send polls")]
     CommunityPollRestricted(ConversationId),
+    #[error("community {0:?} member is not allowed to send stickers, animations, or dice")]
+    CommunityOtherRestricted(ConversationId),
     #[error("actor {actor_id:?} does not have access to community {conversation_id:?}")]
     CommunityAccessDenied {
         conversation_id: ConversationId,
@@ -831,6 +835,15 @@ fn message_content_uses_media(content: &MessageContent) -> bool {
             | MessageContent::VideoNote { .. }
             | MessageContent::Document { .. }
             | MessageContent::Sticker { .. }
+    )
+}
+
+fn message_content_uses_other(content: &MessageContent) -> bool {
+    matches!(
+        content,
+        MessageContent::Sticker { .. }
+            | MessageContent::Animation { .. }
+            | MessageContent::Dice { .. }
     )
 }
 
@@ -1200,6 +1213,12 @@ impl MessagingEngine {
                         conversation_id.clone(),
                     ));
                 }
+                if message_content_uses_other(&content) && !conversation.permissions.can_send_other
+                {
+                    return Err(EngineError::OtherSendPermissionDenied(
+                        conversation_id.clone(),
+                    ));
+                }
                 if let Some(member) = self
                     .state
                     .communities
@@ -1227,6 +1246,14 @@ impl MessagingEngine {
                         && member.restrictions.send_polls
                     {
                         return Err(EngineError::CommunityPollRestricted(
+                            conversation_id.clone(),
+                        ));
+                    }
+                    if message_content_uses_other(&content)
+                        && matches!(member.status, MemberStatus::Restricted)
+                        && member.restrictions.send_other
+                    {
+                        return Err(EngineError::CommunityOtherRestricted(
                             conversation_id.clone(),
                         ));
                     }
@@ -1426,6 +1453,13 @@ impl MessagingEngine {
                         destination_conversation_id.clone(),
                     ));
                 }
+                if message_content_uses_other(&original.content)
+                    && !conversation.permissions.can_send_other
+                {
+                    return Err(EngineError::OtherSendPermissionDenied(
+                        destination_conversation_id.clone(),
+                    ));
+                }
                 if let Some(member) = self
                     .state
                     .communities
@@ -1453,6 +1487,14 @@ impl MessagingEngine {
                         && member.restrictions.send_polls
                     {
                         return Err(EngineError::CommunityPollRestricted(
+                            destination_conversation_id.clone(),
+                        ));
+                    }
+                    if message_content_uses_other(&original.content)
+                        && matches!(member.status, MemberStatus::Restricted)
+                        && member.restrictions.send_other
+                    {
+                        return Err(EngineError::CommunityOtherRestricted(
                             destination_conversation_id.clone(),
                         ));
                     }

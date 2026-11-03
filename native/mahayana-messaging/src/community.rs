@@ -37,6 +37,12 @@ pub struct MemberRestrictions {
     pub send_messages: bool,
     pub send_media: bool,
     pub send_polls: bool,
+    #[serde(default)]
+    pub send_other: bool,
+    #[serde(default)]
+    pub send_inline: bool,
+    #[serde(default)]
+    pub send_games: bool,
     pub embed_links: bool,
     pub add_members: bool,
     pub pin_messages: bool,

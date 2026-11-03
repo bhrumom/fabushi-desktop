@@ -3393,6 +3393,148 @@ impl ProductionSessionWorkers {
         Ok(conversations)
     }
 
+    pub(crate) fn human_recipient_requirements_from_entry(
+        source_entry: &serde_json::Value,
+    ) -> fabushi_messaging_core::RecipientSearchRequirements {
+        fabushi_messaging_core::RecipientSearchRequirements {
+            require_media: source_entry
+                .get("attachments")
+                .and_then(serde_json::Value::as_array)
+                .is_some_and(|attachments| !attachments.is_empty())
+                || source_entry
+                    .get("requireMedia")
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
+            require_polls: source_entry
+                .get("requirePolls")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false)
+                || source_entry.get("poll").is_some_and(|v| !v.is_null()),
+            require_send_other: source_entry
+                .get("requireSendOther")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            require_inline: source_entry
+                .get("requireInline")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            require_game: source_entry
+                .get("requireGame")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            source_protected_content: source_entry
+                .get("protectedContent")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            ..fabushi_messaging_core::RecipientSearchRequirements::default()
+        }
+    }
+
+    pub(crate) fn human_recipient_authorization_from_metadata(
+        metadata: &serde_json::Value,
+        sender_is_participant: bool,
+    ) -> fabushi_messaging_core::RecipientAuthorizationInput {
+        let mut input =
+            fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
+                sender_is_participant,
+            );
+        if let Some(permissions) = metadata
+            .get("permissions")
+            .and_then(serde_json::Value::as_object)
+        {
+            if let Some(v) = permissions
+                .get("canSendMessages")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.can_send_messages = v;
+            }
+            if let Some(v) = permissions
+                .get("canSendMedia")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.can_send_media = v;
+            }
+            if let Some(v) = permissions
+                .get("canSendPolls")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.can_send_polls = v;
+            }
+            if let Some(v) = permissions
+                .get("canSendOther")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.can_send_other = v;
+            }
+            if let Some(v) = permissions
+                .get("canSendInline")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.can_send_inline = v;
+            }
+            if let Some(v) = permissions
+                .get("canSendGames")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.can_send_games = v;
+            }
+        }
+        if let Some(restrictions) = metadata
+            .get("restrictions")
+            .and_then(serde_json::Value::as_object)
+        {
+            if let Some(v) = restrictions
+                .get("sendMessages")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.community_restrict_messages = v;
+            }
+            if let Some(v) = restrictions
+                .get("sendMedia")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.community_restrict_media = v;
+            }
+            if let Some(v) = restrictions
+                .get("sendPolls")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.community_restrict_polls = v;
+            }
+            if let Some(v) = restrictions
+                .get("sendOther")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.community_restrict_other = v;
+            }
+            if let Some(v) = restrictions
+                .get("sendInline")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.community_restrict_inline = v;
+            }
+            if let Some(v) = restrictions
+                .get("sendGames")
+                .and_then(serde_json::Value::as_bool)
+            {
+                input.community_restrict_games = v;
+            }
+        }
+        if let Some(v) = metadata
+            .get("communityForbidden")
+            .and_then(serde_json::Value::as_bool)
+        {
+            input.community_forbidden = v;
+        }
+        if let Some(v) = metadata
+            .get("channelPostingAllowed")
+            .and_then(serde_json::Value::as_bool)
+        {
+            input.channel_posting_allowed = v;
+        }
+        input
+    }
+
     pub fn search_human_recipients(
         &self,
         source_conversation_id: &str,
@@ -3420,17 +3562,7 @@ impl ProductionSessionWorkers {
         {
             return Err("recipient search source must be a settled canonical message".into());
         }
-        let requirements = fabushi_messaging_core::RecipientSearchRequirements {
-            require_media: source_entry
-                .get("attachments")
-                .and_then(serde_json::Value::as_array)
-                .is_some_and(|attachments| !attachments.is_empty()),
-            source_protected_content: source_entry
-                .get("protectedContent")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(false),
-            ..fabushi_messaging_core::RecipientSearchRequirements::default()
-        };
+        let requirements = Self::human_recipient_requirements_from_entry(&source_entry);
         let local_human_id = self.local_human_id()?;
         let normalized_query = query.trim().to_lowercase();
         let mut recipients = self
@@ -3443,10 +3575,24 @@ impl ProductionSessionWorkers {
                     .is_some_and(|ids| {
                         ids.iter().any(|id| id.as_str() == Some(local_human_id))
                     });
+                let auth_input = conversation
+                    .get("id")
+                    .and_then(serde_json::Value::as_str)
+                    .and_then(|id| self.open_human_conversation_db_owner(id).ok())
+                    .and_then(|owner| owner.read_metadata().ok())
+                    .map(|metadata| {
+                        Self::human_recipient_authorization_from_metadata(
+                            &metadata,
+                            sender_is_participant,
+                        )
+                    })
+                    .unwrap_or_else(|| {
+                        fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
+                            sender_is_participant,
+                        )
+                    });
                 if !fabushi_messaging_core::recipient_search_authorized(
-                    fabushi_messaging_core::RecipientAuthorizationInput::direct_default(
-                        sender_is_participant,
-                    ),
+                    auth_input,
                     requirements,
                 ) {
                     return false;
@@ -3643,8 +3789,8 @@ impl ProductionSessionWorkers {
             // Reauthorize before *each* network dispatch, not merely when the
             // original snapshot was accepted. The immutable payload never
             // changes when the source text is later edited.
-            match self.authorize_forward_source(source_id, &batch.source_entry_id) {
-                Ok(_) => {}
+            let source_entry = match self.authorize_forward_source(source_id, &batch.source_entry_id) {
+                Ok(entry) => entry,
                 Err(ForwardSourceFailure::Policy(denial)) => {
                     // Persist a visible denial without sending any remaining
                     // destination. Ordinary inbound history may still sync.
@@ -3657,7 +3803,7 @@ impl ProductionSessionWorkers {
                     return Ok(batch);
                 }
                 Err(ForwardSourceFailure::Storage(error)) => return Err(error),
-            }
+            };
             if self.human_forward_scope()? != (account.to_string(), issuer.to_string()) {
                 return Err("Fabushi native messaging credential changed Human account or issuer".into());
             }
@@ -3671,12 +3817,12 @@ impl ProductionSessionWorkers {
                 if participants.len() != 2 || !self.metadata_has_local_human(&metadata)? {
                     return Err("forward destination is not an authorized Human conversation".into());
                 }
+                let mut requirements = Self::human_recipient_requirements_from_entry(&source_entry);
+                requirements.require_media |= !batch.attachments.is_empty();
+                let auth_input = Self::human_recipient_authorization_from_metadata(&metadata, true);
                 let permitted = fabushi_messaging_core::recipient_search_authorized(
-                    fabushi_messaging_core::RecipientAuthorizationInput::direct_default(true),
-                    fabushi_messaging_core::RecipientSearchRequirements {
-                        require_media: !batch.attachments.is_empty(),
-                        ..fabushi_messaging_core::RecipientSearchRequirements::default()
-                    },
+                    auth_input,
+                    requirements,
                 );
                 if !permitted {
                     return Err("forward destination rejected the source message policy".into());
@@ -5738,6 +5884,90 @@ mod sharebox_shipping_tests {
             Some("sent"),
         );
         assert_eq!(restarted.read_human_conversation_transcript(&alpha).unwrap().len(), 1);
+
+        // Destination permission & typed-share policy enforcement across searchHumanRecipients and forwardHumanMessage
+        let gamma = conversation_id(&restarted.create_human_conversation("human-gamma", "Gamma Blocked").unwrap());
+        let gamma_owner = restarted.open_human_conversation_db_owner(&gamma).unwrap();
+        let mut gamma_meta = gamma_owner.read_metadata().unwrap();
+        gamma_meta["permissions"] = serde_json::json!({ "canSendMessages": false });
+        gamma_owner.write_metadata(&gamma_meta).unwrap();
+
+        let delta = conversation_id(&restarted.create_human_conversation("human-delta", "Delta NoOther").unwrap());
+        let delta_owner = restarted.open_human_conversation_db_owner(&delta).unwrap();
+        let mut delta_meta = delta_owner.read_metadata().unwrap();
+        delta_meta["permissions"] = serde_json::json!({ "canSendOther": false });
+        delta_owner.write_metadata(&delta_meta).unwrap();
+
+        let source_owner = restarted.open_human_conversation_db_owner(&source).unwrap();
+        assert!(source_owner.append_transcript_entry(&serde_json::json!({
+            "id": "human-server-message:901",
+            "kind": "message",
+            "role": "user",
+            "authorKind": "human",
+            "authorId": "human-source",
+            "content": "shared link with send-other requirement",
+            "requireSendOther": true,
+            "delivery": "sent",
+            "timestampMs": 25.0,
+            "remoteMessageId": "901",
+            "remoteCreatedAt": "1970-01-01T00:00:25Z"
+        })).unwrap());
+
+        let ordinary_recipients = restarted
+            .search_human_recipients(&source, source_entry_id, "", 50)
+            .unwrap();
+        assert!(
+            ordinary_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(gamma.as_str())),
+            "canSendMessages=false destination must be excluded before exposure",
+        );
+        assert!(
+            ordinary_recipients.iter().any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(delta.as_str())),
+            "canSendOther=false destination remains eligible for ordinary text forwards",
+        );
+
+        let other_recipients = restarted
+            .search_human_recipients(&source, "human-server-message:901", "", 50)
+            .unwrap();
+        assert!(
+            other_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(gamma.as_str())),
+            "canSendMessages=false destination must remain excluded",
+        );
+        assert!(
+            other_recipients.iter().all(|item| item.get("id").and_then(serde_json::Value::as_str) != Some(delta.as_str())),
+            "canSendOther=false destination must be excluded when requireSendOther=true",
+        );
+        assert!(
+            other_recipients.iter().any(|item| item.get("id").and_then(serde_json::Value::as_str) == Some(beta.as_str())),
+            "unrestricted destination remains eligible when requireSendOther=true",
+        );
+
+        let policy_settlement = restarted
+            .forward_human_message(
+                &source,
+                "human-server-message:901",
+                &[beta.clone(), gamma.clone(), delta.clone()],
+                "forward-request-policy-1",
+                false,
+                false,
+            )
+            .unwrap();
+        let policy_dests = policy_settlement.get("destinations").and_then(serde_json::Value::as_array).unwrap();
+        assert_eq!(policy_dests.len(), 3);
+        let status_for = |conv_id: &str| {
+            policy_dests
+                .iter()
+                .find(|item| item.get("conversationId").and_then(serde_json::Value::as_str) == Some(conv_id))
+                .unwrap()
+        };
+        assert_eq!(status_for(&beta).get("status").and_then(serde_json::Value::as_str), Some("sent"));
+        assert_eq!(status_for(&gamma).get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        assert!(status_for(&gamma).get("error").and_then(serde_json::Value::as_str).unwrap_or_default().contains("rejected the source message policy"));
+        assert_eq!(status_for(&delta).get("status").and_then(serde_json::Value::as_str), Some("failed"));
+        assert!(status_for(&delta).get("error").and_then(serde_json::Value::as_str).unwrap_or_default().contains("rejected the source message policy"));
+        assert_eq!(restarted.read_human_conversation_transcript(&beta).unwrap().len(), 1);
+        assert_eq!(restarted.read_human_conversation_transcript(&gamma).unwrap().len(), 0);
+        assert_eq!(restarted.read_human_conversation_transcript(&delta).unwrap().len(), 0);
+
         restarted.shutdown();
         let _ = fs::remove_dir_all(root);
     }

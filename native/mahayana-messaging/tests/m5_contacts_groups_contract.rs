@@ -292,6 +292,304 @@ fn contacts_and_groups_are_searchable_through_the_messaging_protocol() {
 }
 
 #[test]
+fn share_recipient_search_uses_canonical_typed_permission_axes_before_exposure() {
+    let mut service = MessagingService::load(MemoryStateStore::default()).unwrap();
+    for (id, name) in [
+        ("human:owner", "Owner"),
+        ("human:restricted", "Restricted"),
+    ] {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context(id, &format!("profile:{id}")),
+                    ClientCommand::UpsertProfile {
+                        actor: Actor::human(id, name),
+                    },
+                ),
+                1,
+            )
+            .unwrap();
+    }
+
+    let mut allowed = group_conversation("group:share-allowed");
+    allowed.title = "Share Allowed".into();
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "create-share-allowed"),
+                ClientCommand::CreateConversation {
+                    conversation: allowed,
+                },
+            ),
+            2,
+        )
+        .unwrap();
+
+    let mut allowed_community = community("group:share-allowed");
+    allowed_community.upsert_member(CommunityMember {
+        actor_id: ActorId::new("human:restricted"),
+        status: MemberStatus::Restricted,
+        admin_title: None,
+        admin_rights: AdminRights::default(),
+        restrictions: MemberRestrictions {
+            send_messages: false,
+            send_other: true,
+            send_inline: true,
+            send_games: true,
+            ..MemberRestrictions::default()
+        },
+        joined_at_ms: 1,
+        invited_by: Some(ActorId::new("human:owner")),
+    });
+    service
+        .handle(
+            ClientEnvelope::new(
+                context("human:owner", "community-share-allowed"),
+                ClientCommand::UpdateCommunity {
+                    community: allowed_community,
+                },
+            ),
+            3,
+        )
+        .unwrap();
+
+    let mut other_blocked = group_conversation("group:share-other-blocked");
+    other_blocked.title = "Share Other Blocked".into();
+    other_blocked.permissions.can_send_other = false;
+    let mut inline_blocked = group_conversation("group:share-inline-blocked");
+    inline_blocked.title = "Share Inline Blocked".into();
+    inline_blocked.permissions.can_send_inline = false;
+    let mut game_blocked = group_conversation("group:share-game-blocked");
+    game_blocked.title = "Share Game Blocked".into();
+    game_blocked.permissions.can_send_games = false;
+
+    for (index, conversation) in [other_blocked, inline_blocked, game_blocked]
+        .into_iter()
+        .enumerate()
+    {
+        service
+            .handle(
+                ClientEnvelope::new(
+                    context("human:owner", &format!("create-share-blocked-{index}")),
+                    ClientCommand::CreateConversation { conversation },
+                ),
+                4 + i64::try_from(index).unwrap(),
+            )
+            .unwrap();
+    }
+
+    let query = || SearchQuery {
+        text: "share".into(),
+        scope: SearchScope::Global,
+        conversation_id: None,
+        sender_id: None,
+        from_ms: None,
+        to_ms: None,
+        limit: 20,
+    };
+    let mut search = |actor_id: &str, request_id: &str, requirements: RecipientSearchRequirements| {
+        let response = service
+            .handle(
+                ClientEnvelope::new(
+                    context(actor_id, request_id),
+                    ClientCommand::SearchRecipients {
+                        query: query(),
+                        requirements,
+                    },
+                ),
+                10,
+            )
+            .unwrap();
+        match &response[0].event {
+            ServerEvent::SearchResults { results, .. } => results.clone(),
+            other => panic!("unexpected recipient search event: {other:?}"),
+        }
+    };
+
+    let other = search(
+        "human:owner",
+        "share-other",
+        RecipientSearchRequirements {
+            require_send_other: true,
+            ..RecipientSearchRequirements::default()
+        },
+    );
+    assert!(other.iter().any(|result| result.id == "group:share-allowed"));
+    assert!(other
+        .iter()
+        .all(|result| result.id != "group:share-other-blocked"));
+
+    let inline = search(
+        "human:owner",
+        "share-inline",
+        RecipientSearchRequirements {
+            require_inline: true,
+            ..RecipientSearchRequirements::default()
+        },
+    );
+    assert!(inline.iter().any(|result| result.id == "group:share-allowed"));
+    assert!(inline
+        .iter()
+        .all(|result| result.id != "group:share-inline-blocked"));
+
+    let game = search(
+        "human:owner",
+        "share-game",
+        RecipientSearchRequirements {
+            require_game: true,
+            ..RecipientSearchRequirements::default()
+        },
+    );
+    assert!(game.iter().any(|result| result.id == "group:share-allowed"));
+    assert!(game
+        .iter()
+        .all(|result| result.id != "group:share-game-blocked"));
+
+    let restricted_default = search(
+        "human:restricted",
+        "share-restricted-default",
+        RecipientSearchRequirements::default(),
+    );
+    assert!(restricted_default
+        .iter()
+        .any(|result| result.id == "group:share-allowed"));
+
+    for (request_id, requirements) in [
+        (
+            "share-restricted-other",
+            RecipientSearchRequirements {
+                require_send_other: true,
+                ..RecipientSearchRequirements::default()
+            },
+        ),
+        (
+            "share-restricted-inline",
+            RecipientSearchRequirements {
+                require_inline: true,
+                ..RecipientSearchRequirements::default()
+            },
+        ),
+        (
+            "share-restricted-game",
+            RecipientSearchRequirements {
+                require_game: true,
+                ..RecipientSearchRequirements::default()
+            },
+        ),
+    ] {
+        let restricted = search("human:restricted", request_id, requirements);
+        assert!(restricted
+            .iter()
+            .all(|result| result.id != "group:share-allowed"));
+    }
+}
+
+#[test]
+fn typed_share_permission_fields_keep_legacy_persistence_fail_closed() {
+    let legacy_permissions: ConversationPermissions = serde_json::from_str(
+        r#"{"canSendMessages":true,"canSendMedia":true,"canSendPolls":true,"canAddMembers":true,"canPinMessages":true,"canManageTopics":true,"canManageCalls":true}"#,
+    )
+    .unwrap();
+    assert!(!legacy_permissions.can_send_other);
+    assert!(!legacy_permissions.can_send_inline);
+    assert!(!legacy_permissions.can_send_games);
+
+    let fresh_permissions = ConversationPermissions::default();
+    assert!(fresh_permissions.can_send_other);
+    assert!(fresh_permissions.can_send_inline);
+    assert!(fresh_permissions.can_send_games);
+
+    let legacy_restrictions: MemberRestrictions = serde_json::from_str(
+        r#"{"sendMessages":false,"sendMedia":false,"sendPolls":false,"embedLinks":false,"addMembers":false,"pinMessages":false,"changeInfo":false,"untilMs":null}"#,
+    )
+    .unwrap();
+    assert!(!legacy_restrictions.send_other);
+    assert!(!legacy_restrictions.send_inline);
+    assert!(!legacy_restrictions.send_games);
+
+    let mut engine = seed_engine("group:share-send-other");
+    let mut source_group = group_conversation("group:share-source-dice");
+    source_group.title = "Share Dice Source".into();
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: source_group,
+        })
+        .unwrap();
+    engine
+        .execute(Command::QueueMessage {
+            conversation_id: ConversationId::new("group:share-source-dice"),
+            local_message_id: MessageId::new("msg:dice-source"),
+            client_message_id: ClientMessageId("client:dice-source".into()),
+            sender_id: ActorId::new("human:owner"),
+            content: MessageContent::Dice {
+                emoji: "🎲".into(),
+                value: 6,
+            },
+            reply_to_message_id: None,
+            thread_root_message_id: None,
+            created_at_ms: 10,
+            scheduled_at_ms: None,
+            silent: false,
+            protected_content: false,
+        })
+        .unwrap();
+
+    let mut no_other_group = group_conversation("group:share-no-other");
+    no_other_group.permissions.can_send_other = false;
+    engine
+        .execute(Command::UpsertConversation {
+            conversation: no_other_group,
+        })
+        .unwrap();
+    assert_eq!(
+        engine.execute(Command::ForwardMessage {
+            source_conversation_id: ConversationId::new("group:share-source-dice"),
+            message_id: MessageId::new("msg:dice-source"),
+            destination_conversation_id: ConversationId::new("group:share-no-other"),
+            local_message_id: MessageId::new("msg:dice-forward-denied"),
+            client_message_id: ClientMessageId("client:dice-forward-denied".into()),
+            sender_id: ActorId::new("human:member"),
+            thread_root_message_id: None,
+            created_at_ms: 11,
+            scheduled_at_ms: None,
+            silent: false,
+            privacy: ForwardPrivacy::default(),
+        }),
+        Err(EngineError::OtherSendPermissionDenied(ConversationId::new(
+            "group:share-no-other"
+        )))
+    );
+
+    let mut restricted_member = community_member("human:restricted", MemberStatus::Restricted);
+    restricted_member.restrictions.send_other = true;
+    engine
+        .execute(Command::SetCommunityMember {
+            actor_id: ActorId::new("human:owner"),
+            conversation_id: ConversationId::new("group:share-send-other"),
+            member: restricted_member,
+        })
+        .unwrap();
+    assert_eq!(
+        engine.execute(Command::ForwardMessage {
+            source_conversation_id: ConversationId::new("group:share-source-dice"),
+            message_id: MessageId::new("msg:dice-source"),
+            destination_conversation_id: ConversationId::new("group:share-send-other"),
+            local_message_id: MessageId::new("msg:dice-community-denied"),
+            client_message_id: ClientMessageId("client:dice-community-denied".into()),
+            sender_id: ActorId::new("human:restricted"),
+            thread_root_message_id: None,
+            created_at_ms: 12,
+            scheduled_at_ms: None,
+            silent: false,
+            privacy: ForwardPrivacy::default(),
+        }),
+        Err(EngineError::CommunityOtherRestricted(ConversationId::new(
+            "group:share-send-other"
+        )))
+    );
+}
+
+#[test]
 fn admin_rights_are_operation_specific() {
     let mut engine = seed_engine("group:m5-admin");
 
