@@ -1,0 +1,48 @@
+{
+  "schema": "ocrm-scoped-recovery-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "PS-LOCK-RECONCILE-v2",
+  "source_subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+  "source_tree": "7690531a3a018fae94e7122b08a8b5c67252793e",
+  "implementation_base": "b31b2c6a131b09aff80233952de404d7ea7497c3",
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "run_id": 41618863245,
+  "run_attempt": 1,
+  "job_id": 125859112028,
+  "actual_evidence_url": "https://github.com/bhrumom/fabushi-desktop/actions/runs/41618863245/job/125859112028",
+  "findings": [
+    {
+      "id": "PSL-6D8-DESKTOP-CUSTODY-V3-ORACLE",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "severity": "P2",
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "blob": "71144e4e578a51fd2281dcb6b743e5c7a11d569e",
+      "symbol": "desktop_service_contracts::RealService::assert_uninstall_custody_with_refresh",
+      "line": 734,
+      "observed": "Actual selected target reports 13 passed and 3 failed. All three fail the complete image comparison that still requires formatVersion 2 and omits uninstallObservation; the production writer correctly emits version 3 with a canonical observation.",
+      "failed_tests": [
+        "desktop_service_contracts::closed_desktop_service_never_replays_an_admitted_uninstall_or_dispatches_new_work",
+        "desktop_service_contracts::desktop_observation_rejects_a_pre_fact_success_from_the_actual_loader",
+        "desktop_service_contracts::late_desktop_uninstall_reply_cannot_settle_the_successor_service_request"
+      ],
+      "authority": {
+        "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+        "blob": "77a99b596b43333e2f9ef5bff5b1395025032247",
+        "requirement": "LR2-01 / PSL08",
+        "owner_state_blob": "8b8a03ccde91dfbf5a20ca141d84a073ab9c19b5"
+      },
+      "resolution": "Retain complete status/image/marker comparison and stale/disposal byte-equality assertions. Require formatVersion 3 plus explicit null or canonical UUID observation. Through the existing real service/loader sequence assert null before uninstall, rotation at reservation/settlement/fact release, stability across refresh-only changes and stale/closed-service replies. Keep every original custody, denial, cached-byte, pending-request and no-replay assertion; do not mask the new field or merely copy it into expected JSON without lifecycle assertions.",
+      "before_implementation": true
+    }
+  ],
+  "source_review_scope": {
+    "original_base": "9864d1c02e7e67881d644800963abc807b3abaab",
+    "previous_review_subject": "b8a648abd90b6ae5c4f9feae8a1e159f126fd69b",
+    "addition_reason": "Executed retained desktop consumer oracle outside the previously edited paths must follow the already specified v3 image contract. Preserve original review scope as context and add this one actual consumer test path to the recovery snapshot.",
+    "required": "Fresh focused GENERAL and STRUCTURE review, complete retained scope context, exact-H affected Actions; prior R3 source approval is not successful execution."
+  },
+  "retained_evidence": "The prior R3 source reviews and historical passing controls retain their exact subjects; current portable job remains failed/incomplete pending final receipt. No whole-case, current candidate, unit or global acceptance is inferred.",
+  "execution": "No unchanged-H rerun; correction and new frozen-H verification required.",
+  "global_flags_changed": false
+}
