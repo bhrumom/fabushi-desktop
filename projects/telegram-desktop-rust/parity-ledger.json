@@ -51971,8 +51971,7 @@
         "TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001",
         "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
         "FBCP-NMR-001"
-      ],
-      "reviewed_source_blob": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -51994,8 +51993,7 @@
         "TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001",
         "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
         "FBCP-NMR-001"
-      ],
-      "reviewed_source_blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52014,8 +52012,7 @@
       "responsibility_ids": [
         "FBCP-NMR-001",
         "TDRP-R9-SHARE-SEND-OPTIONS-001"
-      ],
-      "reviewed_source_blob": "86865db47439dbce848fc812df2554335d3e004c"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52034,8 +52031,7 @@
       "responsibility_ids": [
         "FBCP-NMR-001",
         "TDRP-R9-SHARE-SEND-OPTIONS-001"
-      ],
-      "reviewed_source_blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",

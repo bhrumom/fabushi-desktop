@@ -56,11 +56,13 @@ export function createSpreadsheetViewerProvider(actions: SpreadsheetViewerAction
   let generation = 0;
   let active: { readonly generation: number; readonly entry: SpreadsheetViewerEntryProjection } | null = null;
   let disposed = false;
+  let pendingRead: { readonly generation: number; readonly source: string; readonly maxBytes: number; readonly promise: Promise<AttachmentBytesResult | null> } | null = null;
 
   const isCurrent = (entryGeneration: number): boolean => !disposed && active?.generation === entryGeneration;
   const invalidate = (): void => {
     generation += 1;
     active = null;
+    pendingRead = null;
   };
 
   return {
@@ -77,13 +79,19 @@ export function createSpreadsheetViewerProvider(actions: SpreadsheetViewerAction
       };
       const readAttachmentBytes = async (source: string, maxBytes: number): Promise<AttachmentBytesResult | null> => {
         if (!isCurrent(entryGeneration) || source !== entry.source) return null;
-        try {
-          const result = await actions.readAttachmentBytes(source, maxBytes);
-          return isCurrent(entryGeneration) ? result : null;
-        } catch (error: unknown) {
-          if (!isCurrent(entryGeneration)) return null;
-          throw error;
+        const pending = pendingRead;
+        if (pending?.generation === entryGeneration && pending.source === source && pending.maxBytes === maxBytes) {
+          return pending.promise;
         }
+        const promise = actions.readAttachmentBytes(source, maxBytes).then((result) =>
+          isCurrent(entryGeneration) ? result : null
+        ).catch((error: unknown) => {
+          if (!isCurrent(entryGeneration)) return null;
+          if (pendingRead?.promise === promise) pendingRead = null;
+          throw error;
+        });
+        pendingRead = { generation: entryGeneration, source, maxBytes, promise };
+        return promise;
       };
       const onDownload = async (): Promise<boolean> => {
         if (!isCurrent(entryGeneration)) return false;

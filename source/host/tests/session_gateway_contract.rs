@@ -8093,6 +8093,8 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
             };
             assert!(owner.append_transcript_entry(&duplicate).expect("seed conflicting nonce row"));
         }
+        let original_participants = owner.read_metadata().expect("original metadata")
+            .get("participantIds").cloned().expect("original participant pair");
         let participants = match label {
             "foreign-participants" => Some(json!(["2", "3"])),
             "participants-more-than-two" => Some(json!(["1", "2", "3"])),
@@ -8108,8 +8110,10 @@ fn shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mut
         if label == "participants-rebound-peer" {
             assert!(runtime.open_human_conversation_db_owner(&id).is_err(),
                 "a rebound peer must not retain authority through the original canonical directory");
-            assert!(owner.set_metadata("participantIds", json!(["1", "2"])).unwrap(),
-                "restore the original canonical pair for the pure-reopen positive control");
+            let rebound_metadata = owner.read_metadata().expect("rebound metadata");
+            assert_eq!(owner.read_metadata().expect("identity refusal is read-only"), rebound_metadata);
+            assert!(owner.set_metadata("participantIds", original_participants).unwrap(),
+                "restore the exact original canonical pair for the pure-reopen positive control");
         }
         let before = owner.get_transcript_entries().expect("original complete rows");
         let metadata = owner.read_metadata().expect("original conversation metadata");

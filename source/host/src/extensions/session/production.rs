@@ -2549,9 +2549,10 @@ impl ProductionSessionWorkers {
             let request = context.get("requestId").and_then(serde_json::Value::as_str)
                 .filter(|value| !value.is_empty())
                 .ok_or_else(|| "persisted Human forward request is invalid".to_string())?;
-            // Use the same strict cached/cold source owner as batch recovery.
-            // Unreadable or malformed storage cannot prove legacy ownership.
-            let owner = self.open_human_conversation_db_owner(source)?;
+            // This is journal-only ownership discovery. A rebound source must remain
+            // discoverable so generic outbox replay cannot bypass its denial;
+            // it grants no transcript or resource authority.
+            let owner = self.open_human_forward_recovery_owner(source)?;
             if load_forward_batches(&owner, source)?.iter().any(|batch|
                 (batch.request_id == request && batch.account_id == author)
                     || batch.destinations.iter().any(|target|
@@ -2593,7 +2594,7 @@ impl ProductionSessionWorkers {
             let db_path = get_native_conversation_db_path(&self.agents_root, &source_id)
                 .map_err(|error| error.to_string())?;
             if !db_path.is_file() { continue; }
-            let owner = self.open_human_conversation_db_owner(&source_id)?;
+            let owner = self.open_human_forward_recovery_owner(&source_id)?;
             if load_forward_batches(&owner, &source_id)?.iter().any(|batch|
                 batch.destinations.iter().any(|target|
                     target.conversation_id == conversation_id && target.client_nonce == nonce

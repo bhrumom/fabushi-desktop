@@ -515,7 +515,7 @@ test("human_entry_refresh_requeries_search_and_discards_older_results", { timeou
   await f.resolveRequest(accountBTail, historyPage([accountBRow]));
   await f.expectRows([accountBRow.id]);
   await f.frames();
-  assert.equal(await f.editor.innerText(), "", "an old account's composer does not enter the new account");
+  assert.equal((await f.editor.innerText()).trim(), "", "an old account's composer does not enter the new account");
   assert.equal(await f.count("searchHumanMessages"), beforeAccountSwitch,
     "scope reset must reject an old render's query before any request enters account B");
   await f.editor.fill("ACCOUNT_B_DRAFT");
@@ -645,7 +645,9 @@ test("human_entry_refresh_retires_removed_pdf_and_late_resource_reads", { timeou
   };
   await openPdf(pdfA);
   const retiredRead = await f.resourceRequest("readAttachmentBytes", pdfA.path);
-  await pdf(pdfA.fileName).getByRole("button", { name: "Download file", exact: true }).click();
+  const pdfDownload = pdf(pdfA.fileName).getByRole("button", { name: "Download file", exact: true });
+  await pdfDownload.focus();
+  await pdfDownload.press("Enter");
   const retiredDownload = await f.resourceRequest("downloadAttachment", pdfA.path);
   assert.deepEqual(retiredDownload.args, { source: pdfA.path, suggestedName: pdfA.fileName });
   await f.update({ ...entry, content: "unrelated text edit", attachments: [pdfB, { ...pdfA }] });

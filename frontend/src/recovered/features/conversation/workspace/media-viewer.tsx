@@ -328,18 +328,25 @@ export function TranscriptAttachmentGallery({ attachments, adjacency, role, reso
       throw error;
     }
   }, [currentPreviewAttachment, previewToken]);
+  const pdfReadRef = useRef<{ token: number; path: string; maxBytes: number; promise: Promise<AttachmentBytesResult | null> } | null>(null);
   const readPreviewBytes = useCallback<PdfBytesResolver>(async (path, maxBytes) => {
     if (previewToken == null) return null;
     const attachment = currentPreviewAttachment(previewToken, "pdf");
     const reader = latestRef.current.readAttachmentBytes;
     if (attachment == null || attachment.path !== path || reader == null) return null;
-    try {
-      const result = await reader(path, maxBytes);
-      return currentPreviewAttachment(previewToken, "pdf") == null ? null : result;
-    } catch (error: unknown) {
-      if (currentPreviewAttachment(previewToken, "pdf") == null) return null;
-      throw error;
+    const pending = pdfReadRef.current;
+    if (pending?.token === previewToken && pending.path === path && pending.maxBytes === maxBytes) {
+      return pending.promise;
     }
+    const promise = reader(path, maxBytes).then((result) =>
+      currentPreviewAttachment(previewToken, "pdf") == null ? null : result
+    ).catch((error: unknown) => {
+      if (currentPreviewAttachment(previewToken, "pdf") == null) return null;
+      if (pdfReadRef.current?.promise === promise) pdfReadRef.current = null;
+      throw error;
+    });
+    pdfReadRef.current = { token: previewToken, path, maxBytes, promise };
+    return promise;
   }, [currentPreviewAttachment, previewToken]);
   const downloadPreview = useCallback(async () => {
     if (previewToken == null) return false;
