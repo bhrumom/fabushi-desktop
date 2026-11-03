@@ -16,7 +16,7 @@ use crate::transcript_mutation_events::publish_transcript_mutation;
 
 use super::agent_db_recovery::{
     AgentDbRecoveryError, DbRecoveryOptions, open_configured_db,
-    probe_human_conversation_store, recover_corrupt_store_db,
+    inspect_human_conversation_store, probe_human_conversation_store, recover_corrupt_store_db,
 };
 use super::agent_db_schema::{
     CLEAR_BLOBS_SQL, CLEAR_TRANSCRIPT_ENTRIES_SQL, COMPARE_AND_SET_KV_SQL, DELETE_KV_SQL,
@@ -61,6 +61,8 @@ pub enum AgentDbProjectionError {
     OwnerPoisoned,
     #[error("Human transcript page could not be durably prepared")]
     HumanTranscriptUnavailable,
+    #[error("Human retry store admission refused: {0}")]
+    HumanRetryInvalid(String),
 }
 
 const KV_PROFILE: &str = "sandProfile";
@@ -266,6 +268,30 @@ impl SandAgentDb {
         options.recovery.recover_on_corruption = false;
         options.recovery.reject_if_corrupt = true;
         Self::open_with_options_and_seed(db_path, options, false)
+    }
+
+    /// Inspect the *same committed read-only snapshot* for Human identity before
+    /// the ordinary writable opener can initialize WAL/schema. This is strict
+    /// admission for existing stores, never generic Agent salvage or reset.
+    pub fn open_validated_human_conversation_store(
+        db_path: impl AsRef<Path>, busy_timeout_ms: u64, allow_empty: bool,
+        admit: impl FnOnce(&serde_json::Value) -> Result<(), String>,
+    ) -> Result<Self, AgentDbProjectionError> {
+        let path = resolve_agent_db_path(db_path.as_ref());
+        match inspect_human_conversation_store(&path, busy_timeout_ms)? {
+            Some(snapshot) => {
+                let raw = read_kv(&snapshot, "metadata")?
+                    .ok_or_else(|| AgentDbProjectionError::HumanRetryInvalid(
+                        "existing Human store has no committed identity".into()))?;
+                let bytes = decode_hex(&raw).map_err(AgentDbProjectionError::MetadataHex)?;
+                let metadata: serde_json::Value = serde_json::from_slice(&bytes)?;
+                admit(&metadata).map_err(AgentDbProjectionError::HumanRetryInvalid)?;
+            }
+            None if !allow_empty => return Err(AgentDbProjectionError::HumanRetryInvalid(
+                "existing Human store has no committed database".into())),
+            None => {},
+        }
+        Self::open_human_conversation_store(path, busy_timeout_ms)
     }
 
     pub fn open_with_options(
@@ -1542,6 +1568,41 @@ impl SandAgentDb {
             return Ok(Vec::new());
         };
         Ok(read_transcript_entries_from_db(db)?)
+    }
+
+    /// Retry admission must see physically stored rows, including malformed or
+    /// legacy-error entries omitted by the presentation decoder. Never turn a
+    /// duplicate persisted nonce into authority for another send.
+    pub fn get_human_retry_entries(
+        &self, client_nonce: &str,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::HumanRetryInvalid("Human store is closed".into()));
+        }
+        let guard = self.connection.lock().map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let db = guard.as_ref().ok_or_else(||
+            AgentDbProjectionError::HumanRetryInvalid("Human store is unavailable".into()))?;
+        let mut query = db.prepare("SELECT id, entry FROM transcript_entries ORDER BY seq")?;
+        let rows = query.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        let mut matches = Vec::new();
+        for row in rows {
+            let (physical_id, raw) = row?;
+            let entry: serde_json::Value = serde_json::from_str(&raw).map_err(|_| {
+                AgentDbProjectionError::HumanRetryInvalid(
+                    "persisted Human transcript includes undecodable entry".into())
+            })?;
+            if entry.get("clientNonce").and_then(serde_json::Value::as_str) != Some(client_nonce) {
+                continue;
+            }
+            if entry.get("id").and_then(serde_json::Value::as_str) != Some(physical_id.as_str()) {
+                return Err(AgentDbProjectionError::HumanRetryInvalid(
+                    "persisted Human retry entry identity conflicts with its physical row".into()));
+            }
+            matches.push(entry);
+        }
+        Ok(matches)
     }
 
     pub fn get_human_transcript_entries(

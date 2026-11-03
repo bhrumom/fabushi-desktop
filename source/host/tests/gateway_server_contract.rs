@@ -30,7 +30,7 @@ impl GatewayApi for TestApi {
                 "version": "avatar-v1"
             })),
             "getTranscript" => Ok(args),
-            "searchHumanRecipients" | "forwardHumanMessage" => Ok(json!({"method":method,"args":args})),
+            "searchHumanRecipients" | "forwardHumanMessage" | "retryHumanMessage" => Ok(json!({"method":method,"args":args})),
             method if method.starts_with("feature.") => Ok(json!({
                 "method": method,
                 "args": args,
@@ -314,6 +314,77 @@ fn gateway_forward_recipient_methods_are_authenticated_and_unknown_methods_stay_
         assert!(response.starts_with("HTTP/1.1 404 Not Found"), "{response}");
     }
     server.close();
+}
+
+#[test]
+fn gateway_human_retry_requires_authentication_and_preserves_the_explicit_command() {
+    struct RetryAdmissionApi {
+        calls: Arc<Mutex<Vec<(String, Value)>>>,
+    }
+
+    impl GatewayApi for RetryAdmissionApi {
+        fn call(&self, method: &str, args: Value) -> Result<Value, GatewayCommandError> {
+            self.calls
+                .lock()
+                .expect("retry dispatch lock")
+                .push((method.to_owned(), args.clone()));
+            TestApi.call(method, args)
+        }
+    }
+
+    let body = r#"{"conversationId":"human:1:2","clientNonce":"original"}"#;
+    for configured_token in [None, Some("retry-secret")] {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let server = start_gateway_server(GatewayServerDeps {
+            api: Arc::new(RetryAdmissionApi { calls: Arc::clone(&calls) }),
+            events: GatewayEventHub::default(),
+            local_exec: None,
+            webauthn: None,
+            config: config(configured_token),
+            started_at: 1,
+        }).expect("gateway");
+        let send = |method: &str, token: &str, payload: &str| request(server.port(), &format!(
+            "POST /api/{method} HTTP/1.1\r\nHost: 127.0.0.1\r\n{token}Content-Length: {}\r\nConnection: close\r\n\r\n{payload}", payload.len()));
+
+        for token in ["", "Authorization: Bearer wrong-secret\r\n"] {
+            let denied = send("retryHumanMessage", token, body);
+            assert!(denied.starts_with("HTTP/1.1 401 Unauthorized"), "{denied}");
+            assert!(calls.lock().unwrap().is_empty(), "unauthenticated retry reached dispatch");
+        }
+        if configured_token.is_none() {
+            let denied = send("retryHumanMessage", "Authorization: Bearer retry-secret\r\n", body);
+            assert!(denied.starts_with("HTTP/1.1 401 Unauthorized"), "{denied}");
+            assert!(calls.lock().unwrap().is_empty(), "unconfigured retry gateway reached dispatch");
+
+            // Authentication becomes mandatory for this command without changing
+            // the established loopback policy for other explicit commands.
+            let transcript = send("getTranscript", "", body);
+            assert!(transcript.starts_with("HTTP/1.1 200 OK"), "{transcript}");
+            assert_eq!(json_body(&transcript), serde_json::from_str::<Value>(body).unwrap());
+            assert_eq!(calls.lock().unwrap().as_slice(), &[
+                ("getTranscript".to_owned(), serde_json::from_str::<Value>(body).unwrap()),
+            ]);
+        } else {
+            for alias in ["retryHumanMessages", "telegram.retryMessage"] {
+                let denied = send(alias, "Authorization: Bearer retry-secret\r\n", body);
+                assert!(denied.starts_with("HTTP/1.1 404 Not Found"), "{denied}");
+                assert!(calls.lock().unwrap().is_empty(), "retry alias reached dispatch");
+            }
+            let malformed = send(
+                "retryHumanMessage", "Authorization: Bearer retry-secret\r\n", "{\"conversationId\":",
+            );
+            assert!(malformed.starts_with("HTTP/1.1 400 Bad Request"), "{malformed}");
+            assert!(calls.lock().unwrap().is_empty(), "malformed JSON retry reached dispatch");
+
+            let allowed = send("retryHumanMessage", "Authorization: Bearer retry-secret\r\n", body);
+            assert!(allowed.starts_with("HTTP/1.1 200 OK"), "{allowed}");
+            assert_eq!(json_body(&allowed), json!({"method":"retryHumanMessage", "args":{"conversationId":"human:1:2","clientNonce":"original"}}));
+            assert_eq!(calls.lock().unwrap().as_slice(), &[
+                ("retryHumanMessage".to_owned(), serde_json::from_str::<Value>(body).unwrap()),
+            ]);
+        }
+        server.close();
+    }
 }
 
 #[test]

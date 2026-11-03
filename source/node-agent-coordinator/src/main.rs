@@ -1439,6 +1439,9 @@ fn spawn_host(state: Arc<CoordinatorState>) -> io::Result<u64> {
         "SAND_DATA_ROOT",
         state.bootstrap.process_config.data_dir.trim(),
     );
+    // The existing discovery transport carries the Host's generated token.
+    // A local bind is not an authenticated command boundary for durable sends.
+    command.env("SAND_GATEWAY_REQUIRE_AUTH", "1");
     if let Some(local_human_id) = state.bootstrap.process_config.local_human_id.as_deref() {
         command.env("FABUSHI_LOCAL_HUMAN_ID", local_human_id.trim());
     }

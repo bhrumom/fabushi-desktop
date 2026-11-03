@@ -449,3 +449,66 @@ test("Coordinator malformed-frame recovery fences late old-port frames and admit
   replacement.succeed(request, settlement);
   assert.deepEqual(await result, settlement);
 });
+
+function settledHumanRetry() {
+  return {
+    kind: "message", id: "human-server-message:42", role: "user",
+    authorKind: "human", authorId: "local", clientNonce: "original",
+    content: "Original text", delivery: "sent", remoteMessageId: "42",
+    timestampMs: 101, replyToId: "human-server-message:7",
+    attachments: [{ path: "/saved/original.pdf", name: "original.pdf", resourceId: "resource-1" }],
+  };
+}
+
+test("Human retry waits for ready, fences account ABA and submits only durable identities", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  let generation = 1;
+  const args = { conversationId: "human:local:peer", clientNonce: "original" };
+  const stale = observed(h.client.call("retryHumanMessage", args, () => generation === 1));
+  const refused = assert.rejects(stale, /scope expired before admission/);
+  await nextTurn();
+  assert.equal(port.requests.length, 0);
+  generation = 2;
+  generation = 3; // Same account identity after logout/relogin, new lifetime.
+  port.ready();
+  await refused;
+  assert.equal(port.requests.length, 0);
+  const fresh = observed(h.client.call("retryHumanMessage", args, () => generation === 3));
+  await nextTurn();
+  const request = onlyRequest(port);
+  assert.equal(request.method, "retryHumanMessage");
+  assert.deepEqual(request.args, args, "no replacement message, attachments or new nonce");
+  const result = settledHumanRetry();
+  port.succeed(request, result);
+  assert.deepEqual(await fresh, result);
+  assert.equal(port.requests.length, 1);
+});
+
+test("Human retry rejects payload changes before posting and malformed Host settlement after posting", { timeout: 5_000 }, async (t) => {
+  const h = harness(t);
+  const port = h.providePort();
+  port.ready();
+  await h.client.ready;
+  const args = { conversationId: "human:local:peer", clientNonce: "original" };
+  for (const candidate of [
+    { ...args, text: "replacement" }, { ...args, attachments: [] },
+    { ...args, replyToId: null }, { ...args, clientNonce: " original" },
+    { ...args, clientNonce: "界".repeat(67) },
+  ]) {
+    await assert.rejects(observed(h.client.call("retryHumanMessage", candidate)),
+      /original Human conversation and nonce identities/);
+    assert.equal(port.requests.length, 0);
+  }
+  const invalid = observed(h.client.call("retryHumanMessage", args));
+  const failed = assert.rejects(invalid, /malformed Human message settlement/);
+  await nextTurn();
+  const request = onlyRequest(port);
+  port.succeed(request, { ...settledHumanRetry(), remoteMessageId: "43" });
+  await failed;
+  assert.equal(port.requests.length, 1);
+  const again = observed(h.client.call("retryHumanMessage", args));
+  await nextTurn();
+  port.succeed(port.requests[1]!, settledHumanRetry());
+  assert.deepEqual(await again, settledHumanRetry());
+});

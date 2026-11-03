@@ -121,7 +121,12 @@ fn committed_wal_schema_and_identity_survive_human_open() {
     assert_eq!(main_tables, 0);
     drop(main_only);
 
-    let owner = SandAgentDb::open_human_conversation_store(&path, 1000).unwrap();
+    let owner = SandAgentDb::open_validated_human_conversation_store(
+        &path, 1000, false, |committed| {
+            if committed == &winner { Ok(()) }
+            else { Err("semantic admission did not read the committed WAL identity".into()) }
+        },
+    ).unwrap();
     assert_eq!(owner.read_kv("metadata").unwrap(), Some(winner_raw.clone()));
     assert_eq!(owner.read_metadata().unwrap(), winner);
     assert!(!owner.initialize_human_metadata_if_empty(metadata("Must not adopt the main snapshot", 102)).unwrap());

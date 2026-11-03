@@ -1,6 +1,7 @@
 import type { CoordinatorPortBridge, TransferredCoordinatorPort } from "../recovered/contracts/desktop-bridge";
 import {
   parseCoordinatorHumanTranscriptPageRequest,
+  parseCoordinatorHumanMessageRetryRequest,
   validateCoordinatorReply,
   type CoordinatorAgentThreadRequest,
   type CoordinatorAgentThreadResponse,
@@ -33,7 +34,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validateReply(method: string, value: unknown): unknown {
-  if (method.startsWith("feature.auth.telegram") || method === "getAgentTranscriptWindow" || method === "getAgentThread" || method === "getHumanConversationTranscriptTail") {
+  if (method.startsWith("feature.auth.telegram") || method === "getAgentTranscriptWindow" || method === "getAgentThread" || method === "getHumanConversationTranscriptTail" || method === "retryHumanMessage") {
     return validateCoordinatorReply(method, value);
   }
   if (["listAgents", "searchAgents", "getTrays", "listAllAutomations"].includes(method)) {
@@ -174,6 +175,9 @@ export function createCoordinatorClient(portBridge: CoordinatorPortBridge): Prod
   const call = async (method: string, args: unknown = {}, isCurrent?: () => boolean) => {
     if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageRequest(args) == null) {
       throw new Error("getHumanConversationTranscriptTail requires a valid Human transcript cursor");
+    }
+    if (method === "retryHumanMessage" && parseCoordinatorHumanMessageRetryRequest(args) == null) {
+      throw new Error("retryHumanMessage requires original Human conversation and nonce identities");
     }
     await currentReady;
     // Waiting for the port is not Host admission. The original presentation

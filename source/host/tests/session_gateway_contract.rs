@@ -1556,9 +1556,17 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
     let restarted = Arc::new(make_runtime());
     assert_eq!(dispatch(&restarted, "createHumanConversation",
         json!({"localHumanId":"1", "peerHumanId":"2", "title":"Must keep persisted title"})), created);
+    // The shipping gateway retry must consume the existing Host outbox after
+    // process restart, not reconstruct an attachment or mint another nonce.
+    let retried = dispatch(&restarted, "retryHumanMessage", json!({
+        "conversationId": conversation_id, "clientNonce": "durable-send-1"
+    }));
+    assert_eq!(retried["id"], "human-server-message:21");
+    assert_eq!(retried["clientNonce"], "durable-send-1");
+    assert_eq!(retried["attachments"][0]["resourceId"], "durable-resource-1");
     let settled = restarted
         .sync_human_conversation(&conversation_id)
-        .expect("restart sync settles pending send");
+        .expect("restart sync preserves the retry settlement");
     assert_eq!(settled.len(), 1);
     assert_eq!(settled[0]["id"], "human-server-message:21");
     assert_eq!(settled[0]["remoteMessageId"], "21");
@@ -1574,6 +1582,20 @@ fn shipping_human_send_recovers_ambiguous_dispatch_after_restart_without_reuploa
                 && entry["delivery"] == "sent"
         }))
     }), "canonical settlement publishes the recovered message from the same owner");
+    // A canonical replay and malformed/extra arguments are non-dispatching.
+    assert_eq!(dispatch(&restarted, "retryHumanMessage", json!({
+        "conversationId": conversation_id, "clientNonce": "durable-send-1"
+    })), settled[0]);
+    for invalid in [
+        json!({"conversationId": conversation_id, "clientNonce": "durable-send-1", "text": "tamper"}),
+        json!({"conversationId": conversation_id, "clientNonce": " other"}),
+        json!({"conversationId": "foreign", "clientNonce": "durable-send-1"}),
+        json!({"conversationId": conversation_id, "clientNonce": "missing"}),
+    ] {
+        assert!(dispatch_production_session_gateway_call(
+            &restarted, "retryHumanMessage", &invalid
+        ).expect("explicit gateway route").is_err(), "invalid retry must fail closed: {invalid}");
+    }
     subscription.unsubscribe();
     restarted.shutdown();
     drop(restarted);
@@ -8523,3 +8545,46 @@ fn shipping_human_malformed_history_ids_preserve_page_checkpoint_and_recover_aft
     }
 }
 
+
+#[test]
+fn human_retry_raw_duplicate_and_foreign_author_refuse_without_replacing_durable_state() {
+    let root = temp_root("human-retry-raw-identity");
+    let agents = root.join("agents");
+    let memory = Arc::new(
+        mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(agents.clone())
+    );
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+        &agents, 500, Some("local".into()), Arc::new(|| None), memory,
+    ));
+    let created = runtime.create_human_conversation("peer", "Peer").unwrap();
+    let id = created["id"].as_str().unwrap();
+    let owner = runtime.open_human_conversation_db_owner(id).unwrap();
+    let local = json!({
+        "id":"human-server-message:7", "kind":"message", "role":"user",
+        "authorKind":"human", "authorId":"local", "clientNonce":"retry-7",
+        "content":"original", "delivery":"sent", "remoteMessageId":"7", "timestampMs":1.0
+    });
+    assert!(owner.append_transcript_entry(&local).unwrap());
+    assert_eq!(dispatch(&runtime, "retryHumanMessage",
+        json!({"conversationId":id,"clientNonce":"retry-7"})), local);
+    let unrelated = json!({
+        "id":"human-server-message:8", "kind":"message", "role":"user",
+        "authorKind":"human", "authorId":"peer", "clientNonce":"peer-8",
+        "content":"peer", "delivery":"sent", "remoteMessageId":"8", "timestampMs":2.0
+    });
+    assert!(owner.append_transcript_entry(&unrelated).unwrap());
+    assert!(dispatch_production_session_gateway_call(&runtime, "retryHumanMessage",
+        &json!({"conversationId":id,"clientNonce":"peer-8"}))
+        .unwrap().is_err(), "peer nonce is not an outgoing retry");
+    assert!(owner.append_transcript_entry(&json!({
+        "id":"duplicate-notice", "kind":"notice", "text":"old", "clientNonce":"retry-7"
+    })).unwrap());
+    assert!(dispatch_production_session_gateway_call(&runtime, "retryHumanMessage",
+        &json!({"conversationId":id,"clientNonce":"retry-7"}))
+        .unwrap().is_err(), "one valid row plus a hidden malformed candidate is ambiguous");
+    assert_eq!(owner.get_transcript_entries().unwrap().len(), 3);
+    runtime.shutdown();
+    drop(owner);
+    drop(runtime);
+    fs::remove_dir_all(root).unwrap();
+}

@@ -39,6 +39,7 @@ mod unix {
         oauth_completion: Arc<Mutex<Option<Value>>>,
         oauth_completion_attempts: Arc<AtomicUsize>,
         webauthn_batches: Arc<Mutex<Vec<Value>>>,
+        human_retry_requests: Arc<Mutex<Vec<Value>>>,
         stop: Arc<AtomicBool>,
         worker: Option<thread::JoinHandle<()>>,
     }
@@ -61,6 +62,7 @@ mod unix {
             let oauth_completion = Arc::new(Mutex::new(None));
             let oauth_completion_attempts = Arc::new(AtomicUsize::new(0));
             let webauthn_batches = Arc::new(Mutex::new(Vec::new()));
+            let human_retry_requests = Arc::new(Mutex::new(Vec::new()));
             let crash_path = data_dir.join("fake-host-crash");
             let stop = Arc::new(AtomicBool::new(false));
             let worker_stop = Arc::clone(&stop);
@@ -68,6 +70,7 @@ mod unix {
             let worker_oauth_completion = Arc::clone(&oauth_completion);
             let worker_oauth_completion_attempts = Arc::clone(&oauth_completion_attempts);
             let worker_webauthn_batches = Arc::clone(&webauthn_batches);
+            let worker_human_retry_requests = Arc::clone(&human_retry_requests);
             let worker = thread::spawn(move || {
                 while !worker_stop.load(Ordering::Acquire) {
                     match listener.accept() {
@@ -79,6 +82,7 @@ mod unix {
                             let oauth_completion_attempts =
                                 Arc::clone(&worker_oauth_completion_attempts);
                             let webauthn_batches = Arc::clone(&worker_webauthn_batches);
+                            let human_retry_requests = Arc::clone(&worker_human_retry_requests);
                             thread::spawn(move || {
                                 let _ = serve_fake_gateway(
                                     stream,
@@ -89,6 +93,7 @@ mod unix {
                                     oauth_completion.as_ref(),
                                     oauth_completion_attempts.as_ref(),
                                     webauthn_batches.as_ref(),
+                                    human_retry_requests.as_ref(),
                                 );
                             });
                         }
@@ -111,6 +116,7 @@ mod unix {
                 oauth_completion,
                 oauth_completion_attempts,
                 webauthn_batches,
+                human_retry_requests,
                 stop,
                 worker: Some(worker),
             }
@@ -130,6 +136,10 @@ mod unix {
 
         fn oauth_completion_attempts(&self) -> usize {
             self.oauth_completion_attempts.load(Ordering::Acquire)
+        }
+
+        fn human_retry_requests(&self) -> Vec<Value> {
+            self.human_retry_requests.lock().expect("Human retry requests lock").clone()
         }
 
         fn wait_for_oauth_completion(&self) -> Value {
@@ -195,6 +205,7 @@ mod unix {
         oauth_completion: &Mutex<Option<Value>>,
         oauth_completion_attempts: &AtomicUsize,
         webauthn_batches: &Mutex<Vec<Value>>,
+        human_retry_requests: &Mutex<Vec<Value>>,
     ) -> io::Result<()> {
         // The fake gateway listener is non-blocking so its accept loop can poll for
         // shutdown. Accepted sockets may inherit that mode on macOS, making the
@@ -361,6 +372,19 @@ mod unix {
                 200,
                 r#"{"accepted":true}"#,
             ),
+            ("POST", "/api/retryHumanMessage") => {
+                let payload = serde_json::from_slice::<Value>(&request[header_end..total])
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                human_retry_requests
+                    .lock()
+                    .map_err(|_| io::Error::other("Human retry requests lock poisoned"))?
+                    .push(payload);
+                write_fake_response(
+                    &mut stream,
+                    200,
+                    r#"{"kind":"message","id":"human-server-message:42","role":"user","authorKind":"human","authorId":"local","clientNonce":"original","content":"Stored original text","delivery":"sent","remoteMessageId":"42","timestampMs":100,"composedAtMs":80,"replyToId":"human-server-message:3","attachments":[{"path":"/committed/original.txt","name":"original.txt","resourceId":"resource-1"}]}"#,
+                )
+            }
             ("POST", "/api/completeMcpOAuth") => {
                 let attempt = oauth_completion_attempts.fetch_add(1, Ordering::AcqRel);
                 if attempt == 0 {
@@ -494,6 +518,36 @@ mod unix {
         }
     }
 
+    fn recv_correlated_reply(
+        rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
+        stdin: &mut impl Write,
+        seen_control_methods: &mut Vec<String>,
+        expected_request_id: &str,
+        timeout: Duration,
+    ) -> CoordinatorFrame {
+        let deadline = std::time::Instant::now() + timeout;
+        loop {
+            let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+            assert!(!remaining.is_zero(), "Coordinator reply deadline: {expected_request_id}");
+            let (channel, frame) = rx.recv_timeout(remaining)
+                .expect("Coordinator correlated reply")
+                .expect("valid Coordinator frame");
+            if channel == CarrierChannel::Control {
+                service_control_frame(stdin, seen_control_methods, frame);
+                continue;
+            }
+            assert_eq!(channel, CarrierChannel::Data);
+            match &frame {
+                CoordinatorFrame::Event { .. } => continue,
+                CoordinatorFrame::Reply { request_id, .. } => {
+                    assert_eq!(request_id, expected_request_id, "unexpected Coordinator reply");
+                    return frame;
+                }
+                other => panic!("unexpected frame while awaiting {expected_request_id}: {other:?}"),
+            }
+        }
+    }
+
     fn pump_control_until_webauthn_result(
         rx: &mpsc::Receiver<Result<(CarrierChannel, CoordinatorFrame), serde_json::Error>>,
         stdin: &mut impl Write,
@@ -599,6 +653,7 @@ mod unix {
         fs::write(
             &path,
             r#"#!/bin/sh
+printf '%s' "$SAND_GATEWAY_REQUIRE_AUTH" > "$SAND_DATA_ROOT/fake-host-require-auth"
 cat > "$SAND_DATA_ROOT/gateway.json" <<EOF
 {"port":${FABUSHI_TEST_GATEWAY_PORT},"pid":$$,"startedAt":1,"scheme":"http","host":"127.0.0.1","token":"${FABUSHI_TEST_GATEWAY_TOKEN}"}
 EOF
@@ -640,6 +695,7 @@ exit 17
             .env("MAHAYANA_APP_HOST_BIN", &host)
             .env("FABUSHI_TEST_GATEWAY_PORT", gateway.port().to_string())
             .env("FABUSHI_TEST_GATEWAY_TOKEN", gateway.token())
+            .env("SAND_GATEWAY_REQUIRE_AUTH", "0")
             .env("SAND_WEBAUTHN_SIGNER_PATH", &webauthn_signer)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -786,6 +842,53 @@ exit 17
         assert!(saw_runtime_event, "shipping Coordinator did not relay Host event");
         assert!(saw_tool_event, "shipping Coordinator did not relay client-side tool events");
         assert!(saw_echo_reply, "shipping Coordinator did not settle Host reply");
+        assert_eq!(
+            fs::read_to_string(data_dir.join("fake-host-require-auth"))
+                .expect("read Host child authentication requirement"),
+            "1",
+            "shipping Coordinator must require Host authentication despite the parent override"
+        );
+
+        let retry_args = json!({"conversationId": "human:1:2", "clientNonce": "original"});
+        send(
+            &mut stdin,
+            CarrierChannel::Data,
+            &CoordinatorFrame::Request {
+                request_id: "r-human-retry".into(),
+                method: "retryHumanMessage".into(),
+                args: retry_args.clone(),
+            },
+        );
+        let retry_reply = recv_correlated_reply(
+            &rx,
+            &mut stdin,
+            &mut seen_control_methods,
+            "r-human-retry",
+            Duration::from_secs(2),
+        );
+        match retry_reply {
+            CoordinatorFrame::Reply {
+                request_id,
+                outcome: ReplyOutcome::Ok { value },
+            } => {
+                assert_eq!(request_id, "r-human-retry");
+                assert_eq!(value, json!({
+                    "kind": "message", "id": "human-server-message:42", "role": "user",
+                    "authorKind": "human", "authorId": "local", "clientNonce": "original",
+                    "content": "Stored original text", "delivery": "sent", "remoteMessageId": "42",
+                    "timestampMs": 100, "composedAtMs": 80, "replyToId": "human-server-message:3",
+                    "attachments": [{
+                        "path": "/committed/original.txt", "name": "original.txt", "resourceId": "resource-1"
+                    }]
+                }));
+            }
+            other => panic!("unexpected retryHumanMessage frame: {other:?}"),
+        }
+        assert_eq!(
+            gateway.human_retry_requests(),
+            vec![retry_args],
+            "shipping Coordinator must forward exactly the original retry identities through the authenticated HTTP gateway"
+        );
 
         send(
             &mut stdin,
@@ -799,13 +902,13 @@ exit 17
                 }),
             },
         );
-        let (channel, send_reply) = recv_application_frame(
+        let send_reply = recv_correlated_reply(
             &rx,
             &mut stdin,
             &mut seen_control_methods,
+            "r-send",
             Duration::from_secs(2),
         );
-        assert_eq!(channel, CarrierChannel::Data);
         match send_reply {
             CoordinatorFrame::Reply {
                 request_id,

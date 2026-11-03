@@ -78,6 +78,7 @@ const FABUSHI_EXTENSION_COMMANDS: &[&str] = &[
     "syncHumanConversation",
     "createHumanConversation",
     "sendHumanMessage",
+    "retryHumanMessage",
     "reactHumanMessage",
     "getHumanConversationTranscript",
     "getHumanConversationTranscriptTail",
@@ -1104,6 +1105,11 @@ fn handle_connection(
     }
     if (webauthn_requests || webauthn_responses) && deps.config.auth_token.is_none() {
         return respond_error(&mut stream, 401, "webauthn requires gateway authentication");
+    }
+    // A durable Human retry can re-dispatch a charged/accepted message.
+    // Loopback without a configured bearer is not sufficient authority.
+    if command && path == "/api/retryHumanMessage" && deps.config.auth_token.is_none() {
+        return respond_error(&mut stream, 401, "retryHumanMessage requires gateway authentication");
     }
     if let Some(token) = deps.config.auth_token.as_deref() {
         if !is_authorized(&request, token) {

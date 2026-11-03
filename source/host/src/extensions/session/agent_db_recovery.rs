@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use rusqlite::{Connection, ErrorCode, OpenFlags, params};
+use rusqlite::config::DbConfig;
 use serde_json::{Map, Value};
 
 use crate::storage::sqlite_busy::{is_sqlite_corrupt_error, is_sqlite_io_error};
@@ -126,15 +127,37 @@ pub(super) fn probe_human_conversation_store(
     db_path: &Path,
     busy_timeout_ms: u64,
 ) -> Result<(), AgentDbRecoveryError> {
+    let _snapshot = inspect_human_conversation_store(db_path, busy_timeout_ms)?;
+    Ok(())
+}
+
+/// Hold the same read-only committed snapshot through structural and semantic
+/// admission. None is an absent/empty new store with no retained sidecars; only
+/// the caller's explicit initialization policy may admit that state.
+pub(super) fn inspect_human_conversation_store(
+    db_path: &Path,
+    busy_timeout_ms: u64,
+) -> Result<Option<Connection>, AgentDbRecoveryError> {
     let mut has_nonempty_sidecar = false;
     let mut has_snapshot_sidecar = false;
+    let mut has_wal = false;
+    let mut has_journal = false;
+    let mut has_shm = false;
     for suffix in ["-wal", "-journal", "-shm"] {
         let mut path = db_path.as_os_str().to_os_string();
         path.push(suffix);
         match std::fs::metadata(PathBuf::from(path)) {
             Ok(metadata) if metadata.len() > 0 => {
+                // A truncated WAL cannot establish a committed snapshot.
+                // Preserve it before SQLite can treat it as an empty WAL.
+                if suffix == "-wal" && metadata.len() < 32 {
+                    return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+                }
                 has_nonempty_sidecar = true;
                 has_snapshot_sidecar |= suffix != "-shm";
+                has_wal |= suffix == "-wal";
+                has_journal |= suffix == "-journal";
+                has_shm |= suffix == "-shm";
             },
             Ok(_) => {},
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {},
@@ -150,7 +173,7 @@ pub(super) fn probe_human_conversation_store(
         if has_nonempty_sidecar {
             return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
         }
-        return Ok(());
+        return Ok(None);
     }
     if main_len < 100 {
         return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
@@ -177,13 +200,43 @@ pub(super) fn probe_human_conversation_store(
         }
     }
     if has_snapshot_sidecar {
-        return Ok(());
+        // A header-only main snapshot cannot admit a journal-backed store.
+        // In particular a malformed nonempty rollback journal can otherwise
+        // be deleted by SQLite before its corrupt main file is rejected.
+        // A read-only connection refuses required rollback instead of doing
+        // it. An active writer's RESERVED lock still permits a valid committed
+        // snapshot to be checked without disturbing that writer's journal.
+        //
+        // WAL needs the actual committed snapshot, not the immutable main-only
+        // view above. Require its existing shared-memory file, request a
+        // read-only WAL index and disable checkpoint/delete on close. A missing
+        // index or conflicting journal is uncertain retained state: do not
+        // create an index, repair it, or discard either journal just to open.
+        if has_wal && (!has_shm || has_journal) {
+            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+        }
+        drop(db);
+        uri.set_query(None);
+        uri.query_pairs_mut().append_pair("mode", "ro").append_pair("readonly_shm", "1");
+        let snapshot = Connection::open_with_flags(
+            uri.as_str(),
+            OpenFlags::SQLITE_OPEN_READ_ONLY | OpenFlags::SQLITE_OPEN_URI,
+        )?;
+        snapshot.set_db_config(DbConfig::SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE, true)?;
+        snapshot.busy_timeout(Duration::from_millis(busy_timeout_ms))?;
+        snapshot.execute_batch("BEGIN")?;
+        let status = snapshot.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
+        if status != "ok" {
+            return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
+        }
+        return Ok(Some(snapshot));
     }
+    db.execute_batch("BEGIN")?;
     let status = db.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
     if status != "ok" {
         return Err(AgentDbRecoveryError::Integrity(db_path.display().to_string()));
     }
-    Ok(())
+    Ok(Some(db))
 }
 
 fn sqlite_error(error: &AgentDbRecoveryError) -> Option<&rusqlite::Error> {

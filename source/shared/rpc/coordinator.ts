@@ -29,6 +29,23 @@ export interface CoordinatorHumanTranscriptPageResponse {
   readonly nextBeforeCursor?: string;
 }
 
+export interface CoordinatorHumanMessageRetryRequest {
+  readonly conversationId: string;
+  readonly clientNonce: string;
+}
+
+export interface CoordinatorHumanMessageRetryResponse extends CoordinatorTranscriptEntry {
+  readonly kind: "message";
+  readonly role: "user";
+  readonly authorKind: "human";
+  readonly authorId: string;
+  readonly clientNonce: string;
+  readonly delivery: "sent";
+  readonly remoteMessageId: string;
+  readonly content: string;
+  readonly timestampMs: number;
+}
+
 export interface CoordinatorAgentThreadRequest {
   readonly id: string;
   readonly rootId: string;
@@ -231,6 +248,39 @@ export function parseCoordinatorHumanTranscriptPageRequest(value: unknown): Coor
   };
 }
 
+function isUnpaddedIdentity(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && value.trim() === value;
+}
+
+function isHumanRetryNonce(value: unknown): value is string {
+  return isUnpaddedIdentity(value) && new TextEncoder().encode(value).length <= 200;
+}
+
+export function parseCoordinatorHumanMessageRetryRequest(value: unknown): CoordinatorHumanMessageRetryRequest | null {
+  if (!isRecord(value) || Object.keys(value).length !== 2
+    || !Object.hasOwn(value, "conversationId") || !Object.hasOwn(value, "clientNonce")
+    || !isUnpaddedIdentity(value.conversationId) || !isHumanRetryNonce(value.clientNonce)) return null;
+  return { conversationId: value.conversationId, clientNonce: value.clientNonce };
+}
+
+export function parseCoordinatorHumanMessageRetryResponse(value: unknown): CoordinatorHumanMessageRetryResponse | null {
+  if (!isRecord(value) || value.kind !== "message" || value.role !== "user" || value.authorKind !== "human"
+    || !isUnpaddedIdentity(value.authorId) || !isHumanRetryNonce(value.clientNonce)
+    || value.delivery !== "sent" || typeof value.remoteMessageId !== "string"
+    || !/^[1-9][0-9]*$/.test(value.remoteMessageId) || !Number.isSafeInteger(Number(value.remoteMessageId))
+    || value.id !== `human-server-message:${value.remoteMessageId}`
+    || typeof value.content !== "string" || !isFiniteNumber(value.timestampMs)) return null;
+  if (value.composedAtMs != null && !isFiniteNumber(value.composedAtMs)) return null;
+  if (value.replyToId != null && !isUnpaddedIdentity(value.replyToId)) return null;
+  if (value.attachments != null && (!Array.isArray(value.attachments) || !value.attachments.every((item) =>
+    isRecord(item) && isUnpaddedIdentity(item.resourceId)
+      && typeof item.path === "string" && item.path.length > 0
+      && typeof item.name === "string" && item.name.length > 0))) return null;
+  // Keep the authoritative row (including reply/resource/forward fields) intact.
+  // The caller separately correlates it with the current account and nonce.
+  return value as unknown as CoordinatorHumanMessageRetryResponse;
+}
+
 export function parseCoordinatorTranscriptWindowRequest(value: unknown): CoordinatorTranscriptWindowRequest | null {
   if (!isRecord(value)) return null;
   const id = value.id;
@@ -271,6 +321,9 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   if (method === "getHumanConversationTranscriptTail" && parseCoordinatorHumanTranscriptPageResponse(value) == null) {
     throw new Error("getHumanConversationTranscriptTail returned a malformed Human transcript page");
   }
+  if (method === "retryHumanMessage" && parseCoordinatorHumanMessageRetryResponse(value) == null) {
+    throw new Error("retryHumanMessage returned a malformed Human message settlement");
+  }
   return value;
 }
 
@@ -291,6 +344,7 @@ export const COORDINATOR_METHOD_TABLE = {
   getAgentThread: { args: "object", reply: "agent-thread" },
   getAgentTranscriptTail: { args: "object", reply: "transcript-page" },
   getHumanConversationTranscriptTail: { args: "object", reply: "human-transcript-page" },
+  retryHumanMessage: { args: "object", reply: "human-message-settlement" },
   openAgentTail: { args: "object", reply: "transcript-page" },
   sendPrompt: { args: "object", reply: "send-result" },
   interruptAgent: { args: "object", reply: "interrupt-result" },

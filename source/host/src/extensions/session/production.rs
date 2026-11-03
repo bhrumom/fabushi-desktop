@@ -2865,6 +2865,24 @@ impl ProductionSessionWorkers {
         }
     }
 
+    fn validate_human_conversation_metadata(
+        metadata: &serde_json::Value, conversation_id: &str,
+    ) -> Result<(), String> {
+        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
+            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
+        {
+            return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
+        }
+        let ids = metadata.get("participantIds").and_then(serde_json::Value::as_array)
+            .ok_or_else(|| "Human conversation participant identity is missing".to_string())?;
+        if ids.len() != 2 || ids[0].as_str().is_none_or(|id| id.is_empty() || id.trim() != id)
+            || ids[1].as_str().is_none_or(|id| id.is_empty() || id.trim() != id || Some(id) == ids[0].as_str())
+        {
+            return Err("Human conversation participant identity is invalid".into());
+        }
+        Ok(())
+    }
+
     pub fn open_human_conversation_db_owner(
         &self,
         conversation_id: &str,
@@ -2885,24 +2903,20 @@ impl ProductionSessionWorkers {
             // conversation identity check as a freshly opened source.
             drop(owners);
             let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-            if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
-                || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
-            {
-                return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
+            if owner.read_kv("metadata").map_err(|error| error.to_string())?.is_none() {
+                return Err("Human conversation has no persisted identity".into());
             }
+            Self::validate_human_conversation_metadata(&metadata, conversation_id)?;
             return Ok(owner);
         }
         let owner = Arc::new(
-            SandAgentDb::open_conversation_store(&db_path, self.busy_timeout_ms)
-                .map_err(|error| error.to_string())?,
+            SandAgentDb::open_validated_human_conversation_store(
+                &db_path, self.busy_timeout_ms, false,
+                |metadata| Self::validate_human_conversation_metadata(metadata, conversation_id),
+            ).map_err(|error| error.to_string())?,
         );
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
-        if metadata.get("conversationKind").and_then(serde_json::Value::as_str) != Some("human")
-            || metadata.get("conversationId").and_then(serde_json::Value::as_str) != Some(conversation_id)
-        {
-            owner.close(false);
-            return Err(format!("Conversation is not the requested Human conversation: {conversation_id}"));
-        }
+        Self::validate_human_conversation_metadata(&metadata, conversation_id)?;
         owners.insert(key, Arc::clone(&owner));
         Ok(owner)
     }
@@ -3473,6 +3487,117 @@ impl ProductionSessionWorkers {
         Ok(Some(canonical_id))
     }
 
+    /// Retry only Host-owned durable Human state; UI cannot replace its payload.
+    pub fn retry_human_message(
+        &self, conversation_id: &str, client_nonce: &str,
+    ) -> Result<serde_json::Value, String> {
+        if conversation_id.is_empty() || conversation_id.trim() != conversation_id
+            || client_nonce.is_empty() || client_nonce.trim() != client_nonce
+            || client_nonce.len() > 200
+        {
+            return Err("retryHumanMessage requires exact Human conversation and nonce identities".into());
+        }
+        let (account, issuer) = self.human_forward_scope()?;
+        let serial = self.human_message_lock(&format!(
+            "human-retry:{account}:{issuer}:{conversation_id}:{client_nonce}"
+        ))?;
+        let _retry_guard = serial.lock().map_err(|_| "Human retry lock poisoned".to_string())?;
+        if self.human_forward_scope()? != (account.clone(), issuer.clone()) {
+            return Err("Fabushi native messaging credential changed Human account or issuer".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        if !self.metadata_has_local_human(&metadata)? {
+            return Err("local Human identity is not a conversation participant".into());
+        }
+        let _peer = self.peer_human_id_from_metadata(&metadata)?;
+        let rows = owner.get_human_retry_entries(client_nonce)
+            .map_err(|error| error.to_string())?;
+        let [entry] = rows.as_slice() else {
+            return Err("retryHumanMessage requires one unambiguous durable local Human message".into());
+        };
+        if entry.get("kind").and_then(serde_json::Value::as_str) != Some("message")
+            || entry.get("role").and_then(serde_json::Value::as_str) != Some("user")
+            || entry.get("authorKind").and_then(serde_json::Value::as_str) != Some("human")
+            || entry.get("authorId").and_then(serde_json::Value::as_str) != Some(account.as_str())
+        {
+            return Err("retryHumanMessage row is not an authorized local Human outbox entry".into());
+        }
+        let id = entry.get("id").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "retryHumanMessage row has no durable identity".to_string())?;
+        if entry.get("delivery").and_then(serde_json::Value::as_str) == Some("sent") {
+            let remote_id = entry.get("remoteMessageId")
+                .ok_or_else(|| "retryHumanMessage settled row has no remote identity".to_string())
+                .and_then(fabushi_message_identity_text)?;
+            if id != format!("human-server-message:{remote_id}") {
+                return Err("retryHumanMessage canonical identity conflicts with the remote ID".into());
+            }
+            return Ok(entry.clone());
+        }
+        if id != format!("human-message:{client_nonce}")
+            || !matches!(entry.get("delivery").and_then(serde_json::Value::as_str),
+                Some("pending" | "dispatching"))
+            || entry.get("remoteMessageId").is_some()
+        {
+            return Err("retryHumanMessage row is not a retryable local Human intent".into());
+        }
+        if self.pending_human_forward_is_batch_owned(conversation_id, entry)? {
+            let context = entry.get("forwardContext")
+                .ok_or_else(|| "retryHumanMessage cannot recover a forward without its source context".to_string())?;
+            if context.get("batchVersion").and_then(serde_json::Value::as_u64) != Some(1) {
+                return Err("retryHumanMessage cannot downgrade an unknown forward batch version".into());
+            }
+            let source_id = context.get("sourceConversationId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "retryHumanMessage forward source is missing".to_string())?;
+            let request_id = context.get("requestId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "retryHumanMessage forward request is missing".to_string())?;
+            let batch = self.deliver_forward_batch(
+                source_id, request_id, Some(&[conversation_id.to_string()])
+            )?;
+            if !batch.destinations.iter().any(|target|
+                target.conversation_id == conversation_id && target.client_nonce == client_nonce
+                    && target.completed
+            ) {
+                return Err(batch.destinations.iter()
+                    .find(|target| target.conversation_id == conversation_id)
+                    .and_then(|target| target.error.clone())
+                    .unwrap_or_else(|| "retryHumanMessage forward destination is not settled".into()));
+            }
+            let settled = owner.get_human_retry_entries(client_nonce)
+                .map_err(|error| error.to_string())?;
+            let [row] = settled.as_slice() else {
+                return Err("retryHumanMessage forward result is not unambiguous".into());
+            };
+            if row.get("delivery").and_then(serde_json::Value::as_str) != Some("sent") {
+                return Err("retryHumanMessage forward result is not durable".into());
+            }
+            return Ok(row.clone());
+        }
+        let text = entry.get("content").and_then(serde_json::Value::as_str)
+            .ok_or_else(|| "retryHumanMessage lost its persisted text".to_string())?;
+        let attachments = match entry.get("attachments") {
+            None | Some(serde_json::Value::Null) => Vec::new(),
+            Some(serde_json::Value::Array(values)) => values.clone(),
+            _ => return Err("retryHumanMessage stored attachments are invalid".into()),
+        };
+        let composed_at_ms = match entry.get("composedAtMs") {
+            None | Some(serde_json::Value::Null) => None,
+            Some(value) => Some(value.as_f64().filter(|v| v.is_finite())
+                .ok_or_else(|| "retryHumanMessage stored composed time is invalid".to_string())?),
+        };
+        let reply_to_id = match entry.get("replyToId") {
+            None | Some(serde_json::Value::Null) => None,
+            Some(value) => Some(value.as_str().filter(|v| !v.is_empty())
+                .ok_or_else(|| "retryHumanMessage stored reply identity is invalid".to_string())?),
+        };
+        if self.human_forward_scope()? != (account, issuer) {
+            return Err("Fabushi native messaging credential changed Human account or issuer".into());
+        }
+        self.append_human_message(
+            conversation_id, text, client_nonce, composed_at_ms, reply_to_id, &attachments,
+        )
+    }
+
     pub fn append_human_message(
         &self,
         conversation_id: &str,
@@ -3525,6 +3650,34 @@ impl ProductionSessionWorkers {
         };
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
+        // Reauthorize original forward intent after acquiring the destination's
+        // mutation lock: the source or target may have been revoked while waiting.
+        // This includes text-only sends and previously uploaded resources.
+        if let Some(context) = forward_context.filter(|value|
+            value.get("batchVersion").and_then(serde_json::Value::as_u64) == Some(1)
+        ) {
+            let source_id = context.get("sourceConversationId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "Human forward context lost its source".to_string())?;
+            let source_entry = context.get("sourceEntryId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "Human forward context lost its entry".to_string())?;
+            let request = context.get("requestId").and_then(serde_json::Value::as_str)
+                .ok_or_else(|| "Human forward context lost its request".to_string())?;
+            let (account, issuer) = self.human_forward_scope()?;
+            let source_owner = self.open_human_conversation_db_owner(source_id)?;
+            if !load_forward_batches(&source_owner, source_id)?.iter().any(|batch| {
+                batch.account_id == account && batch.issuer == issuer
+                    && batch.request_id == request && batch.source_entry_id == source_entry
+                    && batch.context == *context && batch.text == text
+                    && batch.attachments == attachments
+                    && batch.destinations.iter().any(|target|
+                        target.conversation_id == conversation_id && target.client_nonce == client_nonce
+                    )
+            }) {
+                return Err("Human forward target no longer matches its durable source batch".into());
+            }
+            self.authorize_forward_source(source_id, source_entry)
+                .map_err(|error| error.to_string())?;
+        }
         let is_participant = metadata
             .get("participantIds")
             .and_then(serde_json::Value::as_array)
