@@ -1,0 +1,43 @@
+{
+  "schema": "ocrm-review-runner-decisions-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LPI-v1",
+  "review_round": 1,
+  "candidate": "7b8bfdfc5557c0f7cd6dc4b5cba84ccdf56e8ffe",
+  "tree": "86459aea119b90e5a52d17ed3ac6c96e6733e05b",
+  "base": "98202d3b272b45f0968f741e1df064e8fbec6462",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "reviews": [
+    {
+      "lens": "general",
+      "model": "configured parent GPT-6 Astra Pro",
+      "effort": "xhigh",
+      "fresh_blind": true,
+      "verdict": "REQUEST_CHANGES",
+      "finding_count": 1,
+      "execution": "not-run"
+    },
+    {
+      "lens": "structure/reuse/performance",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "fresh_blind": true,
+      "verdict": "NO_FINDINGS",
+      "finding_count": 0,
+      "execution": "not-run"
+    }
+  ],
+  "findings": [
+    {
+      "id": "LPI-R1-GENERAL-01",
+      "severity": "P2",
+      "classification": "verification-instrument-owned-process-lifetime",
+      "decision": "FIX",
+      "path": "projects/openclaw-rust/scripts/capture_local_exec_identity.py",
+      "symbol": "run_command",
+      "reason": "After timeout the intermediate wait can reap the session leader before the final killpg, so the retained numeric PGID no longer proves ownership if reused. Root independently read the same source ordering; no executed race or collateral signal is claimed.",
+      "repair": "Keep the direct child unreaped through final process-group escalation; use non-reaping waitid with WNOWAIT to observe exit and preserve the identity reservation, and refuse further group signalling if child ownership cannot be established. Reap only after the last group signal. Add an Actions-only real owned-child/independent-peer qualification for this cleanup boundary; retain all four product commands, existing7Rust/4TAP names and negative oracles."
+    }
+  ],
+  "state": "repair-required; decisions saved before code repair; fresh focused review and exact-H Actions remain necessary"
+}
