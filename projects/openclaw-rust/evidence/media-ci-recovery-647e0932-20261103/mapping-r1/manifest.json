@@ -1,0 +1,14 @@
+{
+  "base": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "startingHead": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "tree": "1e1348964e4356a76de0f61fd6557a7fbe6d0d6b",
+  "path": "projects/openclaw-rust/inventory/index.json",
+  "blob": "6905d89a058a59f09a2ec3f5b3b4afc6f751919d",
+  "bytes": 2972,
+  "sha256": "88bca2d7eab937e28a9197f8576098cc6cffbaae43d9f7f1b050c2060df514e4",
+  "patchBytes": 1671,
+  "patchSha256": "135d1702e7ae28c459ba9b9088b34298c86aa5a38a5bddb76f496bf00b21aa92",
+  "scope": "Exactlyoneexistingindexdatafile; pendingmappingdeclaration only; no generatedstate/source/validator/gatechange",
+  "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "execution": "not-run;Gitidentitysnapshotonly"
+}

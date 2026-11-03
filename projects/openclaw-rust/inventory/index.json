@@ -35,6 +35,36 @@
     "unread": 62067,
     "unreviewed_applicable": 0
   },
+  "pending_mapping_additions": {
+    "from_canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+    "entries": [
+      {
+        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+        "path": "src/gateway/agent-turn/agent-run-final-media.ts",
+        "blob_sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551"
+      },
+      {
+        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+        "path": "src/gateway/agent-turn/agent-run-media.ts",
+        "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f"
+      },
+      {
+        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+        "path": "src/infra/sqlite-worker-error.ts",
+        "blob_sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6"
+      },
+      {
+        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+        "path": "src/gateway/managed-image-attachments.custody.ts",
+        "blob_sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf"
+      },
+      {
+        "responsibility_id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+        "path": "src/media/store.read-scope.ts",
+        "blob_sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5"
+      }
+    ]
+  },
   "project_id": "OCRM-001",
   "spec_revision": 2,
   "upstream": {

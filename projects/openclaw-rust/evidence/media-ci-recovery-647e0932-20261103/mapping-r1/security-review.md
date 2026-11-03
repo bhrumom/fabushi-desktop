@@ -1,0 +1,63 @@
+# Media mapping recovery r1 — independent security/general/correctness review
+
+**Verdict: APPROVE the frozen single-file declaration change. No blocking or non-blocking defects found in this scope.** This is a source-review verdict, not a successful Actions execution, source-closure verdict, or media-runtime acceptance.
+
+## Review identity and settings
+
+- Reviewer: fresh independent `/root/media_mapping_security_r1`; security/general/correctness lens.
+- Applied launch settings reported in the assignment: model `gpt-6-astra`, effort `xhigh`, `fork_turns=none`. The scope includes source-authority admission and preservation of security-sensitive custody accounting, so xhigh is appropriate. No model/effort fallback was used or requested in this review.
+- Repository: `/workspace/scratch/29e7135d8bfe/fabushi-desktop`.
+- Frozen base and starting HEAD: `4f0639321c4ae03cc7dbef1d8e49dea0f042e180`.
+- Frozen candidate tree: `1e1348964e4356a76de0f61fd6557a7fbe6d0d6b`.
+- Complete changed scope: only `projects/openclaw-rust/inventory/index.json`, mode `100644`, blob `6905d89a058a59f09a2ec3f5b3b4afc6f751919d`.
+- Candidate file: 2,972 bytes; independently computed SHA-256 `88bca2d7eab937e28a9197f8576098cc6cffbaae43d9f7f1b050c2060df514e4`.
+- Complete full-index/binary Git diff SHA-256: `135d1702e7ae28c459ba9b9088b34298c86aa5a38a5bddb76f496bf00b21aa92`, matching the frozen manifest.
+- Frozen manifest read: `/workspace/scratch/29e7135d8bfe/reviews/media-mapping-recovery-r1/manifest.json`.
+- Fixed upstream: `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`, declared tree `90c8aab39972da11cfad220361781d49e1bc6700`.
+- Independence: no peer review report or root adjudication was read. Source, policy, immutable Git objects, original execution evidence, and upstream files were read directly. Repository source/index/shards were not modified. Only this report was written.
+
+## Applicable authority and exact failure
+
+Read the repository `AGENTS.md`, including the independent-review contract and OCRM Actions-only rule; `projects/openclaw-rust/SOURCE_OF_TRUTH.md` authority/current-state sections; the module-map ownership/state caveats; and the current main specification `docs/specs/openclaw-rust-equivalence-migration.md` §17.1–17.5. The applicable requirements preserve fixed U, the existing inventory/ledger/RTM, literal reading facts, required review depth, source/responsibility identity, independent verification/acceptance, and all global completion flags. §17 permits a bounded owner-based batch without global closure; metadata structure cannot establish semantic or runtime acceptance.
+
+The original decoded log `/workspace/scratch/29e7135d8bfe/ci-recovery/mcp-official-exact/74-source-authority-original.log` shows checkout and `SUBJECT_SHA` `74f11d3d31c6245ac5886dc0181460b2d4349744`. In the Actions run identified in the assignment as `41580539540`, the source-authority step invokes `verify_audit_integrity.py --before-expansion` before any expansion. The traceback at log lines 327–338 ends in `source_review.py::validate_source_responsibility_links` with `Missing reverse source/responsibility link: OCRM-RESP-MEDIA-FINAL-CUSTODY-001`, exit 1. The candidate does not change that validator or bypass this step.
+
+The historical log also reports 33 source-review tests and 21 inventory-materialization tests passing before that integrity failure. Those are historical results for H74. A read-only Git diff found no changes from H74 to this candidate in the relevant scripts, shard set, parity ledger, or source-authority workflow. This supports continuity of the mechanism; it does not turn the historical run into a passing candidate run.
+
+## Source identity and mapping facts
+
+The candidate adds `pending_mapping_additions` at index lines 38–67, anchored to canonical inventory SHA-256 `8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93`. I read the canonical manifest and decoded its committed shard evidence through immutable candidate-tree Git objects. Read-only reconstruction and hashing of the canonical JSON reproduced that digest, with 62,130 entries: 62,128 ordinary blobs, two symlinks, and zero gitlinks. The changed declaration therefore binds the actual unchanged inventory, rather than an invented or stale digest.
+
+I independently fetched all five complete files through GitHub `fetch_file` at exact U, read their contents, and recomputed Git blob SHA-1 from their complete UTF-8 bytes. The computed blob identities match both GitHub's returned identities and the candidate/ledger/shard identities. This was a bounded mapping-relevance read, not a complete transitive deep-review or runtime-equivalence claim.
+
+| Exact U path | Blob SHA | Bytes / lines | Existing shard mapping and relevant source behavior |
+| --- | --- | --- | --- |
+| `src/gateway/agent-turn/agent-run-final-media.ts` | `f4bf5b4308cb2a7160ad1db0142160d14fb71551` | 9,259 / 243 | Unclassified, no IDs. `finalizeAgentRunMedia` checks retained run/session/source authority, establishes transcript ownership, and preserves artifacts when SQLite outcome is unknown. |
+| `src/gateway/agent-turn/agent-run-media.ts` | `27a3a65974fad078872b257ee28cafccdad4691f` | 5,421 / 127 | Already mapped to `OCRM-RESP-MEDIA-STORE-READ-SCOPE-001`. `dispatchAgentRunWithMedia` retains dispatch identity and invokes final-media custody for eligible internal visible replies. |
+| `src/infra/sqlite-worker-error.ts` | `b13f8354e7244d630ee274b3b0debf9a3f5bb8c6` | 4,739 / 135 | Unclassified, no IDs. `hasSqliteWorkerOutcomeUnknown` recognizes retained unknown outcomes through native cause/aggregate envelopes without invoking supplied getters or iterators. |
+| `src/gateway/managed-image-attachments.custody.ts` | `1975104ea6cdcfea25d3bc4362edbaea5e673adf` | 5,658 / 167 | Unclassified, no IDs. Managed-file insertion delegates settlement; uncertain insertion or cleanup claim retains bytes, and cleanup acts under recorded custody. |
+| `src/media/store.read-scope.ts` | `73515a9ed6a2dc9f1a0adddc638d542ad1323ee5` | 8,935 / 269 | Unclassified, no IDs. `writeReadScopeMedia` guards directory/file identity and retains file resources until acceptance/delegated settlement. |
+
+The affected rows are in `inventory/shards/part-0036.jsonl.gz`, `part-0043.jsonl.gz`, and `part-0044.jsonl.gz`. Their compressed and decompressed SHA-256 values independently match the manifest. All five rows still carry `read_status=unread`, `review_status=pending`, `required_review_depth=deep`, unknown category/risk/applicability, and pending disposition. No row claims a fresh completed read from this index repair.
+
+The already-existing responsibility at `parity-ledger.json` around lines 36817–36991 has exactly these five `source_refs`, including the matching full-file line ranges and meaningful symbols. It remains `mapping=mapped`, `read=partial`, `implementation=implementing`, `wiring=wired`, `verification=not-run`, and `acceptance=pending`, with reviewer null and an explicit statement that broader finalizer/read-scope parity remains open. The candidate changes none of those statuses. Its existing owner is Session/AgentDb, with App/Runner consumers and subordinate attachment cleanup; the mapping addition creates no runtime or storage owner.
+
+A read-only extraction of ledger references absent from the row-side ID lists yielded exactly the five declared tuples, all under this responsibility and all with matching row blob identities. There were no additional unrepresented ledger references in that extraction. The retained read-scope responsibility still names the same `agent-run-media.ts` path/blob. Before materialization the coverage remains the original 884 mapped paths and 61,246 unclassified paths. Five added edges affect four previously unclassified paths, because the dispatch file already has a mapping; any post-materialization counts must come from Actions rather than hand-edited counters.
+
+## Admission, materialization, and preservation assessment
+
+Directly inspected the exact candidate-tree versions of `source_review.py`, `verify_audit_integrity.py`, `expand_inventory.py`, `shard_inventory.py`, the relevant contract tests, and `.github/workflows/ocrm-p0-authority.yml`.
+
+1. **Narrow declaration admission remains enforced.** `source_review.py::pending_mapping_additions` accepts only the declared keys, a nonempty list, exact prior canonical digest, nonempty string fields, and unique `(responsibility_id,path,blob_sha)` tuples. `validate_source_responsibility_links` first checks ledger path/blob identities, then permits a missing reverse link only before expansion and only for an explicitly declared tuple whose responsibility is mapped, unverified, and pending acceptance. It also requires the actual missing tuple set to equal the declaration set. These five entries and the existing responsibility satisfy those conditions by direct evidence inspection.
+2. **The ordinary gate still rejects pending state.** `verify_audit_integrity.py` retains its Actions-only execution guard, reads and hashes committed shard evidence, validates existing row-to-ledger links, and rejects unmaterialized additions outside `--before-expansion`. No schema, validator, negative probe, workflow permission, final gate, or source lock is edited.
+3. **Materialization preserves previous ownership.** `expand_inventory.py` reconciles ledger IDs only on exact `(path,blob_sha)` matches and unions them with each existing row's IDs. It changes `responsibility_status` only from unclassified to mapped. Consequently the existing `OCRM-RESP-MEDIA-STORE-READ-SCOPE-001` link on `agent-run-media.ts` is retained while the custody ID is added. The existing `source_review.py` row validation continues to reject dangling/orphaned or identity-drifted links.
+4. **Declaration consumption requires actual materialization.** `shard_inventory.py::write` rechecks the old canonical digest and requires each declared path/blob to contain its declared responsibility ID before generating shards or removing the pending declaration. It derives mapping counters from the resulting rows and preserves global flags. The source-authority workflow runs the real materializer and normal integrity gate after pre-expansion admission; its persistence job consumes exact-subject evidence and uses a guarded non-force branch update.
+5. **Reading, review, verification, and acceptance remain distinct.** The complete diff changes only the pending declaration. Upstream identity, all inventory/authority counters and booleans, the null latest exact-head evidence field, literal reads, risk-review state, ledger statuses, and the eight false ledger completion flags are unchanged. Existing materializer code preserves those independent row facts rather than inferring deep review from a mapping.
+
+The existing `ForwardMappingContract` tests cover pre-expansion-only admission; rejection of reviewed/verified/accepted pending responsibility states; missing source and blob drift; prior reverse-link loss; stale digest; duplicate declaration entries; and unused declarations. Existing materialization tests cover consumption only after the exact link appears, preservation of unread/pending state, refusal before shard replacement if an addition was not materialized, and preservation of literal/risk/dependency history. I read these tests; I did not execute them.
+
+## Findings and limits
+
+**Findings: none.** The concrete failure is an omitted pending declaration for already-existing ledger references. This candidate uses the existing explicit, digest-bound recovery path and preserves every prior link and independent evidence state. No scope-specific security or correctness defect was found.
+
+**Runtime/evidence limits:** no local generator, schema check, validator, test, build, lint, benchmark, package, acceptance run, or `htch-runtime` invocation occurred. Local commands were limited to source/evidence reads, Git inspection, hashing, and JSON/gzip evidence parsing; no repository validation function was imported or executed. No new Actions run was launched by this reviewer. The candidate's expected ability to pass the recorded pre-expansion failure is a source-based conclusion, not an observed passing execution. A fresh exact-subject Actions result is still needed before claiming the repair verified, and this narrow approval says nothing about unrelated DFA failures or complete media/runtime equivalence. The full upstream tree was not locally reacquired; exact-U file retrieval plus independent blob hashing establishes the five source identities used here, while full source/dependency closure remains outside this review.

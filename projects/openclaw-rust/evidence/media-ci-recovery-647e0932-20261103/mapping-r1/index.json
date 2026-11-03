@@ -1,0 +1,23 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "scope": "Existing digest-bound pending reverse mapping repair only",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "failedSubject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "failedRun": 41580539540,
+  "failedJob": 125734077461,
+  "sourceReviewTree": "1e1348964e4356a76de0f61fd6557a7fbe6d0d6b",
+  "sourceReviewBase": "4f0639321c4ae03cc7dbef1d8e49dea0f042e180",
+  "files": [
+    "manifest.json",
+    "security-review.md",
+    "structure-review.md",
+    "root-decisions.json"
+  ],
+  "rootFullReadBothReviews": true,
+  "sourceVerdict": "APPROVE_SOURCE_ONLY",
+  "execution": "not-run for new candidate; checkpoint skips CI until shared media failures are repaired and final H freezes",
+  "subjectVsCarrier": "Review tree contains single index delta; this publication additionally carries its review evidence. No carrier identity substitutes for runtime/source authority receipt.",
+  "unitVerified": false,
+  "globalAcceptance": false
+}

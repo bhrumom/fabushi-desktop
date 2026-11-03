@@ -1,0 +1,47 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "existing OCRM media reverse-mapping recovery",
+  "decision": "FIX",
+  "classification": "IMPL_BUG: incomplete committed mapping declaration",
+  "failedSubject": "74f11d3d31c6245ac5886dc0181460b2d4349744",
+  "runId": 41580539540,
+  "jobId": 125734077461,
+  "originalFailure": "Missing reverse source/responsibility link: OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
+  "cause": "Incoming media responsibility added five exact fixed-U forward source_refs but omitted the existing pending_mapping_additions declaration anchored to the unchanged canonical inventory. Pre-expansion guard correctly refused before generated writes.",
+  "allowedPaths": [
+    "projects/openclaw-rust/inventory/index.json"
+  ],
+  "contract": "Existing source_review.py pending_mapping_additions/validate_source_responsibility_links plus expand_inventory.py/shard_inventory.py; OCRM §17.2",
+  "fix": "Add exactly the five pending reverse-link triples already named by the mapped/not-run/pending responsibility, anchored to canonical inventory digest8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93. Preserve every existing count/row/read/review/acceptance/flag. Only Actions may materialize and persist the exact reverse links.",
+  "oracle": "Existing test_source_review.py negative/positive pending-mapping cases and test_inventory_materialization.py consume-only-after-exact-link cases, then original unchanged pre-expansion/expand/shard/strict checks on new exactH. Do not delete gates, broaden pending allowance, run local generators, or retry unchanged74.",
+  "historicalReadFacts": "Five existing literal rows were inspected directly. Four currently unclassified and one already mapped to MEDIA-STORE-READ-SCOPE; all remain unread/unknown/deep-required/pending. This data repair does not assert fullsource reading.",
+  "validation": "Original74 Actions log read; no new executable validation or semantic closure claimed",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "sourceReviews": [
+    {
+      "path": "reviews/media-mapping-r1-security-review.md",
+      "sha256": "20d8ee9369c269fb56a3a9b13fd546dfcb4e6018aad19cde07033917cd02fe8b",
+      "bytes": 12634,
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "fork": "none",
+      "rootRead": "complete",
+      "verdict": "APPROVE_SOURCE_ONLY",
+      "tree": "1e1348964e4356a76de0f61fd6557a7fbe6d0d6b"
+    },
+    {
+      "path": "reviews/media-mapping-r1-structure-review.md",
+      "sha256": "0e064428c18893b5ae2c9a75ceba08518683024b26b9fe53ad7167bc38842237",
+      "bytes": 12488,
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "fork": "none",
+      "rootRead": "complete",
+      "verdict": "APPROVE_SOURCE_ONLY",
+      "tree": "1e1348964e4356a76de0f61fd6557a7fbe6d0d6b"
+    }
+  ],
+  "phase": "Both independent source lenses approved and root fullread; exact-H Actions pending"
+}
