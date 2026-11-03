@@ -237,3 +237,39 @@ helper's final `});` to `}` as well. Preserve all four actual-file I/O boundary
 controls and their exact assertions. Include both delimiter fixes in the same
 focused review and recovery execution; do not spend another run rediscovering
 an already confirmed syntax defect. This decision precedes the second edit.
+
+**MAB-CI-R2-F1 — FIX / IMPL_BUG (native staging default):** on
+`150df821a8a341a33053dbb9c01c169f5d73763c`, Runtime `41555913691`, attempt 1,
+renderer job `125654628782`, the shipping/contract build and 115 retained
+Plugin Skills/model/MCP tests passed. MAB executed all 85 tests: 81 passed,
+four failed, none skipped/cancelled/todo. All four failures occur at actual
+`stageBytes` setup before the staged-read/upload continuation assertions.
+The normal command captured Node/tee exits `1/0`; both inherited-errexit
+controls retained their required `7/0/1` and `0/1/1` outcomes.
+
+CI used Node `v24.22.1`. Its [official Web Crypto source][MAB-NODE-WEBCRYPTO]
+requires the Crypto receiver for `randomUUID`; the existing native edge calls
+`(deps.randomUUID ?? crypto.randomUUID)()` without that receiver. Production
+composition supplies no override. Actual TAP proves staging returned failure;
+the precise invalid-receiver exception is a source/runtime inference because
+the edge catches it and the failed assertion did not print that exception.
+The [same Node version's module export][MAB-NODE-CRYPTO] exposes the underlying
+freestanding native function. Import `randomUUID` from `node:crypto` and use it
+as the existing fallback. Keep the injected override, source naming, byte
+limits, real filesystem work, error/cleanup and account behavior unchanged.
+Do not inject a fixture UUID or install a global Crypto shim to hide the defect.
+
+The independent campaign-cap/directness assessment classified the subject as
+reachable and this failure as an implementation defect, not an environment
+block. The initial syntax campaign and focused recovery used the default
+two-campaign allowance; an unchanged rerun is forbidden. Retain the 81 MAB,
+115 Plugin and capture-control positives under their actual H, including the
+25 MAB and 14 Plugin input-hash matches. After this narrowly scoped production
+fix and fresh source review, the next direct instrument is the existing
+exact-H Actions renderer build and real staging/continuation controls, with
+their unchanged complete MAB/capture oracles. No assertion is removed, and
+neither the earlier successes nor the campaign limit supplies new-H acceptance.
+This recovery decision is recorded before editing the production fallback.
+
+[MAB-NODE-WEBCRYPTO]: https://github.com/nodejs/node/blob/v24.22.1/lib/internal/crypto/webcrypto.js
+[MAB-NODE-CRYPTO]: https://github.com/nodejs/node/blob/v24.22.1/lib/crypto.js
