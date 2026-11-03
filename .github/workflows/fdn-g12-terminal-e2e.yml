@@ -1,0 +1,107 @@
+name: FDN G12 terminal production E2E
+
+on:
+  pull_request:
+    paths:
+      - "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs"
+      - "source/host/src/runner/host_external_machine_dependencies.rs"
+      - "source/host/tests/external_machine_shipping_contract.rs"
+      - "source/host/tests/gateway_local_exec_sand_box_contract.rs"
+      - ".github/workflows/fdn-g12-terminal-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fdn-g12-terminal-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  terminal-production:
+    name: Terminal production E2E / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact tested HEAD
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            expected="${{ github.event.pull_request.head.sha }}"
+          else
+            expected="${{ github.sha }}"
+          fi
+          test "$actual" = "$expected"
+          echo "Exact tested HEAD: $actual" >> "$GITHUB_STEP_SUMMARY"
+      - name: Reclaim Ubuntu hosted-runner disk headroom
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Before cleanup:"
+          df -h "$GITHUB_WORKSPACE"
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+          if command -v docker >/dev/null 2>&1; then
+            docker system prune --all --force --volumes || true
+          fi
+          echo "After cleanup:"
+          df -h "$GITHUB_WORKSPACE"
+          available_kb="$(df -Pk "$GITHUB_WORKSPACE" | awk 'NR == 2 { print $4 }')"
+          minimum_kb=$((12 * 1024 * 1024))
+          if [ "$available_kb" -lt "$minimum_kb" ]; then
+            echo "Need at least 12 GiB free before Rust terminal E2E linking; have $available_kb KiB" >&2
+            exit 1
+          fi
+      - name: Install Linux native desktop dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libwayland-dev libpipewire-0.3-dev libegl1-mesa-dev libegl-dev libgbm-dev libdrm-dev libxkbcommon-dev
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.97.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: source/host -> target
+          shared-key: fdn-g12-terminal-${{ matrix.os }}-1.97.1
+      - name: Execute real OS process through terminal owner
+        shell: bash
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --test gateway_local_exec_sand_box_contract
+          exec_manager_drives_real_os_process_to_bounded_terminal_result
+          -- --exact --nocapture
+      - name: Execute real cancellation and history lifecycle
+        shell: bash
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --test gateway_local_exec_sand_box_contract
+          exec_manager_cancel_maps_to_real_child_termination_and_history
+          -- --exact --nocapture
+      - name: Verify durable accepted/start ambiguity and process-death recovery
+        shell: bash
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --lib
+          operation_journal_fail_closed_tests
+          -- --nocapture
+      - name: Verify shipping terminal recovery projection
+        shell: bash
+        run: >-
+          cargo test --manifest-path source/host/Cargo.toml
+          --test external_machine_shipping_contract
+          shipping_terminal
+          -- --nocapture
