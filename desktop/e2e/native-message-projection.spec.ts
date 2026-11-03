@@ -941,3 +941,47 @@ test('HRR-12 a second same-intent retry clears the visible failure before its ne
   ]);
   await milestone(page, info, 'human-retry-notice-replaced');
 });
+
+test('HRR-13 two failed Human messages with identical retry errors retain each other’s notice ownership', async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+  await page.evaluate(() => {
+    window.nativeMessageFixture.stageFailedHuman('notice-first-nonce');
+    window.nativeMessageFixture.stageFailedHuman('notice-second-nonce');
+  });
+  const first = messageRow(page, 'human-message:notice-first-nonce');
+  const second = messageRow(page, 'human-message:notice-second-nonce');
+  await expect(first.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(second.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await page.locator('[contenteditable="true"]').fill('Independent draft across distinct failed intents');
+  await first.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(1);
+  await page.evaluate(() => window.nativeMessageFixture.rejectHumanRetry(0));
+  const notice = page.getByText('Human retry unavailable: fixture-retry: temporary retry refusal', { exact: true });
+  await expect(notice).toBeVisible();
+
+  // The second nonce is not a retry of the first failed intent. Starting it
+  // must not clear the first error even though later failures share its copy.
+  await second.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(2);
+  await expect(notice).toBeVisible();
+  await page.evaluate(() => window.nativeMessageFixture.rejectHumanRetry(1));
+  await expect(notice).toBeVisible();
+
+  // Starting the first nonce again must not remove the second nonce's notice.
+  await first.getByRole('button', { name: 'Resend', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().humanRetries)).toBe(3);
+  await expect(notice).toBeVisible();
+  const original = await page.evaluate(() => window.nativeMessageFixture.requests.filter((request) => request.method === 'retryHumanMessage'));
+  expect(original.map((request) => request.args)).toEqual([
+    { conversationId: 'human:a', clientNonce: 'notice-first-nonce' },
+    { conversationId: 'human:a', clientNonce: 'notice-second-nonce' },
+    { conversationId: 'human:a', clientNonce: 'notice-first-nonce' },
+  ]);
+  await expect(first.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(second.getByRole('button', { name: 'Resend', exact: true })).toBeVisible();
+  await expect(page.locator('[contenteditable="true"]')).toHaveText('Independent draft across distinct failed intents');
+  expect(await page.evaluate(() => window.nativeMessageFixture.attachmentCommits)).toEqual([]);
+  expect(await page.evaluate(() => window.nativeMessageFixture.requests.filter((r) => r.method === 'sendHumanMessage'))).toEqual([]);
+  await milestone(page, info, 'human-retry-notice-distinct-intents');
+});

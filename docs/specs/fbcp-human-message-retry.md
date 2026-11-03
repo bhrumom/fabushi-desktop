@@ -272,3 +272,26 @@ controlled-port contract, actual Chromium Renderer retry/selection checks,
 renderer compile and strict semantic architecture binding, plus retained
 Session/Transcript and native shipping checks. No local/htch execution, no
 release or independent ACCEPT inferred from authored tests.
+
+## HRR-13: Failed-message-specific composer notice ownership
+
+HRR-12's visible Human retry failure must be scoped not just by account and
+conversation selection but by the exact original durable `clientNonce`.
+Another failed message in the same conversation may independently be retried,
+and starting or settling that second message must not erase a still-relevant
+first-message error. Equal display strings do not confer notice ownership:
+the notice state retains a retry token, whereas unrelated feature notices
+are explicitly unowned, including same-text replacements. A new attempt of
+the *same* nonce may retire its own earlier notice before the actual frame,
+but an unrelated nonce may not. Keep Host idempotency, immutable retry intent,
+service permissions, composer draft and existing Transcript/Coordinator owners.
+
+The authored negative is a real mounted ProductionRenderer with two failed
+Human rows and same-text Coordinator failure outcomes. It checks both
+messages' retry buttons, order of three exact two-field requests, preservation
+of the unrelated error while the other nonce is in flight, no fresh send
+or resource staging, and a newer draft that survives. This extends the
+exact-H Chromium count to 29; it is **authored**, not executed at preparation.
+Containing-H GitHub Actions must establish compile, actual Renderer, strict
+source binding and retained Host/Coordinator/shipping contracts; no local
+validation or independent release ACCEPT is implied.

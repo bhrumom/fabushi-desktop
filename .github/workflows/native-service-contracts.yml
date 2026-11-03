@@ -855,20 +855,20 @@ jobs:
           import fs from 'node:fs';
           import assert from 'node:assert/strict';
           const report = JSON.parse(fs.readFileSync('../artifacts/native-message-ui/production-renderer.json', 'utf8'));
-          assert.equal(report.stats.expected, 28);
+          assert.equal(report.stats.expected, 29);
           for (const field of ['unexpected', 'flaky', 'skipped']) assert.equal(report.stats[field], 0, field);
           assert.deepEqual(report.errors, []);
           const cases = [];
           const walk = suite => { for (const spec of suite.specs ?? []) cases.push(...spec.tests); for (const child of suite.suites ?? []) walk(child); };
           for (const suite of report.suites) walk(suite);
-          assert.equal(cases.length, 28);
+          assert.equal(cases.length, 29);
           for (const item of cases) {
             assert.equal(item.expectedStatus, 'passed');
             assert.equal(item.results.length, 1);
             assert.equal(item.results[0].status, 'passed');
             assert.equal(item.results[0].retry, 0);
           }
-          console.log('actual ProductionRenderer: 28 passed, 0 failed, 0 skipped, 0 retries');
+          console.log('actual ProductionRenderer: 29 passed, 0 failed, 0 skipped, 0 retries');
           NODE
       - name: Actual ProductionRenderer Transcript cache and continuation behaviors
         shell: bash
