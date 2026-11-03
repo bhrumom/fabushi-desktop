@@ -1,0 +1,41 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "repository": "bhrumom/fabushi-desktop",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "global_flags_promoted": false,
+  "schema": "ocrm-causal-execution-assessment-v1",
+  "subject": "10d7c42c47b85ca6c8d1fcedb2825981a6f4fd53",
+  "tree": "1a6ac05feaefbfad463ff516ce6bfb65ed3d23f3",
+  "workflow_blob": "c417dda9677b8da0a6c016e00e3565cc8e3f1aed",
+  "workflow_bytes": 514375,
+  "workflow_sha256": "bcc2dff1e106f6ca6626f6f4fdbca139f492d88cdb39c6e2e40a6e54ccaad6df",
+  "observed": {
+    "run_id": 41637226714,
+    "attempt": 1,
+    "conclusion": "failure",
+    "created_at": "2026-11-03T12:37:04Z",
+    "updated_at": "2026-11-03T12:37:04Z",
+    "job_count": 0,
+    "product_commands_executed": 0,
+    "check_suite_id": 112826902453
+  },
+  "decision": {
+    "id": "LDB-10D7-WORKFLOW-SIZE-ADMISSION",
+    "disposition": "FIX",
+    "classification": "IMPL_BUG: workflow admission instrument exceeds documented service limit",
+    "evidence": "Git tree/file identity proves 514375 bytes. Official GitHub Actions limits state 500 KB per workflow; larger files do not start runs. Independent assessment confirms this concrete blocking defect and zero attempt-specific jobs.",
+    "causal_limit": "No server-side size annotation was obtainable through available endpoints. Attribution to this limit is a documented-limit/source-size inference; no product assertion or runner environment failure is claimed.",
+    "source": {
+      "url": "https://docs.github.com/en/actions/reference/limits",
+      "section": "Workflow file size",
+      "retrieved_date": "2026-11-03"
+    },
+    "correction": "Move the exact deindented configuration-evidence Python body from the existing step to projects/openclaw-rust/scripts/record_configuration_evidence.py. Preserve step gate, bash preamble, cwd, env, all dictionary entries and assertions, output formatting, every job and scope predicate. Bind and syntax-check the new helper in Actions; no product assertion deletion.",
+    "original_body": {
+      "bytes": 50320,
+      "sha256": "f519d76272e49fe852207253ca1b86fac99fde3287872a99d186790e4bed7825"
+    },
+    "campaign": "This attempt executed no product job. Correct the admission instrument, freshly review exact fix and affected caller with complete prior context, then permit one new exact-H execution. No unchanged rerun."
+  },
+  "acceptance": "Runtime not run; full migration gates remain open."
+}

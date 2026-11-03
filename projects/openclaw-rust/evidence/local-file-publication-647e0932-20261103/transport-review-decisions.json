@@ -1,0 +1,34 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "repository": "bhrumom/fabushi-desktop",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "global_flags_promoted": false,
+  "schema": "ocrm-review-decisions-v1",
+  "subject": "1bfc0433ba71dca94c63506a79ffec9760de52cc",
+  "tree": "6ef40e491dc13b3a6c1fe61e9df4e5470183157e",
+  "scope": "Complete TS helper/provider/new contract tests plus actual native and daemon adjacency; independent source assessment only.",
+  "findings": [
+    {
+      "id": "LFP-TRANSPORT-TERMINATION-REENTRY",
+      "decision": "FIX",
+      "classification": "production bounded-cleanup defect",
+      "path": "source/host/local-exec/local-exec-native-file-access.ts",
+      "trigger": "After possible helper entry, a live owned child's kill() emits error synchronously. The installed error listener re-enters stop() before any stopping guard, repeatedly signalling until stack exhaustion.",
+      "rationale": "LFP-05 requires bounded failure handling and exact owned-child cancellation. Set termination-attempt ownership before signalling, arm the close bound independently, and preserve uncertainty without recursive or repeated signals.",
+      "oracle": "Add a controlled child that synchronously emits a termination error and returns false from kill. Require exactly one owned signal attempt, bounded settlement, and outcome_unknown after possible entry. Keep all prior assertions."
+    },
+    {
+      "id": "LFP-TRANSPORT-FIXTURE-CANONICAL-ROOT",
+      "decision": "FIX",
+      "classification": "test/oracle portability defect",
+      "path": "source/local-exec-daemon/file-publication.contract.test.ts",
+      "trigger": "A newly created temporary root has a symlinked ancestor; containPath canonicalizes the target while native helper computes containment against lexical fixture root, refusing before the intended helper entry.",
+      "rationale": "Canonicalize each new provider/native fixture directory before creating owners and targets. Preserve production containment. This corrects new fixture reachability; the pre-existing production lexical-root limitation is not represented as fixed.",
+      "oracle": "Retain real Host destination-byte/publication assertions and synthetic transport controls. An explicit temporary-root-alias setup control may establish canonical fixture behavior, without claiming broad symlink-root product support."
+    }
+  ],
+  "model": "inherited configured model",
+  "effort": "xhigh",
+  "runtime": "not-run",
+  "remaining": "Full frozen integration review and exact-H Actions remain required; LFP04 stronger CAS/concurrent-writer boundary and final device/package acceptance remain open."
+}
