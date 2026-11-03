@@ -1,0 +1,50 @@
+{
+  "schema_version": "review-runner-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXO-v1",
+  "base": "4bc25f453108268087e9a11f91aee51680ce2822",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "findings": [
+    {
+      "id": "LXO-01",
+      "decision": "FIX",
+      "reason": "Multiple Host sandbox facades independently own maps and publish the same journal; single Host extension owner is required."
+    },
+    {
+      "id": "LXO-02",
+      "decision": "FIX",
+      "reason": "Unconditional pre-send failure settlement can retire a different invocation; use successful-registration identity plus atomic state publication."
+    },
+    {
+      "id": "LXO-03",
+      "decision": "FIX",
+      "reason": "Cancel delivery and stream closure lack process Exit; post-send error paths lose uncertainty and partial output."
+    },
+    {
+      "id": "LXO-04",
+      "decision": "FIX",
+      "reason": "Actual producer pre-entry refusal needs narrow existing-wire tag; generic handler codes are not non-entry proof."
+    },
+    {
+      "id": "LXO-05",
+      "decision": "FIX",
+      "reason": "Actual ExternalShell adapter returns unknown as successful JSON, preventing existing Runner sticky custody."
+    },
+    {
+      "id": "LXO-06",
+      "decision": "FIX",
+      "reason": "Actual App node system.run also labels unknown outcome success."
+    },
+    {
+      "id": "LXO-ORACLE-01",
+      "decision": "FIX",
+      "reason": "Existing cancel-plus-close Cancelled expectation is incorrect; keep real child termination/aborted Exit positive and all relevant assertions."
+    },
+    {
+      "id": "LXO-GENERATED-HTML",
+      "decision": "DEFER",
+      "reason": "Separate explicit source-origin contract requires verified same-Host native provider binding and atomic Session provenance; no grant minted by this prerequisite."
+    }
+  ],
+  "execution": "No local/htch validation; Actions only after frozen H. No verified/global status promotion."
+}
