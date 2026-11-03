@@ -551,5 +551,59 @@
     "independent_acceptance": false,
     "full_migration_complete": false,
     "note": "Queued/in-progress results are not passes. Existing current owner and unified UI/Agent/Host capabilities remain; this checkpoint neither deletes Telegram legacy data nor asserts release ACCEPT. Actual later job conclusions must be re-read from GitHub."
+  },
+  "round1_hrr13_20261103": {
+    "fixed_upstream": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "parent": "20549763f576a65a7c108d7c066493dcc24284d8",
+    "production_h": "53fd3bebf8ac54f29d7b858e2712153985449458",
+    "production_tree": "4f36758c2116b452e10c9fda51de2d157a31b4fe",
+    "branch": "checkpoint/tdrp-human-retry-bfafe567-r1",
+    "requirement_ids": [
+      "HRR-13",
+      "HRR-05",
+      "HRR-06",
+      "HRR-AC-03"
+    ],
+    "behavior": "One actual ProductionRenderer Human retry notice is owned by original message clientNonce, account, slot, selection and a unique React-state token; unlike same-text ordinary notices, second-message retry cannot retire it. Original durable Host Session/Transcript, identity, resources, drafts and Agent flows retained.",
+    "source_blobs": {
+      "frontend/src/production/ProductionRenderer.tsx": "ad2d07d7e325f3f67cd71546dce23a9bf11ddfa8",
+      "desktop/e2e/native-message-projection.spec.ts": "e4ae7bffa472501d1564720916cbd6a9c5335d2a",
+      ".github/workflows/native-service-contracts.yml": "971c7ec1a7bcc6cd5cfda9cda0c36c8c3d6e0b46",
+      "projects/grok-fabu-parity/architecture-semantic-adaptations.json": "180f47a54c40ba298428c63854559e119da298c0"
+    },
+    "authored_test": "HRR-13 two failed Human messages with identical retry errors retain each other’s notice ownership (actual Chromium E2E; first/second/first exact nonce, no staging, intact draft)",
+    "expected_gates": "new exact H: Chromium Renderer29; retained Coordinator20, Host81, Rust renderer, semantic source, shipping AppHost and existing dependency checks",
+    "execution_at_authoring": {
+      "native_run": 41611206276,
+      "rust_run": 41611206620,
+      "ui": "completed/success (job125833250911; Coordinator20/20, Chromium Renderer29/29, zero fail/skip/retry)",
+      "rust_renderer": "completed/success (job125833250999)",
+      "electron": "completed/success (job125833250951)",
+      "windows": "completed/success (job125833250833)",
+      "ffi": "completed/success (job125833251066)",
+      "social": "completed/success (job125833251013)",
+      "host": "in_progress at receipt readback (job125833250540), not a pass",
+      "shipping": "in_progress at receipt readback (job125833251026), not a pass",
+      "new_H_ui_pass": true,
+      "full_containing_H_pass": false
+    },
+    "prev_h_scoped": {
+      "h": "8fd9dc8bd777d89b1b2ecb2c5b8eef4bec9891d6",
+      "run": 41609548094,
+      "coordinator": 20,
+      "chromium_renderer": 28,
+      "host_human": 81,
+      "source_scope": "prior H only; not proof of H53fd"
+    },
+    "source_accounting": {
+      "recursive_git_identities": 16381,
+      "source_reviews": 6,
+      "complete_reviews": 2,
+      "unknown": null,
+      "unread": null,
+      "accepted": false
+    },
+    "independent_acceptance": false,
+    "complete": false
   }
 }
