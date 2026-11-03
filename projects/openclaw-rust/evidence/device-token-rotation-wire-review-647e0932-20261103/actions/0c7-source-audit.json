@@ -1,0 +1,271 @@
+{
+  "subject_commit": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "subject_tree": "77aee57690a8d09cdf794f6459412ae26f604f1a",
+  "artifact_id": 13203046754,
+  "receipt": {
+    "file": "/workspace/scratch/29e7135d8bfe/ci-recovery/drt-exact/0c7-artifact-13203046754/p0-structural-receipt.json",
+    "bytes": 5080,
+    "sha256": "59c47c407b7cd914d70f1c5cb4b888a290bb4dd7860eed0ac49e36dd1bc2587c"
+  },
+  "authority_summary": {
+    "blob_entries_total": 62128,
+    "canonical_file_records": 62130,
+    "canonical_inventory_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+    "gitlink_entries_total": 0,
+    "reason": "Tracked source enumeration is established; dependency/LFS/semantic responsibility closure remains open.",
+    "source_closure_ready": false,
+    "subject_commit": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "symlink_entries_total": 2,
+    "tracked_entries_total": 62130,
+    "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "gate_verdicts": {
+    "OCRM-G01-dependency-LFS-closure": "open",
+    "OCRM-G01-tracked-tree": "success",
+    "OCRM-G02-final": "not-run",
+    "OCRM-G02-structural": "success"
+  },
+  "completion_flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "checks": {
+    "subject": true,
+    "run_and_attempt": true,
+    "upstream": true,
+    "manifest_hash_agrees": true,
+    "raw_tree_manifest_members_equal": true,
+    "62130_records": true,
+    "input_digest_consistent": true,
+    "eight_flags_false": true,
+    "all_source_or_archived_generated_input_hashes_match": true
+  },
+  "audit_consistent": true,
+  "input_observations": [
+    {
+      "path": ".github/workflows/ocrm-p0-authority.yml",
+      "reported_sha256": "15e7cd4e6402dd515bbd023c2b421162fb854e13c8744ba6abec8f7fc33fc86e",
+      "independently_read_sha256": "15e7cd4e6402dd515bbd023c2b421162fb854e13c8744ba6abec8f7fc33fc86e",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/dependencies/source-manifest-inputs.json",
+      "reported_sha256": "b16d26dbbaa63ede053231e615463d63c82351e68c8ad9761094d16d8bc8b46e",
+      "independently_read_sha256": "b16d26dbbaa63ede053231e615463d63c82351e68c8ad9761094d16d8bc8b46e",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+      "reported_sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e",
+      "independently_read_sha256": "35fcb85c98328ea059d37d210ca53f8c39fdb78fb85903eafb81a7621a2bf01e",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/dossiers/model-picker-scoped.md",
+      "reported_sha256": "f7e716850861d51521931657cdd1c9b1e68aefad8088126758aa43bba1d0b884",
+      "independently_read_sha256": "f7e716850861d51521931657cdd1c9b1e68aefad8088126758aa43bba1d0b884",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+      "reported_sha256": "e96d1a0b0d2588b063f79443ec5bdebc23932f19f9f23fb458915ea1f44f1119",
+      "independently_read_sha256": "e96d1a0b0d2588b063f79443ec5bdebc23932f19f9f23fb458915ea1f44f1119",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+      "reported_sha256": "c28fce04d80bc059c83be01b1b98fe61ea23044a3eebdc6c9fc6f2e5214ba308",
+      "independently_read_sha256": "c28fce04d80bc059c83be01b1b98fe61ea23044a3eebdc6c9fc6f2e5214ba308",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
+      "reported_sha256": "db6fda256eaa618d651a46ef921ed31d6b44b57714f8be27ed6a015eb5dee828",
+      "independently_read_sha256": "db6fda256eaa618d651a46ef921ed31d6b44b57714f8be27ed6a015eb5dee828",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-range-correction.json",
+      "reported_sha256": "5e523c78719144fe75699a78d75bfd5fb485623c88d60f8ca66ee18b2b55db6c",
+      "independently_read_sha256": "5e523c78719144fe75699a78d75bfd5fb485623c88d60f8ca66ee18b2b55db6c",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
+      "reported_sha256": "7ff0a3892a8df00ea7a91e41f70b9217fe7e2295c2b05013d5609245bddb7fd1",
+      "independently_read_sha256": "7ff0a3892a8df00ea7a91e41f70b9217fe7e2295c2b05013d5609245bddb7fd1",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+      "reported_sha256": "c9005d2e9e07233f9bce523dfbc79bd3872ca42046aa6fd7e4a38a879860abb3",
+      "independently_read_sha256": "c9005d2e9e07233f9bce523dfbc79bd3872ca42046aa6fd7e4a38a879860abb3",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/index.json",
+      "reported_sha256": "5a0ead37abd41afacbaf146af187c72b8f2b9826dca2f39496bb06088dbb6a7b",
+      "independently_read_sha256": "5a0ead37abd41afacbaf146af187c72b8f2b9826dca2f39496bb06088dbb6a7b",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/read-observations.json",
+      "reported_sha256": "3561f7feaf98df8f82865fa3c45597b3e03fa824f58c37f9221e081a0b5adaf2",
+      "independently_read_sha256": "3561f7feaf98df8f82865fa3c45597b3e03fa824f58c37f9221e081a0b5adaf2",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/inventory/shards/manifest.json",
+      "reported_sha256": "74e4bbfdbf84435078e674234f6c82a784803f2a285ba547f641a13c295c1ee9",
+      "independently_read_sha256": "74e4bbfdbf84435078e674234f6c82a784803f2a285ba547f641a13c295c1ee9",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "reported_sha256": "d596b67e49eb5f5976b732484f7001fb940d5ec2db7188bc3a009d901f6938f4",
+      "independently_read_sha256": "d596b67e49eb5f5976b732484f7001fb940d5ec2db7188bc3a009d901f6938f4",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "reported_sha256": "da5bfc429a2a1fd07f715d8b6ee4286d95de6c8480abb34556fe0357adf8cc87",
+      "independently_read_sha256": "da5bfc429a2a1fd07f715d8b6ee4286d95de6c8480abb34556fe0357adf8cc87",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/schemas/parity-ledger.schema.json",
+      "reported_sha256": "7cddb11feeb4ac52939c86cba2cd1a124bc9ee6a7cd1dd84c11142c4091762aa",
+      "independently_read_sha256": "7cddb11feeb4ac52939c86cba2cd1a124bc9ee6a7cd1dd84c11142c4091762aa",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/schemas/requirements-traceability-matrix.schema.json",
+      "reported_sha256": "4d473e1c5f666e47fa3dec54a313d3fd4897af89a1089930a87e3b7253908eea",
+      "independently_read_sha256": "4d473e1c5f666e47fa3dec54a313d3fd4897af89a1089930a87e3b7253908eea",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/schemas/source-inventory.schema.json",
+      "reported_sha256": "4c9e99b87aa4323c213118716ca674d269438e599f87349c9879b4c7df67d154",
+      "independently_read_sha256": "4c9e99b87aa4323c213118716ca674d269438e599f87349c9879b4c7df67d154",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/expand_inventory.py",
+      "reported_sha256": "05c5112ff0576eeab51c85787833322f75dffa498fb3ae9b5c9e799fc117a636",
+      "independently_read_sha256": "05c5112ff0576eeab51c85787833322f75dffa498fb3ae9b5c9e799fc117a636",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/shard_inventory.py",
+      "reported_sha256": "bdf875a0be08a19e4cfe23387aa93b97eb8da4e4855942b429c3307205fda6ae",
+      "independently_read_sha256": "bdf875a0be08a19e4cfe23387aa93b97eb8da4e4855942b429c3307205fda6ae",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/source_review.py",
+      "reported_sha256": "a4d628822136b3a86c6f74a89041cb5b9b68935193ac74b2f975e3426476a097",
+      "independently_read_sha256": "a4d628822136b3a86c6f74a89041cb5b9b68935193ac74b2f975e3426476a097",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/test_inventory_materialization.py",
+      "reported_sha256": "5f810f98278e0961e14d3e193f0dd008740ce1c07cb24c3d24d0327d4c4ca472",
+      "independently_read_sha256": "5f810f98278e0961e14d3e193f0dd008740ce1c07cb24c3d24d0327d4c4ca472",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/test_source_review.py",
+      "reported_sha256": "999017d9103582464304a6761dc60b6bb11c4882f9d2b82c97b9510c6b130b98",
+      "independently_read_sha256": "999017d9103582464304a6761dc60b6bb11c4882f9d2b82c97b9510c6b130b98",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/validate_p0.py",
+      "reported_sha256": "74225a9451d7b689a490d71706292306ef1e6a69d51bf63c3a22415ce51b732c",
+      "independently_read_sha256": "74225a9451d7b689a490d71706292306ef1e6a69d51bf63c3a22415ce51b732c",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/verify_audit_integrity.py",
+      "reported_sha256": "80a72f221ca0e51bad3a97e3ca9ad13b148d8b35a09c65f7f7991f393665f8c3",
+      "independently_read_sha256": "80a72f221ca0e51bad3a97e3ca9ad13b148d8b35a09c65f7f7991f393665f8c3",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "projects/openclaw-rust/upstream.lock.json",
+      "reported_sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "independently_read_sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+      "matches": true,
+      "read_identity": "immutable commit source",
+      "explanation": null
+    },
+    {
+      "path": "upstream-recursive-inventory.json",
+      "reported_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+      "independently_read_sha256": "8994988c264876be709930e2f87c6b60ae124a6077a833ccd324dc1117d26d93",
+      "matches": true,
+      "read_identity": "original generated artifact",
+      "explanation": null
+    }
+  ],
+  "known_generated_input_limitation": "All26 repository path hashes match immutable H. The27th receipt input is the archived generated upstream manifest and matches. This is source structural run evidence, not a claim that all receipt inputs are immutable H bytes or that dependency/semantic closure is accepted.",
+  "scope": "global tracked-source structural candidate; not dependency closure or unit admission"
+}

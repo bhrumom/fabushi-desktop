@@ -1,0 +1,178 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "created_at": "2026-11-03T04:00:57.818514+00:00",
+  "kind": "historical independent review and original Actions evidence carrier; not a second inventory/ledger/RTM",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "subject_commit": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "subject_tree": "77aee57690a8d09cdf794f6459412ae26f604f1a",
+  "immutable_review_tree": "a66145d238e8dbfef934b9cba7891d3ee02f05ce",
+  "identity_binding": "Full16scoped files match between reviewed tree and published subject; publication parent differs only by separately preserved unrelated files. See r3/delivery.json and r3/publication-manifest.json.",
+  "review_reconstruction": "R1 complete.patch is bound to published497c2c7a base; R2 exact tree is published113c3227; R3 publication.patch plus publishedfee4f179 base reconstructs the immutable review subject. The separate R3 publication manifest retains54b32b96 carrier rebase with identical16path scope. Complete/fix patch hashes in all manifests remain historical identities, not execution evidence.",
+  "source_review": "R3 both fresh blind source lenses converged, no findings. Prior failures and root decisions preserved. No runtime or global credit from source approval.",
+  "current_execution": "Source job125715056548 passed tracked/structural gates; runtime41574595343 original audit continues. No final DTR result yet.",
+  "historical_subjects": [
+    {
+      "sha": "e19a0a265e400a4c9b1d96520c84fb612a3843e8",
+      "runtime_run": 41571103928,
+      "source_run": 41571103969,
+      "scope": "Linux48portablegroups and91App cases audited passing; Windows original media failure preserved; no DTR or successor credit."
+    },
+    {
+      "sha": "113c32276b99ed668be095e0be6ed164dffdf46d",
+      "runtime_run": 41572993677,
+      "source_run": 41572993673,
+      "scope": "49of50portablegroups pass; DTRHTTP12pass1fail from ordinary403report TEST_FLAW; mainApp skipped and dependent reused-MCP receipt missing. Owner44/retained27 positives stay bound to113."
+    }
+  ],
+  "original_evidence_location": "Original Actions artifacts and complete logs are named and hashed in each auditor report. This carrier copies the narrow review/audit metadata, not the old blockedH5593raw archive. Missing/expired original evidence remains missing, not passing.",
+  "media_identity_limit": "Original e19/113media diagnostic is historical. The corrected0c7 fixture and later8e5cee76media compatibility implementation are distinct subjects; neither inherits the others runtime verdict.",
+  "carrier_limit": "The commit adding these files is a later evidence carrier, not the tested subject. It acquires no current-target acceptance by copying historical results.",
+  "remaining": [
+    "scopedG01/G02admission and semantic source review gaps",
+    "currentH runtime and platform gates",
+    "real provider/channel/plugin/node/device compatibility",
+    "complete recursive dependency/LFS/legal source closure",
+    "fullG01-G12/AC01-AC24 and independent shipping ACCEPT"
+  ],
+  "unit_verified": false,
+  "independent_acceptance": false,
+  "global_acceptance": false,
+  "members": [
+    {
+      "path": "r1/security-review.md",
+      "bytes": 15314,
+      "sha256": "6cfa7272fac5da1637fb36e4add981660d5f3b71a0128e0a19401c9613494ddd",
+      "scratch_source": "reviews/dtr-r1-security-review.md"
+    },
+    {
+      "path": "r1/structure-review.md",
+      "bytes": 18266,
+      "sha256": "8612703875f0f679f730d37c868f4891c07ba2a940fda6208e15b3edaa55d358",
+      "scratch_source": "reviews/dtr-r1-structure-review.md"
+    },
+    {
+      "path": "r1/manifest.json",
+      "bytes": 5816,
+      "sha256": "830397fc9449a7db932b2fa0170703e7228444820a4ff9dcc9f6db1977cdbbe1",
+      "scratch_source": "reviews/dtr-r1/manifest.json"
+    },
+    {
+      "path": "r2/security-review.md",
+      "bytes": 19885,
+      "sha256": "11f9390496e75347b992eb8ac7427c8d659e089e202d40fbc1bf025e6d2baf32",
+      "scratch_source": "reviews/dtr-r2-security-review.md"
+    },
+    {
+      "path": "r2/structure-review.md",
+      "bytes": 20777,
+      "sha256": "301fcb83a8a6fff4cf823c266c71f119fad0b3f756859dd8330976c208b061dc",
+      "scratch_source": "reviews/dtr-r2-structure-review.md"
+    },
+    {
+      "path": "r2/manifest.json",
+      "bytes": 6142,
+      "sha256": "40af04ab2f9d25f048deaf6e57d100ecf2ed79d1e20710faee16c7cd0ec8d9a8",
+      "scratch_source": "reviews/dtr-r2/manifest.json"
+    },
+    {
+      "path": "r3/security-review.md",
+      "bytes": 19566,
+      "sha256": "b4ea78b5e0699b3fcbdcaa451ad2705115c5cf2c5372dc754fca18c56be1571e",
+      "scratch_source": "reviews/dtr-r3-security-review.md"
+    },
+    {
+      "path": "r3/structure-review.md",
+      "bytes": 19069,
+      "sha256": "0ae408472d103713e2957dacde034fafd9fb069c80d64a5981b08fae09abf227",
+      "scratch_source": "reviews/dtr-r3-structure-review.md"
+    },
+    {
+      "path": "r3/manifest.json",
+      "bytes": 6602,
+      "sha256": "f9af7fd186df309d3a7dcbab10f24fbe8e3d09f082198cf4173d615c272629b3",
+      "scratch_source": "reviews/dtr-r3/manifest.json"
+    },
+    {
+      "path": "r2/delivery.json",
+      "bytes": 5454,
+      "sha256": "b38fd230627f826b6d15ada438f03ec322d8fe4625256378b59c9254c982242a",
+      "scratch_source": "reviews/dtr-r2/delivery.json"
+    },
+    {
+      "path": "r3/delivery.json",
+      "bytes": 5618,
+      "sha256": "162dec8f82c0195a49fe6facc7520e575b7de012e5f63374f9f72beb78a80e74",
+      "scratch_source": "reviews/dtr-r3/delivery.json"
+    },
+    {
+      "path": "r3/publication-manifest.json",
+      "bytes": 6919,
+      "sha256": "ee3bf2c31fe3afa93fbf18270050b0eee3f301967115b48187f5c887f12fe151",
+      "scratch_source": "reviews/dtr-r3/publication-manifest.json"
+    },
+    {
+      "path": "r1/complete.patch",
+      "bytes": 395990,
+      "sha256": "9a30e9eb43b5beef67a38fdc1fb39e0fd74c74fba0290fe7c634ef0b47c823a7",
+      "scratch_source": "reviews/dtr-r1/complete.patch"
+    },
+    {
+      "path": "r3/publication.patch",
+      "bytes": 29445,
+      "sha256": "9345e49709311fa57c9d5a27d089f1e98a47e99238c20772e2de6c88ddf73e0c",
+      "scratch_source": "reviews/dtr-r3/publication.patch"
+    },
+    {
+      "path": "r3/fix-delta.patch",
+      "bytes": 39367,
+      "sha256": "e97f990ffb5a0bfbea22cb0683f435b628c894ad1764057b222a4b112f9178d9",
+      "scratch_source": "reviews/dtr-r3/fix-delta.patch"
+    },
+    {
+      "path": "review-decisions.json",
+      "bytes": 33670,
+      "sha256": "5b7155bb322a6e418f5aebaded54ad0f1de48a94ac640d793ecafe1a93df42c5",
+      "scratch_source": "reviews/dtr-decisions.json"
+    },
+    {
+      "path": "actions/e19-evidence-audit.md",
+      "bytes": 12124,
+      "sha256": "22ffb35cb44517c64bdd0e2d0e58c79fb8b9c0b778325eaec26a844b878a226d",
+      "scratch_source": "ci-recovery/drt-exact/e19-evidence-audit.md"
+    },
+    {
+      "path": "actions/e19-evidence-audit.json",
+      "bytes": 6391,
+      "sha256": "9530303d1f3d991aa766014779994b3d222fab52a565cd410546dd3e620eb73d",
+      "scratch_source": "ci-recovery/drt-exact/e19-evidence-audit.json"
+    },
+    {
+      "path": "actions/113-evidence-audit.md",
+      "bytes": 11123,
+      "sha256": "306309491f371761c9a84948c3fe616569fffc8dc6f170e01ffcb128fa67ce26",
+      "scratch_source": "ci-recovery/drt-exact/113-evidence-audit.md"
+    },
+    {
+      "path": "actions/113-evidence-audit.json",
+      "bytes": 5872,
+      "sha256": "faed5974633115bb0ba643f6d2e5cecd785ecfc6ab2225ff2f314ba792e016e0",
+      "scratch_source": "ci-recovery/drt-exact/113-evidence-audit.json"
+    },
+    {
+      "path": "actions/113-dtr-http-failure-diagnosis.json",
+      "bytes": 22244,
+      "sha256": "dd0935a90c977615bcf9be7ebbd314cba96fb7451f5335727d9c6547f1d31bbe",
+      "scratch_source": "ci-recovery/drt-exact/113-dtr-http-failure-diagnosis.json"
+    },
+    {
+      "path": "actions/0c7-source-audit.json",
+      "bytes": 12862,
+      "sha256": "67734c92f3a21340f6836613999b293858900ba6ecdf3f52eb13f7a0b13924c3",
+      "scratch_source": "ci-recovery/drt-exact/0c7-source-audit.json"
+    }
+  ]
+}

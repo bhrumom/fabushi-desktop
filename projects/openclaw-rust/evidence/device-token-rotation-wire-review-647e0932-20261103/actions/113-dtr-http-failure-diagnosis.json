@@ -1,0 +1,1103 @@
+{
+  "classification": "TEST_FLAW",
+  "subject_commit": "113c32276b99ed668be095e0be6ed164dffdf46d",
+  "subject_tree": "7644b264bf72ef57f7333a7f4f8d7accd2dd7af8",
+  "run_id": 41572993677,
+  "run_attempt": 1,
+  "job_id": 125709987601,
+  "artifact_id": 13202711485,
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--manifest-path",
+    "source/host/Cargo.toml",
+    "--test",
+    "device_token_rotation_wire_gateway_contract",
+    "--",
+    "--test-threads=1"
+  ],
+  "failed_test": "token_rotate_wire_http_issued_nel_literal_never_becomes_pairing_or_admin_at_adjacent_consumers",
+  "raw_location": "tests/device_token_rotation_wire_gateway_contract.rs:1146:13",
+  "raw_panic": {
+    "assertion": "assert_eq!(errors.len(), reports + 1)",
+    "left": 0,
+    "right": 1
+  },
+  "raw_summary": [
+    12,
+    1,
+    0,
+    0,
+    0
+  ],
+  "cargo_exit": 101,
+  "capture_exit": 0,
+  "raw_log": {
+    "file": "113-artifact-13202711485/channel-pending-recovery/device-token-rotation-wire-gateway.log",
+    "bytes": 29902,
+    "sha256": "136f0a784ad135dc06be80b4d0aa1f196efb12b9da8b4b3d638dcc940aa3efd2"
+  },
+  "causal_source": {
+    "test": "source/host/tests/device_token_rotation_wire_gateway_contract.rs:1128-1150",
+    "production": "source/host/src/gateway_server.rs:2058-2071",
+    "reason": "Existing production report policy calls on_command_error only for status>=500. New NEL test requires403 and then incorrectly requires a403error report. Fixture callback merely appends production reports. Request reader waits for connection EOF; production callback decision precedes respond_error. No scheduling wait or repeated run can make an unreported403 satisfy this oracle.",
+    "classification_confidence": "Direct original assertion and exact source predicate; no product reproduction executed."
+  },
+  "prior_assertions_reached": [
+    "literal token issuance and authenticated currentness",
+    "ordinary transcript authentication status200",
+    "first management refusal status403",
+    "response redaction",
+    "complete SQL snapshot unchanged",
+    "recognized/owner-hook counters match expected first request"
+  ],
+  "unreached_scope": "The failing report assertion prevents later target/method loop iterations and final genuine-admin controls in this one test from executing; do not credit the complete NEL HTTP oracle.",
+  "safe_recovery_hint": "Before changing source, record TEST_FLAW. Preserve403, byte/SQL/revision, real owner-hook, literal grant and redaction checks. Expect no error-report increment for403 under current policy, retain independent500 reporting and all ordinary positive controls. No production policy expansion or delay/sleep/retry is needed.",
+  "source_identities": [
+    {
+      "path": "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+      "bytes": 70666,
+      "sha256": "d758e24465ab026b2b862450e2f2736ee04dc413c6ec1815c7e7738588b9bc4e",
+      "blob": "e719636a00f80d18cc635ab7413a17b37c8d7046"
+    },
+    {
+      "path": "source/host/src/gateway_server.rs",
+      "bytes": 97871,
+      "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+      "blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+      "bytes": 19679,
+      "sha256": "1cf46dd3f13c67a8b3b9da579f51e1ece8c18bec6e7a4f020568e046010e8aca",
+      "blob": "e3c3f5ffa7debd986ae2888b7d60519ee8f772ae"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "bytes": 98347,
+      "sha256": "b4d9faeec15681a15301a5e8bc5701ae91cda20721ad86dfef0ab10110aff166",
+      "blob": "e683bb4494c3d28ca8bc466472eb3d198578198e"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "bytes": 438191,
+      "sha256": "d2a7894da832125acc117d725ce437e4ffb12f59e6a042c6521e450427e99106",
+      "blob": "e705a065dc34f066af6a095bcc7475d36da1f4e2"
+    }
+  ],
+  "retained_positive_groups": [
+    {
+      "case": "generated-send-message-recorder",
+      "required_count": 30,
+      "log_sha256": "1db93b5bdfe754f9a263924e5252fb4521f3c323a5ce3b3b2835d53c790124f2",
+      "summaries": [
+        [
+          30,
+          0,
+          0,
+          0,
+          663
+        ]
+      ]
+    },
+    {
+      "case": "generated-send-message-contracts",
+      "required_count": 42,
+      "log_sha256": "f9766809202599c91b50de2c0292035536dd9f500b3fb2e93f4c4c9761db61bd",
+      "summaries": [
+        [
+          13,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          14,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "integration",
+      "required_count": 103,
+      "log_sha256": "1749dc92a42f421b2999a6179a959b46378ee66445386e21683de5be9c17ec21",
+      "summaries": [
+        [
+          7,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          48,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          21,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          19,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          18,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          27,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          14,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "session-owner-namespace",
+      "required_count": 15,
+      "log_sha256": "d1ab33ad21be59584ddd1f3ef94f2d640b2fdb63a22a3fbe7ab5e2a6b5da9b95",
+      "summaries": [
+        [
+          19,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          28,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "codex-model-identity",
+      "required_count": 10,
+      "log_sha256": "a665df4c18407d002bcbf588c2b825958ab61546e9cccfe02b1067e4063bf2b2",
+      "summaries": [
+        [
+          10,
+          0,
+          0,
+          0,
+          683
+        ]
+      ]
+    },
+    {
+      "case": "codex-workspace-binding",
+      "required_count": 7,
+      "log_sha256": "3473c3ba175f0ddd162cba844710724d4a2dc2fa5a082b295dcda014c3c9b269",
+      "summaries": [
+        [
+          7,
+          0,
+          0,
+          0,
+          686
+        ]
+      ]
+    },
+    {
+      "case": "codex-workspace-http",
+      "required_count": 17,
+      "log_sha256": "6666c00d3cf4a6a73c6182793bcc062ecc3d2fc450bcc464c2c2d48ca6f1fd86",
+      "summaries": [
+        [
+          17,
+          0,
+          0,
+          0,
+          676
+        ]
+      ]
+    },
+    {
+      "case": "codex-model-regressions",
+      "required_count": 8,
+      "log_sha256": "70557f8068e07dfde3c5c0739a847343f9c81f862ebbc88775f238d5370c20fa",
+      "summaries": [
+        [
+          8,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          11,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          14,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          50,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "memory-account-binding",
+      "required_count": 2,
+      "log_sha256": "9e269000a3c7a1e76c7adf7bb8af1e4130685c821d25d58089466e4ce9bcd0ec",
+      "summaries": [
+        [
+          2,
+          0,
+          0,
+          0,
+          6
+        ]
+      ]
+    },
+    {
+      "case": "checked-store",
+      "required_count": 3,
+      "log_sha256": "bbb5efb163564a49f8e7cda5cd1b7e1e0275d8d46113031625ded71aa4282871",
+      "summaries": [
+        [
+          3,
+          0,
+          0,
+          0,
+          690
+        ]
+      ]
+    },
+    {
+      "case": "paired-device-sse",
+      "required_count": 1,
+      "log_sha256": "6503f976fbbb803e61bf154d367d52da3704728d5dc6e8d6251f8cde4e54414d",
+      "summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          692
+        ]
+      ]
+    },
+    {
+      "case": "device-pairing-join",
+      "required_count": 8,
+      "log_sha256": "3006cfcb1838d662ecc11c252572a36654d9eadc3411420a5c40545a399beced",
+      "summaries": [
+        [
+          8,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-join-limit-state",
+      "required_count": 11,
+      "log_sha256": "3f1c2f3a177da8ca5b57477ad0699d3f555dbf77aba4e000603d0431ed064d85",
+      "summaries": [
+        [
+          11,
+          0,
+          0,
+          0,
+          682
+        ]
+      ]
+    },
+    {
+      "case": "device-join-ingress-http",
+      "required_count": 7,
+      "log_sha256": "6298b36500f41160f305e05226f3b999e1a71fc4e39dbfe3adf137a817ecb5f2",
+      "summaries": [
+        [
+          7,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-join-legacy-http",
+      "required_count": 2,
+      "log_sha256": "4025234167408e38c53614bfac4c6e45d813ddd08ea8b871a71d5831396c44e7",
+      "summaries": [
+        [
+          2,
+          0,
+          0,
+          0,
+          41
+        ]
+      ]
+    },
+    {
+      "case": "device-join-tls",
+      "required_count": 1,
+      "log_sha256": "54139e61176682fcc4e0956c734209b1abe1dba7c0ba321b8a1ccb22f2b8c851",
+      "summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          42
+        ]
+      ]
+    },
+    {
+      "case": "memory-synthesis-identity",
+      "required_count": 6,
+      "log_sha256": "f5e3d8ec765a24df8ca4c6184e0e6788adf58f23db2c25d1000b9ae81fb4c6b3",
+      "summaries": [
+        [
+          6,
+          0,
+          0,
+          0,
+          687
+        ]
+      ]
+    },
+    {
+      "case": "production-memory-synthesis",
+      "required_count": 2,
+      "log_sha256": "6a0a25d92fd2145a962b40b019c12c2b644a77ad03aac33fc9d3830606a0b8d6",
+      "summaries": [
+        [
+          2,
+          0,
+          0,
+          0,
+          691
+        ]
+      ]
+    },
+    {
+      "case": "session-claim-integration",
+      "required_count": 13,
+      "log_sha256": "e1025023087aae71857b1938e40a225dd70243606d872bfe348c86e881aaee07",
+      "summaries": [
+        [
+          24,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          59,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "session-claim-commit-custody",
+      "required_count": 4,
+      "log_sha256": "65a759f967dab5ba26280bfdb1cfca19926322e6b57dfc8e2519c3125f4d955b",
+      "summaries": [
+        [
+          9,
+          0,
+          0,
+          0,
+          684
+        ]
+      ]
+    },
+    {
+      "case": "device-pairing",
+      "required_count": 20,
+      "log_sha256": "b52fd3cf595d37414a0eb457f9da282831ce6efae2f5f7c0ff1b66779d7f631e",
+      "summaries": [
+        [
+          20,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-pairing-rotation-authority",
+      "required_count": 9,
+      "log_sha256": "c15a94052d915ea092801ba6d8fa2bdb35e60c0177c467a2c2d123c718da5737",
+      "summaries": [
+        [
+          9,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-pairing-rotation-gateway",
+      "required_count": 8,
+      "log_sha256": "f24d78aa685b900adb6f1bfa1dd7e01003de7b800ee958d33a761d559acff422",
+      "summaries": [
+        [
+          8,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-pairing-revocation-authority",
+      "required_count": 26,
+      "log_sha256": "9592481b9f93a85de226c8e2cd789656cce2480d17fe2c30437de5029644fe49",
+      "summaries": [
+        [
+          26,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-pairing-revocation-gateway",
+      "required_count": 8,
+      "log_sha256": "8b6810a697f6748b87d409431f2e852d522d0db1aa115a8db5448e2be0d0f93b",
+      "summaries": [
+        [
+          8,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-role-token-revocation-authority",
+      "required_count": 27,
+      "log_sha256": "9a51d579b48b57722896765cc66b64ceefb83b3d9060e03a5fe0a85250a2c75d",
+      "summaries": [
+        [
+          27,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-role-token-revocation-gateway",
+      "required_count": 10,
+      "log_sha256": "599204e56e8a4983fe429799971a3562840986adb4df8137bc0725891026fe73",
+      "summaries": [
+        [
+          10,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-token-rotation-wire-authority",
+      "required_count": 44,
+      "log_sha256": "20807e47a1bf4d436444562a5c750d506ea1a3ed4f0b153c9c6c11c9c400080b",
+      "summaries": [
+        [
+          44,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "device-pairing-retained-stream",
+      "required_count": 27,
+      "log_sha256": "324d3b9839e8417667415bf23dca6ce6f554911e15f708d84b29d81845786528",
+      "summaries": [
+        [
+          27,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "received-catalog-preparation",
+      "required_count": 1,
+      "log_sha256": "18dc9c2b65b2af9184421bb48acc273dbdd6681cf2acdef29535bded2b47867d",
+      "summaries": [
+        [
+          7,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "received-catalog-projection",
+      "required_count": 6,
+      "log_sha256": "2d51158491c525fcc8888cf986d57deb9a16e9472380bcf5bbdb45c52f6a4c26",
+      "summaries": [
+        [
+          12,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "received-catalog-toolset",
+      "required_count": 3,
+      "log_sha256": "7748b29514c4050ee63598cdf3177241ebc80c9bd4ff3e1091e2ef8df38883ea",
+      "summaries": [
+        [
+          10,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "received-catalog-runtime",
+      "required_count": 11,
+      "log_sha256": "f92eb73feca36c5168ff1b754e8b239f450f5e482747d5593b33551894640869",
+      "summaries": [
+        [
+          19,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "preentry-cancellation-wiring",
+      "required_count": 7,
+      "log_sha256": "ef46b41a29f9ef0ff6731fcadc4bace2dc7e508e214546af72c37a32d8a920c8",
+      "summaries": [
+        [
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "received-catalog-retry",
+      "required_count": 1,
+      "log_sha256": "5358d2be158efb1d5a827ff597d81171a4001194b4860f562a815ded73ae81aa",
+      "summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          692
+        ]
+      ]
+    },
+    {
+      "case": "received-catalog-builder-regressions",
+      "required_count": 0,
+      "log_sha256": "cafd96e6248724041148f260fa21f5965e225cd3dc423737d92bb11ad85fa740",
+      "summaries": [
+        [
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "received-catalog-credential-match",
+      "required_count": 0,
+      "log_sha256": "5d64b67d0bf575d4c38ab63ac861939e96944442cee711a037abc7e13ac61788",
+      "summaries": [
+        [
+          5,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "channel-transport-chunks",
+      "required_count": 8,
+      "log_sha256": "aaf856b76a280f408d11e24a6677782af317b9f0649169dcb9fceed4163cd61f",
+      "summaries": [
+        [
+          20,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "plugin-uninstall-service",
+      "required_count": 9,
+      "log_sha256": "2c55110ea0fd5f75d5e7e058c979b3feb74f0f1b88a2500404ddae05fbc422a8",
+      "summaries": [
+        [
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          19,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          16,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          8,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          21,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          7,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "plugin-uninstall-state",
+      "required_count": 26,
+      "log_sha256": "321334508a5f02b3dd01bc8e95fa8f37c52da873a25fc08449bf5e17cdd872ae",
+      "summaries": [
+        [
+          73,
+          0,
+          0,
+          0,
+          620
+        ]
+      ]
+    },
+    {
+      "case": "plugin-uninstall-binding",
+      "required_count": 3,
+      "log_sha256": "af20503aee9c1eefc389d1143057246db3dd25716ec52b7bc835a3f19e1d03b5",
+      "summaries": [
+        [
+          9,
+          0,
+          0,
+          0,
+          684
+        ]
+      ]
+    },
+    {
+      "case": "plugin-uninstall-relay-handoff",
+      "required_count": 1,
+      "log_sha256": "5e4bdaab657d95b36afd4a8ab60bdeb3ead73ccfba35e0a4f4c510c52f68393a",
+      "summaries": [
+        [
+          1,
+          0,
+          0,
+          0,
+          692
+        ]
+      ]
+    },
+    {
+      "case": "plugin-cache-publication",
+      "required_count": 0,
+      "log_sha256": "689998e6e3f6fa2ec15ee59b757e8d11f507e5a7a8ad210a9d3cb31ba489e070",
+      "summaries": [
+        [
+          3,
+          0,
+          0,
+          0,
+          690
+        ]
+      ]
+    },
+    {
+      "case": "plugin-session-consumer",
+      "required_count": 0,
+      "log_sha256": "800945230e8fd81fbb742c3f0d1a071abd3b321a43c5b609c6e7c95281a288ef",
+      "summaries": [
+        [
+          3,
+          0,
+          0,
+          0,
+          690
+        ]
+      ]
+    },
+    {
+      "case": "provider-checkpoint-publication",
+      "required_count": 7,
+      "log_sha256": "3008c553d1066aa7d9bbabd51deba1f5cc52b32e74b3c16490e820c8652ac8d5",
+      "summaries": [
+        [
+          7,
+          0,
+          0,
+          0,
+          686
+        ]
+      ]
+    },
+    {
+      "case": "provider-checkpoint-custody",
+      "required_count": 4,
+      "log_sha256": "52ec0c502280afd6db63808435418e8a508b38ac2b76d9e05cff6105147e07c8",
+      "summaries": [
+        [
+          16,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "case": "generated-failure-history",
+      "required_count": 9,
+      "log_sha256": "26de99e6a63e68981252665b4121a97781d56523c0486e3fa7bb13a3ab374309",
+      "summaries": [
+        [
+          9,
+          0,
+          0,
+          0,
+          20
+        ]
+      ]
+    },
+    {
+      "case": "canonical-root-admission",
+      "required_count": 8,
+      "log_sha256": "dea878149a5ea70142420dd0c8fc6423f116d7ac057f25f6d644036df2635369",
+      "summaries": [
+        [
+          8,
+          0,
+          0,
+          0,
+          21
+        ]
+      ]
+    },
+    {
+      "case": "canonical-root-admission-contracts",
+      "required_count": 12,
+      "log_sha256": "1fdddd58ea2588251a3fb3a1ab1ff166f5ef83d73433d1f5644a80cc3f538681",
+      "summaries": [
+        [
+          12,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          29,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          12,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          19,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          0,
+          0,
+          0,
+          0
+        ]
+      ]
+    }
+  ],
+  "reported_app_step": "skipped",
+  "source_authority": "success, independently consistent original receipt",
+  "all_eight_global_flags_false": true,
+  "auditor_actions": "Source/evidence reads and scratch reports only; no product edits, local executable validation or workflow mutation/rerun."
+}

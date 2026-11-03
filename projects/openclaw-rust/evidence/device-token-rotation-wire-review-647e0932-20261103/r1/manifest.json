@@ -1,0 +1,132 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "repositoryRoot": "/workspace/scratch/29e7135d8bfe/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "taskRound": 1,
+  "reviewRound": 1,
+  "contract": "DTR-v1",
+  "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+  "startingHead": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+  "explicitlyIncludedPriorOverlayTree": "f6aaaf556fe99d53b46060da46691e154bffdfac",
+  "priorOverlayManifest": "reviews/drt-r5/manifest.json",
+  "priorOverlayPublicationStatus": "source review in progress; not runtime acceptance",
+  "behaviorBaselineTree": "f6aaaf556fe99d53b46060da46691e154bffdfac",
+  "tree": "5d8dd303c69999f1f8d68d687ab74b779d675464",
+  "scopeMode": "Complete15-path DTR batch on exact497 committed base plus explicit immutable preceding DRT overlay, admitted by OCRM17.3. Complete patch against committed base retained; introduced.patch isolates DTR changes against declared overlay. Later publication of identical overlay bytes may supply a commit identity without changing reviewed source.",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "specFirstBlob": "dca45ffddc2a9ef5197ee5a1e27f837f0b9375e2",
+  "specBeforeCurrentLifecycleClarification": "33e08b6f0ca7933e1b73603d87cfcc94fa8ad738",
+  "currentSpecBlob": "df77dd07d19680ea27793cbd2f1f71442b39d7f7",
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+      "blob": "df77dd07d19680ea27793cbd2f1f71442b39d7f7",
+      "bytes": 15637,
+      "sha256": "433d29c55c16921667ce97ff455026a35a662d20318694a8953a7900f8bf7fb1"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json",
+      "blob": "a598e9d752b87d2b732f96f587e04ab910bacae0",
+      "bytes": 38984,
+      "sha256": "488900f4fb3296f2164030598585b85edd5c626a7f5c91177f58be009342bb54"
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "blob": "a1ee8c6c6c0e6490eeb0b5b6fe74d468f2b2d606",
+      "bytes": 100123,
+      "sha256": "42d9a9411dc5b909ead566cbef6d3833d0c7b93d81b74285c1499d6f6599f410"
+    },
+    {
+      "path": "source/host/src/gateway_server.rs",
+      "blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+      "bytes": 97871,
+      "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a"
+    },
+    {
+      "path": "source/host/src/host_gateway_api.rs",
+      "blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "bytes": 12641,
+      "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "blob": "ca038b1aa9f3a78a1951551e0a80d543142c08dd",
+      "bytes": 990401,
+      "sha256": "ccdea2e9d91837c7eb3789dcfff1fceaef2419b575c419b5124c40deaa012735"
+    },
+    {
+      "path": "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+      "blob": "943df188b148214c2c6104f03800ea91bd434c41",
+      "bytes": 20661,
+      "sha256": "7a14a0db374a123f0821e97289786221373c31ba78cfd97364b37451dbc8f46b"
+    },
+    {
+      "path": "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
+      "blob": "e0915a36fe2f7489a9b4a83f350ac0d63435d681",
+      "bytes": 10144,
+      "sha256": "30577dca60ce4ad68b84bde23ffe72bb5ad1e99b5040092ab417891f0b031e2d"
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+      "blob": "7b258aab316234868d3d99f0fbf7b571456f09e9",
+      "bytes": 81409,
+      "sha256": "f2539a29b008894cf07feb24445560eef8a62d6917f74608767b3ba503fffd4e"
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+      "blob": "3fc2213fc941d8fafb0ba2d938015b55726391d3",
+      "bytes": 59016,
+      "sha256": "04980f254290498d22ee3de353d0f2b9d9acacd54817c9625509b82f78712ef0"
+    },
+    {
+      "path": "source/host/tests/device_pairing_retained_stream_contract.rs",
+      "blob": "bde613c782c81eba91fe44e57fbb5e4f2a3ebdd7",
+      "bytes": 111291,
+      "sha256": "fd68f2717a0f74088a97c6b577da1c9f075474d2c14f7e7e9a329468c54e5b4f"
+    },
+    {
+      "path": "source/host/tests/gateway_protocol_contract.rs",
+      "blob": "bebb67faabed215bfd84e419e2f34eeeacb55a99",
+      "bytes": 9264,
+      "sha256": "7ec7d99da255d59e2c32aa56796fd421a4e8fd582144084de8455df7a9b70aaf"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "b4c56a46f57d2886ce46620df9c5ea8a24c59b3e",
+      "bytes": 538006,
+      "sha256": "b1ff628877b93de1a6c34084c959095e089461bd6602dec07c925d2a2a86d357"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "741c9686e7c53ca41fb8ba8faa9decd3462b2710",
+      "bytes": 1423637,
+      "sha256": "549484ed721e390784108832104dd9c4e56ab3f63352599f2664775535989866"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "70d781fbe10a2ee0e0596666e625665017b27758",
+      "bytes": 150930,
+      "sha256": "23f3b5a35f993a4883b3261c0a59d8c8cfacea7015688510a7b5c21343f9c132"
+    }
+  ],
+  "patches": {
+    "complete.patch": {
+      "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+      "bytes": 395990,
+      "sha256": "9a30e9eb43b5beef67a38fdc1fb39e0fd74c74fba0290fe7c634ef0b47c823a7"
+    },
+    "introduced.patch": {
+      "base": "f6aaaf556fe99d53b46060da46691e154bffdfac",
+      "bytes": 334680,
+      "sha256": "72fd957e2ba5e94ade75ad1e3fdfaa8993de49bdda172ecac008264b6114dbb8"
+    }
+  },
+  "privateIndexOnly": true,
+  "foreignResiduesAndBlockedRawArchiveExcluded": true,
+  "sourceReviewIsNotExecution": true,
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "frozenAt": "2026-11-03T03:02:30.653788+00:00"
+}

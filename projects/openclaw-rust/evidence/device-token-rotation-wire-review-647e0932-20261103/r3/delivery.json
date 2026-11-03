@@ -1,0 +1,129 @@
+{
+  "sha": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "commitUrl": "https://github.com/bhrumom/fabushi-desktop/commit/0c7da50fcf457184f38d6a61b73f8e32810cff49",
+  "tree": "77aee57690a8d09cdf794f6459412ae26f604f1a",
+  "parent": "54b32b96ff827f4fee56fed494c866ca8c8b53ec",
+  "immutableReviewTree": "a66145d238e8dbfef934b9cba7891d3ee02f05ce",
+  "scopeEquality": "all16blobs and all3scope patches byteidentical across unrelatedplugin rebase",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "verified": true,
+  "verification": "GitHub connector/API exact commit,parent,tree,ref and16paths/fullbytes/Gitblob/bytecount/SHA256 readback; sourceidentityonly",
+  "files": [
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "3755a4440283550e6705b073052ad6fe1b90da45",
+      "bytes": 1439875,
+      "sha256": "d596b67e49eb5f5976b732484f7001fb940d5ec2db7188bc3a009d901f6938f4",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+      "blob": "c0cde59b089f4b6aef344218bcb1302a11826a86",
+      "bytes": 21324,
+      "sha256": "dbd65119e06daddd66376fe1ecbcf617485c636dac9ae9238f2e49ccb835a19a",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json",
+      "blob": "a598e9d752b87d2b732f96f587e04ab910bacae0",
+      "bytes": 38984,
+      "sha256": "488900f4fb3296f2164030598585b85edd5c626a7f5c91177f58be009342bb54",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
+      "blob": "e0915a36fe2f7489a9b4a83f350ac0d63435d681",
+      "bytes": 10144,
+      "sha256": "30577dca60ce4ad68b84bde23ffe72bb5ad1e99b5040092ab417891f0b031e2d",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/src/host_gateway_api.rs",
+      "blob": "127b340f120f931af778783aabcf338869fe0bc8",
+      "bytes": 12641,
+      "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+      "blob": "fb038d518350deebcb22e8f48a87e2d5a8c3b96e",
+      "bytes": 73833,
+      "sha256": "cc9baf679002cb9014038ffabfa8b16fe70e1a33daa15efe194e9bc3ce167e63",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "7d2ef247eaf0c2d08da62acef22251999403eb58",
+      "bytes": 155652,
+      "sha256": "da5bfc429a2a1fd07f715d8b6ee4286d95de6c8480abb34556fe0357adf8cc87",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "55b17de374467b25dc98b5d121f73116b029f85b",
+      "bytes": 100301,
+      "sha256": "e5799aebe0ad58569d93fecbec0134d5c9716c8c003471c4d44074b6f5ad91d4",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+      "blob": "943df188b148214c2c6104f03800ea91bd434c41",
+      "bytes": 20661,
+      "sha256": "7a14a0db374a123f0821e97289786221373c31ba78cfd97364b37451dbc8f46b",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/src/gateway_server.rs",
+      "blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+      "bytes": 97871,
+      "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/tests/gateway_protocol_contract.rs",
+      "blob": "bebb67faabed215bfd84e419e2f34eeeacb55a99",
+      "bytes": 9264,
+      "sha256": "7ec7d99da255d59e2c32aa56796fd421a4e8fd582144084de8455df7a9b70aaf",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/tests/device_pairing_retained_stream_contract.rs",
+      "blob": "3796823606b8af8ab81f09fbe7faf19ee5da9706",
+      "bytes": 123316,
+      "sha256": "6d4892d359b179c009c6aea817d669b287ddcf070075961a4524f0a0d9884038",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+      "bytes": 101805,
+      "sha256": "244eb53368362b10734203354b30bb899f9298c440008a93f9b4c128cfef6329",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "765a757720343f49b67127caedd2530ad4344db6",
+      "bytes": 439287,
+      "sha256": "5d90b663c442f38e1b9cbc8def1b96024899955819f6e2a36bf310e8f25d3bb3",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+      "blob": "19cc7a87a28f33188c0b775f02ea8565d8c6a39f",
+      "bytes": 100496,
+      "sha256": "16e35f72fce807194900f7ed6a76022a525903e9cf356ce576526cda7b3bc949",
+      "exactHPathAndFullBytesAPIReadback": true
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "blob": "ca038b1aa9f3a78a1951551e0a80d543142c08dd",
+      "bytes": 990401,
+      "sha256": "ccdea2e9d91837c7eb3789dcfff1fceaef2419b575c419b5124c40deaa012735",
+      "exactHPathAndFullBytesAPIReadback": true
+    }
+  ],
+  "observedAt": "2026-11-03T03:51:33.763460+00:00",
+  "execution": "not-run for currentR3H at readback; pending Actions observation",
+  "unitVerified": false,
+  "globalAcceptance": false
+}

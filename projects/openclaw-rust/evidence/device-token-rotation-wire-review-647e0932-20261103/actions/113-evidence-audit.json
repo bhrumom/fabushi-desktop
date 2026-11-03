@@ -1,0 +1,193 @@
+{
+  "at_utc": "2026-11-03T03:47:10.377641+00:00",
+  "subject_commit": "113c32276b99ed668be095e0be6ed164dffdf46d",
+  "subject_tree": "7644b264bf72ef57f7333a7f4f8d7accd2dd7af8",
+  "runtime_run": 41572993677,
+  "attempt": 1,
+  "portable_evidence_consistent": true,
+  "portable_result": "failed-or-incomplete",
+  "source_group_count": 50,
+  "source_input_count": 370,
+  "passing_group_count": 49,
+  "DTR_owner": {
+    "required": 44,
+    "passed": true
+  },
+  "DTR_HTTP": {
+    "required": 13,
+    "passed": 12,
+    "failed": 1,
+    "classification": "TEST_FLAW"
+  },
+  "retained_stream": {
+    "required": 27,
+    "passed": true
+  },
+  "App": {
+    "source_cases": 94,
+    "planned_commands": 191,
+    "source_inputs": 249,
+    "new_DTR_cases": 3,
+    "step19": "skipped",
+    "runtime_credit": false
+  },
+  "source_run": 41572993673,
+  "source_receipt_consistent": true,
+  "source_input_comparison": "26repository inputs match113 and1archived manifest matches; no post-materialization differences",
+  "Windows_media": "one original testfailure, TEST_FLAW;11othergroupspassed",
+  "Linux_media": "12groupspassed",
+  "completion_flags": {
+    "baseline_identity_accepted": false,
+    "ecosystem_compatibility_accepted": false,
+    "production_wiring_complete": false,
+    "release_accepted": false,
+    "responsibility_mapping_complete": false,
+    "rust_implementation_complete": false,
+    "source_closure_ready": false,
+    "ui_accepted": false
+  },
+  "unit_verified": false,
+  "independent_acceptance": false,
+  "global_closure": false,
+  "machine_proofs": [
+    {
+      "file": "113-portable-audit.json",
+      "bytes": 403366,
+      "sha256": "c8dbb7545215c8df6dec3e800bd8cf730e4e760a605a76a96f1e81e47718df72"
+    },
+    {
+      "file": "113-media-audit.json",
+      "bytes": 150557,
+      "sha256": "ea50f572244e29e884e36c1408dc6084286926df7f2db0d50dcf44542025cb81"
+    },
+    {
+      "file": "113-source-audit.json",
+      "bytes": 13191,
+      "sha256": "981b80dc8f38e7a19cad5690ac7b3917888e18802eecd81eb6f582b2448f9812"
+    },
+    {
+      "file": "113-dtr-http-failure-diagnosis.json",
+      "bytes": 22244,
+      "sha256": "dd0935a90c977615bcf9be7ebbd314cba96fb7451f5335727d9c6547f1d31bbe"
+    },
+    {
+      "file": "113-windows-failure-diagnosis.json",
+      "bytes": 5211,
+      "sha256": "4c436967cf447a62a036665b60fc6fa1ad0442d951e7025ead96513ce4f432e9"
+    },
+    {
+      "file": "113-vs-e19-source-selection-delta.json",
+      "bytes": 12403,
+      "sha256": "786c6749ac35bfbac4353d9ad4a96c6e2681585e7bfc1822af6016c913cb6b43"
+    },
+    {
+      "file": "113-secondary-link-preview-audit.json",
+      "bytes": 15857,
+      "sha256": "c8f356664225d528dac25717246de12647f07bd12830a2926d8a9acfe57e7b01"
+    },
+    {
+      "file": "113-final-portable-equivalence.json",
+      "bytes": 2075,
+      "sha256": "e75d7d4136ce29799df7b201f6ab40390022ce5b160d69e886be8dc21b2a6e7d"
+    }
+  ],
+  "terminal_job_status_pending": false,
+  "no_successor_credit": [
+    "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+    "fee4f179b640489774208fa3ce653a3868b641bf"
+  ],
+  "model_effort_as_assigned": "gpt-6-astra/xhigh",
+  "jobs": [
+    {
+      "id": 125709987310,
+      "name": "OCRM installation key restore boundary / Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "completed_at": "2026-11-03T03:36:15Z"
+    },
+    {
+      "id": 125709987601,
+      "name": "sqlite-native-path",
+      "status": "completed",
+      "conclusion": "failure",
+      "completed_at": "2026-11-03T03:46:13Z"
+    },
+    {
+      "id": 125709987605,
+      "name": "OCRM media cleanup / Windows",
+      "status": "completed",
+      "conclusion": "failure",
+      "completed_at": "2026-11-03T03:39:19Z"
+    },
+    {
+      "id": 125709987659,
+      "name": "rust-host",
+      "status": "queued",
+      "conclusion": null,
+      "completed_at": null
+    },
+    {
+      "id": 125709987832,
+      "name": "renderer",
+      "status": "completed",
+      "conclusion": "success",
+      "completed_at": "2026-11-03T03:35:01Z"
+    },
+    {
+      "id": 125709988911,
+      "name": "Pressure profiler / ${{ matrix.os }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "completed_at": "2026-11-03T03:34:18Z"
+    },
+    {
+      "id": 125709989111,
+      "name": "platform-worker",
+      "status": "completed",
+      "conclusion": "skipped",
+      "completed_at": "2026-11-03T03:34:18Z"
+    }
+  ],
+  "Linux_terminal": "failure",
+  "secondary_link_preview": "3 own selections pass, reused-MCP evidence missing because Automationproducer skipped",
+  "main_App_step19": "skipped",
+  "filtered_link_preview_App_cases": 3,
+  "final_artifact": {
+    "file": "113-artifact-13202776557.zip",
+    "bytes": 482770,
+    "sha256": "61b1efe5b495fde38565487fba655a72b44e641d3e1c3c5492421d489dacc3f7"
+  },
+  "full_terminal_Linux_log": {
+    "file": "113-linux-terminal-log.log",
+    "bytes": 4490018,
+    "sha256": "58d38e66554a9233bd61bd57a053c1abe922b0af3c0633aa0eff298a373b23dd"
+  },
+  "final_portable_members_identical": true,
+  "original_archive_files": [
+    {
+      "file": "113-artifact-13202711485.zip",
+      "bytes": 454256,
+      "sha256": "0162b1739d3cc812fa73377e818e3741d50641241447be8a2553cfc0aef6492c"
+    },
+    {
+      "file": "113-artifact-13202776557.zip",
+      "bytes": 482770,
+      "sha256": "61b1efe5b495fde38565487fba655a72b44e641d3e1c3c5492421d489dacc3f7"
+    },
+    {
+      "file": "113-artifact-13202815569.zip",
+      "bytes": 90146,
+      "sha256": "11eb22afdeb1b93ded828a44634e1d46faf589a71c6422677695bc454fc645e0"
+    },
+    {
+      "file": "113-artifact-13201689142.zip",
+      "bytes": 85829,
+      "sha256": "f67c37cc879da4664bdf5fbe1324dcae817b1f76f9b82889699d86aab089fb07"
+    },
+    {
+      "file": "113-artifact-13202660395.zip",
+      "bytes": 4951791,
+      "sha256": "44c1ec838fe9e576d30a19fbad395406bb26100f211ed2ad24aeb28543847c64"
+    }
+  ]
+}

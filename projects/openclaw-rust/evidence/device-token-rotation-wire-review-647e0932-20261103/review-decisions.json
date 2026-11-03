@@ -1,0 +1,620 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "DTR-v1",
+  "phase": "R3 both independent source lenses converged; exact0c7 original Actions audit in progress",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "sourceContextTree": "6b6eef057b3eff3d7990642b4e1314a16bc79ed9",
+  "specBeforeImplementation": {
+    "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+    "blob": "33e08b6f0ca7933e1b73603d87cfcc94fa8ad738",
+    "bytes": 15395,
+    "sha256": "3368f7ad01e958b840817bfb64804e9a9312e8c8616d41f4131007216af507e2"
+  },
+  "assessment": {
+    "path": "reviews/dtr-contract-assessment.md",
+    "sha256": "56c0741d6e99f95e4dc80261a8f606b5723250f557b225034b5c974ffd18608d",
+    "rootFullRead": true,
+    "sourceOnly": true,
+    "actualParentModel": "gpt-6-astra",
+    "actualParentEffort": "xhigh",
+    "hostCapacityInterruptionPreserved": true
+  },
+  "decisions": [
+    {
+      "id": "DTR-DEC-01",
+      "decision": "ADOPT",
+      "rationale": "Bound new wire method under same owner; preserve native DPA permission/shape/delivery. Closed schema and response include scopes and identity-bound delivery."
+    },
+    {
+      "id": "DTR-DEC-02",
+      "decision": "REJECT",
+      "rationale": "Do not adopt assessment recommendation that every old selected role/token must be valid. Fixed-U issuance can replace obsolete entries after current caller/target approval. Keep strict object container; current self proof still must be valid; explicit scopes may repair old selected grant."
+    },
+    {
+      "id": "DTR-DEC-03",
+      "decision": "COMPROMISE",
+      "rationale": "Use native checked SQL authority and no malformed decisive array coercion; selected missing/null scope fallback and created-time fallback follow actual source. Record native stored-data normalization differences for remaining compatibility."
+    },
+    {
+      "id": "DTR-DEC-04",
+      "decision": "ADOPT",
+      "rationale": "Node-only full-column invalidation follows current native owner convention; operator/otherrole exact preservation. Explicit U field-level/pending-surface parity gap remains applicable, not accepted."
+    },
+    {
+      "id": "DTR-DEC-05",
+      "decision": "ADOPT",
+      "rationale": "Scope trimming matches ECMAScript using existing Rust primitives, and result ordering uses UTF16. Preserve valid lifecycle/opaque issuer/unknown metadata, no issuer-generation enforcement claim; use checked safe integer time and exact committed result."
+    },
+    {
+      "id": "DTR-DEC-06",
+      "decision": "ADOPT",
+      "rationale": "MainSpec17.3 permits implementation on exact declared frozen source overlay. Do not invent a predecessor publication or all-global-green coding prerequisite. Root reconciles latest publication and exactsharedgate; actualfailuresstopdependentwork. Clarify specbeforeownerchanges."
+    },
+    {
+      "id": "DTR-DEC-07",
+      "decision": "ADOPT",
+      "rationale": "Reuse the unchanged native role implication predicate through a private core; DTR compares its ECMAScript-normalized scopes without the legacy wrapper retrimming NEL. Preserve legacy wrapper semantics and pin both positive and negative normalization controls.",
+      "supersededBy": "DTR-SEC-01",
+      "supersessionCount": 1
+    },
+    {
+      "id": "DTR-DEC-08",
+      "decision": "ADOPT",
+      "at": "2026-11-03T02:53:50.621899+00:00",
+      "rationale": "Interpret supported creation/last-use safe integers by numeric value, matching ECMAScript Number.isSafeInteger: a finite integral JSON number such as 1.0 or -0.0 within nonnegative safe range is valid and preserved. Integer-representation-only refusal would reject otherwise valid legacy JSON without a security benefit. Strings/fractions/out-of-range remain invalid; DRT revokedAtMs active-marker integer-only zero rule remains unchanged. Clarify the spec before the worker revises this newly authored code/test boundary."
+    },
+    {
+      "id": "DTR-DEC-09",
+      "decision": "FIX",
+      "at": "2026-11-03T02:58:45.696678+00:00",
+      "rationale": "Exact fixed-U token-utils API bytes are2217B/62lines and match7bb56b. Existing current ledger end_line100 cannot describe this blob. Preserve that old record in historical_source_refs, correct only current range to1-62, and reference batch metadata evidence. Original cached extra terminal newlines and requested reading windows remain historical; normalize exact source copies for review without changing U or promoting full reading/acceptance.",
+      "evidence": "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json"
+    },
+    {
+      "id": "DTR-SEC-01",
+      "decision": "FIX",
+      "severity": "P2",
+      "at": "2026-11-03T03:16:20.524728+00:00",
+      "rationale": "Fresh DTR-issued literal operator.admin+NEL is reinterpreted by shared stored/live/admitted grant consumers as canonicaladmin; realHTTP exemption reaches those consumers. This violates the newissuedgrant and is not deferredlegacydata. Reconcile credentialgrant interpretation in theexistingowner, preservelegacyDPArequestnormalization asaseparateadapter andadd actualissuance→successor-use owner/HTTP refusals withstateoracles. No secondpermissionstate or blanketvalidliteralgrantrefusal.",
+      "supersedes": "DTR-DEC-07 legacywrapper-preservation portion only; new concrete freshproducer/consumer failure was not weighed there"
+    },
+    {
+      "id": "DTR-LIFE-02",
+      "decision": "FIX",
+      "severity": "P2",
+      "at": "2026-11-03T03:16:20.524741+00:00",
+      "rationale": "Newprimary-role-only successordurableissuance mustpass existingcurrentness afterfreshlookup/reopen. Reconcile atissuance withoutimplicitlyresurrectingrole-withdrawn oldcredentials orwideningunrelatedcallerapproval. Preserve IMMEDIATE/onecommit/revision/rollback andaddrealretainedreconnect plusrolewithdrawalcontrols. Exactmechanism/specclarification precedescode."
+    },
+    {
+      "id": "DTR-LIFE-03",
+      "decision": "FIX",
+      "severity": "P2",
+      "at": "2026-11-03T03:22:08.324422+00:00",
+      "classification": "IMPL_BUG from direct source trace, no runtime reproduction",
+      "rationale": "The valid explicit-scope issuance fixture preserves an unused BLOB scopes_json fallback while approved_scopes_json is valid. Current caller admission eagerly decodes both columns through rotation_record and then rejects that fresh successor with 500. Decisive approval semantics must be consistent across issuance and successor consumption. Read only COALESCE(approved_scopes_json, scopes_json) for the shared current caller record; preserve legacy DPA target raw-scope reads and all decisive malformed-storage refusals, role withdrawal, issuer, fingerprint and live-grant checks. Strengthen the existing positive case to currentness/reopen; do not weaken its malformed fallback refusal."
+    },
+    {
+      "id": "DTR-INTEGRATION-01",
+      "decision": "FIX",
+      "at": "2026-11-03T03:22:08.324422+00:00",
+      "rationale": "Adopt incoming e19a0a2 complete current portable-runner extraction and 3438eb5 locked canonical inventory changes without duplicating their owners. Rebase DTR authored portable additions into the extracted existing-owner script, retaining incoming command order, strict names/counts, parser controls, input custody, media/palette and artifact consumers; preserve incoming source shard identities and false flags. No executable validation locally. Fresh focused source review and exact-H Actions remain required."
+    },
+    {
+      "id": "DTR-INTEGRATION-02",
+      "decision": "ADOPT",
+      "at": "2026-11-03T03:32:14.843319+00:00",
+      "incomingHead": "a27a3a6daec5377a56f61221b34ac3f3c8c4005e",
+      "rationale": "Two incoming commits add only nine media source/evidence archive files, no DTR, production, workflow or shared ledger input changes. Preserve them byte-for-byte, rebase the exact16 frozen DTR path blobs before fresh review/publication; no borrowed media result or semantic read claim. The first prelaunch R2 snapshot remains archived and was not independently reviewed."
+    },
+    {
+      "id": "DTR-INTEGRATION-03",
+      "decision": "ADOPT",
+      "at": "2026-11-03T03:38:36.060242+00:00",
+      "incomingHead": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+      "rationale": "Preserve existing media-owner three-file native Windows oracle correction and its source evidence without changing DTR inputs. Root read exact spec/test diff: explicit file:///C|/ refusal, supported file:/C|/ normalization positive, fixture diagnostic. Existing owner classifies TEST_FLAW by locked url2.5.8 source; root has not independently adjudicated that full dependency source and does not claim per-iteration runtime cause or corrected pass. Exact-H native Actions remain required. Frozen R2 DTR tree/reviews stay unchanged."
+    },
+    {
+      "id": "DTR-PERF-04",
+      "decision": "FIX",
+      "severity": "P2",
+      "at": "2026-11-03T03:40:26.787651+00:00",
+      "classification": "IMPL_BUG; source-derived complexity and shipping reachability, no runtime reproduction/benchmark",
+      "rationale": "Root read R2owner132-145/1406-1418, Gateway55-56/1901-1913/1998-2014, actualApp13340-13344/13378-13391. Unique input scopes incur O(n squared) Vec membership before pairing-authority admission; a valid read-only operator reaches that hook within existing body size. Replace only shared canonical scope membership with order-preserving set membership, retain ECMAScript spelling/first-seen output/DTR UTF16 sort and explicit legacyDPA/nativeidentity adapters. Add actual bound HTTP large-input403/zero-state-change/hook witness and current positive; no input cap, status reordering, syntheticbenchmark or assertion deletion. Frozen R2 review continues on7644; final reports will be separately fully read/adjudicated."
+    },
+    {
+      "id": "DTR-INTEGRATION-04",
+      "decision": "ADOPT",
+      "at": "2026-11-03T03:44:20.081369+00:00",
+      "incomingHead": "fee4f179b640489774208fa3ce653a3868b641bf",
+      "rationale": "Preserve incoming12-path existing Runner prior-root production/test/spec/evidence change. Root read complete shared workflow and portable-capture diff: two explicit selected groups, existing strict count branch, after-App historical reader step and failure evidence credential exclusion. Merge only rootDTR14thHTTPname/scope additions through those same two owners; no second runner or broad revalidation mechanism. No independent semantic review or runtime acceptance claimed for incoming PRID. RootDTRspec/normalizer/test bytes and unrelated worktree residues remain intact; frozen R2 remains unchanged."
+    },
+    {
+      "id": "DTR-CI-01",
+      "decision": "FIX",
+      "classification": "TEST_FLAW",
+      "at": "2026-11-03T03:47:25.145440+00:00",
+      "subject": "113c32276b99ed668be095e0be6ed164dffdf46d",
+      "run": 41572993677,
+      "job": 125709987601,
+      "artifact": 13202711485,
+      "artifactSHA256": "0162b1739d3cc812fa73377e818e3741d50641241447be8a2553cfc0aef6492c",
+      "targetLogSHA256": "136f0a784ad135dc06be80b4d0aa1f196efb12b9da8b4b3d638dcc940aa3efd2",
+      "case": "token_rotate_wire_http_issued_nel_literal_never_becomes_pairing_or_admin_at_adjacent_consumers",
+      "originalFailure": "testsource1146 errors.len expected1 observed0; actual target12passed1failed/cargo101/capture0",
+      "sourceCause": "Root read exact113test1130-1158 and gateway2058-2070. on_command_error is deliberately restricted to status>=500. First loop actual403/redaction/fullSQL/boundhook assertions passed before invalid telemetry expectation. No implementation bypass or timing explanation.",
+      "repair": "Keep all valid403/SQL/secrets/hook counters/currentpositive/500report controls. Assert4xx leavesbotherrorandsuccessreportcountsunchanged; for DTR use existing bound admission context to preserve request-id witness. Do not expand production telemetry or deletevalidassertions. New14HTTP complete target required in Actions; oldHAppstep19wasSKIPPED and receives no credit.",
+      "specBeforeOracleEdit": {
+        "blob": "c0cde59b089f4b6aef344218bcb1302a11826a86",
+        "bytes": 21324,
+        "sha256": "dbd65119e06daddd66376fe1ecbcf617485c636dac9ae9238f2e49ccb835a19a"
+      }
+    },
+    {
+      "id": "DTR-INTEGRATION-05",
+      "decision": "ADOPT",
+      "at": "2026-11-03T03:49:48.909868+00:00",
+      "incomingHead": "54b32b96ff827f4fee56fed494c866ca8c8b53ec",
+      "rationale": "Preserve four unrelated plugin-loader production/test commits and full API identities. They touch no DTR review path; exact16 scoped blobs and all scoped patches remain unchanged. Keep immutable R3 review tree/manifest untouched; record separate publication base/tree with identical scope. No independent plugin semantic review or runtime credit claimed."
+    },
+    {
+      "id": "DTR-INTEGRATION-06",
+      "decision": "ADOPT",
+      "at": "2026-11-03T03:57:08.192788+00:00",
+      "incomingHead": "8e5cee76ebbe6e748dc6a8dc87d73142bf04109b",
+      "rationale": "Full API readback and exact Git object import of8 incoming plugin/media commits and22 final paths; no DTR scope overlap. Preserve new drive-pipe compatibility implementation and its historical oracle correction without substituting source conclusions for observed runtime evidence. No acceptance transfer to current target."
+    }
+  ],
+  "status": {
+    "implementation": "source-authored-frozen-R3",
+    "execution": "113partialfailure; R3not-run",
+    "unitVerified": false,
+    "globalAcceptance": false
+  },
+  "createdAt": "2026-11-03T02:39:04.739887+00:00",
+  "originalSpecBeforeImplementation": {
+    "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+    "blob": "dca45ffddc2a9ef5197ee5a1e27f837f0b9375e2",
+    "bytes": 15238,
+    "sha256": "6d448b1b9fdf7cb3c7893ba727f9f234d92521578fcdd05c41cad84d8efb3483"
+  },
+  "implementationBase": {
+    "commit": "d26d44d1441c05e3dbb7dc18eb908ab042cbdae9",
+    "declaredOverlayTree": "6b6eef057b3eff3d7990642b4e1314a16bc79ed9",
+    "prospectivePublicationTree": "f6df6e83800ec8283d893ffb962f7c7dc3fc734b",
+    "ownerBeforeBlob": "3a81416b0c088e53cbe2ea5058a4dcb0762a599b",
+    "DRTUnitVerified": false
+  },
+  "ownerWorker": {
+    "name": "dtr_owner",
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "allowed": [
+      "source/host/src/device_pairing_owner.rs",
+      "source/host/tests/device_token_rotation_wire_authority_contract.rs"
+    ],
+    "sharedContract": "DTR-v1",
+    "testsRun": false
+  },
+  "updatedAt": "2026-11-03T03:51:33.763460+00:00",
+  "networkWorker": {
+    "name": "dtr_network",
+    "model": "gpt-6-astra",
+    "effort": "xhigh",
+    "allowed": [
+      "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+      "source/host/tests/device_pairing_retained_stream_contract.rs"
+    ],
+    "sharedContract": "DTR-v1",
+    "testsRun": false
+  },
+  "rootImplementation": {
+    "gatewayHook": "rotate_device_token optional sealed proof and ceiling, fixed default403",
+    "appTests": "three real existing-owner/node-projection and source-binding controls; shared prior fixture visibility only",
+    "ledger": "existing OCRM lifecycle responsibility and nine RTM rows, all status/flags preserved",
+    "DRTFrozenSource": "32509841d7c378a96a8c5ab362892397bea95f70",
+    "execution": "not-run"
+  },
+  "hostInterruptions": [
+    {
+      "worker": "dtr_network",
+      "cause": "Selected model is at capacity",
+      "stage": "11 HTTP and6 additive retained cases authored; final handoff/source check interrupted",
+      "sameConfiguredPerformerResumed": true,
+      "noCompletedVerdictOverwritten": true
+    },
+    {
+      "worker": "dtr_owner",
+      "cause": "Selected model is at capacity",
+      "stage": "owner+37 authority cases authored; lifecycle clarification/source check interrupted",
+      "sameConfiguredPerformerResumed": true,
+      "noCompletedVerdictOverwritten": true
+    }
+  ],
+  "sourceEvidenceAuthoring": [
+    {
+      "priorInterruptedAttempt": "Missing source_url key on normalization pack member; stopped before ledger mutation. Explicit exact-U URL and acquisition field variants used on resume.",
+      "productExecution": "none"
+    }
+  ],
+  "frozenReview": {
+    "round": 3,
+    "tree": "a66145d238e8dbfef934b9cba7891d3ee02f05ce",
+    "base": "fee4f179b640489774208fa3ce653a3868b641bf",
+    "previousReview": "7644b264bf72ef57f7333a7f4f8d7accd2dd7af8",
+    "manifest": "reviews/dtr-r3/manifest.json"
+  },
+  "workerHandoffs": [
+    {
+      "path": "reviews/dtr-owner-implementation.md",
+      "bytes": 14303,
+      "sha256": "09de03911e20dcbbb461401fa305abd70e189ff6895b62879e96594f0b674aad",
+      "rootFullReportRead": true,
+      "sourceOnly": true
+    },
+    {
+      "path": "reviews/dtr-network-implementation.md",
+      "bytes": 13651,
+      "sha256": "7e336b4af5ac3ef0d6c8e70f2ff486690a38ea4fb60359b14c5caeafb4f44307",
+      "rootFullReportRead": true,
+      "sourceOnly": true
+    }
+  ],
+  "reviewRounds": [
+    {
+      "round": 1,
+      "tree": "5d8dd303c69999f1f8d68d687ab74b779d675464",
+      "general": {
+        "path": "reviews/dtr-r1-security-review.md",
+        "sha256": "6cfa7272fac5da1637fb36e4add981660d5f3b71a0128e0a19401c9613494ddd",
+        "bytes": 15314,
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "forkTurns": "none",
+        "rootFullReportRead": true,
+        "verdict": "REQUEST_CHANGES"
+      },
+      "structure": {
+        "path": "reviews/dtr-r1-structure-review.md",
+        "sha256": "8612703875f0f679f730d37c868f4891c07ba2a940fda6208e15b3edaa55d358",
+        "bytes": 18266,
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "forkTurns": "none",
+        "rootFullReportRead": true,
+        "verdict": "APPROVE",
+        "requests": 0
+      }
+    }
+  ],
+  "fixContractBeforeTests": {
+    "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+    "blob": "17387a134eb873b3db9d86b7f27cbb321732f7eb",
+    "bytes": 17500,
+    "sha256": "26b0b6ca1734f89d0983996691f5ec775a0738b69df74f98c618f0252cd2524e",
+    "requirements": [
+      "DTR-SEC-01",
+      "DTR-LIFE-02"
+    ],
+    "mechanism": "owner assessment pending; fixedpublicinvariants allow independent networkoracle authoring"
+  },
+  "fixMechanismBeforeImplementation": {
+    "at": "2026-11-03T03:18:06.966764+00:00",
+    "specBlob": "3ee57eb95a5d719f0d38cc9ac328c563fa1350ff",
+    "bytes": 19066,
+    "sha256": "67860483ba50a8fcc6a653a0eec997ef5a673334e075ba1080da76edb7bd98e2",
+    "basis": "Root fullsecurityreport and directproducer/consumer/U source reads; originalownerboundedassessment interim recommendation; finalassessmentreport stillpendingfullread",
+    "scope": "Sameowner only; noencodingmarker/schema/newpermissionstore; unchangedpublicAPI",
+    "scopePolicy": "CanonicalECMA stored/live/admitted grants and scopeproducers/pendingcomparisons; exact adaptedrequestedcomparison; legacyexplicitDPArequestRusttrim preserved separately; roleIDs unchanged",
+    "primaryRole": "Appendonlyselectedalreadyapprovedprimary tooriginalrolesarrayin sameUPDATE, preserveeveryoldstring/order; existingnormalizedmembership keepsrawbytes; caller currentness stillrolesarray-only",
+    "cases": "Retain all valid existing owner/HTTP/retained/App asserts; add causalnewsuccessor use/currentness/reopen/withdrawal/rollback controls"
+  },
+  "ownerFixAssessment": {
+    "path": "reviews/dtr-owner-fix-assessment.md",
+    "sha256": "178dce39b2258a7a251ac837df144f3d778484bb739d40a35c63028b720a666c",
+    "rootFullReportRead": true,
+    "adjudication": "Adopt bounded existing-owner scope normalization and atomic selected-role materialization; implementation authorized after recorded spec mechanism."
+  },
+  "decisiveApprovalSpecBeforeImplementation": {
+    "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+    "gitBlob": "e3c3f5ffa7debd986ae2888b7d60519ee8f772ae",
+    "sha256": "1cf46dd3f13c67a8b3b9da579f51e1ece8c18bec6e7a4f020568e046010e8aca",
+    "bytes": 19679,
+    "at": "2026-11-03T03:22:08.324422+00:00"
+  },
+  "incomingSharedIntegration": {
+    "head": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+    "tree": "b544c1d377ca82618cdadcf5106cb3c10d82411b",
+    "manifest": "reviews/dtr-incoming-343/manifest.json",
+    "sourceOnly": true,
+    "rootSerialIntegration": true,
+    "workflowBytes": 436879,
+    "scopedAuthority": "pending",
+    "execution": "not-run"
+  },
+  "r2WorkerHandoffs": [
+    {
+      "path": "reviews/dtr-owner-r2-implementation.md",
+      "bytes": 15940,
+      "sha256": "d87b73c411a89561f83722bee357da684334ea0dd90617825274793756ef794d",
+      "rootFullReportRead": true,
+      "sourceOnly": true
+    },
+    {
+      "path": "reviews/dtr-network-r2-implementation.md",
+      "bytes": 12257,
+      "sha256": "3a0d26d2a7bfec10de85445a27b410bb30937b731d9ec42a2d35c7bfa8fead46",
+      "rootFullReportRead": true,
+      "sourceOnly": true
+    }
+  ],
+  "publicationIntent": {
+    "kind": "recoverable unverified production checkpoint",
+    "reason": "Complete coherent source/cases frozen; OCRM17.4 permits timely cloud save before verdict. Fresh independent R2 reviews and exact-H Actions run concurrently; all authority/coverage/runtime/global claims remain unaccepted.",
+    "paths": 16
+  },
+  "publicationCheckpoint": {
+    "sha": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "commitUrl": "https://github.com/bhrumom/fabushi-desktop/commit/0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "tree": "77aee57690a8d09cdf794f6459412ae26f604f1a",
+    "parent": "54b32b96ff827f4fee56fed494c866ca8c8b53ec",
+    "immutableReviewTree": "a66145d238e8dbfef934b9cba7891d3ee02f05ce",
+    "scopeEquality": "all16blobs and all3scope patches byteidentical across unrelatedplugin rebase",
+    "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+    "verified": true,
+    "verification": "GitHub connector/API exact commit,parent,tree,ref and16paths/fullbytes/Gitblob/bytecount/SHA256 readback; sourceidentityonly",
+    "files": [
+      {
+        "path": "projects/openclaw-rust/parity-ledger.json",
+        "blob": "3755a4440283550e6705b073052ad6fe1b90da45",
+        "bytes": 1439875,
+        "sha256": "d596b67e49eb5f5976b732484f7001fb940d5ec2db7188bc3a009d901f6938f4",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+        "blob": "c0cde59b089f4b6aef344218bcb1302a11826a86",
+        "bytes": 21324,
+        "sha256": "dbd65119e06daddd66376fe1ecbcf617485c636dac9ae9238f2e49ccb835a19a",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/device-token-rotation-wire-source-647e0932-20261103.json",
+        "blob": "a598e9d752b87d2b732f96f587e04ab910bacae0",
+        "bytes": 38984,
+        "sha256": "488900f4fb3296f2164030598585b85edd5c626a7f5c91177f58be009342bb54",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/app/src/tests/device_token_rotation_wire_tests.rs",
+        "blob": "e0915a36fe2f7489a9b4a83f350ac0d63435d681",
+        "bytes": 10144,
+        "sha256": "30577dca60ce4ad68b84bde23ffe72bb5ad1e99b5040092ab417891f0b031e2d",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/src/host_gateway_api.rs",
+        "blob": "127b340f120f931af778783aabcf338869fe0bc8",
+        "bytes": 12641,
+        "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/tests/device_token_rotation_wire_gateway_contract.rs",
+        "blob": "fb038d518350deebcb22e8f48a87e2d5a8c3b96e",
+        "bytes": 73833,
+        "sha256": "cc9baf679002cb9014038ffabfa8b16fe70e1a33daa15efe194e9bc3ce167e63",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+        "blob": "7d2ef247eaf0c2d08da62acef22251999403eb58",
+        "bytes": 155652,
+        "sha256": "da5bfc429a2a1fd07f715d8b6ee4286d95de6c8480abb34556fe0357adf8cc87",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "blob": "55b17de374467b25dc98b5d121f73116b029f85b",
+        "bytes": 100301,
+        "sha256": "e5799aebe0ad58569d93fecbec0134d5c9716c8c003471c4d44074b6f5ad91d4",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/app/src/tests/device_pairing_revocation_tests.rs",
+        "blob": "943df188b148214c2c6104f03800ea91bd434c41",
+        "bytes": 20661,
+        "sha256": "7a14a0db374a123f0821e97289786221373c31ba78cfd97364b37451dbc8f46b",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/src/gateway_server.rs",
+        "blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+        "bytes": 97871,
+        "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/tests/gateway_protocol_contract.rs",
+        "blob": "bebb67faabed215bfd84e419e2f34eeeacb55a99",
+        "bytes": 9264,
+        "sha256": "7ec7d99da255d59e2c32aa56796fd421a4e8fd582144084de8455df7a9b70aaf",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/tests/device_pairing_retained_stream_contract.rs",
+        "blob": "3796823606b8af8ab81f09fbe7faf19ee5da9706",
+        "bytes": 123316,
+        "sha256": "6d4892d359b179c009c6aea817d669b287ddcf070075961a4524f0a0d9884038",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/src/device_pairing_owner.rs",
+        "blob": "12125c53b84a1cbd1b46cd4a2860c7970894f0ed",
+        "bytes": 101805,
+        "sha256": "244eb53368362b10734203354b30bb899f9298c440008a93f9b4c128cfef6329",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "blob": "765a757720343f49b67127caedd2530ad4344db6",
+        "bytes": 439287,
+        "sha256": "5d90b663c442f38e1b9cbc8def1b96024899955819f6e2a36bf310e8f25d3bb3",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/tests/device_token_rotation_wire_authority_contract.rs",
+        "blob": "19cc7a87a28f33188c0b775f02ea8565d8c6a39f",
+        "bytes": 100496,
+        "sha256": "16e35f72fce807194900f7ed6a76022a525903e9cf356ce576526cda7b3bc949",
+        "exactHPathAndFullBytesAPIReadback": true
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "blob": "ca038b1aa9f3a78a1951551e0a80d543142c08dd",
+        "bytes": 990401,
+        "sha256": "ccdea2e9d91837c7eb3789dcfff1fceaef2419b575c419b5124c40deaa012735",
+        "exactHPathAndFullBytesAPIReadback": true
+      }
+    ],
+    "observedAt": "2026-11-03T03:51:33.763460+00:00",
+    "execution": "not-run for currentR3H at readback; pending Actions observation",
+    "unitVerified": false,
+    "globalAcceptance": false
+  },
+  "r3ContractBeforeCode": {
+    "path": "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
+    "blob": "906c9819fb9c4062b66acb3686c86bc305f4513e",
+    "bytes": 20938,
+    "sha256": "275db6c420df36550a13cd6fd9b5375455aa323ec9bc91457aaa7f7ea8985b1a",
+    "base": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+    "previousReviewTree": "7644b264bf72ef57f7333a7f4f8d7accd2dd7af8"
+  },
+  "ancestorEvidenceAssessment": {
+    "subject": "e19a0a265e400a4c9b1d96520c84fb612a3843e8",
+    "tree": "5be2d7ca128dae5fefc8f7551e7088934daf19ac",
+    "sourceRun": 41571103969,
+    "runtimeRun": 41571103928,
+    "rootFullReportAndAggregateRead": true,
+    "sourceOnlyInterpretation": "Independent agent parsed original Actions artifacts against immutable source. Root read complete report+aggregate and independently observed terminal Linux success and job identities through GitHub API; root does not claim to have rerun every leaf parser or executed product tests.",
+    "portable": {
+      "groups": 48,
+      "inputs": 366,
+      "DRT": [
+        27,
+        10,
+        20
+      ],
+      "result": "source-selected original commands/names/logs/exits match"
+    },
+    "app": {
+      "selectedOuterCases": 91,
+      "commands": 185,
+      "inputs": 247,
+      "DRTCases": 3,
+      "binaryHash": "Actions-reported; archived binary bytes absent"
+    },
+    "source": "62130 tracked identities and structural G02; 23/26 repository hashes match H, 3 deliberate post-materialization inputs differ and raw generated versions absent; generated inventory matches. Full dependency/LFS/semantic closure and scoped unit acceptance open.",
+    "Windows": "original22passed1failed; TEST_FLAW source-inferred triple-slash pipe-drive unsupported, original log does not identify iteration; correction78 has no runtime credit",
+    "macOS": "queued/no evidence",
+    "noDTRExecutionCredit": true,
+    "unitVerified": false,
+    "globalAcceptance": false,
+    "reports": [
+      {
+        "path": "ci-recovery/drt-exact/e19-evidence-audit.md",
+        "bytes": 12124,
+        "sha256": "22ffb35cb44517c64bdd0e2d0e58c79fb8b9c0b778325eaec26a844b878a226d"
+      },
+      {
+        "path": "ci-recovery/drt-exact/e19-evidence-audit.json",
+        "bytes": 6391,
+        "sha256": "9530303d1f3d991aa766014779994b3d222fab52a565cd410546dd3e620eb73d"
+      }
+    ]
+  },
+  "r3RootIntegration": {
+    "phase": "implementation source authored; not executed",
+    "base": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+    "scope": "DTR-PERF-04 same-owner BTreeSet membership; actual100000distinctscope boundHTTP read-only refusal/completeSQL/reopen/credentialcurrentness/authorizedpositive; existing44authority/27retained/3App assertions unchanged; fullHTTP selection14 in both existing lanes",
+    "oracleSourceCorrection": "During authoring root read actual GatewayCommandError::Forbidden Display and included its existing forbidden prefix before freeze; no executed failure or oracle weakening.",
+    "additionalOracleFix": "DTR-CI-01 original113 NEL HTTP403telemetry expectation fixedtoexisting4xxpolicy; allvalidassertions and500positivecontrols preserved. Rootread actualoriginalfailurelogandcausalsource."
+  },
+  "r2IndependentReports": [
+    {
+      "lens": "structure/reuse/performance",
+      "worker": "dtr_structure_r2",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "tree": "7644b264bf72ef57f7333a7f4f8d7accd2dd7af8",
+      "path": "reviews/dtr-r2-structure-review.md",
+      "bytes": 20777,
+      "sha256": "301fcb83a8a6fff4cf823c266c71f119fad0b3f756859dd8330976c208b061dc",
+      "verdict": "REQUEST_CHANGES",
+      "findings": [
+        {
+          "id": "DTR-R2-STRUCT-01",
+          "severity": "P2",
+          "rootDecision": "FIX",
+          "decisionRef": "DTR-PERF-04",
+          "rationale": "Root independently confirmed shipping low-privilege reachability and quadratic source complexity before source repair; spec906c9819 preceded productionedit. Order-preserving borrowed BTreeSet implementation and actualHTTPlargeinput/currentpositive authored. Freshreview+exactHActions stillrequired."
+        }
+      ],
+      "rootFullRead": true,
+      "sourceOnly": true,
+      "unaffectedContractAssessment": "Noadditionalblocker in inspectedsharedowner/transaction/currentness/retained/App/CI integration; doesnotgrantfullsource/runtimeacceptance"
+    },
+    {
+      "lens": "GENERAL/security/lifetime",
+      "worker": "dtr_security_r2",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "tree": "7644b264bf72ef57f7333a7f4f8d7accd2dd7af8",
+      "path": "reviews/dtr-r2-security-review.md",
+      "bytes": 19885,
+      "sha256": "11f9390496e75347b992eb8ac7427c8d659e089e202d40fbc1bf025e6d2baf32",
+      "verdict": "SOURCE_ONLY_ACCEPT",
+      "findings": [],
+      "rootFullRead": true,
+      "sourceOnly": true,
+      "runtimeLimit": "Independent source no blocker does not supersede original113 HTTP TEST_FLAW or the structureP2; R3freshreview+newHActions stillrequired"
+    }
+  ],
+  "r3IndependentSourceReviews": [
+    {
+      "path": "reviews/dtr-r3-security-review.md",
+      "bytes": 19566,
+      "sha256": "b4ea78b5e0699b3fcbdcaa451ad2705115c5cf2c5372dc754fca18c56be1571e",
+      "actualModel": "gpt-6-astra",
+      "actualEffort": "xhigh",
+      "verdict": "APPROVE_SOURCE_R3",
+      "findings": 0,
+      "rootFullRead": true
+    },
+    {
+      "path": "reviews/dtr-r3-structure-review.md",
+      "bytes": 19069,
+      "sha256": "0ae408472d103713e2957dacde034fafd9fb069c80d64a5981b08fae09abf227",
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "xhigh",
+      "verdict": "APPROVED_SOURCE_R3",
+      "findings": 0,
+      "rootFullRead": true
+    }
+  ],
+  "r3ReviewBinding": {
+    "immutableReviewTree": "a66145d238e8dbfef934b9cba7891d3ee02f05ce",
+    "publishedSubject": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "publishedTree": "77aee57690a8d09cdf794f6459412ae26f604f1a",
+    "identityEvidence": "reviews/dtr-r3/delivery.json",
+    "scope": "16 identical path blobs plus identical scoped patches; publication-base unrelated plugin files not independently accepted",
+    "runtimeCredit": false
+  },
+  "rootRead113FinalReport": {
+    "path": "ci-recovery/drt-exact/113-evidence-audit.md",
+    "bytes": 11123,
+    "sha256": "306309491f371761c9a84948c3fe616569fffc8dc6f170e01ffcb128fa67ce26",
+    "rootFullRead": true,
+    "classification": "original DTR HTTP 12 passed1 failed from TEST_FLAW; App skipped; secondary reused composition receipt missing; no currentH credit"
+  }
+}
