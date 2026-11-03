@@ -389,7 +389,7 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
             false,
         )
         .expect("forward preserving origin author");
-    assert_eq!(bob_forward["destinations"][0]["completed"], json!(true));
+    assert_eq!(bob_forward["destinations"][0]["status"], json!("sent"));
     let carol_forward = session
         .forward_human_message(
             &conversation_id,
@@ -400,7 +400,7 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
             false,
         )
         .expect("forward dropping origin author");
-    assert_eq!(carol_forward["destinations"][0]["completed"], json!(true));
+    assert_eq!(carol_forward["destinations"][0]["status"], json!("sent"));
 
     let bob_forward_matches = dispatch_production_session_gateway_call(
         &session,
