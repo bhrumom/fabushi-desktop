@@ -449,14 +449,21 @@ impl PluginSkillsAdmissionQuery for PluginSkillsLiveAdmission {
     fn acquire(&self, plugin_id: &str) -> Result<Option<PluginSkillsAdmissionLease>, String> {
         let lock = AdmissionFileLock::shared(&self.sand_root_dir)?;
         let durable = load_uninstall_image(&get_plugin_skills_dir(&self.sand_root_dir))?;
-        let live = self.state.lock()
+        let mut live = self.state.lock()
             .map_err(|_| "plugin skills live admission poisoned".to_string())?;
+        let locally_owned_refresh = live.refresh.as_ref().is_some_and(|refresh| {
+            durable.state.refresh_intent.as_ref() == Some(&refresh.operation_id)
+        });
+        // A completed refresh in another process releases a stale recovery
+        // marker here; an active/unknown refresh remains a global refusal.
+        live.recovery_required = durable.state.refresh_intent.is_some() && !locally_owned_refresh;
+        live.denied.retain(|id, _| durable.state.auth_refusals.contains_key(id));
+        live.durable = durable.clone();
         let denied = live.recovery_fault
             || live.recovery_required
             || live.denied.contains_key(plugin_id)
-            || live.durable.state.auth_refusals.contains_key(plugin_id)
-            || durable.state.refresh_intent.is_some()
             || durable.state.auth_refusals.contains_key(plugin_id)
+            || durable.state.refresh_intent.is_some()
             || durable.state.confirmed.contains(plugin_id)
             || durable.state.pending.contains_key(plugin_id);
         if denied {
