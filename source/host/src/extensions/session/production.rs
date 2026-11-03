@@ -2082,7 +2082,14 @@ impl ProductionSessionWorkers {
         };
         let marked = pending.get("forwardBatchOwned").and_then(serde_json::Value::as_bool) == Some(true);
         let context = pending.get("forwardContext");
-        if !marked && context.is_none() && !nonce.starts_with("human-forward-") {
+        let claims_forward_source = context.is_some_and(|value| {
+            value.get("batchVersion").is_some()
+                || ["sourceConversationId", "sourceEntryId", "requestId"].iter()
+                    .any(|key| value.get(*key).is_some())
+        });
+        // Ordinary reply metadata can use forwardContext without claiming
+        // ownership of a source batch. Do not capture unrelated Human sends.
+        if !marked && !claims_forward_source && !nonce.starts_with("human-forward-") {
             return Ok(());
         }
         if !self.pending_human_forward_is_batch_owned(conversation_id, pending)? {
@@ -2110,7 +2117,19 @@ impl ProductionSessionWorkers {
                 && batch.request_id == request && batch.source_entry_id == source_entry
                 && batch.context == *context
                 && pending.get("content").and_then(serde_json::Value::as_str) == Some(batch.text.as_str())
-                && batch.attachments.as_slice() == attachments.as_slice()
+                && batch.attachments.len() == attachments.len()
+                && batch.attachments.iter().zip(attachments.iter()).all(|(source, staged)| {
+                    // The forward journal retains source-only media metadata.
+                    // Session's durable outbox normalizes only name, path and
+                    // immutable snapshot: compare that view, not source-only keys.
+                    staged.as_object().is_some_and(|item| item.keys().all(|key|
+                        matches!(key.as_str(), "name" | "path" | "forwardSnapshot")))
+                        && source.get("name").and_then(serde_json::Value::as_str).map(str::trim)
+                            == staged.get("name").and_then(serde_json::Value::as_str)
+                        && source.get("path").and_then(serde_json::Value::as_str).map(str::trim)
+                            == staged.get("path").and_then(serde_json::Value::as_str)
+                        && source.get("forwardSnapshot") == staged.get("forwardSnapshot")
+                })
                 && batch.destinations.iter().any(|target|
                     target.conversation_id == conversation_id && target.client_nonce == nonce)
         }) {
@@ -2267,10 +2286,15 @@ impl ProductionSessionWorkers {
                 if receipts.len() != original.len() {
                     return Err("remote Human acknowledgement cannot settle incomplete attachment uploads".into());
                 }
-                if receipts.len() != remote.attachments.len()
-                    || receipts.iter().zip(remote.attachments.iter()).any(|(local, echoed)|
-                        local.resource_id != echoed.resource_id
-                            || local.name != echoed.name
+                if receipts.len() != remote.attachments.len() {
+                    return Err("remote Human acknowledgement changed dispatched resources".into());
+                }
+                if receipts.iter().zip(remote.attachments.iter())
+                    .any(|(local, echoed)| local.resource_id != echoed.resource_id) {
+                    return Err("remote Human acknowledgement changed dispatched resources".into());
+                }
+                if receipts.iter().zip(remote.attachments.iter()).any(|(local, echoed)|
+                        local.name != echoed.name
                             || local.size != echoed.size
                             || local.content_type != echoed.content_type
                             || local.created_at != echoed.created_at

@@ -9589,11 +9589,10 @@ fn shipping_human_forward_revoked_source_during_post_rejects_concurrent_history_
     assert_eq!(retained_after_post[0]["clientNonce"], pending[0]["clientNonce"]);
     assert_eq!(retained_after_post[0]["delivery"], "pending");
     let nonce = pending[0]["clientNonce"].as_str().unwrap().to_string();
-    runtime.shutdown(); drop(target_owner); drop(runtime);
-
-    // Permission restoration must recover the same journal/nonce after restart.
+    // Restore while the original owner is live. Shutdown closes retained
+    // SQLite handles, so restoring afterwards would be an invalid test fixture.
     source_owner.update_transcript_entry(source_entry_id, &original_source).unwrap().unwrap();
-    drop(source_owner);
+    runtime.shutdown(); drop(target_owner); drop(source_owner); drop(runtime);
     let restarted = human_message_fixture_runtime(&root, &server.url);
     let settled = dispatch(&restarted, "retryHumanMessage",
         json!({"conversationId":target,"clientNonce":nonce}));

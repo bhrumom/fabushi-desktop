@@ -435,6 +435,23 @@
       ],
       "workflow": "native-service-contracts.yml selects 80 Human, 18 Coordinator, 25 actual Chromium Renderer",
       "execution": "not run on new containing H; previous a9 runs are historical only"
+    },
+    "causal_ci_repair": {
+      "failed_head": "826e3f3cde7a450eab23a98cc0751f9326ce141a",
+      "run": 41598180402,
+      "job": 125790380486,
+      "actual": "68 passed/12 failed of 80 Human",
+      "classification": [
+        "IMPLEMENTATION: comparing journal source-only extra metadata with normalized pending attachments falsely denies forwarding; compare the exact outbox projection, preserving snapshot",
+        "IMPLEMENTATION: ordinary reply forwardContext without source keys was incorrectly treated as forward-owned; respect existing source marker semantics",
+        "ORACLE COMPATIBILITY: resource-ID mismatch must retain existing resource-ID error before metadata error",
+        "FIXTURE: restoring source through already closed SQLite owner returns None; restore before runtime.shutdown"
+      ],
+      "changedBlobs": {
+        "source/host/src/extensions/session/production.rs": "53bb6d18980dfe915a32bfa3639c195af1302384",
+        "source/host/tests/session_gateway_contract.rs": "4b67de8519c2c9f9274a7a813d50fe2b6bb5763b"
+      },
+      "retest": "not-run on repair H at authoring; do not promote old failed H or earlier scoped passes"
     }
   }
 }
