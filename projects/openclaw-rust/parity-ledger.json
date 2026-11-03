@@ -15891,7 +15891,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:). HHP-v2 connects only the existing direct service local explicit HTML contract: exact opt-in on .html/.htm validates actual bounded bytes, returns text/html and document with unchanged bytes, and leaves generated trust absent. The broad remote, image-optimization, chat and permission-scope responsibilities remain applicable and are not accepted by this slice.",
+      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:). HHP-v2 connects only the existing direct service local explicit HTML contract: exact opt-in on .html/.htm validates actual bounded bytes, returns text/html and document with unchanged bytes, and leaves generated trust absent. The broad remote, image-optimization, chat and permission-scope responsibilities remain applicable and are not accepted by this slice. FUA-v1 rejects every nonlocal file URL authority and native conversion failure before the existing local-reader boundary, and checks workspace-resolved network namespaces before filesystem work. Native file URL bytes and filenames remain covered by actual loader/service controls; this is not a public Gateway registration or general read-authority completion.",
       "blocker_ids": [
         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001"
       ],
@@ -15908,7 +15908,9 @@
         "projects/openclaw-rust/dossiers/web-media-remote-workspace-scoped.md",
         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
         "projects/openclaw-rust/scripts/capture_media_cleanup.py",
-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json"
       ],
       "existing_owner_candidates": [
         {
@@ -15945,7 +15947,10 @@
         "Percent-encoded file URLs properly decoded",
         "Exact explicit mode plus an HTML extension invokes the existing byte/shape policy after roots and bounded read, before image optimization; refusal has no ordinary fallback",
         "Success preserves loaded bytes and filename, returns text/html/document and no generated trust; explicit mode grants no roots, sandbox or host-read authority",
-        "Omitted, unknown and non-HTML modes preserve existing loading behavior; MIME signature coverage beyond the existing detector remains an explicit full-equivalence gap"
+        "Omitted, unknown and non-HTML modes preserve existing loading behavior; MIME signature coverage beyond the existing detector remains an explicit full-equivalence gap",
+        "Only structurally parsed local file URLs with empty/localhost host may reach native path conversion; no slash-stripping or lossy fallback revives rejected URLs",
+        "The private synchronous admission-to-local-reader boundary rejects remote URLs and prohibited resolved network paths before canonicalize, metadata, open or read; roots and sandbox flags do not bypass URL admission",
+        "Native Windows local verbatim-drive workspaces remain local; UNC and device namespaces are refused before the local-reader boundary"
       ],
       "migration_rollback": "Reject remote URL and unverified paths fail-closed",
       "oracle_ids": [
@@ -15975,7 +15980,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "High: local file admission, bounded actual-byte inspection, Unicode-safe content policy and MIME conflicts. HHP-v2 adds only an explicit content check; existing opened-handle/read-scope, all-format MIME, frontend/Runner, remote loading and full acceptance remain open.",
+      "risk": "High: local file admission, bounded actual-byte inspection, Unicode-safe content policy and MIME conflicts. HHP-v2 adds only an explicit content check; existing opened-handle/read-scope, all-format MIME, frontend/Runner, remote loading and full acceptance remain open. FUA-v1 uses a private no-I/O boundary oracle plus real native local fixtures. Windows remote negatives never invoke a real share; source review must prove the admission phase stays pure. Historical read status and references are retained and are not upgraded into full fixed-U reading or full dependency equivalence.",
       "selected_owner": "source/host/src/extensions/attachments/web_media.rs",
       "source_refs": [],
       "status": {
@@ -16005,7 +16010,12 @@
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_mode_preserves_non_html_loading",
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_keeps_local_access_guards",
-        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes"
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+        "source/host/src/extensions/attachments/web_media.rs::file_url_admission_tests",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_authority_alias_is_not_read"
       ],
       "typed_contracts": [
         "load_web_media(uri_or_path: &str, options: &WebMediaOptions) -> Result<WebMediaResult, String>",

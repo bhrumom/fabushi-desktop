@@ -176,14 +176,138 @@ fn test_ocrm_web_media_file_url_and_traversal_guards() {
     assert!(assert_no_windows_network_path("/safe/path/img.png", "test").is_ok());
 
     // 3. file_url_to_path
-    let decoded_path = file_url_to_path("FILE:///var/tmp/caf%C3%A9%20image.png")
+    let native_path = std::env::temp_dir().join("café image.png");
+    let native_url = url::Url::from_file_path(&native_path).expect("native absolute URL");
+    let single_slash_url = format!("FILE:{}", native_url.as_str().strip_prefix("file://").unwrap());
+    let decoded_path = file_url_to_path(&single_slash_url)
         .expect("decode file URL");
-    assert!(decoded_path.to_string_lossy().contains("café image.png"));
+    assert_eq!(decoded_path, native_path);
 
     // Traversal rejection in file URL
     assert!(file_url_to_path("FILE:///C:/safe/folder%2Fsecret.png").is_err());
     assert!(file_url_to_path("FILE:///C:/safe/folder%5Csecret.png").is_err());
     assert!(file_url_to_path("FILE:////attacker/share/evil.png").is_err());
+}
+
+#[test]
+fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+    for reference in [
+        "file://files.example/share/image.png",
+        "FiLe://localhost.example/share/image.png",
+        "FILE://127.0.0.1/share/image.png",
+        "file://[::1]/share/image.png",
+        "file://localhost./share/image.png",
+        "file://[broken/share/image.png",
+        "file://user:secret@localhost/share/image.png",
+        "file://localhost:8080/share/image.png",
+        "FILE:////files.example/share/image.png",
+        "file:///C:/safe/folder%2fimage.png",
+        "FILE:///C:/safe/folder%5Cimage.png",
+        "https://localhost/image.png",
+    ] {
+        match file_url_to_path(reference).expect_err("invalid reference must not become a path") {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
+            other => panic!("Expected invalid-file-url for {reference:?}, got {other:?}"),
+        }
+    }
+    #[cfg(windows)]
+    match file_url_to_path("file:///drive-less/image.png").expect_err("native conversion failure") {
+        WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
+        other => panic!("Expected invalid-file-url, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
+    let temp = TempTestDir::new("file-url-native");
+    let service = test_attachments_service(&temp.path);
+    let name = "café 100% report.html";
+    let path = temp.path.join(name);
+    let bytes = b"<!doctype html><html><body>native URL bytes</body></html>";
+    fs::write(&path, bytes).unwrap();
+    let native_url = url::Url::from_file_path(&path).expect("native fixture URL");
+    let references = [
+        native_url.to_string(),
+        format!("FILE:{}", native_url.as_str().strip_prefix("file://").unwrap()),
+        format!("fIlE:{}", native_url.as_str().strip_prefix("file:").unwrap()),
+        format!("file://localhost{}", native_url.path()),
+    ];
+    for reference in references {
+        assert_eq!(file_url_to_path(&reference).unwrap(), path);
+        let mut options = WebMediaOptions {
+            max_bytes: Some(bytes.len()),
+            local_roots: Some(vec![temp.path.clone()]),
+            optimize_images: true,
+            html_publication: Some("explicit".to_string()),
+            ..Default::default()
+        };
+        let loaded = load_web_media(&reference, &options).expect("native local URL inside allowed root");
+        assert_eq!(loaded.buffer, bytes);
+        assert_eq!(loaded.file_name.as_deref(), Some(name));
+        assert_eq!(loaded.content_type.as_deref(), Some("text/html"));
+        assert_explicit_html_loads(&service, &reference, bytes, name);
+
+        options.max_bytes = Some(bytes.len() - 1);
+        assert!(matches!(load_web_media(&reference, &options), Err(WebMediaError::TooLarge(_))));
+        let error = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": reference, "maxBytes": bytes.len() - 1, "htmlPublication": "explicit"
+        })).expect("service handles loader").expect_err("service retains byte cap");
+        assert!(error.starts_with("Media exceeds "), "{error}");
+        assert_explicit_html_loads(&service, &reference, bytes, name);
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+    }
+}
+
+#[test]
+fn test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed() {
+    let temp = TempTestDir::new("file-url-service-refusal");
+    let service = test_attachments_service(&temp.path);
+    // These fail URL parsing without any possible remote native path conversion.
+    // Remote Windows authority controls use the private no-I/O boundary instead.
+    for reference in ["file://[broken/share/image.png", "file://user:secret@localhost/share/image.png"] {
+        let error = service.dispatch_gateway("loadWebMedia", &json!({ "url": reference }))
+            .expect("direct service arm exists").expect_err("service propagates invalid URL");
+        assert!(error.starts_with("Local media access error [invalid-file-url]: "), "{error}");
+        assert!(!error.contains("secret"), "refusal must not echo URL credentials");
+    }
+    // This checks the real finite registry, not an HTTP or renderer execution.
+    assert!(!mahayana_host_runtime::gateway_protocol::is_grok_gateway_command("loadWebMedia"));
+    let path = temp.path.join("recovered.html");
+    let bytes = b"<!doctype html><html>valid after refusal</html>";
+    fs::write(&path, bytes).unwrap();
+    let reference = url::Url::from_file_path(&path).unwrap();
+    assert_explicit_html_loads(&service, reference.as_str(), bytes, "recovered.html");
+}
+
+#[cfg(unix)]
+#[test]
+fn test_ocrm_web_media_file_url_authority_alias_is_not_read() {
+    let temp = TempTestDir::new("file-url-alias");
+    let service = test_attachments_service(&temp.path);
+    let path = temp.path.join("alias.html");
+    let bytes = b"<!doctype html><html>owned alias bytes</html>";
+    fs::write(&path, bytes).unwrap();
+    let local = url::Url::from_file_path(&path).unwrap();
+    let alias = format!("file://{}", local.path().trim_start_matches('/'));
+    assert!(url::Url::parse(&alias).unwrap().host_str().is_some());
+    for sandbox_validated in [false, true] {
+        let options = WebMediaOptions {
+            local_roots: Some(vec![temp.path.clone()]),
+            sandbox_validated,
+            html_publication: Some("explicit".to_string()),
+            ..Default::default()
+        };
+        match load_web_media(&alias, &options).expect_err("remote authority must not alias an allowed local file") {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
+            other => panic!("Expected invalid-file-url, got {other:?}"),
+        }
+        assert_eq!(load_web_media(local.as_str(), &options).unwrap().buffer, bytes);
+    }
+    let error = service.dispatch_gateway("loadWebMedia", &json!({ "url": alias, "htmlPublication": "explicit" }))
+        .expect("service handles loader").expect_err("service refuses authority alias");
+    assert!(error.starts_with("Local media access error [invalid-file-url]: "), "{error}");
+    assert_explicit_html_loads(&service, local.as_str(), bytes, "alias.html");
+    assert_eq!(fs::read(&path).unwrap(), bytes);
 }
 
 #[test]

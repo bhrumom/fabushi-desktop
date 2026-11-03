@@ -1450,7 +1450,9 @@
         "projects/openclaw-rust/scripts/capture_media_cleanup.py",
         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
         "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R24",
@@ -2844,7 +2846,9 @@
         "projects/openclaw-rust/scripts/capture_media_cleanup.py",
         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
         "projects/openclaw-rust/docs/specs/media-image-probe-boundary.md",
-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

@@ -259,61 +259,47 @@ pub fn optimize_image_buffer_for_web_media(
 
 /// Resolves single-slash or standard file URL to path string.
 pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
-    let lower = url_str.to_ascii_lowercase();
-    if !lower.starts_with("file:") {
-        return Err(WebMediaError::LocalAccess {
-            code: "invalid-file-url".to_string(),
-            message: format!("Not a file URL: {url_str}"),
-        });
+    let invalid = |message: &str| WebMediaError::LocalAccess {
+        code: "invalid-file-url".to_string(),
+        message: message.to_string(),
+    };
+    let parsed = Url::parse(url_str).map_err(|_| invalid("Invalid file URL"))?;
+    if parsed.scheme() != "file" {
+        return Err(invalid("Not a file URL"));
+    }
+    if parsed.host_str().is_some_and(|host| {
+        !host.is_empty() && !host.eq_ignore_ascii_case("localhost")
+    }) {
+        return Err(invalid("File URLs with remote hosts are not allowed"));
     }
 
-    // Windows network share URL rejection
-    if lower.starts_with("file:////") || lower.starts_with("file://attacker") {
-        return Err(WebMediaError::LocalAccess {
-            code: "invalid-file-url".to_string(),
-            message: format!("Network share file URLs are not allowed: {url_str}"),
-        });
+    let path = parsed.path().to_ascii_lowercase();
+    if path.contains("%2f") || path.contains("%5c") {
+        return Err(invalid("Encoded path separators in file URL"));
     }
 
-    // Rejects encoded traversal sequences
-    if url_str.contains("%2f") || url_str.contains("%2F") || url_str.contains("%5c") || url_str.contains("%5C") {
-        return Err(WebMediaError::LocalAccess {
-            code: "invalid-file-url".to_string(),
-            message: format!("Encoded traversal characters in file URL: {url_str}"),
-        });
-    }
-
-    if let Ok(parsed) = Url::parse(url_str) {
-        if let Ok(p) = parsed.to_file_path() {
-            return Ok(p);
-        }
-    }
-
-    // Fallback manual parser for non-standard or uppercase FILE: schemes
-    let after_scheme = url_str
-        .strip_prefix("FILE:")
-        .or_else(|| url_str.strip_prefix("file:"))
-        .unwrap_or(url_str);
-
-    let trimmed = after_scheme.trim_start_matches('/');
-    let decoded = percent_encoding::percent_decode_str(trimmed)
-        .decode_utf8_lossy()
-        .to_string();
-
-    #[cfg(unix)]
-    {
-        Ok(PathBuf::from(format!("/{decoded}")))
-    }
-    #[cfg(not(unix))]
-    {
-        Ok(PathBuf::from(decoded))
-    }
+    let file_path = parsed
+        .to_file_path()
+        .map_err(|_| invalid("File URL cannot be converted to an absolute local path"))?;
+    assert_no_windows_network_path(&file_path.to_string_lossy(), "Local file URL")
+        .map_err(|_| invalid("File URL resolves to a network path"))?;
+    Ok(file_path)
 }
 
 /// Loads web media from local file path or URL with size caps and image optimization.
 pub fn load_web_media(
     media_url: &str,
     options: &WebMediaOptions,
+) -> Result<WebMediaResult, WebMediaError> {
+    load_web_media_with_local_reader(media_url, options, load_local_web_media)
+}
+
+// Admission stays pure. The private callback owns the complete existing local
+// load, starting with root canonicalization; it is not a caller-provided bypass.
+fn load_web_media_with_local_reader(
+    media_url: &str,
+    options: &WebMediaOptions,
+    local_reader: impl FnOnce(&Path, &WebMediaOptions) -> Result<WebMediaResult, WebMediaError>,
 ) -> Result<WebMediaResult, WebMediaError> {
     let cleaned = strip_legacy_media_directive_prefix(media_url);
 
@@ -332,6 +318,35 @@ pub fn load_web_media(
         PathBuf::from(&cleaned)
     };
 
+    // Canonical Windows workspaces can use a rooted verbatim drive prefix.
+    // Preserve that local form while refusing UNC/device/network namespaces.
+    #[cfg(windows)]
+    let verbatim_local_drive = match file_path.components().next() {
+        Some(std::path::Component::Prefix(prefix)) => match prefix.kind() {
+            std::path::Prefix::Disk(_) => false,
+            std::path::Prefix::VerbatimDisk(_) if file_path.is_absolute() => true,
+            _ => {
+                return Err(WebMediaError::LocalAccess {
+                    code: "network-path-not-allowed".to_string(),
+                    message: "Local media path uses a network or device namespace".to_string(),
+                });
+            }
+        },
+        _ => false,
+    };
+    #[cfg(not(windows))]
+    let verbatim_local_drive = false;
+    if !verbatim_local_drive {
+        assert_no_windows_network_path(&file_path.to_string_lossy(), "Local media path")?;
+    }
+
+    local_reader(&file_path, options)
+}
+
+fn load_local_web_media(
+    file_path: &Path,
+    options: &WebMediaOptions,
+) -> Result<WebMediaResult, WebMediaError> {
     // Traversal guard against local_roots
     if let Some(roots) = &options.local_roots {
         if !options.sandbox_validated {
@@ -430,5 +445,163 @@ pub fn load_web_media(
             file_name,
             trusted_generated_html_source: None,
         })
+    }
+}
+
+#[cfg(test)]
+mod file_url_admission_tests {
+    use super::*;
+
+    fn assert_local_access(error: WebMediaError, expected: &str) {
+        match error {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, expected),
+            other => panic!("Expected {expected}, got {other:?}"),
+        }
+    }
+
+    fn assert_reader_not_entered(reference: &str, options: &WebMediaOptions, code: &str) {
+        let mut entries = 0;
+        let result = load_web_media_with_local_reader(reference, options, |_, _| {
+            entries += 1;
+            Err(WebMediaError::LocalAccess {
+                code: "reader-entered".to_string(),
+                message: "The test reader performs no filesystem operations".to_string(),
+            })
+        });
+        assert_eq!(entries, 0, "Reader entered for {reference:?}");
+        assert_local_access(result.expect_err("Reference must be refused"), code);
+    }
+
+    #[test]
+    fn remote_file_authorities_never_enter_local_reader() {
+        let owned_root = std::env::temp_dir().join("fua-boundary-only");
+        for sandbox_validated in [false, true] {
+            for local_roots in [None, Some(vec![owned_root.clone()])] {
+                let options = WebMediaOptions {
+                    local_roots,
+                    sandbox_validated,
+                    host_read_capability: true,
+                    html_publication: Some("explicit".to_string()),
+                    ..Default::default()
+                };
+                for reference in [
+                    "file://files.example/share/image.png",
+                    "FiLe://localhost.example/share/image.png",
+                    "FILE://127.0.0.1/share/image.png",
+                    "file://[::1]/share/image.png",
+                    "file://tmp/fua-boundary-only/image.png",
+                    "file://localhost./share/image.png",
+                    r"file:\\files.example\share\image.png",
+                    "FILE:////files.example/share/image.png",
+                ] {
+                    assert_reader_not_entered(reference, &options, "invalid-file-url");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_file_urls_never_enter_local_reader() {
+        let options = WebMediaOptions {
+            local_roots: Some(vec![std::env::temp_dir()]),
+            sandbox_validated: true,
+            ..Default::default()
+        };
+        for reference in [
+            "file://[broken/share/image.png",
+            "file://user:secret@localhost/share/image.png",
+            "file://localhost:8080/share/image.png",
+            "file:///C:/safe/folder%2fimage.png",
+            "FILE:///C:/safe/folder%2Fimage.png",
+            "file:///C:/safe/folder%5cimage.png",
+            "FILE:///C:/safe/folder%5Cimage.png",
+        ] {
+            assert_reader_not_entered(reference, &options, "invalid-file-url");
+        }
+        #[cfg(windows)]
+        assert_reader_not_entered("file:///drive-less/image.png", &options, "invalid-file-url");
+    }
+
+    #[test]
+    fn network_paths_never_enter_local_reader() {
+        for reference in [r"\\files.example\share\image.png", "//files.example/share/image.png"] {
+            assert_reader_not_entered(reference, &WebMediaOptions::default(), "network-path-not-allowed");
+        }
+        for workspace in [r"\\files.example\share", "//files.example/share"] {
+            let options = WebMediaOptions {
+                workspace_dir: Some(PathBuf::from(workspace)),
+                local_roots: Some(vec![std::env::temp_dir()]),
+                ..Default::default()
+            };
+            assert_reader_not_entered("image.png", &options, "network-path-not-allowed");
+        }
+        #[cfg(windows)]
+        for workspace in [r"\/files.example\share", r"/\files.example\share", r"\\?\UNC\files.example\share", r"\\.\files.example"] {
+            let options = WebMediaOptions {
+                workspace_dir: Some(PathBuf::from(workspace)),
+                ..Default::default()
+            };
+            assert_reader_not_entered("image.png", &options, "network-path-not-allowed");
+        }
+    }
+
+    #[test]
+    fn local_path_enters_reader_once_with_original_options() {
+        let path = std::env::temp_dir().join("café 100% image.png");
+        let url = Url::from_file_path(&path).expect("native absolute file URL");
+        let options = WebMediaOptions {
+            max_bytes: Some(37),
+            local_roots: Some(vec![std::env::temp_dir()]),
+            ..Default::default()
+        };
+        let mut entries = 0;
+        let loaded = load_web_media_with_local_reader(url.as_str(), &options, |actual, actual_options| {
+            entries += 1;
+            assert_eq!(actual, path.as_path());
+            assert!(std::ptr::eq(actual_options, &options));
+            Ok(WebMediaResult {
+                buffer: b"reader-result".to_vec(),
+                content_type: None,
+                kind: None,
+                file_name: None,
+                trusted_generated_html_source: None,
+            })
+        }).expect("admitted local path");
+        assert_eq!(entries, 1);
+        assert_eq!(loaded.buffer, b"reader-result");
+    }
+
+    #[test]
+    fn local_reader_error_is_returned_without_retry() {
+        let path = std::env::temp_dir().join("fua-reader-error.png");
+        let url = Url::from_file_path(path).expect("native absolute file URL");
+        for _ in 0..2 {
+            let mut entries = 0;
+            let error = load_web_media_with_local_reader(url.as_str(), &WebMediaOptions::default(), |_, _| {
+                entries += 1;
+                Err(WebMediaError::Io(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "owned refusal")))
+            }).expect_err("reader refusal must propagate");
+            assert_eq!(entries, 1);
+            match error {
+                WebMediaError::Io(error) => assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied),
+                other => panic!("Reader error was replaced: {other:?}"),
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn verbatim_drive_workspace_enters_local_reader() {
+        let workspace = PathBuf::from(r"\\?\C:\fua-owned");
+        let expected = workspace.join("image.png");
+        let options = WebMediaOptions { workspace_dir: Some(workspace), ..Default::default() };
+        let mut entries = 0;
+        let error = load_web_media_with_local_reader("image.png", &options, |actual, _| {
+            entries += 1;
+            assert_eq!(actual, expected.as_path());
+            Err(WebMediaError::LocalAccess { code: "owned-local-reader".to_string(), message: "probe".to_string() })
+        }).expect_err("positive reader sentinel");
+        assert_eq!(entries, 1);
+        assert_local_access(error, "owned-local-reader");
     }
 }

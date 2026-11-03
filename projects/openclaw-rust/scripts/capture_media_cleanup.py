@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture existing media lifecycle, HTML and image probe contracts in Actions only."""
+"""Capture media lifecycle, HTML, file URL and image contracts in Actions only."""
 
 import hashlib
 import json
@@ -54,6 +54,14 @@ HTML_POLICY_UNIX_NAMES = [
     "test_html_provenance_permission_denied_retained_and_recovered",
     "test_html_provenance_symlink_loop_retained_and_recovered",
 ]
+FILE_URL_OWNER_PREFIX = "extensions::attachments::web_media::file_url_admission_tests::"
+FILE_URL_OWNER_NAMES = [
+    "remote_file_authorities_never_enter_local_reader",
+    "invalid_file_urls_never_enter_local_reader",
+    "network_paths_never_enter_local_reader",
+    "local_path_enters_reader_once_with_original_options",
+    "local_reader_error_is_returned_without_retry",
+]
 WEB_MEDIA_NAMES = [
     "test_ocrm_anthropic_inline_content_blocks_normalization",
     "test_ocrm_web_media_animated_webp_preservation",
@@ -72,6 +80,9 @@ WEB_MEDIA_NAMES = [
     "test_ocrm_web_media_explicit_html_keeps_byte_cap_boundary",
     "test_ocrm_web_media_explicit_html_keeps_local_access_guards",
     "test_ocrm_web_media_explicit_html_retry_reads_fresh_bytes",
+    "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+    "test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+    "test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
 ]
 IMAGE_OPS_NAMES = [
     "test_ocrm_image_ops_build_resize_side_grid",
@@ -119,6 +130,9 @@ INPUTS = [
     "source/host/src/extensions/attachments/image_ops.rs",
     "source/host/src/media_mime.rs",
     "source/host/tests/openclaw_image_ops_contract.rs",
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+    "source/host/src/gateway_protocol.rs",
+    "source/host/src/host_gateway_api.rs",
 ]
 
 
@@ -240,9 +254,9 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This executable verification is GitHub Actions-only.")
     ROOT.mkdir(parents=True, exist_ok=False)
-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1"],
+    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1"],
                "result": "failed-or-incomplete", "executions": [],
-               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, and PNG header bounds through existing metadata/attachment/file consumers. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
+               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, and PNG header bounds through existing metadata/attachment/file consumers. FUA-v1 covers local file URL authority/conversion and pure admission before the private local-reader boundary, native path/byte/service controls and a Unix local alias refusal; the counter measures boundary entries, not OS syscalls. No live network share is used. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, permission-capability closure, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
     save(receipt)
     try:
         head = output(["git", "rev-parse", "HEAD"])
@@ -275,11 +289,15 @@ def main():
         owner = [OWNER_PREFIX + name for name in OWNER_NAMES]
         integration = INTEGRATION_NAMES.copy()
         html_policy = HTML_POLICY_NAMES.copy()
+        file_url_owner = [FILE_URL_OWNER_PREFIX + name for name in FILE_URL_OWNER_NAMES]
+        web_media = WEB_MEDIA_NAMES.copy()
         if runner_os == "Windows":
             owner.append(OWNER_PREFIX + "cleanup_windows_identity_compares_full_file_id")
+            file_url_owner.append(FILE_URL_OWNER_PREFIX + "verbatim_drive_workspace_enters_local_reader")
         else:
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries")
             html_policy.extend(HTML_POLICY_UNIX_NAMES)
+            web_media.append("test_ocrm_web_media_file_url_authority_alias_is_not_read")
         if runner_os == "Linux":
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_raw_names")
         if runner_os in {"macOS", "Windows"}:
@@ -290,7 +308,8 @@ def main():
             ("cleanup-consumers", base + ["--test", "openclaw_media_store_contract", "--", "--test-threads=1"], integration),
             ("html-policy", base + ["--test", "openclaw_html_provenance_contract", "--", "--test-threads=1"], html_policy),
             ("host-read-format", base + ["--test", "openclaw_channel_and_local_roots_contract", "test_ocrm_host_read_media_policy_format_admission", "--", "--exact", "--test-threads=1"], ["test_ocrm_host_read_media_policy_format_admission"]),
-            ("explicit-html-consumers", base + ["--test", "openclaw_web_media_contract", "--", "--test-threads=1"], WEB_MEDIA_NAMES),
+            ("file-url-admission", base + ["--lib", FILE_URL_OWNER_PREFIX, "--", "--test-threads=1"], file_url_owner),
+            ("explicit-html-consumers", base + ["--test", "openclaw_web_media_contract", "--", "--test-threads=1"], web_media),
             ("image-probe-consumers", base + ["--test", "openclaw_image_ops_contract", "--", "--test-threads=1"], IMAGE_OPS_NAMES),
         ]
         receipt["planned_commands"] = [{"case": label, "command": command, "required_positive_names": names}

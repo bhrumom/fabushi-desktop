@@ -1,0 +1,83 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "base": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+  "base_tree": "686109128a616195e65d1c9018ccd5b0b9d2cc8a",
+  "starting_head": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+  "scope_mode": "complete FUA-v1 existing-owner implementation/test/capture/spec/ledger/RTM/evidence delta; earlier HHP-v2/IPB-v1 preserved",
+  "snapshot": "/workspace/scratch/7d27ea239237/file-url-r1",
+  "base_snapshot": "/workspace/scratch/7d27ea239237/file-url-r1-base",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "paths": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 10112,
+      "sha256": "210c5edd5325a41ce2696a682ac23843fed1605bb3c7b7a9595758eac16c9323",
+      "git_blob": "8057987d1ec0ed53f87343f1ff65063808eca44a",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 7030,
+      "sha256": "22f0bde2c4d2425cb41e27914f9c53b8be06d1375fc89c0d74780faffa8d6a3f",
+      "git_blob": "95b07bf1b78ef149b7dabb5ed2926693247219fd",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 1418986,
+      "sha256": "22e7c7b03060d8701591ceea70d51d04a8462d7f719b785af0ffe9f7f61a198e",
+      "git_blob": "df9cba558cccc210b35a811e9b5f9f3f8817cd79",
+      "base_blob": "1a6662f0ad9abe1b1a230ddc769a71560ea770b7"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 146097,
+      "sha256": "c11ee831f28be316acf7f9fed23d66edb9f2f4e501920f9029de49fe29210b36",
+      "git_blob": "1d74ab6a725b6bab93428ce571d16944a05afa92",
+      "base_blob": "1b56af4674e6634786460bb9d52f3e0b098785b5"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 17460,
+      "sha256": "6b35213e3e236ce133642c66b7e3d03334acc23cef3a5285fe924a608c4f8d9c",
+      "git_blob": "7eed829018250ca297538df614f3929ea5a09058",
+      "base_blob": "01d23d9ab56232776c9994abb53320032aa992bd"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 24129,
+      "sha256": "655392f82f5554c48fa73d7c5db8d58e85365f80b88a13ec6ef11c25eb46bc78",
+      "git_blob": "3e26c08770379911d6502bb778c0078deda822ed",
+      "base_blob": "61291cf57b42408cd98c7fe7676d2a0694fa44d0"
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 35993,
+      "sha256": "5248e9a93f1bdd0c32d259ed3b947a242d06a70286b68d82906065123d71b4a3",
+      "git_blob": "752687912e16ceb804fa63b6a172251dc53d0943",
+      "base_blob": "a90b5f913679b7e284f4970c42e8c2b774ee4c94"
+    }
+  ],
+  "complete_diff": "/workspace/scratch/7d27ea239237/file-url-r1-complete.patch",
+  "complete_diff_sha256": "60f999d9097f70f0f0225e28e68be0b82a42eb6dd40f3587e750ff787b0d8411",
+  "diff_exit": 1,
+  "diff_stderr": "",
+  "candidate_tree": "27b6ac5b5e90023dff847e73e8c564743dd8e109",
+  "validation": "No local/htch executable validation; source candidate awaiting independent review and exact-H Actions.",
+  "candidate_tree_readback": "GitHub nontruncated tree; all seven declared blobs matched before review"
+}

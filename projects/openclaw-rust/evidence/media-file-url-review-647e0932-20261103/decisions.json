@@ -1,0 +1,71 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "FUA-v1",
+  "base": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+  "base_tree": "686109128a616195e65d1c9018ccd5b0b9d2cc8a",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "candidate_tree": "27b6ac5b5e90023dff847e73e8c564743dd8e109",
+  "complete_diff_sha256": "60f999d9097f70f0f0225e28e68be0b82a42eb6dd40f3587e750ff787b0d8411",
+  "review_scope": "Complete immutable seven-path delta, including production, tests, capture, scoped contract, evidence, ledger and RTM; applicable adjacent actual callers/consumers and dependency contracts.",
+  "reports": [
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-review-647e0932-20261103/general.md",
+      "sha256": "08468f34e9defac23f0a99d4ed39e732a85fff3812af0a6574c1486719c4f098",
+      "bytes": 11943,
+      "lens": "GENERAL/CORRECTNESS/SECURITY",
+      "model": "configured parent model; no override",
+      "reasoning_effort": "xhigh",
+      "launch": {
+        "tool": "collaboration.spawn_agent",
+        "fork_turns": "none",
+        "reasoning_effort": "xhigh",
+        "model_override": null,
+        "accepted": true
+      },
+      "verdict": "NO_FINDINGS",
+      "full_report_read_by_integrator": true
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-review-647e0932-20261103/structure.md",
+      "sha256": "d2bee1a1c29c7663aede349a45cf76e42a8562e4a4a923b2de11dec7789067d8",
+      "bytes": 10543,
+      "lens": "STRUCTURE/REUSE/PERFORMANCE",
+      "model": "gpt-6.1-sol",
+      "reasoning_effort": "xhigh",
+      "launch": {
+        "tool": "collaboration.spawn_agent",
+        "fork_turns": "none",
+        "reasoning_effort": "xhigh",
+        "model_override": "gpt-6.1-sol",
+        "accepted": true
+      },
+      "verdict": "NO_FINDINGS",
+      "full_report_read_by_integrator": true
+    }
+  ],
+  "synthesized_findings": [],
+  "decisions": [],
+  "source_review_converged": true,
+  "runtime_acceptance": false,
+  "root_assessment": {
+    "unchanged_body": "Existing root canonicalization, bounded read, HTML/image decisions and result/error behavior are retained below the private callback.",
+    "owner": "Existing Attachments web_media owner; no public callback, permission authority, runtime or registry entry.",
+    "source_limits": "Scoped fixed-U caller and dependency contract review; historical full-read facts and all open dependency/product responsibilities retained.",
+    "expected_actions": "The existing three-platform media capture selects 79 Linux/macOS and 76 Windows controls, including all previous media groups; counts are not executions.",
+    "remaining": "New exact-H execution, native macOS, broader scope and independent final ACCEPT remain open."
+  },
+  "integration_carry": {
+    "parent": "d26d44d1441c05e3dbb7dc18eb908ab042cbdae9",
+    "parent_tree": "b5cf232dc2c3e9af8fb3519a67d54168fb49b44d",
+    "incoming_path": "projects/openclaw-rust/evidence/media-html-image-actions-947e980-647e0932-20261103.json",
+    "incoming_kind": "Evidence carrier only; production subject remains 947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+    "reviewed_product_blobs_unchanged": true,
+    "decision": "Apply the seven exact reviewed blobs on the carrier tree and preserve it. The report/manifest/decision files are provenance metadata, not a change to the reviewed product."
+  },
+  "validation_policy": "No local/htch executable validation. Push production candidate once; reuse existing Actions/cache. Prior H947 results remain attached only to 947. Shared canonical parser failure is resolved in inherited ff0 and observed 947 execution; no duplicate repair is published.",
+  "completion_flags_changed": false,
+  "full_unit_verified_promoted": false,
+  "overall_complete": false,
+  "launch_provenance_note": "Actual accepted tool arguments above qualify the reviewers' self-described session metadata; prompt wording is not used as proof of an applied override."
+}
