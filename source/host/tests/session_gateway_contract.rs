@@ -7525,6 +7525,10 @@ fn shipping_human_retry_identity_is_concurrent_idempotent_and_reuses_settled_int
     assert_eq!(pending.len(), 1);
     assert_eq!(pending[0]["delivery"], "pending");
     assert_eq!(pending[0]["clientNonce"], "retry-concurrent-nonce");
+    let previous_error = pending[0]["lastDispatchError"].as_str()
+        .filter(|message| !message.trim().is_empty())
+        .expect("initial failure is durably recorded").to_owned();
+    let previous_failed_at = pending[0]["lastDispatchFailedAtMs"].clone();
     runtime.shutdown();
     drop(owner);
     drop(runtime);
@@ -7547,6 +7551,15 @@ fn shipping_human_retry_identity_is_concurrent_idempotent_and_reuses_settled_int
     barrier.wait();
     accepted_rx.recv_timeout(std::time::Duration::from_secs(15))
         .expect("one concurrent retry reaches the remote server");
+    let in_flight_owner = restarted.open_human_conversation_db_owner(&conversation_id)
+        .expect("retry in-flight owner");
+    let in_flight = in_flight_owner.get_transcript_entries().expect("durable in-flight row");
+    assert_eq!(in_flight.len(), 1);
+    assert_eq!(in_flight[0]["delivery"], "dispatching");
+    assert_eq!(in_flight[0]["lastDispatchError"], previous_error,
+        "the prior error remains durable while a retry is awaiting remote settlement");
+    assert_eq!(in_flight[0]["lastDispatchFailedAtMs"], previous_failed_at);
+    drop(in_flight_owner);
     release.send(()).expect("release deterministic remote settlement");
     let first = workers.remove(0).join().expect("first concurrent retry");
     let second = workers.remove(0).join().expect("second concurrent retry");
@@ -7559,7 +7572,11 @@ fn shipping_human_retry_identity_is_concurrent_idempotent_and_reuses_settled_int
         "conversationId":conversation_id,
         "clientNonce":"retry-concurrent-nonce"
     })), first, "settled replay is a pure local read");
-    assert_eq!(restarted.read_human_conversation_transcript(&conversation_id).expect("one row").len(), 1);
+    let settled_rows = restarted.read_human_conversation_transcript(&conversation_id).expect("one row");
+    assert_eq!(settled_rows.len(), 1);
+    assert!(settled_rows[0].get("lastDispatchError").is_none(),
+        "successful canonical settlement replaces the old retry error");
+    assert!(settled_rows[0].get("lastDispatchFailedAtMs").is_none());
     restarted.shutdown();
     drop(restarted);
     let requests = server.join().expect("exactly two message attempts");

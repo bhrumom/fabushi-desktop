@@ -3850,8 +3850,9 @@ impl ProductionSessionWorkers {
                 }
                 if let Some(object) = pending_entry.as_object_mut() {
                     object.insert("delivery".into(), serde_json::json!("dispatching"));
-                    object.remove("lastDispatchError");
-                    object.remove("lastDispatchFailedAtMs");
+                    // Preserve a prior durable failure until remote settlement replaces
+                    // this outbox row. If the Host exits during HTTP, restart must not
+                    // lose the only actionable error projection.
                     if !uploaded.is_empty() {
                         object.insert("remoteDispatchAttachments".into(), serde_json::to_value(&uploaded)
                             .map_err(|error| format!("Human dispatch attachments could not be persisted: {error}"))?);

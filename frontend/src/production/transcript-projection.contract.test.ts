@@ -89,6 +89,9 @@ test("NMR-50 persisted Human lastDispatchError restores the failed retry project
   const restored = projectTranscriptEntry(failedIntent, 0, "Alice", "human:alice");
   assert.ok(restored?.kind === "message");
   assert.equal(restored.delivery, "failed");
+  const inFlight = projectTranscriptEntry({ ...failedIntent, delivery: "dispatching" }, 0, "Alice", "human:alice");
+  assert.ok(inFlight?.kind === "message");
+  assert.equal(inFlight.delivery, "failed");
   assert.equal(restored.clientNonce, "restart-retry");
   assert.equal(restored.authorKind, "human");
   assert.equal(restored.authorId, "self");
