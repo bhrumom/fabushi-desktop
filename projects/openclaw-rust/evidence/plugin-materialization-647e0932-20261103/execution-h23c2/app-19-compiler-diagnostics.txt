@@ -1,0 +1,159 @@
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:743:37
+    |
+743 |     let result = call_send(&bridge, json!({"type": "attachment", "url": url}), "https-passthrough")
+    |                                     ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:714:57
+    |
+714 |         assert_eq!(wakes[0].selected_images[0]["data"], json!(PNG));
+    |                                                         ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:690:42
+    |
+690 |     let result = bridge.call_tool(&tool, json!({
+    |                                          ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:650:59
+    |
+650 |             assert_invalid_source(bridge.call_tool(&tool, json!({
+    |                                                           ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:643:55
+    |
+643 |         assert_invalid_source(bridge.call_tool(&tool, json!({
+    |                                                       ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:576:37
+    |
+576 |     let second = call_send(&bridge, json!({"type": "attachment", "url": source_url}), "repaired-after-reopen")
+    |                                     ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:565:50
+    |
+565 |         assert_invalid_source(call_send(&bridge, json!({
+    |                                                  ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:545:39
+    |
+545 |     let repaired = call_send(&bridge, json!({"type": "attachment", "url": source_url}), "repaired-first")
+    |                                       ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:536:50
+    |
+536 |         assert_invalid_source(call_send(&bridge, json!({
+    |                                                  ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:475:41
+    |
+475 |         let result = call_send(&bridge, json!({
+    |                                         ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:431:36
+    |
+431 |     let error = call_send(&bridge, json!({
+    |                                    ^^^^
+
+
+error: cannot find macro `json` in this scope
+   --> src/tests/local_media_file_url_tests.rs:398:40
+    |
+398 |         let error = call_send(&bridge, json!({
+    |                                        ^^^^
+
+
+error[E0425]: cannot find type `Value` in this scope
+  --> src/tests/local_media_file_url_tests.rs:35:16
+   |
+35 |         _args: Value,
+   |                ^^^^^ not found in this scope
+
+
+error[E0425]: cannot find type `Value` in this scope
+  --> src/tests/local_media_file_url_tests.rs:37:17
+   |
+37 |     ) -> Result<Value, ProviderSessionError> {
+   |                 ^^^^^ not found in this scope
+   |
+help: you might be missing a type parameter
+   |
+27 | impl<Value> RoutedToolBridge for UnusedLocalMediaDelegate {
+   |     +++++++
+
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:152:18
+    |
+152 |         message: Value,
+    |                  ^^^^^ not found in this scope
+
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:244:30
+    |
+244 |     fn entries(&self) -> Vec<Value> {
+    |                              ^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+171 | impl<Value> LocalMediaAppFixture {
+    |     +++++++
+
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:342:11
+    |
+342 |     args: Value,
+    |           ^^^^^ not found in this scope
+
+
+error[E0425]: cannot find type `Value` in this scope
+   --> src/tests/local_media_file_url_tests.rs:344:13
+    |
+344 | ) -> Result<Value, ProviderSessionError> {
+    |             ^^^^^ not found in this scope
+    |
+help: you might be missing a type parameter
+    |
+340 | fn call_send<Value>(
+    |             +++++++
+
+
+error[E0308]: mismatched types
+   --> src/tests/local_media_file_url_tests.rs:199:42
+    |
+198 |         deps.transcript_runtime.session_runtime().set_window_focused(
+    |                                                   ------------------ arguments to this method are incorrect
+199 |             &deps.session_workers, true, 1_000,
+    |                                          ^^^^^ expected `f64`, found integer
+    |
+note: method defined here
+   --> /home/runner/work/fabushi-desktop/fabushi-desktop/source/host/src/extensions/transcript/session_runtime.rs:315:12
+    |
+315 |     pub fn set_window_focused(
+    |            ^^^^^^^^^^^^^^^^^^
+help: use a float literal
+    |
+199 |             &deps.session_workers, true, 1_000.0,
+    |                                               ++
+

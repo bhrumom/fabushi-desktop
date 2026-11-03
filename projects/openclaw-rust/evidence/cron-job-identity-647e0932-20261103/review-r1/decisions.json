@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "scope": "OCRM-CRON-JOB-IDENTITY-v1",
+  "round": 1,
+  "base_commit": "972779ecd290b90e407ffe651aa5c456c31e9f7f",
+  "candidate_tree": "f5e577cf9e119f417ce0cf071f03c214c5bf6190",
+  "reviews": [
+    {
+      "path": "general-review.md",
+      "verdict": "SOURCE-ONLY APPROVE",
+      "blocking_findings": 0,
+      "model": "configured; no override",
+      "effort": "xhigh; controller-confirmed launch"
+    },
+    {
+      "path": "structure-review.md",
+      "verdict": "SOURCE-ONLY APPROVE",
+      "blocking_findings": 0,
+      "model": "gpt-6.1-sol; controller-confirmed launch",
+      "effort": "xhigh; controller-confirmed launch"
+    }
+  ],
+  "synthesized_findings": [],
+  "decisions": [],
+  "review_fix_required": false,
+  "source_convergence": true,
+  "execution_status": "not-run for candidate; no verification or acceptance promotion",
+  "next_review_reason": "Concurrent exact live checkpoint71 changes four shared paths. Preserve incoming changes, freeze composed tree215733e43f8016e159ef1d676e433138272f6dc6 and independently review integration delta with complete cron context. Original R1 unchanged."
+}

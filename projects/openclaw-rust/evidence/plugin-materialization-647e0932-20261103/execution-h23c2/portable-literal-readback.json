@@ -1,0 +1,1220 @@
+[
+  {
+    "case": "generated-send-message-recorder",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        30,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 30,
+    "receipt_observed_names": 30,
+    "observed_name_differences": [],
+    "required_count": 30,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "generated-send-message-contracts",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        13,
+        0,
+        0
+      ],
+      [
+        17,
+        0,
+        0
+      ],
+      [
+        14,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 44,
+    "receipt_observed_names": 44,
+    "observed_name_differences": [],
+    "required_count": 44,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "integration",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        7,
+        0,
+        0
+      ],
+      [
+        48,
+        0,
+        0
+      ],
+      [
+        6,
+        0,
+        0
+      ],
+      [
+        4,
+        0,
+        0
+      ],
+      [
+        6,
+        0,
+        0
+      ],
+      [
+        21,
+        0,
+        0
+      ],
+      [
+        7,
+        0,
+        0
+      ],
+      [
+        19,
+        0,
+        0
+      ],
+      [
+        10,
+        0,
+        0
+      ],
+      [
+        6,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        18,
+        0,
+        0
+      ],
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        27,
+        0,
+        0
+      ],
+      [
+        14,
+        0,
+        0
+      ],
+      [
+        9,
+        0,
+        0
+      ],
+      [
+        5,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 216,
+    "receipt_observed_names": 216,
+    "observed_name_differences": [],
+    "required_count": 103,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "session-owner-namespace",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        19,
+        0,
+        0
+      ],
+      [
+        28,
+        0,
+        0
+      ],
+      [
+        9,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 56,
+    "receipt_observed_names": 56,
+    "observed_name_differences": [],
+    "required_count": 15,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "codex-model-identity",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        10,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 10,
+    "receipt_observed_names": 10,
+    "observed_name_differences": [],
+    "required_count": 10,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "codex-workspace-binding",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        7,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 7,
+    "receipt_observed_names": 7,
+    "observed_name_differences": [],
+    "required_count": 7,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "codex-workspace-http",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        17,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 17,
+    "receipt_observed_names": 17,
+    "observed_name_differences": [],
+    "required_count": 17,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "codex-model-regressions",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        11,
+        0,
+        0
+      ],
+      [
+        9,
+        0,
+        0
+      ],
+      [
+        14,
+        0,
+        0
+      ],
+      [
+        50,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 100,
+    "receipt_observed_names": 100,
+    "observed_name_differences": [],
+    "required_count": 8,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "memory-account-binding",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        2,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 2,
+    "receipt_observed_names": 2,
+    "observed_name_differences": [],
+    "required_count": 2,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "checked-store",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 3,
+    "receipt_observed_names": 3,
+    "observed_name_differences": [],
+    "required_count": 3,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "paired-device-sse",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 1,
+    "receipt_observed_names": 1,
+    "observed_name_differences": [],
+    "required_count": 1,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-pairing-join",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        8,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 8,
+    "receipt_observed_names": 8,
+    "observed_name_differences": [],
+    "required_count": 8,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-join-limit-state",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        11,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 11,
+    "receipt_observed_names": 11,
+    "observed_name_differences": [],
+    "required_count": 11,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-join-ingress-http",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        7,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 7,
+    "receipt_observed_names": 7,
+    "observed_name_differences": [],
+    "required_count": 7,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-join-legacy-http",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        2,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 2,
+    "receipt_observed_names": 2,
+    "observed_name_differences": [],
+    "required_count": 2,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-join-tls",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 1,
+    "receipt_observed_names": 1,
+    "observed_name_differences": [],
+    "required_count": 1,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "memory-synthesis-identity",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        6,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 6,
+    "receipt_observed_names": 6,
+    "observed_name_differences": [],
+    "required_count": 6,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "production-memory-synthesis",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        2,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 2,
+    "receipt_observed_names": 2,
+    "observed_name_differences": [],
+    "required_count": 2,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "session-claim-integration",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        24,
+        0,
+        0
+      ],
+      [
+        59,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 83,
+    "receipt_observed_names": 83,
+    "observed_name_differences": [],
+    "required_count": 13,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "session-claim-commit-custody",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        9,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 9,
+    "receipt_observed_names": 9,
+    "observed_name_differences": [],
+    "required_count": 4,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-pairing",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        20,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 20,
+    "receipt_observed_names": 20,
+    "observed_name_differences": [],
+    "required_count": 20,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-pairing-rotation-authority",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        9,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 9,
+    "receipt_observed_names": 9,
+    "observed_name_differences": [],
+    "required_count": 9,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-pairing-rotation-gateway",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        8,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 8,
+    "receipt_observed_names": 8,
+    "observed_name_differences": [],
+    "required_count": 8,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-pairing-revocation-authority",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        26,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 26,
+    "receipt_observed_names": 26,
+    "observed_name_differences": [],
+    "required_count": 26,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-pairing-revocation-gateway",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        8,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 8,
+    "receipt_observed_names": 8,
+    "observed_name_differences": [],
+    "required_count": 8,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-role-token-revocation-authority",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        27,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 27,
+    "receipt_observed_names": 27,
+    "observed_name_differences": [],
+    "required_count": 27,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-role-token-revocation-gateway",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        10,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 10,
+    "receipt_observed_names": 10,
+    "observed_name_differences": [],
+    "required_count": 10,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-token-rotation-wire-authority",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        44,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 44,
+    "receipt_observed_names": 44,
+    "observed_name_differences": [],
+    "required_count": 44,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-token-rotation-wire-gateway",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        14,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 14,
+    "receipt_observed_names": 14,
+    "observed_name_differences": [],
+    "required_count": 14,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "device-pairing-retained-stream",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        27,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 27,
+    "receipt_observed_names": 27,
+    "observed_name_differences": [],
+    "required_count": 27,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "received-catalog-preparation",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        7,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 7,
+    "receipt_observed_names": 7,
+    "observed_name_differences": [],
+    "required_count": 1,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "received-catalog-projection",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        12,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 12,
+    "receipt_observed_names": 12,
+    "observed_name_differences": [],
+    "required_count": 6,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "received-catalog-toolset",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        10,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 10,
+    "receipt_observed_names": 10,
+    "observed_name_differences": [],
+    "required_count": 3,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "received-catalog-runtime",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        19,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 19,
+    "receipt_observed_names": 19,
+    "observed_name_differences": [],
+    "required_count": 11,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "preentry-cancellation-wiring",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        15,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 21,
+    "receipt_observed_names": 21,
+    "observed_name_differences": [],
+    "required_count": 7,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "received-catalog-retry",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 1,
+    "receipt_observed_names": 1,
+    "observed_name_differences": [],
+    "required_count": 1,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "received-catalog-builder-regressions",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        2,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 13,
+    "receipt_observed_names": 13,
+    "observed_name_differences": [],
+    "required_count": 0,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "received-catalog-credential-match",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        5,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 5,
+    "receipt_observed_names": 5,
+    "observed_name_differences": [],
+    "required_count": 0,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "channel-transport-chunks",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        20,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 20,
+    "receipt_observed_names": 20,
+    "observed_name_differences": [],
+    "required_count": 8,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "plugin-uninstall-service",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        19,
+        0,
+        0
+      ],
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        16,
+        0,
+        0
+      ],
+      [
+        8,
+        0,
+        0
+      ],
+      [
+        4,
+        0,
+        0
+      ],
+      [
+        21,
+        0,
+        1
+      ],
+      [
+        5,
+        0,
+        0
+      ],
+      [
+        7,
+        0,
+        0
+      ],
+      [
+        15,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 101,
+    "receipt_observed_names": 101,
+    "observed_name_differences": [],
+    "required_count": 9,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "plugin-uninstall-state",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        73,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 73,
+    "receipt_observed_names": 73,
+    "observed_name_differences": [],
+    "required_count": 26,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "plugin-uninstall-binding",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        9,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 9,
+    "receipt_observed_names": 9,
+    "observed_name_differences": [],
+    "required_count": 3,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "plugin-uninstall-relay-handoff",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        1,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 1,
+    "receipt_observed_names": 1,
+    "observed_name_differences": [],
+    "required_count": 1,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "plugin-cache-publication",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 3,
+    "receipt_observed_names": 3,
+    "observed_name_differences": [],
+    "required_count": 0,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "plugin-session-consumer",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 3,
+    "receipt_observed_names": 3,
+    "observed_name_differences": [],
+    "required_count": 0,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "provider-checkpoint-publication",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        7,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 7,
+    "receipt_observed_names": 7,
+    "observed_name_differences": [],
+    "required_count": 7,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "provider-checkpoint-custody",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        16,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 16,
+    "receipt_observed_names": 16,
+    "observed_name_differences": [],
+    "required_count": 4,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "generated-failure-history",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        9,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 9,
+    "receipt_observed_names": 9,
+    "observed_name_differences": [],
+    "required_count": 9,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "canonical-root-admission",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        8,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 8,
+    "receipt_observed_names": 8,
+    "observed_name_differences": [],
+    "required_count": 8,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "canonical-prior-root-image",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        4,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 4,
+    "receipt_observed_names": 4,
+    "observed_name_differences": [],
+    "required_count": 4,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "canonical-prior-root-process",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        3,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 3,
+    "receipt_observed_names": 3,
+    "observed_name_differences": [],
+    "required_count": 3,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  },
+  {
+    "case": "canonical-root-admission-contracts",
+    "read_exit": 0,
+    "raw_summary_triplets": [
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        29,
+        0,
+        0
+      ],
+      [
+        15,
+        0,
+        0
+      ],
+      [
+        12,
+        0,
+        0
+      ],
+      [
+        19,
+        0,
+        0
+      ],
+      [
+        4,
+        0,
+        0
+      ]
+    ],
+    "receipt_summary_matches": true,
+    "actual_positive_lines": 91,
+    "receipt_observed_names": 91,
+    "observed_name_differences": [],
+    "required_count": 12,
+    "required_name_differences": [],
+    "command_matches_plan": true,
+    "required_names_match_plan": true
+  }
+]

@@ -3965,6 +3965,9 @@ jobs:
               "source/host/Cargo.toml", "source/host/Cargo.lock",
               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+              "projects/openclaw-rust/docs/specs/cron-job-identity.md",
+              "source/host/app/src/tests/cron_job_identity_tests.rs",
+              "source/host/src/automations/automation_id.rs",
               "source/host/app/src/tests/config_secret_boundary_tests.rs",
               "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
               "source/host/app/src/tests/local_media_file_url_tests.rs",
@@ -4083,6 +4086,8 @@ jobs:
                   "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
                   "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
               "media_settlement_scope": "Actual file-backed App SendMessage/Session/Transcript/AgentDb path with real successful COMMIT followed by lost acknowledgement and actual receipt refusal followed by SQLite-denied rollback. Unknown retains owned bytes and exact identity through same-ID retry, abort, last-Arc Drop and two fresh owners; confirmed refusal cleans only owned files. Real pending ACK, channel, success counter, cache/multi-image, busy-entry/Tool cleanup and sealed unwind controls remain explicit. One generated Runner case requires sticky DownstreamOutcomeUnknown, no retry, no fabricated canonical history or completion. Controlled Responses/faults do not establish live provider/channel, arbitrary crash, full read-scope or packaged-platform acceptance.",
+              "cron_job_identity_contract": "OCRM-CRON-JOB-IDENTITY-v1",
+              "cron_job_identity_scope": "Actual App list/trigger functions with real Agent/Session/AutomationRuntime/FileStore owners and controlled final execution outcomes. Same-name Agents retain distinct canonical IDs, local command/history identity and unique legacy compatibility; ambiguous and stale UUID aliases refuse before effects, and reopen/delete plus existing terminal custody are exercised. Source wiring supplements those helpers; this is not full UnifiedGatewayApi/HTTP construction, real provider/backend or complete upstream cron.run/grant/wait/platform acceptance.",
               "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
@@ -4306,6 +4311,15 @@ jobs:
                   "local_media_file_url_app_preserves_https_without_local_custody",
               ]]
               required += local_media_file_url_required
+              cron_job_identity_required = ["tests::cron_job_identity_tests::" + name for name in [
+                  "cron_job_identity_list_and_trigger_keep_same_name_agents_distinct",
+                  "cron_job_identity_legacy_aliases_refuse_ambiguity_without_effects",
+                  "cron_job_identity_canonical_legacy_collision_refuses_without_effects",
+                  "cron_job_identity_reopen_and_delete_preserve_target_continuity",
+                  "cron_job_identity_existing_execution_outcomes_remain_owned",
+              ]]
+              required += cron_job_identity_required
+              receipt["cron_job_identity_required_tests"] = cron_job_identity_required
               receipt["local_media_file_url_required_tests"] = local_media_file_url_required
               media_settlement_required = ["tests::channel_host_lane_tests::media_settlement_unknown::" + name for name in [
                   "media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",

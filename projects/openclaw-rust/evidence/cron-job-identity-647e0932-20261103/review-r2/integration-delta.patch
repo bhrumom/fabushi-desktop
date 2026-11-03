@@ -1,0 +1,1053 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 8f924c42928fa61242a2f0129ee20f9549a5c92f..673d6270d3c2a7f4b9e9f640acf88927f2f7b154 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -1856,6 +1856,8 @@ jobs:
+                   "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+                   "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+                   "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
++                  "send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
++                  "send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
+                   "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
+                   "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
+                   "generated_send_message_text_success_survives_session_backfill_reopen",
+@@ -3969,6 +3971,21 @@ jobs:
+               "source/host/app/src/tests/config_secret_boundary_tests.rs",
+               "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+               "source/host/app/src/tests/local_media_file_url_tests.rs",
++              "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
++              "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
++              "source/host/app/src/tests/media_settlement_unknown_tests.rs",
++              "source/host/src/attachment_paths.rs",
++              "source/host/src/lib.rs",
++              "source/host/src/extensions/session/agent_db_schema.rs",
++              "source/host/src/extensions/session/production_agent_store.rs",
++              "source/host/src/extensions/transcript/ack_obligations.rs",
++              "source/host/src/extensions/transcript/sand_ack_obligation_store.rs",
++              "source/host/src/agent_isolation/conversation_blob_db.rs",
++              "source/host/src/runner/tools/mcp_meta_tools.rs",
++              "source/host/src/runner/stream_attempt.rs",
++              "source/host/src/runner/production_turn_agent_owner.rs",
++              "source/host/src/runner/production_turn_run_shell_adapter.rs",
++              "source/host/tests/openclaw_sessions_and_config_contract.rs",
+               "source/host/src/extensions/attachments/media_reference.rs",
+               "source/host/src/runner/tools/send_message_tool.rs",
+               "source/host/src/runner/tools/sand_agent_management_tools.rs",
+@@ -4064,6 +4081,11 @@ jobs:
+               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
+               "model_contract": "CMI-v1/CWB-v1",
+               "local_media_file_url_contract": "LFA-v1",
++              "media_settlement_contract": "MSU-v1",
++              "media_settlement_sqlite_environment": {key: os.environ.get(key) for key in (
++                  "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
++                  "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
++              "media_settlement_scope": "Actual file-backed App SendMessage/Session/Transcript/AgentDb path with real successful COMMIT followed by lost acknowledgement and actual receipt refusal followed by SQLite-denied rollback. Unknown retains owned bytes and exact identity through same-ID retry, abort, last-Arc Drop and two fresh owners; confirmed refusal cleans only owned files. Real pending ACK, channel, success counter, cache/multi-image, busy-entry/Tool cleanup and sealed unwind controls remain explicit. One generated Runner case requires sticky DownstreamOutcomeUnknown, no retry, no fabricated canonical history or completion. Controlled Responses/faults do not establish live provider/channel, arbitrary crash, full read-scope or packaged-platform acceptance.",
+               "cron_job_identity_contract": "OCRM-CRON-JOB-IDENTITY-v1",
+               "cron_job_identity_scope": "Actual App list/trigger functions with real Agent/Session/AutomationRuntime/FileStore owners and controlled final execution outcomes. Same-name Agents retain distinct canonical IDs, local command/history identity and unique legacy compatibility; ambiguous and stale UUID aliases refuse before effects, and reopen/delete plus existing terminal custody are exercised. Source wiring supplements those helpers; this is not full UnifiedGatewayApi/HTTP construction, real provider/backend or complete upstream cron.run/grant/wait/platform acceptance.",
+               "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
+@@ -4112,14 +4134,41 @@ jobs:
+               if result.returncode != 0:
+                   raise RuntimeError("command failed: " + stem)
+               return out.decode("utf-8", errors="replace")
++          def host_feature_observation(output, test_support):
++              matches = []
++              for line in output.splitlines():
++                  if not line.startswith("{"):
++                      continue
++                  event = json.loads(line)
++                  target = event.get("target", {})
++                  if (event.get("reason") == "compiler-artifact"
++                      and target.get("name") == "mahayana_host_runtime"
++                      and target.get("kind") == ["lib"]
++                      and pathlib.Path(event.get("manifest_path", "")).resolve() == pathlib.Path("source/host/Cargo.toml").resolve()
++                      and pathlib.Path(target.get("src_path", "")).resolve() == pathlib.Path("source/host/src/lib.rs").resolve()):
++                      matches.append(event)
++              if len(matches) != 1:
++                  raise RuntimeError("expected one actual Host dependency artifact for feature observation")
++              event = matches[0]
++              features = event.get("features")
++              if (event.get("profile", {}).get("test") is not False
++                  or not isinstance(features, list)
++                  or not all(isinstance(feature, str) for feature in features)
++                  or ("test-support" in features) != test_support):
++                  raise RuntimeError("actual Host dependency has the wrong test-support feature mode")
++              return {key: event[key] for key in ("package_id", "manifest_path", "features", "profile", "fresh")}
+           try:
+               if head != os.environ["FABUSHI_TARGET_SHA"]:
+                   raise RuntimeError("actual App subject HEAD mismatch")
+               save()
+               cargo = ["cargo", "check", "--locked", "--manifest-path", "source/host/app/Cargo.toml", "--bin", "mahayana-app-host"]
+-              run(cargo, "shipping-check")
++              shipping_output = run(cargo + ["--message-format=json"], "shipping-check", print_stdout=False)
++              receipt["shipping_host_feature_observation"] = host_feature_observation(shipping_output, False)
++              save()
+               cargo[1] = "test"
+               build_output = run(cargo + ["--no-run", "--message-format=json"], "test-build", print_stdout=False)
++              receipt["app_test_host_feature_observation"] = host_feature_observation(build_output, True)
++              save()
+               executables = set()
+               for line in build_output.splitlines():
+                   event = json.loads(line)
+@@ -4272,6 +4321,18 @@ jobs:
+               required += cron_job_identity_required
+               receipt["cron_job_identity_required_tests"] = cron_job_identity_required
+               receipt["local_media_file_url_required_tests"] = local_media_file_url_required
++              media_settlement_required = ["tests::channel_host_lane_tests::media_settlement_unknown::" + name for name in [
++                  "media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
++                  "media_settlement_app_lost_commit_ack_retains_rows_bytes_and_same_id_fence",
++                  "media_settlement_app_denied_rollback_retains_until_first_open_recovery",
++                  "media_settlement_app_collecting_cache_multi_image_and_terminal_identity",
++                  "media_settlement_app_busy_entry_refuses_promptly_and_bridge_preserves_winner",
++                  "media_settlement_app_poisoned_entry_and_sealed_unwind_retain_for_recovery",
++                  "media_settlement_app_generated_runner_lost_ack_retains_unknown_custody",
++                  "media_settlement_app_legacy_owned_refusal_retains_without_inventing_receipt",
++              ]]
++              required += media_settlement_required
++              receipt["media_settlement_required_tests"] = media_settlement_required
+               receipt["required_tests"] = required
+               save()
+               for index, name in enumerate(required):
+diff --git a/projects/openclaw-rust/parity-ledger.json b/projects/openclaw-rust/parity-ledger.json
+index 379557210e62d2c380daba068e6e8c774f051187..2f0d7d43f54c9abedebbe25f40f21acd20a19c30 100644
+--- a/projects/openclaw-rust/parity-ledger.json
++++ b/projects/openclaw-rust/parity-ledger.json
+@@ -15169,7 +15169,7 @@
+       ],
+       "responsibility_kind": "business-runtime",
+       "reviewer": "xuyao@ombhrum.com",
+-      "risk": "None; fail-closed directory identity assertion",
++      "risk": "High: directory/descriptor identity, delegated cleanup authority and uncertain durable publication; MSU-v1 covers only the separately mapped final-custody consumer and does not close this read-scope responsibility.",
+       "selected_owner": "source/host/src/extensions/attachments/media_store.rs",
+       "source_refs": [
+         {
+@@ -36763,6 +36763,185 @@
+         "FabushiResponsesRequestBinding"
+       ],
+       "unit_id": "OCRM-UNIT-MEM-001"
++    },
++    {
++      "adr_refs": [],
++      "behavior": "MAC-v1/MSU-v1: preserve final outgoing-media ownership through the existing SendMessage -> TranscriptRuntime -> Session -> AgentDb settlement chain. Typed commit/rollback uncertainty seals process-local cleanup authority, retires the exact DB connection, retains recovery bytes and prevents same-ID append/publication/replay. Broader assistant rewrite, delegated read-scope/physical identity and detached-result responsibilities remain applicable and incomplete.",
++      "blocker_ids": [
++        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
++        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
++      ],
++      "capability_ids": [
++        "media.final_custody"
++      ],
++      "dependencies": [
++        "source/host/src/attachment_paths.rs",
++        "source/host/src/extensions/session/production.rs",
++        "source/host/src/extensions/transcript/production_runtime.rs",
++        "source/host/src/runner/tools/send_message_tool.rs",
++        "source/host/src/runner/tools/mcp_meta_tools.rs",
++        "source/host/src/runner/stream_attempt.rs",
++        "source/host/src/runner/generated_agent_turn_stream.rs",
++        "source/host/src/runner/production_turn_run_shell_adapter.rs",
++        "source/host/src/runner/turn_agent_composition/tool_call_recorder.rs"
++      ],
++      "evidence_refs": [
++        "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
++        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-unknown-current-audit.md",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-concurrency-consumer-notes.md",
++        "source/host/src/extensions/session/agent_db.rs",
++        "source/host/src/attachment_paths.rs",
++        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
++        "source/host/tests/openclaw_sessions_and_config_contract.rs",
++        "source/host/tests/send_message_tool_contract.rs"
++      ],
++      "existing_owner_candidates": [
++        {
++          "path": "source/host/src/extensions/session/agent_db.rs",
++          "reason": "Existing canonical transcript, hidden settlement receipt and session-admission fence already share one transaction."
++        },
++        {
++          "path": "source/host/src/attachment_paths.rs",
++          "reason": "Existing process-local owned-file cleanup authority; it consumes settlement and is not a durable truth owner."
++        }
++      ],
++      "id": "OCRM-RESP-MEDIA-FINAL-CUSTODY-001",
++      "integration": {
++        "consumer": "source/host/app/src/main.rs::ProductionSendMessageSink; existing CountingSendMessageSink and Runner tool-effect custody; existing Session first-open media recovery",
++        "entrypoint": "source/host/app/src/main.rs::ProductionSendMessageSink::resolve_attachment_source / send_message",
++        "owner": "source/host/src/extensions/session/agent_db.rs::SandAgentDb::append_transcript_entries_and_release_media",
++        "producer": "source/host/src/runner/tools/send_message_tool.rs::SendMessageToolBridge"
++      },
++      "invariants": [
++        "One existing Session/AgentDb truth for transcript, media receipt and durable fence; no parallel runtime or store.",
++        "Any attempted COMMIT error remains unknown even after successful cleanup; an ordinary precommit refusal requires confirmed rollback and autocommit.",
++        "Unknown, busy and sealed-unwind custody cannot delete files, release the fence, count success or replay automatically.",
++        "A same-ID terminal entry is never removed/recreated; distinct images collect before seal and exact repeated sources do not rematerialize.",
++        "Success publication follows confirmed owner settlement; real external acceptance is separate from controlled fault tests."
++      ],
++      "migration_rollback": "Retain unresolved media and durable recovery identities; reconcile through the existing retired/fresh Session owner before any rollback to the old unknown-deleting path. No receipt/schema downgrade or automatic replay.",
++      "oracle_ids": [
++        "MSU-01",
++        "MSU-02",
++        "MSU-03",
++        "MSU-04",
++        "MSU-05",
++        "MSU-06",
++        "MSU-07",
++        "MSU-08",
++        "MSU-09",
++        "MSU-10"
++      ],
++      "owner_decision": "Register the previously specification-only MAC responsibility in the sole OCRM ledger. Reuse SandAgentDb for settlement, Session/Transcript for typed propagation, attachment_paths for subordinate deletion authority and the existing App/Runner consumers. No new module or ADR is needed.",
++      "postconditions": [
++        "Confirmed settlement retains owned bytes and permits the existing success consumers.",
++        "Unconfirmed settlement returns typed unknown, retains bytes/identity, retires the exact DB connection and suppresses outward success.",
++        "Confirmed refusal cleans only this attempt; failed cleanup preserves the durable recovery fence."
++      ],
++      "preconditions": [
++        "Existing admitted Session and captured media work/lifecycle identity when the fenced path is used.",
++        "Owned media was materialized by this operation; caller source and unrelated files remain outside its deletion authority."
++      ],
++      "required_evidence_dimensions": [
++        "unit",
++        "integration",
++        "negative-test",
++        "recovery",
++        "security",
++        "platform"
++      ],
++      "required_gate_ids": [
++        "OCRM-G04-rust-contract",
++        "OCRM-G05-frozen-oracle"
++      ],
++      "requirement_ids": [
++        "OCRM-R23",
++        "OCRM-R24",
++        "OCRM-AC23",
++        "OCRM-AC24"
++      ],
++      "responsibility_kind": "business-runtime",
++      "reviewer": null,
++      "risk": "High: unknown durable outcome, file deletion authority, exact connection retirement, reentrant/concurrent same-ID operations, gated fault FFI and restart recovery. Broader fixed-U finalizer/read-scope parity remains open.",
++      "selected_owner": "source/host/src/extensions/session/agent_db.rs",
++      "source_refs": [
++        {
++          "blob_sha": "f4bf5b4308cb2a7160ad1db0142160d14fb71551",
++          "path": "src/gateway/agent-turn/agent-run-final-media.ts",
++          "range": {
++            "end_line": 243,
++            "start_line": 1
++          },
++          "symbol": "finalizeAgentRunMedia"
++        },
++        {
++          "blob_sha": "27a3a65974fad078872b257ee28cafccdad4691f",
++          "path": "src/gateway/agent-turn/agent-run-media.ts",
++          "range": {
++            "end_line": 127,
++            "start_line": 1
++          },
++          "symbol": "dispatchAgentRunWithMedia"
++        },
++        {
++          "blob_sha": "b13f8354e7244d630ee274b3b0debf9a3f5bb8c6",
++          "path": "src/infra/sqlite-worker-error.ts",
++          "range": {
++            "end_line": 135,
++            "start_line": 1
++          },
++          "symbol": "hasSqliteWorkerOutcomeUnknown"
++        },
++        {
++          "blob_sha": "1975104ea6cdcfea25d3bc4362edbaea5e673adf",
++          "path": "src/gateway/managed-image-attachments.custody.ts",
++          "range": {
++            "end_line": 167,
++            "start_line": 1
++          },
++          "symbol": "insertManagedImageRecordWithFile and cleanup claim custody"
++        },
++        {
++          "blob_sha": "73515a9ed6a2dc9f1a0adddc638d542ad1323ee5",
++          "path": "src/media/store.read-scope.ts",
++          "range": {
++            "end_line": 269,
++            "start_line": 1
++          },
++          "symbol": "writeReadScopeMedia delegated resource settlement"
++        }
++      ],
++      "status": {
++        "acceptance": "pending",
++        "implementation": "implementing",
++        "mapping": "mapped",
++        "read": "partial",
++        "verification": "not-run",
++        "wiring": "wired"
++      },
++      "target": {
++        "language": "Rust",
++        "path": "source/host/src/extensions/session/agent_db.rs",
++        "symbol": "SandAgentDb::append_transcript_entries_and_release_media"
++      },
++      "tests": [
++        "source/host/src/extensions/session/agent_db.rs::media_settlement_tests",
++        "source/host/src/attachment_paths.rs::tests",
++        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
++        "source/host/tests/send_message_tool_contract.rs::send_message_bridge_preserves_prepared_custody_on_unknown_resolution",
++        "source/host/tests/send_message_tool_contract.rs::send_message_bridge_aborts_prepared_custody_on_known_resolution_error",
++        "source/host/tests/openclaw_sessions_and_config_contract.rs"
++      ],
++      "typed_contracts": [
++        "MSU-v1",
++        "Result<usize, AgentDbProjectionError> through Session media append",
++        "Result<Value, AgentDbProjectionError> through TranscriptRuntime media append",
++        "ProviderSessionError::ToolOutcomeUnknown at the actual App/Runner boundary",
++        "OutgoingMediaCustody rollback-eligible / owner-settlement-pending / committed"
++      ],
++      "unit_id": "OCRM-UNIT-MEDIA-008"
+     }
+   ],
+   "schema_version": 1,
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 3605dc7310eb4dfd06385b6aae0612a2b560d576..d62c6816905709d9dfed939a3581633488d9921c 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1363,7 +1363,9 @@
+       "blocker_ids": [
+         "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
+         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
+-        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
++        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001",
++        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
++        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
+       ],
+       "evidence_refs": [
+         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
+@@ -1391,7 +1393,10 @@
+         "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+         "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+         "source/host/tests/local_media_file_url_contract.rs",
+-        "source/host/app/src/tests/local_media_file_url_tests.rs"
++        "source/host/app/src/tests/local_media_file_url_tests.rs",
++        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
++        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R23",
+@@ -1418,7 +1423,17 @@
+         "OCRM-MODEL-IDENTITY-O06",
+         "OCRM-MODEL-IDENTITY-O07",
+         "CMI-O1",
+-        "CMI-O2"
++        "CMI-O2",
++        "MSU-01",
++        "MSU-02",
++        "MSU-03",
++        "MSU-04",
++        "MSU-05",
++        "MSU-06",
++        "MSU-07",
++        "MSU-08",
++        "MSU-09",
++        "MSU-10"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -1433,7 +1448,8 @@
+         "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+         "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
+         "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
+-        "OCRM-RESP-MODEL-IDENTITY-001"
++        "OCRM-RESP-MODEL-IDENTITY-001",
++        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
+       ],
+       "reviewer": "xuyao@ombhrum.com"
+     },
+@@ -1451,7 +1467,9 @@
+         "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
+         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
+         "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
+-        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
++        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001",
++        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
++        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
+       ],
+       "evidence_refs": [
+         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
+@@ -1532,7 +1550,10 @@
+         "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+         "projects/openclaw-rust/evidence/media-bounded-read-contract-647e0932-20261103.json",
+-        "source/host/tests/channel_attachment_contract.rs"
++        "source/host/tests/channel_attachment_contract.rs",
++        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
++        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R24",
+@@ -1596,7 +1617,17 @@
+         "MSI-04",
+         "MSI-05",
+         "MSI-06",
+-        "MSI-07"
++        "MSI-07",
++        "MSU-01",
++        "MSU-02",
++        "MSU-03",
++        "MSU-04",
++        "MSU-05",
++        "MSU-06",
++        "MSU-07",
++        "MSU-08",
++        "MSU-09",
++        "MSU-10"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -1707,7 +1738,8 @@
+         "OCRM-RESP-SHARED-ASYNC-SCOPE-001",
+         "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
+         "OCRM-RESP-MEDIA-STAGED-INPUTS-001",
+-        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
++        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001",
++        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
+       ],
+       "reviewer": "xuyao@ombhrum.com"
+     },
+@@ -2854,7 +2886,9 @@
+       "blocker_ids": [
+         "BL-MEDIA-PLAYBACK-TRANSCODE-CHAT-WIRING-001",
+         "BL-MEDIA-HTML-PROVENANCE-CHAT-WIRING-001",
+-        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001"
++        "BL-MEDIA-UND-AUDIO-PREFLIGHT-CHAT-WIRING-001",
++        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
++        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
+       ],
+       "evidence_refs": [
+         "projects/openclaw-rust/dossiers/crash-guard-media-scoped.md",
+@@ -2882,7 +2916,10 @@
+         "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+         "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+         "source/host/tests/local_media_file_url_contract.rs",
+-        "source/host/app/src/tests/local_media_file_url_tests.rs"
++        "source/host/app/src/tests/local_media_file_url_tests.rs",
++        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
++        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC23",
+@@ -2909,7 +2946,17 @@
+         "OCRM-MODEL-IDENTITY-O06",
+         "OCRM-MODEL-IDENTITY-O07",
+         "CMI-O1",
+-        "CMI-O2"
++        "CMI-O2",
++        "MSU-01",
++        "MSU-02",
++        "MSU-03",
++        "MSU-04",
++        "MSU-05",
++        "MSU-06",
++        "MSU-07",
++        "MSU-08",
++        "MSU-09",
++        "MSU-10"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2924,7 +2971,8 @@
+         "OCRM-RESP-MEDIA-GENERATED-HTML-PROVENANCE-001",
+         "OCRM-RESP-MEDIA-UND-AUDIO-PREFLIGHT-001",
+         "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
+-        "OCRM-RESP-MODEL-IDENTITY-001"
++        "OCRM-RESP-MODEL-IDENTITY-001",
++        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
+       ],
+       "reviewer": "xuyao@ombhrum.com"
+     },
+@@ -2942,7 +2990,9 @@
+         "BL-MEDIA-REMOTE-WORKSPACE-CONSUMERS-001",
+         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001",
+         "BL-MEDIA-UND-ATTACHMENTS-SELECT-CHAT-WIRING-001",
+-        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001"
++        "BL-MEDIA-UND-ENTRY-CAPABILITIES-CHAT-WIRING-001",
++        "BL-MEDIA-FINAL-CUSTODY-FULL-EQUIVALENCE-001",
++        "BL-MEDIA-SETTLEMENT-EXACT-H-EVIDENCE-001"
+       ],
+       "evidence_refs": [
+         "projects/openclaw-rust/dossiers/audio-transcode-ffmpeg-scoped.md",
+@@ -3046,7 +3096,10 @@
+         "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+         "projects/openclaw-rust/docs/specs/media-bounded-read-safety.md",
+         "projects/openclaw-rust/evidence/media-bounded-read-contract-647e0932-20261103.json",
+-        "source/host/tests/channel_attachment_contract.rs"
++        "source/host/tests/channel_attachment_contract.rs",
++        "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
++        "source/host/app/src/tests/media_settlement_unknown_tests.rs",
++        "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/media-settlement-fixed-u-contract.md"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+@@ -3110,7 +3163,17 @@
+         "MSI-04",
+         "MSI-05",
+         "MSI-06",
+-        "MSI-07"
++        "MSI-07",
++        "MSU-01",
++        "MSU-02",
++        "MSU-03",
++        "MSU-04",
++        "MSU-05",
++        "MSU-06",
++        "MSU-07",
++        "MSU-08",
++        "MSU-09",
++        "MSU-10"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -3215,7 +3278,8 @@
+         "OCRM-RESP-SECURITY-OPENgrep-CRABBOX-001",
+         "OCRM-RESP-MEDIA-INPUT-FILES-EXTRACT-001",
+         "OCRM-RESP-MEDIA-STAGED-INPUTS-001",
+-        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001"
++        "OCRM-RESP-MEM-SYNTHESIS-IDENTITY-001",
++        "OCRM-RESP-MEDIA-FINAL-CUSTODY-001"
+       ],
+       "reviewer": "xuyao@ombhrum.com"
+     }
+diff --git a/source/host/app/src/main.rs b/source/host/app/src/main.rs
+index 5e1a392d615bec42153e9936f7dc23db8954cd81..ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df 100644
+--- a/source/host/app/src/main.rs
++++ b/source/host/app/src/main.rs
+@@ -73,6 +73,7 @@ use mahayana_host_runtime::extensions::session::agent_session::{
+ };
+ use mahayana_host_runtime::extensions::memory::agent_state::AvatarBoxFileReader;
+ use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
++use mahayana_host_runtime::extensions::session::agent_db::AgentDbProjectionError;
+ use mahayana_host_runtime::extensions::session::session_paths::{
+     is_root_main_session_key, resolve_internal_send_route, resolve_public_session_route,
+     InternalSessionRouteError, PublicSessionRoute, PublicSessionRouteError, SessionKind,
+@@ -718,14 +719,61 @@ struct ProductionSendMessageSink {
+     session_key: Option<String>,
+     reply_thread_target: Option<String>,
+     is_fork: bool,
+-    pending_media: Mutex<HashMap<String, PendingOutgoingMedia>>,
++    pending_media: Mutex<HashMap<String, Arc<Mutex<PendingOutgoingMedia>>>>,
+ }
+ 
++#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
++enum PendingOutgoingMediaPhase {
++    #[default]
++    Collecting,
++    OwnerSettlementPending,
++    Committed,
++    Aborted,
++}
++
++#[derive(Default)]
+ struct PendingOutgoingMedia {
++    phase: PendingOutgoingMediaPhase,
+     custody: OutgoingMediaCustody,
+     session_key: Option<String>,
+     lifecycle_revision: Option<String>,
+     media_work_id: Option<String>,
++    resolved_sources: HashMap<String, ResolvedAttachmentSource>,
++    has_owned_media: bool,
++}
++
++impl PendingOutgoingMedia {
++    fn assert_collecting(&self) -> Result<(), ProviderSessionError> {
++        match self.phase {
++            PendingOutgoingMediaPhase::Collecting
++                if !self.custody.is_owner_settlement_pending() => Ok(()),
++            PendingOutgoingMediaPhase::Aborted => Err(ProviderSessionError::Tool(
++                "outgoing media attempt was already refused; use a new tool-call id".into(),
++            )),
++            _ => Err(ProviderSessionError::ToolOutcomeUnknown(
++                "outgoing media identity is already settling or settled".into(),
++            )),
++        }
++    }
++
++    fn begin_owner_settlement(&mut self) -> Result<(), ProviderSessionError> {
++        self.assert_collecting()?;
++        if !self.custody.begin_owner_settlement() {
++            return Err(ProviderSessionError::ToolOutcomeUnknown(
++                "outgoing media cleanup authority is already sealed".into(),
++            ));
++        }
++        self.phase = PendingOutgoingMediaPhase::OwnerSettlementPending;
++        Ok(())
++    }
++
++    fn commit(&mut self) {
++        self.custody.commit();
++        self.phase = PendingOutgoingMediaPhase::Committed;
++        self.media_work_id = None;
++        self.resolved_sources.clear();
++        self.has_owned_media = false;
++    }
+ }
+ 
+ impl ProductionSendMessageSink {
+@@ -744,22 +792,56 @@ impl ProductionSendMessageSink {
+         }
+     }
+ 
+-    fn assert_pending_media_current(&self, tool_call_id: &str) -> Result<(), ProviderSessionError> {
+-        let fence = self
++    fn pending_media_entry(
++        &self,
++        tool_call_id: &str,
++        create: bool,
++    ) -> Result<Option<Arc<Mutex<PendingOutgoingMedia>>>, ProviderSessionError> {
++        let mut pending = self
+             .pending_media
+             .lock()
+-            .map_err(|_| ProviderSessionError::Tool("outgoing media custody lock poisoned".into()))?
+-            .get(tool_call_id)
+-            .and_then(|pending| {
+-                Some((
+-                    pending.session_key.as_deref()?,
+-                    pending.lifecycle_revision.as_deref()?,
++            .map_err(|_| ProviderSessionError::ToolOutcomeUnknown(
++                "outgoing media custody index is poisoned".into(),
++            ))?;
++        if create {
++            Ok(Some(Arc::clone(pending.entry(tool_call_id.to_string())
++                .or_insert_with(|| Arc::new(Mutex::new(PendingOutgoingMedia::default()))))))
++        } else {
++            Ok(pending.get(tool_call_id).map(Arc::clone))
++        }
++    }
++
++    fn try_pending_media(
++        entry: &Mutex<PendingOutgoingMedia>,
++    ) -> Result<std::sync::MutexGuard<'_, PendingOutgoingMedia>, ProviderSessionError> {
++        match entry.try_lock() {
++            Ok(pending) => Ok(pending),
++            Err(std::sync::TryLockError::WouldBlock) => Err(ProviderSessionError::ToolOutcomeUnknown(
++                "another operation still owns this outgoing media identity".into(),
++            )),
++            Err(std::sync::TryLockError::Poisoned(poisoned)) => {
++                // Poison recovery may only disarm cleanup. It never resumes
++                // materialization, SQL, publication or a failed operation.
++                let mut pending = poisoned.into_inner();
++                if pending.phase == PendingOutgoingMediaPhase::Collecting {
++                    let _ = pending.custody.begin_owner_settlement();
++                    pending.phase = PendingOutgoingMediaPhase::OwnerSettlementPending;
++                }
++                Err(ProviderSessionError::ToolOutcomeUnknown(
++                    "outgoing media ownership was interrupted".into(),
+                 ))
+-            })
+-            .map(|(session_key, lifecycle_revision)| {
+-                (session_key.to_string(), lifecycle_revision.to_string())
+-            });
+-        let Some((session_key, lifecycle_revision)) = fence else {
++            }
++        }
++    }
++
++    fn assert_pending_media_current(
++        &self,
++        pending: &PendingOutgoingMedia,
++    ) -> Result<(), ProviderSessionError> {
++        let (Some(session_key), Some(lifecycle_revision)) = (
++            pending.session_key.as_deref(),
++            pending.lifecycle_revision.as_deref(),
++        ) else {
+             return Ok(());
+         };
+         self.sessions
+@@ -770,6 +852,48 @@ impl ProductionSendMessageSink {
+             )
+             .map_err(ProviderSessionError::Tool)
+     }
++
++    fn rollback_pending_media(
++        &self,
++        pending: &mut PendingOutgoingMedia,
++        tool_call_id: &str,
++        confirmed_precommit_refusal: bool,
++    ) {
++        let errors = match pending.phase {
++            PendingOutgoingMediaPhase::Collecting => pending.custody.rollback(),
++            PendingOutgoingMediaPhase::OwnerSettlementPending if confirmed_precommit_refusal => {
++                pending.custody.rollback_after_confirmed_refusal()
++            }
++            _ => return,
++        };
++        pending.phase = PendingOutgoingMediaPhase::Aborted;
++        pending.resolved_sources.clear();
++        pending.has_owned_media = false;
++        let cleanup_complete = errors.is_empty();
++        for error in errors {
++            eprintln!(
++                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
++                self.agent_id, tool_call_id
++            );
++        }
++        // A failed cleanup retains the durable recovery fence. The map lock
++        // is not held while entering Session or any of its notifications.
++        if !cleanup_complete {
++            return;
++        }
++        if let (Some(revision), Some(work_id)) = (
++            pending.lifecycle_revision.as_deref(),
++            pending.media_work_id.as_deref(),
++        ) {
++            match self.sessions.release_session_media_admission(&self.agent_id, revision, work_id) {
++                Ok(_) => pending.media_work_id = None,
++                Err(error) => eprintln!(
++                    "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}",
++                    self.agent_id, tool_call_id
++                ),
++            }
++        }
++    }
+ }
+ 
+ impl SendMessageSink for ProductionSendMessageSink {
+@@ -882,117 +1006,90 @@ impl SendMessageSink for ProductionSendMessageSink {
+         source_url: &str,
+         tool_call_id: &str,
+     ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
+-        let admission = if let Some(session_key) = self.session_key.as_deref() {
+-            self.sessions
+-                .assert_session_work_admission(&self.agent_id, Some(session_key))
+-                .map_err(ProviderSessionError::Tool)?;
+-            self.sessions
+-                .read_session_work_admission(&self.agent_id)
+-                .map_err(ProviderSessionError::Tool)?
+-                .filter(|record| record.session_key == session_key)
+-                .map(|record| (record.session_key, record.lifecycle_revision))
+-        } else {
+-            None
+-        };
+-        let admission_session_key = admission.as_ref().map(|(key, _)| key.clone());
+-        let admission_lifecycle_revision = admission.map(|(_, revision)| revision);
+-        let (resolved, owned_path) = resolve_production_attachment_source(
+-            self.sessions.as_ref(),
+-            self.forever_box.as_ref(),
+-            &self.agent_id,
+-            source_url,
+-        )
+-        .map_err(ProviderSessionError::Tool)?;
+-        if let Some(path) = owned_path {
+-            let mut custody = OutgoingMediaCustody::default();
+-            custody.track(path.clone());
+-            let media_work_id = format!("send-media:{tool_call_id}");
+-            let media_lifecycle_revision = if let Some(session_key) = admission_session_key.as_deref() {
+-                Some(self
+-                    .sessions
+-                    .capture_session_media_admission(
+-                        &self.agent_id,
+-                        session_key,
+-                        &media_work_id,
+-                        Some(&path),
+-                    )
+-                    .map_err(|error| {
+-                        for cleanup_error in custody.rollback() {
+-                            eprintln!(
+-                                "mahayana-host outgoing_media_cleanup_failed agent={} tool={} error={cleanup_error}",
+-                                self.agent_id, tool_call_id
+-                            );
+-                        }
+-                        ProviderSessionError::Tool(error)
+-                    })?)
++        let entry = self.pending_media_entry(tool_call_id, true)?.ok_or_else(|| {
++            ProviderSessionError::ToolOutcomeUnknown("outgoing media identity is unavailable".into())
++        })?;
++        let mut pending = Self::try_pending_media(&entry)?;
++        pending.assert_collecting()?;
++        if let Err(error) = self.assert_pending_media_current(&pending) {
++            self.rollback_pending_media(&mut pending, tool_call_id, false);
++            return Err(error);
++        }
++        if let Some(resolved) = pending.resolved_sources.get(source_url) {
++            return Ok(resolved.clone());
++        }
++        let result = (|| {
++            let admission = if let Some(session_key) = self.session_key.as_deref() {
++                self.sessions
++                    .assert_session_work_admission(&self.agent_id, Some(session_key))
++                    .map_err(ProviderSessionError::Tool)?;
++                self.sessions
++                    .read_session_work_admission(&self.agent_id)
++                    .map_err(ProviderSessionError::Tool)?
++                    .filter(|record| record.session_key == session_key)
++                    .map(|record| (record.session_key, record.lifecycle_revision))
+             } else {
+                 None
+             };
+-            let mut pending = match self.pending_media.lock() {
+-                Ok(pending) => pending,
+-                Err(_) => {
+-                    for error in custody.rollback() {
+-                        eprintln!(
+-                            "mahayana-host outgoing_media_cleanup_failed agent={} tool={} error={error}",
+-                            self.agent_id, tool_call_id
+-                        );
+-                    }
+-                    if let Some(lifecycle_revision) = media_lifecycle_revision.as_deref() {
+-                        let _ = self.sessions.release_session_media_admission(
+-                            &self.agent_id,
+-                            lifecycle_revision,
+-                            &media_work_id,
+-                        );
++            let admission_session_key = admission.as_ref().map(|(key, _)| key.clone());
++            let admission_lifecycle_revision = admission.map(|(_, revision)| revision);
++            if (!pending.resolved_sources.is_empty() || pending.has_owned_media)
++                && (pending.session_key != admission_session_key
++                    || pending.lifecycle_revision != admission_lifecycle_revision)
++            {
++                return Err(ProviderSessionError::Tool(
++                    "session generation changed while collecting outgoing media".into(),
++                ));
++            }
++            pending.session_key = admission_session_key.clone();
++            pending.lifecycle_revision = admission_lifecycle_revision.clone();
++            let (resolved, owned_path) = resolve_production_attachment_source(
++                self.sessions.as_ref(),
++                self.forever_box.as_ref(),
++                &self.agent_id,
++                source_url,
++            )
++            .map_err(ProviderSessionError::Tool)?;
++            if let Some(path) = owned_path {
++                pending.custody.track(path.clone()).map_err(|_| {
++                    ProviderSessionError::ToolOutcomeUnknown(
++                        "outgoing media cleanup authority changed during materialization".into(),
++                    )
++                })?;
++                pending.has_owned_media = true;
++                if let Some(session_key) = admission_session_key.as_deref() {
++                    let media_work_id = format!("send-media:{tool_call_id}");
++                    // Keep the exact attempted capture identity even if its
++                    // ordinary pre-send path subsequently needs cleanup.
++                    pending.media_work_id = Some(media_work_id.clone());
++                    let revision = self.sessions.capture_session_media_admission(
++                        &self.agent_id, session_key, &media_work_id, Some(&path),
++                    ).map_err(ProviderSessionError::Tool)?;
++                    pending.lifecycle_revision = Some(revision.clone());
++                    if admission_lifecycle_revision.as_deref() != Some(revision.as_str()) {
++                        return Err(ProviderSessionError::Tool(
++                            "session generation changed while admitting outgoing media".into(),
++                        ));
+                     }
+-                    return Err(ProviderSessionError::Tool(
+-                        "outgoing media custody lock poisoned".into(),
+-                    ));
+                 }
+-            };
+-            let pending_media = pending
+-                .entry(tool_call_id.to_string())
+-                .or_insert_with(|| PendingOutgoingMedia {
+-                    custody: OutgoingMediaCustody::default(),
+-                    session_key: admission_session_key.clone(),
+-                    lifecycle_revision: media_lifecycle_revision
+-                        .clone()
+-                        .or(admission_lifecycle_revision.clone()),
+-                    media_work_id: media_lifecycle_revision
+-                        .as_ref()
+-                        .map(|_| media_work_id.clone()),
+-                });
+-            pending_media.custody.absorb(custody);
++            }
++            pending.resolved_sources.insert(source_url.to_string(), resolved.clone());
++            Ok(resolved)
++        })();
++        if let Err(error) = &result {
++            if !matches!(error, ProviderSessionError::ToolOutcomeUnknown(_)) {
++                self.rollback_pending_media(&mut pending, tool_call_id, false);
++            }
+         }
+-        Ok(resolved)
++        result
+     }
+ 
+     fn abort_attachment_custody(&self, tool_call_id: &str) {
+-        let mut pending = match self.pending_media.lock() {
+-            Ok(pending) => pending,
+-            Err(poisoned) => poisoned.into_inner(),
+-        };
+-        let Some(mut custody) = pending.remove(tool_call_id) else { return };
+-        for error in custody.custody.rollback() {
+-            eprintln!(
+-                "mahayana-host outgoing_media_cleanup_failed agent={} tool_call={} error={error}",
+-                self.agent_id, tool_call_id
+-            );
+-        }
+-        if let (Some(revision), Some(work_id)) = (
+-            custody.lifecycle_revision.as_deref(),
+-            custody.media_work_id.as_deref(),
+-        ) {
+-            if let Err(error) = self.sessions.release_session_media_admission(
+-                &self.agent_id,
+-                revision,
+-                work_id,
+-            ) {
+-                eprintln!(
+-                    "mahayana-host outgoing_media_admission_release_failed agent={} tool_call={} error={error}",
+-                    self.agent_id, tool_call_id
+-                );
+-            }
+-        }
++        let Ok(Some(entry)) = self.pending_media_entry(tool_call_id, false) else { return };
++        let Ok(mut pending) = Self::try_pending_media(&entry) else { return };
++        // Pending/unknown, committed and previously refused identities retain
++        // their entry. A detached old Arc can never coexist with a replacement.
++        self.rollback_pending_media(&mut pending, tool_call_id, false);
+     }
+ 
+     fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
+@@ -1015,22 +1112,43 @@ impl SendMessageSink for ProductionSendMessageSink {
+             .filter(|value| !value.is_empty())
+             .map(ToOwned::to_owned);
+ 
+-        if let Err(error) = self.assert_pending_media_current(tool_call_id) {
+-            self.abort_attachment_custody(tool_call_id);
+-            return Err(error);
++        let pending_entry = self.pending_media_entry(tool_call_id, false)?;
++        let mut pending = pending_entry.as_ref()
++            .map(|entry| Self::try_pending_media(entry))
++            .transpose()?;
++        if let Some(custody) = pending.as_mut() {
++            custody.assert_collecting()?;
++            if let Err(error) = self.assert_pending_media_current(custody) {
++                self.rollback_pending_media(custody, tool_call_id, false);
++                return Err(error);
++            }
+         }
+-        let media_fence = self
+-            .pending_media
+-            .lock()
+-            .map_err(|_| ProviderSessionError::Tool("outgoing media custody lock poisoned".into()))?
+-            .get(tool_call_id)
+-            .and_then(|pending| {
+-                Some((
+-                    pending.lifecycle_revision.as_ref()?.clone(),
+-                    pending.media_work_id.as_ref()?.clone(),
++        let media_fence = pending.as_ref().and_then(|custody| {
++            Some((
++                custody.lifecycle_revision.as_ref()?.clone(),
++                custody.media_work_id.as_ref()?.clone(),
++            ))
++        });
++        let has_owned_media = pending.as_ref().is_some_and(|custody| custody.has_owned_media);
++        if let Some(custody) = pending.as_mut() {
++            // This happens before history allocation or any possibly
++            // committing owner call, including an unwind from that call.
++            custody.begin_owner_settlement()?;
++        }
++        let legacy_error = |error: String| {
++            if has_owned_media {
++                // This legacy no-fence API cannot prove a clean rollback.
++                // Retain bytes conservatively without inventing a receipt.
++                ProviderSessionError::ToolOutcomeUnknown(
++                    "outgoing media compatibility settlement could not be confirmed".into(),
++                )
++            } else {
++                ProviderSessionError::Tool(format!(
++                    "could not persist SendMessage for {}: {error}", self.agent_id,
+                 ))
+-            });
+-        let entry = match (media_fence, self.session_key.as_deref()) {
++            }
++        };
++        let appended = match (media_fence, self.session_key.as_deref()) {
+             (Some((revision, work_id)), Some(session_key)) => self
+                 .transcript_runtime
+                 .append_generated_send_message_entry_with_media_custody(
+@@ -1043,7 +1161,17 @@ impl SendMessageSink for ProductionSendMessageSink {
+                     self.is_fork,
+                     &revision,
+                     &work_id,
+-                ),
++                )
++                .map_err(|error| match error {
++                    AgentDbProjectionError::TranscriptCommitUnknown(_) => {
++                        ProviderSessionError::ToolOutcomeUnknown(
++                            "outgoing media settlement could not be confirmed".into(),
++                        )
++                    }
++                    error => ProviderSessionError::Tool(format!(
++                        "could not persist SendMessage for {}: {error}", self.agent_id,
++                    )),
++                }),
+             (None, Some(session_key)) => self
+                 .transcript_runtime
+                 .append_generated_send_message_entry(
+@@ -1054,7 +1182,7 @@ impl SendMessageSink for ProductionSendMessageSink {
+                     timestamp_ms,
+                     self.reply_thread_target.as_deref(),
+                     self.is_fork,
+-                ),
++                ).map_err(legacy_error),
+             (None, None) => self
+                 .transcript_runtime
+                 .append_generated_send_message_entry_compatibility(
+@@ -1064,35 +1192,36 @@ impl SendMessageSink for ProductionSendMessageSink {
+                     timestamp_ms,
+                     self.reply_thread_target.as_deref(),
+                     self.is_fork,
+-                ),
+-            (Some((_revision, _work_id)), None) => Err(
++                ).map_err(legacy_error),
++            (Some((_revision, _work_id)), None) => Err(ProviderSessionError::Tool(
+                 "outgoing media fence is missing its admitted session identity".into(),
+-            ),
+-        }
+-            .map_err(|error| {
+-                self.abort_attachment_custody(tool_call_id);
+-                ProviderSessionError::Tool(format!(
+-                    "could not persist SendMessage for {}: {error}",
+-                    self.agent_id
+-                ))
+-            })?;
++            )),
++        };
++        let entry = match appended {
++            Ok(entry) => entry,
++            Err(error) => {
++                if !matches!(&error, ProviderSessionError::ToolOutcomeUnknown(_)) {
++                    if let Some(custody) = pending.as_mut() {
++                        self.rollback_pending_media(custody, tool_call_id, true);
++                    }
++                }
++                return Err(error);
++            }
++        };
+         let entry_id = entry
+             .get("id")
+             .and_then(serde_json::Value::as_str)
++            .filter(|id| !id.is_empty())
+             .map(ToOwned::to_owned)
+-            .ok_or_else(|| {
+-                self.abort_attachment_custody(tool_call_id);
+-                ProviderSessionError::Tool(
+-                    "persisted SendMessage entry did not contain an id".to_string(),
+-                )
+-            })?;
+-        let mut pending = match self.pending_media.lock() {
+-            Ok(pending) => pending,
+-            Err(poisoned) => poisoned.into_inner(),
+-        };
+-        if let Some(mut custody) = pending.remove(tool_call_id) {
+-            custody.custody.commit();
++            .ok_or_else(|| ProviderSessionError::ToolOutcomeUnknown(
++                "persisted SendMessage entry did not contain an id".into(),
++            ))?;
++        if let Some(custody) = pending.as_mut() {
++            custody.commit();
+         }
++        // Publication callbacks can re-enter this sink. They see a compact
++        // terminal identity and never run under either custody mutex.
++        drop(pending);
+         if let Some(address_token) = channel_delivery {
+             let host_tx = self.host_tx.clone();
+             let agent_id = self.agent_id.clone();

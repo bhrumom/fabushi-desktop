@@ -1,0 +1,58 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--no-fail-fast",
+    "--manifest-path",
+    "source/host/Cargo.toml",
+    "--test",
+    "host_storage_contract",
+    "--test",
+    "agent_db_recovery_contract",
+    "--test",
+    "conversation_blob_db_recovery_contract",
+    "--test",
+    "automation_store_contract",
+    "--",
+    "--test-threads=1"
+  ],
+  "cargo_exit": 0,
+  "capture_exit": 0,
+  "summaries": [
+    [
+      1,
+      0,
+      0
+    ],
+    [
+      18,
+      0,
+      1
+    ],
+    [
+      45,
+      0,
+      0
+    ],
+    [
+      4,
+      0,
+      0
+    ],
+    [
+      11,
+      0,
+      0
+    ]
+  ],
+  "observed_positive_lines": 78,
+  "required": 18,
+  "required_literal_differences": [],
+  "observed_name_differences": [],
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  }
+}

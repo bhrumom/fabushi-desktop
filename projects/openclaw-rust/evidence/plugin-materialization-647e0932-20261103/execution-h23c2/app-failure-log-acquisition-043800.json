@@ -1,0 +1,13 @@
+{
+  "observed_at_utc": "2026-11-03 04:38:00 UTC",
+  "log_snapshot_file": "sqlite-native-path-125721731498-043800-snapshot.raw.log",
+  "returned_characters": 4256256,
+  "last_returned_timestamp": "2026-11-03T04:30:11.7801745Z",
+  "app_started_at": "2026-11-03T04:31:41Z",
+  "app_failed_at": "2026-11-03T04:36:44Z",
+  "log_sha256": "92cb8a60c8929d2512cb80cef1cdb9fe856d4ab220ba713c690d4efbe09671f0",
+  "complete_job_log": false,
+  "app_failure_diagnostic_present": false,
+  "failure_classification": "pending original diagnostic",
+  "repeated_log_call": false
+}

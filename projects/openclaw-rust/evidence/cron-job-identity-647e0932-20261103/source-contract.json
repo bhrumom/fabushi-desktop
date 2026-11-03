@@ -1,0 +1,129 @@
+{
+  "contract": "OCRM-CRON-JOB-IDENTITY-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "base_commit": "972779ecd290b90e407ffe651aa5c456c31e9f7f",
+  "base_tree": "a75bb4706831a34b818e459f6be4df920560a2fe",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "responsibility_anchor": "OCRM-RESP-GW-DISPATCH-REGISTRY-001",
+  "responsibility_anchor_scope": "Existing registered Gateway dispatch adapter; no claim that its registry row or OCRM-UNIT-AUTOMATION-001 closes all cron job/source responsibilities.",
+  "owner_chain": {
+    "entry": "Authenticated Gateway POST /api/cron.list and /api/cron.trigger",
+    "adapter": "UnifiedGatewayApi -> actual same-file list_openclaw_cron_jobs/trigger_openclaw_cron_job",
+    "producer": "Native dispatch_automation_command -> AutomationRuntime::create_agent_automation -> FileAutomationStore::upsert",
+    "identity": "Existing automations::automation_id::stable_automation_id(Agent ID, local automation ID)",
+    "state": "Existing ProductionSessionWorkers/SandAgentSessionStore and Agent-local FileAutomationStore configuration/history",
+    "executor": "Existing runAgentAutomationNow -> AutomationRuntime/AutomationRunPath -> existing routed Runner or Host lane",
+    "consumer": "Selected pair's real run history, existing observations and canonical Gateway response",
+    "permission": "Existing Gateway authentication/operator/scope boundary; no new grant or agentId override"
+  },
+  "behavior": "Two same-name routines in different Agents can be listed and triggered without first-match redirection; unique safe legacy aliases remain compatible, ambiguity and stale canonical namespace refuse before effects.",
+  "requirements": [
+    "CJI-01",
+    "CJI-02",
+    "CJI-03",
+    "CJI-04",
+    "CJI-05",
+    "CJI-06",
+    "CJI-07"
+  ],
+  "decision": {
+    "id": "CJI-ID-NAMESPACE-01",
+    "made_before_production_implementation": true,
+    "reason": "Without reserved UUID-v5 canonical addressing, deleting a canonical target could redirect its old ID to another routine's now-unique local alias. Preserve the routine through its own canonical ID; refuse that old addressing form and joint namespace collisions."
+  },
+  "fixed_U_read_slices": [
+    {
+      "path": "src/cron/service/jobs.ts",
+      "blob_sha": "780d8542ad4460b63ab39a4b2096671192853ec4",
+      "ranges": [
+        [
+          171,
+          230
+        ]
+      ],
+      "claim": "createJob establishes global ID independent of display name; review limited to identity creation"
+    },
+    {
+      "path": "src/cron/service/ops-read.ts",
+      "blob_sha": "3fd0daf829edc3c94ed052dd78478c3ce9f1bea0",
+      "ranges": [
+        [
+          1,
+          100
+        ]
+      ],
+      "claim": "list and exact readJob within existing locked store; remaining scratch/edit operations not reviewed for this slice"
+    },
+    {
+      "path": "src/gateway/server-methods/cron-job-access.ts",
+      "blob_sha": "28a75469df97ceaef4cc137510ee8477ee07038a",
+      "ranges": [
+        [
+          126,
+          235
+        ]
+      ],
+      "claim": "ID aliases, exact read, existing caller-scope selection and run handoff"
+    },
+    {
+      "path": "src/gateway/server-methods/cron.ts",
+      "blob_sha": "35cd3e5e36e26ccefba265c4955377fff0bc5ca0",
+      "ranges": [
+        [
+          501,
+          625
+        ]
+      ],
+      "claim": "cron.run carries the exact selected job ID through enqueue and history; full upstream method not implemented by this target repair"
+    },
+    {
+      "path": "src/cli/cron-cli/register.cron-simple.ts",
+      "blob_sha": "ed18eba20a47260fba17a9b7b1b75fba372fb524",
+      "ranges": [
+        [
+          251,
+          280
+        ]
+      ],
+      "claim": "actual CLI consumer passes chosen job ID to cron.run and subsequent run wait"
+    }
+  ],
+  "review_truth": "Bounded product-identity/caller reads and target defect repair; not full-file review, not recursive source closure, no canonical source-review rows or historical reading facts upgraded.",
+  "source_review_unknowns": [
+    "Complete upstream cron methods, access/grants, queue and wait semantics",
+    "All recursive dependencies/source inputs and global risk review",
+    "Real service/provider and supported platform/package compatibility"
+  ],
+  "required_tests": [
+    "cron_job_identity_list_and_trigger_keep_same_name_agents_distinct",
+    "cron_job_identity_legacy_aliases_refuse_ambiguity_without_effects",
+    "cron_job_identity_canonical_legacy_collision_refuses_without_effects",
+    "cron_job_identity_reopen_and_delete_preserve_target_continuity",
+    "cron_job_identity_existing_execution_outcomes_remain_owned"
+  ],
+  "execution_plan": {
+    "workflow": ".github/workflows/rust-desktop-runtime.yml",
+    "job": "sqlite-native-path",
+    "step": "Check and execute the actual Automation, Settings and channel App owners on Linux",
+    "reuse": "Existing cfg(not(test)) App check, exact compiler executable and per-test receipt; append five required names and source inputs, preserving all controls",
+    "allowed_environment": "GitHub Actions only",
+    "status": "authored; exact candidate H pending"
+  },
+  "acceptance": {
+    "new_owner": false,
+    "source_rows_upgraded": false,
+    "global_flags_changed": false,
+    "unit_verified": false,
+    "independent_acceptance": "pending",
+    "final_G01_G12_AC01_AC24": "open"
+  },
+  "preserved_incoming": [
+    "bb5 Rust plugin auth recovery remains separate pending exact-H evidence",
+    "d70 MCP credential/callback/vault retirement and prior-root capture edits are retained; no overlapping source paths with this batch"
+  ]
+}

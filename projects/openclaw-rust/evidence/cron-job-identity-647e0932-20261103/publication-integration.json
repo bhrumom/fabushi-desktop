@@ -1,0 +1,32 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "kind": "cron reviewed source checkpoint; execution pending",
+  "reviewed_core_tree": "215733e43f8016e159ef1d676e433138272f6dc6",
+  "intended_parent": "fa75f9ccd66e43f3a4d72ab47acdefaa832212f6",
+  "parent_tree": "ba707272d259b7da5f0def5f31eb3380ce6fd3e8",
+  "unpublished_prepared_commit": "97e3c54e916c48e0be2a08659eb520e1b89df217",
+  "previous_push_result": "UNKNOWN GraphQL response; fresh branch and compare prove canonical ref instead advanced directly from871 tofa75. Prepared97 is not a published branch result and is not claimed delivered.",
+  "incoming_preserved": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
+      "sha": "c99e744188d90d7b31448e45e9887148c835dda6"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills.rs",
+      "sha": "a0054eebb18e38b234689d72ca998dac3fd77901"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/plugin_skills_sync_tests.rs",
+      "sha": "cb8abb868bef2469bded2dda87e0680e5c54b329"
+    },
+    {
+      "path": "source/host/tests/mcp_coordinator_relay_contract.rs",
+      "sha": "71144e4e578a51fd2281dcb6b743e5c7a11d569e"
+    }
+  ],
+  "overlap_with_cron_and_compile_repair": [],
+  "core_blobs_unchanged_from_review": true,
+  "execution": "Skip CI on this recoverable checkpoint while the already diagnosed App test fixture compile recovery completes focused source review; next repaired commit will run the existing Actions.",
+  "completion_flags_changed": false
+}

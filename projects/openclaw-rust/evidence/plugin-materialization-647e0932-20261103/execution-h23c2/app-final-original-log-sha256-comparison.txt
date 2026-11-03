@@ -1,0 +1,7 @@
+automation-app/shipping-check.stdout.log: OK
+automation-app/shipping-check.stderr.log: OK
+automation-app/test-build.stdout.log: OK
+automation-app/test-build.stderr.log: OK
+link-preview-native-gateway/host.log: OK
+link-preview-native-gateway/coordinator.log: OK
+link-preview-native-gateway/app.log: OK

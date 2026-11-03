@@ -1,0 +1,39 @@
+{
+  "input_hash_conflicts": [],
+  "palette_input_before_after_equal": true,
+  "palette_fixture_before_after_equal": true,
+  "portable_palette_export": {
+    "path": "/home/runner/work/fabushi-desktop/fabushi-desktop/.evidence/sqlite-native-path/palette-message/41576693105-1/palette-rust-results.json",
+    "sha256": "db2e2deebd5488524f7ef0fa10d75b0980e47abb873dc14fe15bb828a5800655",
+    "produced_by": "palette_message_gateway_exports_persisted_rust_search_results"
+  },
+  "palette_producer_log_matches_portable_integration": true,
+  "palette_producer_required_positive_in_raw": 1,
+  "head_values": [
+    "23c2a567d874509f56353b8cae737cdf1437309d",
+    "23c2a567d874509f56353b8cae737cdf1437309d",
+    "23c2a567d874509f56353b8cae737cdf1437309d"
+  ],
+  "tree_values": [
+    "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+    "b10485b13c15cd1cf012a5f51acaf6927aeb322a",
+    "b10485b13c15cd1cf012a5f51acaf6927aeb322a"
+  ],
+  "upstream_values": [
+    {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    }
+  ]
+}

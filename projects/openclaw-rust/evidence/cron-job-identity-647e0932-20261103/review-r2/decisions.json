@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "scope": "OCRM-CRON-JOB-IDENTITY-v1",
+  "round": 2,
+  "base_commit": "71b039ae860c45e982dfbc8b1f401143d49d2454",
+  "candidate_tree": "215733e43f8016e159ef1d676e433138272f6dc6",
+  "prior_snapshot_tree": "f5e577cf9e119f417ce0cf071f03c214c5bf6190",
+  "reviews": [
+    {
+      "path": "general-review.md",
+      "verdict": "SOURCE-ONLY APPROVE",
+      "blocking_findings": 0,
+      "model": "configured; no override",
+      "effort": "xhigh; actual launch"
+    },
+    {
+      "path": "structure-review.md",
+      "verdict": "SOURCE-ONLY APPROVE",
+      "blocking_findings": 0,
+      "model": "gpt-6.1-sol; actual launch",
+      "effort": "xhigh; actual launch"
+    }
+  ],
+  "synthesized_findings": [],
+  "decisions": [],
+  "source_convergence": true,
+  "source_fix_required": false,
+  "execution_status": "not-run; exact published-H Actions required",
+  "publication_base_preservation": "871b033c5b9aabbe322cc7322af92648939db9b5 adds only independent PRID spec/evidence paths; all seven cron reviewed core blobs remain exact. Preserve these ancestor changes.",
+  "pre_execution_blocker": "H23 App test-build has original diagnosed TEST_FLAW: local-media fixture lacks json/Value import and supplies integer to f64. Separate two-hunk recovery is frozen/reviewing; source checkpoint may be saved under17.4 with skip-ci, then repaired subject runs existing Actions. No rerun of unchanged H23.",
+  "acceptance": "all unit/global/final acceptance pending"
+}
