@@ -1,0 +1,24 @@
+{
+  "schema_version": "evidence-archive-status-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "subject": {
+    "sha": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "run_id": 41586608776,
+    "attempt": 1,
+    "job_id": 125753467838
+  },
+  "raw_log": {
+    "utf8_bytes": 5987684,
+    "sha256": "388cd773fdc3364fa830bcdde61c11654e2a373068438c4c7d8faaee1d83ba2a",
+    "repository_archive": "blocked; no confirmed raw-log blob or manifest"
+  },
+  "reason": "Automatic approval review rejected raw full-job-log upload because the log contains internal execution environment metadata and the disclosure authorization was not established. No alternative raw upload attempted after rejection.",
+  "retained_evidence": {
+    "carrier_sha": "88d9b8994b5b7a6f3eeb8c821be01c2b70e2c944",
+    "printed_receipts": "Previously verified structured actual-App, portable and link-preview receipts remain at their original subject H.",
+    "artifact_id": 13209168572,
+    "artifact_digest": "sha256:40eaacdae53459f8eedf470fe4fbb63027433b0d9baf94b6ad380e6f867bf2f5",
+    "artifact_scope": "API metadata pointer; ZIP download/content not claimed"
+  },
+  "impact": "Full raw Git archive remains blocked. Existing assessed subject-bound structured evidence is retained; this does not supply LXO runtime acceptance."
+}

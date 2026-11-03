@@ -1,0 +1,246 @@
+{
+  "schema_version": "lxo-source-contract-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXO-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "authority": {
+    "spec_commit": "886afed019bfb6d22d4e52d7e075e6f14398fe4a",
+    "spec_path": "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+    "spec_blob": "bd22147504fe06d357b5e5b16a81f426196059f0",
+    "decisions_blob": "627da380805c09dce15206b90ef933c562e717dd",
+    "master_spec_section": "17",
+    "scoped_runtime_authority": "pending exact-H Actions; not unit acceptance"
+  },
+  "implementation_base": "886afed019bfb6d22d4e52d7e075e6f14398fe4a",
+  "source_review": {
+    "upstream_full_read": [
+      {
+        "path": "src/process/exec-termination.ts",
+        "blob": "8b799aea4cccb13dd5b76b4b25c49b4c025cf5d1",
+        "range": [
+          1,
+          211
+        ]
+      }
+    ],
+    "production_deep_review": [
+      "HostLocalExecExtension to permissioned facade to operation owner to bridge registration, cancellation, response, journal and recovery",
+      "ProductionExternalMachineExecutor to registered ExternalShell and common Runner guard, checkpoints and terminal custody",
+      "Actual App node system.run admission, execute_local_node_shell_invocation, existing invocation completion and result projection",
+      "Actual TypeScript provider, controlled manager, generated codec and no-handler/error producers"
+    ],
+    "generated_contract_review": {
+      "input": "source/host/proto/agent/v1/local_exec.proto",
+      "fact": "ExecClientThrow optional error_code is already field 4; no schema regeneration or generated edit. Rust/TypeScript consumers preserve optional tag."
+    },
+    "dependency_disposition": "No dependency/version/download/patch/LFS/resource/legal change in this batch; use fixed source locks and existing generated codecs. Does not close global recursive source/dependency accounting.",
+    "historical_read_facts": "Existing OCRM read/source_refs/historical_source_refs are retained without promotion."
+  },
+  "ownership": {
+    "entry": "ExternalShell / App node.invoke system.run",
+    "producer": "Existing generated Runner tool request / Gateway node invocation",
+    "unique_owner": "Existing HostLocalExecExtension shares lazy GatewayLocalExecOperationOwner across permission facades",
+    "storage": "Existing host-local-exec-operations.json version 2, active records and bounded terminal history",
+    "service": "Existing GatewayLocalExecManager and SandLocalExecBridge",
+    "consumer": "ProductionExternalMachineExecutor -> common Runner guard; actual App node invocation response",
+    "recovery": "Accepted/Running recover unknown; persistence failure blocks admission; observed in-memory Exit does not prove durable publication"
+  },
+  "authored_oracles": {
+    "status": "not executed",
+    "native_platforms": [
+      "linux",
+      "windows",
+      "macos"
+    ],
+    "native_positive_names": {
+      "manager": [
+        "operation_owner_is_lazy_and_shared_by_distinct_permission_facades",
+        "duplicate_and_permission_refusal_cannot_retire_another_invocation",
+        "unproved_shell_terminals_preserve_typed_uncertainty_and_observed_output",
+        "preentry_refusals_remain_known_and_do_not_poison_journal_health",
+        "cancellation_close_and_deadline_remain_unknown_after_durable_reopen",
+        "uncertain_shell_output_remains_utf8_bounded_in_durable_history",
+        "post_send_journal_failures_keep_observed_facts_and_unknown_custody",
+        "proven_preentry_refusal_stays_known_when_its_journal_publication_fails",
+        "finish_admission_and_snapshot_publication_share_one_transaction",
+        "corrupt_journal_fails_closed_instead_of_becoming_empty_history",
+        "unknown_journal_version_fails_closed",
+        "accepted_start_ambiguity_recovers_durably_as_outcome_unknown",
+        "process_death_recovery_durably_marks_running_as_outcome_unknown",
+        "atomic_persistence_failure_is_reported",
+        "pre_send_journal_failure_does_not_send_exec_frame",
+        "completed_bounded_output_round_trips_through_journal",
+        "duplicate_operation_id_from_durable_history_is_not_replayed"
+      ],
+      "gateway": [
+        "sandbox_projects_provider_state_and_user_computers",
+        "upload_and_download_enforce_gate_and_use_frozen_frames",
+        "unavailable_computer_fails_before_permission_approval",
+        "oversized_file_and_blocked_gate_fail_before_provider_side_effect",
+        "exec_manager_streams_shell_and_read_through_permissioned_provider",
+        "shell_send_failure_finishes_pre_send_operation_as_failed",
+        "exec_manager_reports_control_throw_with_frozen_failure_classification",
+        "exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
+        "exec_manager_does_not_mark_cancel_when_provider_rejects_delivery",
+        "exec_manager_drives_real_os_process_to_bounded_terminal_result",
+        "exec_manager_cancel_maps_to_real_child_termination_and_history"
+      ],
+      "codec": [
+        "production_codec_accepts_exec_client_json_and_ignores_unknown_fields",
+        "production_codec_projects_frozen_control_cases",
+        "production_codec_creates_package_owned_remote_accessor",
+        "production_codec_projects_generated_shell_and_read_shapes",
+        "production_codec_uses_generated_oneof_and_permission_error_semantics",
+        "generated_binding_owns_the_complete_exec_oneof_shape",
+        "generated_protobuf_json_preserves_read_bytes_and_int64_semantics",
+        "generated_binding_provenance_is_auditable_and_not_a_parallel_codec",
+        "generated_codec_is_uniquely_consumed_by_shipping_manager_and_runner",
+        "production_codec_preserves_preentry_refusal_and_opaque_throw_distinction"
+      ],
+      "extension": [
+        "local_exec_ask_gate_reports_refusal_with_agent_identity",
+        "local_exec_error_preserves_provider_message",
+        "failure_classifier_matches_grok_spawn_errno_contract",
+        "command_output_formatting_strips_ansi_cr_redraw_and_bounds_tail",
+        "command_error_merges_bounded_streams_and_preserves_termination_reason",
+        "command_error_uses_timeout_and_signal_without_raw_command_newlines",
+        "local_exec_provider_lifecycle_is_persisted_through_host_telemetry",
+        "production_extension_reports_exec_failure_through_host_telemetry"
+      ],
+      "prefix": "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::"
+    },
+    "registered_runner_tests": [
+      "production_generated_runner_retains_unknown_external_shell_effects",
+      "production_generated_runner_preserves_known_external_shell_outcomes",
+      "production_external_shell_adapter_types_uncertain_results_and_errors"
+    ],
+    "registered_runner_cases": 20,
+    "actual_app_tests": [
+      "local_exec_app_close_reports_unknown_with_stable_result_identity",
+      "local_exec_app_malformed_reply_preserves_partial_output_and_unknown_error",
+      "local_exec_app_deadline_cancel_without_exit_remains_unknown",
+      "local_exec_app_confirmed_normal_exit_outranks_cancel_request",
+      "local_exec_app_confirmed_aborted_exit_remains_known",
+      "local_exec_app_permission_refusal_never_dispatches",
+      "local_exec_app_remote_preentry_refusal_remains_known",
+      "local_exec_app_exit_with_journal_failure_retains_observed_result"
+    ],
+    "protocol_tests": [
+      "lxo production codec retains optional preentry code without inventing it",
+      "lxo provider permission refusal is tagged before real executor entry",
+      "lxo provider generated decode refusal is tagged before executor entry",
+      "lxo real default provider preserves no-handler preentry witness",
+      "lxo controlled no-handler witness is distinct from entered exceptions",
+      "lxo controlled cancellation can close stream without a shell Exit"
+    ],
+    "causal_inputs": [
+      "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+      "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+      "source/host/src/extensions/local_exec/local_exec_error.rs",
+      "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+      "source/host/src/extensions/local_exec/production.rs",
+      "source/host/src/extensions/local_exec/extension.rs",
+      "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs",
+      "source/host/proto/agent/v1/local_exec.proto",
+      "source/host/build.rs",
+      "source/host/src/extensions/local_tool_permission/extension.rs",
+      "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
+      "source/host/src/runner/host_external_machine_dependencies.rs",
+      "source/host/src/runner/tools/sand_external_machine_tools.rs",
+      "source/host/src/runner/tools/mcp_meta_tools.rs",
+      "source/host/src/runner/stream_attempt.rs",
+      "source/host/src/runner/production_turn_run_shell_adapter.rs",
+      "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+      "source/host/tests/extensions_local_exec_contract.rs",
+      "source/host/tests/local_exec_production_codec_contract.rs",
+      "source/host/tests/runner_effect_custody_contract.rs",
+      "source/host/tests/openclaw_chat_cron_node_contract.rs",
+      "source/host/local-exec/local-exec-provider.ts",
+      "source/local-exec-daemon/production-executor.ts",
+      "source/packages/agent-exec/controlled.ts",
+      "source/shared/local-exec-gateway.ts",
+      "source/local-exec-daemon/production-outcome.contract.test.ts",
+      "source/host/app/src/tests/local_exec_outcome_tests.rs",
+      "source/host/src/extensions/node_host/invocation_runtime.rs",
+      "source/host/src/extensions/node_host/invoke_protocol.rs",
+      "source/host/src/extensions/node_host/runtime_state.rs",
+      "source/host/src/durable_file_policy.rs",
+      "source/host/src/extensions/process/command_custody.rs",
+      "source/host/src/host_paths.rs",
+      "source/host/Cargo.toml",
+      "source/host/Cargo.lock",
+      "source/host/app/Cargo.toml",
+      "source/host/app/Cargo.lock",
+      "source/host/app/src/main.rs",
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "projects/openclaw-rust/scripts/capture_media_cleanup.py"
+    ],
+    "protocol_inputs": [
+      ".github/workflows/rust-desktop-runtime.yml",
+      "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+      "projects/openclaw-rust/upstream.lock.json",
+      "desktop/package.json",
+      "desktop/package-lock.json",
+      "desktop/scripts/build-electron-runtime.mjs",
+      "source/local-exec-daemon/production-outcome.contract.test.ts",
+      "source/local-exec-daemon/production-executor.ts",
+      "source/host/local-exec/local-exec-provider.ts",
+      "source/host/local-exec/local-exec-machine.ts",
+      "source/host/local-exec/local-exec-native-file-access.ts",
+      "source/shared/local-exec-gateway.ts",
+      "source/packages/agent-exec/controlled.ts",
+      "source/packages/context/core.ts",
+      "source/packages/utils/writable-iterable.ts",
+      "source/packages/proto/generated/agent/v1/exec_pb.ts",
+      "source/packages/proto/generated/agent/v1/agent_service_pb.ts",
+      "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
+      "source/packages/local-exec/background-shell.ts",
+      "source/packages/local-exec/background-shell-lifecycle.ts"
+    ],
+    "retained_source_oracle_tests": [
+      "test_ocrm_node_o06_shipping_routes_to_unique_native_owners",
+      "test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout"
+    ],
+    "retained_source_oracle_scope": "Supplementary real entry/helper/native forwarding checks preserve missing owner, missing helper, dropped envelope/first-hop/second-hop timeout and wrong-unit negatives. Direct App tests remain the behavior oracle."
+  },
+  "accounting": {
+    "responsibility_ids": [
+      "OCRM-RESP-EXEC-PROCESS-SPAWN-001",
+      "OCRM-RESP-EXEC-RUNNER-TIMEOUT-001",
+      "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
+      "OCRM-RESP-NODE-HOST-LOCAL-RUNTIME-PROJECTION-001"
+    ],
+    "rtm_ids": [
+      "OCRM-R16",
+      "OCRM-R17",
+      "OCRM-AC11",
+      "OCRM-AC16",
+      "OCRM-AC17"
+    ],
+    "status_changes": [
+      {
+        "id": "OCRM-RESP-EXEC-TERMINATION-CONTROLLER-001",
+        "from": "verification=verified",
+        "to": "verification=not-run",
+        "reason": "Historical gateway evidence remains retained, but changed owner/settlement requires new exact-H evidence; full termination-controller caller blocker and not-wired state remain."
+      }
+    ],
+    "all_eight_completion_flags": false,
+    "scope_note": "No mapping, read, verification or acceptance promotion. Existing owner selections and full product duties retained."
+  },
+  "gaps": [
+    "Exact-H source, native three-platform, actual Runner, actual App and TypeScript protocol results pending.",
+    "Real external provider/device/account acceptance and whole-process-tree graceful/forced termination remain open.",
+    "Existing bounded terminal history is retained; no unbounded replay registry or new durable tombstone contract is introduced.",
+    "Historical false terminal records are not reclassified without evidence.",
+    "Generated HTML origin/trust requires its separate verified same-Host provider generation and atomic Session provenance contract.",
+    "Full OCRM source/dependency closure, G01-G12, AC01-AC24, real platform shipping, soak, UI, upgrade/rollback and independent ACCEPT remain unaccepted."
+  ],
+  "executable_validation": "Only GitHub Actions after frozen H; no local or htch execution."
+}

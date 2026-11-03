@@ -19,6 +19,17 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint,
     RoutedToolDefinition,
 };
+use mahayana_host_runtime::extensions::local_exec::extension::{
+    HostLocalExecExtension, start_local_exec_extension,
+};
+use mahayana_host_runtime::extensions::local_exec::local_exec_bridge::LocalExecProviderRegistration;
+use mahayana_host_runtime::extensions::local_tool_permission::extension::{
+    HostLocalToolPermissionExtension, start_local_tool_permission_extension,
+};
+use mahayana_host_runtime::extensions::settings::settings_service::{
+    SandLocalToolPermission, SettingsService,
+};
+use mahayana_host_runtime::extensions::telemetry::host_telemetry_service::HostTelemetryService;
 use mahayana_host_runtime::gateway_server::GatewayEventHub;
 use mahayana_host_runtime::host_event_bus::HostEventSubscription;
 use mahayana_host_runtime::runner::coordinator_tool_relay::{
@@ -39,7 +50,11 @@ use mahayana_host_runtime::runner::routed_provider_runtime::{
     RunnerRequestContextSnapshot, coordinator_tool_execution_error,
     start_routed_mcp_server_for_attempt,
 };
+use mahayana_host_runtime::runner::host_external_machine_dependencies::ProductionExternalMachineExecutor;
 use mahayana_host_runtime::runner::sand_agent_runner::SandAgentRunner;
+use mahayana_host_runtime::runner::tools::sand_external_machine_tools::{
+    ExternalMachineExecutor, ExternalMachineShellArgs,
+};
 use mahayana_host_runtime::runner::subagent_runtime::SubagentRuntime;
 use mahayana_host_runtime::runner::turn_agent_composition::{
     SAND_AGENT_TOKEN_LIMIT, TurnAgentComposition,
@@ -483,8 +498,12 @@ struct ReleaseGate {
 
 impl ReleaseGate {
     fn wait(&self) {
+        self.wait_for(BOUND);
+    }
+
+    fn wait_for(&self, timeout: Duration) {
         let guard = self.open.lock().expect("release gate");
-        let (guard, _) = self.changed.wait_timeout_while(guard, BOUND, |open| !*open)
+        let (guard, _) = self.changed.wait_timeout_while(guard, timeout, |open| !*open)
             .expect("bounded release gate");
         assert!(*guard, "owned tool was not released within its bound");
     }
@@ -1421,6 +1440,7 @@ fn run_wire_process(
     let mut child = OwnedWireChild(std::process::Command::new(std::env::current_exe().expect("test executable"))
         .args(["--exact", test_name, "--nocapture", "--test-threads=1"])
         .env(root_env, &root.0)
+        .env("SAND_DATA_ROOT", &root.0)
         .env(WIRE_TOKEN_ENV, &token)
         .env("FABUSHI_RESPONSES_URL", format!("{}/v1/responses", server.origin))
         .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", &credential)
@@ -1487,6 +1507,16 @@ struct GeneratedWireRunner {
 
 impl GeneratedWireRunner {
     fn new(root: &Path, stream_id: &str, relay: Arc<CoordinatorToolRelay>, cancel: bool) -> Self {
+        Self::with_external_machine(root, stream_id, relay, cancel, None)
+    }
+
+    fn with_external_machine(
+        root: &Path,
+        stream_id: &str,
+        relay: Arc<CoordinatorToolRelay>,
+        cancel: bool,
+        external: Option<Arc<dyn ExternalMachineExecutor>>,
+    ) -> Self {
         use mahayana_host_runtime::host_request_context::HostRequestContext;
 
         let cancellation = RoutedProviderCancellation::default();
@@ -1517,6 +1547,10 @@ impl GeneratedWireRunner {
         .with_retry_sink(Arc::new(move |_| {
             retry_sink.fetch_add(1, Ordering::AcqRel);
         }));
+        let composition = match external {
+            Some(executor) => composition.with_external_machine_executor(executor),
+            None => composition,
+        };
         // The same production bridge used by HostRunnerComposition binds the
         // real owner/facade. No attempt executor, runtime or custody is injected.
         let runner = create_production_runner(
@@ -1711,4 +1745,610 @@ fn production_generated_runner_preserves_terminal_tool_custody() {
     assert_eq!(prompts, ["generated-unknown", "generated-clear", "generated-failure", "generated-cancel"],
         "no retries, refused invocations or late worker results may dispatch another provider request");
     assert!(requests.iter().all(|request| request["model"] == MODEL));
+}
+
+
+const LXO_UNKNOWN_TEST: &str = "production_generated_runner_retains_unknown_external_shell_effects";
+const LXO_KNOWN_TEST: &str = "production_generated_runner_preserves_known_external_shell_outcomes";
+const LXO_ADAPTER_TEST: &str = "production_external_shell_adapter_types_uncertain_results_and_errors";
+const LXO_ROOT_ENV: &str = "FABUSHI_LOCAL_EXEC_CUSTODY_WIRE_ROOT";
+const LXO_AGENT: &str = "generated-custody-agent";
+const LXO_OUTPUT: &str = "lxo-partial-output\n";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LocalExecReply {
+    Close,
+    CancelClose,
+    Silence,
+    MalformedClient,
+    MalformedControl,
+    OpaqueThrow,
+    TaggedAfterStart,
+    FileError,
+    StartedJournalFailure,
+    TerminalJournalFailure,
+    Exit,
+    AbortedExit,
+    CancelThenExit,
+    PreEntryTag,
+    ShellRejected,
+    ShellPermissionDenied,
+    LocalPermission,
+}
+
+impl LocalExecReply {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Close => "close",
+            Self::CancelClose => "cancel-close",
+            Self::Silence => "silence",
+            Self::MalformedClient => "malformed-client",
+            Self::MalformedControl => "malformed-control",
+            Self::OpaqueThrow => "opaque-throw",
+            Self::TaggedAfterStart => "tagged-after-start",
+            Self::FileError => "file-error",
+            Self::StartedJournalFailure => "started-journal-failure",
+            Self::TerminalJournalFailure => "terminal-journal-failure",
+            Self::Exit => "exit",
+            Self::AbortedExit => "aborted-exit",
+            Self::CancelThenExit => "cancel-then-exit",
+            Self::PreEntryTag => "pre-entry-tag",
+            Self::ShellRejected => "shell-rejected",
+            Self::ShellPermissionDenied => "shell-permission-denied",
+            Self::LocalPermission => "local-permission",
+        }
+    }
+
+    fn parse(name: &str) -> Self {
+        [
+            Self::Close, Self::CancelClose, Self::Silence, Self::MalformedClient,
+            Self::MalformedControl, Self::OpaqueThrow, Self::TaggedAfterStart,
+            Self::FileError, Self::StartedJournalFailure, Self::TerminalJournalFailure,
+            Self::Exit, Self::AbortedExit, Self::CancelThenExit, Self::PreEntryTag,
+            Self::ShellRejected, Self::ShellPermissionDenied, Self::LocalPermission,
+        ].into_iter().find(|case| case.name() == name).expect("declared LocalExec case")
+    }
+
+    fn is_unknown(self) -> bool {
+        !matches!(self, Self::Exit | Self::AbortedExit | Self::CancelThenExit
+            | Self::PreEntryTag | Self::ShellRejected | Self::ShellPermissionDenied
+            | Self::LocalPermission)
+    }
+
+    fn enters_effect(self) -> bool {
+        !matches!(self, Self::PreEntryTag | Self::ShellRejected
+            | Self::ShellPermissionDenied | Self::LocalPermission)
+    }
+
+    fn has_exit(self) -> bool {
+        matches!(self, Self::Exit | Self::AbortedExit | Self::CancelThenExit
+            | Self::TerminalJournalFailure)
+    }
+
+    fn breaks_journal(self) -> bool {
+        matches!(self, Self::StartedJournalFailure | Self::TerminalJournalFailure)
+    }
+
+    fn status(self) -> &'static str {
+        match self {
+            Self::AbortedExit => "cancelled",
+            Self::Exit | Self::CancelThenExit | Self::TerminalJournalFailure => "completed",
+            Self::PreEntryTag | Self::ShellRejected | Self::ShellPermissionDenied => "failed",
+            Self::LocalPermission => "not_found",
+            _ => "outcome_unknown",
+        }
+    }
+}
+
+/// Only the remote transport is controlled. The request must have passed the
+/// real permission owner, shared journal admission and production bridge before
+/// this fixture starts its independently owned, counted filesystem effect.
+struct LocalExecDownstream {
+    local_exec: Arc<HostLocalExecExtension>,
+    permission: Arc<HostLocalToolPermissionExtension>,
+    executor: Arc<ProductionExternalMachineExecutor>,
+    _registration: LocalExecProviderRegistration,
+    effects: Arc<AtomicUsize>,
+    requests: Arc<Mutex<Vec<String>>>,
+    cancel_frames: Arc<AtomicUsize>,
+    gate: Arc<ReleaseGate>,
+    workers: Arc<Mutex<Vec<thread::JoinHandle<()>>>>,
+    stop: Arc<AtomicBool>,
+    provider: Option<thread::JoinHandle<()>>,
+    receipt: PathBuf,
+}
+
+impl LocalExecDownstream {
+    fn new(root: &Path, reply: LocalExecReply) -> Self {
+        assert_eq!(mahayana_host_runtime::host_paths::get_sand_root_dir(), root);
+        let settings = Arc::new(SettingsService::new(root.join("settings.json")));
+        settings.set_local_tool_permission(if reply == LocalExecReply::LocalPermission {
+            SandLocalToolPermission::Never
+        } else {
+            SandLocalToolPermission::Always
+        }).expect("persist actual local permission");
+        let permission = Arc::new(start_local_tool_permission_extension(settings));
+        permission.controller().begin_turn(LXO_AGENT);
+        let epoch = permission.controller().direction_epoch(LXO_AGENT);
+        let telemetry = HostTelemetryService::open_with_identity_tags(
+            root.join("local-exec-telemetry.jsonl"), Default::default(),
+        ).expect("real telemetry owner");
+        let local_exec = Arc::new(start_local_exec_extension(telemetry.logs.clone()));
+        let (send, receive) = mpsc::channel();
+        let registration = local_exec.register_provider(send);
+        let welcome = receive.recv_timeout(BOUND).expect("production provider welcome");
+        let provider_id = welcome["providerId"].as_str().expect("production provider identity").to_string();
+        local_exec.submit_responses(json!({
+            "providerId": provider_id,
+            "frames":[{
+                "kind":"hello", "localRoot":root, "terminalsFolder":root.join("terminals"),
+                "computerId":"lxo-controlled-computer", "label":"LocalExec contract",
+            }],
+        }));
+        let executor = Arc::new(ProductionExternalMachineExecutor::for_turn(
+            Arc::clone(&local_exec), Arc::clone(&permission), LXO_AGENT, epoch,
+        ));
+        let effects = Arc::new(AtomicUsize::new(0));
+        let requests = Arc::new(Mutex::new(Vec::<String>::new()));
+        let cancel_frames = Arc::new(AtomicUsize::new(0));
+        let gate = Arc::new(ReleaseGate::default());
+        let workers = Arc::new(Mutex::new(Vec::new()));
+        let stop = Arc::new(AtomicBool::new(false));
+        let receipt = root.join("external-effects.txt");
+        let provider_owner = Arc::clone(&local_exec);
+        let provider_executor = Arc::clone(&executor);
+        let provider_effects = Arc::clone(&effects);
+        let provider_requests = Arc::clone(&requests);
+        let provider_cancels = Arc::clone(&cancel_frames);
+        let provider_gate = Arc::clone(&gate);
+        let provider_workers = Arc::clone(&workers);
+        let provider_stop = Arc::clone(&stop);
+        let provider_receipt = receipt.clone();
+        let journal = root.join("host-local-exec-operations.json");
+        let provider = thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(30);
+            while !provider_stop.load(Ordering::Acquire) {
+                assert!(Instant::now() < deadline, "owned LocalExec provider exceeded its bound");
+                let frame = match receive.recv_timeout(Duration::from_millis(20)) {
+                    Ok(frame) => frame,
+                    Err(mpsc::RecvTimeoutError::Timeout) => continue,
+                    Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                };
+                if frame["kind"] == "cancel" {
+                    provider_cancels.fetch_add(1, Ordering::AcqRel);
+                    continue;
+                }
+                assert_eq!(frame["kind"], "exec", "only actual shell requests may enter");
+                let request_id = frame["requestId"].as_str().expect("bridge request ID").to_string();
+                assert_ne!(request_id, provider_id, "the production bridge must not reuse provider ID");
+                let ordinal = {
+                    let mut captured = provider_requests.lock().expect("captured requests");
+                    assert!(!captured.contains(&request_id), "distinct invocation transport IDs");
+                    captured.push(request_id.clone());
+                    captured.len()
+                };
+                let call_id = frame["serverMessage"]["shellStreamArgs"]["toolCallId"]
+                    .as_str().expect("real generated shell operation ID").to_string();
+                assert_eq!(frame["serverMessage"]["shellStreamArgs"]["command"], "count-owned-effect");
+                let send = |kind: &str, message: Value| {
+                    provider_owner.submit_responses(json!({
+                        "providerId":provider_id,
+                        "frames":[{"kind":kind,"requestId":request_id,"message":message}],
+                    }));
+                };
+                if !reply.enters_effect() {
+                    match reply {
+                        LocalExecReply::PreEntryTag => send("control", json!({
+                            "throw":{"error":"lxo pre-entry refusal","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"},
+                        })),
+                        LocalExecReply::ShellRejected => send("client", json!({
+                            "shellStream":{"rejected":{"reason":"lxo rejected before execution"}},
+                        })),
+                        LocalExecReply::ShellPermissionDenied => send("client", json!({
+                            "shellStream":{"permissionDenied":{"error":"lxo provider permission denied"}},
+                        })),
+                        LocalExecReply::LocalPermission => panic!("local permission refusal reached transport"),
+                        _ => unreachable!(),
+                    }
+                    continue;
+                }
+
+                let receipt = provider_receipt.clone();
+                let effect_call = call_id.clone();
+                let counted = Arc::clone(&provider_effects);
+                let effect_gate = Arc::clone(&provider_gate);
+                let (entered_tx, entered_rx) = mpsc::channel();
+                let effect = thread::spawn(move || {
+                    let mut file = fs::OpenOptions::new().create(true).append(true).open(receipt)
+                        .expect("non-idempotent external receipt");
+                    writeln!(file, "{effect_call}").expect("append exactly one external effect");
+                    file.sync_all().expect("persist external entry");
+                    counted.fetch_add(1, Ordering::AcqRel);
+                    entered_tx.send(()).expect("effect entry acknowledgement");
+                    effect_gate.wait_for(Duration::from_secs(30));
+                });
+                provider_workers.lock().expect("owned effects").push(effect);
+                entered_rx.recv_timeout(BOUND).expect("effect really entered before local result");
+                // A broken implementation may admit the second generated call.
+                // Let it finish so the count assertion fails without a timeout.
+                let delivered_reply = if ordinal == 1 { reply } else { LocalExecReply::Exit };
+                if delivered_reply == LocalExecReply::StartedJournalFailure {
+                    fs::remove_file(&journal).expect("accepted journal was published before send");
+                    fs::create_dir(&journal).expect("portable journal publication failure");
+                }
+                send("client", json!({"shellStream":{"stdout":{"data":LXO_OUTPUT}}}));
+                if delivered_reply == LocalExecReply::StartedJournalFailure {
+                    continue;
+                }
+                wait_until("manager observed real shell activity", || {
+                    provider_executor.operation_status(&call_id).expect("owner query")["status"] == "running"
+                });
+                if matches!(delivered_reply, LocalExecReply::CancelClose
+                    | LocalExecReply::CancelThenExit | LocalExecReply::AbortedExit)
+                {
+                    assert_eq!(provider_executor.cancel_operation(&call_id)
+                        .expect("actual scoped cancellation")["cancelRequested"], true);
+                    let cancel = receive.recv_timeout(BOUND).expect("real cancellation frame");
+                    assert_eq!(cancel["kind"], "cancel");
+                    assert_eq!(cancel["requestId"], request_id);
+                    provider_cancels.fetch_add(1, Ordering::AcqRel);
+                }
+                if delivered_reply == LocalExecReply::TerminalJournalFailure {
+                    fs::remove_file(&journal).expect("running journal is durable before failure");
+                    fs::create_dir(&journal).expect("portable terminal publication failure");
+                }
+                if delivered_reply.has_exit() {
+                    provider_gate.release();
+                    wait_until("counted effect completes before acknowledged Exit", || {
+                        provider_workers.lock().expect("owned effects").iter().all(|worker| worker.is_finished())
+                    });
+                    send("client", json!({"shellStream":{"exit":{
+                        "code":17, "cwd":"/lxo", "aborted":delivered_reply == LocalExecReply::AbortedExit,
+                    }}}));
+                    continue;
+                }
+                match delivered_reply {
+                    LocalExecReply::Close | LocalExecReply::CancelClose => {
+                        send("control", json!({"streamClose":{}}));
+                    }
+                    LocalExecReply::Silence => {}
+                    LocalExecReply::MalformedClient => send("client", json!(["malformed", "client"])),
+                    LocalExecReply::MalformedControl => send("control", json!({
+                        "throw":{"error":"conflicting control"}, "streamClose":{},
+                    })),
+                    LocalExecReply::OpaqueThrow => send("control", json!({
+                        "throw":{"error":"lxo entered failure"},
+                    })),
+                    LocalExecReply::TaggedAfterStart => send("control", json!({
+                        "throw":{"error":"contradictory refusal","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"},
+                    })),
+                    LocalExecReply::FileError => {
+                        provider_owner.submit_responses(json!({
+                            "providerId":provider_id,
+                            "frames":[{"kind":"file-error","requestId":request_id,"error":"unexpected entered file error"}],
+                        }));
+                    }
+                    _ => unreachable!(),
+                }
+            }
+        });
+        Self {
+            local_exec, permission, executor, _registration:registration, effects, requests,
+            cancel_frames, gate, workers, stop, provider:Some(provider), receipt,
+        }
+    }
+
+    fn same_owner_status(&self, operation_id: &str) -> Value {
+        let another_turn_facade = ProductionExternalMachineExecutor::new(
+            Arc::clone(&self.local_exec), Arc::clone(&self.permission), LXO_AGENT,
+        );
+        let status = another_turn_facade.operation_status(operation_id).expect("shared owner status");
+        assert_eq!(status, self.executor.operation_status(operation_id).expect("original status"));
+        let foreign_agent = ProductionExternalMachineExecutor::new(
+            Arc::clone(&self.local_exec), Arc::clone(&self.permission), "another-agent",
+        );
+        assert_eq!(foreign_agent.operation_status(operation_id).expect("foreign status")["status"], "not_found");
+        status
+    }
+
+    fn assert_effect(&self, reply: LocalExecReply, operation_id: &str) -> bool {
+        let expected = if reply.enters_effect() { 1 } else { 0 };
+        let mut alive_at_return = false;
+        assert_eq!(self.effects.load(Ordering::Acquire), expected);
+        assert_eq!(self.requests.lock().expect("received requests").len(),
+            if reply == LocalExecReply::LocalPermission { 0 } else { 1 });
+        if expected == 1 {
+            assert_eq!(fs::read_to_string(&self.receipt).expect("actual external effect"),
+                format!("{operation_id}\n"));
+            let workers = self.workers.lock().expect("owned external workers");
+            assert_eq!(workers.len(), 1);
+            alive_at_return = !workers[0].is_finished();
+            assert_eq!(alive_at_return, !reply.has_exit(),
+                "no-Exit unknown must outlive Host return; Exit must follow actual fixture completion");
+        } else {
+            assert!(!self.receipt.exists());
+        }
+        if matches!(reply, LocalExecReply::CancelClose | LocalExecReply::CancelThenExit | LocalExecReply::AbortedExit) {
+            assert_eq!(self.cancel_frames.load(Ordering::Acquire), 1);
+        }
+        alive_at_return
+    }
+
+    fn finish(&mut self) {
+        self.gate.release();
+        self.stop.store(true, Ordering::Release);
+        if let Some(provider) = self.provider.take() {
+            wait_until("owned LocalExec provider stops", || provider.is_finished());
+            provider.join().expect("LocalExec provider result");
+        }
+        for worker in std::mem::take(&mut *self.workers.lock().expect("owned effects")) {
+            wait_until("owned external effect stops", || worker.is_finished());
+            worker.join().expect("external effect result");
+        }
+    }
+}
+
+impl Drop for LocalExecDownstream {
+    fn drop(&mut self) {
+        self.gate.release();
+        self.stop.store(true, Ordering::Release);
+        if let Some(provider) = self.provider.take() {
+            let deadline = Instant::now() + BOUND;
+            while !provider.is_finished() && Instant::now() < deadline {
+                thread::sleep(Duration::from_millis(2));
+            }
+            if provider.is_finished() { let _ = provider.join(); }
+        }
+        if let Ok(mut workers) = self.workers.lock() {
+            let deadline = Instant::now() + BOUND;
+            for worker in workers.drain(..) {
+                while !worker.is_finished() && Instant::now() < deadline {
+                    thread::sleep(Duration::from_millis(2));
+                }
+                if worker.is_finished() { let _ = worker.join(); }
+            }
+        }
+    }
+}
+
+fn local_exec_wire_response(request: &Value) -> Result<String, String> {
+    let prompt = generated_wire_prompt(request)?;
+    let case = prompt.strip_prefix("lxo-").ok_or("missing LocalExec case prefix")?;
+    let reply = LocalExecReply::parse(case);
+    let has_output = request["input"].as_array().is_some_and(|input| {
+        input.iter().any(|item| item["type"] == "function_call_output")
+    });
+    let events = if has_output {
+        vec![
+            json!({"type":"response.output_text.delta","delta":"known external completion"}),
+            json!({"type":"response.completed","response":{"id":"lxo-done","output":[]}}),
+        ]
+    } else {
+        let mut calls = vec![json!({
+            "type":"function_call", "name":"ExternalShell", "call_id":format!("{prompt}-first"),
+            "arguments":json!({"command":"count-owned-effect","workingDirectory":"/lxo"}).to_string(),
+        })];
+        if reply.is_unknown() {
+            calls.push(json!({
+                "type":"function_call", "name":"ExternalShell", "call_id":format!("{prompt}-second"),
+                "arguments":json!({"command":"count-owned-effect","workingDirectory":"/lxo"}).to_string(),
+            }));
+        }
+        vec![json!({"type":"response.completed","response":{"id":"lxo-response","output":calls}})]
+    };
+    Ok(events.iter().map(|event| format!("data: {event}\n\n")).collect())
+}
+
+fn local_exec_child_case(root: &Path) -> LocalExecReply {
+    LocalExecReply::parse(&fs::read_to_string(root.join("local-exec-case.txt")).expect("exact private case"))
+}
+
+fn assert_local_exec_record(status: &Value, reply: LocalExecReply, operation_id: &str) {
+    assert_eq!(status["status"], reply.status());
+    assert_eq!(status["operationId"], operation_id);
+    if reply == LocalExecReply::LocalPermission { return; }
+    assert_eq!(status["requestId"], operation_id);
+    assert_eq!(status["resultRef"], format!("fabushi-local-exec://operation/{operation_id}"));
+    assert_eq!(status["aborted"], reply == LocalExecReply::AbortedExit);
+    if reply.enters_effect() {
+        assert_eq!(status["stdout"], LXO_OUTPUT, "partial observed output must survive the error path");
+        assert_eq!(status["stdoutTruncated"], false);
+        assert_eq!(status["stderrTruncated"], false);
+    }
+    if reply.has_exit() {
+        assert_eq!(status["exitCode"], 17);
+    } else {
+        assert!(status["exitCode"].is_null());
+    }
+}
+
+fn reopen_local_exec_result(root: &Path, reply: LocalExecReply, operation_id: &str) {
+    let telemetry = HostTelemetryService::open_with_identity_tags(
+        root.join("local-exec-reopened-telemetry.jsonl"), Default::default(),
+    ).expect("fresh telemetry owner");
+    let local_exec = Arc::new(start_local_exec_extension(telemetry.logs.clone()));
+    let permission = Arc::new(start_local_tool_permission_extension(Arc::new(
+        SettingsService::new(root.join("settings.json")),
+    )));
+    let executor = ProductionExternalMachineExecutor::new(local_exec, permission, LXO_AGENT);
+    if reply.breaks_journal() {
+        let refused = executor.execute_shell(&ExternalMachineShellArgs {
+            command:"must-not-replay".into(), working_directory:"/lxo".into(),
+            tool_call_id:"fresh-owner-refusal".into(),
+        }).expect_err("journal failure must remain fail-closed after restart");
+        assert!(matches!(refused, ProviderSessionError::Tool(_)));
+        assert!(refused.to_string().contains("journal"));
+    } else {
+        let recovered = executor.operation_status(operation_id).expect("fresh owner query");
+        assert_local_exec_record(&recovered, reply, operation_id);
+    }
+}
+
+fn run_local_exec_runner_child(root: PathBuf) {
+    let reply = local_exec_child_case(&root);
+    let prompt = format!("lxo-{}", reply.name());
+    let operation_id = format!("{prompt}-first");
+    let mut downstream = LocalExecDownstream::new(&root, reply);
+    let relay = Arc::new(CoordinatorToolRelay::with_timeout(GatewayEventHub::default(), BOUND));
+    let external: Arc<dyn ExternalMachineExecutor> = downstream.executor.clone();
+    let mut fixture = GeneratedWireRunner::with_external_machine(
+        &root, &prompt, relay, false, Some(external),
+    );
+    let result = fixture.run(&root, &prompt, &prompt);
+    let snapshot = fixture.snapshot(&prompt, 1);
+    let mut report = ToolEffectCustodyReport::new(&prompt);
+    report.record(fixture.runner.last_tool_effect_custody());
+    let frozen = report.for_terminal(&prompt);
+    assert_eq!(snapshot.started_revision, 1, "the second generated tool must not run after uncertainty");
+    assert_eq!(snapshot.pending_effects, 0, "the adapter really returned through the common guard");
+    if reply.is_unknown() {
+        assert!(result.is_err(), "unknown ExternalShell cannot finish the real Runner successfully");
+        assert_eq!(snapshot.unknown_result, Some(ToolEffectUnknownResult::DownstreamOutcomeUnknown));
+        assert_eq!(snapshot.checkpoint_revision, 0);
+        assert!(frozen.requires_retention());
+        assert!(!fixture.store.directory().exists(), "unknown tool result must never be checkpointed");
+    } else {
+        assert_eq!(snapshot.unknown_result, None);
+        assert!(!frozen.requires_retention(), "positive known controls must not acquire false uncertainty");
+        // Fabushi's existing Responses loop publishes known Tool errors as
+        // isError outputs and permits its next model step. Preserve that contract.
+        assert_eq!(result.expect("known outcome permits the next model step"), "known external completion");
+        assert_eq!(snapshot.checkpoint_revision, 1);
+        assert!(fixture.store.directory().exists());
+    }
+    assert_eq!(fixture.retries.load(Ordering::Acquire), 0);
+    let external_alive_at_return = downstream.assert_effect(reply, &operation_id);
+    let status = downstream.same_owner_status(&operation_id);
+    assert_local_exec_record(&status, reply, &operation_id);
+    let effects = downstream.effects.load(Ordering::Acquire);
+    let requests = downstream.requests.lock().expect("captured transport IDs").clone();
+    let observation = fixture.runner.last_tool_effect_custody().cloned();
+    downstream.finish();
+    assert_eq!(fixture.runner.last_tool_effect_custody(), observation.as_ref(),
+        "late owned-worker completion cannot clear frozen custody");
+    drop(fixture);
+    drop(downstream);
+    reopen_local_exec_result(&root, reply, &operation_id);
+    fs::write(root.join("child-result.json"), json!({
+        "pid":std::process::id(), "token":std::env::var(WIRE_TOKEN_ENV).expect("private child token"),
+        "case":reply.name(), "effects":effects, "retries":0, "requests":requests,
+        "snapshot":snapshot, "report":frozen, "status":status,
+        "externalAliveAtReturn":external_alive_at_return,
+    }).to_string()).expect("LocalExec generated Runner receipt");
+}
+
+fn run_local_exec_adapter_child(root: PathBuf) {
+    let reply = local_exec_child_case(&root);
+    let operation_id = format!("lxo-{}-first", reply.name());
+    let mut downstream = LocalExecDownstream::new(&root, reply);
+    let error = downstream.executor.execute_shell(&ExternalMachineShellArgs {
+        command:"count-owned-effect".into(), working_directory:"/lxo".into(),
+        tool_call_id:operation_id.clone(),
+    }).expect_err("actual manager uncertainty must reach typed adapter error");
+    let ProviderSessionError::ToolOutcomeUnknown(message) = error else {
+        panic!("actual external adapter lost the typed uncertainty: {error}");
+    };
+    let detail: Value = serde_json::from_str(&message).expect("structured unknown result detail");
+    assert_eq!(detail["operationId"], operation_id);
+    assert_eq!(detail["requestId"], operation_id);
+    assert_eq!(detail["resultRef"], format!("fabushi-local-exec://operation/{operation_id}"));
+    assert_eq!(detail["outcomeUnknown"], true);
+    assert_eq!(detail["stdout"], LXO_OUTPUT);
+    assert_eq!(detail["stdoutTruncated"], false);
+    assert!(detail["cause"].as_str().is_some_and(|cause| !cause.is_empty()));
+    if reply == LocalExecReply::TerminalJournalFailure {
+        assert_eq!(detail["status"], "completed", "observed Exit remains an execution fact");
+        assert_eq!(detail["exitCode"], 17);
+        assert!(detail["cause"].as_str().unwrap().contains("journal"));
+    }
+    let external_alive_at_return = downstream.assert_effect(reply, &operation_id);
+    let status = downstream.same_owner_status(&operation_id);
+    assert_local_exec_record(&status, reply, &operation_id);
+    downstream.finish();
+    drop(downstream);
+    reopen_local_exec_result(&root, reply, &operation_id);
+    fs::write(root.join("child-result.json"), json!({
+        "pid":std::process::id(), "token":std::env::var(WIRE_TOKEN_ENV).expect("private child token"),
+        "case":reply.name(), "effects":1, "detail":detail,
+        "externalAliveAtReturn":external_alive_at_return,
+    }).to_string()).expect("LocalExec adapter receipt");
+}
+
+fn run_local_exec_cases(test_name: &str, cases: &[LocalExecReply], adapter_only: bool) {
+    for reply in cases {
+        let root = TempRoot::new();
+        fs::write(root.0.join("local-exec-case.txt"), reply.name()).expect("freeze exact child case");
+        let mut server = WireServer::with_response(local_exec_wire_response);
+        let receipt = run_wire_process(&root, &mut server, test_name, LXO_ROOT_ENV);
+        assert_eq!(receipt["case"], reply.name());
+        assert_eq!(receipt["effects"].as_u64(), Some(if reply.enters_effect() { 1 } else { 0 }));
+        assert_eq!(receipt["externalAliveAtReturn"], reply.enters_effect() && !reply.has_exit());
+        println!("LXO_CASE_RECEIPT {}", json!({"test":test_name,"receipt":receipt}));
+        let requests = server.requests.lock().expect("actual Responses requests");
+        assert_eq!(requests.len(), if adapter_only { 0 } else if reply.is_unknown() { 1 } else { 2 },
+            "{}: no uncertain checkpoint, replay or extra provider dispatch", reply.name());
+        if !adapter_only {
+            assert_eq!(receipt["retries"], 0);
+            let report: ToolEffectCustodyReport = serde_json::from_value(receipt["report"].clone())
+                .expect("actual generated terminal report");
+            assert_eq!(report.requires_retention(), reply.is_unknown());
+            assert!(requests.iter().all(|request| request["model"] == MODEL));
+            if !reply.is_unknown() {
+                let output = requests[1]["input"].as_array().expect("accepted checkpoint replay")
+                    .iter().find(|item| item["type"] == "function_call_output")
+                    .expect("known result is paired with its actual call");
+                let value: Value = serde_json::from_str(output["output"].as_str().expect("tool result JSON"))
+                    .expect("known tool output");
+                if reply.has_exit() {
+                    assert_eq!(value["exitCode"], 17);
+                    assert_eq!(value["aborted"], *reply == LocalExecReply::AbortedExit);
+                    assert_eq!(value["outcomeUnknown"], false);
+                    assert_eq!(value["resultRef"], format!(
+                        "fabushi-local-exec://operation/lxo-{}-first", reply.name(),
+                    ));
+                } else {
+                    assert_eq!(value["isError"], true);
+                    assert!(value["error"].as_str().is_some_and(|message| !message.is_empty()));
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn production_generated_runner_retains_unknown_external_shell_effects() {
+    if let Some(root) = std::env::var_os(LXO_ROOT_ENV) {
+        run_local_exec_runner_child(PathBuf::from(root));
+        return;
+    }
+    run_local_exec_cases(LXO_UNKNOWN_TEST, &[
+        LocalExecReply::Close, LocalExecReply::CancelClose, LocalExecReply::Silence,
+        LocalExecReply::MalformedClient, LocalExecReply::MalformedControl, LocalExecReply::OpaqueThrow,
+        LocalExecReply::TaggedAfterStart, LocalExecReply::FileError,
+        LocalExecReply::StartedJournalFailure, LocalExecReply::TerminalJournalFailure,
+    ], false);
+}
+
+#[test]
+fn production_generated_runner_preserves_known_external_shell_outcomes() {
+    if let Some(root) = std::env::var_os(LXO_ROOT_ENV) {
+        run_local_exec_runner_child(PathBuf::from(root));
+        return;
+    }
+    run_local_exec_cases(LXO_KNOWN_TEST, &[
+        LocalExecReply::Exit, LocalExecReply::AbortedExit, LocalExecReply::CancelThenExit,
+        LocalExecReply::PreEntryTag, LocalExecReply::ShellRejected,
+        LocalExecReply::ShellPermissionDenied, LocalExecReply::LocalPermission,
+    ], false);
+}
+
+#[test]
+fn production_external_shell_adapter_types_uncertain_results_and_errors() {
+    if let Some(root) = std::env::var_os(LXO_ROOT_ENV) {
+        run_local_exec_adapter_child(PathBuf::from(root));
+        return;
+    }
+    run_local_exec_cases(LXO_ADAPTER_TEST, &[
+        LocalExecReply::Close, LocalExecReply::MalformedClient, LocalExecReply::TerminalJournalFailure,
+    ], true);
 }

@@ -49,15 +49,20 @@ fn bridge_with_provider() -> (
     mahayana_host_runtime::extensions::local_exec::local_exec_bridge::LocalExecProviderRegistration,
     mpsc::Receiver<serde_json::Value>,
 ) {
+    let sequence = Arc::new(std::sync::atomic::AtomicU64::new(1));
+    let next = Arc::clone(&sequence);
     let bridge = SandLocalExecBridge::with_sources(
         Arc::new(|| 1000),
-        Arc::new(|| "provider-1".to_string()),
+        Arc::new(move || format!(
+            "fixture-request-{}",
+            next.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+        )),
     );
     let (send, receive) = mpsc::channel();
     let registration = bridge.register_provider(send);
-    let _ = receive.recv_timeout(Duration::from_millis(100)).expect("welcome");
+    let welcome = receive.recv_timeout(Duration::from_millis(100)).expect("welcome");
     bridge.submit_responses(json!({
-        "providerId": "provider-1",
+        "providerId": welcome["providerId"],
         "frames": [{
             "kind": "hello",
             "localRoot": "/Users/test",
@@ -326,6 +331,7 @@ fn shell_send_failure_finishes_pre_send_operation_as_failed() {
         )
         .expect_err("provider send failure must fail the shell operation");
     assert!(!error.message.is_empty());
+    assert!(!error.is_outcome_unknown(), "a rejected transport send entered no execution");
     let record = manager
         .operation("send-failure")
         .expect("failed pre-send operation remains auditable");
@@ -377,6 +383,11 @@ fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
         .expect_err("provider throw must fail");
     assert!(error.to_string().contains("Error: spawn rg ENOENT"));
     assert!(error.to_string().contains("provider-stack"));
+    assert!(error.is_outcome_unknown(), "error wording is not a positive pre-entry witness");
+    assert_eq!(
+        manager.operation("shell-failure").expect("uncertain operation").status,
+        GatewayLocalExecOperationStatus::OutcomeUnknown,
+    );
     let _ = receive
         .recv_timeout(Duration::from_secs(1))
         .expect("exec cleanup cancel");
@@ -394,7 +405,7 @@ fn exec_manager_reports_control_throw_with_frozen_failure_classification() {
 
 
 #[test]
-fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
+fn exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel() {
     let (bridge, _registration, receive) = bridge_with_provider();
     let gate = Arc::new(FakeGate::default());
     let manager = GatewayLocalExecSandBox::new(bridge.clone(), gate)
@@ -451,13 +462,15 @@ fn exec_manager_journals_stable_operation_id_and_cancels_provider_request() {
         "requestId":bridge_request_id,
         "message":{"streamClose":{"id":1}}
     }]}));
-    let result = shell.join().expect("shell thread").expect("cancelled shell");
+    let result = shell.join().expect("shell thread").expect("unknown cancellation result");
     assert_eq!(result.exit_code, None);
+    assert!(result.outcome_unknown, "generic stream closure does not establish Exit");
+    assert!(!result.aborted, "cancel delivery does not establish an aborted Exit");
 
     let settled = manager
         .operation_for_agent("agent-journal", "operation-stable-1")
         .expect("settled operation");
-    assert_eq!(settled.status, GatewayLocalExecOperationStatus::Cancelled);
+    assert_eq!(settled.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
     assert_eq!(settled.bridge_request_id, bridge_request_id);
     assert_eq!(manager.operation_history_for_agent("agent-journal").len(), 1);
     assert!(manager.operation_history_for_agent("other-agent").is_empty());
@@ -507,6 +520,7 @@ fn exec_manager_does_not_mark_cancel_when_provider_rejects_delivery() {
         .expect("provider exit remains observable");
     assert_eq!(result.exit_code, Some(0));
     assert!(!result.aborted);
+    assert!(!result.outcome_unknown);
 
     let settled = manager
         .operation_for_agent("agent-undelivered-cancel", "operation-undelivered-cancel")
@@ -588,6 +602,7 @@ fn exec_manager_drives_real_os_process_to_bounded_terminal_result() {
     let result = shell.join().expect("shell thread").expect("real shell result");
     assert!(result.stdout.contains("fabushi-terminal-real-process"));
     assert_eq!(result.exit_code, Some(0));
+    assert!(!result.outcome_unknown);
     let settled = manager
         .operation_for_agent(&agent_id, &op_id)
         .expect("settled real operation");
@@ -684,6 +699,7 @@ fn exec_manager_cancel_maps_to_real_child_termination_and_history() {
     let result = shell.join().expect("cancel shell thread").expect("cancelled result");
     assert_eq!(result.exit_code, Some(130));
     assert!(result.aborted);
+    assert!(!result.outcome_unknown, "real termination plus aborted Exit is definitive");
     let settled = manager
         .operation_for_agent(&agent_id, &op_id)
         .expect("settled cancelled operation");

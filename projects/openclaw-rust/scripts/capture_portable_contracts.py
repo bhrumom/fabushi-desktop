@@ -280,7 +280,50 @@ box_response_inputs = [
     "source/packages/proto/generated/agent/v1/exec_service_pb.ts",
     "source/packages/proto/generated/agent/v1/shell_exec_pb.ts"
 ]
-inputs = sorted(set(inputs) | set(box_response_inputs))
+local_exec_outcome_inputs = [
+    "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+    "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+    "source/host/src/extensions/local_exec/local_exec_error.rs",
+    "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+    "source/host/src/extensions/local_exec/production.rs",
+    "source/host/src/extensions/local_exec/extension.rs",
+    "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs",
+    "source/host/proto/agent/v1/local_exec.proto",
+    "source/host/build.rs",
+    "source/host/src/extensions/local_tool_permission/extension.rs",
+    "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
+    "source/host/src/runner/host_external_machine_dependencies.rs",
+    "source/host/src/runner/tools/sand_external_machine_tools.rs",
+    "source/host/src/runner/tools/mcp_meta_tools.rs",
+    "source/host/src/runner/stream_attempt.rs",
+    "source/host/src/runner/production_turn_run_shell_adapter.rs",
+    "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+    "source/host/tests/extensions_local_exec_contract.rs",
+    "source/host/tests/local_exec_production_codec_contract.rs",
+    "source/host/tests/runner_effect_custody_contract.rs",
+    "source/host/tests/openclaw_chat_cron_node_contract.rs",
+    "source/host/local-exec/local-exec-provider.ts",
+    "source/local-exec-daemon/production-executor.ts",
+    "source/packages/agent-exec/controlled.ts",
+    "source/shared/local-exec-gateway.ts",
+    "source/local-exec-daemon/production-outcome.contract.test.ts",
+    "source/host/app/src/tests/local_exec_outcome_tests.rs",
+    "source/host/src/extensions/node_host/invocation_runtime.rs",
+    "source/host/src/extensions/node_host/invoke_protocol.rs",
+    "source/host/src/extensions/node_host/runtime_state.rs",
+    "source/host/src/durable_file_policy.rs",
+    "source/host/src/extensions/process/command_custody.rs",
+    "source/host/src/host_paths.rs",
+    "source/host/Cargo.toml",
+    "source/host/Cargo.lock",
+    "source/host/app/Cargo.toml",
+    "source/host/app/Cargo.lock",
+    "source/host/app/src/main.rs",
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "projects/openclaw-rust/scripts/capture_media_cleanup.py"
+]
+inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs))
 base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
 integration = base + ["--no-fail-fast"]
 for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
@@ -817,6 +860,9 @@ cases = [
         "real_mcp_effect_prevents_provider_retry_after_attempt_expiry",
         "production_fabushi_executor_refuses_replay_after_tool_expiry",
         "production_generated_runner_preserves_terminal_tool_custody",
+        "production_generated_runner_retains_unknown_external_shell_effects",
+        "production_generated_runner_preserves_known_external_shell_outcomes",
+        "production_external_shell_adapter_types_uncertain_results_and_errors",
     ]),
     ("memory-account-binding", base + ["--test", "fabushi_model_identity_production_contract", "same_runner_nudges_and_turn_memory_", "--", "--test-threads=1"], [
         "same_runner_nudges_and_turn_memory_refuse_a_changed_fabushi_account",
@@ -1273,9 +1319,9 @@ if box_daemon_lock_tracked:
 else:
     assert not box_daemon_lock.exists(), "Untracked daemon lock would be an unbound build input"
 
-def box_response_source_bindings():
+def source_bindings(paths):
     bindings = {}
-    for path in box_response_inputs:
+    for path in paths:
         actual = pathlib.Path(path).read_bytes()
         committed = subprocess.check_output(["git", "show", f"{head}:{path}"])
         bindings[path] = {
@@ -1285,11 +1331,17 @@ def box_response_source_bindings():
         }
     return bindings
 
-box_response_inputs_before = box_response_source_bindings()
+local_exec_outcome_inputs_before = source_bindings(local_exec_outcome_inputs)
+assert all(item["matches_head_bytes"] for item in local_exec_outcome_inputs_before.values()), "LXO source input differs from exact H"
+box_response_inputs_before = source_bindings(box_response_inputs)
 assert all(item["matches_head_bytes"] for item in box_response_inputs_before.values()), "BXR source input differs from exact H"
 
 
 receipt = {
+    "local_exec_outcome_contract": "LXO-v1",
+    "local_exec_outcome_inputs_before": local_exec_outcome_inputs_before,
+    "local_exec_outcome_required_runner_names": ["production_generated_runner_retains_unknown_external_shell_effects","production_generated_runner_preserves_known_external_shell_outcomes","production_external_shell_adapter_types_uncertain_results_and_errors"],
+    "local_exec_outcome_scope": "Actual registered generated Runner, production ExternalShell adapter, shared Host LocalExec and permission owner through real bridge delivery. Counted external effects, unknown post-entry outcomes, sticky custody, no uncertain checkpoint/replay, known refusal/Exit and fresh-owner journal controls use fixture-owned peers. Separate native three-platform and actual App/protocol receipts remain required; no physical device, external account, full process-tree, package or global acceptance.",
     "box_response_contract": "BXR-v1.3",
     "box_response_scope": "Actual existing manager/accessor identity, protobuf/HTTP/Connect completion, typed post-write uncertainty, ForeverBox Shell/Read/Write/ComputerUse projection and actual MCP spill bridge. Real owned daemon Shell/binary Write/Read uses the same production accessor and nonzero identities. Controlled peers do not prove external services, real monitor devices, cancellation, raw HTML capture, persistence, packages or all-platform compatibility. Existing downstream effect-custody tests are reused inside codex-model-regressions.",
     "box_response_inputs_before": box_response_inputs_before,
@@ -1463,7 +1515,12 @@ palette_exported = palette_fixture.is_file()
 receipt["palette_export"] = {"path": str(palette_fixture),
     "sha256": hashlib.sha256(palette_fixture.read_bytes()).hexdigest() if palette_exported else None,
     "produced_by": "palette_message_gateway_exports_persisted_rust_search_results"}
-box_response_inputs_after = box_response_source_bindings()
+local_exec_outcome_inputs_after = source_bindings(local_exec_outcome_inputs)
+receipt["local_exec_outcome_inputs_after"] = local_exec_outcome_inputs_after
+local_exec_outcome_sources_unchanged = (local_exec_outcome_inputs_after == local_exec_outcome_inputs_before
+    and all(item["matches_head_bytes"] for item in local_exec_outcome_inputs_after.values()))
+receipt["local_exec_outcome_sources_unchanged"] = local_exec_outcome_sources_unchanged
+box_response_inputs_after = source_bindings(box_response_inputs)
 receipt["box_response_inputs_after"] = box_response_inputs_after
 box_response_sources_unchanged = (box_response_inputs_after == box_response_inputs_before
     and all(item["matches_head_bytes"] for item in box_response_inputs_after.values()))
@@ -1479,7 +1536,7 @@ daemon_unchanged = (daemon_passed
 receipt["box_response_producer_unchanged"] = daemon_unchanged
 accepted = (palette_exported and len(receipt["executions"]) == len(cases)
     and all(case["oracle_accepted"] for case in receipt["executions"])
-    and box_response_sources_unchanged and daemon_unchanged)
+    and box_response_sources_unchanged and daemon_unchanged and local_exec_outcome_sources_unchanged)
 receipt["result"] = "passed" if accepted else "failed-or-incomplete"
 (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
 print(json.dumps(receipt, indent=2), flush=True)

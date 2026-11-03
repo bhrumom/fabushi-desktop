@@ -44,7 +44,7 @@ impl ProductionExecClientMessage {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GatewayExecControl {
-    Throw { error: String, stack_trace: Option<String> },
+    Throw { error: String, stack_trace: Option<String>, error_code: Option<String> },
     StreamClose,
     Unknown,
 }
@@ -119,6 +119,7 @@ impl ProductionLocalExecCodec {
                 GatewayExecControl::Throw {
                     error: value.error,
                     stack_trace: value.stack_trace,
+                    error_code: value.error_code,
                 }
             }
             Some(exec_client_control_message::Message::StreamClose(_)) => {

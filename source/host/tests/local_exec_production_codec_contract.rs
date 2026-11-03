@@ -56,6 +56,7 @@ fn production_codec_projects_frozen_control_cases() {
         GatewayExecControl::Throw {
             error: "boom".into(),
             stack_trace: Some("stack".into()),
+            error_code: Some("E_BOOM".into()),
         }
     );
     assert_eq!(
@@ -301,4 +302,21 @@ fn generated_codec_is_uniquely_consumed_by_shipping_manager_and_runner() {
             "shipping Runner ExternalShell/ExternalRead chain is missing: {needle}"
         );
     }
+}
+
+#[test]
+fn production_codec_preserves_preentry_refusal_and_opaque_throw_distinction() {
+    for (wire, expected) in [
+        (json!({"throw":{"error":"permission denied","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"}}), Some("LOCAL_EXEC_PRE_ENTRY_REFUSED")),
+        (json!({"throw":{"error":"entered backend failed","errorCode":"EXEC_BACKEND_UNAVAILABLE"}}), Some("EXEC_BACKEND_UNAVAILABLE")),
+        (json!({"throw":{"error":"opaque failure"}}), None),
+    ] {
+        let GatewayExecControl::Throw { error_code, .. } =
+            PRODUCTION_LOCAL_EXEC_CODEC.decode_control(&wire).expect("generated throw")
+        else { panic!("expected throw control") };
+        assert_eq!(error_code.as_deref(), expected);
+    }
+    assert!(PRODUCTION_LOCAL_EXEC_CODEC.decode_control(&json!({
+        "throw":{"error":"invalid","errorCode":false}
+    })).is_err());
 }

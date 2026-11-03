@@ -12,21 +12,34 @@ use serde_json::{Value, json};
 const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
 
 fn node_shell_timeout_is_forwarded(invoke: &str) -> bool {
-    let Some((_, call)) = invoke.split_once(".execute_shell_with_timeout(") else {
+    // This is a supplementary source-wiring oracle. The App's direct tests
+    // execute the shared helper; retain both hops here so an envelope-only
+    // timeout or a dropped helper argument cannot satisfy the wiring check.
+    let Some((_, call)) = invoke.split_once("execute_local_node_shell_invocation(") else {
         return false;
     };
-    let Some((arguments, _)) = call.split_once("\n            );") else {
+    let Some((arguments, _)) = call.split_once("\n        )") else {
         return false;
     };
-    arguments.contains(concat!(
-        "&scope,\n",
-        "                shell_command,\n",
-        "                working_directory,\n",
-        "                tool_call_id,\n",
-        "                args.get(\"timeoutMs\")\n",
-        "                    .and_then(serde_json::Value::as_u64)\n",
-        "                    .map(std::time::Duration::from_millis),",
-    ))
+    let Some((_, execution)) = invoke.split_once("manager.execute_shell_with_timeout(") else {
+        return false;
+    };
+    let Some((native_arguments, _)) = execution.split_once("\n    );") else {
+        return false;
+    };
+    invoke.contains("timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)")
+        && arguments.contains(concat!(
+            "&manager,\n",
+            "            invocation,\n",
+            "            &scope,\n",
+            "            shell_command,\n",
+            "            working_directory,\n",
+            "            tool_call_id,\n",
+            "            request.timeout_ms.map(std::time::Duration::from_millis),",
+        ))
+        && native_arguments.contains(
+            "scope, command, working_directory, operation_id, timeout,",
+        )
 }
 
 fn temp_root(label: &str) -> std::path::PathBuf {
@@ -569,16 +582,12 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
         .split_once(".execute_shell_with_timeout(")
         .expect("shipping node.invoke uses the timeout-aware local execution owner")
         .1
-        .split_once("let terminal_result = match &result")
+        .split_once("let terminal_result = match result")
         .expect("shipping execution result enters the terminal projection")
         .0;
-    assert!(execution.contains("&scope"));
-    assert!(execution.contains("shell_command"));
-    assert!(execution.contains("working_directory"));
-    assert!(execution.contains("tool_call_id"));
-    assert!(execution.contains("args.get(\"timeoutMs\")"));
-    assert!(execution.contains(".and_then(serde_json::Value::as_u64)"));
-    assert!(execution.contains(".map(std::time::Duration::from_millis)"));
+    assert!(execution.contains("scope, command, working_directory, operation_id, timeout,"));
+    assert!(invoke.contains("execute_local_node_shell_invocation("));
+    assert!(invoke.contains("request.timeout_ms.map(std::time::Duration::from_millis)"));
     assert!(invoke.contains(
         "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)"));
     assert!(invoke.contains(".execute_shell_with_timeout("));
@@ -616,19 +625,36 @@ fn test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout
         .0;
     assert!(node_shell_timeout_is_forwarded(invoke));
     let old_call = invoke.replace(".execute_shell_with_timeout(", ".execute_shell(");
+    assert_ne!(old_call, invoke);
     assert!(!node_shell_timeout_is_forwarded(&old_call));
-    let timeout_argument = concat!(
-        "args.get(\"timeoutMs\")\n",
-        "                    .and_then(serde_json::Value::as_u64)\n",
-        "                    .map(std::time::Duration::from_millis)",
+    let missing_helper = invoke.replacen(
+        "execute_local_node_shell_invocation(", "unrelated_node_projection(", 1,
     );
+    assert_ne!(missing_helper, invoke);
+    assert!(!node_shell_timeout_is_forwarded(&missing_helper));
+    let timeout_argument = "request.timeout_ms.map(std::time::Duration::from_millis)";
     let dropped_timeout = invoke.replace(timeout_argument, "None");
     assert_ne!(dropped_timeout, invoke);
     assert!(dropped_timeout.contains(
         "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)"
     ), "request-envelope timeout alone must not satisfy the LocalExec forwarding oracle");
     assert!(!node_shell_timeout_is_forwarded(&dropped_timeout));
+    let dropped_native_timeout = invoke.replace(
+        "scope, command, working_directory, operation_id, timeout,",
+        "scope, command, working_directory, operation_id, None,",
+    );
+    assert_ne!(dropped_native_timeout, invoke);
+    assert!(dropped_native_timeout.contains(timeout_argument),
+        "forwarding to the helper alone must not satisfy the native owner hop");
+    assert!(!node_shell_timeout_is_forwarded(&dropped_native_timeout));
+    let dropped_envelope_timeout = invoke.replace(
+        "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)",
+        "timeout_ms: None",
+    );
+    assert_ne!(dropped_envelope_timeout, invoke);
+    assert!(!node_shell_timeout_is_forwarded(&dropped_envelope_timeout));
     let wrong_units = invoke.replace("Duration::from_millis", "Duration::from_secs");
+    assert_ne!(wrong_units, invoke);
     assert!(!node_shell_timeout_is_forwarded(&wrong_units));
 }
 

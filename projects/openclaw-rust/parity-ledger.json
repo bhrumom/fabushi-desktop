@@ -1659,7 +1659,10 @@
       "evidence_refs": [
         "source/host/src/extensions/node_host/runtime_state.rs",
         "source/host/app/src/main.rs",
-        "projects/openclaw-rust/dossiers/node-host-scoped.md"
+        "projects/openclaw-rust/dossiers/node-host-scoped.md",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+        "source/host/app/src/tests/local_exec_outcome_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -1693,7 +1696,8 @@
         "The local producer and Gateway projections share one generation-fenced NodeHostRuntimeState owner",
         "Local invocation admission uses idempotency and generation fencing before the existing local executor side effect",
         "This row does not claim a remote Gateway caller, reconnect scheduler, remote manifest publication or physical worker executor",
-        "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller"
+        "Pairing-backed remote rows remain explicitly disconnected until a legitimate transport owner supplies the missing caller",
+        "Actual local system.run reports EXECUTION_OUTCOME_UNKNOWN with stable operation/result identity when no authoritative Exit or durable settlement is available; known refusal stays EXECUTION_ERROR"
       ],
       "migration_rollback": "Disable the local node projection only at its existing Gateway boundary and retain canonical runtime state; remote paths remain fail-closed",
       "oracle_ids": [],
@@ -1752,7 +1756,8 @@
       },
       "tests": [
         "source/host/tests/openclaw_node_host_contract.rs",
-        "source/host/src/extensions/node_host/runtime_state.rs::tests::replacement_drains_predecessor_invocations_before_successor"
+        "source/host/src/extensions/node_host/runtime_state.rs::tests::replacement_drains_predecessor_invocations_before_successor",
+        "source/host/app/src/tests/local_exec_outcome_tests.rs"
       ],
       "typed_contracts": [
         "NodeHostRuntimeState",
@@ -9738,7 +9743,9 @@
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
         "source/host/tests/external_machine_shipping_contract.rs",
         "source/host/tests/openclaw_chat_cron_node_contract.rs",
-        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9765,8 +9772,10 @@
         "producer": "source/host/src/runner/host_external_machine_dependencies.rs + source/host/app/src/main.rs::ProductionExternalMachineExecutor::for_turn"
       },
       "invariants": [
-        "Execution timeout aborts child process when elapsed exceeds deadline",
-        "Environment variables are stripped of non-allowlisted credentials"
+        "Execution timeout requests cancellation through the registered operation; only an observed shell Exit establishes completion or abort, otherwise settlement remains OutcomeUnknown",
+        "Environment variables are stripped of non-allowlisted credentials",
+        "Distinct permission facades from one Host extension share one lazy operation owner and one ordered journal publication transaction",
+        "A refused or duplicate invocation cannot mutate another operation; identity and agent checks precede owner-scoped cancellation"
       ],
       "migration_rollback": "Disable sandboxed tool execution in runner config",
       "oracle_ids": [
@@ -9814,10 +9823,15 @@
         "source/host/tests/gateway_local_exec_sand_box_contract.rs::sandbox_projects_provider_state_and_user_computers",
         "source/host/tests/gateway_local_exec_sand_box_contract.rs::upload_and_download_enforce_gate_and_use_frozen_frames",
         "source/host/tests/external_machine_shipping_contract.rs::shipping_host_consumes_external_machine_through_runner_bridge",
-        "source/host/tests/openclaw_chat_cron_node_contract.rs::test_ocrm_node_o06_shipping_routes_to_unique_native_owners"
+        "source/host/tests/openclaw_chat_cron_node_contract.rs::test_ocrm_node_o06_shipping_routes_to_unique_native_owners",
+        "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs::operation_journal_fail_closed_tests",
+        "source/host/tests/local_exec_production_codec_contract.rs",
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel"
       ],
       "typed_contracts": [
-        "GatewayLocalExecSandBox::ensure_ready"
+        "GatewayLocalExecSandBox::ensure_ready",
+        "GatewayLocalExecOperationOwner",
+        "SandLocalExecError::is_outcome_unknown"
       ],
       "unit_id": "OCRM-UNIT-EXEC-001"
     },
@@ -9833,7 +9847,11 @@
       ],
       "evidence_refs": [
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
-        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json",
+        "source/host/src/runner/host_external_machine_dependencies.rs",
+        "source/host/tests/runner_effect_custody_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -9861,7 +9879,8 @@
       },
       "invariants": [
         "No-output timeout fires if process emits no stdout/stderr during configured interval",
-        "Output buffer caps memory usage to prevent OOM"
+        "Output buffer caps memory usage to prevent OOM",
+        "Actual ExternalShell adapter returns ToolOutcomeUnknown for uncertain manager results and typed errors; the existing common Runner guard retains sticky custody and prevents uncertain checkpoint/replay"
       ],
       "migration_rollback": "Controlled by runner stream attempt policy",
       "oracle_ids": [
@@ -9907,7 +9926,10 @@
       },
       "tests": [
         "source/host/tests/production_turn_run_shell_adapter_contract.rs::production_turn_adapter_doubles_first_output_deadline_after_retry",
-        "source/host/tests/production_turn_run_shell_adapter_contract.rs::production_turn_adapter_first_output_watchdog_interrupts_silent_attempt"
+        "source/host/tests/production_turn_run_shell_adapter_contract.rs::production_turn_adapter_first_output_watchdog_interrupts_silent_attempt",
+        "source/host/tests/runner_effect_custody_contract.rs::production_generated_runner_retains_unknown_external_shell_effects",
+        "source/host/tests/runner_effect_custody_contract.rs::production_generated_runner_preserves_known_external_shell_outcomes",
+        "source/host/tests/runner_effect_custody_contract.rs::production_external_shell_adapter_types_uncertain_results_and_errors"
       ],
       "typed_contracts": [
         "run_production_turn_shell_lifecycle"
@@ -9928,7 +9950,9 @@
       ],
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
-        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
       ],
       "existing_owner_candidates": [
         {
@@ -9945,7 +9969,8 @@
       },
       "invariants": [
         "Graceful signal sent first; force kill applied if process remains alive past killGraceMs",
-        "Windows taskkill targets process tree /T to eliminate child workers"
+        "Windows taskkill targets process tree /T to eliminate child workers",
+        "Cancel delivery or stream closure is not process termination evidence; LXO-v1 preserves the full grace/force-kill/process-tree consumer blocker"
       ],
       "migration_rollback": "Immediate SIGKILL fallback",
       "oracle_ids": [
@@ -9991,7 +10016,7 @@
         "implementation": "implemented",
         "mapping": "mapped",
         "read": "read-complete",
-        "verification": "verified",
+        "verification": "not-run",
         "wiring": "not-wired"
       },
       "target": {
@@ -10000,7 +10025,8 @@
         "symbol": "GatewayLocalExecManager::cancel_operation"
       },
       "tests": [
-        "source/host/tests/gateway_local_exec_sand_box_contract.rs"
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+        "source/host/tests/gateway_local_exec_sand_box_contract.rs::exec_manager_cancel_maps_to_real_child_termination_and_history"
       ],
       "typed_contracts": [
         "GatewayLocalExecManager::cancel_operation"

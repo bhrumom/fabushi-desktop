@@ -261,6 +261,105 @@ AGENT_MANAGEMENT_NAMES = [
     "lfa_agent_management_batch_admits_all_urls_before_resolving",
 ]
 
+LXO_MANAGER_PREFIX = "extensions::local_exec::gateway_local_exec_sand_box::operation_journal_fail_closed_tests::"
+LXO_MANAGER_NAMES = [
+    "operation_owner_is_lazy_and_shared_by_distinct_permission_facades",
+    "duplicate_and_permission_refusal_cannot_retire_another_invocation",
+    "unproved_shell_terminals_preserve_typed_uncertainty_and_observed_output",
+    "preentry_refusals_remain_known_and_do_not_poison_journal_health",
+    "cancellation_close_and_deadline_remain_unknown_after_durable_reopen",
+    "uncertain_shell_output_remains_utf8_bounded_in_durable_history",
+    "post_send_journal_failures_keep_observed_facts_and_unknown_custody",
+    "proven_preentry_refusal_stays_known_when_its_journal_publication_fails",
+    "finish_admission_and_snapshot_publication_share_one_transaction",
+    "corrupt_journal_fails_closed_instead_of_becoming_empty_history",
+    "unknown_journal_version_fails_closed",
+    "accepted_start_ambiguity_recovers_durably_as_outcome_unknown",
+    "process_death_recovery_durably_marks_running_as_outcome_unknown",
+    "atomic_persistence_failure_is_reported",
+    "pre_send_journal_failure_does_not_send_exec_frame",
+    "completed_bounded_output_round_trips_through_journal",
+    "duplicate_operation_id_from_durable_history_is_not_replayed"
+]
+LXO_GATEWAY_NAMES = [
+    "sandbox_projects_provider_state_and_user_computers",
+    "upload_and_download_enforce_gate_and_use_frozen_frames",
+    "unavailable_computer_fails_before_permission_approval",
+    "oversized_file_and_blocked_gate_fail_before_provider_side_effect",
+    "exec_manager_streams_shell_and_read_through_permissioned_provider",
+    "shell_send_failure_finishes_pre_send_operation_as_failed",
+    "exec_manager_reports_control_throw_with_frozen_failure_classification",
+    "exec_manager_journals_stable_operation_id_and_preserves_uncertain_cancel",
+    "exec_manager_does_not_mark_cancel_when_provider_rejects_delivery",
+    "exec_manager_drives_real_os_process_to_bounded_terminal_result",
+    "exec_manager_cancel_maps_to_real_child_termination_and_history"
+]
+LXO_CODEC_NAMES = [
+    "production_codec_accepts_exec_client_json_and_ignores_unknown_fields",
+    "production_codec_projects_frozen_control_cases",
+    "production_codec_creates_package_owned_remote_accessor",
+    "production_codec_projects_generated_shell_and_read_shapes",
+    "production_codec_uses_generated_oneof_and_permission_error_semantics",
+    "generated_binding_owns_the_complete_exec_oneof_shape",
+    "generated_protobuf_json_preserves_read_bytes_and_int64_semantics",
+    "generated_binding_provenance_is_auditable_and_not_a_parallel_codec",
+    "generated_codec_is_uniquely_consumed_by_shipping_manager_and_runner",
+    "production_codec_preserves_preentry_refusal_and_opaque_throw_distinction"
+]
+LXO_EXTENSION_NAMES = [
+    "local_exec_ask_gate_reports_refusal_with_agent_identity",
+    "local_exec_error_preserves_provider_message",
+    "failure_classifier_matches_grok_spawn_errno_contract",
+    "command_output_formatting_strips_ansi_cr_redraw_and_bounds_tail",
+    "command_error_merges_bounded_streams_and_preserves_termination_reason",
+    "command_error_uses_timeout_and_signal_without_raw_command_newlines",
+    "local_exec_provider_lifecycle_is_persisted_through_host_telemetry",
+    "production_extension_reports_exec_failure_through_host_telemetry"
+]
+LXO_INPUTS = [
+    "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+    "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+    "source/host/src/extensions/local_exec/local_exec_error.rs",
+    "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+    "source/host/src/extensions/local_exec/production.rs",
+    "source/host/src/extensions/local_exec/extension.rs",
+    "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs",
+    "source/host/proto/agent/v1/local_exec.proto",
+    "source/host/build.rs",
+    "source/host/src/extensions/local_tool_permission/extension.rs",
+    "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
+    "source/host/src/runner/host_external_machine_dependencies.rs",
+    "source/host/src/runner/tools/sand_external_machine_tools.rs",
+    "source/host/src/runner/tools/mcp_meta_tools.rs",
+    "source/host/src/runner/stream_attempt.rs",
+    "source/host/src/runner/production_turn_run_shell_adapter.rs",
+    "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+    "source/host/tests/extensions_local_exec_contract.rs",
+    "source/host/tests/local_exec_production_codec_contract.rs",
+    "source/host/tests/runner_effect_custody_contract.rs",
+    "source/host/tests/openclaw_chat_cron_node_contract.rs",
+    "source/host/local-exec/local-exec-provider.ts",
+    "source/local-exec-daemon/production-executor.ts",
+    "source/packages/agent-exec/controlled.ts",
+    "source/shared/local-exec-gateway.ts",
+    "source/local-exec-daemon/production-outcome.contract.test.ts",
+    "source/host/app/src/tests/local_exec_outcome_tests.rs",
+    "source/host/src/extensions/node_host/invocation_runtime.rs",
+    "source/host/src/extensions/node_host/invoke_protocol.rs",
+    "source/host/src/extensions/node_host/runtime_state.rs",
+    "source/host/src/durable_file_policy.rs",
+    "source/host/src/extensions/process/command_custody.rs",
+    "source/host/src/host_paths.rs",
+    "source/host/Cargo.toml",
+    "source/host/Cargo.lock",
+    "source/host/app/Cargo.toml",
+    "source/host/app/Cargo.lock",
+    "source/host/app/src/main.rs",
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "projects/openclaw-rust/scripts/capture_media_cleanup.py"
+]
+
 INPUTS = [
     ".github/workflows/rust-desktop-runtime.yml",
     "projects/openclaw-rust/scripts/capture_media_cleanup.py",
@@ -326,6 +425,7 @@ INPUTS = [
     "source/host/app/src/tests/channel_host_lane_tests.rs",
     "source/host/app/src/tests/media_settlement_unknown_tests.rs",
 ]
+INPUTS = sorted(set(INPUTS) | set(LXO_INPUTS))
 
 
 def output(command):
@@ -446,11 +546,12 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This executable verification is GitHub Actions-only.")
     ROOT.mkdir(parents=True, exist_ok=False)
-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native", "MSU-v1-native"],
+    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native", "MSU-v1-native", "LXO-v1-native"],
                "result": "failed-or-incomplete", "executions": [],
                "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
     save(receipt)
     receipt["media_settlement_scope"] = "MSU-v1 native file-backed AgentDb commands exercise confirmed success/refusal, actual COMMIT acknowledgement loss, actual rollback authorizer denial, deferred COMMIT failure, exact connection retirement, one-shot identity-bound fault leases and zero unknown-success publication; local cleanup custody retains sealed media through abort/Drop. Tool error-class controls prove unknown does not invoke destructive build-error cleanup. These native cases do not execute the actual App, Session first-open recovery or generated Runner consumer; their separate Linux App receipt remains required. No arbitrary crash-point, live service, complete read-scope or final migration acceptance is claimed."
+    receipt["local_exec_outcome_scope"] = "Actual shared LocalExec operation owner and real bridge consumers: atomic admission/settlement/publication, invocation identity, typed uncertainty, cancellation without Exit, known refusal/Exit, bounded output, journal failures and restart, generated optional error-code decoding and existing telemetry. Existing real OS child controls retain confirmed termination. Registered Runner and actual App/protocol consumers have separate Linux receipts. No physical device, full process-tree controller, external provider, package or global acceptance."
     try:
         head = output(["git", "rev-parse", "HEAD"])
         if head != os.environ["FABUSHI_TARGET_SHA"]:
@@ -516,6 +617,10 @@ def main():
             integration.append("test_ocrm_media_store_cleanup_protects_top_level_case_variants")
         base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
         cases = [
+            ("local-exec-owner", base + ["--lib", LXO_MANAGER_PREFIX, "--", "--test-threads=1"], [LXO_MANAGER_PREFIX + name for name in LXO_MANAGER_NAMES]),
+            ("local-exec-gateway", base + ["--test", "gateway_local_exec_sand_box_contract", "--", "--test-threads=1"], LXO_GATEWAY_NAMES),
+            ("local-exec-codec", base + ["--test", "local_exec_production_codec_contract", "--", "--test-threads=1"], LXO_CODEC_NAMES),
+            ("local-exec-extension", base + ["--test", "extensions_local_exec_contract", "--", "--test-threads=1"], LXO_EXTENSION_NAMES),
             ("media-settlement-owner", base + ["--lib", MEDIA_SETTLEMENT_PREFIX, "--", "--test-threads=1"], [MEDIA_SETTLEMENT_PREFIX + name for name in MEDIA_SETTLEMENT_NAMES]),
             ("outgoing-media-custody", base + ["--lib", MEDIA_CUSTODY_PREFIX, "--", "--test-threads=1"], [MEDIA_CUSTODY_PREFIX + name for name in MEDIA_CUSTODY_NAMES]),
             ("transaction-commit-owners", base + ["--test", "openclaw_sessions_and_config_contract", "commit", "--", "--test-threads=1"], TRANSACTION_COMMIT_NAMES),

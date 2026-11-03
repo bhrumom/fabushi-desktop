@@ -235,7 +235,75 @@ struct GatewayLocalExecActiveOperation {
     bridge_request_id: String,
     cancellation: LocalExecCancellationHandle,
     started: bool,
-    cancel_requested: bool,
+}
+
+struct GatewayLocalExecOperationState {
+    active_operations: HashMap<String, GatewayLocalExecActiveOperation>,
+    operation_history: VecDeque<GatewayLocalExecOperationRecord>,
+    operation_history_limit: usize,
+    operation_journal_path: PathBuf,
+    operation_journal_error: Option<String>,
+    #[cfg(test)]
+    before_journal_publish: Option<Arc<dyn Fn() + Send + Sync>>,
+}
+
+impl GatewayLocalExecOperationState {
+    fn load(path: PathBuf) -> Self {
+        let (operation_history, operation_journal_error) =
+            match GatewayLocalExecManager::load_operation_history(
+                &path,
+                DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
+            ) {
+                Ok(history) => (history, None),
+                Err(error) => (VecDeque::new(), Some(error.message)),
+            };
+        Self {
+            active_operations: HashMap::new(),
+            operation_history,
+            operation_history_limit: DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
+            operation_journal_path: path,
+            operation_journal_error,
+            #[cfg(test)]
+            before_journal_publish: None,
+        }
+    }
+}
+
+/// One Host extension shares this owner across its permission-scoped facades.
+/// The state lock covers transitions and durable publication together: a newer
+/// operation snapshot cannot be overwritten by an earlier in-flight writer.
+pub(crate) struct GatewayLocalExecOperationOwner {
+    state: Mutex<Option<GatewayLocalExecOperationState>>,
+    journal_path: Option<PathBuf>,
+}
+
+impl GatewayLocalExecOperationOwner {
+    pub(crate) fn new() -> Self {
+        Self { state: Mutex::new(None), journal_path: None }
+    }
+
+    fn with_state<T>(
+        &self,
+        action: impl FnOnce(&mut GatewayLocalExecOperationState) -> T,
+    ) -> T {
+        let mut state = self.state.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        // Resolve the configured root only on first use, not while Host
+        // extensions are being constructed before startup configuration.
+        let state = state.get_or_insert_with(|| {
+            GatewayLocalExecOperationState::load(self.journal_path.clone().unwrap_or_else(|| {
+                get_sand_root_dir().join(SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME)
+            }))
+        });
+        action(state)
+    }
+
+    #[cfg(test)]
+    fn with_journal_path(path: PathBuf) -> Self {
+        Self {
+            state: Mutex::new(None),
+            journal_path: Some(path),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -243,11 +311,7 @@ pub struct GatewayLocalExecManager {
     sandbox: GatewayLocalExecSandBox,
     process_custody: Arc<CommandProcessCustody>,
     next_exec_id: Arc<AtomicU32>,
-    active_operations: Arc<Mutex<HashMap<String, GatewayLocalExecActiveOperation>>>,
-    operation_history: Arc<Mutex<VecDeque<GatewayLocalExecOperationRecord>>>,
-    operation_history_limit: usize,
-    operation_journal_path: Arc<PathBuf>,
-    operation_journal_error: Arc<Mutex<Option<String>>>,
+    operation_owner: Arc<GatewayLocalExecOperationOwner>,
 }
 
 #[derive(Clone)]
@@ -255,6 +319,7 @@ pub struct GatewayLocalExecSandBox {
     bridge: SandLocalExecBridge,
     gate: Arc<dyn GatewayLocalToolGate>,
     process_custody: Arc<CommandProcessCustody>,
+    operation_owner: Arc<GatewayLocalExecOperationOwner>,
     computer_id: Option<String>,
     max_file_bytes: usize,
     failure_reporter: Option<GatewayLocalExecFailureReporter>,
@@ -266,6 +331,7 @@ impl GatewayLocalExecSandBox {
             bridge,
             gate,
             process_custody: Arc::new(CommandProcessCustody::new()),
+            operation_owner: Arc::new(GatewayLocalExecOperationOwner::new()),
             computer_id: None,
             max_file_bytes: DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES,
             failure_reporter: None,
@@ -292,6 +358,14 @@ impl GatewayLocalExecSandBox {
 
     pub fn with_process_custody(mut self, process_custody: Arc<CommandProcessCustody>) -> Self {
         self.process_custody = process_custody;
+        self
+    }
+
+    pub(crate) fn with_operation_owner(
+        mut self,
+        operation_owner: Arc<GatewayLocalExecOperationOwner>,
+    ) -> Self {
+        self.operation_owner = operation_owner;
         self
     }
 
@@ -556,34 +630,24 @@ fn durable_shell_output(value: &str, already_truncated: bool) -> (String, bool) 
 
 impl GatewayLocalExecManager {
     fn new(sandbox: GatewayLocalExecSandBox) -> Self {
-        Self::new_with_operation_journal_path(
-            sandbox,
-            get_sand_root_dir().join(SAND_LOCAL_EXEC_OPERATION_JOURNAL_FILE_NAME),
-        )
-    }
-
-    fn new_with_operation_journal_path(
-        sandbox: GatewayLocalExecSandBox,
-        operation_journal_path: PathBuf,
-    ) -> Self {
         let process_custody = Arc::clone(&sandbox.process_custody);
-        let (history, operation_journal_error) = match Self::load_operation_history(
-            &operation_journal_path,
-            DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
-        ) {
-            Ok(history) => (history, None),
-            Err(error) => (VecDeque::new(), Some(error.message)),
-        };
+        let operation_owner = Arc::clone(&sandbox.operation_owner);
         Self {
             sandbox,
             process_custody,
             next_exec_id: Arc::new(AtomicU32::new(1)),
-            active_operations: Arc::new(Mutex::new(HashMap::new())),
-            operation_history: Arc::new(Mutex::new(history)),
-            operation_history_limit: DEFAULT_LOCAL_EXEC_OPERATION_HISTORY_LIMIT,
-            operation_journal_path: Arc::new(operation_journal_path),
-            operation_journal_error: Arc::new(Mutex::new(operation_journal_error)),
+            operation_owner,
         }
+    }
+
+    #[cfg(test)]
+    fn new_with_operation_journal_path(
+        sandbox: GatewayLocalExecSandBox,
+        operation_journal_path: PathBuf,
+    ) -> Self {
+        Self::new(sandbox.with_operation_owner(Arc::new(
+            GatewayLocalExecOperationOwner::with_journal_path(operation_journal_path),
+        )))
     }
 
     fn now_ms() -> u64 {
@@ -731,20 +795,10 @@ impl GatewayLocalExecManager {
         write_result
     }
 
-    fn set_operation_journal_error(&self, message: String) {
-        *self
-            .operation_journal_error
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(message);
-    }
-
-    pub fn ensure_operation_journal_healthy(&self) -> Result<(), SandLocalExecError> {
-        match self
-            .operation_journal_error
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone()
-        {
+    fn ensure_state_journal_healthy(
+        state: &GatewayLocalExecOperationState,
+    ) -> Result<(), SandLocalExecError> {
+        match state.operation_journal_error.as_ref() {
             Some(error) => Err(SandLocalExecError::new(format!(
                 "local-exec operation journal unavailable; shell execution is fail-closed: {error}"
             ))),
@@ -752,22 +806,21 @@ impl GatewayLocalExecManager {
         }
     }
 
+    pub fn ensure_operation_journal_healthy(&self) -> Result<(), SandLocalExecError> {
+        self.operation_owner.with_state(|state| Self::ensure_state_journal_healthy(state))
+    }
+
     pub fn stable_result_ref(operation_id: &str) -> String {
         format!("fabushi-local-exec://operation/{operation_id}")
     }
 
-    fn persist_operation_snapshot(&self) -> Result<(), SandLocalExecError> {
-        let mut records = self
-            .operation_history
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone();
-        for (operation_id, active) in self
-            .active_operations
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .iter()
-        {
+    // Called with the owner's state transaction held, including throughout
+    // atomic replacement and its durability barriers.
+    fn persist_operation_snapshot(
+        state: &mut GatewayLocalExecOperationState,
+    ) -> Result<(), SandLocalExecError> {
+        let mut records = state.operation_history.clone();
+        for (operation_id, active) in &state.active_operations {
             records.push_back(GatewayLocalExecOperationRecord {
                 operation_id: operation_id.clone(),
                 agent_id: active.agent_id.clone(),
@@ -786,47 +839,42 @@ impl GatewayLocalExecManager {
                 settled_at_ms: None,
             });
         }
-        Self::persist_operation_history(&self.operation_journal_path, &records).map_err(|error| {
-            let message =
-                format!("local-exec operation journal persistence is fail-closed: {error}");
-            self.set_operation_journal_error(message.clone());
+        #[cfg(test)]
+        if let Some(pause) = state.before_journal_publish.as_ref() {
+            pause();
+        }
+        Self::persist_operation_history(&state.operation_journal_path, &records).map_err(|error| {
+            let message = format!("local-exec operation journal persistence is fail-closed: {error}");
+            state.operation_journal_error = Some(message.clone());
             SandLocalExecError::new(message)
         })
     }
 
     pub fn operation(&self, operation_id: &str) -> Option<GatewayLocalExecOperationRecord> {
-        if let Some(active) = self
-            .active_operations
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .get(operation_id)
-            .cloned()
-        {
-            return Some(GatewayLocalExecOperationRecord {
-                operation_id: operation_id.to_string(),
-                agent_id: active.agent_id,
-                bridge_request_id: active.bridge_request_id,
-                status: if active.started {
-                    GatewayLocalExecOperationStatus::Running
-                } else {
-                    GatewayLocalExecOperationStatus::Accepted
-                },
-                exit_code: None,
-                aborted: false,
-                stdout: String::new(),
-                stderr: String::new(),
-                stdout_truncated: false,
-                stderr_truncated: false,
-                settled_at_ms: None,
-            });
-        }
-        self.operation_history
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .iter()
-            .rev()
-            .find(|record| record.operation_id == operation_id)
-            .cloned()
+        self.operation_owner.with_state(|state| {
+            if let Some(active) = state.active_operations.get(operation_id) {
+                return Some(GatewayLocalExecOperationRecord {
+                    operation_id: operation_id.to_string(),
+                    agent_id: active.agent_id.clone(),
+                    bridge_request_id: active.bridge_request_id.clone(),
+                    status: if active.started {
+                        GatewayLocalExecOperationStatus::Running
+                    } else {
+                        GatewayLocalExecOperationStatus::Accepted
+                    },
+                    exit_code: None,
+                    aborted: false,
+                    stdout: String::new(),
+                    stderr: String::new(),
+                    stdout_truncated: false,
+                    stderr_truncated: false,
+                    settled_at_ms: None,
+                });
+            }
+            state.operation_history.iter().rev()
+                .find(|record| record.operation_id == operation_id)
+                .cloned()
+        })
     }
 
     pub fn operation_for_agent(
@@ -839,12 +887,9 @@ impl GatewayLocalExecManager {
     }
 
     pub fn operation_history(&self) -> Vec<GatewayLocalExecOperationRecord> {
-        self.operation_history
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .iter()
-            .cloned()
-            .collect()
+        self.operation_owner.with_state(|state| {
+            state.operation_history.iter().cloned().collect()
+        })
     }
 
     pub fn operation_history_for_agent(
@@ -857,29 +902,41 @@ impl GatewayLocalExecManager {
             .collect()
     }
 
-    pub fn cancel_operation(&self, operation_id: &str) -> bool {
-        let mut active = self
-            .active_operations
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let Some(operation) = active.get_mut(operation_id) else {
+    fn cancel_matching_operation(
+        state: &GatewayLocalExecOperationState,
+        operation_id: &str,
+        agent_id: Option<&str>,
+        bridge_request_id: Option<&str>,
+    ) -> bool {
+        let Some(operation) = state.active_operations.get(operation_id) else {
             return false;
         };
-        let delivered = operation.cancellation.cancel();
-        if delivered {
-            operation.cancel_requested = true;
+        if agent_id.is_some_and(|agent| operation.agent_id.as_deref() != Some(agent))
+            || bridge_request_id.is_some_and(|request| operation.bridge_request_id != request)
+        {
+            return false;
         }
-        delivered
+        // Check ownership and deliver to this exact record under one lock.
+        // A successful send requests cancellation; it is not an Exit.
+        operation.cancellation.cancel()
+    }
+
+    pub fn cancel_operation(&self, operation_id: &str) -> bool {
+        self.operation_owner.with_state(|state| {
+            Self::cancel_matching_operation(state, operation_id, None, None)
+        })
     }
 
     pub fn cancel_operation_for_agent(&self, agent_id: &str, operation_id: &str) -> bool {
-        let owned = self
-            .active_operations
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .get(operation_id)
-            .is_some_and(|operation| operation.agent_id.as_deref() == Some(agent_id));
-        owned && self.cancel_operation(operation_id)
+        self.operation_owner.with_state(|state| {
+            Self::cancel_matching_operation(state, operation_id, Some(agent_id), None)
+        })
+    }
+
+    fn cancel_registered_operation(&self, operation_id: &str, bridge_request_id: &str) -> bool {
+        self.operation_owner.with_state(|state| {
+            Self::cancel_matching_operation(state, operation_id, None, Some(bridge_request_id))
+        })
     }
 
     fn register_operation(
@@ -887,125 +944,121 @@ impl GatewayLocalExecManager {
         operation_id: &str,
         agent_id: Option<&str>,
         cancellation: LocalExecCancellationHandle,
-    ) -> Result<(), SandLocalExecError> {
-        self.ensure_operation_journal_healthy()?;
-        let mut active = self
-            .active_operations
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if active.contains_key(operation_id)
-            || self
-                .operation_history
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .iter()
-                .any(|record| record.operation_id == operation_id)
-        {
-            return Err(SandLocalExecError::new(format!(
-                "local-exec operationId already exists and will not be replayed: {operation_id}"
-            )));
-        }
-        active.insert(
-            operation_id.to_string(),
-            GatewayLocalExecActiveOperation {
-                agent_id: agent_id.map(str::to_string),
-                bridge_request_id: cancellation.request_id().to_string(),
-                cancellation,
-                started: false,
-                cancel_requested: false,
-            },
-        );
-        drop(active);
-        if let Err(error) = self.persist_operation_snapshot() {
-            self.active_operations
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .remove(operation_id);
-            return Err(error);
-        }
-        Ok(())
+    ) -> Result<String, SandLocalExecError> {
+        let bridge_request_id = cancellation.request_id().to_string();
+        self.operation_owner.with_state(|state| {
+            Self::ensure_state_journal_healthy(state)?;
+            if state.active_operations.contains_key(operation_id)
+                || state.operation_history.iter().any(|record| record.operation_id == operation_id)
+            {
+                return Err(SandLocalExecError::new(format!(
+                    "local-exec operationId already exists and will not be replayed: {operation_id}"
+                )));
+            }
+            state.active_operations.insert(
+                operation_id.to_string(),
+                GatewayLocalExecActiveOperation {
+                    agent_id: agent_id.map(str::to_string),
+                    bridge_request_id: bridge_request_id.clone(),
+                    cancellation,
+                    started: false,
+                },
+            );
+            if let Err(error) = Self::persist_operation_snapshot(state) {
+                // No provider frame has been sent. This transaction still owns
+                // the registration it is rolling back.
+                state.active_operations.remove(operation_id);
+                return Err(error);
+            }
+            Ok(bridge_request_id)
+        })
     }
 
-    fn mark_operation_started(&self, operation_id: &str) -> Result<(), SandLocalExecError> {
-        let changed = {
-            let mut active = self
-                .active_operations
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner());
-            let operation = active.get_mut(operation_id).ok_or_else(|| {
+    fn mark_operation_started(
+        &self,
+        operation_id: &str,
+        bridge_request_id: &str,
+    ) -> Result<(), SandLocalExecError> {
+        self.operation_owner.with_state(|state| {
+            let operation = state.active_operations.get_mut(operation_id).ok_or_else(|| {
                 SandLocalExecError::new(format!(
                     "local-exec operationId disappeared before started journal: {operation_id}"
                 ))
             })?;
-            if operation.started {
-                false
-            } else {
-                operation.started = true;
-                true
+            if operation.bridge_request_id != bridge_request_id {
+                return Err(SandLocalExecError::new(format!(
+                    "local-exec invocation does not own operationId: {operation_id}"
+                )));
             }
-        };
-        if changed {
-            self.persist_operation_snapshot()?;
-        }
-        Ok(())
-    }
-
-    fn cancellation_requested(&self, operation_id: &str) -> bool {
-        self.active_operations
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .get(operation_id)
-            .is_some_and(|operation| operation.cancel_requested)
+            if operation.started {
+                return Ok(());
+            }
+            operation.started = true;
+            Self::persist_operation_snapshot(state)
+        })
     }
 
     fn finish_operation(
         &self,
         operation_id: &str,
+        bridge_request_id: &str,
         status: GatewayLocalExecOperationStatus,
         result: Option<&GatewayLocalExecShellResult>,
     ) -> Result<(), SandLocalExecError> {
-        let active = self
-            .active_operations
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .remove(operation_id);
-        let Some(active) = active else {
-            return Ok(());
-        };
-        let mut history = self
-            .operation_history
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        while history.len() >= self.operation_history_limit.max(1) {
-            history.pop_front();
-        }
-        let (stdout, stdout_truncated) = result
-            .map(|result| durable_shell_output(&result.stdout, result.stdout_truncated))
-            .unwrap_or_default();
-        let (stderr, stderr_truncated) = result
-            .map(|result| durable_shell_output(&result.stderr, result.stderr_truncated))
-            .unwrap_or_default();
-        history.push_back(GatewayLocalExecOperationRecord {
-            operation_id: operation_id.to_string(),
-            agent_id: active.agent_id,
-            bridge_request_id: active.bridge_request_id,
-            status,
-            exit_code: result.and_then(|result| result.exit_code),
-            aborted: result.is_some_and(|result| result.aborted),
-            stdout,
-            stderr,
-            stdout_truncated,
-            stderr_truncated,
-            settled_at_ms: Some(Self::now_ms()),
-        });
-        drop(history);
-        self.persist_operation_snapshot().map_err(|error| {
-            SandLocalExecError::new(format!(
-                "{}; operation result is not safely durable (resultRef={})",
-                error.message,
-                Self::stable_result_ref(operation_id)
-            ))
+        self.operation_owner.with_state(|state| {
+            let active = state.active_operations.get(operation_id).ok_or_else(|| {
+                SandLocalExecError::new(format!(
+                    "local-exec operationId disappeared before terminal journal: {operation_id}"
+                ))
+            })?;
+            if active.bridge_request_id != bridge_request_id {
+                return Err(SandLocalExecError::new(format!(
+                    "local-exec invocation does not own operationId: {operation_id}"
+                )));
+            }
+            let active = state.active_operations.remove(operation_id)
+                .expect("the matching registration is held by this state transaction");
+            while state.operation_history.len() >= state.operation_history_limit.max(1) {
+                state.operation_history.pop_front();
+            }
+            let (stdout, stdout_truncated) = result
+                .map(|result| durable_shell_output(&result.stdout, result.stdout_truncated))
+                .unwrap_or_default();
+            let (stderr, stderr_truncated) = result
+                .map(|result| durable_shell_output(&result.stderr, result.stderr_truncated))
+                .unwrap_or_default();
+            state.operation_history.push_back(GatewayLocalExecOperationRecord {
+                operation_id: operation_id.to_string(),
+                agent_id: active.agent_id,
+                bridge_request_id: active.bridge_request_id,
+                status,
+                exit_code: result.and_then(|result| result.exit_code),
+                aborted: result.is_some_and(|result| result.aborted),
+                stdout,
+                stderr,
+                stdout_truncated,
+                stderr_truncated,
+                settled_at_ms: Some(Self::now_ms()),
+            });
+            Self::persist_operation_snapshot(state).map_err(|error| {
+                SandLocalExecError::new(format!(
+                    "{}; operation result is not safely durable (resultRef={})",
+                    error.message,
+                    Self::stable_result_ref(operation_id)
+                ))
+            })
         })
+    }
+
+    fn shell_outcome_unknown_error(
+        operation_id: &str,
+        message: impl AsRef<str>,
+    ) -> SandLocalExecError {
+        SandLocalExecError::outcome_unknown(format!(
+            "{} (operationId={operation_id}; resultRef={})",
+            message.as_ref(),
+            Self::stable_result_ref(operation_id),
+        ))
     }
 
     pub fn terminals_folder(&self) -> String {
@@ -1094,38 +1147,46 @@ impl GatewayLocalExecManager {
             working_directory,
             tool_call_id,
         );
+        let mut registered_request_id = None;
         let mut request = match self.open_exec_with_before_send(
             scope,
             "run-command",
             command,
             message,
             |cancellation| {
-                self.register_operation(tool_call_id, scope.agent_id.as_deref(), cancellation)
+                let request_id =
+                    self.register_operation(tool_call_id, scope.agent_id.as_deref(), cancellation)?;
+                registered_request_id = Some(request_id);
+                Ok(())
             },
         ) {
             Ok(request) => request,
             Err(error) => {
-                // The registration callback runs before the bridge sends the
-                // frame. If that send fails, close the already-journaled
-                // operation instead of leaving it indefinitely Accepted.
-                if let Err(cleanup_error) = self.finish_operation(
-                    tool_call_id,
-                    GatewayLocalExecOperationStatus::Failed,
-                    None,
-                ) {
-                    return Err(SandLocalExecError::new(format!(
-                        "{}; operation cleanup was not safely durable: {}",
-                        error.message, cleanup_error.message
-                    )));
+                // Only this invocation's successful registration can be retired.
+                // A permission or duplicate refusal owns no older operation.
+                if let Some(request_id) = registered_request_id.as_deref() {
+                    if let Err(cleanup_error) = self.finish_operation(
+                        tool_call_id,
+                        request_id,
+                        GatewayLocalExecOperationStatus::Failed,
+                        None,
+                    ) {
+                        return Err(SandLocalExecError::new(format!(
+                            "{}; operation cleanup was not safely durable: {}",
+                            error.message, cleanup_error.message
+                        )));
+                    }
                 }
                 return Err(error);
             }
         };
+        let bridge_request_id = request.request_id().to_string();
         let mut result = GatewayLocalExecShellResult {
             request_id: tool_call_id.to_string(),
             ..GatewayLocalExecShellResult::default()
         };
         let mut terminal_status = None;
+        let mut observed_activity = false;
         let outcome = (|| -> Result<GatewayLocalExecShellResult, SandLocalExecError> {
             loop {
                 let wait = timeout
@@ -1135,16 +1196,12 @@ impl GatewayLocalExecManager {
                 let response = match request.recv_timeout(wait) {
                     Ok(response) => response,
                     Err(_) => {
-                        let timed_out = timeout.is_some_and(|timeout| started_at.elapsed() >= timeout);
-                        let cancelled = timed_out && self.cancel_operation(tool_call_id);
-                        terminal_status = Some(if cancelled {
-                            GatewayLocalExecOperationStatus::Cancelled
-                        } else {
-                            GatewayLocalExecOperationStatus::OutcomeUnknown
-                        });
-                        result.aborted = cancelled;
+                        if timeout.is_some_and(|timeout| started_at.elapsed() >= timeout) {
+                            let _ = self.cancel_registered_operation(tool_call_id, &bridge_request_id);
+                        }
+                        // Neither an accepted cancellation request nor loss of
+                        // the response proves that the provider observed Exit.
                         result.outcome_unknown = true;
-                        request.close();
                         return Ok(result.clone());
                     }
                 };
@@ -1159,43 +1216,39 @@ impl GatewayLocalExecManager {
                         match decoded.payload() {
                             ProductionExecClientPayload::ShellStream(event) => match event {
                                 ProductionShellStreamEvent::Stdout(data) => {
-                                    self.mark_operation_started(tool_call_id)?;
+                                    observed_activity = true;
                                     result.stdout_truncated |=
                                         append_bounded_shell_output(&mut result.stdout, data);
+                                    self.mark_operation_started(tool_call_id, &bridge_request_id)?;
                                 }
                                 ProductionShellStreamEvent::Stderr(data) => {
-                                    self.mark_operation_started(tool_call_id)?;
+                                    observed_activity = true;
                                     result.stderr_truncated |=
                                         append_bounded_shell_output(&mut result.stderr, data);
+                                    self.mark_operation_started(tool_call_id, &bridge_request_id)?;
                                 }
                                 ProductionShellStreamEvent::Exit { code, cwd, aborted } => {
                                     result.exit_code = Some(*code);
                                     result.cwd = (!cwd.is_empty()).then(|| cwd.clone());
                                     result.aborted = *aborted;
-                                    terminal_status = Some(
-                                        if *aborted || self.cancellation_requested(tool_call_id) {
-                                            GatewayLocalExecOperationStatus::Cancelled
-                                        } else {
-                                            GatewayLocalExecOperationStatus::Completed
-                                        },
-                                    );
-                                    request.close();
+                                    terminal_status = Some(if *aborted {
+                                        GatewayLocalExecOperationStatus::Cancelled
+                                    } else {
+                                        GatewayLocalExecOperationStatus::Completed
+                                    });
                                     return Ok(result.clone());
                                 }
                                 ProductionShellStreamEvent::Rejected(reason)
                                 | ProductionShellStreamEvent::PermissionDenied(reason) => {
-                                    terminal_status =
-                                        Some(if self.cancellation_requested(tool_call_id) {
-                                            GatewayLocalExecOperationStatus::Cancelled
-                                        } else {
-                                            GatewayLocalExecOperationStatus::Failed
-                                        });
-                                    request.close();
+                                    if !observed_activity {
+                                        terminal_status = Some(GatewayLocalExecOperationStatus::Failed);
+                                    }
                                     return Err(SandLocalExecError::new(reason.clone()));
                                 }
                                 ProductionShellStreamEvent::Start
                                 | ProductionShellStreamEvent::Backgrounded => {
-                                    self.mark_operation_started(tool_call_id)?;
+                                    observed_activity = true;
+                                    self.mark_operation_started(tool_call_id, &bridge_request_id)?;
                                 }
                                 ProductionShellStreamEvent::Other => {}
                             },
@@ -1211,15 +1264,13 @@ impl GatewayLocalExecManager {
                             .decode_control(message)
                             .map_err(SandLocalExecError::new)?
                         {
-                            GatewayExecControl::Throw { error, stack_trace } => {
+                            GatewayExecControl::Throw { error, stack_trace, error_code } => {
                                 self.sandbox.report_exec_failure(scope, &error);
-                                terminal_status =
-                                    Some(if self.cancellation_requested(tool_call_id) {
-                                        GatewayLocalExecOperationStatus::Cancelled
-                                    } else {
-                                        GatewayLocalExecOperationStatus::Failed
-                                    });
-                                request.close();
+                                if error_code.as_deref() == Some("LOCAL_EXEC_PRE_ENTRY_REFUSED")
+                                    && !observed_activity
+                                {
+                                    terminal_status = Some(GatewayLocalExecOperationStatus::Failed);
+                                }
                                 let detail = stack_trace
                                     .filter(|stack| !stack.trim().is_empty())
                                     .map(|stack| format!("{error}\n{stack}"))
@@ -1238,16 +1289,7 @@ impl GatewayLocalExecManager {
                                 )));
                             }
                             GatewayExecControl::StreamClose => {
-                                let cancelled = self.cancellation_requested(tool_call_id);
-                                terminal_status = Some(if cancelled {
-                                    GatewayLocalExecOperationStatus::Cancelled
-                                } else {
-                                    GatewayLocalExecOperationStatus::OutcomeUnknown
-                                });
-                                request.close();
-                                if !cancelled {
-                                    result.outcome_unknown = true;
-                                }
+                                result.outcome_unknown = true;
                                 return Ok(result.clone());
                             }
                             GatewayExecControl::Unknown => {}
@@ -1257,14 +1299,7 @@ impl GatewayLocalExecManager {
                         let error = response
                             .get("error")
                             .and_then(Value::as_str)
-                            .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE)
-                            .to_string();
-                        terminal_status = Some(if self.cancellation_requested(tool_call_id) {
-                            GatewayLocalExecOperationStatus::Cancelled
-                        } else {
-                            GatewayLocalExecOperationStatus::Failed
-                        });
-                        request.close();
+                            .unwrap_or(SAND_NO_LOCAL_MACHINE_MESSAGE);
                         return Err(SandLocalExecError::new(format_command_error(
                             command,
                             &CommandErrorResult {
@@ -1273,7 +1308,7 @@ impl GatewayLocalExecManager {
                                 signal: None,
                                 output_limit_exceeded: false,
                             },
-                            &error,
+                            error,
                             "",
                             0,
                         )));
@@ -1282,16 +1317,37 @@ impl GatewayLocalExecManager {
                 }
             }
         })();
+        request.close();
 
-        let status = terminal_status.unwrap_or_else(|| {
-            if self.cancellation_requested(tool_call_id) {
-                GatewayLocalExecOperationStatus::Cancelled
-            } else {
-                GatewayLocalExecOperationStatus::Failed
+        // Once the bridge accepted the frame, an unproved terminal is unknown.
+        // Positive pre-entry refusals and authoritative Exit are the exceptions.
+        let status = terminal_status.unwrap_or(GatewayLocalExecOperationStatus::OutcomeUnknown);
+        let outcome = if status == GatewayLocalExecOperationStatus::OutcomeUnknown {
+            result.outcome_unknown = true;
+            match outcome {
+                Ok(_) => Ok(result.clone()),
+                Err(error) => Err(Self::shell_outcome_unknown_error(tool_call_id, &error.message)),
             }
-        });
-        if let Err(error) = self.finish_operation(tool_call_id, status, outcome.as_ref().ok()) {
-            return Err(error);
+        } else {
+            outcome
+        };
+        if let Err(error) = self.finish_operation(
+            tool_call_id,
+            &bridge_request_id,
+            status,
+            Some(&result),
+        ) {
+            let detail = match outcome {
+                Err(cause) => format!("{}; {}", cause.message, error.message),
+                Ok(_) => error.message,
+            };
+            // A positive no-entry refusal remains a known no-effect failure,
+            // even when recording that refusal fails. The journal stays poisoned.
+            return Err(if status == GatewayLocalExecOperationStatus::Failed {
+                SandLocalExecError::new(detail)
+            } else {
+                Self::shell_outcome_unknown_error(tool_call_id, detail)
+            });
         }
         outcome
     }
@@ -1340,7 +1396,7 @@ impl GatewayLocalExecManager {
                         .decode_control(message)
                         .map_err(SandLocalExecError::new)?
                     {
-                        GatewayExecControl::Throw { error, stack_trace } => {
+                        GatewayExecControl::Throw { error, stack_trace, .. } => {
                             self.sandbox.report_exec_failure(scope, &error);
                             request.close();
                             let detail = stack_trace
@@ -1505,6 +1561,530 @@ mod operation_journal_fail_closed_tests {
             stderr_truncated: false,
             settled_at_ms: None,
         }
+    }
+
+    const OPERATION_TEST_BOUND: Duration = Duration::from_secs(5);
+
+    struct OperationTestDirectory(PathBuf);
+
+    impl OperationTestDirectory {
+        fn new(label: &str) -> Self {
+            let path = unique_test_path(label).with_extension("dir");
+            fs::create_dir(&path).expect("create owned operation fixture directory");
+            Self(path)
+        }
+
+        fn journal(&self) -> PathBuf {
+            self.0.join("operations.json")
+        }
+
+        fn refuse_publication(&self) {
+            let journal = self.journal();
+            fs::rename(&journal, self.0.join("before-fault.json"))
+                .expect("retain the last real journal before the I/O fault");
+            fs::create_dir(&journal).expect("a directory cannot be replaced by the journal file");
+        }
+    }
+
+    impl Drop for OperationTestDirectory {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    struct DeniedGate;
+
+    impl GatewayLocalToolGate for DeniedGate {
+        fn blocked_reason(&self) -> Option<String> {
+            Some("fixture permission refusal".into())
+        }
+
+        fn requires_approval(&self) -> bool {
+            true
+        }
+
+        fn authorize(
+            &self,
+            _scope: &GatewayLocalToolScope,
+            _action: &str,
+            _target: &str,
+        ) -> Result<Option<String>, SandLocalExecError> {
+            Err(SandLocalExecError::new("fixture permission refusal"))
+        }
+    }
+
+    struct ShellOperationFixture {
+        directory: OperationTestDirectory,
+        owner: Arc<GatewayLocalExecOperationOwner>,
+        bridge: SandLocalExecBridge,
+        _registration: super::super::local_exec_bridge::LocalExecProviderRegistration,
+        provider_id: String,
+        receive: mpsc::Receiver<Value>,
+        manager: Arc<GatewayLocalExecManager>,
+    }
+
+    impl ShellOperationFixture {
+        fn new(label: &str) -> Self {
+            let directory = OperationTestDirectory::new(label);
+            let owner = Arc::new(GatewayLocalExecOperationOwner::with_journal_path(directory.journal()));
+            let sequence = Arc::new(AtomicU64::new(1));
+            let next = Arc::clone(&sequence);
+            let bridge = SandLocalExecBridge::with_sources(
+                Arc::new(|| 1000),
+                Arc::new(move || format!("lxo-request-{}", next.fetch_add(1, Ordering::Relaxed))),
+            );
+            let (send, receive) = mpsc::channel();
+            let registration = bridge.register_provider(send);
+            let welcome = receive.recv_timeout(OPERATION_TEST_BOUND).expect("provider welcome");
+            let provider_id = welcome["providerId"].as_str().expect("provider identity").to_string();
+            bridge.submit_responses(json!({
+                "providerId": provider_id,
+                "frames": [{
+                    "kind": "hello",
+                    "localRoot": directory.0.to_string_lossy(),
+                    "terminalsFolder": "terminals",
+                    "computerId": "lxo-computer",
+                    "label": "LXO fixture"
+                }]
+            }));
+            let manager = Arc::new(
+                GatewayLocalExecSandBox::new(bridge.clone(), Arc::new(AllowGate))
+                    .with_operation_owner(Arc::clone(&owner))
+                    .exec_manager(),
+            );
+            Self { directory, owner, bridge, _registration: registration, provider_id, receive, manager }
+        }
+
+        fn facade(&self, gate: Arc<dyn GatewayLocalToolGate>) -> Arc<GatewayLocalExecManager> {
+            Arc::new(
+                GatewayLocalExecSandBox::new(self.bridge.clone(), gate)
+                    .with_operation_owner(Arc::clone(&self.owner))
+                    .exec_manager(),
+            )
+        }
+
+        fn start(
+            &self,
+            operation_id: &str,
+            timeout: Option<Duration>,
+        ) -> std::thread::JoinHandle<Result<GatewayLocalExecShellResult, SandLocalExecError>> {
+            let manager = Arc::clone(&self.manager);
+            let operation_id = operation_id.to_string();
+            std::thread::spawn(move || {
+                manager.execute_shell_with_timeout(
+                    &GatewayLocalToolScope {
+                        agent_id: Some("lxo-agent".into()),
+                        tool_call_id: Some(operation_id.clone()),
+                        action: Some("run-command".into()),
+                    },
+                    "fixture-command",
+                    "/tmp",
+                    &operation_id,
+                    timeout,
+                )
+            })
+        }
+
+        fn frame(&self, kind: &str) -> Value {
+            let frame = self.receive.recv_timeout(OPERATION_TEST_BOUND).expect("provider frame");
+            assert_eq!(frame["kind"], kind);
+            frame
+        }
+
+        fn reply(&self, request: &Value, mut frames: Vec<Value>) {
+            for frame in &mut frames {
+                frame["requestId"] = request["requestId"].clone();
+            }
+            self.bridge.submit_responses(json!({
+                "providerId": self.provider_id,
+                "frames": frames,
+            }));
+        }
+
+        fn wait_running(&self, operation_id: &str) {
+            let deadline = Instant::now() + OPERATION_TEST_BOUND;
+            loop {
+                if self.manager.operation(operation_id).is_some_and(|record| {
+                    record.status == GatewayLocalExecOperationStatus::Running
+                }) {
+                    return;
+                }
+                assert!(Instant::now() < deadline, "operation did not enter Running");
+                std::thread::yield_now();
+            }
+        }
+
+        fn record(&self, operation_id: &str) -> GatewayLocalExecOperationRecord {
+            self.manager.operation_for_agent("lxo-agent", operation_id).expect("owned operation")
+        }
+    }
+
+    fn test_stdout(data: &str) -> Value {
+        json!({"kind":"client","message":{"id":1,"shellStream":{"stdout":{"data":data}}}})
+    }
+
+    fn test_exit(code: u32, aborted: bool) -> Value {
+        json!({"kind":"client","message":{"id":1,"shellStream":{"exit":{
+            "code":code,"cwd":"/tmp","aborted":aborted
+        }}}})
+    }
+
+    fn test_close() -> Value {
+        json!({"kind":"control","message":{"streamClose":{"id":1}}})
+    }
+
+    #[test]
+    fn operation_owner_is_lazy_and_shared_by_distinct_permission_facades() {
+        let fixture = ShellOperationFixture::new("lazy-shared");
+        let second = fixture.facade(Arc::new(AllowGate));
+        assert!(Arc::ptr_eq(&fixture.manager.operation_owner, &second.operation_owner));
+        assert!(fixture.owner.state.lock().expect("uninitialized owner").is_none());
+        assert!(!fixture.directory.journal().exists(), "facade construction must not publish a journal");
+
+        assert!(second.operation("absent").is_none());
+        {
+            let state = fixture.owner.state.lock().expect("initialized owner");
+            assert_eq!(state.as_ref().expect("lazy initialization").operation_journal_path,
+                fixture.directory.journal());
+        }
+        let shell = fixture.start("shared-live", None);
+        let request = fixture.frame("exec");
+        let active = second.operation_for_agent("lxo-agent", "shared-live").expect("shared admission");
+        assert_eq!(active.bridge_request_id, request["requestId"].as_str().unwrap());
+        assert_eq!(active.status, GatewayLocalExecOperationStatus::Accepted);
+        fixture.reply(&request, vec![test_exit(0, false)]);
+        let result = shell.join().expect("shell worker").expect("confirmed result");
+        assert!(!result.outcome_unknown);
+        assert_eq!(second.operation("shared-live").unwrap().status, GatewayLocalExecOperationStatus::Completed);
+        assert_eq!(second.operation_history(), fixture.manager.operation_history());
+    }
+
+    #[test]
+    fn duplicate_and_permission_refusal_cannot_retire_another_invocation() {
+        let fixture = ShellOperationFixture::new("duplicate-identity");
+        let shell = fixture.start("live-identity", None);
+        let request = fixture.frame("exec");
+        fixture.reply(&request, vec![test_stdout("owned output")]);
+        fixture.wait_running("live-identity");
+        let original = fixture.record("live-identity");
+        let scope = GatewayLocalToolScope {
+            agent_id: Some("other-agent".into()),
+            tool_call_id: Some("live-identity".into()),
+            action: Some("run-command".into()),
+        };
+        let second = fixture.facade(Arc::new(AllowGate));
+        let duplicate = second.execute_shell(&scope, "must-not-run", "/tmp", "live-identity")
+            .expect_err("duplicate is refused before publication");
+        assert!(!duplicate.is_outcome_unknown());
+        assert!(duplicate.message.contains("already exists"));
+        let denied = fixture.facade(Arc::new(DeniedGate))
+            .execute_shell(&scope, "must-not-run", "/tmp", "live-identity")
+            .expect_err("permission refusal owns no registration");
+        assert!(!denied.is_outcome_unknown());
+        assert_eq!(fixture.record("live-identity"), original);
+        assert!(fixture.manager.operation_history().is_empty());
+        assert!(!second.cancel_operation_for_agent("other-agent", "live-identity"));
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+
+        assert!(fixture.manager.mark_operation_started("live-identity", "stale-request").is_err());
+        assert!(fixture.manager.finish_operation(
+            "live-identity", "stale-request", GatewayLocalExecOperationStatus::Failed, None,
+        ).is_err());
+        assert_eq!(fixture.record("live-identity"), original, "a stale ticket cannot mutate the real call");
+
+        assert!(second.cancel_operation_for_agent("lxo-agent", "live-identity"));
+        let cancel = fixture.frame("cancel");
+        assert_eq!(cancel["requestId"], request["requestId"]);
+        fixture.reply(&request, vec![test_exit(17, false)]);
+        let result = shell.join().expect("shell worker").expect("real Exit after a cancel request");
+        assert_eq!(result.exit_code, Some(17));
+        assert!(!result.aborted);
+        assert!(!result.outcome_unknown);
+        let record = fixture.record("live-identity");
+        assert_eq!(record.status, GatewayLocalExecOperationStatus::Completed);
+        assert_eq!(record.exit_code, Some(17));
+        assert_eq!(record.bridge_request_id, original.bridge_request_id);
+        assert_eq!(fixture.manager.operation_history().len(), 1);
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+    }
+
+    #[test]
+    fn unproved_shell_terminals_preserve_typed_uncertainty_and_observed_output() {
+        let cases = [
+            ("close", test_close(), true, true),
+            ("missing-client", json!({"kind":"client"}), false, true),
+            ("malformed-client", json!({"kind":"client","message":{"id":{"invalid":true}}}), false, true),
+            ("missing-control", json!({"kind":"control"}), false, true),
+            ("malformed-control", json!({"kind":"control","message":{"throw":{"error":[]}}}), false, true),
+            ("opaque-throw", json!({"kind":"control","message":{"throw":{"error":"opaque failure"}}}), false, false),
+            ("backend-error", json!({"kind":"control","message":{"throw":{
+                "error":"unavailable","errorCode":"EXEC_BACKEND_UNAVAILABLE"
+            }}}), false, false),
+            ("stream-start-error", json!({"kind":"control","message":{"throw":{
+                "error":"timed out","errorCode":"AGENT_EXEC_STREAM_START_TIMEOUT"
+            }}}), false, false),
+            ("entered-rejected", json!({"kind":"client","message":{"shellStream":{"rejected":{"reason":"late rejection"}}}}), false, true),
+            ("entered-denied", json!({"kind":"client","message":{"shellStream":{"permissionDenied":{"error":"late denial"}}}}), false, true),
+            ("entered-refusal-tag", json!({"kind":"control","message":{"throw":{
+                "error":"late tag","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"
+            }}}), false, true),
+            ("unexpected-file-error", json!({"kind":"file-error","error":"unexpected file failure"}), false, true),
+        ];
+        for (label, terminal, returns_result, activity) in cases {
+            let fixture = ShellOperationFixture::new(label);
+            let shell = fixture.start(label, None);
+            let request = fixture.frame("exec");
+            let mut frames = Vec::new();
+            if activity {
+                frames.push(test_stdout("bounded partial output"));
+            }
+            frames.push(terminal);
+            fixture.reply(&request, frames);
+            let outcome = shell.join().expect("uncertain shell worker");
+            if returns_result {
+                let result = outcome.expect("stream closure returns an explicit unknown snapshot");
+                assert!(result.outcome_unknown, "{label}");
+                assert_eq!(result.request_id, label);
+                assert_eq!(result.exit_code, None);
+                assert!(!result.aborted);
+            } else {
+                let error = outcome.expect_err("unproved error must remain uncertain");
+                assert!(error.is_outcome_unknown(), "{label}: {}", error.message);
+                assert!(error.message.contains(&GatewayLocalExecManager::stable_result_ref(label)), "{label}");
+            }
+            let record = fixture.record(label);
+            assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown, "{label}");
+            assert_eq!(record.exit_code, None, "{label}");
+            assert!(!record.aborted, "{label}");
+            assert_eq!(record.stdout, if activity { "bounded partial output" } else { "" }, "{label}");
+            assert_eq!(record.bridge_request_id, request["requestId"].as_str().unwrap());
+            let persisted = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
+                .expect("actual durable unknown record");
+            assert_eq!(persisted.front(), Some(&record), "{label}");
+        }
+    }
+
+    #[test]
+    fn preentry_refusals_remain_known_and_do_not_poison_journal_health() {
+        for (label, refusal) in [
+            ("rejected", json!({"kind":"client","message":{"shellStream":{"rejected":{"reason":"not admitted"}}}})),
+            ("permission-denied", json!({"kind":"client","message":{"shellStream":{"permissionDenied":{"error":"not allowed"}}}})),
+            ("tagged-refusal", json!({"kind":"control","message":{"throw":{
+                "error":"producer refused before entry","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"
+            }}})),
+        ] {
+            let fixture = ShellOperationFixture::new(label);
+            let shell = fixture.start(label, None);
+            let request = fixture.frame("exec");
+            fixture.reply(&request, vec![refusal]);
+            let error = shell.join().expect("refused shell worker").expect_err("known refusal");
+            assert!(!error.is_outcome_unknown(), "{label}");
+            let record = fixture.record(label);
+            assert_eq!(record.status, GatewayLocalExecOperationStatus::Failed);
+            assert!(record.stdout.is_empty());
+            fixture.manager.ensure_operation_journal_healthy().expect("known refusal is durably recorded");
+            let cancel = fixture.frame("cancel");
+            assert_eq!(cancel["requestId"], request["requestId"]);
+
+            let next = fixture.start("confirmed-after-refusal", None);
+            let next_request = fixture.frame("exec");
+            assert_ne!(next_request["requestId"], request["requestId"]);
+            fixture.reply(&next_request, vec![test_exit(0, false)]);
+            assert!(!next.join().expect("next worker").expect("later authorized operation").outcome_unknown);
+        }
+    }
+
+    #[test]
+    fn cancellation_close_and_deadline_remain_unknown_after_durable_reopen() {
+        for requested_cancel in [false, true] {
+            let fixture = ShellOperationFixture::new("cancel-or-deadline");
+            let shell = fixture.start(
+                "uncertain-cancel",
+                (!requested_cancel).then_some(Duration::from_millis(30)),
+            );
+            let request = fixture.frame("exec");
+            if requested_cancel {
+                fixture.reply(&request, vec![test_stdout("before cancellation")]);
+                fixture.wait_running("uncertain-cancel");
+                assert!(fixture.manager.cancel_operation_for_agent("lxo-agent", "uncertain-cancel"));
+                fixture.reply(&request, vec![test_close()]);
+            }
+            let result = shell.join().expect("cancel/deadline worker").expect("unknown result snapshot");
+            assert!(result.outcome_unknown);
+            assert_eq!(result.exit_code, None);
+            assert!(!result.aborted, "a requested cancellation is not an observed abort");
+            let cancel = fixture.frame("cancel");
+            assert_eq!(cancel["requestId"], request["requestId"]);
+            let record = fixture.record("uncertain-cancel");
+            assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
+            let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
+                GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
+                fixture.directory.journal(),
+            );
+            assert_eq!(reopened.operation("uncertain-cancel"), Some(record));
+            let duplicate = reopened.execute_shell(
+                &GatewayLocalToolScope {
+                    agent_id: Some("lxo-agent".into()),
+                    tool_call_id: Some("uncertain-cancel".into()),
+                    action: None,
+                },
+                "do-not-replay", "/tmp", "uncertain-cancel",
+            ).expect_err("reopening uncertainty cannot authorize replay");
+            assert!(!duplicate.is_outcome_unknown());
+            assert!(duplicate.message.contains("already exists"));
+            assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)));
+        }
+    }
+
+    #[test]
+    fn uncertain_shell_output_remains_utf8_bounded_in_durable_history() {
+        let fixture = ShellOperationFixture::new("unknown-output-bound");
+        let shell = fixture.start("unknown-output-bound", None);
+        let request = fixture.frame("exec");
+        let output = "界".repeat(MAX_LOCAL_EXEC_SHELL_STREAM_BYTES / 3 + 100);
+        fixture.reply(&request, vec![test_stdout(&output), test_close()]);
+        let result = shell.join().expect("bounded worker").expect("unknown snapshot");
+        assert!(result.outcome_unknown);
+        assert!(result.stdout_truncated);
+        assert!(result.stdout.len() <= MAX_LOCAL_EXEC_SHELL_STREAM_BYTES);
+        assert!(output.starts_with(&result.stdout));
+        let record = fixture.record("unknown-output-bound");
+        assert_eq!(record.status, GatewayLocalExecOperationStatus::OutcomeUnknown);
+        assert!(record.stdout_truncated);
+        assert!(record.stdout.len() <= MAX_LOCAL_EXEC_DURABLE_OUTPUT_BYTES);
+        assert!(output.starts_with(&record.stdout));
+        let recovered = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
+            .expect("UTF-8 durable unknown output");
+        assert_eq!(recovered.front(), Some(&record));
+    }
+
+    #[test]
+    fn post_send_journal_failures_keep_observed_facts_and_unknown_custody() {
+        for terminal_write in [false, true] {
+            let fixture = ShellOperationFixture::new("journal-after-send");
+            let shell = fixture.start("journal-after-send", None);
+            let request = fixture.frame("exec");
+            if terminal_write {
+                fixture.reply(&request, vec![test_stdout("retained before Exit")]);
+                fixture.wait_running("journal-after-send");
+            }
+            fixture.directory.refuse_publication();
+            fixture.reply(&request, vec![if terminal_write {
+                test_exit(17, false)
+            } else {
+                test_stdout("retained despite started-journal failure")
+            }]);
+            let error = shell.join().expect("journal-failure worker").expect_err("real journal I/O failure");
+            assert!(error.is_outcome_unknown());
+            assert!(error.message.contains("persistence"));
+            assert!(error.message.contains("resultRef="));
+            let record = fixture.record("journal-after-send");
+            assert_eq!(record.status, if terminal_write {
+                GatewayLocalExecOperationStatus::Completed
+            } else {
+                GatewayLocalExecOperationStatus::OutcomeUnknown
+            });
+            assert_eq!(record.exit_code, terminal_write.then_some(17));
+            assert!(!record.aborted);
+            assert_eq!(record.stdout, if terminal_write {
+                "retained before Exit"
+            } else {
+                "retained despite started-journal failure"
+            });
+            let health = fixture.manager.ensure_operation_journal_healthy().expect_err("shared journal is poisoned");
+            assert!(!health.is_outcome_unknown(), "a later admission failure entered no effect");
+            let other = fixture.facade(Arc::new(AllowGate));
+            assert!(other.ensure_operation_journal_healthy().is_err(), "health is shared across facades");
+
+            fs::remove_dir(fixture.directory.journal()).expect("remove only the owned fault directory");
+            fs::rename(fixture.directory.0.join("before-fault.json"), fixture.directory.journal())
+                .expect("restore the last actually durable state");
+            let reopened = GatewayLocalExecManager::new_with_operation_journal_path(
+                GatewayLocalExecSandBox::new(fixture.bridge.clone(), Arc::new(AllowGate)),
+                fixture.directory.journal(),
+            );
+            assert_eq!(reopened.operation("journal-after-send").unwrap().status,
+                GatewayLocalExecOperationStatus::OutcomeUnknown,
+                "an in-memory Exit cannot upgrade a prior durable Accepted/Running record");
+        }
+    }
+
+    #[test]
+    fn proven_preentry_refusal_stays_known_when_its_journal_publication_fails() {
+        let fixture = ShellOperationFixture::new("refusal-journal-failure");
+        let shell = fixture.start("refusal-journal-failure", None);
+        let request = fixture.frame("exec");
+        fixture.directory.refuse_publication();
+        fixture.reply(&request, vec![json!({"kind":"control","message":{"throw":{
+            "error":"positively refused before execution","errorCode":"LOCAL_EXEC_PRE_ENTRY_REFUSED"
+        }}})]);
+        let error = shell.join().expect("refusal worker").expect_err("known refusal and I/O failure");
+        assert!(!error.is_outcome_unknown());
+        assert!(error.message.contains("positively refused"));
+        assert!(error.message.contains("persistence"));
+        assert_eq!(fixture.record("refusal-journal-failure").status, GatewayLocalExecOperationStatus::Failed);
+        assert!(fixture.manager.ensure_operation_journal_healthy().is_err());
+    }
+
+    #[test]
+    fn finish_admission_and_snapshot_publication_share_one_transaction() {
+        let fixture = ShellOperationFixture::new("publication-transaction");
+        let shell = fixture.start("transaction-id", None);
+        let request = fixture.frame("exec");
+        fixture.reply(&request, vec![test_stdout("transaction output")]);
+        fixture.wait_running("transaction-id");
+
+        let (paused_send, paused_receive) = mpsc::channel();
+        let (resume_send, resume_receive) = mpsc::channel();
+        let resume_receive = Arc::new(Mutex::new(resume_receive));
+        let pause_once = Arc::new(std::sync::atomic::AtomicBool::new(true));
+        fixture.owner.with_state(|state| {
+            state.before_journal_publish = Some(Arc::new(move || {
+                if pause_once.swap(false, Ordering::AcqRel) {
+                    paused_send.send(()).expect("announce real terminal publication");
+                    resume_receive.lock().expect("resume gate")
+                        .recv_timeout(OPERATION_TEST_BOUND).expect("bounded publication release");
+                }
+            }));
+        });
+        fixture.reply(&request, vec![test_exit(0, false)]);
+        paused_receive.recv_timeout(OPERATION_TEST_BOUND).expect("terminal reached actual publication");
+        assert!(matches!(fixture.owner.state.try_lock(), Err(std::sync::TryLockError::WouldBlock)),
+            "the coherent state transaction must cover publication, not just snapshot construction");
+
+        let second = fixture.facade(Arc::new(AllowGate));
+        let (contending_send, contending_receive) = mpsc::channel();
+        let contender = std::thread::spawn(move || {
+            assert!(matches!(second.operation_owner.state.try_lock(),
+                Err(std::sync::TryLockError::WouldBlock)));
+            contending_send.send(()).expect("announce admission during publication");
+            second.execute_shell(
+                &GatewayLocalToolScope {
+                    agent_id: Some("lxo-agent".into()),
+                    tool_call_id: Some("transaction-id".into()),
+                    action: None,
+                },
+                "must-not-reenter", "/tmp", "transaction-id",
+            )
+        });
+        contending_receive.recv_timeout(OPERATION_TEST_BOUND)
+            .expect("second facade reached the same publishing owner");
+        resume_send.send(()).expect("allow the real atomic journal write");
+        assert!(!shell.join().expect("finishing worker").expect("confirmed Exit").outcome_unknown);
+        let error = contender.join().expect("duplicate contender").expect_err("terminal identity remains reserved");
+        assert!(!error.is_outcome_unknown());
+        assert!(error.message.contains("already exists"));
+        let record = fixture.record("transaction-id");
+        assert_eq!(record.status, GatewayLocalExecOperationStatus::Completed);
+        assert_eq!(record.stdout, "transaction output");
+        let persisted = GatewayLocalExecManager::load_operation_history(&fixture.directory.journal(), 128)
+            .expect("real ordered journal publication");
+        assert_eq!(persisted.len(), 1);
+        assert_eq!(persisted.front(), Some(&record));
+        let cancel = fixture.frame("cancel");
+        assert_eq!(cancel["requestId"], request["requestId"]);
+        assert!(matches!(fixture.receive.try_recv(), Err(mpsc::TryRecvError::Empty)),
+            "a terminal/admission handoff cannot dispatch a second invocation");
     }
 
     #[test]

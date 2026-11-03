@@ -116,7 +116,7 @@ export interface ProductionExecCodec<
   clientMessageToJson(message: ClientMessage): JsonValue;
   controlMessageToJson(message: ClientControlMessage): JsonValue;
   createAbortControl(execId: number): ServerControlMessage;
-  createThrowControl(execId: number, error: string): ClientControlMessage;
+  createThrowControl(execId: number, error: string, errorCode?: string): ClientControlMessage;
 }
 
 /** The exact surface used from the shipped SimpleControlledExecManager. */
@@ -213,7 +213,7 @@ export function createProductionLocalExecExecutor<
       }
     },
     cancel: (execId): void => manager.handleControlMessage(codec.createAbortControl(execId)),
-    throwControl: (error): JsonValue => codec.controlMessageToJson(codec.createThrowControl(0, error)),
+    throwControl: (error, errorCode): JsonValue => codec.controlMessageToJson(codec.createThrowControl(0, error, errorCode)),
   };
 }
 
@@ -354,8 +354,8 @@ export function createDefaultProductionLocalExecExecutor(options: {
         createAbortControl: (execId) => new ExecServerControlMessage({
           message: { case: "abort", value: new ExecServerAbort({ id: execId }) },
         }),
-        createThrowControl: (execId, error) => new ExecClientControlMessage({
-          message: { case: "throw", value: new ExecClientThrow({ id: execId, error }) },
+        createThrowControl: (execId, error, errorCode) => new ExecClientControlMessage({
+          message: { case: "throw", value: new ExecClientThrow({ id: execId, error, ...(errorCode === undefined ? {} : { errorCode }) }) },
         }),
       },
       createContext: contextFromSignal,

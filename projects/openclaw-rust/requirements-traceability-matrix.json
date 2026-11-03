@@ -1120,7 +1120,9 @@
         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R16",
@@ -1170,7 +1172,9 @@
         "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/source-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
-        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json"
+        "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-R17",
@@ -2298,7 +2302,9 @@
         "source/host/app/src/tests/config_secret_boundary_tests.rs",
         "projects/openclaw-rust/docs/specs/cron-job-identity.md",
         "projects/openclaw-rust/evidence/cron-job-identity-647e0932-20261103/source-contract.json",
-        "source/host/app/src/tests/cron_job_identity_tests.rs"
+        "source/host/app/src/tests/cron_job_identity_tests.rs",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC11",
@@ -2526,7 +2532,9 @@
       "evidence_refs": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs",
         "source/host/tests/production_turn_run_shell_adapter_contract.rs",
-        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md"
+        "projects/openclaw-rust/dossiers/process-exec-shell-scoped.md",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC16",
@@ -2624,7 +2632,9 @@
         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
         "source/host/src/extensions/memory/production_identity_tests.rs",
-        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
+        "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs",
+        "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+        "projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",

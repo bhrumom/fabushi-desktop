@@ -1,4 +1,5 @@
 import type { Context } from "../context/core.js";
+import { LOCAL_EXEC_PRE_ENTRY_REFUSED } from "../../shared/local-exec-gateway.js";
 import { appendGitDiagnostics } from "../git-core/diagnostics.js";
 import { createCounter, createHistogram } from "../metrics/index.js";
 import { createWritableIterable, WriteIterableClosedError } from "../utils/writable-iterable.js";
@@ -208,7 +209,7 @@ export class SimpleControlledExecManager {
     logger.error(ctx, errorMessage, { messageCase: serverMessage.message.case });
     controlledExecError.increment(ctx, 1, { exec_case: execCase });
     return (async function* () {
-      yield new ExecClientControlMessage({ message: { case: "throw", value: new ExecClientThrow({ id: serverMessage.id, error: errorMessage }) } });
+      yield new ExecClientControlMessage({ message: { case: "throw", value: new ExecClientThrow({ id: serverMessage.id, error: errorMessage, errorCode: LOCAL_EXEC_PRE_ENTRY_REFUSED }) } });
       yield new ExecClientControlMessage({ message: { case: "streamClose", value: new ExecClientStreamClose({ id: serverMessage.id }) } });
     })();
   }

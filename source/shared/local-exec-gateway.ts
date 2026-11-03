@@ -1,5 +1,7 @@
 export const GATEWAY_LOCAL_EXEC_REQUESTS_PATH = "/local-exec/requests";
 export const GATEWAY_LOCAL_EXEC_RESPONSES_PATH = "/local-exec/responses";
+// Sent only when the provider proves that no execution handler was entered.
+export const LOCAL_EXEC_PRE_ENTRY_REFUSED = "LOCAL_EXEC_PRE_ENTRY_REFUSED";
 export const SAND_NO_LOCAL_MACHINE_MESSAGE =
   "Your local machine isn't connected right now (the Fabushi desktop app must be open and online to run commands on it). Try again once it's reachable.";
 

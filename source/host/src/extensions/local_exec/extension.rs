@@ -13,7 +13,7 @@ use crate::extensions::process::command_custody::CommandProcessCustody;
 
 use super::gateway_local_exec_sand_box::{
     GatewayLocalExecFailureReport, GatewayLocalExecFailureReporter,
-    GatewayLocalExecSandBox, GatewayLocalToolGate,
+    GatewayLocalExecOperationOwner, GatewayLocalExecSandBox, GatewayLocalToolGate,
 };
 use super::local_exec_bridge::{
     LocalExecComputer, LocalExecProviderInfo, LocalExecProviderLifecycleReport,
@@ -50,6 +50,7 @@ pub struct HostLocalExecExtension {
     bridge: SandLocalExecBridge,
     logs: HostStructuredLogTelemetry,
     process_custody: Arc<CommandProcessCustody>,
+    operation_owner: Arc<GatewayLocalExecOperationOwner>,
 }
 
 impl HostLocalExecExtension {
@@ -102,6 +103,7 @@ impl HostLocalExecExtension {
             });
         GatewayLocalExecSandBox::new(self.bridge(), gate)
             .with_process_custody(Arc::clone(&self.process_custody))
+            .with_operation_owner(Arc::clone(&self.operation_owner))
             .with_failure_reporter(failure_reporter)
     }
 
@@ -193,5 +195,6 @@ pub fn start_local_exec_extension(
         ),
         logs,
         process_custody: Arc::new(CommandProcessCustody::new()),
+        operation_owner: Arc::new(GatewayLocalExecOperationOwner::new()),
     }
 }

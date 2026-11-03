@@ -4007,6 +4007,41 @@ jobs:
               "projects/openclaw-rust/docs/specs/media-settlement-unknown.md",
               "projects/openclaw-rust/docs/specs/final-assistant-media-custody.md",
               "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+              "projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md",
+              "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
+              "source/host/src/extensions/local_exec/local_exec_error.rs",
+              "source/host/src/extensions/local_exec/local_exec_bridge.rs",
+              "source/host/src/extensions/local_exec/production.rs",
+              "source/host/src/extensions/local_exec/extension.rs",
+              "source/host/src/extensions/local_exec/agent_v1_exec_wire.rs",
+              "source/host/proto/agent/v1/local_exec.proto",
+              "source/host/build.rs",
+              "source/host/src/extensions/local_tool_permission/extension.rs",
+              "source/host/src/extensions/local_tool_permission/local_tool_permission_controller.rs",
+              "source/host/src/runner/host_external_machine_dependencies.rs",
+              "source/host/src/runner/tools/sand_external_machine_tools.rs",
+              "source/host/src/runner/tools/mcp_meta_tools.rs",
+              "source/host/src/runner/stream_attempt.rs",
+              "source/host/src/runner/production_turn_run_shell_adapter.rs",
+              "source/host/tests/gateway_local_exec_sand_box_contract.rs",
+              "source/host/tests/extensions_local_exec_contract.rs",
+              "source/host/tests/local_exec_production_codec_contract.rs",
+              "source/host/tests/runner_effect_custody_contract.rs",
+              "source/host/tests/openclaw_chat_cron_node_contract.rs",
+              "source/host/local-exec/local-exec-provider.ts",
+              "source/local-exec-daemon/production-executor.ts",
+              "source/packages/agent-exec/controlled.ts",
+              "source/shared/local-exec-gateway.ts",
+              "source/local-exec-daemon/production-outcome.contract.test.ts",
+              "source/host/app/src/tests/local_exec_outcome_tests.rs",
+              "source/host/src/extensions/node_host/invocation_runtime.rs",
+              "source/host/src/extensions/node_host/invoke_protocol.rs",
+              "source/host/src/extensions/node_host/runtime_state.rs",
+              "source/host/src/durable_file_policy.rs",
+              "source/host/src/extensions/process/command_custody.rs",
+              "source/host/src/host_paths.rs",
+              "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+              "projects/openclaw-rust/scripts/capture_media_cleanup.py",
               "source/host/src/attachment_paths.rs",
               "source/host/src/lib.rs",
               "source/host/src/extensions/session/agent_db_schema.rs",
@@ -4118,6 +4153,8 @@ jobs:
               "model_contract": "CMI-v1/CWB-v1",
               "local_media_file_url_contract": "LFA-v1",
               "media_settlement_contract": "MSU-v1",
+              "local_exec_outcome_contract": "LXO-v1",
+              "local_exec_outcome_scope": "Actual shipping node system.run helper, shared LocalExec/permission/journal and node invocation lifecycle in owned App processes. Real bridge frames exercise unknown close/deadline/malformed reply and actual journal publication failure, plus known permission/pre-entry/normal and aborted Exit. This is not complete UnifiedGatewayApi construction, physical node, process-tree, external provider or packaged acceptance.",
               "media_settlement_sqlite_environment": {key: os.environ.get(key) for key in (
                   "LIBSQLITE3_SYS_USE_PKG_CONFIG", "LIBSQLITE3_FLAGS",
                   "SQLITE3_LIB_DIR", "SQLITE3_INCLUDE_DIR", "SQLITE3_STATIC")},
@@ -4373,6 +4410,18 @@ jobs:
               ]]
               required += media_settlement_required
               receipt["media_settlement_required_tests"] = media_settlement_required
+              local_exec_outcome_required = ["tests::local_exec_outcome_tests::" + name for name in [
+                  "local_exec_app_close_reports_unknown_with_stable_result_identity",
+                  "local_exec_app_malformed_reply_preserves_partial_output_and_unknown_error",
+                  "local_exec_app_deadline_cancel_without_exit_remains_unknown",
+                  "local_exec_app_confirmed_normal_exit_outranks_cancel_request",
+                  "local_exec_app_confirmed_aborted_exit_remains_known",
+                  "local_exec_app_permission_refusal_never_dispatches",
+                  "local_exec_app_remote_preentry_refusal_remains_known",
+                  "local_exec_app_exit_with_journal_failure_retains_observed_result",
+              ]]
+              required += local_exec_outcome_required
+              receipt["local_exec_outcome_required_tests"] = local_exec_outcome_required
               receipt["required_tests"] = required
               save()
               for index, name in enumerate(required):
@@ -5404,6 +5453,96 @@ jobs:
         with:
           name: ocrm-mab-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           path: .evidence/ocrm-mab
+          if-no-files-found: error
+          retention-days: 90
+      - name: Test actual LocalExec preentry and cancellation protocol
+        timeout-minutes: 5
+        env:
+          LXO_EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, re, subprocess
+          root = pathlib.Path(".evidence/ocrm-local-exec-protocol")
+          root.mkdir(parents=True, exist_ok=False)
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          assert head == os.environ["LXO_EXPECTED_SHA"], "LXO protocol subject mismatch"
+          paths = [".github/workflows/rust-desktop-runtime.yml","projects/openclaw-rust/docs/specs/local-exec-outcome-ownership.md","projects/openclaw-rust/upstream.lock.json","desktop/package.json","desktop/package-lock.json","desktop/scripts/build-electron-runtime.mjs","source/local-exec-daemon/production-outcome.contract.test.ts","source/local-exec-daemon/production-executor.ts","source/host/local-exec/local-exec-provider.ts","source/host/local-exec/local-exec-machine.ts","source/host/local-exec/local-exec-native-file-access.ts","source/shared/local-exec-gateway.ts","source/packages/agent-exec/controlled.ts","source/packages/context/core.ts","source/packages/utils/writable-iterable.ts","source/packages/proto/generated/agent/v1/exec_pb.ts","source/packages/proto/generated/agent/v1/agent_service_pb.ts","source/packages/proto/generated/agent/v1/shell_exec_pb.ts","source/packages/local-exec/background-shell.ts","source/packages/local-exec/background-shell-lifecycle.ts"]
+          required = ["lxo production codec retains optional preentry code without inventing it","lxo provider permission refusal is tagged before real executor entry","lxo provider generated decode refusal is tagged before executor entry","lxo real default provider preserves no-handler preentry witness","lxo controlled no-handler witness is distinct from entered exceptions","lxo controlled cancellation can close stream without a shell Exit"]
+          def bindings():
+              result = {}
+              for path in paths:
+                  raw = pathlib.Path(path).read_bytes()
+                  result[path] = {"git_blob": subprocess.check_output(["git", "rev-parse", f"{head}:{path}"], text=True).strip(),
+                      "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw),
+                      "matches_head_bytes": raw == subprocess.check_output(["git", "show", f"{head}:{path}"])}
+              return result
+          def accepted_tap(text, names, exit_code, capture_exit):
+              positives = re.findall(r"^ok \d+ - (.+)$", text.replace("\r\n", "\n"), re.MULTILINE)
+              counts = {key: re.findall(r"^# " + key + r" (\d+)$", text, re.MULTILINE)
+                  for key in ("tests", "pass", "fail", "cancelled", "skipped", "todo")}
+              return (exit_code == 0 and capture_exit == 0 and bool(names)
+                  and len(set(names)) == len(names) and sorted(positives) == sorted(names)
+                  and counts == {"tests":[str(len(names))], "pass":[str(len(names))],
+                      "fail":["0"], "cancelled":["0"], "skipped":["0"], "todo":["0"]}
+                  and not re.search(r"^not ok ", text, re.MULTILINE))
+          positive = "ok 1 - expected\n# tests 1\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n"
+          controls = []
+          for label, text, exit_code, capture_exit, expected in [
+              ("positive", positive, 0, 0, True),
+              ("missing-name", positive.replace("expected", "other"), 0, 0, False),
+              ("duplicate-name", "ok 2 - expected\n" + positive, 0, 0, False),
+              ("zero-tests", "", 0, 0, False),
+              ("ignored", positive.replace("# skipped 0", "# skipped 1"), 0, 0, False),
+              ("failed-exit", positive, 1, 0, False),
+              ("capture-failure", positive, 0, 1, False),
+          ]:
+              observed = accepted_tap(text, ["expected"], exit_code, capture_exit)
+              controls.append({"case":label,"expected":expected,"observed":observed})
+              assert observed == expected, "LXO TAP oracle control failed: " + label
+          before = bindings()
+          assert all(value["matches_head_bytes"] for value in before.values())
+          executable = pathlib.Path("desktop/.tmp-grok-electron/ocrm-plugin/production-outcome.contract.test.cjs")
+          bundle_before = hashlib.sha256(executable.read_bytes()).hexdigest()
+          command = ["node", "--test", "--test-reporter=tap", str(executable)]
+          log = root / "protocol.tap"
+          exit_code, capture_exit, execution_error = None, 0, None
+          try:
+              with log.open("wb") as output:
+                  exit_code = subprocess.run(command, stdout=output, stderr=subprocess.STDOUT,
+                      check=False, timeout=90).returncode
+          except (OSError, subprocess.SubprocessError) as error:
+              capture_exit, execution_error = 1, str(error)
+          raw = log.read_bytes() if log.exists() else b""
+          text = raw.decode("utf-8", errors="replace")
+          after = bindings()
+          bundle_after = hashlib.sha256(executable.read_bytes()).hexdigest()
+          accepted = accepted_tap(text, required, exit_code, capture_exit) and before == after and bundle_before == bundle_after
+          lock = json.loads(pathlib.Path("projects/openclaw-rust/upstream.lock.json").read_text())
+          receipt = {"contract":"LXO-v1-protocol","subject_commit":head,
+              "subject_tree":subprocess.check_output(["git","rev-parse","HEAD^{tree}"],text=True).strip(),
+              "upstream":{key:lock["upstream"][key] for key in ("repository","commit","tree")},
+              "run_id":os.environ["GITHUB_RUN_ID"],"run_attempt":os.environ["GITHUB_RUN_ATTEMPT"],
+              "job":os.environ["GITHUB_JOB"],"runner_os":os.environ["RUNNER_OS"],
+              "command":command,"exit":exit_code,"capture_exit":capture_exit,"execution_error":execution_error,
+              "inputs_before":before,"inputs_after":after,"bundle_sha256_before":bundle_before,
+              "bundle_sha256_after":bundle_after,"required_positive_names":required,
+              "observed_positive_names":re.findall(r"^ok \d+ - (.+)$",text,re.MULTILINE),
+              "oracle_controls":controls,"log_sha256":hashlib.sha256(raw).hexdigest(),
+              "result":"passed-scoped" if accepted else "failed-or-incomplete",
+              "scope":"Actual default production codec, provider permission/decode/no-handler emission and controlled manager cancellation/entered exceptions. Only the final response HTTP is captured by an owned fixture. This does not execute native shell side effects, Rust consumers, real device/provider, strict whole-project TypeScript or package acceptance."}
+          (root / "receipt.json").write_text(json.dumps(receipt,indent=2) + "\n")
+          print(text, flush=True)
+          print(json.dumps(receipt,indent=2), flush=True)
+          raise SystemExit(0 if accepted else 1)
+          PY
+      - name: Upload LocalExec protocol evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocrm-local-exec-protocol-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .evidence/ocrm-local-exec-protocol
           if-no-files-found: error
           retention-days: 90
       - name: Check production architecture boundary

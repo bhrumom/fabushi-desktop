@@ -104,6 +104,7 @@ if (process.argv.includes("--plugin-skills-contracts")) {
     ["source/electron-main/coordinator/coordinator-main-port-client.contract.test.ts", "coordinator-main-port-client.contract.test.cjs"],
     ["source/electron-main/coordinator/coordinator-runtime.test.ts", "coordinator-runtime.test.cjs"],
     ["source/electron-main/adapters/attachment-gateway.contract.test.ts", "attachment-gateway.contract.test.cjs"],
+    ["source/local-exec-daemon/production-outcome.contract.test.ts", "production-outcome.contract.test.cjs"],
   ]) {
     await build({
       ...common,

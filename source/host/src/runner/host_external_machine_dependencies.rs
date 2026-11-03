@@ -224,27 +224,52 @@ impl ExternalMachineExecutor for ProductionExternalMachineExecutor {
         &self,
         args: &ExternalMachineShellArgs,
     ) -> Result<Value, ProviderSessionError> {
-        let result = self
-            .manager
-            .execute_shell(
-                &self.scope(&args.tool_call_id, "run-command"),
-                &args.command,
-                &args.working_directory,
-                &args.tool_call_id,
-            )
-            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
-        Ok(json!({
+        let result = match self.manager.execute_shell(
+            &self.scope(&args.tool_call_id, "run-command"),
+            &args.command,
+            &args.working_directory,
+            &args.tool_call_id,
+        ) {
+            Ok(result) => result,
+            Err(error) if error.is_outcome_unknown() => {
+                // The journal remains the sole result owner. Retain an observed
+                // Exit or bounded partial output even when its publication failed.
+                let mut detail = self.manager
+                    .operation_for_agent(&self.agent_id, &args.tool_call_id)
+                    .map(Self::operation_json)
+                    .unwrap_or_else(|| json!({
+                        "operationId": args.tool_call_id,
+                        "requestId": args.tool_call_id,
+                        "resultRef": GatewayLocalExecManager::stable_result_ref(&args.tool_call_id),
+                    }));
+                detail["outcomeUnknown"] = Value::Bool(true);
+                detail["cause"] = Value::String(error.to_string());
+                return Err(ProviderSessionError::ToolOutcomeUnknown(detail.to_string()));
+            }
+            Err(error) => return Err(ProviderSessionError::Tool(error.to_string())),
+        };
+        let outcome_unknown = result.outcome_unknown;
+        let mut detail = json!({
             "stdout": result.stdout,
             "stderr": result.stderr,
             "exitCode": result.exit_code,
             "cwd": result.cwd,
             "aborted": result.aborted,
             "requestId": result.request_id.clone(),
+            "resultRef": GatewayLocalExecManager::stable_result_ref(&result.request_id),
             "operationId": result.request_id,
             "outcomeUnknown": result.outcome_unknown,
             "stdoutTruncated": result.stdout_truncated,
             "stderrTruncated": result.stderr_truncated
-        }))
+        });
+        if outcome_unknown {
+            // The common Runner guard consumes this typed error before releasing
+            // its effect receipt; successful JSON cannot carry sticky custody.
+            detail["cause"] = Value::String("local-exec execution outcome is unknown".into());
+            Err(ProviderSessionError::ToolOutcomeUnknown(detail.to_string()))
+        } else {
+            Ok(detail)
+        }
     }
 
     fn operation_status(&self, operation_id: &str) -> Result<Value, ProviderSessionError> {

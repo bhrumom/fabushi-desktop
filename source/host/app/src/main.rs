@@ -5599,68 +5599,115 @@ impl UnifiedGatewayApi {
                 .and_then(serde_json::Value::as_str)
                 .map(str::to_string),
         };
-        let mut invocation = NodeHostInvocationRuntime::start(
+        let invocation = NodeHostInvocationRuntime::start(
             Arc::clone(&self.node_host_runtime),
             self.node_host_local_session.clone(),
             &request,
         )
             .map_err(GatewayCommandError::BadRequest)?;
-        let result = self
+        let manager = self
             .local_exec
             .sandbox(self.local_tool_permission.clone())
-            .exec_manager()
-            .execute_shell_with_timeout(
-                &scope,
-                shell_command,
-                working_directory,
-                tool_call_id,
-                args.get("timeoutMs")
-                    .and_then(serde_json::Value::as_u64)
-                    .map(std::time::Duration::from_millis),
-            );
-        let terminal_result = match &result {
-            Ok(result) => NodeInvokeResult::success_payload(
-                invoke_id,
-                node_id,
-                serde_json::json!({
-                    "exitCode": result.exit_code,
-                    "stdout": result.stdout,
-                    "stderr": result.stderr,
-                    "cwd": result.cwd,
-                    "aborted": result.aborted,
-                    "outcomeUnknown": result.outcome_unknown,
-                    "stdoutTruncated": result.stdout_truncated,
-                    "stderrTruncated": result.stderr_truncated,
-                }),
-            ),
-            Err(error) => NodeInvokeResult::failure(
-                invoke_id,
-                node_id,
-                "EXECUTION_ERROR",
-                error.to_string(),
-                None,
-            ),
-        };
-        let public_result = serde_json::to_value(&terminal_result)
-            .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
-        invocation
-            .complete(terminal_result)
-            .map_err(GatewayCommandError::Internal)?;
-
-        let response = match public_result {
-            serde_json::Value::Object(mut object) => {
-                object.insert("command".into(), serde_json::Value::String(command.to_string()));
-                object.insert("payloadJSON".into(), serde_json::Value::Null);
-                serde_json::Value::Object(object)
-            }
-            _ => {
-                return Err(GatewayCommandError::Internal(
-                    "node.invoke result did not serialize as an object".into(),
-                ));
-            }
-        };
-        Ok(response)
+            .exec_manager();
+        execute_local_node_shell_invocation(
+            &manager,
+            invocation,
+            &scope,
+            shell_command,
+            working_directory,
+            tool_call_id,
+            request.timeout_ms.map(std::time::Duration::from_millis),
+        )
     }
+}
+
+/// The live node.invoke system.run consumer uses the same execution-result
+/// owner as ExternalShell. Ending the node response is not proof of process
+/// exit: unknown execution is an explicit failure with its stable result ref.
+fn execute_local_node_shell_invocation(
+    manager: &mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::GatewayLocalExecManager,
+    mut invocation: NodeHostInvocationRuntime,
+    scope: &GatewayLocalToolScope,
+    command: &str,
+    working_directory: &str,
+    operation_id: &str,
+    timeout: Option<std::time::Duration>,
+) -> Result<serde_json::Value, GatewayCommandError> {
+    let invoke_id = invocation.invoke_id().to_string();
+    let node_id = invocation.node_id().to_string();
+    let result_ref = mahayana_host_runtime::extensions::local_exec::gateway_local_exec_sand_box::GatewayLocalExecManager::stable_result_ref(operation_id);
+    let result = manager.execute_shell_with_timeout(
+        scope, command, working_directory, operation_id, timeout,
+    );
+    let terminal_result = match result {
+        Ok(result) => {
+            let details = serde_json::json!({
+                "exitCode": result.exit_code,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "cwd": result.cwd,
+                "aborted": result.aborted,
+                "outcomeUnknown": result.outcome_unknown,
+                "stdoutTruncated": result.stdout_truncated,
+                "stderrTruncated": result.stderr_truncated,
+                "operationId": operation_id,
+                "requestId": result.request_id,
+                "resultRef": result_ref,
+            });
+            if result.outcome_unknown {
+                NodeInvokeResult::failure(
+                    &invoke_id,
+                    &node_id,
+                    "EXECUTION_OUTCOME_UNKNOWN",
+                    "Local node execution ended without a confirmed outcome",
+                    Some(details),
+                )
+            } else {
+                NodeInvokeResult::success_payload(&invoke_id, &node_id, details)
+            }
+        }
+        Err(error) => {
+            let unknown = error.is_outcome_unknown();
+            let details = unknown.then(|| {
+                let observed = manager.operation(operation_id)
+                    .filter(|record| record.agent_id == scope.agent_id)
+                    .map(|record| serde_json::json!({
+                        "status": record.status,
+                        "exitCode": record.exit_code,
+                        "aborted": record.aborted,
+                        "stdout": record.stdout,
+                        "stderr": record.stderr,
+                        "stdoutTruncated": record.stdout_truncated,
+                        "stderrTruncated": record.stderr_truncated,
+                    }));
+                serde_json::json!({
+                    "operationId": operation_id,
+                    "requestId": operation_id,
+                    "resultRef": result_ref,
+                    "outcomeUnknown": true,
+                    "observed": observed,
+                })
+            });
+            NodeInvokeResult::failure(
+                &invoke_id,
+                &node_id,
+                if unknown { "EXECUTION_OUTCOME_UNKNOWN" } else { "EXECUTION_ERROR" },
+                error.to_string(),
+                details,
+            )
+        }
+    };
+    let public_result = serde_json::to_value(&terminal_result)
+        .map_err(|error| GatewayCommandError::Internal(error.to_string()))?;
+    invocation.complete(terminal_result).map_err(GatewayCommandError::Internal)?;
+    let serde_json::Value::Object(mut object) = public_result else {
+        return Err(GatewayCommandError::Internal(
+            "node.invoke result did not serialize as an object".into(),
+        ));
+    };
+    object.insert("command".into(), serde_json::Value::String("system.run".into()));
+    object.insert("payloadJSON".into(), serde_json::Value::Null);
+    Ok(serde_json::Value::Object(object))
 }
 
 fn post_agent_message_to_group(
@@ -18154,6 +18201,8 @@ mod tests {
 
     #[path = "codex_model_admission_tests.rs"]
     mod codex_model_admission_tests;
+    #[path = "local_exec_outcome_tests.rs"]
+    mod local_exec_outcome_tests;
 
     use super::{
         BOX_APPLY_ENVIRONMENT_GATEWAY_METHOD, ProductionBrowserUaLog,

@@ -1,0 +1,174 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 8814c337d65c6d76a3cdf4fa7eee0d054b2194c8..cfde0aa75688099b9ae9ec25efe528b71a82c406 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -4027,6 +4027,7 @@ jobs:
+               "source/host/tests/extensions_local_exec_contract.rs",
+               "source/host/tests/local_exec_production_codec_contract.rs",
+               "source/host/tests/runner_effect_custody_contract.rs",
++              "source/host/tests/openclaw_chat_cron_node_contract.rs",
+               "source/host/local-exec/local-exec-provider.ts",
+               "source/local-exec-daemon/production-executor.ts",
+               "source/packages/agent-exec/controlled.ts",
+diff --git a/projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json
+index 6ec575e5293e947a4c69ee083a29bb40b9b30809..36e1834664d795d8062cf990936ee529186de6b5 100644
+--- a/projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json
++++ b/projects/openclaw-rust/evidence/local-exec-outcome-647e0932-20261103/source-contract.json
+@@ -159,6 +159,7 @@
+       "source/host/tests/extensions_local_exec_contract.rs",
+       "source/host/tests/local_exec_production_codec_contract.rs",
+       "source/host/tests/runner_effect_custody_contract.rs",
++      "source/host/tests/openclaw_chat_cron_node_contract.rs",
+       "source/host/local-exec/local-exec-provider.ts",
+       "source/local-exec-daemon/production-executor.ts",
+       "source/packages/agent-exec/controlled.ts",
+@@ -201,7 +202,12 @@
+       "source/packages/proto/generated/agent/v1/shell_exec_pb.ts",
+       "source/packages/local-exec/background-shell.ts",
+       "source/packages/local-exec/background-shell-lifecycle.ts"
+-    ]
++    ],
++    "retained_source_oracle_tests": [
++      "test_ocrm_node_o06_shipping_routes_to_unique_native_owners",
++      "test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout"
++    ],
++    "retained_source_oracle_scope": "Supplementary real entry/helper/native forwarding checks preserve missing owner, missing helper, dropped envelope/first-hop/second-hop timeout and wrong-unit negatives. Direct App tests remain the behavior oracle."
+   },
+   "accounting": {
+     "responsibility_ids": [
+diff --git a/projects/openclaw-rust/scripts/capture_media_cleanup.py b/projects/openclaw-rust/scripts/capture_media_cleanup.py
+index b9a0020746feb58d677a841d3f37b7f7de0e4da9..1876291c37991e047704105fc104587e3c6cf364 100644
+--- a/projects/openclaw-rust/scripts/capture_media_cleanup.py
++++ b/projects/openclaw-rust/scripts/capture_media_cleanup.py
+@@ -337,6 +337,7 @@
+     "source/host/tests/extensions_local_exec_contract.rs",
+     "source/host/tests/local_exec_production_codec_contract.rs",
+     "source/host/tests/runner_effect_custody_contract.rs",
++    "source/host/tests/openclaw_chat_cron_node_contract.rs",
+     "source/host/local-exec/local-exec-provider.ts",
+     "source/local-exec-daemon/production-executor.ts",
+     "source/packages/agent-exec/controlled.ts",
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index d59ff684e62deab01daa584f3c8b6252f9ab9ea4..ebcde846a0f59a6332598d9d4b17d0beb58b0ac9 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -301,6 +301,7 @@
+     "source/host/tests/extensions_local_exec_contract.rs",
+     "source/host/tests/local_exec_production_codec_contract.rs",
+     "source/host/tests/runner_effect_custody_contract.rs",
++    "source/host/tests/openclaw_chat_cron_node_contract.rs",
+     "source/host/local-exec/local-exec-provider.ts",
+     "source/local-exec-daemon/production-executor.ts",
+     "source/packages/agent-exec/controlled.ts",
+diff --git a/source/host/tests/openclaw_chat_cron_node_contract.rs b/source/host/tests/openclaw_chat_cron_node_contract.rs
+index 2bde1d3f9ab87f53e00079140a414ad492ac2ab6..a1514f23f559ebd107b3a188d77438f479cc663f 100644
+--- a/source/host/tests/openclaw_chat_cron_node_contract.rs
++++ b/source/host/tests/openclaw_chat_cron_node_contract.rs
+@@ -12,21 +12,34 @@ use serde_json::{Value, json};
+ const SHIPPING_HOST_MAIN: &str = include_str!("../app/src/main.rs");
+ 
+ fn node_shell_timeout_is_forwarded(invoke: &str) -> bool {
+-    let Some((_, call)) = invoke.split_once(".execute_shell_with_timeout(") else {
++    // This is a supplementary source-wiring oracle. The App's direct tests
++    // execute the shared helper; retain both hops here so an envelope-only
++    // timeout or a dropped helper argument cannot satisfy the wiring check.
++    let Some((_, call)) = invoke.split_once("execute_local_node_shell_invocation(") else {
+         return false;
+     };
+-    let Some((arguments, _)) = call.split_once("\n            );") else {
++    let Some((arguments, _)) = call.split_once("\n        )") else {
+         return false;
+     };
+-    arguments.contains(concat!(
+-        "&scope,\n",
+-        "                shell_command,\n",
+-        "                working_directory,\n",
+-        "                tool_call_id,\n",
+-        "                args.get(\"timeoutMs\")\n",
+-        "                    .and_then(serde_json::Value::as_u64)\n",
+-        "                    .map(std::time::Duration::from_millis),",
+-    ))
++    let Some((_, execution)) = invoke.split_once("manager.execute_shell_with_timeout(") else {
++        return false;
++    };
++    let Some((native_arguments, _)) = execution.split_once("\n    );") else {
++        return false;
++    };
++    invoke.contains("timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)")
++        && arguments.contains(concat!(
++            "&manager,\n",
++            "            invocation,\n",
++            "            &scope,\n",
++            "            shell_command,\n",
++            "            working_directory,\n",
++            "            tool_call_id,\n",
++            "            request.timeout_ms.map(std::time::Duration::from_millis),",
++        ))
++        && native_arguments.contains(
++            "scope, command, working_directory, operation_id, timeout,",
++        )
+ }
+ 
+ fn temp_root(label: &str) -> std::path::PathBuf {
+@@ -569,16 +582,12 @@ fn test_ocrm_node_o06_shipping_routes_to_unique_native_owners() {
+         .split_once(".execute_shell_with_timeout(")
+         .expect("shipping node.invoke uses the timeout-aware local execution owner")
+         .1
+-        .split_once("let terminal_result = match &result")
++        .split_once("let terminal_result = match result")
+         .expect("shipping execution result enters the terminal projection")
+         .0;
+-    assert!(execution.contains("&scope"));
+-    assert!(execution.contains("shell_command"));
+-    assert!(execution.contains("working_directory"));
+-    assert!(execution.contains("tool_call_id"));
+-    assert!(execution.contains("args.get(\"timeoutMs\")"));
+-    assert!(execution.contains(".and_then(serde_json::Value::as_u64)"));
+-    assert!(execution.contains(".map(std::time::Duration::from_millis)"));
++    assert!(execution.contains("scope, command, working_directory, operation_id, timeout,"));
++    assert!(invoke.contains("execute_local_node_shell_invocation("));
++    assert!(invoke.contains("request.timeout_ms.map(std::time::Duration::from_millis)"));
+     assert!(invoke.contains(
+         "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)"));
+     assert!(invoke.contains(".execute_shell_with_timeout("));
+@@ -616,19 +625,36 @@ fn test_node_shell_timeout_oracle_rejects_missing_owner_call_and_dropped_timeout
+         .0;
+     assert!(node_shell_timeout_is_forwarded(invoke));
+     let old_call = invoke.replace(".execute_shell_with_timeout(", ".execute_shell(");
++    assert_ne!(old_call, invoke);
+     assert!(!node_shell_timeout_is_forwarded(&old_call));
+-    let timeout_argument = concat!(
+-        "args.get(\"timeoutMs\")\n",
+-        "                    .and_then(serde_json::Value::as_u64)\n",
+-        "                    .map(std::time::Duration::from_millis)",
++    let missing_helper = invoke.replacen(
++        "execute_local_node_shell_invocation(", "unrelated_node_projection(", 1,
+     );
++    assert_ne!(missing_helper, invoke);
++    assert!(!node_shell_timeout_is_forwarded(&missing_helper));
++    let timeout_argument = "request.timeout_ms.map(std::time::Duration::from_millis)";
+     let dropped_timeout = invoke.replace(timeout_argument, "None");
+     assert_ne!(dropped_timeout, invoke);
+     assert!(dropped_timeout.contains(
+         "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)"
+     ), "request-envelope timeout alone must not satisfy the LocalExec forwarding oracle");
+     assert!(!node_shell_timeout_is_forwarded(&dropped_timeout));
++    let dropped_native_timeout = invoke.replace(
++        "scope, command, working_directory, operation_id, timeout,",
++        "scope, command, working_directory, operation_id, None,",
++    );
++    assert_ne!(dropped_native_timeout, invoke);
++    assert!(dropped_native_timeout.contains(timeout_argument),
++        "forwarding to the helper alone must not satisfy the native owner hop");
++    assert!(!node_shell_timeout_is_forwarded(&dropped_native_timeout));
++    let dropped_envelope_timeout = invoke.replace(
++        "timeout_ms: args.get(\"timeoutMs\").and_then(serde_json::Value::as_u64)",
++        "timeout_ms: None",
++    );
++    assert_ne!(dropped_envelope_timeout, invoke);
++    assert!(!node_shell_timeout_is_forwarded(&dropped_envelope_timeout));
+     let wrong_units = invoke.replace("Duration::from_millis", "Duration::from_secs");
++    assert_ne!(wrong_units, invoke);
+     assert!(!node_shell_timeout_is_forwarded(&wrong_units));
+ }
+ 

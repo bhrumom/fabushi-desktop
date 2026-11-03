@@ -74,6 +74,10 @@ fn local_exec_ask_gate_reports_refusal_with_agent_identity() {
 fn local_exec_error_preserves_provider_message() {
     let error = SandLocalExecError::new("computer disconnected");
     assert_eq!(error.to_string(), "computer disconnected");
+    assert!(!error.is_outcome_unknown());
+    let unknown = SandLocalExecError::outcome_unknown("provider reply lost after dispatch");
+    assert_eq!(unknown.to_string(), "provider reply lost after dispatch");
+    assert!(unknown.is_outcome_unknown());
 }
 
 #[test]

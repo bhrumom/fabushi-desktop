@@ -7,7 +7,7 @@ import { createDeadlinePolicy, createIdleWatchdogPolicy, createPollingPolicy, cr
 import { errorLogTag, errorMessage } from "../../shared/errors.js";
 import { GATEWAY_AUTH_SCHEME } from "../../shared/gateway-wire.js";
 import {
-  DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GATEWAY_LOCAL_EXEC_REQUESTS_PATH, GATEWAY_LOCAL_EXEC_RESPONSES_PATH,
+  DEFAULT_MAX_LOCAL_EXEC_FILE_BYTES, GATEWAY_LOCAL_EXEC_REQUESTS_PATH, GATEWAY_LOCAL_EXEC_RESPONSES_PATH, LOCAL_EXEC_PRE_ENTRY_REFUSED,
   SAND_LOCAL_EXEC_CONTROL_POST_TIMEOUT_MS, SAND_LOCAL_EXEC_DATA_POST_TIMEOUT_MS, SAND_LOCAL_EXEC_HEARTBEAT_INTERVAL_MS,
   localExecFileTooLargeMessage, localExecUploadFrameTooLargeMessage, maxLocalExecUploadFrameBytes
 } from "../../shared/local-exec-gateway.js";
@@ -32,7 +32,7 @@ export interface LocalExecExecutor {
   decodeServerMessage(json: JsonValue): LocalExecDecodedMessage;
   execute(message: LocalExecDecodedMessage, signal: AbortSignal): AsyncIterable<LocalExecExecutorOutput>;
   cancel(execId: number): void;
-  throwControl(error: string): JsonValue;
+  throwControl(error: string, errorCode?: string): JsonValue;
 }
 
 function normalizeDescribableMessage(
@@ -165,8 +165,8 @@ export class SandLocalExecProvider {
     if (frame.kind === "download") return { action: "read-file", target: frame.path, attachToResourcePath: frame.path };
     try { const decoded = this.options.executor.decodeServerMessage(frame.serverMessage); const normalized = normalizeDescribableMessage(decoded); return normalized === undefined ? undefined : describeLocalExec(normalized, this.terminalsFolder); } catch { return undefined; }
   }
-  private refuse(requestId: string, kind: "exec" | "upload" | "upload-start" | "upload-chunk" | "upload-commit" | "download", reason: string): void { if (kind === "exec") this.enqueue({ kind: "control", requestId, message: this.options.executor.throwControl(reason) }); else this.enqueue({ kind: "file-error", requestId, error: reason }); }
-  private async handleExec(requestId: string, json: JsonValue): Promise<void> { let message: LocalExecDecodedMessage; try { message = this.options.executor.decodeServerMessage(json); } catch (error) { this.enqueue({ kind: "control", requestId, message: this.options.executor.throwControl(errorMessage(error)) }); return; } const execId = this.nextExecId++; message.id = execId; const controller = new AbortController(); this.inflight.set(requestId, { execId, controller }); this.options.onInflightChange?.(this.inflight.size); try { for await (const output of this.options.executor.execute(message, controller.signal)) this.enqueue({ kind: output.kind, requestId, message: output.message }); } finally { this.inflight.delete(requestId); this.options.onInflightChange?.(this.inflight.size); } }
+  private refuse(requestId: string, kind: "exec" | "upload" | "upload-start" | "upload-chunk" | "upload-commit" | "download", reason: string): void { if (kind === "exec") this.enqueue({ kind: "control", requestId, message: this.options.executor.throwControl(reason, LOCAL_EXEC_PRE_ENTRY_REFUSED) }); else this.enqueue({ kind: "file-error", requestId, error: reason }); }
+  private async handleExec(requestId: string, json: JsonValue): Promise<void> { let message: LocalExecDecodedMessage; try { message = this.options.executor.decodeServerMessage(json); } catch (error) { this.enqueue({ kind: "control", requestId, message: this.options.executor.throwControl(errorMessage(error), LOCAL_EXEC_PRE_ENTRY_REFUSED) }); return; } const execId = this.nextExecId++; message.id = execId; const controller = new AbortController(); this.inflight.set(requestId, { execId, controller }); this.options.onInflightChange?.(this.inflight.size); try { for await (const output of this.options.executor.execute(message, controller.signal)) this.enqueue({ kind: output.kind, requestId, message: output.message }); } finally { this.inflight.delete(requestId); this.options.onInflightChange?.(this.inflight.size); } }
   private handleCancel(requestId: string): void { const entry = this.inflight.get(requestId); if (entry == null) return; this.options.executor.cancel(entry.execId); entry.controller.abort(); }
   private atomicHeadroomBytes(): number {
     return Math.min(this.maxFileBytes, 8 * 1024 * 1024);

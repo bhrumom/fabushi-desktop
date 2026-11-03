@@ -1,0 +1,63 @@
+{
+  "schema": "ocrm-source-integration-convergence-v1",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "contract": "LXO-v1",
+  "candidate": "d3de1af117d314b9313219d34029ee924bafe435",
+  "tree": "065218c0c9b80b26e6db44f8a91998c979ebe31e",
+  "base": "694b6d70d50573b738a93d958de5db7647987e19",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "previous_source_candidate": "ae6200ee8743da59020a1322d2704de0e91ea5c8",
+  "reviews": [
+    {
+      "round": "integration",
+      "lens": "general",
+      "candidate": "d3de1af117d314b9313219d34029ee924bafe435",
+      "tree": "065218c0c9b80b26e6db44f8a91998c979ebe31e",
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "finding_count": 0,
+      "model": "configured parent retained",
+      "effort": "xhigh",
+      "execution": "not-run",
+      "scope_paths": 25,
+      "scope_hunks": 95,
+      "focused_shared_paths": 3,
+      "fresh_blind": true,
+      "full_report_archive": "not requested; minimal metadata only"
+    },
+    {
+      "round": "integration",
+      "lens": "structure/reuse/performance",
+      "candidate": "d3de1af117d314b9313219d34029ee924bafe435",
+      "tree": "065218c0c9b80b26e6db44f8a91998c979ebe31e",
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "finding_count": 0,
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "execution": "not-run",
+      "scope_paths": 25,
+      "scope_hunks": 95,
+      "focused_shared_paths": 3,
+      "fresh_blind": true,
+      "full_report_archive": "not requested; minimal metadata only"
+    }
+  ],
+  "source_converged": true,
+  "remaining_findings": 0,
+  "mechanical_merge": {
+    "unchanged_candidate_blobs": 22,
+    "shared_files": 3,
+    "incoming_assessment_refs": 3,
+    "incoming_required_http_names": 3,
+    "source_content_reconstruction": "complete old/new readbacks and full-hunk reconstruction; reviewed additive merges retain both sides"
+  },
+  "execution": "not-run; combined exact shipping-H GitHub Actions required after shared admission repair",
+  "historical_execution_not_transferred": {
+    "subject": "14e637798b7c76c8530f9a3710051461f793924f",
+    "run": 41597864483,
+    "attempt": 1,
+    "linux_job": 125789361548,
+    "conclusion": "success",
+    "independent_assessment": "74 direct BXR positives,14 reused custody positives,16 result-oracle controls,43 exact source inputs and11 command-log digests independently matched existing execution-r1/assessment.json; applies only to H14e",
+    "macos": "queued at assessment; no acceptance"
+  }
+}
