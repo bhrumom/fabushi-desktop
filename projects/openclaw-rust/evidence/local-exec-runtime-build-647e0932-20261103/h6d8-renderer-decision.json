@@ -1,0 +1,68 @@
+{
+  "schema": "ocrm-scoped-recovery-decision-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "batch": "LDB-v1",
+  "source_subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+  "tree": "7690531a3a018fae94e7122b08a8b5c67252793e",
+  "fixed_U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "run_id": 41618863245,
+  "run_attempt": 1,
+  "job_id": 125859112514,
+  "step": 8,
+  "command": "npm --prefix desktop run build:electron -- --plugin-skills-contracts",
+  "command_exit": 1,
+  "decoded_job_log_sha256": "2c18637abad0b662879baf55f8a652d025c2afd041a5fd07b4b61bfd4465755a",
+  "findings": [
+    {
+      "id": "LDB-6D8-INPUTS-01",
+      "decision": "FIX",
+      "severity": "P1",
+      "classification": "Build-input implementation defect; downstream behavioral instrument unavailable",
+      "evidence": "Five actual unresolved imports of iconv-lite, re2js, jschardet and ignore. Protocol tests are skipped, not failed behavioral assertions.",
+      "resolution": "Restore the exact existing frozen dependency closure and actual selected build/startup path under the existing owners; do not externalize missing modules, stub parser, remove tests or rerun the unchanged subject."
+    },
+    {
+      "id": "LDB-SELECTED-ENTRY-01",
+      "decision": "FIX",
+      "severity": "P1",
+      "classification": "Source-established missing production artifact and stale module edges",
+      "evidence": "The actual Electron spawn function resolves dist/local-exec-daemon/main.cjs; current build and runtime checker omit it. Current daemon imports missing Host path/crash modules and eagerly loads native parser packages absent from the desktop lock.",
+      "resolution": "Emit and require the selected entry, preserve exact process/generation route and actual provider composition, use canonical path owner and a narrow Node event adapter; build separate qualified native runtime stages and exercise emitted entry."
+    }
+  ],
+  "retained_positive": {
+    "contract": "ONP-v1",
+    "step": 5,
+    "required": 21,
+    "observed_unique": 21,
+    "command_exits": [
+      0,
+      0
+    ],
+    "capture_exits": [
+      0,
+      0
+    ],
+    "raw_log_hashes": [
+      "4da2c122733058bc013660d36ec4ae41a29f651da970884f382ed63f4e7a731f",
+      "8014883ea5b529fe5d57fce99e5746b897137ce77e56292dc87d14c7cae2c7d7"
+    ],
+    "independent_reconstruction": true,
+    "artifact_id": 13222253461,
+    "scope": "Locked root notice and controlled packaging/input fixtures only"
+  },
+  "review_source": {
+    "agent": "/root/ldb_dependency_authority",
+    "mode": "read-only",
+    "parent_model": "gpt-6-astra",
+    "effort": "xhigh",
+    "backend_introspection": false
+  },
+  "limits": [
+    "Native media/LXO/LXR evidence was still running at this decision; no verdict inferred.",
+    "Source authority terminal success does not close recursive source/product acceptance.",
+    "No TS business owner is promoted to Rust-complete by this repair.",
+    "Package legal artifacts and actual runtime ABI/load proofs must be acquired; missing artifacts stay unaccepted.",
+    "No other finding or global gate is closed."
+  ]
+}

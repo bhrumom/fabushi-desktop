@@ -134,3 +134,142 @@ original commit. No public wire/protobuf or package dependency changes are
 authorized. Global source closure, physical devices, full process-tree shutdown,
 file-publication outcome propagation, package/upgrade/rollback acceptance and
 G01–G12/AC01–AC24 remain open; all eight global flags stay false.
+
+## LDB-v1 — selected LocalExec build and startup closure
+
+This prerequisite repair is fixed before implementation at Fabushi
+`c0fc337676dd155213302d7d1718fd8df3470a4a`, tree
+`e361b037f66b12a923adbaf26e1c99a6cc11edd9`. Fixed OpenClaw U and all prior
+LXO/LXR requirements remain unchanged. This section alone authorizes the bounded
+dependency/build changes below; the earlier LXR restriction on dependency
+changes remains applicable to that historical slice.
+
+The actual failure is runtime workflow `41618863245`, attempt 1, subject
+`6d8c241b609948c4266e1e40c8f559795b317473`, renderer job `125859112514`,
+step 8: `npm --prefix desktop run build:electron -- --plugin-skills-contracts`
+exits 1 on five unresolved imports of iconv-lite, re2js, jschardet and ignore.
+Later protocol checks are not executed. The completed ONP-v1 21-test evidence
+retains its own scope. This is a confirmed build-input defect and an unavailable
+instrument for downstream behavioral claims, not a proved runtime failure.
+
+Production source also shows the selected path is incomplete:
+Rust Coordinator control -> existing Electron spawnLocalExecDaemon ->
+`dist/local-exec-daemon/main.cjs` -> existing SandLocalExecProvider ->
+Rust Host gateway/native-file owner. The build does not emit that selected entry.
+The retained daemon imports a deleted Host path helper and a retired TypeScript
+crash-guard module. Its production executor eagerly loads a native parser.
+The existing Rust requester and Box RPC implementation are not connected substitutes
+for this daemon. Do not replace the executor with a partial file-only or test owner.
+
+### Required behavior and ownership
+
+- LDB-01: Extend the existing desktop build owner to emit the already selected
+  daemon entry and its complete esbuild input manifest. Keep Rust Coordinator
+  supervision, exact generation/process identity, Host permission and durable
+  invocation custody. Keep the current provider/executor composition. This
+  restores a retained legacy platform path; its TypeScript business/policy
+  responsibilities remain migration-open and cannot be counted as Rust-complete.
+  Do not add a daemon, Agent loop, session store, scheduler or permission owner.
+- LDB-02: Restore only the six dependencies required by this existing graph:
+  iconv-lite 0.7.0, ignore 7.0.5, jschardet 3.1.4, re2js 1.2.2,
+  tree-sitter 0.21.1 and tree-sitter-bash 0.21.0. Preserve the frozen transitive
+  identities safer-buffer 2.1.2, node-addon-api 8.5.0, node-gyp-build 4.8.4 and
+  web-tree-sitter 0.21.0, including the node-addon-api override needed by the
+  bash package. Use the exact resolved URLs and integrity values from frozen
+  Grok lock `18cf139bff7d97bf4f568d8382edd6e57d5bf8a7`; do not substitute
+  OpenClaw's different parser versions. Preserve unrelated current desktop
+  dependencies and the existing node-gyp 12.4.0 build tool.
+- LDB-03: Build native parser packages in an isolated owned directory for the
+  actual selected runtime. Node and Electron stages have distinct identities
+  and roots. Derive the Electron ABI/embedded Node identity from the installed
+  pinned Electron 43.4.0 executable; never reuse the old Electron 42.1.0/ABI146
+  assumption. Record runtime/version/ABI/platform/architecture, exact lock and
+  source/patch inputs, official header download/checksum identities, native
+  output hashes and complete stage membership. Refuse mismatched headers,
+  missing binaries or load failures. Reuse only a stage whose manifest and
+  all causal inputs/output hashes match; an unqualified binary cache is not proof.
+- LDB-04: Preserve the existing loader's separate Node and Electron roots and
+  terminal behavior on a native load error. Node contracts use the explicit
+  Node stage; packaged Electron ignores that override and consumes its own
+  unpacked stage. Declare the required parser assets in the existing packaging
+  and runtime checker. No developer node_modules fallback, parser stub, external
+  missing import, or bypass of a required test may make a broken package pass.
+  A complete startup artifact is required even if no shell request is issued.
+- LDB-05: Apply only the existing tree-sitter C++ standard patch in the isolated
+  build copy. Stock binding.gyp SHA-256
+  `d94979694bc3b1854ba0030be33e9941df9867f99d956117b704e9cfaca37a7d`
+  and patched SHA-256
+  `8f7eb83b314277458e41d0096c03d58849c2921ee8705b14376b712e1eb647d4`
+  must both be checked. Do not apply the frozen script's unrelated Connect
+  patches or mutate a shared installation to manufacture the expected input.
+  Keep package source/license notices with their stages and provenance.
+  jschardet is declared LGPL-2.1+ in the frozen lock; OpenClaw's root MIT notice
+  does not cover it. Missing package legal/source artifacts remain explicit
+  unaccepted evidence, not a relabeling of that dependency.
+- LDB-06: Use the existing shared sand-data-root function for daemon path
+  resolution. Adapt Node uncaughtException/unhandledRejection facts inside the
+  existing daemon process boundary: preserve Error values or normalize other
+  values, report to the current reporter, contain a synchronous reporter throw,
+  and permit replacing/clearing the reporter. Preserve the frozen no-forced-exit
+  event behavior and existing explicit fatal/shutdown path. Do not recreate
+  the retired TypeScript Host crash-guard module or call Rust Panic coverage
+  proof of Node signal coverage. The adapter owns no restart, persistent state
+  or new telemetry destination.
+- LDB-07: The existing runtime checker must reject missing selected daemon,
+  mismatched dependency/runtime manifests and incomplete native stage inputs.
+  Retain every ONP notice and existing runtime assertion; update their controlled
+  complete-runtime fixture when the actual required artifact set grows.
+  The default checker must not be weakened for notice-only or contract execution.
+- LDB-08: Exercise the actual emitted daemon through its real process entry,
+  generation binding, persisted connection settings, SSE request loop and
+  response transport, with the real default executor and same-H native Host
+  helper. Use isolated roots and a controlled loopback gateway, observe matching
+  discovery and provider hello, transfer actual bytes through upload start/chunk/
+  commit and download, independently read the destination, then stop and await
+  closure of only the exact owned child and verify discovery retirement.
+  No injected executor or fake provider can satisfy this oracle. Malformed
+  generation and unavailable/wrong-domain parser controls must fail without
+  successful registration; keep all six existing LXO protocol positives.
+- LDB-09: Only GitHub Actions executes builds, native probes, fixtures or tests.
+  Reuse the existing runtime workflow/capture and caches; bind each source,
+  installed dependency, generated bundle, header and native executable to H.
+  A changed package manifest/lock invalidates dependent build/runtime evidence,
+  not unrelated historical source facts. Preserve failures and source-independent
+  positives. Stop at a failed shared build before promoting downstream evidence.
+
+### Scope, delivery and acceptance
+
+Root integration owns package.json/lock, build and checker scripts, workflow,
+capture and OCRM evidence/ledger references. Isolated workers may modify only
+declared daemon source/test paths after this authority is delivered. No public
+protobuf/schema or Host journal change is included.
+
+The build implementation may add a narrow helper and contracts under
+`desktop/scripts/`, the emitted-entry contract under `source/local-exec-daemon/`,
+and extend the existing LocalExec process-identity capture to execute it with
+same-H Host/Coordinator artifacts. The selected dependency graph, patched copies,
+headers, emitted entry and exact process must all be observable by the oracle.
+Compilation alone does not establish process startup or file delivery.
+
+Accept this slice only after fresh complete-scope review and exact-H build,
+native-load, six existing protocol checks, actual emitted-entry/file lifecycle,
+required negative controls and source-input evidence. Missing real Electron,
+device/service/account, supported-platform installer/signing, upgrade/rollback,
+security/performance/soak or full shell/LS parity remains blocked or pending with
+its own scope. Existing LocalLsExecutor traversal injection and broader legacy
+business migration are known independent gaps. File-publication uncertainty
+propagation is the subsequent LFP contract, not accepted by startup success.
+All eight OCRM flags and final G01-G12 / AC01-AC24 remain unchanged.
+
+Sources: current build `36bbc5bcafefc64eb242e8dbf5c83f80513b5253`, loader
+`139844e853647dcbf78cffd38ea4d2f003b74c21`, actual daemon main
+`6ed3c317002ffcc0c6d745cb4751491ed81e82e0`, native launch
+`765703e12055721788514f51d90cc5cf311e2d18`; frozen Fabushi reference
+`b-nnett/grok-bot-0.18-reconstructed@a9f633e09d49a85829b8236331b9e21f7e612634`
+package `7606d112bb38b3ab1e2a749e2e178ecd3ba11a65`, lock above,
+Node build `adb17d777198e7622670b7444d9075770b3082bf`, patch inputs
+`3b3fd733ccc47c267ffe63b53ce2bbb4411e12c1`, obsolete Electron build
+`d48a3f344ba7b2eb405ebb659f7ea0bc14c2802e`, crash event source
+`15725a072efc7301e75c20e9611008f282d04444`. Version pins and current consumer
+blob equality are source evidence; the published archives, runtime ABI and
+actual native outputs require their separate captured identities.
