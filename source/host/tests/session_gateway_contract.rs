@@ -9692,7 +9692,7 @@ fn shipping_human_forward_padded_history_nonce_cannot_bypass_source_reauthorizat
     assert!(released.is_ok());
     assert!(matches!(&observed_sync, Ok(Err(error)) if error.contains("noncanonical client nonce")),
         "padded history must reject before source or identity settlement: {observed_sync:?}");
-    assert!(final_sync.unwrap_err().contains("protected"));
+    assert!(final_sync.unwrap_err().contains("noncanonical client nonce"));
     assert_eq!(retained_batch, original_batch, "active forward journal is not rewritten by history");
     assert_eq!(after_sync.len(), 1);
     assert_eq!(after_sync[0]["id"], pending[0]["id"]);
