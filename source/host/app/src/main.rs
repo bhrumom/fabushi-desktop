@@ -641,12 +641,15 @@ fn resolve_production_attachment_source(
     forever_box: &ForeverBoxService,
     agent_id: &str,
     source_url: &str,
-) -> (ResolvedAttachmentSource, Option<std::path::PathBuf>) {
-    let Some(source_path) = file_path_from_file_url(source_url) else {
-        return (ResolvedAttachmentSource {
+) -> Result<(ResolvedAttachmentSource, Option<std::path::PathBuf>), String> {
+    let Some(source_path) =
+        mahayana_host_runtime::extensions::attachments::media_reference::resolve_local_file_url(source_url)
+            .map_err(|error| format!("invalid local media file URL: {error}"))?
+    else {
+        return Ok((ResolvedAttachmentSource {
             url: source_url.to_string(),
             file_name: None,
-        }, None);
+        }, None));
     };
     let file_name = source_path
         .file_name()
@@ -666,10 +669,10 @@ fn resolve_production_attachment_source(
             &bytes,
             kind,
         ) {
-            return (
+            return Ok((
                 ResolvedAttachmentSource { url: url.clone(), file_name },
                 file_path_from_file_url(&url),
-            );
+            ));
         }
     }
     let status = forever_box.get_status(agent_id);
@@ -698,7 +701,7 @@ fn resolve_production_attachment_source(
     let owned_path = (resolved != source_url)
         .then(|| file_path_from_file_url(&resolved))
         .flatten();
-    (ResolvedAttachmentSource { url: resolved, file_name }, owned_path)
+    Ok((ResolvedAttachmentSource { url: resolved, file_name }, owned_path))
 }
 
 struct ProductionSendMessageSink {
@@ -898,7 +901,8 @@ impl SendMessageSink for ProductionSendMessageSink {
             self.forever_box.as_ref(),
             &self.agent_id,
             source_url,
-        );
+        )
+        .map_err(ProviderSessionError::Tool)?;
         if let Some(path) = owned_path {
             let mut custody = OutgoingMediaCustody::default();
             custody.track(path.clone());
@@ -1178,7 +1182,8 @@ impl AgentManagementSink for ProductionAgentManagementSink {
             self.forever_box.as_ref(),
             &self.agent_id,
             &image.url,
-        );
+        )
+        .map_err(ProviderSessionError::Tool)?;
         Ok(AgentMessageImage {
             url: resolved.url,
             alt: image.alt.clone(),
@@ -17947,6 +17952,8 @@ mod tests {
     mod original_turn_recovery_tests;
     #[path = "channel_host_lane_tests.rs"]
     mod channel_host_lane_tests;
+    #[path = "local_media_file_url_tests.rs"]
+    mod local_media_file_url_tests;
     #[path = "link_preview_gateway_tests.rs"]
     mod link_preview_gateway_tests;
     #[path = "channel_failure_handoff_tests.rs"]

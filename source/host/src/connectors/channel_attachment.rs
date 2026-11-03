@@ -59,6 +59,7 @@ pub fn resolve_channel_attachment(raw_url: Option<&str>) -> Option<ResolvedChann
 
     let local_path = to_local_channel_attachment_path(raw_url)?;
     let resolved = reanchor_sand_path(&local_path);
+    crate::extensions::attachments::media_reference::admit_local_media_path(&resolved).ok()?;
     let metadata = fs::metadata(&resolved).ok()?;
     if !metadata.is_file()
         || metadata.len() == 0

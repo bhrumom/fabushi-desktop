@@ -1,0 +1,278 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 7,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "contract": "LFA-v1/FUA including LFA-03a and LFA-03b; preserve current Device shared bindings",
+  "base": "2a6dfc0f7295b3b6ad3e372afa5be4d27951b11a",
+  "base_tree": "16977e8995befe89bfa975e2f1a4a98849fe6dbb",
+  "starting_head": "2a6dfc0f7295b3b6ad3e372afa5be4d27951b11a",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "prior_candidate_tree": "efd035bd168369022a1a8b2131511ef20daf1646",
+  "snapshot": "/workspace/scratch/7d27ea239237/media-admission-r7",
+  "base_snapshot": "/workspace/scratch/7d27ea239237/media-admission-r7-base",
+  "prior_snapshot": "/workspace/scratch/7d27ea239237/media-admission-r6",
+  "scope_mode": "Complete immutable23-path scope against incoming2a. Five integration paths differ from R6, remaining18 identical. Both historical evidence JSON are hash-only for blind reviewers; root content audit retained.",
+  "validation": "Not executed locally or on htch. Exact published-H Actions required. Old evidence retains original subject. No status/global flag promotion.",
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 441439,
+      "sha256": "6f10da0e15d1463e144e58c3e8a63ca4c028623ba77fce7e2cc7f036a616b52e",
+      "git_blob": "5abace3386897aaca3c4a256a11f90b8e3b98119",
+      "base_blob": "765a757720343f49b67127caedd2530ad4344db6",
+      "prior_blob": "eebbd9c203d4869e23f737b741b6e56b20cce7f2"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 20450,
+      "sha256": "146dadba7911290f7f78a4b6e436e02b1b0332754e7b219b62aba39690f65526",
+      "git_blob": "9249e4a93f353247e97c7ef47339382932451d72",
+      "base_blob": null,
+      "prior_blob": "9249e4a93f353247e97c7ef47339382932451d72"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 23499,
+      "sha256": "2ceaf7878a603c77d438e6dd4d68ac9366eb0216976e02100f5c1c6039b14f7c",
+      "git_blob": "8efd93cc604fa814b4660b5153b6b38033faa2ca",
+      "base_blob": "5733cb70842535cde24eb2bd0465a42c864e15ac",
+      "prior_blob": "5414d7193cc7cbcbcfec51dec54cda68be5130ad"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 15721,
+      "sha256": "bd7bbcdd2fd6b536599b636c0904bdab129668fd0965753fac83f95d5b966a40",
+      "git_blob": "0722207d574b638c1e9984737f85cb05fa3aa3b7",
+      "base_blob": null,
+      "prior_blob": "0722207d574b638c1e9984737f85cb05fa3aa3b7"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 11020,
+      "sha256": "68187df3c539f99703f0e7b06460b33884ee13dc1d8ddc499693832dff2d23fe",
+      "git_blob": "721190ec1e165a8fbdf9e5764d779796000e71e9",
+      "base_blob": null,
+      "prior_blob": "721190ec1e165a8fbdf9e5764d779796000e71e9"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 1446166,
+      "sha256": "7aadc1a486ed5626d271434ca50790134d72f72c416cb20fb82c41c714c563c3",
+      "git_blob": "3fb5f2b4b5cade7d15d3cbedacc01c8a5dcd1cf0",
+      "base_blob": "3755a4440283550e6705b073052ad6fe1b90da45",
+      "prior_blob": "3fb5f2b4b5cade7d15d3cbedacc01c8a5dcd1cf0"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 157422,
+      "sha256": "99777c80b3a643ce4cf67b5499a8ce43b82dedfc5209ce74e7b1fd59fe44e700",
+      "git_blob": "dddcfc37286add1e5c3be86bed9eb346057b0fbb",
+      "base_blob": "7d2ef247eaf0c2d08da62acef22251999403eb58",
+      "prior_blob": "dddcfc37286add1e5c3be86bed9eb346057b0fbb"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 27126,
+      "sha256": "f08df363a4ba718cb3ffa0b3fa0cb6f50d61ac6a214a4cf66f8da8306525df2e",
+      "git_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "base_blob": "03f5385ee4687fc35a15136c98856a46248f30bf",
+      "prior_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 100446,
+      "sha256": "2afde2fd2340dfa2764b2ced64f525641fa131bc74b34d17ea3478c107d5f2b7",
+      "git_blob": "ee404c54ce24a740f6808a8c7bba9650a0f0e2d6",
+      "base_blob": "55b17de374467b25dc98b5d121f73116b029f85b",
+      "prior_blob": "62bc1cd60cf33a2f5a6c4ce6f8a61d70bbf546ad"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 990759,
+      "sha256": "36605022e09e91269ee17770a48fa9897e5ba4adcf5bbc7b21b6f382e3cdd4fa",
+      "git_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45",
+      "base_blob": "ca038b1aa9f3a78a1951551e0a80d543142c08dd",
+      "prior_blob": "4831ae8cf002ce64e6409f2d695b48aaa1914c45"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 35498,
+      "sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80",
+      "git_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "base_blob": null,
+      "prior_blob": "5682e951f1eac8f107efd3a3948b0748870912bd"
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 3208,
+      "sha256": "7cff2caf2a4ae941f00b5c41d4134aa333f4657077a9146313398556ad0d85e9",
+      "git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "base_blob": "356e901feb2328729f882afe487fbe0199f4a40a",
+      "prior_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 9938,
+      "sha256": "041e8addb24aa00ae8f86df7a458315d44e4f2ae678a079a8fbed9c37e9a2080",
+      "git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "base_blob": "2372f03102c106fdb93d3c5a50e71a74c80e55b3",
+      "prior_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 37909,
+      "sha256": "33eb05fd603a4c032918ef61e0b1c0d451ea25fa24f82fa42f4e99323d6bc738",
+      "git_blob": "0956a0db7df81390002fde917ebc3fe782e75296",
+      "base_blob": "71b19135ed156a589767c4e7f824dc48df698863",
+      "prior_blob": "0956a0db7df81390002fde917ebc3fe782e75296"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 29770,
+      "sha256": "bcd7bf57f01a4f5996a04bd7d9c937436bbfcb45ac86048b12c3877ca905cedc",
+      "git_blob": "bf7a38dfa100fadb6c0cc15b6bf699884c67299b",
+      "base_blob": "e3af38b17fd7b91627493b89d6174636f719e109",
+      "prior_blob": "6447eff570c31939d3165ac72271cc1914d84055"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 8629,
+      "sha256": "469a181b842c1a276ba5fdf83cb4cf6a19e437e3441a4e0e592acc503363cb3b",
+      "git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "base_blob": "e8cf8008e9c4eab2dbd909289ab6fa9a1345726c",
+      "prior_blob": "22e7f260ca0d23250802af3d862cf836b21d675b"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 16713,
+      "sha256": "9fcb3f301ebf9f0191fa019e606f6cf9123ff13268c02eee1f182a91caa04f35",
+      "git_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "base_blob": "5a2afd591da79f24652b59eef2be6c05ecb1134c",
+      "prior_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985"
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 8003,
+      "sha256": "712a51c8240dd0e612eb52644f715f53d56773e59d162d5a87bcaa74239b1a6d",
+      "git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "base_blob": "85fd507cc4a63401c879ab2b7ae95b9887016f55",
+      "prior_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0"
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 7267,
+      "sha256": "1969ea135cf99c0f30fae7c08f715f034eea4f5ec11fc85e3807af7b983be85a",
+      "git_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f",
+      "base_blob": null,
+      "prior_blob": "ff2d348d55572394f547deb15c2e36b2347ea43f"
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 17023,
+      "sha256": "22a62e8c3e1cf2945da22fa93b53d983cbba7a9e65584d2b8f06a3de50bf9c45",
+      "git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "base_blob": "d947f0c4f440c0cae751769a97823b5511966b35",
+      "prior_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f"
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 50621,
+      "sha256": "e1072ab95a02e4da8ad7925d22a84fe0e25d9ae802b4f97e717cc06b0238093d",
+      "git_blob": "315cda26d1e62b0616881857d6f9047fc883abd1",
+      "base_blob": "1423e74eea806fe7656b29d14aa96dfd0c47174c",
+      "prior_blob": "4d7829bd42995f9503d6c9fee390986e8c1c724e"
+    },
+    {
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 6508,
+      "sha256": "e04282673878faea7837a446e3d8aae2d44ced129bd4cfcf645afe728373e25c",
+      "git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "base_blob": "5e54aa00dfcc6527dea68ad804b21f0f9cacdf16",
+      "prior_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 25035,
+      "sha256": "bf20eb522055db43112c01d09fcf039b6104b2f5dbb9dddda76172ede3f4540c",
+      "git_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "base_blob": "84efaed7bf499b516923bf4435da45be830a85cd",
+      "prior_blob": "8c334d36e4b507842a38509b945956fe5085beb7"
+    }
+  ],
+  "focus_paths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+    "source/host/src/extensions/attachments/web_media.rs",
+    "source/host/tests/openclaw_web_media_contract.rs"
+  ],
+  "patches": [
+    {
+      "path": "media-admission-r7-complete.patch",
+      "bytes": 198121,
+      "sha256": "36a538ebc6ca77e8b4427fef84d356b26666e64f356641f50504326edaecbd5b"
+    },
+    {
+      "path": "media-admission-r7-integration.patch",
+      "bytes": 32946,
+      "sha256": "ab3de4b75840481cc30d3872b810d921f1a4ab6e92814576559678fe1a20e7a7"
+    }
+  ],
+  "candidate_tree": "71e8a1838cf8e925e88d514b95b35b7245895f63",
+  "candidate_tree_readback": {
+    "tree": "71e8a1838cf8e925e88d514b95b35b7245895f63",
+    "entries": 10539,
+    "truncated": false,
+    "all_changed_blobs_match": true,
+    "all_base_blobs_match": true
+  }
+}

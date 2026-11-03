@@ -38,3 +38,48 @@ fn create_and_update_tools_delegate_with_merge_semantics(){
  let updated=bridge.call_tool(&tools[2],json!({"agent_id":"agent-b","description":"new persona"}),"update").expect("update");assert!(updated.as_str().unwrap().contains("agent-b"));
  assert_eq!(sink.updates.lock().unwrap().as_slice(),&[("agent-b".into(),None,Some("new persona".into()))]);
 }
+
+#[test]
+fn lfa_agent_management_batch_admits_all_urls_before_resolving() {
+    let sink = Arc::new(Sink::default());
+    let bridge = AgentManagementToolBridge::new(Arc::new(Delegate), sink.clone());
+    let tools = bridge.list_tools().expect("first-party tools");
+    let send = &tools[0];
+    let native = url::Url::from_file_path(std::env::temp_dir().join("lfa café image.png"))
+        .expect("native absolute URL").to_string();
+    let invalid = [
+        format!("{native}%2Fextra"),
+        format!("{native}%FF"),
+        "file://files.example/share/image.png".to_string(),
+        "file://files.example/C:/image.png".to_string(),
+    ];
+    for (index, invalid) in invalid.iter().enumerate() {
+        let error = bridge.call_tool(send, json!({
+            "target_id": "other", "message": "validate the full batch",
+            "images": [{"url": native}, {"url": invalid}],
+        }), &format!("lfa-invalid-{index}")).expect_err("bad later URL refuses the batch");
+        match error {
+            ProviderSessionError::Tool(message) => assert!(message.starts_with("invalid local media file URL:")),
+            other => panic!("unexpected refusal: {other:?}"),
+        }
+        assert!(sink.resolved_images.lock().unwrap().is_empty(), "no image resolver entry before full admission");
+        assert!(sink.sends.lock().unwrap().is_empty(), "no send after source refusal");
+        assert!(sink.sent_images.lock().unwrap().is_empty());
+    }
+
+    // This port only observes boundary entry; it performs no filesystem or
+    // network work. The actual App fixture separately checks managed files.
+    let https = "https://example.invalid/image.png";
+    assert_eq!(bridge.call_tool(send, json!({
+        "target_id": "other", "message": "valid after refusal",
+        "images": [{"url": native}, {"url": https}],
+    }), "lfa-valid").expect("admitted batch reaches the existing sink"), Value::String("sent".into()));
+    assert_eq!(sink.resolved_images.lock().unwrap().as_slice(), &[
+        ("lfa-valid".to_string(), native.clone()),
+        ("lfa-valid".to_string(), https.to_string()),
+    ]);
+    assert_eq!(sink.sent_images.lock().unwrap().as_slice(), &[
+        vec![format!("resolved:{native}"), format!("resolved:{https}")],
+    ]);
+    assert_eq!(sink.sends.lock().unwrap().len(), 1);
+}

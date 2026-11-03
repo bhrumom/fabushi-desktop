@@ -1,0 +1,161 @@
+{
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "finding_id": "FUA-NORMALIZATION-01",
+  "classification": "IMPL_BUG",
+  "decision": "FIX",
+  "recorded_before_fix": true,
+  "subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "runtime_run": 41567768358,
+  "artifact_id": 13200058555,
+  "artifact_sha256": "c3bd83ea7fe568848b3b432e45a14011e730f894b48548c64b6f555693b78352",
+  "failure": "The pure owner counter enters once for FILE:////files.example/share/image.png; converter returns /files.example/share/image.png. Existing four-slash rejection and new owner/converter assertions fail.",
+  "raw_logs": {
+    "file-url-admission.log": "f01a32539a38becff9443ee28d4c55049bfd3d6f7e6a52d4eb06ca39682478da",
+    "explicit-html-consumers.log": "4e22d9aa0a716ab94a54449b98cf0096056339af222eac1156b66002ef23706a"
+  },
+  "actual_failures": {
+    "owner": {
+      "passed": 4,
+      "failed": 1,
+      "command_exit": 101,
+      "capture_exit": 0
+    },
+    "web_consumers": {
+      "passed": 19,
+      "failed": 2,
+      "command_exit": 101,
+      "capture_exit": 0
+    }
+  },
+  "retained_positive_groups": {
+    "cleanup_owner": 7,
+    "cleanup_consumers": 17,
+    "html_policy": 12,
+    "host_read_format": 1,
+    "image_probe": 16
+  },
+  "cause": "Locked url2.5.8 parse_path normalizes leading empty file path segments before returning Url (parser.rs1371-1378). Post-parse host and post-conversion network checks cannot reconstruct the discarded separators. The same parser can remove a host when a Windows drive segment is encountered (parser.rs1344-1363), which must also not defeat the declared nonlocal-authority refusal.",
+  "version_source": {
+    "commit": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce",
+    "parser_blob": "dbdf9b906238c20ef0896d114d5cb8ad69197e34",
+    "ranges": [
+      "512-565",
+      "1318-1379"
+    ]
+  },
+  "fix_direction": "Preserve a pre-normalization rejection of four or more leading file separators, including mixed slash/backslash and ignored URL tab/newline spelling. Reject FileWithHostAndWindowsDrive normalization through the existing parser syntax-violation callback. Retain structural scheme/host/conversion checks and private no-I/O boundary. Add variants to existing controls; remove no assertion.",
+  "invalidated_evidence": "R1 source convergence is not runtime acceptance. FUA admission/web groups require a corrected exact-H execution; old failed receipt remains failed. Native Windows prior result stays attached to364 only.",
+  "forbidden": "No changed expectation, assertion removal, gate bypass, test skip, unchanged rerun or local/htch executable verification.",
+  "schema": "ocrm-scoped-implementation-recovery-v1",
+  "record_scope": "FUA-v1 existing Attachments owner only; failure receipt is not rewritten",
+  "repair_state": "source candidate; independent R2 review and exact corrected-H Actions pending",
+  "changed_behavior": "Reject four-or-more leading separators before URL normalization and reject FileWithHostAndWindowsDrive; retain parsed scheme/host/encoded-separator/native-conversion and final path checks.",
+  "test_delta": "Retain all named tests and assertions. Add five-slash, mixed-separator, ignored-tab/CR/LF, leading-C0/scheme-tab converter, remote-host drive, pipe-drive, IP-host drive and dot/drive cases inside existing tables. Existing 79 Linux/macOS and 76 Windows selected-name sets remain unchanged.",
+  "windows_original_evidence": {
+    "job": 125693323398,
+    "artifact": 13200270481,
+    "artifact_sha256": "53abdc0e5fc11c3d0999e8464f2f9516c74bd50b806fb382f217959227cd11fd",
+    "actual_passed": 76,
+    "actual_failed": 0,
+    "scope": "H364 only; no repaired-H acceptance"
+  },
+  "source_original_evidence": {
+    "run": 41567768550,
+    "status": "completed",
+    "conclusion": "success",
+    "scope": "tracked-tree/structural only; dependency/LFS closure and final G02 remain open"
+  },
+  "macos_original_evidence": {
+    "job": 125693323245,
+    "last_observed_status": "queued",
+    "observed_at": "2026-11-03T02:48:00Z",
+    "actual_passes": null
+  },
+  "collector": {
+    "frozen_at": "2026-11-03T02:51:20Z",
+    "assessment_sha256": "388f249bec4e3176f41b18a37339c260698eedb969e5416d55a9a2125068cac7",
+    "collector_json_sha256": "72dcede1fb615f24dffc3867c80e58e9b9410974164297a0b91d2677e9477dad",
+    "manifest_sha256": "e52c4b8cf0800c861f856c9d6fb59c736f7380912f13302190788b180c7f8eab"
+  },
+  "preserved_authority": "No source lock, public schema, capture/oracle, ledger statuses, RTM states, eight global flags, workflows or consumer owner changes in this recovery.",
+  "open_scope": [
+    "full Node/Rust path-alias parity and exact crate archive acquisition",
+    "generated HTML provenance and authentic root/capability authority",
+    "actual SendMessage separate consumer audit; do not reroute through loader or invent permission",
+    "all full-migration acceptance, real providers/channels/plugins/nodes/devices, supported packages and independent ACCEPT"
+  ],
+  "historical_unpublished_R2": {
+    "candidate_tree": "a2b9d3a154145d8071cc63909a5e6a20feeb7731",
+    "published": false,
+    "validation": "source-review slice only; no executed corrected-H receipt",
+    "test_counts_scope": "The prior test_delta 79/76 selected counts describe only the unpublished R2 slice; full integrated LFA capture additionally selects its own owner/consumer cases."
+  },
+  "current_recovery": {
+    "contract": "FUA-v1 recovery integrated with existing LFA-v1 production consumers",
+    "base_commit": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+    "base_tree": "4e69dc6d77f4ff4508e02cdd7064084530db9b6e",
+    "reused_candidate_tree": "6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31",
+    "shared_owner": "source/host/src/extensions/attachments/media_reference.rs",
+    "behavior": "Reuse shared native converter in media_reference; reuse071 raw-prefix helper only after file classification, preserving localhost doubled-prefix and native interior/query positives. Keep BR reader/service bytes. Actual SendMessage/AgentManagement consume Result before effects; AgentManagement parses/admit all image values before any materialization.",
+    "independent_review": "pending new complete integrated scope",
+    "exact_H_actions": "not-run"
+  },
+  "additional_source_finding": {
+    "finding_id": "FUA-WINDOWS-ABSOLUTE-02",
+    "recorded_before_integrating_fix": true,
+    "basis": "source-confirmed possible debug assertion/native drive-relative return; no local execution or fabricated failing CI case",
+    "subject": "FUA R2 frozen tree a2b9d3a154145d8071cc63909a5e6a20feeb7731; file_url_to_path native conversion boundary",
+    "trigger": "On Windows, file:///C: (or encoded-drive colon) has only a drive segment; published url2.5.8 to_file_path builds C: and asserts native absolute path.",
+    "dependency": {
+      "archive_sha256": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
+      "lib_git_blob": "f1558682b6287d0cba1cd93d84cee6cf6cbeaf44",
+      "ranges": [
+        "3139-3191"
+      ]
+    },
+    "contract": "FUA-02/LFA-03 require an admitted native absolute path or typed refusal before local effects.",
+    "decision": "REUSE_EXISTING_LFA_FIX",
+    "existing_source": "/tmp/fabushi-647e-pairing/local-file-url-r1/candidate/source/host/src/extensions/attachments/media_reference.rs",
+    "existing_candidate_tree": "6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31",
+    "integration": "Reuse native drive-root precondition and absolute-result check already in the shared existing media_reference owner. Preserve FUA normalization prefix guard/zero-reader assertions and actual LFA App propagation; do not publish a duplicate parser owner.",
+    "review": "FUA R2 remains source-only historical frozen slice, no runtime or whole-LFA approval. Full integrated scope requires new independent reviews and exact-H Actions.",
+    "retained": "No prior failed receipt, valid assertion, source identity, unit state or global completion flag is changed."
+  },
+  "integrated_R1_recovery": {
+    "finding_id": "LFA-AGENT-IMAGE-BATCH-01",
+    "decision": "FIX",
+    "recorded_before_fix": true,
+    "candidate_tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
+    "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+    "source_evidence": "AgentManagementToolBridge parse_images constructs the complete Vec but checks only scheme; then resolves each source sequentially. ProductionAgentManagementSink ignores owned_path from the shared resolver. After a valid first image creates a managed file, a later URL rejection returns early without SendMessage abort custody.",
+    "source_blob": "e8cf8008e9c4eab2dbd909289ab6fa9a1345726c",
+    "source_ranges": [
+      "11-22",
+      "55-65",
+      "93-101"
+    ],
+    "source_confirmation": "Root directly read exact source after independent structure reviewer preliminary finding; no local execution or fabricated observed orphan",
+    "contract": "LFA invalid-source admission must cause no materialization or outward message; actual AgentManagement adjacent consumer is in scope",
+    "fix": "Reuse shared pure resolve_local_file_url inside existing parse_images before any per-image sink resolution. The full value batch passes parsing before .into_iter begins; no new store, custody owner or trait interface. Keep actual sink direct-call admission. Add real App valid-first/invalid-later no-effects case and native bridge regression/positive selection.",
+    "limits": "This addresses deterministic invalid URL refusal in a batch. Later file-read/persistence/delivery failures and unknown write outcomes remain separate existing work; no broad cleanup or crash guarantee is claimed.",
+    "review": "New immutable R2 with complete scope plus delta and independent review required before publication; all R1 findings retained.",
+    "independent_R1_findings": [
+      {
+        "review": "reviews/media-admission-general-r1.md",
+        "finding": "LFA-GEN-R1-01",
+        "sha256": "19c9acf61a1e576801ac4ea408e326c9fdf8f0d12c511c9327caaa689694df4b",
+        "verdict": "REQUEST_CHANGES"
+      },
+      {
+        "review": "reviews/media-admission-structure-r1.md",
+        "finding": "R1-STRUCT-01",
+        "sha256": "398e78394ab18cbe03919ba61221c4daf555a9a0a70fb3aa2da15544782987c1",
+        "verdict": "REQUEST_CHANGES"
+      }
+    ],
+    "root_review_read": "Both complete terminal reports read; same source-confirmed finding accepted. Strengthen actual App oracle with repeated refusal across owner reopen and subsequent actual local-image materialization/send. No additional production scope or state owner."
+  },
+  "historical_open_scope_interpretation": "Earlier open_scope and no-consumer-change text describe the historical unpublished FUA-only recovery. Exact url archive is now acquired in073; actual App consumers are implemented in this integrated LFA candidate but review/execution/acceptance remain pending. All other source/permission/producer/ecosystem gates remain open."
+}

@@ -55,7 +55,7 @@ permission to read an arbitrary local file.
 | ID | Required behavior |
 | --- | --- |
 | FUA-01 | Use structural URL parsing. Accept only the file scheme with empty/localhost host. Reject every other hostname or IP authority on every supported OS as `WebMediaError::LocalAccess` with code `invalid-file-url`. Do not use a host-name denylist. |
-| FUA-02 | Preserve URL parse and native file-path conversion failures as `invalid-file-url`. Remove the permissive slash-stripping/lossy-decoding fallback. Support legitimate native absolute, single-slash, mixed/uppercase and localhost file URL forms through the real parser. |
+| FUA-02 | Preserve URL parse and native file-path conversion failures as `invalid-file-url`, after the shared owner's explicitly specified LFA-03a pre-conversion normalization. Remove the permissive slash-stripping/lossy-decoding fallback. Support legitimate native absolute, single-slash, mixed/uppercase and localhost file URL forms through the real parser. LFA-03a changes only a parsed Windows rooted literal-pipe drive delimiter before native conversion; no failed conversion is retried or reconstructed. |
 | FUA-03 | Reject prohibited raw and resolved network paths before canonicalize, metadata, open or read. File URL rejection retains `invalid-file-url`; raw/workspace-derived prohibited network paths retain `network-path-not-allowed`. Neither roots nor the existing sandbox flag may bypass URL admission. |
 | FUA-04 | Preserve exact native paths, Unicode, spaces and literal percent signs for supported local URLs. Retain encoded slash/backslash refusals. Use platform-native fixtures rather than a Unix path as a Windows positive. Keep byte limits, allowed-root checks, explicit HTML policy and image handling intact. |
 | FUA-05 | The actual direct Attachments service propagates admission errors and still returns the correct bytes and file name for admitted native fixtures. Refusal creates no durable state; a later valid call works normally. Public Gateway admission remains unchanged. |
@@ -64,6 +64,15 @@ permission to read an arbitrary local file.
 ## Architecture and implementation boundary
 
 Repair `web_media.rs::file_url_to_path` in place with the existing `url::Url`.
+Preserve the pre-normalization rejection of four or more leading file separators,
+including mixed slash/backslash forms and the URL parser's ignored ASCII tab,
+CR and LF characters. Match the parser's leading C0/space trimming for this
+prefix guard. This guard only preserves prohibited prefix evidence; it does not
+replace structural parsing or establish full Node/Rust path-alias parity.
+Reject `FileWithHostAndWindowsDrive` syntax normalization before a discarded
+nonlocal authority can become an admitted local drive path. Use the existing
+parser's violation callback; do not infer the original authority from its
+normalized output.
 Require its parsed scheme/host, reject encoded separators in the path, require
 native conversion success, and reject a prohibited converted network path.
 Do not replace the local loader with a source-specific runtime or reuse the
@@ -114,6 +123,34 @@ exits, positive-name uniqueness and all selected assertions. Missing/queued OS
 jobs remain unverified. This batch cannot satisfy full G01–G12/AC01–AC24,
 independent ACCEPT or shipping-SHA acceptance by itself.
 
+### Exact-H normalization recovery
+
+At `3647531d1d47d1c690b98a06f0156ae2734ff7ad`, Linux run `41567768358`
+produced a sound implementation failure: the four-slash reference entered the
+private reader once and two converter controls failed. The locked `url` 2.5.8
+parser removes leading empty file path segments before returning a `Url`
+(`parser.rs` 1371–1378 at version-source commit
+`d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce`). Post-parse checks cannot recover
+that discarded information. Its neighboring Windows-drive normalization can
+also discard a host and emits `FileWithHostAndWindowsDrive` (1344–1363).
+
+The repair keeps all original assertions and adds variants to the existing
+zero-reader-entry and converter controls. The same native local, localhost,
+single-slash, bytes, size-cap and retry positives remain required. The failed
+Linux receipt and original R1 reviews remain immutable; R1 source convergence
+was not runtime acceptance. Windows' 76 passing checks remain evidence only
+for H364. A new frozen H and focused source review must decide the repaired
+behavior. The recovery decision and failure identities are in
+`projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json`.
+
+The final recovery is integrated with `local-media-file-url-admission.md`
+(LFA-v1): the existing `media_reference` owner supplies structural conversion,
+remote-host-erasure refusal and native absolute-path admission. The web adapter
+retains its stricter prefix rule and typed errors. LFA also propagates the same
+pure refusal through the actual SendMessage/AgentManagement production resolver
+before native read or Box fallback. The unpublished FUA R2 tree is historical
+source-review context, not a second shipping implementation or approval of LFA.
+
 ## Release, rollback and provenance
 
 The change is a stateless Rust implementation repair on the existing migration
@@ -124,7 +161,7 @@ refusal, without adding logs containing file contents or credentials.
 - Fixed-U `src/media/web-media.ts`, blob `f48bca504f6fb77c3d094864eb656cb2b1bf25e2`, URL admission and resolved-path/read ordering.
 - Fixed-U `src/media/web-media.file-url.windows.test.ts`, blob `bdaedcde111ea2880b96d9afa547a9c1d2a36b42`, native uppercase single-slash control and refusal cases.
 - Fixed-U package/lock binding: `@openclaw/fs-safe` 0.27.0, archive SHA-256 `02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c`; packaged `dist/local-file-access.js` SHA-256 `7530a957ca9d56f56deba8da1dd06be03c894c6f6472bc8571080937b57bfda8`. Review is scoped dependency-contract/actual-use review, not a claim of full package reading or generator closure.
-- Target host and App locks both bind `url` 2.5.8, checksum `ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed`. Version-source commit `d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce` documents Windows UNC conversion; exact crate archive acquisition remains separate.
+- Target host and App locks both bind `url` 2.5.8, checksum `ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed`. The acquired 86,512-byte archive matches that checksum and its VCS record binds `d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce`. Its parser/lib members match the reviewed version-source blobs exactly. This supersedes the earlier acquisition gap without claiming a complete package read or recursive dependency closure.
 - Existing `media-store-read-scope.md`, `media-html-policy-safety.md` and `media-image-probe-boundary.md` retain their independent authority and open scope.
 
 ## Locked-parser normalization correction before combined BR publication
@@ -170,7 +207,13 @@ followup work. Neither this correction nor BR's generic reader promotes the
 complete FUA/media row or any global acceptance flag. Every native execution
 and exact current-H input/log/exit observation remains required in Actions.
 
-## Native Windows rooted-drive oracle correction — FUA-WIN-ORACLE-01
+## Historical native Windows rooted-drive oracle correction — FUA-WIN-ORACLE-01
+
+The following correction records the pre-LFA production contract through
+`78aa967cc9400bb5c207441b2a78dbf7021d596c` and the unchanged dependency behavior.
+Its old product-level refusal is superseded only for the narrowly admitted
+spelling by the explicit LFA-03a transition below. Preserve this history and
+the incoming evidence; do not apply both old and new product oracles at once.
 
 At e19 runtime `41571103928`, Windows job `125703932910` executed the
 web-media target with 22 passed and one failed test. The rooted-drive loop
@@ -188,6 +231,31 @@ test name, complete selected count and strict capture. Production admission,
 fallback removal, dependency locks, BR/HHP/IPB and all broader compatibility
 obligations remain unchanged. The corrected exact-H Windows result is required;
 source inference alone is not a passing result or a permanent scope exemption.
+
+## Shared-owner contract transition — LFA-03a / LFA-03b
+
+The shared owner deliberately extends Windows product admission before native
+conversion: after original authority and host-erasure refusal, normalize only
+a parsed pathname beginning `/<ASCII letter>|/` using the existing URL path
+setter. Then require the unchanged escape, UTF-8, NUL, native-conversion,
+absolute-path, alias and web reader-policy checks. This is a bounded product
+compatibility extension. It is not behavior already supplied by the locked
+converter, a retry after failure, or complete Node/Rust pipe-parity evidence.
+
+Preserve the historical correction's true dependency fact with a direct Windows
+`Url::parse("file:///C|/").to_file_path().is_err()` characterization inside the
+same selected test. The current product root table requires both `file:/C|/`
+and `file:///C|/`, alongside all three original colon/encoded-colon positives.
+Keep value-labelled diagnostics, every other refusal and all LFA native byte,
+service, cap, retry and zero-reader-entry controls. The older product negative
+for that one spelling is intentionally replaced by the new positive; its
+dependency refusal and original evidence remain intact. All other failures
+still fail closed. Test names, selected counts and capture gates are unchanged.
+
+The inspected fixed-U Windows tests cover native single-slash handling but have
+no pipe-specific oracle. The old unlabeled panic and the dependency-source
+inference therefore remain separate from the required new exact-H Windows
+execution. No global or full-unit acceptance follows from this transition.
 
 ## Windows rooted drive-pipe recovery — FUA-PIPE-01
 
@@ -227,12 +295,16 @@ normalizes a first literal ASCII drive-letter pipe to a colon; its
 `lib/internal/url.js::getPathFromURLWin32` then yields the rooted native path.
 The asserted positive is a source-supported compatibility requirement.
 
-- **FUA-PIPE-01:** On Windows only, after every existing scheme, original-host,
-  leading-separator, encoded-separator and bare-root guard, normalize exactly
-  the first parsed `/[A-Za-z]|/` component to `/[A-Za-z]:/` and delegate to the
-  existing `Url::to_file_path`. Keep final network-path refusal. Do not decode
-  another spelling, recover a failed authority, build a native path manually,
-  add a dependency/owner, or change Unix behavior.
+- **FUA-PIPE-01:** The LFA integration retains this behavior through the single
+  existing `resolve_local_file_url` owner. On Windows only, after scheme and
+  original-host/authority admission, normalize exactly the first parsed
+  `/[A-Za-z]|/` component to `/[A-Za-z]:/` with the existing URL path setter.
+  Then require escape/UTF-8/NUL, rooted-native and alias admission. The web
+  adapter retains its stricter original-leading-separator and final network
+  refusals before its private reader. This replaces the incoming web-local
+  normalization location, preserving every refusal and the native converter.
+  Do not decode another spelling, recover a failed authority, build a native
+  path manually, add a dependency/owner, or change Unix behavior.
 - **FUA-PIPE-02:** Retain all four pre-78aa rooted-drive positives plus incoming
   `file:/C|/`. The incoming `file:///C|/` refusal is superseded by the guarded
   compatibility implementation and its positive; retain every other negative.

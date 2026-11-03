@@ -1,0 +1,200 @@
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/docs/specs/local-media-file-url-admission.md b/workspace/scratch/7d27ea239237/media-admission-r4/projects/openclaw-rust/docs/specs/local-media-file-url-admission.md
+index 8a8a7a7..14ff85a 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/docs/specs/local-media-file-url-admission.md
++++ b/workspace/scratch/7d27ea239237/media-admission-r4/projects/openclaw-rust/docs/specs/local-media-file-url-admission.md
+@@ -92,6 +92,54 @@ Extend the existing exact-H media and Linux App capture rather than creating ano
+ 
+ Before publication, freeze the complete source tree, full diff and manifest, obtain independent general/security and pinned structure/reuse/performance reviews, decide findings before fixes and review any accepted repair. All executable validation runs only in GitHub Actions after publication of exact H. Source/API/hash/archive work outside Actions is evidence acquisition, not validation. Completion of this slice requires actual production consumer results for its selected scope; no global flag or unit verified promotion precedes scoped authority/coverage.
+ 
++## Native Windows drive delimiter recovery — LFA-03a
++
++This amendment is specified before its R4 implementation. R3 integrates the
++existing WFX extraction on base `3438eb5bac755c399c9ec686414bbb4c0816888d`, tree
++`b544c1d377ca82618cdadcf5106cb3c10d82411b`; the full source candidate remains
++unpublished and unexecuted. Preserve the extracted portable capture, incoming
++canonical inventory, all BR reader bodies and the existing test selections.
++
++The native Windows receipts for subjects
++`e19a0a265e400a4c9b1d96520c84fb612a3843e8` (run `41571103928`) and
++`3438eb5bac755c399c9ec686414bbb4c0816888d` (run `41571310630`) both retain a
++22-pass/1-fail full web target. The failing rooted-drive assertion does not
++label the particular input. Source reading separately identifies a causal
++dependency boundary: `url 2.5.8`'s `parse_file_host` returns a false path-start
++flag for the empty/localhost host; `parse_file` inserts a slash before passing
++the still-leading slash to `parse_path`. For `file:///C|/`, the drive token is
++then beyond the first-segment normalization condition. Leading empty segments
++are removed later, but the literal pipe remains. The Windows converter accepts
++only a colon or percent-encoded colon in that drive position. R3's shared
++absolute-drive precondition also refuses this source. This is source-derived
++diagnosis, not an executed R3 result or a variant label from the failed log.
++
++LFA-03a requires the existing shared owner to normalize only a parsed Windows
++pathname's literal leading `/<ASCII letter>|/` drive delimiter to `:` before
++native conversion, after the original authority/violation checks. Use the
++existing URL path setter and native converter; do not reconstruct a native
++path or add a fallback after conversion failure. Keep percent escapes, Unicode,
++query/fragment separation, root/size policy and downstream owner checks intact.
++The URL setter's published contract preserves existing percent escapes and
++restores query/fragment positions. No such rewrite runs on Unix.
++
++Encoded pipe, bare pipe drive, drive-relative path, remote authority, encoded
++separator, malformed escape, invalid UTF-8, NUL and ADS remain refusals. The
++web adapter's existing raw leading-separator guard remains authoritative even
++after this narrow normalization. Preserve every existing four rooted-drive
++positive and add the source value to its failure diagnostics. Extend existing
++shared-owner variants and the real native web/service byte/cap/retry case with
++triple-slash, localhost, single-slash and authority-position pipe forms. Extend
++existing zero-reader-entry negatives around encoded/bare pipe and aliases.
++These are added table entries within the already selected tests, not reduced
++coverage or synthetic success counts.
++
++Completion requires fresh focused general/security and pinned structural
++reviews, unchanged shared capture gates, and exact published-H native Actions,
++including actual Windows execution. Retain both original failed receipts.
++Do not rerun an unchanged failed subject, upgrade a ledger status/global flag,
++or claim App/real-service/platform-wide acceptance from this normalization.
++
+ ## Delivery, rollback and remaining acceptance
+ 
+ Publish through the existing branch with a compare-and-swap lease, preserve concurrent work, and read back the full remote commit/tree/content. A rollback reverts this admission change without rewriting previous receipts or durable Session data. Reverting to unsafe URL acceptance is not a security acceptance path; hold affected delivery if this repair cannot meet its contract.
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/media_reference.rs b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/src/extensions/attachments/media_reference.rs
+index 860278b..0956a0d 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/media_reference.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/src/extensions/attachments/media_reference.rs
+@@ -116,6 +116,29 @@ pub fn resolve_local_file_url(raw: &str) -> Result<Option<PathBuf>, MediaReferen
+         ));
+     }
+ 
++    #[cfg(windows)]
++    let parsed = {
++        let pathname = parsed.path();
++        let bytes = pathname.as_bytes();
++        // url 2.5.8 can leave a literal pipe in the first drive segment after
++        // parsing an empty/localhost authority. Normalize only that rooted
++        // drive delimiter, after authority admission, through the URL owner.
++        // Encoded pipes and bare drives still fail the existing checks below.
++        if bytes.first() == Some(&b'/')
++            && bytes.get(1).is_some_and(|byte| byte.is_ascii_alphabetic())
++            && bytes.get(2) == Some(&b'|')
++            && bytes.get(3) == Some(&b'/')
++        {
++            let mut pathname = pathname.to_owned();
++            pathname.replace_range(2..3, ":");
++            let mut parsed = parsed;
++            parsed.set_path(&pathname);
++            parsed
++        } else {
++            parsed
++        }
++    };
++
+     let pathname = parsed.path();
+     let bytes = pathname.as_bytes();
+     let mut index = 0;
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/web_media.rs b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/src/extensions/attachments/web_media.rs
+index 98bf139..6447eff 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/web_media.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/src/extensions/attachments/web_media.rs
+@@ -604,6 +604,15 @@ mod file_url_admission_tests {
+                     "file://C:",
+                     "file:///C:",
+                     "file:///C|",
++                    "file:///C|relative/image.png",
++                    "file:///C%7C/safe/image.png",
++                    "file:///C%7c/safe/image.png",
++                    "file:///C|/safe/image.png:stream",
++                    "file:///C|/safe/folder%2Fimage.png",
++                    "file:///C|/safe/folder%5Cimage.png",
++                    "file:///C|/safe/image%FF.png",
++                    "file:///C|/safe/image%00.png",
++                    "file:///C|/safe/image%.png",
+                     "file:///C%3A",
+                     "file:///C%3a",
+                     "FiLe://localhost/C:",
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/local_media_file_url_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/tests/local_media_file_url_contract.rs
+index 5170951..ff2d348 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/local_media_file_url_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/tests/local_media_file_url_contract.rs
+@@ -40,7 +40,17 @@ fn lfa_shared_owner_preserves_native_file_url_variants() {
+         url.replacen("file://", "file://LOCALHOST", 1),
+         url.replacen("file://", "file://%6cocalhost", 1),
+         format!("\u{001f} \tf\ti\rL\ne:{}\r\n\u{0001}", &url[5..]),
+-    ];
++    ].into_iter();
++    #[cfg(windows)]
++    let variants = variants.chain({
++        let pipe_path = url.strip_prefix("file://").expect("native scheme").replacen(':', "|", 1);
++        [
++            format!("file://{pipe_path}"),
++            format!("file://localhost{pipe_path}"),
++            format!("file:{pipe_path}"),
++            format!("file://{}", pipe_path.trim_start_matches('/')),
++        ]
++    });
+     for source in variants {
+         assert_eq!(resolve_local_file_url(&source), Ok(Some(path.clone())), "{source:?}");
+     }
+@@ -60,6 +70,8 @@ fn lfa_shared_owner_rejects_all_remote_authorities() {
+         // url 2.5.8 otherwise removes this host while normalizing a drive path.
+         "file://server/C:/safe/image.png",
+         "file://127.0.0.1/C:/safe/image.png",
++        "file://server/C|/safe/image.png",
++        "file://localhost.example/C|/safe/image.png",
+     ] {
+         assert!(resolve_local_file_url(source).is_err(), "{source:?}");
+     }
+@@ -143,6 +155,10 @@ fn lfa_unix_file_url_preserves_posix_control() {
+         resolve_local_file_url("file:///var/tmp/file%3Astream.png"),
+         Ok(Some(PathBuf::from("/var/tmp/file:stream.png"))),
+     );
++    assert_eq!(
++        resolve_local_file_url("file:///C|/safe/file%7Cname.png"),
++        Ok(Some(PathBuf::from("/C|/safe/file|name.png"))),
++    );
+ }
+ 
+ #[cfg(windows)]
+@@ -151,6 +167,16 @@ fn lfa_windows_shared_owner_rejects_drive_less_and_alias_urls() {
+     for source in [
+         "file:///var/tmp/image.png",
+         "file:///C:",
++        "file:///C|",
++        "file:///C|relative/image.png",
++        "file:///C%7C/safe/image.png",
++        "file:///C%7c/safe/image.png",
++        "file:///C|/safe/image.png:stream",
++        "file:///C|/safe/folder%2Fimage.png",
++        "file:///C|/safe/folder%5Cimage.png",
++        "file:///C|/safe/image%FF.png",
++        "file:///C|/safe/image%00.png",
++        "file:///C|/safe/image%.png",
+         "file:///C%3A",
+         "file:///C%3Arelative/image.png",
+         "file:///C:/safe/file.txt:secret.png",
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/openclaw_web_media_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/tests/openclaw_web_media_contract.rs
+index 7e3b39f..8550eaa 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/openclaw_web_media_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r4/source/host/tests/openclaw_web_media_contract.rs
+@@ -268,7 +268,10 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+     }
+     #[cfg(windows)]
+     for reference in ["file:///C:/", "file://C:/", "file:///C|/", "file:///C%3A/"] {
+-        assert_eq!(file_url_to_path(reference).expect("rooted drive remains valid"), PathBuf::from(r"C:\"));
++        let actual = file_url_to_path(reference).unwrap_or_else(|error| {
++            panic!("rooted drive remains valid for {reference:?}: {error:?}")
++        });
++        assert_eq!(actual, PathBuf::from(r"C:\"), "{reference:?}");
+     }
+ }
+ 
+@@ -294,6 +297,10 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
+     let references = references.chain([
+         format!("file://{}", native_url.path().trim_start_matches('/')),
+         format!("file://{}", native_url.path().trim_start_matches('/').replacen('/', "//", 1)),
++        format!("file://{}", native_url.path().replacen(':', "|", 1)),
++        format!("file://localhost{}", native_url.path().replacen(':', "|", 1)),
++        format!("file:{}", native_url.path().replacen(':', "|", 1)),
++        format!("file://{}", native_url.path().trim_start_matches('/').replacen(':', "|", 1)),
+     ]);
+     for reference in references.flat_map(|reference| {
+         let with_components = format!("{reference}?next=%2F%5C#part=%5C%2F");

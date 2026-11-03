@@ -1,0 +1,248 @@
+diff --git a/media-admission-r6/.github/workflows/rust-desktop-runtime.yml b/media-admission-r7/.github/workflows/rust-desktop-runtime.yml
+index eebbd9c..5abace3 100644
+--- a/media-admission-r6/.github/workflows/rust-desktop-runtime.yml
++++ b/media-admission-r7/.github/workflows/rust-desktop-runtime.yml
+@@ -2551,6 +2551,7 @@ jobs:
+               "token_rotate_wire_http_scope_omission_empty_implied_and_legacy_repair_use_resulting_grant",
+               "token_rotate_wire_http_closed_request_storage_refusal_and_explicit_repair_are_atomic",
+               "token_rotate_wire_http_pairing_permission_and_existing_role_scope_guards_stay_distinct",
++              "token_rotate_wire_http_large_distinct_scope_request_reaches_owner_and_preserves_read_only_authority",
+               "token_rotate_wire_http_bad_credentials_and_common_ingress_never_become_native",
+               "token_rotate_wire_http_default_hook_fails_closed_and_dpa_keeps_its_distinct_contract",
+               "token_rotate_wire_http_authenticated_barrier_rechecks_current_sealed_authority",
+@@ -2665,7 +2666,7 @@ jobs:
+               "existing_node_binding_command_exit_records": integration_evidence["command_exit_records"],
+               "existing_node_binding_capture_exit_records": integration_evidence["capture_exit_records"],
+               "result": "passed" if rotation_accepted else "failed",
+-              "scope": "Actual file-backed pairing owner and real HTTP server through thin owner delegates: sealed credential identity, current grants, scope ceilings, identity-derived secret delivery, no ambient fallback, atomic revision rollback, credential retirement and concurrent self rotation, plus native and reopen controls. DVR-v1 adds bound whole-row revocation, operator-only self/admin policy, checked immediate transaction and rollback, original-credential retained SSE and real local-exec/WebAuthn registration retirement, exact frame-admission races and the actual 15-second quiet wake. DRT-v1 adds selected-role retirement, bound native ceilings, fresh-marker refusals and six selected-role retained-stream cases without changing the original DVR oracles. DTR-v1 executes the complete wire-rotation owner44 and HTTP13 targets plus all27 retained cases, preserving all previous names and assertions. It covers resulting-grant caps and explicit repair, exact identity-bound delivery, supported metadata, checked single-commit revision, current-proof races, node-only surfaces, response-loss/no-replay and successor controls. Freshly issued literal scopes stay literal across adjacent management consumers; selected primary-only role materialization, decisive approval reads, rollback, reopen and later role withdrawal are required. External credential caches, issuer-generation policy, upstream WebSocket/node-surface compatibility and real devices remain open. Shipping App hooks and existing node projections have separate actual App helper cases; these HTTP adapters do not run the full App, remote workers, real devices or release acceptance."})
++              "scope": "Actual file-backed pairing owner and real HTTP server through thin owner delegates: sealed credential identity, current grants, scope ceilings, identity-derived secret delivery, no ambient fallback, atomic revision rollback, credential retirement and concurrent self rotation, plus native and reopen controls. DVR-v1 adds bound whole-row revocation, operator-only self/admin policy, checked immediate transaction and rollback, original-credential retained SSE and real local-exec/WebAuthn registration retirement, exact frame-admission races and the actual 15-second quiet wake. DRT-v1 adds selected-role retirement, bound native ceilings, fresh-marker refusals and six selected-role retained-stream cases without changing the original DVR oracles. DTR-v1 executes the complete wire-rotation owner44 and HTTP14 targets plus all27 retained cases, preserving all previous names and assertions. It covers resulting-grant caps and explicit repair, exact identity-bound delivery, supported metadata, checked single-commit revision, current-proof races, node-only surfaces, response-loss/no-replay and successor controls. The large distinct-scope read-only HTTP request reaches the bound owner, is refused without durable mutation and preserves ordinary authorized rotation after reopen; shared canonicalization uses order-preserving set membership. Freshly issued literal scopes stay literal across adjacent management consumers; selected primary-only role materialization, decisive approval reads, rollback, reopen and later role withdrawal are required. External credential caches, issuer-generation policy, upstream WebSocket/node-surface compatibility and real devices remain open. Shipping App hooks and existing node projections have separate actual App helper cases; these HTTP adapters do not run the full App, remote workers, real devices or release acceptance."})
+           (root / "device-pairing-rotation.receipt.json").write_text(json.dumps(rotation_receipt, indent=2) + "\n")
+           print(json.dumps(rotation_receipt, indent=2))
+           raise SystemExit(0 if accepted and append_accepted and pairing_accepted and rotation_accepted else 1)
+diff --git a/media-admission-r6/projects/openclaw-rust/docs/specs/media-file-url-admission.md b/media-admission-r7/projects/openclaw-rust/docs/specs/media-file-url-admission.md
+index 5414d71..8efd93c 100644
+--- a/media-admission-r6/projects/openclaw-rust/docs/specs/media-file-url-admission.md
++++ b/media-admission-r7/projects/openclaw-rust/docs/specs/media-file-url-admission.md
+@@ -256,3 +256,72 @@ The inspected fixed-U Windows tests cover native single-slash handling but have
+ no pipe-specific oracle. The old unlabeled panic and the dependency-source
+ inference therefore remain separate from the required new exact-H Windows
+ execution. No global or full-unit acceptance follows from this transition.
++
++## Windows rooted drive-pipe recovery — FUA-PIPE-01
++
++The preceding FUA-WIN-ORACLE-01 section is retained as the historical decision
++published at `78aa967cc9400bb5c207441b2a78dbf7021d596c`, under the then-unchanged
++native converter. This amendment supersedes only its refusal of
++`file:///C|/`: source-supported compatibility now requires the guarded Windows
++normalization below. FUA-02 still propagates failures after that normalization;
++there is no recovery after a failed conversion or rejected authority. Preserve
++the incoming `file:/C|/` positive as well as all other still-valid controls.
++
++The exact-H Windows job
++[`41571310630/125704599418`](https://github.com/bhrumom/fabushi-desktop/actions/runs/41571310630/job/125704599418)
++at `3438eb5bac755c399c9ec686414bbb4c0816888d` failed
++`test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references` at line
++253: `rooted drive remains valid` returned `invalid-file-url` with
++`File URL cannot be converted to an absolute local path`. The web contract
++reported 22 passed/1 failed, cargo exit 101 and capture exit 0; the other 11
++media capture cases were accepted. Preserve this failed receipt/artifact
++`13201906203`; it is not an environment failure or acceptance evidence.
++
++The old panic omitted the reference. Static tracing of the actual locked
++`url-2.5.8.crate` identifies the third positive, `file:///C|/`: `parse_file_host`
++returns the empty-host flag, `parse_file` adds a slash before the still-leading
++slash, and `parse_path` consequently misses its first-segment drive-letter
++normalization. Removing leading empty segments afterward leaves `/C|/`; the
++Windows converter rejects its literal pipe. This is a source-traced trigger,
++not a reference printed by the failed run. The same converter already supports
++`C%3A`, so encoded-colon conversion is not the repair.
++
++Fixed U calls `@openclaw/fs-safe` 0.27.0 `safeFileURLToPath`; its exact source
++`openclaw/fs-safe@67dee5ef4c03655a2aa98893539475ad041cb61b`,
++`src/local-file-access.ts`, applies Node URL/native conversion after host and
++encoded-separator admission. Fixed U permits Node 24.16.0. That Node version's
++bundled `deps/ada/ada.cpp` sends an empty file host through path-start and
++normalizes a first literal ASCII drive-letter pipe to a colon; its
++`lib/internal/url.js::getPathFromURLWin32` then yields the rooted native path.
++The asserted positive is a source-supported compatibility requirement.
++
++- **FUA-PIPE-01:** The LFA integration retains this behavior through the single
++  existing `resolve_local_file_url` owner. On Windows only, after scheme and
++  original-host/authority admission, normalize exactly the first parsed
++  `/[A-Za-z]|/` component to `/[A-Za-z]:/` with the existing URL path setter.
++  Then require escape/UTF-8/NUL, rooted-native and alias admission. The web
++  adapter retains its stricter original-leading-separator and final network
++  refusals before its private reader. This replaces the incoming web-local
++  normalization location, preserving every refusal and the native converter.
++  Do not decode another spelling, recover a failed authority, build a native
++  path manually, add a dependency/owner, or change Unix behavior.
++- **FUA-PIPE-02:** Retain all four pre-78aa rooted-drive positives plus incoming
++  `file:/C|/`. The incoming `file:///C|/` refusal is superseded by the guarded
++  compatibility implementation and its positive; retain every other negative.
++  Include the reference in rooted-drive failure diagnostics.
++  Pin refusal of encoded pipes, non-letter/long drive tokens, bare drives,
++  prohibited leading separators and encoded separators before the private
++  reader; roots and sandbox variants do not bypass admission.
++- **FUA-PIPE-03:** Extend the existing Windows native temp-file and actual
++  Attachments service fixture with literal-pipe drive URLs, including localhost
++  and query/fragment variants. They must retain exact Unicode/space/percent
++  filenames, bytes, explicit HTML behavior, cap refusal and fresh recovery.
++  A synthetic path-only assertion is insufficient consumer evidence.
++
++Focused recovery must run in Actions on the new frozen H: the changed URL
++admission owner controls and full `openclaw_web_media_contract` with positive
++name/summary/exit evidence, retaining still-valid unrelated case evidence at
++its original subject. Do not rerun unchanged inputs merely to select a green
++attempt. Broader percent-decoding, encoded drive-letter spelling, dot-path
++normalization, namespace/device policy and all other deferred/full-media
++obligations above remain open; this repair does not claim their closure.
+diff --git a/media-admission-r6/projects/openclaw-rust/scripts/capture_portable_contracts.py b/media-admission-r7/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index 62bc1cd..ee404c5 100644
+--- a/media-admission-r6/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/media-admission-r7/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -543,6 +543,7 @@ wire_rotation_http_required = [
+     "token_rotate_wire_http_scope_omission_empty_implied_and_legacy_repair_use_resulting_grant",
+     "token_rotate_wire_http_closed_request_storage_refusal_and_explicit_repair_are_atomic",
+     "token_rotate_wire_http_pairing_permission_and_existing_role_scope_guards_stay_distinct",
++    "token_rotate_wire_http_large_distinct_scope_request_reaches_owner_and_preserves_read_only_authority",
+     "token_rotate_wire_http_bad_credentials_and_common_ingress_never_become_native",
+     "token_rotate_wire_http_default_hook_fails_closed_and_dpa_keeps_its_distinct_contract",
+     "token_rotate_wire_http_authenticated_barrier_rechecks_current_sealed_authority",
+@@ -1030,7 +1031,7 @@ receipt = {
+     "synthetic_result_oracle_controls": oracle_controls,
+     "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
+     "executions": [], "result": "failed-or-incomplete",
+-    "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 retains complete owner26, HTTP8 and its original14 retained-stream cases for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. DRT-v1 adds selected-role retirement through the same owner, explicit native/paired ceilings, fresh-marker rejection and six selected-role retained cases; whole-target counts and exact positive names remain mandatory. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and the upstream remove wire alias remain open. DTR-v1 executes the complete wire-rotation owner44 and HTTP13 targets plus all27 retained cases, preserving all previous names and assertions. It covers resulting-grant caps and explicit repair, exact identity-bound delivery, supported metadata, checked single-commit revision, current-proof races, node-only surfaces, response-loss/no-replay and successor controls. Freshly issued literal scopes stay literal across adjacent management consumers; selected primary-only role materialization, decisive approval reads, rollback, reopen and later role withdrawal are required. External credential caches, issuer-generation policy, upstream WebSocket/node-surface compatibility and real devices remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
++    "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 retains complete owner26, HTTP8 and its original14 retained-stream cases for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. DRT-v1 adds selected-role retirement through the same owner, explicit native/paired ceilings, fresh-marker rejection and six selected-role retained cases; whole-target counts and exact positive names remain mandatory. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and the upstream remove wire alias remain open. DTR-v1 executes the complete wire-rotation owner44 and HTTP14 targets plus all27 retained cases, preserving all previous names and assertions. It covers resulting-grant caps and explicit repair, exact identity-bound delivery, supported metadata, checked single-commit revision, current-proof races, node-only surfaces, response-loss/no-replay and successor controls. The large distinct-scope read-only HTTP request reaches the bound owner, is refused without durable mutation and preserves ordinary authorized rotation after reopen; shared canonicalization uses order-preserving set membership. Freshly issued literal scopes stay literal across adjacent management consumers; selected primary-only role materialization, decisive approval reads, rollback, reopen and later role withdrawal are required. External credential caches, issuer-generation policy, upstream WebSocket/node-surface compatibility and real devices remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+ }
+ for label, command, required in cases:
+     receipt["active_case"] = label
+diff --git a/media-admission-r6/source/host/src/extensions/attachments/web_media.rs b/media-admission-r7/source/host/src/extensions/attachments/web_media.rs
+index 6447eff..bf7a38d 100644
+--- a/media-admission-r6/source/host/src/extensions/attachments/web_media.rs
++++ b/media-admission-r7/source/host/src/extensions/attachments/web_media.rs
+@@ -546,6 +546,7 @@ mod file_url_admission_tests {
+                     "file://[::1]/C:/private/image.png",
+                     "file://files.example/./C:/private/image.png",
+                     "file:////C:/fua-boundary-only/image.png",
++                    "file:////C|/fua-boundary-only/image.png",
+                     r"file:/\/\C:/fua-boundary-only/image.png",
+                     r"file:\/\\C:/fua-boundary-only/image.png",
+                     r"file:\\\/C:/fua-boundary-only/image.png",
+@@ -590,6 +591,8 @@ mod file_url_admission_tests {
+                     "file:///C:/safe/image%00.png",
+                     "file:///C:/safe/image%.png",
+                     "\u{001f}f\ti\rL\ne://localhost:bad/image.png",
++                    "file:///C|/safe/folder%2fimage.png",
++                    "FILE:///C|/safe/folder%5Cimage.png",
+                 ] {
+                     assert_reader_not_entered(reference, &options, "invalid-file-url");
+                 }
+@@ -613,6 +616,10 @@ mod file_url_admission_tests {
+                     "file:///C|/safe/image%FF.png",
+                     "file:///C|/safe/image%00.png",
+                     "file:///C|/safe/image%.png",
++                    "file:///C%7C/",
++                    "file:///C%7c/",
++                    "file:///1|/",
++                    "file:///CC|/",
+                     "file:///C%3A",
+                     "file:///C%3a",
+                     "FiLe://localhost/C:",
+diff --git a/media-admission-r6/source/host/tests/openclaw_web_media_contract.rs b/media-admission-r7/source/host/tests/openclaw_web_media_contract.rs
+index 4d7829b..315cda2 100644
+--- a/media-admission-r6/source/host/tests/openclaw_web_media_contract.rs
++++ b/media-admission-r7/source/host/tests/openclaw_web_media_contract.rs
+@@ -220,6 +220,7 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+         "file://[::1]/C:/private/image.png",
+         "file://files.example/./C:/private/image.png",
+         "file:////C:/safe/image.png",
++        "file:////C|/safe/image.png",
+         r"file:/\/\C:/safe/image.png",
+         r"file:\/\\C:/safe/image.png",
+         r"file:\\\/C:/safe/image.png",
+@@ -237,6 +238,8 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+         r"file:\\files.example\C:\safe\image.png",
+         "file:///C:/safe/folder%2fimage.png",
+         "FILE:///C:/safe/folder%5Cimage.png",
++        "file:///C|/safe/folder%2fimage.png",
++        "FILE:///C|/safe/folder%5Cimage.png",
+         "https://localhost/image.png",
+     ] {
+         match file_url_to_path(reference).expect_err("invalid reference must not become a path") {
+@@ -255,6 +258,10 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+         "file://C:",
+         "file:///C:",
+         "file:///C|",
++        "file:///C%7C/",
++        "file:///C%7c/",
++        "file:///1|/",
++        "file:///CC|/",
+         "file:///C%3A",
+         "file:///C%3a",
+         "FiLe://localhost/C:",
+@@ -317,7 +324,9 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
+         let with_components = format!("{reference}?next=%2F%5C#part=%5C%2F");
+         [reference, with_components]
+     }) {
+-        assert_eq!(file_url_to_path(&reference).unwrap(), path);
++        let decoded = file_url_to_path(&reference)
++            .unwrap_or_else(|error| panic!("native fixture URL {reference:?}: {error:?}"));
++        assert_eq!(decoded, path, "{reference:?}");
+         let mut options = WebMediaOptions {
+             max_bytes: Some(bytes.len()),
+             local_roots: Some(vec![temp.path.clone()]),
+@@ -325,18 +334,20 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
+             html_publication: Some("explicit".to_string()),
+             ..Default::default()
+         };
+-        let loaded = load_web_media(&reference, &options).expect("native local URL inside allowed root");
+-        assert_eq!(loaded.buffer, bytes);
+-        assert_eq!(loaded.file_name.as_deref(), Some(name));
+-        assert_eq!(loaded.content_type.as_deref(), Some("text/html"));
++        let loaded = load_web_media(&reference, &options)
++            .unwrap_or_else(|error| panic!("native local URL {reference:?} inside allowed root: {error:?}"));
++        assert_eq!(loaded.buffer, bytes, "{reference:?}");
++        assert_eq!(loaded.file_name.as_deref(), Some(name), "{reference:?}");
++        assert_eq!(loaded.content_type.as_deref(), Some("text/html"), "{reference:?}");
+         assert_explicit_html_loads(&service, &reference, bytes, name);
+ 
+         options.max_bytes = Some(bytes.len() - 1);
+-        assert!(matches!(load_web_media(&reference, &options), Err(WebMediaError::TooLarge(_))));
++        assert!(matches!(load_web_media(&reference, &options), Err(WebMediaError::TooLarge(_))), "{reference:?}");
+         let error = service.dispatch_gateway("loadWebMedia", &json!({
+             "url": reference, "maxBytes": bytes.len() - 1, "htmlPublication": "explicit"
+-        })).expect("service handles loader").expect_err("service retains byte cap");
+-        assert!(error.starts_with("Media exceeds "), "{error}");
++        })).unwrap_or_else(|| panic!("service handles loader for {reference:?}"))
++            .expect_err(&format!("service retains byte cap for {reference:?}"));
++        assert!(error.starts_with("Media exceeds "), "{reference:?}: {error}");
+         assert_explicit_html_loads(&service, &reference, bytes, name);
+         assert_eq!(fs::read(&path).unwrap(), bytes);
+     }
+@@ -549,8 +560,9 @@ fn assert_explicit_html_loads(
+         "kind": "document",
+         "fileName": file_name,
+     });
+-    let loaded = load_web_media(url, &options).expect("explicit HTML loader result");
+-    assert_eq!(serde_json::to_value(loaded).unwrap(), expected);
++    let loaded = load_web_media(url, &options)
++        .unwrap_or_else(|error| panic!("explicit HTML loader result for {url:?}: {error:?}"));
++    assert_eq!(serde_json::to_value(loaded).unwrap(), expected, "{url:?}");
+ 
+     let dispatched = service
+         .dispatch_gateway(
+@@ -561,10 +573,10 @@ fn assert_explicit_html_loads(
+                 "htmlPublication": "explicit",
+             }),
+         )
+-        .expect("loadWebMedia is handled")
+-        .expect("explicit HTML service result");
++        .unwrap_or_else(|| panic!("loadWebMedia is handled for {url:?}"))
++        .unwrap_or_else(|error| panic!("explicit HTML service result for {url:?}: {error}"));
+     // Exact object equality also requires generated trust to stay absent.
+-    assert_eq!(dispatched, expected);
++    assert_eq!(dispatched, expected, "{url:?}");
+ }
+ 
+ fn assert_explicit_html_rejected(service: &AttachmentsService, url: &str) {

@@ -1,0 +1,251 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 2,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "contract": "LFA-v1 with FUA-v1 recovery and preserved existing BR-v1",
+  "base": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "base_tree": "4e69dc6d77f4ff4508e02cdd7064084530db9b6e",
+  "starting_head": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "prior_candidate_tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
+  "snapshot": "/workspace/scratch/7d27ea239237/media-admission-r2",
+  "base_snapshot": "/workspace/scratch/7d27ea239237/media-admission-r2-base",
+  "prior_snapshot": "/workspace/scratch/7d27ea239237/media-admission-r2-prior",
+  "scope_mode": "Complete22-path source/test/App/capture/workflow/spec/ledger/RTM/evidence scope; incoming0e Memory/Device/BR retained; prior R1 failed finding fixed; all old reviews remain original",
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 532528,
+      "sha256": "3ad2dce96f2deb177df4f49643f012cdaff1348e7e45567810460db9ebac0679",
+      "git_blob": "1e9529f7036b0c8559417d5f3d3ae2c0fe1cb0b5",
+      "base_blob": "f67a2b329634f094a5522d339937afbea1e41662"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 15809,
+      "sha256": "eb4ca498229de267f20cfba8f0cc0c4ee41d5d9af8b3f8f206ef33f2bad34404",
+      "git_blob": "8a8a7a77a641297cb0e8f46e7235fad63991991f",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 15454,
+      "sha256": "08c37bcad1f30f1ef2bb5ef79adcdd54fe36b483b9359fc9f5facae5310c6581",
+      "git_blob": "5204354c54a4a600f30eed21c3ee3ed7c121ed6f",
+      "base_blob": "af7a5ffac2435d673923c2b55010bcf84e23faf0"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 15721,
+      "sha256": "bd7bbcdd2fd6b536599b636c0904bdab129668fd0965753fac83f95d5b966a40",
+      "git_blob": "0722207d574b638c1e9984737f85cb05fa3aa3b7",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 11020,
+      "sha256": "68187df3c539f99703f0e7b06460b33884ee13dc1d8ddc499693832dff2d23fe",
+      "git_blob": "721190ec1e165a8fbdf9e5764d779796000e71e9",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 1441928,
+      "sha256": "c1904504b05517fda74d0d9b43bebb89f32f7f29ca4b4000130a09f393eb1021",
+      "git_blob": "62b97f81d3d49a57a0af6a010783628887001f0a",
+      "base_blob": "d8368edd06515efab0e962564a5e0095403ff862"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 154704,
+      "sha256": "0e949a3840d34a6d7905f9da806b1e99fe741df2f6e89b46f1d0922ca3509d17",
+      "git_blob": "5053c28408e67cdd8235d01e53343f396922df55",
+      "base_blob": "90771a61291a948500a7fb0f732b573b545883d6"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 27126,
+      "sha256": "f08df363a4ba718cb3ffa0b3fa0cb6f50d61ac6a214a4cf66f8da8306525df2e",
+      "git_blob": "dfc83dd491046de7708643ce48b0fbebd74a19bb",
+      "base_blob": "03f5385ee4687fc35a15136c98856a46248f30bf"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 990091,
+      "sha256": "6010ec87aaef917a203256a8d917df170a454bcf440e7c483a1d3f3896d16e07",
+      "git_blob": "bf65f7ee95cfe1dd76568383eb7f81fe13f06b08",
+      "base_blob": "fb7d24ab8996f8c444eb851d4e5f8c41e0627ff6"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 35498,
+      "sha256": "f2097d754193bd21cc1b7911829f37ba395f59750680e1e560d682e6a8f49d80",
+      "git_blob": "5682e951f1eac8f107efd3a3948b0748870912bd",
+      "base_blob": null
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 3208,
+      "sha256": "7cff2caf2a4ae941f00b5c41d4134aa333f4657077a9146313398556ad0d85e9",
+      "git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "base_blob": "356e901feb2328729f882afe487fbe0199f4a40a"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 9938,
+      "sha256": "041e8addb24aa00ae8f86df7a458315d44e4f2ae678a079a8fbed9c37e9a2080",
+      "git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "base_blob": "2372f03102c106fdb93d3c5a50e71a74c80e55b3"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 37019,
+      "sha256": "0566ba6bee684b97d3929d3dcf024f3e5e09db85b0ad58670db29cc3cb4a8392",
+      "git_blob": "860278b4d775e11fbdfb1f5b8124b1b40d8bb0a0",
+      "base_blob": "71b19135ed156a589767c4e7f824dc48df698863"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 28966,
+      "sha256": "375232bcd55dad110f9b9fe71a8ce081e5ea1723dcf14bf30f150778b4a4792f",
+      "git_blob": "98bf139069ce0e4bcb13b1bffbf960feeb311840",
+      "base_blob": "9912720f7c6eff6b53444b1912e3b291613d33e4"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 8629,
+      "sha256": "469a181b842c1a276ba5fdf83cb4cf6a19e437e3441a4e0e592acc503363cb3b",
+      "git_blob": "22e7f260ca0d23250802af3d862cf836b21d675b",
+      "base_blob": "e8cf8008e9c4eab2dbd909289ab6fa9a1345726c"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 16713,
+      "sha256": "9fcb3f301ebf9f0191fa019e606f6cf9123ff13268c02eee1f182a91caa04f35",
+      "git_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "base_blob": "5a2afd591da79f24652b59eef2be6c05ecb1134c"
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 8003,
+      "sha256": "712a51c8240dd0e612eb52644f715f53d56773e59d162d5a87bcaa74239b1a6d",
+      "git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "base_blob": "85fd507cc4a63401c879ab2b7ae95b9887016f55"
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 6227,
+      "sha256": "6b0b9634348dcbc75c728237d0a8e936b1e0ef5ba1bff88077e76da295d259fd",
+      "git_blob": "5170951a59fb94d8c1a3673586690a9dc8315a88",
+      "base_blob": null
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 17023,
+      "sha256": "22a62e8c3e1cf2945da22fa93b53d983cbba7a9e65584d2b8f06a3de50bf9c45",
+      "git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "base_blob": "d947f0c4f440c0cae751769a97823b5511966b35"
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 48964,
+      "sha256": "18b8c3127086a473c4e317ddd4adc5df27837860ec0616b65bbd40330cc53c50",
+      "git_blob": "7e3b39ff61e0776748b0416f517fd45d0107ed6e",
+      "base_blob": "4c7f27cc2ac3e8533a5befd5e2a9e7f841113ac6"
+    },
+    {
+      "path": "source/host/tests/sand_agent_management_tools_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 6508,
+      "sha256": "e04282673878faea7837a446e3d8aae2d44ced129bd4cfcf645afe728373e25c",
+      "git_blob": "28372cd0046620bc88e9d84ca016692e0c89fa24",
+      "base_blob": "5e54aa00dfcc6527dea68ad804b21f0f9cacdf16"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 25035,
+      "sha256": "bf20eb522055db43112c01d09fcf039b6104b2f5dbb9dddda76172ede3f4540c",
+      "git_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "base_blob": "84efaed7bf499b516923bf4435da45be830a85cd"
+    }
+  ],
+  "complete_diff": {
+    "path": "/workspace/scratch/7d27ea239237/media-admission-r2-complete.patch",
+    "sha256": "4900c4d4d87ba403efa762a9bc6dc0ea9272805eb7b1c48a4b7e38f2b2988c3b",
+    "bytes": 183744,
+    "git_diff_exit": 1
+  },
+  "fix_and_incoming_delta": {
+    "path": "/workspace/scratch/7d27ea239237/media-admission-r2-fix-and-incoming.patch",
+    "sha256": "697877b87e297675e79b09d204b9210df020c4ef72a0d0bea3338fc90962c803",
+    "bytes": 202088,
+    "git_diff_exit": 1
+  },
+  "integration_decisions": "/workspace/scratch/7d27ea239237/media-admission-incoming-0e-decisions.json",
+  "finding_decisions": "/workspace/scratch/7d27ea239237/media-admission-r2-decisions.json",
+  "review_policy": "Fresh blind independent GENERAL xhigh and gpt-6.1-sol structure/reuse/performance xhigh; inspect complete frozen context and repair/incoming delta; no old source pass transfer",
+  "known_runtime_blocker": "Current base workflow exceeds GitHub admission size; existing separate WFX owner has an extraction candidate. No workflow creation/runtime pass is claimed; final repaired exact-H execution remains required.",
+  "source_selected_not_results": {
+    "native_groups": 16,
+    "Linux": 163,
+    "macOS": 163,
+    "Windows": 158,
+    "native_inputs": 46,
+    "actual_App_cases": 6
+  },
+  "local_or_htch_executable_validation": false,
+  "frozen_at": "2026-11-03T03:17:05.866972+00:00",
+  "candidate_tree": "a4f1c59eb577a45c1b05da1de0a8f13644dc1a5c",
+  "candidate_tree_readback": {
+    "tree": "a4f1c59eb577a45c1b05da1de0a8f13644dc1a5c",
+    "entries": 10501,
+    "truncated": false,
+    "all_changed_blobs_match": true
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 4,
+  "base": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+  "candidate_tree": "76e6c26d754179ee5af447ecec689a2de844b476",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "root_read_both_reports_completely": true,
+  "source_verdict": "converged for the 21 non-evidence R4 paths",
+  "reviews": [
+    {
+      "lens": "GENERAL/security/correctness",
+      "file": "r4-general.md",
+      "sha256": "d72b8106660287912de1a607818031e369973fb4a3226ed83022ff73ffa277a9",
+      "verdict": "APPROVED",
+      "findings": [],
+      "model": "configured model retained",
+      "effort": "xhigh actually applied"
+    },
+    {
+      "lens": "structure/reuse/performance",
+      "file": "r4-structure.md",
+      "sha256": "a59872abab0fcca4da18bddd450bd2f76e5e4d94e94d66125df841e92abe1ac6",
+      "verdict": "APPROVED",
+      "findings": [],
+      "model": "gpt-6.1-sol actually applied",
+      "effort": "xhigh actually applied"
+    }
+  ],
+  "blind_boundary": "Both R4 reviewers independently cover all 21 current non-evidence paths, do not read prior reports, root decisions or the two historical evidence JSON contents. The root separately read and adjudicated both JSON files. R3 structure INCOMPLETE is preserved, not counted as approval.",
+  "incoming": "Concurrent 113c32276b99ed668be095e0be6ed164dffdf46d and 78aa967cc9400bb5c207441b2a78dbf7021d596c require a separately frozen R5 integration. This R4 verdict does not approve altered shared files or contradicting incoming spec/test expectations.",
+  "runtime": "No R4 executable result. Prior Windows e19 and3438 failures retain original identities and unlabeled panic. New exact published-H Actions required.",
+  "acceptance": "No unit verified, full-source authority/coverage, ecosystem/device, packaging, G01-G12/AC01-AC24 or independent ACCEPT promotion. All global flags false."
+}

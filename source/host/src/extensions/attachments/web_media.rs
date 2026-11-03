@@ -6,11 +6,11 @@
 //! - `src/media/web-media.animated-webp.test.ts`
 //! - `src/media/web-media.file-url.windows.test.ts`
 
-use std::cell::Cell;
 use std::fs;
 use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
-use url::{SyntaxViolation, Url};
+#[cfg(test)]
+use url::Url;
 
 use crate::extensions::attachments::host_read_media_policy::{
     assert_host_read_media_allowed, AssertHostReadParams,
@@ -20,7 +20,9 @@ use crate::extensions::attachments::image_ops::{
     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
 };
 use crate::extensions::attachments::media_file_context::ImageOptimizationLimitError;
-use crate::extensions::attachments::media_reference::read_outbound_media_file_bounded;
+use crate::extensions::attachments::media_reference::{
+    admit_local_media_path, read_outbound_media_file_bounded, resolve_local_file_url,
+};
 use crate::extensions::attachments::media_store::{detect_mime_from_buffer, extract_original_filename};
 use crate::extensions::attachments::media_store_shared::format_media_size;
 
@@ -289,69 +291,36 @@ fn file_url_has_extra_leading_path_separator(url_str: &str) -> bool {
     ) && matches!(bytes.next(), Some(b'/' | b'\\'))
 }
 
-/// Resolves single-slash or standard file URL to path string.
-pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
-    let invalid = |message: &str| WebMediaError::LocalAccess {
+fn resolve_web_media_file_url(url_str: &str) -> Result<Option<PathBuf>, WebMediaError> {
+    let path = resolve_local_file_url(url_str).map_err(|error| WebMediaError::LocalAccess {
         code: "invalid-file-url".to_string(),
-        message: message.to_string(),
-    };
-    let removed_host = Cell::new(false);
-    let parsed = Url::options()
-        .syntax_violation_callback(Some(&|violation| {
-            if violation == SyntaxViolation::FileWithHostAndWindowsDrive {
-                removed_host.set(true);
-            }
-        }))
-        .parse(url_str)
-        .map_err(|_| invalid("Invalid file URL"))?;
-    if parsed.scheme() != "file" {
-        return Err(invalid("Not a file URL"));
-    }
-    if removed_host.get()
-        || parsed.host_str().is_some_and(|host| {
-            !host.is_empty() && !host.eq_ignore_ascii_case("localhost")
-        })
-    {
-        return Err(invalid("File URLs with remote hosts are not allowed"));
-    }
-    if file_url_has_extra_leading_path_separator(url_str) {
-        return Err(invalid("File URL contains extra leading path separators"));
-    }
-
-    let path = parsed.path().to_ascii_lowercase();
-    if path.contains("%2f") || path.contains("%5c") {
-        return Err(invalid("Encoded path separators in file URL"));
-    }
-
-    // url's Windows converter can assert on a bare drive. A second segment,
-    // even the empty segment in /C:/, supplies the required root separator.
-    #[cfg(windows)]
-    if parsed.path_segments().and_then(|mut segments| segments.nth(1)).is_none() {
-        return Err(invalid("File URL cannot be converted to an absolute local path"));
-    }
-
-    // url 2.5.8 can retain a literal drive pipe after an empty file host.
-    // Node normalizes that rooted drive before native path conversion.
-    #[cfg(windows)]
-    let parsed = {
-        let mut parsed = parsed;
-        if matches!(
-            parsed.path().as_bytes(),
-            [b'/', drive, b'|', b'/', ..] if drive.is_ascii_alphabetic()
-        ) {
-            let mut normalized_path = parsed.path().to_owned();
-            normalized_path.replace_range(2..3, ":");
-            parsed.set_path(&normalized_path);
+        message: error.to_string(),
+    })?;
+    if let Some(path) = path.as_ref() {
+        // Inspect original spelling so normalization cannot conceal empty
+        // leading path segments, including immediately after localhost.
+        if file_url_has_extra_leading_path_separator(url_str) {
+            return Err(WebMediaError::LocalAccess {
+                code: "invalid-file-url".to_string(),
+                message: "File URL contains extra leading path separators".to_string(),
+            });
         }
-        parsed
-    };
+        // Keep this adapter's existing stricter Unix/resolved-network policy.
+        assert_no_windows_network_path(&path.to_string_lossy(), "Local file URL")
+            .map_err(|_| WebMediaError::LocalAccess {
+                code: "invalid-file-url".to_string(),
+                message: "File URL resolves to a network path".to_string(),
+            })?;
+    }
+    Ok(path)
+}
 
-    let file_path = parsed
-        .to_file_path()
-        .map_err(|_| invalid("File URL cannot be converted to an absolute local path"))?;
-    assert_no_windows_network_path(&file_path.to_string_lossy(), "Local file URL")
-        .map_err(|_| invalid("File URL resolves to a network path"))?;
-    Ok(file_path)
+/// Resolves single-slash or standard file URLs through shared local admission.
+pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
+    resolve_web_media_file_url(url_str)?.ok_or_else(|| WebMediaError::LocalAccess {
+        code: "invalid-file-url".to_string(),
+        message: "Not a file URL".to_string(),
+    })
 }
 
 /// Loads web media from local file path or URL with size caps and image optimization.
@@ -373,8 +342,8 @@ fn load_web_media_with_local_reader(
 
     assert_no_windows_network_path(&cleaned, "Local media path")?;
 
-    let file_path = if cleaned.to_ascii_lowercase().starts_with("file:") {
-        file_url_to_path(&cleaned)?
+    let file_path = if let Some(path) = resolve_web_media_file_url(&cleaned)? {
+        path
     } else if let Some(ws) = &options.workspace_dir {
         let p = Path::new(&cleaned);
         if p.is_absolute() {
@@ -407,6 +376,11 @@ fn load_web_media_with_local_reader(
     if !verbatim_local_drive {
         assert_no_windows_network_path(&file_path.to_string_lossy(), "Local media path")?;
     }
+
+    admit_local_media_path(&file_path).map_err(|error| WebMediaError::LocalAccess {
+        code: "path-not-allowed".to_string(),
+        message: error.to_string(),
+    })?;
 
     local_reader(&file_path, options)
 }
@@ -558,9 +532,19 @@ mod file_url_admission_tests {
                     "FILE://127.0.0.1/share/image.png",
                     "file://[::1]/share/image.png",
                     "file://tmp/fua-boundary-only/image.png",
+                    "file://server/C:/safe/image.png",
+                    "\u{001f}f\ti\rL\ne://server/C:/safe/image.png",
                     "file://localhost./share/image.png",
                     r"file:\\files.example\share\image.png",
                     "FILE:////files.example/share/image.png",
+                    "file://///files.example/share/image.png",
+                    r"file:/\/\files.example\share\image.png",
+                    "FiLe:/\t/\r/\n/files.example/share/image.png",
+                    "file://files.example/C:/private/image.png",
+                    "file://localhost.example/C|/private/image.png",
+                    "FILE://127.0.0.1/C:/private/image.png",
+                    "file://[::1]/C:/private/image.png",
+                    "file://files.example/./C:/private/image.png",
                     "file:////C:/fua-boundary-only/image.png",
                     "file:////C|/fua-boundary-only/image.png",
                     r"file:/\/\C:/fua-boundary-only/image.png",
@@ -602,6 +586,11 @@ mod file_url_admission_tests {
                     "FILE:///C:/safe/folder%2Fimage.png",
                     "file:///C:/safe/folder%5cimage.png",
                     "FILE:///C:/safe/folder%5Cimage.png",
+                    "file:///C:/safe/image%GG.png",
+                    "file:///C:/safe/image%FF.png",
+                    "file:///C:/safe/image%00.png",
+                    "file:///C:/safe/image%.png",
+                    "\u{001f}f\ti\rL\ne://localhost:bad/image.png",
                     "file:///C|/safe/folder%2fimage.png",
                     "FILE:///C|/safe/folder%5Cimage.png",
                 ] {
@@ -618,6 +607,15 @@ mod file_url_admission_tests {
                     "file://C:",
                     "file:///C:",
                     "file:///C|",
+                    "file:///C|relative/image.png",
+                    "file:///C%7C/safe/image.png",
+                    "file:///C%7c/safe/image.png",
+                    "file:///C|/safe/image.png:stream",
+                    "file:///C|/safe/folder%2Fimage.png",
+                    "file:///C|/safe/folder%5Cimage.png",
+                    "file:///C|/safe/image%FF.png",
+                    "file:///C|/safe/image%00.png",
+                    "file:///C|/safe/image%.png",
                     "file:///C%7C/",
                     "file:///C%7c/",
                     "file:///1|/",
@@ -627,6 +625,7 @@ mod file_url_admission_tests {
                     "FiLe://localhost/C:",
                     "file:///C:?ignored=/",
                     "file:///C:#ignored=/",
+                    "file:///C:/safe/image.png%3Astream",
                 ] {
                     assert_reader_not_entered(reference, &options, "invalid-file-url");
                 }
@@ -654,6 +653,10 @@ mod file_url_admission_tests {
                 ..Default::default()
             };
             assert_reader_not_entered("image.png", &options, "network-path-not-allowed");
+        }
+        #[cfg(windows)]
+        for reference in [r"C:\safe\image.png:stream", r"C:relative.png"] {
+            assert_reader_not_entered(reference, &WebMediaOptions::default(), "path-not-allowed");
         }
     }
 

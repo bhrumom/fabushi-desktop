@@ -1,0 +1,40 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "kind": "recoverable-unverified-production-checkpoint",
+  "recorded_at": "2026-11-03 04:00:09 UTC",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "source_candidate_tree": "71e8a1838cf8e925e88d514b95b35b7245895f63",
+  "source_scope_manifest": "r7-scope.json",
+  "review_base": "2a6dfc0f7295b3b6ad3e372afa5be4d27951b11a",
+  "publication_parent": "6637beb50c6c227b32563d0c80db98869bd3ca9d",
+  "publication_parent_tree": "bb7bea6ebb13fefccba8e137ce53d8e338eadf7f",
+  "additional_incoming": [
+    {
+      "path": "source/packages/cursor-plugins/loader.contract.test.ts",
+      "sha": "4e22a28534a85bc3a16cb7e0f884fadfdd0f77ad",
+      "disposition": "preserved byte-for-byte; outside LFA scope"
+    }
+  ],
+  "user_behavior": "Existing App SendMessage and AgentManagement reject unsafe local file references before materialization/fallback; attachment metadata, channel reads, file context and web loading reuse Attachments local admission. Earlier SendMessage media rolls back on known refusal; AgentManagement preflights all image references before resolution. Native admitted Unicode and literal rooted Windows drive-pipe forms retain real loader/service byte/cap recovery controls.",
+  "review_state": {
+    "r4": "Both fresh blind lenses approved complete21 non-evidence paths; root read complete reports.",
+    "r5": "Both fresh blind lenses approved8-path integration delta and adjacent consumers; root read complete reports.",
+    "r6": "Both fresh blind lenses approved2-path PRID integration delta and adjacent consumers; root read complete reports.",
+    "r7": "Five-path incoming Device/media integration frozen. General review running; structure/reuse/performance review pending. This checkpoint is not review convergence.",
+    "historical_json": "Two source-scope evidence JSON contents audited serially by root; blind reviewers saw identities only. R3 structure exposure is preserved as INCOMPLETE."
+  },
+  "validation": {
+    "executable_local_or_htch": false,
+    "actions_for_this_checkpoint": "Intentionally skipped for intermediate save. Freeze final integrated H after bounded source review and run existing scoped workflow once.",
+    "required": "Exact-H source checks, Linux/macOS/Windows native media capture16groups with platform-specific163/158 totals and46input binding; Linux portable17/14/13 SendMessage summaries; all6 actual App LFA cases, existing high-risk regressions and preserved incoming PRID/Device controls.",
+    "old_evidence": "Retained at original H/U; failed Windows3438/e19 and FUA364 logs are not current candidate evidence.",
+    "verified": false,
+    "accepted": false
+  },
+  "next_concrete_gap": "MSU P1: current media COMMIT/rollback uncertainty is flattened to String and triggers file deletion via abort/Drop. Read-only current-owner audit retained; production correction not implemented here.",
+  "remaining_global": "Full recursive source closure, every applicable product/ecosystem responsibility, actual providers/channels/plugins/nodes/devices, UI/timing/security/performance/soak/platform packages/upgrade/rollback, all applicable G01-G12/AC01-AC24 and independent ACCEPT remain open. All8 canonical global flags remain false."
+}

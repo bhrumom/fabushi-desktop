@@ -86,6 +86,9 @@ WEB_MEDIA_NAMES = [
     "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
     "test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
     "test_ocrm_web_media_service_reader_failures_and_fresh_retry",
+    "lfa_web_media_uses_shared_invalid_file_url_boundary",
+    "lfa_web_media_normalized_file_urls_reach_loader_and_service",
+    "lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry",
 ]
 WEB_MEDIA_UNIX_NAMES = [
     "test_ocrm_web_media_file_url_authority_alias_is_not_read",
@@ -131,6 +134,9 @@ CHANNEL_ATTACHMENT_NAMES = [
     "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules",
     "empty_directory_zero_and_oversize_local_inputs_fail_closed",
     "frozen_shared_media_inventory_drives_channel_classification",
+    "lfa_channel_native_url_variants_preserve_bytes_and_metadata",
+    "lfa_channel_invalid_file_urls_never_become_local_paths",
+    "lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
 ]
 IMAGE_OPS_NAMES = [
     "test_ocrm_image_ops_build_resize_side_grid",
@@ -150,6 +156,55 @@ IMAGE_OPS_NAMES = [
     "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
     "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
 ]
+LOCAL_FILE_URL_NAMES = [
+    "lfa_shared_owner_distinguishes_non_file_sources",
+    "lfa_shared_owner_preserves_native_file_url_variants",
+    "lfa_shared_owner_rejects_all_remote_authorities",
+    "lfa_shared_owner_rejects_malformed_file_urls_after_normalization",
+    "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
+    "lfa_shared_owner_decodes_path_once_and_ignores_url_metadata",
+    "lfa_shared_owner_keeps_refusal_stateless",
+    "lfa_path_guard_rejects_nul_on_every_platform",
+]
+
+FILE_CONTEXT_NAMES = [
+    "test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization",
+    "test_ocrm_file_ctx_02_render_file_context_block_escaping",
+    "test_ocrm_file_ctx_03_resolve_local_media_path",
+    "test_ocrm_file_ctx_04_unlink_if_exists",
+    "test_ocrm_file_ctx_05_document_truncation_notice",
+    "test_ocrm_file_ctx_06_runtime_prompt_image_provenance",
+    "test_ocrm_file_ctx_07_image_processor_contracts",
+    "test_ocrm_file_ctx_08_gateway_service_dispatch",
+    "lfa_file_context_uses_shared_admission_without_lossy_fallback",
+]
+
+SEND_MESSAGE_NAMES = [
+    "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
+    "schema_matches_frozen_type_fences_and_attachment_schemes",
+    "widget_schema_matches_frozen_choice_contract_and_normalization",
+    "generated_send_message_schema_exposes_frozen_widget_constraints",
+    "encoding_preserves_frozen_text_markdown_and_summary_projection",
+    "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
+    "send_message_bridge_is_first_party_and_delegates_other_tools",
+    "cursor_agent_message_resolves_shipping_title_fail_soft",
+    "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
+    "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
+    "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
+    "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
+    "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+    "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+    "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+    "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+    "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+]
+
+AGENT_MANAGEMENT_NAMES = [
+    "runner_management_tools_are_first_party_and_validate_send_inputs",
+    "create_and_update_tools_delegate_with_merge_semantics",
+    "lfa_agent_management_batch_admits_all_urls_before_resolving",
+]
+
 INPUTS = [
     ".github/workflows/rust-desktop-runtime.yml",
     "projects/openclaw-rust/scripts/capture_media_cleanup.py",
@@ -188,6 +243,15 @@ INPUTS = [
     "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
     "source/host/src/connectors/channel_attachment.rs",
     "source/host/tests/channel_attachment_contract.rs",
+    "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+    "source/host/src/extensions/attachments/media_file_context.rs",
+    "source/host/src/runner/tools/send_message_tool.rs",
+    "source/host/tests/local_media_file_url_contract.rs",
+    "source/host/tests/openclaw_media_file_context_contract.rs",
+    "source/host/tests/send_message_tool_contract.rs",
+    "source/host/app/src/tests/local_media_file_url_tests.rs",
+    "source/host/src/runner/tools/sand_agent_management_tools.rs",
+    "source/host/tests/sand_agent_management_tools_contract.rs",
 ]
 
 
@@ -309,9 +373,9 @@ def main():
     if os.environ.get("GITHUB_ACTIONS") != "true":
         raise SystemExit("This executable verification is GitHub Actions-only.")
     ROOT.mkdir(parents=True, exist_ok=False)
-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1"],
+    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native"],
                "result": "failed-or-incomplete", "executions": [],
-               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
+               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
     save(receipt)
     try:
         head = output(["git", "rev-parse", "HEAD"])
@@ -347,14 +411,29 @@ def main():
         file_url_owner = [FILE_URL_OWNER_PREFIX + name for name in FILE_URL_OWNER_NAMES]
         web_media = WEB_MEDIA_NAMES.copy()
         bounded_reader = [BOUNDED_READ_OWNER_PREFIX + name for name in BOUNDED_READ_OWNER_NAMES]
+        local_file_url = LOCAL_FILE_URL_NAMES.copy()
+        file_context = FILE_CONTEXT_NAMES.copy()
+        channel_attachment = CHANNEL_ATTACHMENT_NAMES.copy()
         if runner_os == "Windows":
             owner.append(OWNER_PREFIX + "cleanup_windows_identity_compares_full_file_id")
             file_url_owner.append(FILE_URL_OWNER_PREFIX + "verbatim_drive_workspace_enters_local_reader")
+            local_file_url.extend([
+                "lfa_windows_shared_owner_rejects_drive_less_and_alias_urls",
+                "lfa_windows_path_guard_rejects_network_and_namespace_aliases",
+                "lfa_windows_path_guard_accepts_rooted_drives",
+            ])
+            file_context.append("lfa_windows_file_context_rejects_plain_network_and_alias_paths")
+            channel_attachment.append("lfa_windows_channel_paths_reject_network_and_alias_spellings")
         else:
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries")
             html_policy.extend(HTML_POLICY_UNIX_NAMES)
             web_media.extend(WEB_MEDIA_UNIX_NAMES)
             bounded_reader.extend(BOUNDED_READ_OWNER_PREFIX + name for name in BOUNDED_READ_OWNER_UNIX_NAMES)
+            local_file_url.extend([
+                "lfa_unix_path_guard_preserves_colon_and_double_slash_paths",
+                "lfa_unix_file_url_preserves_posix_control",
+            ])
+            file_context.append("lfa_unix_file_context_preserves_colon_file_names")
         if runner_os == "Linux":
             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_raw_names")
         if runner_os in {"macOS", "Windows"}:
@@ -372,7 +451,11 @@ def main():
             ("bounded-reader-public", base + ["--test", "openclaw_media_reference_contract", "--", "--test-threads=1"], MEDIA_REFERENCE_NAMES),
             ("bounded-reader-box-consumer", base + ["--test", "attachments_service_contract", "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store", "--", "--exact", "--test-threads=1"], ["service_upload_read_text_chunk_and_gateway_use_single_agent_media_store"]),
             ("bounded-reader-image-consumer", base + ["--test", "attachments_service_contract", "image_reads_and_persistence_preserve_content_addressed_dimensions", "--", "--exact", "--test-threads=1"], ["image_reads_and_persistence_preserve_content_addressed_dimensions"]),
-            ("bounded-reader-channel-consumers", base + ["--test", "channel_attachment_contract", "--", "--test-threads=1"], CHANNEL_ATTACHMENT_NAMES),
+            ("bounded-reader-channel-consumers", base + ["--test", "channel_attachment_contract", "--", "--test-threads=1"], channel_attachment),
+            ("local-file-url-owner", base + ["--test", "local_media_file_url_contract", "--", "--test-threads=1"], local_file_url),
+            ("file-context-consumers", base + ["--test", "openclaw_media_file_context_contract", "--", "--test-threads=1"], file_context),
+            ("send-message-consumers", base + ["--test", "send_message_tool_contract", "--", "--test-threads=1"], SEND_MESSAGE_NAMES),
+            ("agent-management-consumers", base + ["--test", "sand_agent_management_tools_contract", "--", "--test-threads=1"], AGENT_MANAGEMENT_NAMES),
         ]
         receipt["planned_commands"] = [{"case": label, "command": command, "required_positive_names": names}
                                        for label, command, names in cases]

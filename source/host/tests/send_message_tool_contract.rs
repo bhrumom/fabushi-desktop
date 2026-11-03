@@ -646,3 +646,40 @@ fn shipping_send_message_composes_cloud_title_and_generated_interaction_observat
     assert!(TURN_TOOLSET.contains("send_message.with_interaction_sink")
         || TURN_TOOLSET.contains("send_bridge.with_interaction_sink"));
 }
+
+#[test]
+fn lfa_send_message_file_url_facade_preserves_admitted_metadata() {
+    use mahayana_host_runtime::runner::tools::send_message_tool::{
+        file_path_from_file_url, identity_attachment_source,
+    };
+    let path = std::env::temp_dir().join("lfa café Ω image.png");
+    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
+    let source = format!("\u{001f}f\ti\rL\ne:{}?signature=%2F#preview%5C", &url[5..]);
+    assert_eq!(file_path_from_file_url(&source), Some(path));
+    let projected = identity_attachment_source(&source);
+    assert_eq!(projected.file_name.as_deref(), Some("lfa café Ω image.png"));
+    assert_eq!(projected.url, source);
+}
+
+#[test]
+fn lfa_send_message_file_url_facade_refuses_unsafe_local_sources() {
+    use mahayana_host_runtime::runner::tools::send_message_tool::{
+        file_path_from_file_url, identity_attachment_source,
+    };
+    // This Option facade is metadata-only. The real App sinks must use the
+    // shared Result API so these refusals cannot become successful passthrough.
+    for source in [
+        "file://server/share/image.png",
+        "file://server/C:/safe/image.png",
+        "file://localhost:99/image.png",
+        "file://[invalid/image.png",
+        "file:///C:/safe/image%2Fsecret.png",
+        "file:///C:/safe/image%5Csecret.png",
+        "file:///C:/safe/image%GG.png",
+        "file:///C:/safe/image%FF.png",
+        "file:///C:/safe/image%00x.png",
+    ] {
+        assert!(file_path_from_file_url(source).is_none(), "{source}");
+        assert!(identity_attachment_source(source).file_name.is_none(), "{source}");
+    }
+}

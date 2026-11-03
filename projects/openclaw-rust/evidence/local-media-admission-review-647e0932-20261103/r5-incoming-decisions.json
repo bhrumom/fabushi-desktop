@@ -1,0 +1,26 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "phase": "incoming source integration before edits",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "prior_candidate_tree": "76e6c26d754179ee5af447ecec689a2de844b476",
+  "prior_base": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+  "incoming_base": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+  "incoming_tree": "f62fc666ade7ad6f8dbf40e889e5ec100a74e974",
+  "decisions": [
+    {
+      "id": "INCOMING-DTR-01",
+      "decision": "FIX",
+      "rationale": "Preserve incoming Device token rotation production and its complete existing-owner execution selections. The DTR specification was read fully before integration. Three-way merge the workflow, portable capture, App composition, ledger and RTM against exact 3438 without changing Device business source or assertions. Conflicts are reviewed serially; no foreign working tree is touched. Re-review all altered shared bindings in a fresh frozen scope before source-convergence acceptance."
+    },
+    {
+      "id": "INCOMING-FUA-ORACLE-01",
+      "decision": "DEFER",
+      "rationale": "The concurrent native-converter refusal for file:///C|/ conflicts with the R4 LFA-03a shared-owner behavior. Preserve both historical records and all incoming source until an independent exact-source contract assessment and root decision reconcile the behavior; do not overwrite the incoming spec/test or use old review approval for changed bytes. No product change for this conflict is authorized by this record."
+    }
+  ],
+  "runtime": "No local or htch execution. New exact-H Actions are required after publication; old failures remain attached to their original subjects.",
+  "acceptance": "Not delivered or accepted. No OCRM verified/global flag promotion."
+}

@@ -183,6 +183,15 @@ fn test_ocrm_web_media_file_url_and_traversal_guards() {
         .expect("decode file URL");
     assert_eq!(decoded_path, native_path);
 
+    #[cfg(unix)]
+    assert_eq!(
+        file_url_to_path("FILE:///var/tmp/caf%C3%A9%20image.png").expect("POSIX file URL"),
+        PathBuf::from("/var/tmp/café image.png"),
+    );
+    #[cfg(windows)]
+    assert!(file_url_to_path("FILE:///var/tmp/caf%C3%A9%20image.png").is_err());
+
+
     // Traversal rejection in file URL
     assert!(file_url_to_path("FILE:///C:/safe/folder%2Fsecret.png").is_err());
     assert!(file_url_to_path("FILE:///C:/safe/folder%5Csecret.png").is_err());
@@ -201,6 +210,15 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         "file://user:secret@localhost/share/image.png",
         "file://localhost:8080/share/image.png",
         "FILE:////files.example/share/image.png",
+        "file://///files.example/share/image.png",
+        r"file:/\/\files.example\share\image.png",
+        "FiLe:/\t/\r/\n/files.example/share/image.png",
+        "\u{0001}Fi\tle:/\t/\r/\n/files.example/share/image.png",
+        "file://files.example/C:/private/image.png",
+        "file://localhost.example/C|/private/image.png",
+        "FILE://127.0.0.1/C:/private/image.png",
+        "file://[::1]/C:/private/image.png",
+        "file://files.example/./C:/private/image.png",
         "file:////C:/safe/image.png",
         "file:////C|/safe/image.png",
         r"file:/\/\C:/safe/image.png",
@@ -256,10 +274,22 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         }
     }
     #[cfg(windows)]
-    for reference in ["file:///C:/", "file://C:/", "file:/C|/", "file:///C|/", "file:///C%3A/"] {
-        let path = file_url_to_path(reference)
-            .unwrap_or_else(|error| panic!("rooted drive {reference:?} must remain valid: {error:?}"));
-        assert_eq!(path, PathBuf::from(r"C:\"), "rooted drive {reference:?}");
+    {
+        // The dependency retains the old refusal; LFA normalizes before conversion.
+        let reference = "file:///C|/";
+        let native = url::Url::parse(reference)
+            .unwrap_or_else(|error| panic!("dependency parse {reference:?}: {error:?}"));
+        assert!(
+            native.to_file_path().is_err(),
+            "url 2.5.8 native conversion must retain its refusal for {reference:?}",
+        );
+        for reference in [
+            "file:///C:/", "file://C:/", "file:/C|/", "file:///C|/", "file:///C%3A/",
+        ] {
+            let path = file_url_to_path(reference)
+                .unwrap_or_else(|error| panic!("rooted drive {reference:?} must remain valid: {error:?}"));
+            assert_eq!(path, PathBuf::from(r"C:\"), "rooted drive {reference:?}");
+        }
     }
 }
 
@@ -287,6 +317,8 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
         format!("file://{}", native_url.path().trim_start_matches('/').replacen('/', "//", 1)),
         format!("file://{}", native_url.path().replacen(':', "|", 1)),
         format!("file://localhost{}", native_url.path().replacen(':', "|", 1)),
+        format!("file:{}", native_url.path().replacen(':', "|", 1)),
+        format!("file://{}", native_url.path().trim_start_matches('/').replacen(':', "|", 1)),
     ]);
     for reference in references.flat_map(|reference| {
         let with_components = format!("{reference}?next=%2F%5C#part=%5C%2F");
@@ -1038,4 +1070,84 @@ fn test_ocrm_web_media_reader_aliases_keep_actual_root_checks() {
         other => panic!("wrong root refusal: {other:?}"),
     }
     assert_eq!(fs::read(&outside).unwrap(), b"outside bytes");
+}
+
+#[test]
+fn lfa_web_media_uses_shared_invalid_file_url_boundary() {
+    // Pure adapter calls: never ask the filesystem to touch a remote share.
+    for source in [
+        "file://server/share/image.png",
+        "file://127.0.0.1/share/image.png",
+        "file://server/C:/safe/image.png",
+        "file://localhost:99/image.png",
+        "file://[invalid/image.png",
+        "FILE:////server/share/image.png",
+        "\u{001f}f\tiLe:////server/share/image.png",
+        "https://example.invalid/image.png",
+    ] {
+        match file_url_to_path(source).expect_err("unadmitted file URL") {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
+            other => panic!("Expected invalid-file-url, got {other:?}: {source:?}"),
+        }
+    }
+}
+
+#[test]
+fn lfa_web_media_normalized_file_urls_reach_loader_and_service() {
+    let temp = TempTestDir::new("lfa-native-urls");
+    let service = test_attachments_service(&temp.path);
+    let name = "café Ω report.HTML";
+    let path = temp.path.join(name);
+    let bytes = b"<html><body>same local source bytes</body></html>";
+    fs::write(&path, bytes).expect("write native local source");
+    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
+    for source in [
+        url.clone(),
+        url.replacen("file://", "FiLe:", 1),
+        url.replacen("file://", "file://localhost", 1),
+        format!("\u{001f} f\ti\rL\ne:{}\n", &url[5..]),
+        format!("{url}?signature=%2F%GG#preview%5C"),
+    ] {
+        assert_eq!(file_url_to_path(&source).expect("admitted file URL"), path);
+        assert_explicit_html_loads(&service, &source, bytes, name);
+    }
+    let reopened = test_attachments_service(&temp.path);
+    assert_explicit_html_loads(&reopened, &url, bytes, name);
+    assert_eq!(fs::read(&path).expect("original source retained"), bytes);
+}
+
+#[test]
+fn lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry() {
+    let temp = TempTestDir::new("lfa-invalid-encoding");
+    let service = test_attachments_service(&temp.path);
+    let name = "café%GG.html";
+    let path = temp.path.join(name);
+    let bytes = b"<html><body>a literal percent is a valid filename</body></html>";
+    fs::write(&path, bytes).expect("write percent-name source");
+    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
+    assert!(url.contains("%25GG"));
+    let options = WebMediaOptions {
+        optimize_images: true,
+        html_publication: Some("explicit".into()),
+        local_roots: Some(vec![temp.path.clone()]),
+        ..Default::default()
+    };
+    for source in [
+        url.replacen("%25GG", "%GG", 1),
+        format!("{url}%FF"),
+        format!("{url}%00x"),
+        format!("{url}%"),
+    ] {
+        match load_web_media(&source, &options).expect_err("invalid pathname admission") {
+            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
+            other => panic!("Expected invalid-file-url, got {other:?}: {source:?}"),
+        }
+        let error = service.dispatch_gateway("loadWebMedia", &json!({
+            "url": source,
+            "htmlPublication": "explicit",
+        })).expect("direct service adapter is handled").expect_err("same admission refusal");
+        assert!(error.starts_with("Local media access error [invalid-file-url]:"));
+        assert_explicit_html_loads(&service, &url, bytes, name);
+    }
+    assert_eq!(fs::read(&path).expect("source unchanged after refusal"), bytes);
 }

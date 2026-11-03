@@ -1,0 +1,244 @@
+{
+  "format": "OCRM-LFA-v1-implementation-candidate",
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "LFA-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "fixed_upstream": {
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+  },
+  "original_author_base": {
+    "commit": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
+    "tree": "686109128a616195e65d1c9018ccd5b0b9d2cc8a"
+  },
+  "integrated_base": {
+    "commit": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+    "tree": "4e69dc6d77f4ff4508e02cdd7064084530db9b6e",
+    "preservation": "Preserve Memory synthesis identity, Device role-token revocation and071 existing media bounded reader/service/tests, as well as prior SGF/LFA/FUA history. Shared workflow, ledger/RTM and App integration is serial."
+  },
+  "source_authority": {
+    "instructions_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
+    "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
+    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
+    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
+    "review_depth": "Deep review of the affected actual product call paths, parser/Windows-path state and pre-read/error/custody/reopen boundaries. Dependency review covers actual published members and their callers, not a fictitious full transitive implementation read.",
+    "fixed_u_sources": [
+      {
+        "path": "src/media/local-media-path.ts",
+        "blob": "f105ca514b5754849284c429b032af30d1487f1a",
+        "scope": "complete 29-line consumer"
+      },
+      {
+        "path": "src/media/local-media-path.windows.test.ts",
+        "blob": "1aef7d957f8e243203ccec8dd92742ca3e795761",
+        "scope": "complete 98-line contract"
+      },
+      {
+        "path": "src/media/web-media.ts",
+        "blob": "f48bca504f6fb77c3d094864eb656cb2b1bf25e2",
+        "scope": "actual URL admission and local read consumers; detailed read observations remain in the source assessment"
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "@openclaw/fs-safe",
+        "version": "0.27.0",
+        "archive_sha256": "02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c",
+        "read_scope": "Actual published local-file-access.js, windows-path-alias.js, windows-path-syntax.js and string coercion; actual U caller and package export. Archive/member/legal/generated-input/recursion facts are preserved separately."
+      },
+      {
+        "name": "url",
+        "version": "2.5.8",
+        "archive_sha256": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
+        "source_commit": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce",
+        "read_scope": "Actual published lib.rs native conversion and parser.rs file host/drive normalization plus public SyntaxViolation callback; Host and App exact locks match. No package or URL fixture was executed locally."
+      }
+    ],
+    "durable_carrier": {
+      "commit": "073b98b4826c8125d0a42d15f8ccdbfebb5eb488",
+      "index": "projects/openclaw-rust/evidence/media-947-dependency-carrier-20261103/index.json",
+      "index_blob": "97e8f2a8353013ba274666cba7655cf27c3f6341",
+      "source_assessment_member": "media-next-production-contract.md",
+      "source_assessment_sha256": "6211961df36efcf41d5a38845e1ed5acceecdfcb1dfd26145bc39a3fb3f820e1",
+      "full_GitHub_readback": true
+    },
+    "historical_full_read_facts_changed": false,
+    "complete_recursive_dependency_acceptance": false
+  },
+  "ownership": {
+    "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
+    "shared_contracts": [
+      "resolve_local_file_url(&str) -> Result<Option<PathBuf>, MediaReferenceError>",
+      "admit_local_media_path(&Path) -> Result<(), MediaReferenceError>"
+    ],
+    "entrypoints": [
+      "ProductionSendMessageSink::resolve_attachment_source",
+      "ProductionAgentManagementSink::resolve_image_source",
+      "connectors::channel_attachment::resolve_channel_attachment",
+      "AttachmentsService::dispatch_gateway loadWebMedia"
+    ],
+    "producers": "Existing Runner SendMessage and SendToAgent tools, existing Channel/Xuser attachment references and direct Attachments web-media service requests",
+    "consumers": "App resolver propagates Result before filesystem/Box/materialization; Channel guards the final reanchored path before metadata; web adapter retains its private pure admission before local reader",
+    "state": "Parser/guard owns no durable state. Existing Session media admission, outgoing custody and transcript transaction remain the only state owners.",
+    "recovery": "The real SendMessage bridge invokes actual abort after a later image refusal; tests observe the first image's real file, pending map and durable fence before cleanup, then real owner reopen and valid repair.",
+    "public_gateway_added": false,
+    "new_runtime_or_state_owner": false
+  },
+  "requirements": [
+    {
+      "id": "LFA-01",
+      "implemented": "Parser-normalized tri-state result and explicit invalid-file propagation; no manual fallback",
+      "oracles": [
+        "local_media_file_url_contract",
+        "web_media::file_url_admission_tests",
+        "actual App refusal and HTTPS control"
+      ]
+    },
+    {
+      "id": "LFA-02",
+      "implemented": "Empty/localhost authorities, retained remote-host-erasure signal, strict pathname percent/UTF-8/separator/NUL admission",
+      "oracles": [
+        "lfa_shared_owner_rejects_all_remote_authorities",
+        "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
+        "preserved private reader zero-entry negatives",
+        "actual App no-effects refusal"
+      ]
+    },
+    {
+      "id": "LFA-03",
+      "implemented": "Native absolute URL path and Windows network/device/drive-relative/ADS refusal; final Channel path rechecked before metadata",
+      "oracles": [
+        "native Windows URL/path cases",
+        "lfa_windows_channel_paths_reject_network_and_alias_spellings",
+        "FUA verbatim-drive workspace positive"
+      ]
+    },
+    {
+      "id": "LFA-04",
+      "implemented": "Both actual App sinks consume shared Result; real SendMessage abort owns earlier-image rollback and Session release",
+      "oracles": [
+        "local_media_file_url_app_rolls_back_earlier_image_on_later_refusal",
+        "local_media_file_url_app_agent_management_refuses_image_before_outward_send"
+      ]
+    },
+    {
+      "id": "LFA-05",
+      "implemented": "Native/Unicode/space/mixed-case/localhost/single-slash inputs preserve paths/bytes and existing metadata/send behavior",
+      "oracles": [
+        "native consumer targets",
+        "local_media_file_url_app_commits_native_and_unicode_media_across_reopen",
+        "local_media_file_url_app_repeated_refusal_then_repair_survives_reopen"
+      ]
+    },
+    {
+      "id": "LFA-06",
+      "implemented": "Existing positive assertions retained with native full-path fixtures; Unix POSIX positives and Windows drive-less refusals preserved",
+      "oracles": [
+        "test_ocrm_web_media_file_url_and_traversal_guards",
+        "test_ocrm_file_ctx_03_resolve_local_media_path",
+        "test_ocrm_file_ctx_08_gateway_service_dispatch"
+      ]
+    }
+  ],
+  "verification": {
+    "source_state": "Applied integrated source; fresh immutable full-scope independent review and exact-H Actions required.",
+    "actions_state": "not-run for this candidate",
+    "local_or_htch_executable_validation": false,
+    "native_capture": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+    "native_source_selected_counts_not_results": {
+      "Linux": 163,
+      "macOS": 163,
+      "Windows": 158
+    },
+    "native_selection": "All inherited cleanup/HTML/image/FUA cases plus complete local_media_file_url_contract, openclaw_media_file_context_contract, channel_attachment_contract and send_message_tool_contract targets; full web target includes new LFA cases. The complete sand_agent_management_tools_contract target retains both existing cases and adds the zero-resolver-entry whole-image admission/valid-recovery case. Preserve the incoming BR private/public/Box/image groups and every actual bounded-read/service/FIFO control. Run its full channel target once with the combined LFA names.",
+    "oracle": "Retain 13 synthetic qualification controls, exact positive-name uniqueness, no extra positives, one exact successful summary per command, zero failures/ignored and cargo/capture exits, exact H/U/platform and before/after Git blob identities.",
+    "actual_App": "Existing Linux automation_app step compiles actual non-test App and linked test harness, then selects six exact tests under tests::local_media_file_url_tests with exact listing, zero-exit one-passed/zero-failed/zero-ignored evidence. Main and new sources/spec are bound as inputs.",
+    "actual_App_source_selected_count_not_result": 6,
+    "controlled_external_ports": "Test-owned Box/provider plumbing and message observation ports are not real provider/channel compatibility.",
+    "scoped_authority_issued": false,
+    "full_unit_verified_promoted": false,
+    "native_source_selected_groups_not_results": 16,
+    "native_bound_input_count_not_result": 46
+  },
+  "remaining": [
+    "Complete pinned source/dependency/generated/download/patch/LFS/resource/legal accounting and required risk review remain open; this carrier is evidence attached to the unique OCRM inventory/ledger, not a second ledger.",
+    "Media persistence Option/Box/original-URL fallback, unknown write outcomes, crash/commit ambiguity and generated HTML producer/store/consumer trust remain separate required implementation work.",
+    "No read-capability/root-confinement/TOCTOU, external loadWebMedia registry, full MIME/codec or native device/provider/channel acceptance is claimed.",
+    "The adapter's stricter cross-platform raw/resolved double-slash restriction remains explicit; it is not full Unix fs-safe URL equivalence.",
+    "All applicable G01-G12 and AC01-AC24, real providers/channels/plugins/nodes/devices, UI/timing/security/performance/soak, supported packages/upgrade/rollback, existing Fabushi regression and independent ACCEPT still apply.",
+    "No shipping or final release candidate is accepted by this source batch."
+  ],
+  "completion_flags_changed": false,
+  "overall_complete": false,
+  "recovered_original_integrated_base": {
+    "commit": "073b98b4826c8125d0a42d15f8ccdbfebb5eb488",
+    "tree": "f73e4982a23b357647b6fec38550c75bfe11f25e",
+    "incoming_product": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+    "preservation": "FUA private reader boundary, existing read/format body, all old tests, capture groups, ledger/RTM refs and prior evidence are retained. Only the existing web converter delegates to the same shared admission owner; actual Runner/AgentManagement and Channel wiring is additional."
+  },
+  "fua_recovery_integration": {
+    "failed_subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+    "failed_runtime_run": 41567768358,
+    "original_lfa_tree": "6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31",
+    "unpublished_fua_r2_tree": "a2b9d3a154145d8071cc63909a5e6a20feeb7731",
+    "correction": "Use the existing common converter, retain pre-normalization slash/backslash/mixed/ignored-control refusal, and retain native drive-root precondition before to_file_path. Original failed/positive receipts remain bound to H364.",
+    "evidence": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
+    "prior_reviews_do_not_approve_this_scope": true
+  },
+  "incoming_shared_gate_resolution": {
+    "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+    "tree": "97181e47831735417e4aeb8197d9a62a5d66b12d",
+    "incoming": "SGF completed SendMessage producer observation and canonical recovery; exact947 terminal evidence; Memory transport",
+    "conflicts": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "resolution": "Keep both appended App required-name blocks. Include both new LFA facade tests in SGF complete target required-name lists, change only SendMessage expected passed count from15to17; retain13/14 summaries, exact cardinality and all failed/ignored assertions."
+      }
+    ],
+    "source_merge": "send_message_tool Option helper delegates to shared LFA owner while retaining all incoming producer observation changes. App unrelated format-only hunk from original author snapshot removed to preserve starting production bytes.",
+    "local_execution": "Git merge and source/byte review only; no executable validation."
+  },
+  "agent_management_batch_recovery": {
+    "decision_record": "LFA-AGENT-IMAGE-BATCH-01",
+    "prior_review_tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
+    "actual_entry": "AgentManagementToolBridge parse_images",
+    "shared_owner": "media_reference::resolve_local_file_url",
+    "order": "The existing parser constructs and admits the complete image vector before any per-image resolve_image_source invocation. Direct actual sink admission remains in place. No new ownership state or trait interface is introduced.",
+    "oracles": [
+      "sand_agent_management_tools_contract::lfa_agent_management_batch_admits_all_urls_before_resolving",
+      "local_media_file_url_tests::local_media_file_url_app_agent_management_refuses_image_before_outward_send: actual single/later invalid, repeated refusal across owner reopen, native materialization/outgoing/wake positive and post-send reopen"
+    ],
+    "scope_limit": "Only deterministic URL admission is preflighted. Later read/persistence/delivery error cleanup and unknown write outcomes remain separate work.",
+    "source_only": "R1 finding retained; R2 review and exact-H Actions pending."
+  },
+  "R1_review_base": {
+    "commit": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+    "tree": "97181e47831735417e4aeb8197d9a62a5d66b12d",
+    "preservation": "Preserve exact947 terminal evidence, 073 dependency carrier, 4c2 Memory transport and incoming SGF producer/canonical recovery. The Option facade source merge retains incoming producer changes; App gate includes both SGF and LFA cases."
+  },
+  "independent_R1": {
+    "tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
+    "verdict": "REQUEST_CHANGES",
+    "general_report_sha256": "19c9acf61a1e576801ac4ea408e326c9fdf8f0d12c511c9327caaa689694df4b",
+    "structure_report_sha256": "398e78394ab18cbe03919ba61221c4daf555a9a0a70fb3aa2da15544782987c1",
+    "same_finding": "AgentManagement valid-first/invalid-later materialization without custody",
+    "current_state": "FIX source applied; new R2 full scope review and exact-H Actions pending"
+  },
+  "incoming071_preservation": {
+    "commit": "071aeb6af1b223cceee9d81b5f7df3bad484d5a4",
+    "reader_blob": "71b19135ed156a589767c4e7f824dc48df698863",
+    "reader_body": "Unchanged by LFA; only shared pure admission is added beside it. Same-handle kind/size, Unix O_NONBLOCK, 64KiB scratch, fallible bounded growth and original errors preserved.",
+    "prefix": "Reuse original file_url_has_extra_leading_path_separator unchanged only for shared Some(file path), preserving incoming localhost/doubled-prefix and native interior/query positives.",
+    "acceptance": "Incoming source is not an executed combined-H pass."
+  },
+  "shared_runtime_blocker": {
+    "subject": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+    "run": 41569288081,
+    "jobs": 0,
+    "artifacts": 0,
+    "classification": "workflow creation failure; existing WFX owner has a documented size-limit recovery candidate",
+    "current_candidate_runtime": "not-run; require repaired workflow on exact published H"
+  }
+}

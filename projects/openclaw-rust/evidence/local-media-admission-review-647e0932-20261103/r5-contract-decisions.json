@@ -1,0 +1,35 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 5,
+  "recorded_before_spec_and_test_edit": true,
+  "base": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+  "base_tree": "f62fc666ade7ad6f8dbf40e889e5ec100a74e974",
+  "prior_candidate_tree": "76e6c26d754179ee5af447ecec689a2de844b476",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "assessment": {
+    "path": "reviews/media-admission-incoming-contract-assessment.md",
+    "sha256": "fde2dd6c43a73e563f8fc1ae52bfb2ab6742418c0cb48ef92a5bc213b8da7e49",
+    "root_read_complete": true,
+    "kind": "independent source-contract assessment; not blind final-source approval or execution"
+  },
+  "findings": [
+    {
+      "id": "IC-01",
+      "decision": "FIX",
+      "rationale": "Incoming78 correctly preserves the pre-LFA native converter refusal; R4 LFA-03a intentionally extends the shared product boundary before native conversion. A mechanical assertion union is contradictory. Preserve incoming ancestry/evidence and its single-slash positive; explicitly scope the older product negative historically, retain the unchanged dependency refusal as a direct dependency control, and require both single-slash and triple-slash product positives under LFA-03a. Keep all other refusals, actual byte/service controls, selected names and counts. No R4 production owner code changes are needed."
+    },
+    {
+      "id": "IC-02",
+      "decision": "FIX",
+      "rationale": "Qualify the old failure as an oracle flaw under the old native-converter contract. Neither raw Windows panic labels its iteration, and the reviewed fixed-U Windows tests contain no pipe-specific oracle. R4 remains an explicitly specified compatibility extension; it is not proved complete Node/Rust parity. This clarification preserves the earlier R2-GEN-01 FIX action under the amended LFA contract and does not rewrite any historical report or failed receipt."
+    }
+  ],
+  "spec_before_test": [
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md:FUA-02 and historical FUA-WIN-ORACLE-01 transition",
+    "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md:LFA-03b"
+  ],
+  "test_delta": "Existing selected Windows web admission test: unchanged direct url2.5.8 refusal characterization plus five product root positives and labelled diagnostics. No name/count/gate reduction.",
+  "shared_integration": "Preserve Device additions by three-way merge; RTM conflict resolved by retaining both additive reference lists. Device responsibility row remains identical to incoming78; only the four original media rows and six media RTM rows differ from incoming.",
+  "acceptance": "Fresh focused general/security and pinned structure/reuse/performance review of the new immutable complete scope, followed by exact published-H Actions, remains required. No local/htch validation or status/global flag promotion."
+}

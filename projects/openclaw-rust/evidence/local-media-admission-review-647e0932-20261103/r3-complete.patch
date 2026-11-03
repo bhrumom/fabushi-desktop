@@ -1,0 +1,3142 @@
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/.github/workflows/rust-desktop-runtime.yml b/workspace/scratch/7d27ea239237/media-admission-r3/.github/workflows/rust-desktop-runtime.yml
+index 6cdef39..9419b54 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/.github/workflows/rust-desktop-runtime.yml
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/.github/workflows/rust-desktop-runtime.yml
+@@ -1841,6 +1841,8 @@ jobs:
+                   "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+                   "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+                   "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
++                  "lfa_send_message_file_url_facade_preserves_admitted_metadata",
++                  "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+                   "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
+                   "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
+                   "generated_send_message_text_success_survives_session_backfill_reopen",
+@@ -3878,6 +3880,13 @@ jobs:
+               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
+               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
+               "source/host/app/src/tests/config_secret_boundary_tests.rs",
++              "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++              "source/host/app/src/tests/local_media_file_url_tests.rs",
++              "source/host/src/extensions/attachments/media_reference.rs",
++              "source/host/src/runner/tools/send_message_tool.rs",
++              "source/host/src/runner/tools/sand_agent_management_tools.rs",
++              "source/host/src/extensions/session/agent_db.rs",
++              "source/host/src/extensions/attachments/media_store.rs",
+               "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
+               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
+               "source/host/app/src/tests/channel_failure_handoff_tests.rs",
+@@ -3965,6 +3974,8 @@ jobs:
+               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1/DRT-v1",
+               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
+               "model_contract": "CMI-v1/CWB-v1",
++              "local_media_file_url_contract": "LFA-v1",
++              "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
+               "subject_commit": head,
+               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
+@@ -4146,6 +4157,16 @@ jobs:
+                   "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_history_without_observation",
+                   "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay",
+               ]
++              local_media_file_url_required = ["tests::local_media_file_url_tests::" + name for name in [
++                  "local_media_file_url_app_rejects_invalid_before_materialization",
++                  "local_media_file_url_app_rolls_back_earlier_image_on_later_refusal",
++                  "local_media_file_url_app_commits_native_and_unicode_media_across_reopen",
++                  "local_media_file_url_app_repeated_refusal_then_repair_survives_reopen",
++                  "local_media_file_url_app_agent_management_refuses_image_before_outward_send",
++                  "local_media_file_url_app_preserves_https_without_local_custody",
++              ]]
++              required += local_media_file_url_required
++              receipt["local_media_file_url_required_tests"] = local_media_file_url_required
+               receipt["required_tests"] = required
+               save()
+               for index, name in enumerate(required):
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/docs/specs/local-media-file-url-admission.md b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/docs/specs/local-media-file-url-admission.md
+new file mode 100644
+index 0000000..8a8a7a7
+--- /dev/null
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/docs/specs/local-media-file-url-admission.md
+@@ -0,0 +1,99 @@
++# Local media file URL admission — LFA-v1
++
++Status: specified before implementation; independent review and exact-H Actions pending.
++Project: OCRM-001. Task `647e0932-bea4-4113-9a61-65ae3db58955`, round 1.
++
++## Problem, authority and current behavior
++
++Fixed OpenClaw U remains `1440bb1771372334bea23d7642bb52deb7db1845`, tree `90c8aab39972da11cfad220361781d49e1bc6700`. Start from Fabushi H `947e980bd3c9dcb06535127f5cedfd193b83f0fc`, tree `686109128a616195e65d1c9018ccd5b0b9d2cc8a`, on the existing migration branch. Preserve the published HHP-v2/IPB-v1 and prior Runner, Session, channel, workflow, source and evidence changes.
++
++## Concurrent implementation integration
++
++The recovered full batch also incorporates FUA normalization recovery after
++Linux H364 run `41567768358` proved the four-separator reader-boundary failure.
++Preserve every original failure and zero-reader-entry assertion. Retain the
++web adapter's pre-normalization four-or-more separator restriction for slash,
++backslash, mixed separators and ignored ASCII tab/CR/LF spellings. Reuse this
++spec's existing shared converter and native Windows drive-root precondition,
++including refusal of a bare `file:///C:` before the dependency's conversion.
++The unpublished FUA R2 tree `a2b9d3a154145d8071cc63909a5e6a20feeb7731` is a
++historical source-review slice; its reviews do not approve this full LFA batch.
++The recovered original LFA tree `6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31`
++remains immutable. New integrated review and exact-H Actions are required.
++
++The R1 review base was `497c2c7a7bc5201aead83d3d36e44f52ba164d04`, tree
++`97181e47831735417e4aeb8197d9a62a5d66b12d`. Preserve the intervening exact-947
++terminal evidence and incoming generated SendMessage producer/recovery work.
++Its strict shared SendMessage target retains every original assertion and now
++includes both LFA facade cases: 17 expected passes instead of 15, with the
++other target summaries and failure/ignored/uniqueness checks unchanged.
++
++R2 integrates on `0e845ce1679e0cdf95346adc54f5d58bf06464e8`, preserving incoming Memory identity, device role revocation and the existing Attachments BR-v1 reader from `071aeb6af1b223cceee9d81b5f7df3bad484d5a4`. Reuse its raw-prefix guard unchanged, including localhost followed by repeated path separators and the drive-token interior-separator positive; invoke that guard only after shared parsing identifies a file source. Preserve every bounded-reader body, service cap conversion and test. The native capture unions both scopes, executing the common channel target once. Its 16 groups select 163 Linux/macOS and 158 Windows positives with 46 inputs; these are source expectations, not results. The inherited zero-job workflow-size refusal still requires the separate existing WFX repair before exact-H execution.
++
++During authoring, live H advanced through evidence carrier `d26d44d1441c05e3dbb7dc18eb908ab042cbdae9` to FUA-v1 production H `3647531d1d47d1c690b98a06f0156ae2734ff7ad`, tree `a85fe54f86823ff30b682f91ff97b1daca3f1318`. FUA already removed the web converter's denylist/fallback, separated pure admission from its existing private synchronous reader, and added causal zero-reader-entry/native-service controls. LFA preserves those exact responsibilities and controls. It adds the shared Result boundary for actual Runner/AgentManagement and Channel consumers, and makes the existing web adapter delegate conversion to that same owner; it does not republish a second FUA implementation.
++
++The earlier recovered LFA snapshot used `073b98b4826c8125d0a42d15f8ccdbfebb5eb488`, tree `f73e4982a23b357647b6fec38550c75bfe11f25e`, which adds only a root-verified evidence carrier after FUA. Preserve FUA's raw and resolved network refusals, their `network-path-not-allowed` code, absolute Windows verbatim-drive workspace positive, private reader boundary, and unmodified bounded read/HTML/image body. File URL refusals retain `invalid-file-url`; the added raw-path alias/NUL guard uses `path-not-allowed` after existing network classification. Unix converted double-slash paths remain subject to the web adapter's stricter existing restriction. All FUA selected cases remain in the same native capture alongside LFA cases. Prior FUA source approval and any earlier-H evidence do not approve this integrated candidate; fresh full-scope review and new exact-H Actions are required.
++
++The initial facts below describe the 947 starting state; the preceding integration record supersedes that state where FUA has already repaired it.
++
++The actual Runner `SendMessage` path calls `ProductionSendMessageSink::resolve_attachment_source`, then `resolve_production_attachment_source`, then `fs::read`, existing per-agent media materialization, Session media custody, Transcript persistence and optional channel delivery. Agent-to-agent image resolution also calls this production resolver. The current `file_path_from_file_url` is only `Url::parse` plus `to_file_path`; Windows accepts a remote URL host as UNC. This can reach filesystem access before any network-path rejection. Merely returning `None` for an invalid file URL is insufficient: the App resolver currently converts `None` into successful original-URL passthrough.
++
++The existing Channel attachment path independently resolves a local source and calls `fs::metadata` before its bounded reader. Its converter rejects remote file URL hosts but lacks the complete converted-path alias boundary. The existing direct Attachments `loadWebMedia` service has another converter with a manual fallback: parse/conversion failures can become local paths. Its finite external Gateway registration remains absent; this batch does not claim to register that service.
++
++Relevant exact starting blobs: App main `4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3`; Runner SendMessage tool `08bfbe0bedc8138bb00804b5fbbd3b5ce3b046f2`; media reference `acbed906d06b496b481fd4d4b5c604d9fc3eda57`; media file context `2372f03102c106fdb93d3c5a50e71a74c80e55b3`; Channel attachment `356e901feb2328729f882afe487fbe0199f4a40a`; web media `61291cf57b42408cd98c7fe7676d2a0694fa44d0`.
++
++The fixed-U dependency is `@openclaw/fs-safe@0.27.0`, archive SHA-256 `02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c`. Actual `dist/local-file-access.js` admits only empty/localhost authorities, rejects encoded pathname separators, invokes Node file conversion, then checks Windows aliases and network paths. Actual Windows syntax/alias modules define the platform distinction. U's web loader invokes this before local reading. Rust host and App both lock `url@2.5.8`, archive SHA-256 `ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed`; the acquired published conversion/parser source agrees with the reviewed exact source commit. Archive identity is not a complete dependency or execution verdict.
++
++## Ownership and shared interface
++
++The existing `attachments/media_reference.rs` owns shared media URI classification and bounded reading. Extend it with `resolve_local_file_url(raw: &str) -> Result<Option<PathBuf>, MediaReferenceError>` and a narrow local-path spelling guard reused by the actual local readers. No new module, crate, permission owner, scheduler, database, media registry or filesystem capability is introduced.
++
++The result distinguishes ordinary non-file input (`Ok(None)`), an admitted file URL (`Ok(Some(path))`) and an invalid file URL (`Err`). The existing Runner Option facade delegates to this owner for metadata-only callers. The production App resolver consumes the Result directly; both real sinks propagate refusal. The local Channel resolver and web-media adapter reuse this same conversion and spelling policy, preserving their public error forms (`None` and `invalid-file-url`). The actual Channel reader checks the final reanchored path before metadata access.
++
++## Required behavior
++
++| ID | Contract and oracle |
++| --- | --- |
++| LFA-01 | Recognize a file URL using the same URL parser normalization, including mixed-case schemes and parser-accepted surrounding control/space normalization. Any recognized malformed file URL fails; it is never manually reconstructed as a local path or forwarded as successful original-URL resolution. Non-file HTTP/HTTPS and other existing non-file passthrough behavior remains unchanged. |
++| LFA-02 | Only empty or localhost authority is local. Reject every other host, userinfo/port or malformed authority before filesystem, Box, persistence or delivery work. Validate pathname percent escapes; encoded `/` or `\\`, malformed escapes, invalid decoded UTF-8 and NUL are refused. Never use lossy decoding. |
++| LFA-03 | Conversion must return a valid platform absolute path. On Windows reject network/share/device forms and alternate data stream or drive-relative colon aliases; ordinary rooted drive paths remain valid, and any admitted extended rooted-drive form follows the actual existing filesystem spelling contract. Apply the same Windows path guard to Channel local-path and reanchored-path admission before metadata/read. Unix colon filenames and valid Unix local paths remain available. |
++| LFA-04 | `resolve_production_attachment_source` returns a Result. Both `ProductionSendMessageSink` and `ProductionAgentManagementSink` propagate invalid file URL errors before read/download/materialization. No error becomes an unchanged URL success. The existing SendMessage bridge invokes its current abort-custody path when a later image fails, preserving already-established cleanup and Session release ownership. |
++| LFA-05 | Valid native local file URLs, localhost, mixed-case scheme, single-slash form where the native platform supports it, percent-encoded spaces and Unicode continue to reach the existing real reader. Verify exact returned paths and bytes, filename, owned materialization, original-source preservation and normal message behavior, without granting new roots/trust. |
++| LFA-06 | Preserve all original valid assertions and HHP/IPB tests. Repair the existing cross-platform test flaw that asserts a drive-less POSIX file URL succeeds on Windows merely because a suffix is present: use an actual native absolute fixture, exact path equality, retain the Unix POSIX control, and add a Windows drive-less refusal. This is an oracle correction, not a product success claim. |
++
++This is local-source admission, not a complete path capability or TOCTOU confinement contract. Keep the web adapter's pre-existing stricter cross-platform rejection of raw `file:////...` spellings explicitly separate from fs-safe's Windows-only network policy; do not claim full Unix equivalence for that retained restriction. NUL rejection moves the existing filesystem refusal before fallback; the fixed dependency's string converter itself does not explicitly reject NUL.
++
++## State, errors, cancellation and recovery
++
++The parser/guard is pure and owns no durable state. It must perform no `canonicalize`, metadata, open, network or Box operation. An invalid source creates no managed file, Session admission, transcript entry or channel request. If earlier images in the same SendMessage call have already acquired custody, the existing bridge failure path rolls back those owned files and releases their current Session media records. Tests must exercise the real production sink and the actual bridge rather than a replacement resolver.
++
++AgentManagement uses a different existing image loop without SendMessage's
++per-call custody rollback. Its existing `parse_images` must therefore admit
++every file URL through the same pure media-reference owner before returning
++the image vector and before any `resolve_image_source` call. A valid first
++image followed by an invalid URL must leave no newly materialized file, no
++source/target transcript change and no outward wake. Keep the actual App
++sink's direct single-image check as well. This value preflight does not add
++a state owner or claim cleanup for later read/persistence/delivery failures.
++Retain native/HTTPS image positives and pin zero resolver-entry for a bad
++later URL in the native bridge contract, plus the real App batch oracle.
++
++The current Session work-admission check still precedes production SendMessage resolution. Existing closed/deleting owner refusals remain effective. Repeated invalid requests, including after a real Session reopen, remain refusals without replay or new persistent state. A later valid request is a fresh normal call. This batch introduces no persistence schema or migration and makes no claim about physical crash timing, external providers/devices or filesystem races.
++
++The separate existing issue where failed media persistence may enter Box/original-URL fallback remains open. This batch changes invalid-source handling only; do not infer known or unknown write-outcome handling from a parsing refusal. Generated HTML provenance, full read authority, public `loadWebMedia` Gateway registration, MIME/codec equivalence and all other migration responsibilities remain required.
++
++## Implementation and verification scope
++
++Product paths are the existing media reference/file-context/web-media owners, Runner SendMessage facade, Channel reader and App production resolver. Root integrates App/composition, existing capture/workflow, ledger and RTM serially. Independent authoring uses exact base/allowed paths and the LFA-v1 interface. Existing App test helpers such as `channel_host_lane_tests::idle_runner_owners` may be reused for actual owners; do not introduce a second production owner or claim a mock is a real external channel.
++
++Add native contract coverage for the shared owner, wrappers and real local Channel/web-media readers, including positive native paths, every denial class, decoded aliases and no-fallback controls. Add App tests using actual Session/ForeverBox owners and production SendMessage/agent-management sinks for early refusal, partial-image custody cleanup, positive local materialization and repair/reopen behavior. Controlled Box/provider/carrier plumbing is explicitly not live ecosystem acceptance.
++
++Extend the existing exact-H media and Linux App capture rather than creating another runner. Bind the changed sources/tests and this spec to receipts. Require exact required-positive names, nonduplicate results, zero failures/ignored tests and command/capture exits; retain existing oracle qualification and original failure history. Native Windows must execute Windows path cases; a Linux pass cannot stand in for it. macOS/platform packaging and full product acceptance remain open if unavailable.
++
++Before publication, freeze the complete source tree, full diff and manifest, obtain independent general/security and pinned structure/reuse/performance reviews, decide findings before fixes and review any accepted repair. All executable validation runs only in GitHub Actions after publication of exact H. Source/API/hash/archive work outside Actions is evidence acquisition, not validation. Completion of this slice requires actual production consumer results for its selected scope; no global flag or unit verified promotion precedes scoped authority/coverage.
++
++## Delivery, rollback and remaining acceptance
++
++Publish through the existing branch with a compare-and-swap lease, preserve concurrent work, and read back the full remote commit/tree/content. A rollback reverts this admission change without rewriting previous receipts or durable Session data. Reverting to unsafe URL acceptance is not a security acceptance path; hold affected delivery if this repair cannot meet its contract.
++
++G01–G12, AC01–AC24, real provider/channel/plugin/node/device, UI/timing/security/performance/soak, supported package/install/upgrade/rollback, existing Fabushi regression and independent ACCEPT remain globally unaccepted. No dependency discovery, helper pass or test count establishes full migration completion.
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/docs/specs/media-file-url-admission.md b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/docs/specs/media-file-url-admission.md
+index af7a5ff..5204354 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/docs/specs/media-file-url-admission.md
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/docs/specs/media-file-url-admission.md
+@@ -64,6 +64,15 @@ permission to read an arbitrary local file.
+ ## Architecture and implementation boundary
+ 
+ Repair `web_media.rs::file_url_to_path` in place with the existing `url::Url`.
++Preserve the pre-normalization rejection of four or more leading file separators,
++including mixed slash/backslash forms and the URL parser's ignored ASCII tab,
++CR and LF characters. Match the parser's leading C0/space trimming for this
++prefix guard. This guard only preserves prohibited prefix evidence; it does not
++replace structural parsing or establish full Node/Rust path-alias parity.
++Reject `FileWithHostAndWindowsDrive` syntax normalization before a discarded
++nonlocal authority can become an admitted local drive path. Use the existing
++parser's violation callback; do not infer the original authority from its
++normalized output.
+ Require its parsed scheme/host, reject encoded separators in the path, require
+ native conversion success, and reject a prohibited converted network path.
+ Do not replace the local loader with a source-specific runtime or reuse the
+@@ -114,6 +123,34 @@ exits, positive-name uniqueness and all selected assertions. Missing/queued OS
+ jobs remain unverified. This batch cannot satisfy full G01–G12/AC01–AC24,
+ independent ACCEPT or shipping-SHA acceptance by itself.
+ 
++### Exact-H normalization recovery
++
++At `3647531d1d47d1c690b98a06f0156ae2734ff7ad`, Linux run `41567768358`
++produced a sound implementation failure: the four-slash reference entered the
++private reader once and two converter controls failed. The locked `url` 2.5.8
++parser removes leading empty file path segments before returning a `Url`
++(`parser.rs` 1371–1378 at version-source commit
++`d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce`). Post-parse checks cannot recover
++that discarded information. Its neighboring Windows-drive normalization can
++also discard a host and emits `FileWithHostAndWindowsDrive` (1344–1363).
++
++The repair keeps all original assertions and adds variants to the existing
++zero-reader-entry and converter controls. The same native local, localhost,
++single-slash, bytes, size-cap and retry positives remain required. The failed
++Linux receipt and original R1 reviews remain immutable; R1 source convergence
++was not runtime acceptance. Windows' 76 passing checks remain evidence only
++for H364. A new frozen H and focused source review must decide the repaired
++behavior. The recovery decision and failure identities are in
++`projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json`.
++
++The final recovery is integrated with `local-media-file-url-admission.md`
++(LFA-v1): the existing `media_reference` owner supplies structural conversion,
++remote-host-erasure refusal and native absolute-path admission. The web adapter
++retains its stricter prefix rule and typed errors. LFA also propagates the same
++pure refusal through the actual SendMessage/AgentManagement production resolver
++before native read or Box fallback. The unpublished FUA R2 tree is historical
++source-review context, not a second shipping implementation or approval of LFA.
++
+ ## Release, rollback and provenance
+ 
+ The change is a stateless Rust implementation repair on the existing migration
+@@ -124,7 +161,7 @@ refusal, without adding logs containing file contents or credentials.
+ - Fixed-U `src/media/web-media.ts`, blob `f48bca504f6fb77c3d094864eb656cb2b1bf25e2`, URL admission and resolved-path/read ordering.
+ - Fixed-U `src/media/web-media.file-url.windows.test.ts`, blob `bdaedcde111ea2880b96d9afa547a9c1d2a36b42`, native uppercase single-slash control and refusal cases.
+ - Fixed-U package/lock binding: `@openclaw/fs-safe` 0.27.0, archive SHA-256 `02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c`; packaged `dist/local-file-access.js` SHA-256 `7530a957ca9d56f56deba8da1dd06be03c894c6f6472bc8571080937b57bfda8`. Review is scoped dependency-contract/actual-use review, not a claim of full package reading or generator closure.
+-- Target host and App locks both bind `url` 2.5.8, checksum `ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed`. Version-source commit `d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce` documents Windows UNC conversion; exact crate archive acquisition remains separate.
++- Target host and App locks both bind `url` 2.5.8, checksum `ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed`. The acquired 86,512-byte archive matches that checksum and its VCS record binds `d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce`. Its parser/lib members match the reviewed version-source blobs exactly. This supersedes the earlier acquisition gap without claiming a complete package read or recursive dependency closure.
+ - Existing `media-store-read-scope.md`, `media-html-policy-safety.md` and `media-image-probe-boundary.md` retain their independent authority and open scope.
+ 
+ ## Locked-parser normalization correction before combined BR publication
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json
+new file mode 100644
+index 0000000..0722207
+--- /dev/null
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json
+@@ -0,0 +1,244 @@
++{
++  "format": "OCRM-LFA-v1-implementation-candidate",
++  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
++  "round": 1,
++  "contract": "LFA-v1",
++  "repository": "bhrumom/fabushi-desktop",
++  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
++  "fixed_upstream": {
++    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
++    "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
++  },
++  "original_author_base": {
++    "commit": "947e980bd3c9dcb06535127f5cedfd193b83f0fc",
++    "tree": "686109128a616195e65d1c9018ccd5b0b9d2cc8a"
++  },
++  "integrated_base": {
++    "commit": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
++    "tree": "4e69dc6d77f4ff4508e02cdd7064084530db9b6e",
++    "preservation": "Preserve Memory synthesis identity, Device role-token revocation and071 existing media bounded reader/service/tests, as well as prior SGF/LFA/FUA history. Shared workflow, ledger/RTM and App integration is serial."
++  },
++  "source_authority": {
++    "instructions_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
++    "source_of_truth_blob": "3748d734b10c9ed5b2d948467fbaa9483f1dd306",
++    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
++    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
++    "review_depth": "Deep review of the affected actual product call paths, parser/Windows-path state and pre-read/error/custody/reopen boundaries. Dependency review covers actual published members and their callers, not a fictitious full transitive implementation read.",
++    "fixed_u_sources": [
++      {
++        "path": "src/media/local-media-path.ts",
++        "blob": "f105ca514b5754849284c429b032af30d1487f1a",
++        "scope": "complete 29-line consumer"
++      },
++      {
++        "path": "src/media/local-media-path.windows.test.ts",
++        "blob": "1aef7d957f8e243203ccec8dd92742ca3e795761",
++        "scope": "complete 98-line contract"
++      },
++      {
++        "path": "src/media/web-media.ts",
++        "blob": "f48bca504f6fb77c3d094864eb656cb2b1bf25e2",
++        "scope": "actual URL admission and local read consumers; detailed read observations remain in the source assessment"
++      }
++    ],
++    "dependencies": [
++      {
++        "name": "@openclaw/fs-safe",
++        "version": "0.27.0",
++        "archive_sha256": "02494f7911afefff665a99e251a943812256933fe6536745b8c61639c180f90c",
++        "read_scope": "Actual published local-file-access.js, windows-path-alias.js, windows-path-syntax.js and string coercion; actual U caller and package export. Archive/member/legal/generated-input/recursion facts are preserved separately."
++      },
++      {
++        "name": "url",
++        "version": "2.5.8",
++        "archive_sha256": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
++        "source_commit": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce",
++        "read_scope": "Actual published lib.rs native conversion and parser.rs file host/drive normalization plus public SyntaxViolation callback; Host and App exact locks match. No package or URL fixture was executed locally."
++      }
++    ],
++    "durable_carrier": {
++      "commit": "073b98b4826c8125d0a42d15f8ccdbfebb5eb488",
++      "index": "projects/openclaw-rust/evidence/media-947-dependency-carrier-20261103/index.json",
++      "index_blob": "97e8f2a8353013ba274666cba7655cf27c3f6341",
++      "source_assessment_member": "media-next-production-contract.md",
++      "source_assessment_sha256": "6211961df36efcf41d5a38845e1ed5acceecdfcb1dfd26145bc39a3fb3f820e1",
++      "full_GitHub_readback": true
++    },
++    "historical_full_read_facts_changed": false,
++    "complete_recursive_dependency_acceptance": false
++  },
++  "ownership": {
++    "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
++    "shared_contracts": [
++      "resolve_local_file_url(&str) -> Result<Option<PathBuf>, MediaReferenceError>",
++      "admit_local_media_path(&Path) -> Result<(), MediaReferenceError>"
++    ],
++    "entrypoints": [
++      "ProductionSendMessageSink::resolve_attachment_source",
++      "ProductionAgentManagementSink::resolve_image_source",
++      "connectors::channel_attachment::resolve_channel_attachment",
++      "AttachmentsService::dispatch_gateway loadWebMedia"
++    ],
++    "producers": "Existing Runner SendMessage and SendToAgent tools, existing Channel/Xuser attachment references and direct Attachments web-media service requests",
++    "consumers": "App resolver propagates Result before filesystem/Box/materialization; Channel guards the final reanchored path before metadata; web adapter retains its private pure admission before local reader",
++    "state": "Parser/guard owns no durable state. Existing Session media admission, outgoing custody and transcript transaction remain the only state owners.",
++    "recovery": "The real SendMessage bridge invokes actual abort after a later image refusal; tests observe the first image's real file, pending map and durable fence before cleanup, then real owner reopen and valid repair.",
++    "public_gateway_added": false,
++    "new_runtime_or_state_owner": false
++  },
++  "requirements": [
++    {
++      "id": "LFA-01",
++      "implemented": "Parser-normalized tri-state result and explicit invalid-file propagation; no manual fallback",
++      "oracles": [
++        "local_media_file_url_contract",
++        "web_media::file_url_admission_tests",
++        "actual App refusal and HTTPS control"
++      ]
++    },
++    {
++      "id": "LFA-02",
++      "implemented": "Empty/localhost authorities, retained remote-host-erasure signal, strict pathname percent/UTF-8/separator/NUL admission",
++      "oracles": [
++        "lfa_shared_owner_rejects_all_remote_authorities",
++        "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
++        "preserved private reader zero-entry negatives",
++        "actual App no-effects refusal"
++      ]
++    },
++    {
++      "id": "LFA-03",
++      "implemented": "Native absolute URL path and Windows network/device/drive-relative/ADS refusal; final Channel path rechecked before metadata",
++      "oracles": [
++        "native Windows URL/path cases",
++        "lfa_windows_channel_paths_reject_network_and_alias_spellings",
++        "FUA verbatim-drive workspace positive"
++      ]
++    },
++    {
++      "id": "LFA-04",
++      "implemented": "Both actual App sinks consume shared Result; real SendMessage abort owns earlier-image rollback and Session release",
++      "oracles": [
++        "local_media_file_url_app_rolls_back_earlier_image_on_later_refusal",
++        "local_media_file_url_app_agent_management_refuses_image_before_outward_send"
++      ]
++    },
++    {
++      "id": "LFA-05",
++      "implemented": "Native/Unicode/space/mixed-case/localhost/single-slash inputs preserve paths/bytes and existing metadata/send behavior",
++      "oracles": [
++        "native consumer targets",
++        "local_media_file_url_app_commits_native_and_unicode_media_across_reopen",
++        "local_media_file_url_app_repeated_refusal_then_repair_survives_reopen"
++      ]
++    },
++    {
++      "id": "LFA-06",
++      "implemented": "Existing positive assertions retained with native full-path fixtures; Unix POSIX positives and Windows drive-less refusals preserved",
++      "oracles": [
++        "test_ocrm_web_media_file_url_and_traversal_guards",
++        "test_ocrm_file_ctx_03_resolve_local_media_path",
++        "test_ocrm_file_ctx_08_gateway_service_dispatch"
++      ]
++    }
++  ],
++  "verification": {
++    "source_state": "Applied integrated source; fresh immutable full-scope independent review and exact-H Actions required.",
++    "actions_state": "not-run for this candidate",
++    "local_or_htch_executable_validation": false,
++    "native_capture": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
++    "native_source_selected_counts_not_results": {
++      "Linux": 163,
++      "macOS": 163,
++      "Windows": 158
++    },
++    "native_selection": "All inherited cleanup/HTML/image/FUA cases plus complete local_media_file_url_contract, openclaw_media_file_context_contract, channel_attachment_contract and send_message_tool_contract targets; full web target includes new LFA cases. The complete sand_agent_management_tools_contract target retains both existing cases and adds the zero-resolver-entry whole-image admission/valid-recovery case. Preserve the incoming BR private/public/Box/image groups and every actual bounded-read/service/FIFO control. Run its full channel target once with the combined LFA names.",
++    "oracle": "Retain 13 synthetic qualification controls, exact positive-name uniqueness, no extra positives, one exact successful summary per command, zero failures/ignored and cargo/capture exits, exact H/U/platform and before/after Git blob identities.",
++    "actual_App": "Existing Linux automation_app step compiles actual non-test App and linked test harness, then selects six exact tests under tests::local_media_file_url_tests with exact listing, zero-exit one-passed/zero-failed/zero-ignored evidence. Main and new sources/spec are bound as inputs.",
++    "actual_App_source_selected_count_not_result": 6,
++    "controlled_external_ports": "Test-owned Box/provider plumbing and message observation ports are not real provider/channel compatibility.",
++    "scoped_authority_issued": false,
++    "full_unit_verified_promoted": false,
++    "native_source_selected_groups_not_results": 16,
++    "native_bound_input_count_not_result": 46
++  },
++  "remaining": [
++    "Complete pinned source/dependency/generated/download/patch/LFS/resource/legal accounting and required risk review remain open; this carrier is evidence attached to the unique OCRM inventory/ledger, not a second ledger.",
++    "Media persistence Option/Box/original-URL fallback, unknown write outcomes, crash/commit ambiguity and generated HTML producer/store/consumer trust remain separate required implementation work.",
++    "No read-capability/root-confinement/TOCTOU, external loadWebMedia registry, full MIME/codec or native device/provider/channel acceptance is claimed.",
++    "The adapter's stricter cross-platform raw/resolved double-slash restriction remains explicit; it is not full Unix fs-safe URL equivalence.",
++    "All applicable G01-G12 and AC01-AC24, real providers/channels/plugins/nodes/devices, UI/timing/security/performance/soak, supported packages/upgrade/rollback, existing Fabushi regression and independent ACCEPT still apply.",
++    "No shipping or final release candidate is accepted by this source batch."
++  ],
++  "completion_flags_changed": false,
++  "overall_complete": false,
++  "recovered_original_integrated_base": {
++    "commit": "073b98b4826c8125d0a42d15f8ccdbfebb5eb488",
++    "tree": "f73e4982a23b357647b6fec38550c75bfe11f25e",
++    "incoming_product": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
++    "preservation": "FUA private reader boundary, existing read/format body, all old tests, capture groups, ledger/RTM refs and prior evidence are retained. Only the existing web converter delegates to the same shared admission owner; actual Runner/AgentManagement and Channel wiring is additional."
++  },
++  "fua_recovery_integration": {
++    "failed_subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
++    "failed_runtime_run": 41567768358,
++    "original_lfa_tree": "6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31",
++    "unpublished_fua_r2_tree": "a2b9d3a154145d8071cc63909a5e6a20feeb7731",
++    "correction": "Use the existing common converter, retain pre-normalization slash/backslash/mixed/ignored-control refusal, and retain native drive-root precondition before to_file_path. Original failed/positive receipts remain bound to H364.",
++    "evidence": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
++    "prior_reviews_do_not_approve_this_scope": true
++  },
++  "incoming_shared_gate_resolution": {
++    "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
++    "tree": "97181e47831735417e4aeb8197d9a62a5d66b12d",
++    "incoming": "SGF completed SendMessage producer observation and canonical recovery; exact947 terminal evidence; Memory transport",
++    "conflicts": [
++      {
++        "path": ".github/workflows/rust-desktop-runtime.yml",
++        "resolution": "Keep both appended App required-name blocks. Include both new LFA facade tests in SGF complete target required-name lists, change only SendMessage expected passed count from15to17; retain13/14 summaries, exact cardinality and all failed/ignored assertions."
++      }
++    ],
++    "source_merge": "send_message_tool Option helper delegates to shared LFA owner while retaining all incoming producer observation changes. App unrelated format-only hunk from original author snapshot removed to preserve starting production bytes.",
++    "local_execution": "Git merge and source/byte review only; no executable validation."
++  },
++  "agent_management_batch_recovery": {
++    "decision_record": "LFA-AGENT-IMAGE-BATCH-01",
++    "prior_review_tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
++    "actual_entry": "AgentManagementToolBridge parse_images",
++    "shared_owner": "media_reference::resolve_local_file_url",
++    "order": "The existing parser constructs and admits the complete image vector before any per-image resolve_image_source invocation. Direct actual sink admission remains in place. No new ownership state or trait interface is introduced.",
++    "oracles": [
++      "sand_agent_management_tools_contract::lfa_agent_management_batch_admits_all_urls_before_resolving",
++      "local_media_file_url_tests::local_media_file_url_app_agent_management_refuses_image_before_outward_send: actual single/later invalid, repeated refusal across owner reopen, native materialization/outgoing/wake positive and post-send reopen"
++    ],
++    "scope_limit": "Only deterministic URL admission is preflighted. Later read/persistence/delivery error cleanup and unknown write outcomes remain separate work.",
++    "source_only": "R1 finding retained; R2 review and exact-H Actions pending."
++  },
++  "R1_review_base": {
++    "commit": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
++    "tree": "97181e47831735417e4aeb8197d9a62a5d66b12d",
++    "preservation": "Preserve exact947 terminal evidence, 073 dependency carrier, 4c2 Memory transport and incoming SGF producer/canonical recovery. The Option facade source merge retains incoming producer changes; App gate includes both SGF and LFA cases."
++  },
++  "independent_R1": {
++    "tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
++    "verdict": "REQUEST_CHANGES",
++    "general_report_sha256": "19c9acf61a1e576801ac4ea408e326c9fdf8f0d12c511c9327caaa689694df4b",
++    "structure_report_sha256": "398e78394ab18cbe03919ba61221c4daf555a9a0a70fb3aa2da15544782987c1",
++    "same_finding": "AgentManagement valid-first/invalid-later materialization without custody",
++    "current_state": "FIX source applied; new R2 full scope review and exact-H Actions pending"
++  },
++  "incoming071_preservation": {
++    "commit": "071aeb6af1b223cceee9d81b5f7df3bad484d5a4",
++    "reader_blob": "71b19135ed156a589767c4e7f824dc48df698863",
++    "reader_body": "Unchanged by LFA; only shared pure admission is added beside it. Same-handle kind/size, Unix O_NONBLOCK, 64KiB scratch, fallible bounded growth and original errors preserved.",
++    "prefix": "Reuse original file_url_has_extra_leading_path_separator unchanged only for shared Some(file path), preserving incoming localhost/doubled-prefix and native interior/query positives.",
++    "acceptance": "Incoming source is not an executed combined-H pass."
++  },
++  "shared_runtime_blocker": {
++    "subject": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
++    "run": 41569288081,
++    "jobs": 0,
++    "artifacts": 0,
++    "classification": "workflow creation failure; existing WFX owner has a documented size-limit recovery candidate",
++    "current_candidate_runtime": "not-run; require repaired workflow on exact published H"
++  }
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json
+new file mode 100644
+index 0000000..721190e
+--- /dev/null
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json
+@@ -0,0 +1,161 @@
++{
++  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
++  "round": 1,
++  "finding_id": "FUA-NORMALIZATION-01",
++  "classification": "IMPL_BUG",
++  "decision": "FIX",
++  "recorded_before_fix": true,
++  "subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
++  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
++  "runtime_run": 41567768358,
++  "artifact_id": 13200058555,
++  "artifact_sha256": "c3bd83ea7fe568848b3b432e45a14011e730f894b48548c64b6f555693b78352",
++  "failure": "The pure owner counter enters once for FILE:////files.example/share/image.png; converter returns /files.example/share/image.png. Existing four-slash rejection and new owner/converter assertions fail.",
++  "raw_logs": {
++    "file-url-admission.log": "f01a32539a38becff9443ee28d4c55049bfd3d6f7e6a52d4eb06ca39682478da",
++    "explicit-html-consumers.log": "4e22d9aa0a716ab94a54449b98cf0096056339af222eac1156b66002ef23706a"
++  },
++  "actual_failures": {
++    "owner": {
++      "passed": 4,
++      "failed": 1,
++      "command_exit": 101,
++      "capture_exit": 0
++    },
++    "web_consumers": {
++      "passed": 19,
++      "failed": 2,
++      "command_exit": 101,
++      "capture_exit": 0
++    }
++  },
++  "retained_positive_groups": {
++    "cleanup_owner": 7,
++    "cleanup_consumers": 17,
++    "html_policy": 12,
++    "host_read_format": 1,
++    "image_probe": 16
++  },
++  "cause": "Locked url2.5.8 parse_path normalizes leading empty file path segments before returning Url (parser.rs1371-1378). Post-parse host and post-conversion network checks cannot reconstruct the discarded separators. The same parser can remove a host when a Windows drive segment is encountered (parser.rs1344-1363), which must also not defeat the declared nonlocal-authority refusal.",
++  "version_source": {
++    "commit": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce",
++    "parser_blob": "dbdf9b906238c20ef0896d114d5cb8ad69197e34",
++    "ranges": [
++      "512-565",
++      "1318-1379"
++    ]
++  },
++  "fix_direction": "Preserve a pre-normalization rejection of four or more leading file separators, including mixed slash/backslash and ignored URL tab/newline spelling. Reject FileWithHostAndWindowsDrive normalization through the existing parser syntax-violation callback. Retain structural scheme/host/conversion checks and private no-I/O boundary. Add variants to existing controls; remove no assertion.",
++  "invalidated_evidence": "R1 source convergence is not runtime acceptance. FUA admission/web groups require a corrected exact-H execution; old failed receipt remains failed. Native Windows prior result stays attached to364 only.",
++  "forbidden": "No changed expectation, assertion removal, gate bypass, test skip, unchanged rerun or local/htch executable verification.",
++  "schema": "ocrm-scoped-implementation-recovery-v1",
++  "record_scope": "FUA-v1 existing Attachments owner only; failure receipt is not rewritten",
++  "repair_state": "source candidate; independent R2 review and exact corrected-H Actions pending",
++  "changed_behavior": "Reject four-or-more leading separators before URL normalization and reject FileWithHostAndWindowsDrive; retain parsed scheme/host/encoded-separator/native-conversion and final path checks.",
++  "test_delta": "Retain all named tests and assertions. Add five-slash, mixed-separator, ignored-tab/CR/LF, leading-C0/scheme-tab converter, remote-host drive, pipe-drive, IP-host drive and dot/drive cases inside existing tables. Existing 79 Linux/macOS and 76 Windows selected-name sets remain unchanged.",
++  "windows_original_evidence": {
++    "job": 125693323398,
++    "artifact": 13200270481,
++    "artifact_sha256": "53abdc0e5fc11c3d0999e8464f2f9516c74bd50b806fb382f217959227cd11fd",
++    "actual_passed": 76,
++    "actual_failed": 0,
++    "scope": "H364 only; no repaired-H acceptance"
++  },
++  "source_original_evidence": {
++    "run": 41567768550,
++    "status": "completed",
++    "conclusion": "success",
++    "scope": "tracked-tree/structural only; dependency/LFS closure and final G02 remain open"
++  },
++  "macos_original_evidence": {
++    "job": 125693323245,
++    "last_observed_status": "queued",
++    "observed_at": "2026-11-03T02:48:00Z",
++    "actual_passes": null
++  },
++  "collector": {
++    "frozen_at": "2026-11-03T02:51:20Z",
++    "assessment_sha256": "388f249bec4e3176f41b18a37339c260698eedb969e5416d55a9a2125068cac7",
++    "collector_json_sha256": "72dcede1fb615f24dffc3867c80e58e9b9410974164297a0b91d2677e9477dad",
++    "manifest_sha256": "e52c4b8cf0800c861f856c9d6fb59c736f7380912f13302190788b180c7f8eab"
++  },
++  "preserved_authority": "No source lock, public schema, capture/oracle, ledger statuses, RTM states, eight global flags, workflows or consumer owner changes in this recovery.",
++  "open_scope": [
++    "full Node/Rust path-alias parity and exact crate archive acquisition",
++    "generated HTML provenance and authentic root/capability authority",
++    "actual SendMessage separate consumer audit; do not reroute through loader or invent permission",
++    "all full-migration acceptance, real providers/channels/plugins/nodes/devices, supported packages and independent ACCEPT"
++  ],
++  "historical_unpublished_R2": {
++    "candidate_tree": "a2b9d3a154145d8071cc63909a5e6a20feeb7731",
++    "published": false,
++    "validation": "source-review slice only; no executed corrected-H receipt",
++    "test_counts_scope": "The prior test_delta 79/76 selected counts describe only the unpublished R2 slice; full integrated LFA capture additionally selects its own owner/consumer cases."
++  },
++  "current_recovery": {
++    "contract": "FUA-v1 recovery integrated with existing LFA-v1 production consumers",
++    "base_commit": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
++    "base_tree": "4e69dc6d77f4ff4508e02cdd7064084530db9b6e",
++    "reused_candidate_tree": "6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31",
++    "shared_owner": "source/host/src/extensions/attachments/media_reference.rs",
++    "behavior": "Reuse shared native converter in media_reference; reuse071 raw-prefix helper only after file classification, preserving localhost doubled-prefix and native interior/query positives. Keep BR reader/service bytes. Actual SendMessage/AgentManagement consume Result before effects; AgentManagement parses/admit all image values before any materialization.",
++    "independent_review": "pending new complete integrated scope",
++    "exact_H_actions": "not-run"
++  },
++  "additional_source_finding": {
++    "finding_id": "FUA-WINDOWS-ABSOLUTE-02",
++    "recorded_before_integrating_fix": true,
++    "basis": "source-confirmed possible debug assertion/native drive-relative return; no local execution or fabricated failing CI case",
++    "subject": "FUA R2 frozen tree a2b9d3a154145d8071cc63909a5e6a20feeb7731; file_url_to_path native conversion boundary",
++    "trigger": "On Windows, file:///C: (or encoded-drive colon) has only a drive segment; published url2.5.8 to_file_path builds C: and asserts native absolute path.",
++    "dependency": {
++      "archive_sha256": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
++      "lib_git_blob": "f1558682b6287d0cba1cd93d84cee6cf6cbeaf44",
++      "ranges": [
++        "3139-3191"
++      ]
++    },
++    "contract": "FUA-02/LFA-03 require an admitted native absolute path or typed refusal before local effects.",
++    "decision": "REUSE_EXISTING_LFA_FIX",
++    "existing_source": "/tmp/fabushi-647e-pairing/local-file-url-r1/candidate/source/host/src/extensions/attachments/media_reference.rs",
++    "existing_candidate_tree": "6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31",
++    "integration": "Reuse native drive-root precondition and absolute-result check already in the shared existing media_reference owner. Preserve FUA normalization prefix guard/zero-reader assertions and actual LFA App propagation; do not publish a duplicate parser owner.",
++    "review": "FUA R2 remains source-only historical frozen slice, no runtime or whole-LFA approval. Full integrated scope requires new independent reviews and exact-H Actions.",
++    "retained": "No prior failed receipt, valid assertion, source identity, unit state or global completion flag is changed."
++  },
++  "integrated_R1_recovery": {
++    "finding_id": "LFA-AGENT-IMAGE-BATCH-01",
++    "decision": "FIX",
++    "recorded_before_fix": true,
++    "candidate_tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
++    "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
++    "source_evidence": "AgentManagementToolBridge parse_images constructs the complete Vec but checks only scheme; then resolves each source sequentially. ProductionAgentManagementSink ignores owned_path from the shared resolver. After a valid first image creates a managed file, a later URL rejection returns early without SendMessage abort custody.",
++    "source_blob": "e8cf8008e9c4eab2dbd909289ab6fa9a1345726c",
++    "source_ranges": [
++      "11-22",
++      "55-65",
++      "93-101"
++    ],
++    "source_confirmation": "Root directly read exact source after independent structure reviewer preliminary finding; no local execution or fabricated observed orphan",
++    "contract": "LFA invalid-source admission must cause no materialization or outward message; actual AgentManagement adjacent consumer is in scope",
++    "fix": "Reuse shared pure resolve_local_file_url inside existing parse_images before any per-image sink resolution. The full value batch passes parsing before .into_iter begins; no new store, custody owner or trait interface. Keep actual sink direct-call admission. Add real App valid-first/invalid-later no-effects case and native bridge regression/positive selection.",
++    "limits": "This addresses deterministic invalid URL refusal in a batch. Later file-read/persistence/delivery failures and unknown write outcomes remain separate existing work; no broad cleanup or crash guarantee is claimed.",
++    "review": "New immutable R2 with complete scope plus delta and independent review required before publication; all R1 findings retained.",
++    "independent_R1_findings": [
++      {
++        "review": "reviews/media-admission-general-r1.md",
++        "finding": "LFA-GEN-R1-01",
++        "sha256": "19c9acf61a1e576801ac4ea408e326c9fdf8f0d12c511c9327caaa689694df4b",
++        "verdict": "REQUEST_CHANGES"
++      },
++      {
++        "review": "reviews/media-admission-structure-r1.md",
++        "finding": "R1-STRUCT-01",
++        "sha256": "398e78394ab18cbe03919ba61221c4daf555a9a0a70fb3aa2da15544782987c1",
++        "verdict": "REQUEST_CHANGES"
++      }
++    ],
++    "root_review_read": "Both complete terminal reports read; same source-confirmed finding accepted. Strengthen actual App oracle with repeated refusal across owner reopen and subsequent actual local-image materialization/send. No additional production scope or state owner."
++  },
++  "historical_open_scope_interpretation": "Earlier open_scope and no-consumer-change text describe the historical unpublished FUA-only recovery. Exact url archive is now acquired in073; actual App consumers are implemented in this integrated LFA candidate but review/execution/acceptance remain pending. All other source/permission/producer/ecosystem gates remain open."
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/parity-ledger.json b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/parity-ledger.json
+index 9882c93..fda6a05 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/parity-ledger.json
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/parity-ledger.json
+@@ -6588,17 +6588,22 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Streaming progress draft composition, reasoning/commentary line formatting, and local attachment 50 MiB upload cap enforcement with safe mime resolution.",
++      "behavior": "Streaming progress draft composition, reasoning/commentary line formatting, and local attachment 50 MiB upload cap enforcement with safe mime resolution. LFA-v1 validates the final reanchored local path before metadata and bounded reading. Actual Xuser publication consumes this reader through AttachmentsService; refused images keep the existing None/omission outcome.",
+       "blocker_ids": [],
+       "capability_ids": [
+         "channel.attachment_resolver"
+       ],
+       "dependencies": [
+-        "mahayana_host_runtime::connectors"
++        "mahayana_host_runtime::connectors",
++        "source/host/src/extensions/attachments/media_reference.rs"
+       ],
+       "evidence_refs": [
+         "source/host/tests/openclaw_channel_delivery_contract.rs",
+-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
++        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -6626,7 +6631,10 @@
+       },
+       "invariants": [
+         "Attachments exceeding 50 MiB rejected",
+-        "MIME type and image flag resolved accurately from header magic bytes"
++        "MIME type and image flag resolved accurately from header magic bytes",
++        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
++        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling",
++        "LFA-v1 does not verify the broader historical MIME or every channel-provider responsibility; current narrow admission and bounded byte consumer are the selected claims"
+       ],
+       "migration_rollback": "Reject attachment and log error without crashing host",
+       "oracle_ids": [
+@@ -6670,7 +6678,10 @@
+         "symbol": "resolve_channel_attachment"
+       },
+       "tests": [
+-        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o05_attachment_50_mib_limit"
++        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o05_attachment_50_mib_limit",
++        "source/host/tests/channel_attachment_contract.rs::lfa_channel_native_url_variants_preserve_bytes_and_metadata",
++        "source/host/tests/channel_attachment_contract.rs::lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
++        "source/host/tests/channel_attachment_contract.rs::lfa_windows_channel_paths_reject_network_and_alias_spellings"
+       ],
+       "typed_contracts": [
+         "resolve_channel_attachment"
+@@ -13031,17 +13042,22 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Resolves raw media reference string to local filesystem PathBuf when not a remote URL or data URL, normalizing single-slash and mixed-case file URLs, rejecting UNC hostnames and encoded traversal separators (%2f, %5c), and expanding tilde home directory paths.",
++      "behavior": "Resolves raw media reference string to local filesystem PathBuf when not a remote URL or data URL, normalizing single-slash and mixed-case file URLs, rejecting UNC hostnames and encoded traversal separators (%2f, %5c), and expanding tilde home directory paths. LFA-v1 delegates file URL conversion and platform path spelling admission to the existing media-reference owner, including native absolute paths and home expansion. Invalid input retains the current None result.",
+       "blocker_ids": [],
+       "capability_ids": [
+         "media.local_path"
+       ],
+       "dependencies": [
+-        "mahayana_host_runtime::connectors::channel_attachment"
++        "mahayana_host_runtime::connectors::channel_attachment",
++        "source/host/src/extensions/attachments/media_reference.rs"
+       ],
+       "evidence_refs": [
+         "source/host/tests/openclaw_media_file_context_contract.rs",
+-        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
++        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -13059,9 +13075,11 @@
+       "invariants": [
+         "Remote media URLs (http, https, media, blob, data) return None",
+         "File URLs containing %2f or %5c return None to prevent path traversal",
+-        "UNC hostnames return None"
++        "UNC hostnames return None",
++        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
++        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling"
+       ],
+-      "migration_rollback": "Fallback to standard Url::to_file_path without UNC / traversal checks",
++      "migration_rollback": "Keep source refusal in the existing path owner; do not fall back to unchecked Url::to_file_path or lossy/manual path reconstruction",
+       "oracle_ids": [
+         "OCRM-FILE-CTX-O03",
+         "OCRM-FILE-CTX-O08"
+@@ -13088,7 +13106,7 @@
+       ],
+       "responsibility_kind": "business-runtime",
+       "reviewer": "xuyao@ombhrum.com",
+-      "risk": "Low; hardens local file path resolution against URL encoding exploit vectors",
++      "risk": "High; this resolver feeds actual local Channel/Xuser metadata/read and must reject unsafe Windows path spellings before filesystem access",
+       "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
+       "source_refs": [
+         {
+@@ -13125,7 +13143,10 @@
+       },
+       "tests": [
+         "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_03_resolve_local_media_path",
+-        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_08_gateway_service_dispatch"
++        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_08_gateway_service_dispatch",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/tests/openclaw_media_file_context_contract.rs::lfa_file_context_uses_shared_admission_without_lossy_fallback",
++        "source/host/tests/openclaw_media_file_context_contract.rs::lfa_windows_file_context_rejects_plain_network_and_alias_paths"
+       ],
+       "typed_contracts": [
+         "resolve_local_media_path(source: &str) -> Option<PathBuf>"
+@@ -14259,7 +14280,7 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Media reference scheme classification, sandbox path rewrite (media/inbound/<id>), and local store resolution.",
++      "behavior": "Media reference scheme classification, sandbox path rewrite (media/inbound/<id>), and local store resolution. LFA-v1 adds a typed local-file URL admission result and pure platform path spelling guard consumed by the actual Runner/agent-management source readers, Channel/Xuser reader, and existing web-media adapter.",
+       "blocker_ids": [],
+       "capability_ids": [
+         "media.reference_resolution"
+@@ -14271,7 +14292,12 @@
+         "source/host/tests/openclaw_media_reference_contract.rs",
+         "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md",
+         "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
+-        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
++        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs",
++        "source/host/tests/sand_agent_management_tools_contract.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -14301,16 +14327,18 @@
+       ],
+       "id": "OCRM-RESP-MEDIA-REFERENCE-RESOLUTION-001",
+       "integration": {
+-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
+-        "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::classify_media_reference_source",
++        "consumer": "main::resolve_production_attachment_source propagates refusal in both actual sinks; media_file_context and channel_attachment reject before metadata/read; web_media preserves invalid-file-url refusal; AgentManagementToolBridge preflights the complete image value batch through the same owner before any per-image resolver call",
++        "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::{classify_media_reference_source, resolve_local_file_url, admit_local_media_path}",
+         "owner": "source/host/src/extensions/attachments/media_reference.rs",
+-        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
++        "producer": "Existing Attachments consumers, production Runner SendMessage and AgentManagement source resolution, and Channel/Xuser attachment resolution"
+       },
+       "invariants": [
+         "Windows drive paths not classified as unsupported schemes",
+-        "Sandbox paths rewritten to media/inbound/<id>"
++        "Sandbox paths rewritten to media/inbound/<id>",
++        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
++        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling"
+       ],
+-      "migration_rollback": "Direct local path resolution",
++      "migration_rollback": "Retain fail-closed media admission and suspend affected delivery if unsafe source conversion would otherwise be restored; no durable-state migration",
+       "oracle_ids": [
+         "OCRM-MEDIA-REF-O02",
+         "OCRM-MEDIA-REF-O03"
+@@ -14336,7 +14364,7 @@
+       ],
+       "responsibility_kind": "business-runtime",
+       "reviewer": "xuyao@ombhrum.com",
+-      "risk": "Low; accurate scheme dispatch and sandbox containment",
++      "risk": "High; URL normalization, Windows remote/share/device/alternate-stream aliases and invalid-source versus non-file classification precede real media reads and outward publication",
+       "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
+       "source_refs": [],
+       "status": {
+@@ -14354,12 +14382,18 @@
+       },
+       "tests": [
+         "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_02_classify_media_reference_source",
+-        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite"
++        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/tests/send_message_tool_contract.rs::lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
++        "source/host/app/src/tests/local_media_file_url_tests.rs",
++        "source/host/tests/sand_agent_management_tools_contract.rs::lfa_agent_management_batch_admits_all_urls_before_resolving"
+       ],
+       "typed_contracts": [
+         "MediaReferenceSourceInfo",
+         "MediaSandboxPathRewrite",
+-        "InboundMediaReference"
++        "InboundMediaReference",
++        "resolve_local_file_url(raw: &str) -> Result<Option<PathBuf>, MediaReferenceError>",
++        "admit_local_media_path(path: &Path) -> Result<(), MediaReferenceError>"
+       ],
+       "unit_id": "OCRM-UNIT-MEDIA-004"
+     },
+@@ -15930,7 +15964,7 @@
+     },
+     {
+       "adr_refs": [],
+-      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:). HHP-v2 connects only the existing direct service local explicit HTML contract: exact opt-in on .html/.htm validates actual bounded bytes, returns text/html and document with unchanged bytes, and leaves generated trust absent. The broad remote, image-optimization, chat and permission-scope responsibilities remain applicable and are not accepted by this slice. FUA-v1 rejects every nonlocal file URL authority and native conversion failure before the existing local-reader boundary, and checks workspace-resolved network namespaces before filesystem work. Native file URL bytes and filenames remain covered by actual loader/service controls; this is not a public Gateway registration or general read-authority completion.",
++      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:). HHP-v2 connects only the existing direct service local explicit HTML contract: exact opt-in on .html/.htm validates actual bounded bytes, returns text/html and document with unchanged bytes, and leaves generated trust absent. The broad remote, image-optimization, chat and permission-scope responsibilities remain applicable and are not accepted by this slice. FUA-v1 rejects every nonlocal file URL authority and native conversion failure before the existing local-reader boundary, and checks workspace-resolved network namespaces before filesystem work. Native file URL bytes and filenames remain covered by actual loader/service controls; this is not a public Gateway registration or general read-authority completion. LFA-v1 preserves refusal after file-URL conversion failure and reuses the shared media-reference admission before roots canonicalization and bounded read. Its existing stricter cross-platform raw four-slash restriction remains explicit.",
+       "blocker_ids": [
+         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001"
+       ],
+@@ -15940,7 +15974,8 @@
+       "dependencies": [
+         "source/host/src/extensions/attachments/image_ops.rs",
+         "source/host/src/extensions/attachments/media_store.rs",
+-        "source/host/src/extensions/attachments/host_read_media_policy.rs"
++        "source/host/src/extensions/attachments/host_read_media_policy.rs",
++        "source/host/src/extensions/attachments/media_reference.rs"
+       ],
+       "evidence_refs": [
+         "source/host/tests/openclaw_web_media_contract.rs",
+@@ -15949,7 +15984,11 @@
+         "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+-        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json"
++        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs"
+       ],
+       "existing_owner_candidates": [
+         {
+@@ -15989,7 +16028,9 @@
+         "Omitted, unknown and non-HTML modes preserve existing loading behavior; MIME signature coverage beyond the existing detector remains an explicit full-equivalence gap",
+         "Only structurally parsed local file URLs with empty/localhost host may reach native path conversion; no slash-stripping or lossy fallback revives rejected URLs",
+         "The private synchronous admission-to-local-reader boundary rejects remote URLs and prohibited resolved network paths before canonicalize, metadata, open or read; roots and sandbox flags do not bypass URL admission",
+-        "Native Windows local verbatim-drive workspaces remain local; UNC and device namespaces are refused before the local-reader boundary"
++        "Native Windows local verbatim-drive workspaces remain local; UNC and device namespaces are refused before the local-reader boundary",
++        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
++        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling"
+       ],
+       "migration_rollback": "Reject remote URL and unverified paths fail-closed",
+       "oracle_ids": [
+@@ -16054,7 +16095,10 @@
+         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
+         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
+         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
+-        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_authority_alias_is_not_read"
++        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_authority_alias_is_not_read",
++        "source/host/tests/openclaw_web_media_contract.rs::lfa_web_media_uses_shared_invalid_file_url_boundary",
++        "source/host/tests/openclaw_web_media_contract.rs::lfa_web_media_normalized_file_urls_reach_loader_and_service",
++        "source/host/tests/openclaw_web_media_contract.rs::lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry"
+       ],
+       "typed_contracts": [
+         "load_web_media(uri_or_path: &str, options: &WebMediaOptions) -> Result<WebMediaResult, String>",
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/requirements-traceability-matrix.json b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/requirements-traceability-matrix.json
+index 90771a6..5053c28 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -1023,7 +1023,11 @@
+         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+         "source/host/tests/pending_wake_rearm_contract.rs",
+         "source/host/tests/durable_recovery_stores_contract.rs",
+-        "source/host/tests/transcript_manager_contract.rs"
++        "source/host/tests/transcript_manager_contract.rs",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R15",
+@@ -1360,7 +1364,11 @@
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
++        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R23",
+@@ -1490,6 +1498,10 @@
+         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+         "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+         "source/host/src/extensions/memory/production_identity_tests.rs",
+@@ -2374,7 +2386,11 @@
+         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
+         "source/host/tests/pending_wake_rearm_contract.rs",
+         "source/host/tests/durable_recovery_stores_contract.rs",
+-        "source/host/tests/transcript_manager_contract.rs"
++        "source/host/tests/transcript_manager_contract.rs",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC15",
+@@ -2817,7 +2833,11 @@
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
+         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
+         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
+-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
++        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC23",
+@@ -2966,6 +2986,10 @@
+         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+         "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
++        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
++        "source/host/tests/local_media_file_url_contract.rs",
++        "source/host/app/src/tests/local_media_file_url_tests.rs",
+         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
+         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
+         "source/host/src/extensions/memory/production_identity_tests.rs",
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/scripts/capture_media_cleanup.py b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/scripts/capture_media_cleanup.py
+index 03f5385..dfc83dd 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/scripts/capture_media_cleanup.py
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/scripts/capture_media_cleanup.py
+@@ -86,6 +86,9 @@ WEB_MEDIA_NAMES = [
+     "test_ocrm_web_media_service_maximum_cap_preserves_actual_bytes",
+     "test_ocrm_web_media_service_reader_zero_exact_and_default_caps",
+     "test_ocrm_web_media_service_reader_failures_and_fresh_retry",
++    "lfa_web_media_uses_shared_invalid_file_url_boundary",
++    "lfa_web_media_normalized_file_urls_reach_loader_and_service",
++    "lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry",
+ ]
+ WEB_MEDIA_UNIX_NAMES = [
+     "test_ocrm_web_media_file_url_authority_alias_is_not_read",
+@@ -131,6 +134,9 @@ CHANNEL_ATTACHMENT_NAMES = [
+     "file_urls_and_plain_paths_upload_bytes_with_frozen_mime_rules",
+     "empty_directory_zero_and_oversize_local_inputs_fail_closed",
+     "frozen_shared_media_inventory_drives_channel_classification",
++    "lfa_channel_native_url_variants_preserve_bytes_and_metadata",
++    "lfa_channel_invalid_file_urls_never_become_local_paths",
++    "lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
+ ]
+ IMAGE_OPS_NAMES = [
+     "test_ocrm_image_ops_build_resize_side_grid",
+@@ -150,6 +156,55 @@ IMAGE_OPS_NAMES = [
+     "test_ocrm_image_ops_png_file_loader_preserves_read_boundaries",
+     "test_ocrm_image_ops_png_prefix_gateway_dispatch_and_retry",
+ ]
++LOCAL_FILE_URL_NAMES = [
++    "lfa_shared_owner_distinguishes_non_file_sources",
++    "lfa_shared_owner_preserves_native_file_url_variants",
++    "lfa_shared_owner_rejects_all_remote_authorities",
++    "lfa_shared_owner_rejects_malformed_file_urls_after_normalization",
++    "lfa_shared_owner_rejects_bad_path_escapes_without_fallback",
++    "lfa_shared_owner_decodes_path_once_and_ignores_url_metadata",
++    "lfa_shared_owner_keeps_refusal_stateless",
++    "lfa_path_guard_rejects_nul_on_every_platform",
++]
++
++FILE_CONTEXT_NAMES = [
++    "test_ocrm_file_ctx_01_xml_attribute_escaping_and_sanitization",
++    "test_ocrm_file_ctx_02_render_file_context_block_escaping",
++    "test_ocrm_file_ctx_03_resolve_local_media_path",
++    "test_ocrm_file_ctx_04_unlink_if_exists",
++    "test_ocrm_file_ctx_05_document_truncation_notice",
++    "test_ocrm_file_ctx_06_runtime_prompt_image_provenance",
++    "test_ocrm_file_ctx_07_image_processor_contracts",
++    "test_ocrm_file_ctx_08_gateway_service_dispatch",
++    "lfa_file_context_uses_shared_admission_without_lossy_fallback",
++]
++
++SEND_MESSAGE_NAMES = [
++    "send_message_guard_rejects_when_shipping_state_is_waiting_on_user",
++    "schema_matches_frozen_type_fences_and_attachment_schemes",
++    "widget_schema_matches_frozen_choice_contract_and_normalization",
++    "generated_send_message_schema_exposes_frozen_widget_constraints",
++    "encoding_preserves_frozen_text_markdown_and_summary_projection",
++    "send_message_uses_frozen_agent_v1_wire_types_and_tool_call_tag",
++    "send_message_bridge_is_first_party_and_delegates_other_tools",
++    "cursor_agent_message_resolves_shipping_title_fail_soft",
++    "send_message_interaction_emits_frozen_initial_and_completed_agent_v1_wire",
++    "awaiting_user_interaction_completes_with_frozen_error_result_before_rejecting",
++    "box_media_resolution_matches_frozen_root_desktop_and_image_fences",
++    "send_message_bridge_resolves_text_images_and_standalone_attachments_before_persisting",
++    "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
++    "delivery_counter_tracks_only_successful_shipping_send_side_effects",
++    "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
++    "lfa_send_message_file_url_facade_preserves_admitted_metadata",
++    "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
++]
++
++AGENT_MANAGEMENT_NAMES = [
++    "runner_management_tools_are_first_party_and_validate_send_inputs",
++    "create_and_update_tools_delegate_with_merge_semantics",
++    "lfa_agent_management_batch_admits_all_urls_before_resolving",
++]
++
+ INPUTS = [
+     ".github/workflows/rust-desktop-runtime.yml",
+     "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+@@ -188,6 +243,15 @@ INPUTS = [
+     "source/host/src/extensions/attachments/generate_image_resource_accessor.rs",
+     "source/host/src/connectors/channel_attachment.rs",
+     "source/host/tests/channel_attachment_contract.rs",
++    "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
++    "source/host/src/extensions/attachments/media_file_context.rs",
++    "source/host/src/runner/tools/send_message_tool.rs",
++    "source/host/tests/local_media_file_url_contract.rs",
++    "source/host/tests/openclaw_media_file_context_contract.rs",
++    "source/host/tests/send_message_tool_contract.rs",
++    "source/host/app/src/tests/local_media_file_url_tests.rs",
++    "source/host/src/runner/tools/sand_agent_management_tools.rs",
++    "source/host/tests/sand_agent_management_tools_contract.rs",
+ ]
+ 
+ 
+@@ -309,9 +373,9 @@ def main():
+     if os.environ.get("GITHUB_ACTIONS") != "true":
+         raise SystemExit("This executable verification is GitHub Actions-only.")
+     ROOT.mkdir(parents=True, exist_ok=False)
+-    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1"],
++    receipt = {"contract": "MSL-RECURSIVE-01", "additional_contracts": ["HHP-v2", "IPB-v1", "FUA-v1", "BR-v1", "LFA-v1-native"],
+                "result": "failed-or-incomplete", "executions": [],
+-               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
++               "scope": "Existing cleanup owner and actual files/service, explicit HTML loading through the existing bounded loader/service, PNG header bounds through existing metadata/attachment/file consumers, and BR-v1 shared byte bounds with opened-file admission, finite fault controls, actual service/Box/image/channel consumers and fresh retry. FUA-v1 retains local URL authority/conversion, pure admission and native path/byte/service controls; its counter measures reader-boundary entries, not OS syscalls, and contacts no live share. Synthetic allocation faults do not prove real process-wide OOM recovery. LFA-v1 native admission selects the shared converter, metadata facade and actual Channel/web-media consumers plus whole AgentManagement preflight. The separate Linux App receipt executes actual private Runner/AgentManagement sinks and Session custody; this native receipt does not prove that execution. HTML policy and stale-snapshot controls do not establish generated origin, a durable marker or database pruning. No public Gateway registration, complete read-capability/root identity, cancellation, hostile Windows open deadline, native 32-bit, frontend/Runner/full MIME or image codec, packaged or whole-media acceptance."}
+     save(receipt)
+     try:
+         head = output(["git", "rev-parse", "HEAD"])
+@@ -347,14 +411,29 @@ def main():
+         file_url_owner = [FILE_URL_OWNER_PREFIX + name for name in FILE_URL_OWNER_NAMES]
+         web_media = WEB_MEDIA_NAMES.copy()
+         bounded_reader = [BOUNDED_READ_OWNER_PREFIX + name for name in BOUNDED_READ_OWNER_NAMES]
++        local_file_url = LOCAL_FILE_URL_NAMES.copy()
++        file_context = FILE_CONTEXT_NAMES.copy()
++        channel_attachment = CHANNEL_ATTACHMENT_NAMES.copy()
+         if runner_os == "Windows":
+             owner.append(OWNER_PREFIX + "cleanup_windows_identity_compares_full_file_id")
+             file_url_owner.append(FILE_URL_OWNER_PREFIX + "verbatim_drive_workspace_enters_local_reader")
++            local_file_url.extend([
++                "lfa_windows_shared_owner_rejects_drive_less_and_alias_urls",
++                "lfa_windows_path_guard_rejects_network_and_namespace_aliases",
++                "lfa_windows_path_guard_accepts_rooted_drives",
++            ])
++            file_context.append("lfa_windows_file_context_rejects_plain_network_and_alias_paths")
++            channel_attachment.append("lfa_windows_channel_paths_reject_network_and_alias_spellings")
+         else:
+             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_unicode_names_and_special_entries")
+             html_policy.extend(HTML_POLICY_UNIX_NAMES)
+             web_media.extend(WEB_MEDIA_UNIX_NAMES)
+             bounded_reader.extend(BOUNDED_READ_OWNER_PREFIX + name for name in BOUNDED_READ_OWNER_UNIX_NAMES)
++            local_file_url.extend([
++                "lfa_unix_path_guard_preserves_colon_and_double_slash_paths",
++                "lfa_unix_file_url_preserves_posix_control",
++            ])
++            file_context.append("lfa_unix_file_context_preserves_colon_file_names")
+         if runner_os == "Linux":
+             integration.append("test_ocrm_media_store_recursive_cleanup_preserves_raw_names")
+         if runner_os in {"macOS", "Windows"}:
+@@ -372,7 +451,11 @@ def main():
+             ("bounded-reader-public", base + ["--test", "openclaw_media_reference_contract", "--", "--test-threads=1"], MEDIA_REFERENCE_NAMES),
+             ("bounded-reader-box-consumer", base + ["--test", "attachments_service_contract", "service_upload_read_text_chunk_and_gateway_use_single_agent_media_store", "--", "--exact", "--test-threads=1"], ["service_upload_read_text_chunk_and_gateway_use_single_agent_media_store"]),
+             ("bounded-reader-image-consumer", base + ["--test", "attachments_service_contract", "image_reads_and_persistence_preserve_content_addressed_dimensions", "--", "--exact", "--test-threads=1"], ["image_reads_and_persistence_preserve_content_addressed_dimensions"]),
+-            ("bounded-reader-channel-consumers", base + ["--test", "channel_attachment_contract", "--", "--test-threads=1"], CHANNEL_ATTACHMENT_NAMES),
++            ("bounded-reader-channel-consumers", base + ["--test", "channel_attachment_contract", "--", "--test-threads=1"], channel_attachment),
++            ("local-file-url-owner", base + ["--test", "local_media_file_url_contract", "--", "--test-threads=1"], local_file_url),
++            ("file-context-consumers", base + ["--test", "openclaw_media_file_context_contract", "--", "--test-threads=1"], file_context),
++            ("send-message-consumers", base + ["--test", "send_message_tool_contract", "--", "--test-threads=1"], SEND_MESSAGE_NAMES),
++            ("agent-management-consumers", base + ["--test", "sand_agent_management_tools_contract", "--", "--test-threads=1"], AGENT_MANAGEMENT_NAMES),
+         ]
+         receipt["planned_commands"] = [{"case": label, "command": command, "required_positive_names": names}
+                                        for label, command, names in cases]
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/scripts/capture_portable_contracts.py b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index 1f73741..dce650d 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -555,6 +555,8 @@ cases = [
+         "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
+         "delivery_counter_tracks_only_successful_shipping_send_side_effects",
+         "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
++        "lfa_send_message_file_url_facade_preserves_admitted_metadata",
++        "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+         "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
+         "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
+         "generated_send_message_text_success_survives_session_backfill_reopen",
+@@ -970,7 +972,7 @@ for label, command, required in cases:
+             r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
+         accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]
+     if label == "generated-send-message-contracts":
+-        accepted = (accepted and sorted(counts) == [(13, 0, 0), (14, 0, 0), (15, 0, 0)]
++        accepted = (accepted and sorted(counts) == [(13, 0, 0), (14, 0, 0), (17, 0, 0)]
+             and len(passed) == len(required))
+     if label == "canonical-root-admission-contracts":
+         accepted = accepted and canonical_contract_results_accepted(cargo_exit, capture_exit, required, text)
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/app/src/main.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/app/src/main.rs
+index fb7d24a..bf65f7e 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/app/src/main.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/app/src/main.rs
+@@ -641,12 +641,15 @@ fn resolve_production_attachment_source(
+     forever_box: &ForeverBoxService,
+     agent_id: &str,
+     source_url: &str,
+-) -> (ResolvedAttachmentSource, Option<std::path::PathBuf>) {
+-    let Some(source_path) = file_path_from_file_url(source_url) else {
+-        return (ResolvedAttachmentSource {
++) -> Result<(ResolvedAttachmentSource, Option<std::path::PathBuf>), String> {
++    let Some(source_path) =
++        mahayana_host_runtime::extensions::attachments::media_reference::resolve_local_file_url(source_url)
++            .map_err(|error| format!("invalid local media file URL: {error}"))?
++    else {
++        return Ok((ResolvedAttachmentSource {
+             url: source_url.to_string(),
+             file_name: None,
+-        }, None);
++        }, None));
+     };
+     let file_name = source_path
+         .file_name()
+@@ -666,10 +669,10 @@ fn resolve_production_attachment_source(
+             &bytes,
+             kind,
+         ) {
+-            return (
++            return Ok((
+                 ResolvedAttachmentSource { url: url.clone(), file_name },
+                 file_path_from_file_url(&url),
+-            );
++            ));
+         }
+     }
+     let status = forever_box.get_status(agent_id);
+@@ -698,7 +701,7 @@ fn resolve_production_attachment_source(
+     let owned_path = (resolved != source_url)
+         .then(|| file_path_from_file_url(&resolved))
+         .flatten();
+-    (ResolvedAttachmentSource { url: resolved, file_name }, owned_path)
++    Ok((ResolvedAttachmentSource { url: resolved, file_name }, owned_path))
+ }
+ 
+ struct ProductionSendMessageSink {
+@@ -898,7 +901,8 @@ impl SendMessageSink for ProductionSendMessageSink {
+             self.forever_box.as_ref(),
+             &self.agent_id,
+             source_url,
+-        );
++        )
++        .map_err(ProviderSessionError::Tool)?;
+         if let Some(path) = owned_path {
+             let mut custody = OutgoingMediaCustody::default();
+             custody.track(path.clone());
+@@ -1178,7 +1182,8 @@ impl AgentManagementSink for ProductionAgentManagementSink {
+             self.forever_box.as_ref(),
+             &self.agent_id,
+             &image.url,
+-        );
++        )
++        .map_err(ProviderSessionError::Tool)?;
+         Ok(AgentMessageImage {
+             url: resolved.url,
+             alt: image.alt.clone(),
+@@ -17931,6 +17936,8 @@ mod tests {
+     mod original_turn_recovery_tests;
+     #[path = "channel_host_lane_tests.rs"]
+     mod channel_host_lane_tests;
++    #[path = "local_media_file_url_tests.rs"]
++    mod local_media_file_url_tests;
+     #[path = "link_preview_gateway_tests.rs"]
+     mod link_preview_gateway_tests;
+     #[path = "channel_failure_handoff_tests.rs"]
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/app/src/tests/local_media_file_url_tests.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/app/src/tests/local_media_file_url_tests.rs
+new file mode 100644
+index 0000000..5682e95
+--- /dev/null
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/app/src/tests/local_media_file_url_tests.rs
+@@ -0,0 +1,769 @@
++use super::super::*;
++use super::channel_host_lane_tests::{IdleRunnerOwners, idle_runner_owners};
++use std::collections::BTreeSet;
++use std::path::{Path, PathBuf};
++use std::sync::atomic::{AtomicUsize, Ordering};
++
++use mahayana_host_runtime::attachment_paths::{
++    get_agent_assets_dir, get_agent_attachments_dir, get_agent_media_store_roots,
++};
++use mahayana_host_runtime::runner::tools::sand_agent_management_tools::AgentManagementToolBridge;
++use mahayana_host_runtime::runner::tools::send_message_tool::{
++    SendMessageToolBridge, send_message_tool_definition,
++};
++
++// The bytes and dimensions are local fixture oracles, not a codec-equivalence
++// or live provider/channel acceptance claim.
++const PNG: &[u8] = &[
++    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
++    0, 0, 0, 1, 0, 0, 0, 1, 8, 4, 0, 0, 0, 181, 28, 12, 2,
++    0, 0, 0, 11, 73, 68, 65, 84, 120, 218, 99, 100, 248, 15, 0,
++    1, 5, 1, 1, 39, 24, 227, 102, 0, 0, 0, 0, 73, 69, 78, 68,
++    174, 66, 96, 130,
++];
++
++struct UnusedLocalMediaDelegate;
++
++impl RoutedToolBridge for UnusedLocalMediaDelegate {
++    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
++        Ok(Vec::new())
++    }
++
++    fn call_tool(
++        &self,
++        _tool: &RoutedToolDefinition,
++        _args: Value,
++        _tool_call_id: &str,
++    ) -> Result<Value, ProviderSessionError> {
++        panic!("first-party media tools must not dispatch to a provider delegate");
++    }
++}
++
++#[derive(Debug, Clone, PartialEq, Eq)]
++struct MediaAdmissionSnapshot {
++    session_key: String,
++    lifecycle_revision: String,
++    work_id: Option<String>,
++    paths: Vec<String>,
++}
++
++fn media_admission(sessions: &ProductionSessionWorkers, agent_id: &str) -> MediaAdmissionSnapshot {
++    let record = sessions.read_session_work_admission(agent_id)
++        .expect("read the actual Session admission")
++        .expect("the fixture has a materialized Session");
++    MediaAdmissionSnapshot {
++        session_key: record.session_key,
++        lifecycle_revision: record.lifecycle_revision,
++        work_id: record.admitted_media_work_id,
++        paths: record.admitted_media_paths,
++    }
++}
++
++#[derive(Debug, Clone)]
++struct ResolutionObservation {
++    requested_url: String,
++    resolved: ResolvedAttachmentSource,
++    admission: MediaAdmissionSnapshot,
++    pending_work_id: Option<String>,
++    owned_bytes: Vec<(PathBuf, Vec<u8>)>,
++}
++
++// This is an observation port, not a replacement resolver or persistence
++// pipeline. Every applicable sink operation delegates to the private shipping
++// sink. Successful resolution is observed before the real bridge can process
++// the next image, so rollback assertions cannot pass merely because no first
++// image was ever materialized/admitted.
++struct ObservedProductionSendSink {
++    production: Arc<ProductionSendMessageSink>,
++    resolutions: Mutex<Vec<ResolutionObservation>>,
++    aborts: Mutex<Vec<String>>,
++    sends: AtomicUsize,
++}
++
++impl ObservedProductionSendSink {
++    fn new(production: Arc<ProductionSendMessageSink>) -> Self {
++        Self {
++            production,
++            resolutions: Mutex::new(Vec::new()),
++            aborts: Mutex::new(Vec::new()),
++            sends: AtomicUsize::new(0),
++        }
++    }
++
++    fn resolutions(&self) -> Vec<ResolutionObservation> {
++        self.resolutions.lock().expect("resolution observations").clone()
++    }
++}
++
++impl SendMessageSink for ObservedProductionSendSink {
++    fn is_awaiting_user_selection(&self) -> bool {
++        self.production.is_awaiting_user_selection()
++    }
++
++    fn resolve_cloud_agent_title(&self, bc_id: &str) -> Option<String> {
++        self.production.resolve_cloud_agent_title(bc_id)
++    }
++
++    fn request_box_help(
++        &self,
++        request: BoxHelpRequest,
++        timestamp_ms: u64,
++        tool_call_id: &str,
++    ) -> Result<BoxHelpOutcome, ProviderSessionError> {
++        self.production.request_box_help(request, timestamp_ms, tool_call_id)
++    }
++
++    fn resolve_attachment_source(
++        &self,
++        source_url: &str,
++        tool_call_id: &str,
++    ) -> Result<ResolvedAttachmentSource, ProviderSessionError> {
++        let resolved = self.production.resolve_attachment_source(source_url, tool_call_id)?;
++        let admission = media_admission(&self.production.sessions, &self.production.agent_id);
++        let pending_work_id = self.production.pending_media.lock()
++            .expect("actual in-flight custody map")
++            .get(tool_call_id).and_then(|pending| pending.media_work_id.clone());
++        let owned_bytes = admission.paths.iter().map(|path| {
++            let path = PathBuf::from(path);
++            let bytes = fs::read(&path).expect("actual admitted bytes already exist");
++            (path, bytes)
++        }).collect();
++        self.resolutions.lock().expect("resolution observations").push(ResolutionObservation {
++            requested_url: source_url.to_string(),
++            resolved: resolved.clone(),
++            admission,
++            pending_work_id,
++            owned_bytes,
++        });
++        Ok(resolved)
++    }
++
++    fn read_media_dimensions(&self, resolved_url: &str) -> Option<(u32, u32)> {
++        self.production.read_media_dimensions(resolved_url)
++    }
++
++    fn abort_attachment_custody(&self, tool_call_id: &str) {
++        self.production.abort_attachment_custody(tool_call_id);
++        self.aborts.lock().expect("abort observations").push(tool_call_id.to_string());
++    }
++
++    fn send_message(
++        &self,
++        message: Value,
++        timestamp_ms: u64,
++        tool_call_id: &str,
++    ) -> Result<Option<String>, ProviderSessionError> {
++        self.sends.fetch_add(1, Ordering::SeqCst);
++        self.production.send_message(message, timestamp_ms, tool_call_id)
++    }
++}
++
++struct LocalMediaAppFixture {
++    root: PathBuf,
++    agent_id: String,
++    session_key: String,
++    owners: Option<IdleRunnerOwners>,
++    sink: Option<Arc<ProductionSendMessageSink>>,
++    host_requests: mpsc::Receiver<HostLaneRequest>,
++    remove_on_drop: bool,
++}
++
++impl LocalMediaAppFixture {
++    fn new(label: &str) -> Self {
++        let root = std::env::temp_dir().join(format!(
++            "fabushi-local-media-app-{label}-{}", uuid::Uuid::new_v4(),
++        ));
++        fs::create_dir_all(&root).expect("owned fixture directory");
++        fs::write(root.join("settings.json"), b"{}").expect("credential-free settings");
++        Self::open(root, None)
++    }
++
++    fn open(root: PathBuf, existing_agent_id: Option<String>) -> Self {
++        let (host_tx, host_requests) = mpsc::channel();
++        let events = GatewayEventHub::default();
++        let sessions = Arc::new(ProductionSessionWorkers::with_agents_root(root.join("agents"), 500));
++        let agent_id = existing_agent_id.unwrap_or_else(|| {
++            sessions.materialize_new_session(None, "user", None).expect("actual Session").id
++        });
++        let admission = media_admission(&sessions, &agent_id);
++        let manager = Arc::new(TranscriptManager::new(&root, Arc::clone(&sessions)));
++        let owners = idle_runner_owners(&root, host_tx.clone(), events.clone(), sessions, manager);
++        let deps = &owners.deps;
++        let roster_events = events.clone();
++        let roster = Arc::new(ProductionRosterEmit::new(
++            Arc::clone(&deps.session_workers), Arc::clone(&deps.transcript_runtime),
++            Arc::new(move |event| roster_events.publish(event)),
++        ));
++        deps.transcript_manager.bind_roster_emit(roster).expect("actual roster owner");
++        deps.transcript_runtime.session_runtime().set_window_focused(
++            &deps.session_workers, true, 1_000,
++        ).expect("actual focused desktop state");
++        let sink = Arc::new(ProductionSendMessageSink {
++            host_tx,
++            cloud_agents: Arc::clone(&deps.cloud_agents),
++            sessions: Arc::clone(&deps.session_workers),
++            forever_box: Arc::clone(&deps.forever_box),
++            transcript_manager: Arc::clone(&deps.transcript_manager),
++            events,
++            ack_obligations: Arc::clone(&deps.ack_obligations),
++            transcript_runtime: Arc::clone(&deps.transcript_runtime),
++            ack_token: None,
++            agent_id: agent_id.clone(),
++            session_key: Some(admission.session_key.clone()),
++            reply_thread_target: None,
++            is_fork: false,
++            pending_media: Mutex::new(HashMap::new()),
++        });
++        Self {
++            root, agent_id, session_key: admission.session_key, owners: Some(owners),
++            sink: Some(sink), host_requests, remove_on_drop: true,
++        }
++    }
++
++    fn deps(&self) -> &LocalRoutedRunnerDeps {
++        &self.owners.as_ref().expect("live actual owners").deps
++    }
++
++    fn source(&self, name: &str, bytes: &[u8]) -> (PathBuf, String) {
++        let directory = self.root.join("incoming");
++        fs::create_dir_all(&directory).expect("owned source directory");
++        let path = directory.join(name);
++        fs::write(&path, bytes).expect("owned local source");
++        let url = file_url_for_path(&path).expect("native absolute file URL");
++        (path, url)
++    }
++
++    fn bridge(&self) -> (SendMessageToolBridge, Arc<ObservedProductionSendSink>) {
++        let sink = Arc::new(ObservedProductionSendSink::new(Arc::clone(
++            self.sink.as_ref().expect("actual SendMessage sink"),
++        )));
++        let port: Arc<dyn SendMessageSink> = sink.clone();
++        (SendMessageToolBridge::new(Arc::new(UnusedLocalMediaDelegate), port), sink)
++    }
++
++    fn entries(&self) -> Vec<Value> {
++        self.deps().session_workers.read_agent_transcript_entries(&self.agent_id)
++            .expect("actual Session transcript")
++    }
++
++    fn admission(&self) -> MediaAdmissionSnapshot {
++        media_admission(&self.deps().session_workers, &self.agent_id)
++    }
++
++    fn agent_dir(&self) -> PathBuf {
++        self.deps().session_workers.session_db_path(&self.agent_id)
++            .expect("actual Session database path").parent()
++            .expect("database parent").to_path_buf()
++    }
++
++    fn media_files(&self) -> BTreeSet<PathBuf> {
++        fn collect(directory: &Path, files: &mut BTreeSet<PathBuf>) {
++            if !directory.exists() { return; }
++            for entry in fs::read_dir(directory).expect("owned media directory") {
++                let entry = entry.expect("owned media directory entry");
++                if entry.file_type().expect("owned media file type").is_dir() {
++                    collect(&entry.path(), files);
++                } else {
++                    files.insert(entry.path());
++                }
++            }
++        }
++        let mut files = BTreeSet::new();
++        for directory in get_agent_media_store_roots(self.agent_dir()) {
++            collect(&directory, &mut files);
++        }
++        files
++    }
++
++    fn assert_custody_idle(&self) {
++        let admission = self.admission();
++        assert!(admission.work_id.is_none(), "durable media identity must be released");
++        assert!(admission.paths.is_empty(), "durable media paths must be released");
++        assert!(self.sink.as_ref().expect("actual sink").pending_media.lock()
++            .expect("actual custody map").is_empty());
++    }
++
++    fn assert_no_host_request(&self) {
++        assert!(matches!(self.host_requests.try_recv(), Err(mpsc::TryRecvError::Empty)),
++            "URL refusal must precede a Host-lane delivery request");
++    }
++
++    fn dispose_owners(&mut self) {
++        drop(self.sink.take());
++        if let Some(owners) = self.owners.take() {
++            owners.dispose(&self.agent_id);
++        }
++    }
++
++    fn reopen(mut self) -> Self {
++        self.dispose_owners();
++        self.remove_on_drop = false;
++        let root = self.root.clone();
++        let agent_id = self.agent_id.clone();
++        drop(self);
++        Self::open(root, Some(agent_id))
++    }
++
++    fn close(mut self) {
++        self.dispose_owners();
++        fs::remove_dir_all(&self.root).expect("remove only this fixture's closed directory");
++        self.remove_on_drop = false;
++    }
++}
++
++impl Drop for LocalMediaAppFixture {
++    fn drop(&mut self) {
++        self.dispose_owners();
++        if self.remove_on_drop {
++            let _ = fs::remove_dir_all(&self.root);
++        }
++    }
++}
++
++fn encoded_separator_url(native_url: &str) -> String {
++    let (parent, leaf) = native_url.rsplit_once('/').expect("native source URL has a filename");
++    // Decoding this separator would address the same existing owned file.
++    // No negative fixture names an external host or network share.
++    format!("{parent}%2F{leaf}")
++}
++
++fn assert_invalid_source(error: ProviderSessionError) {
++    match error {
++        ProviderSessionError::Tool(message) => assert!(
++            message.starts_with("invalid local media file URL:"),
++            "the real App resolver must propagate its refusal, got: {message}",
++        ),
++        other => panic!("expected the App's local source refusal, got: {other:?}"),
++    }
++}
++
++fn call_send(
++    bridge: &SendMessageToolBridge,
++    args: Value,
++    tool_call_id: &str,
++) -> Result<Value, ProviderSessionError> {
++    bridge.call_tool(&send_message_tool_definition(), args, tool_call_id)
++}
++
++fn assert_observed_owned_media(
++    fixture: &LocalMediaAppFixture,
++    observation: &ResolutionObservation,
++    source_url: &str,
++    source_name: &str,
++    bytes: &[u8],
++    tool_call_id: &str,
++    image: bool,
++) -> PathBuf {
++    assert_eq!(observation.requested_url, source_url);
++    assert_ne!(observation.resolved.url, source_url, "the real local source must materialize");
++    assert_eq!(observation.resolved.file_name.as_deref(), Some(source_name));
++    assert_eq!(observation.admission.session_key, fixture.session_key);
++    let work_id = format!("send-media:{tool_call_id}");
++    assert_eq!(observation.admission.work_id.as_deref(), Some(work_id.as_str()));
++    assert_eq!(observation.pending_work_id.as_deref(), Some(work_id.as_str()));
++    assert_eq!(observation.owned_bytes.len(), 1, "one real managed file before publication");
++    let (path, observed_bytes) = &observation.owned_bytes[0];
++    assert_eq!(observed_bytes, bytes);
++    assert_eq!(observation.admission.paths, vec![path.to_str().expect("fixture path").to_string()]);
++    assert_eq!(file_path_from_file_url(&observation.resolved.url).as_deref(), Some(path.as_path()));
++    let expected_directory = if image {
++        get_agent_assets_dir(fixture.agent_dir())
++    } else {
++        get_agent_attachments_dir(fixture.agent_dir())
++    };
++    assert_eq!(path.parent(), Some(expected_directory.as_path()));
++    path.clone()
++}
++
++#[test]
++fn local_media_file_url_app_rejects_invalid_before_materialization() {
++    let fixture = LocalMediaAppFixture::new("reject");
++    let (source, source_url) = fixture.source("owned.png", PNG);
++    let initial_entries = fixture.entries();
++    let initial_admission = fixture.admission();
++    let initial_files = fixture.media_files();
++    let events = fixture.deps().events.subscribe();
++    let (bridge, observer) = fixture.bridge();
++    let invalid_urls = [
++        encoded_separator_url(&source_url),
++        encoded_separator_url(&source_url).replace("%2F", "%2f"),
++        format!("{source_url}%5Cignored"),
++        format!("{source_url}%"),
++        format!("{source_url}%XZ"),
++        format!("{source_url}%FF"),
++        format!("{source_url}%00"),
++    ];
++    for (index, url) in invalid_urls.iter().enumerate() {
++        let call_id = format!("invalid-local-{index}");
++        let error = call_send(&bridge, json!({
++            "type": "attachment", "url": url,
++            "channel": "slack:owned-fixture:thread",
++        }), &call_id).expect_err("invalid file URL must never become original-URL success");
++        assert_invalid_source(error);
++        assert_eq!(fixture.entries(), initial_entries);
++        assert_eq!(fixture.admission(), initial_admission);
++        assert_eq!(fixture.media_files(), initial_files);
++        assert_eq!(fs::read(&source).expect("original still exists"), PNG);
++        fixture.assert_custody_idle();
++        fixture.assert_no_host_request();
++    }
++    assert!(observer.resolutions().is_empty(), "no invalid source completes resolution");
++    assert_eq!(observer.sends.load(Ordering::SeqCst), 0, "no real send or delivery is entered");
++    assert_eq!(observer.aborts.lock().expect("abort observations").len(), invalid_urls.len());
++    assert!(matches!(events.try_recv(), Err(mpsc::TryRecvError::Empty)),
++        "no transcript publication on refusal");
++    drop(bridge);
++    drop(observer);
++    fixture.close();
++}
++
++#[test]
++fn local_media_file_url_app_rolls_back_earlier_image_on_later_refusal() {
++    let fixture = LocalMediaAppFixture::new("partial-images");
++    let (source, source_url) = fixture.source("first.png", PNG);
++    let invalid_url = encoded_separator_url(&source_url);
++    let initial_entries = fixture.entries();
++    let initial_admission = fixture.admission();
++    let initial_files = fixture.media_files();
++    let events = fixture.deps().events.subscribe();
++    let (bridge, observer) = fixture.bridge();
++    let call_id = "two-images-second-invalid";
++    let error = call_send(&bridge, json!({
++        "type": "text", "content": "both images must be admitted before sending",
++        "images": [{"url": source_url, "alt": "first"}, {"url": invalid_url, "alt": "second"}],
++        "channel": "slack:owned-fixture:thread",
++    }), call_id).expect_err("the second source must refuse the whole message");
++    assert_invalid_source(error);
++    let observations = observer.resolutions();
++    assert_eq!(observations.len(), 1, "first real resolution succeeds; second is refused");
++    let owned = assert_observed_owned_media(
++        &fixture, &observations[0], &source_url, "first.png", PNG, call_id, true,
++    );
++    assert_ne!(owned, source);
++    assert!(!owned.exists(), "actual bridge abort removes the earlier managed file");
++    assert_eq!(fs::read(&source).expect("original source survives rollback"), PNG);
++    assert_eq!(fixture.entries(), initial_entries);
++    assert_eq!(fixture.admission(), initial_admission, "actual abort releases the durable media fence");
++    assert_eq!(fixture.media_files(), initial_files);
++    fixture.assert_custody_idle();
++    fixture.assert_no_host_request();
++    assert_eq!(observer.sends.load(Ordering::SeqCst), 0);
++    assert_eq!(*observer.aborts.lock().expect("actual abort observation"), vec![call_id.to_string()]);
++    assert!(matches!(events.try_recv(), Err(mpsc::TryRecvError::Empty)));
++    drop(bridge);
++    drop(observer);
++    fixture.close();
++}
++
++#[test]
++fn local_media_file_url_app_commits_native_and_unicode_media_across_reopen() {
++    let fixture = LocalMediaAppFixture::new("native-unicode");
++    let initial_files = fixture.media_files();
++    let (bridge, observer) = fixture.bridge();
++    let cases: [(&str, &[u8], bool); 2] = [
++        ("native attachment.bin", b"exact native attachment bytes\0\xFF", false),
++        ("本地图 像.png", PNG, true),
++    ];
++    let mut preserved = Vec::new();
++    for (index, (name, bytes, image)) in cases.into_iter().enumerate() {
++        let (source, native_url) = fixture.source(name, bytes);
++        let source_url = if image {
++            format!("FiLe://localhost{}", native_url.strip_prefix("file://").expect("native scheme"))
++        } else { native_url };
++        let before = fixture.entries();
++        let call_id = format!("native-media-{index}");
++        let result = call_send(&bridge, json!({
++            "type": "attachment", "url": source_url, "alt": "local media",
++        }), &call_id).expect("valid native URL reaches the actual sink");
++        assert_eq!(result["sent"], true);
++        let observations = observer.resolutions();
++        assert_eq!(observations.len(), index + 1);
++        let observation = &observations[index];
++        let owned = assert_observed_owned_media(
++            &fixture, observation, &source_url, name, bytes, &call_id, image,
++        );
++        let entries = fixture.entries();
++        assert_eq!(entries.len(), before.len() + 1);
++        assert_eq!(&entries[..before.len()], before.as_slice());
++        let entry = entries.last().expect("actual persisted message");
++        assert_eq!(entry["id"], result["messageId"]);
++        assert_eq!(entry["kind"], "send-message");
++        assert_eq!(entry["sessionKey"], fixture.session_key);
++        assert_eq!(entry["message"]["url"], observation.resolved.url);
++        assert_eq!(entry["message"]["file_name"], name);
++        assert_eq!(entry["message"]["alt"], "local media");
++        if image {
++            assert_eq!(entry["message"]["width"], 1);
++            assert_eq!(entry["message"]["height"], 1);
++        }
++        assert_eq!(fs::read(&owned).expect("committed managed bytes"), bytes);
++        assert_eq!(fs::read(&source).expect("original source preserved"), bytes);
++        fixture.assert_custody_idle();
++        fixture.assert_no_host_request();
++        preserved.push((source, owned, bytes.to_vec()));
++    }
++    assert_eq!(observer.sends.load(Ordering::SeqCst), 2);
++    assert!(observer.aborts.lock().expect("abort observations").is_empty());
++    let expected_entries = fixture.entries();
++    let expected_admission = fixture.admission();
++    let expected_files = fixture.media_files();
++    assert_eq!(expected_files.len(), initial_files.len() + 2);
++    assert!(expected_files.is_superset(&initial_files));
++    drop(bridge);
++    drop(observer);
++    let fixture = fixture.reopen();
++    assert_eq!(fixture.entries(), expected_entries, "fresh Session owner reads exact persisted messages");
++    assert_eq!(fixture.admission(), expected_admission);
++    assert_eq!(fixture.media_files(), expected_files);
++    for (source, owned, bytes) in preserved {
++        assert_eq!(fs::read(source).expect("original source after reopen"), bytes);
++        assert_eq!(fs::read(owned).expect("committed media after reopen"), bytes);
++    }
++    fixture.assert_custody_idle();
++    fixture.close();
++}
++
++#[test]
++fn local_media_file_url_app_repeated_refusal_then_repair_survives_reopen() {
++    let fixture = LocalMediaAppFixture::new("repair-reopen");
++    let (source, source_url) = fixture.source("repair.png", PNG);
++    let invalid_url = encoded_separator_url(&source_url);
++    let (bridge, observer) = fixture.bridge();
++    let initial_entries = fixture.entries();
++    let initial_admission = fixture.admission();
++    let initial_files = fixture.media_files();
++    for index in 0..3 {
++        assert_invalid_source(call_send(&bridge, json!({
++            "type": "attachment", "url": invalid_url,
++        }), &format!("retry-invalid-{index}")).expect_err("repeat refusal is not a successful retry"));
++        assert_eq!(fixture.entries(), initial_entries);
++        assert_eq!(fixture.admission(), initial_admission);
++        assert_eq!(fixture.media_files(), initial_files);
++    }
++    assert!(observer.resolutions().is_empty());
++    assert_eq!(observer.sends.load(Ordering::SeqCst), 0);
++    let repaired = call_send(&bridge, json!({"type": "attachment", "url": source_url}), "repaired-first")
++        .expect("repair is a new real send");
++    assert_eq!(repaired["sent"], true);
++    let first_owned = assert_observed_owned_media(
++        &fixture, &observer.resolutions()[0], &source_url, "repair.png", PNG, "repaired-first", true,
++    );
++    let committed_entries = fixture.entries();
++    let committed_admission = fixture.admission();
++    let committed_files = fixture.media_files();
++    assert_eq!(committed_entries.len(), initial_entries.len() + 1);
++    assert_eq!(committed_files.len(), initial_files.len() + 1);
++    fixture.assert_custody_idle();
++    drop(bridge);
++    drop(observer);
++    let fixture = fixture.reopen();
++    assert_eq!(fixture.entries(), committed_entries);
++    assert_eq!(fixture.admission(), committed_admission);
++    assert_eq!(fs::read(&first_owned).expect("first repaired media survived real reopen"), PNG);
++    let (bridge, observer) = fixture.bridge();
++    for index in 0..2 {
++        assert_invalid_source(call_send(&bridge, json!({
++            "type": "attachment", "url": invalid_url,
++        }), &format!("reopened-invalid-{index}")).expect_err("reopened owner still refuses invalid URL"));
++        assert_eq!(fixture.entries(), committed_entries);
++        assert_eq!(fixture.admission(), committed_admission);
++        assert_eq!(fixture.media_files(), committed_files);
++        assert_eq!(fs::read(&first_owned).expect("refusal preserves earlier committed media"), PNG);
++        fixture.assert_custody_idle();
++        fixture.assert_no_host_request();
++    }
++    assert_eq!(observer.sends.load(Ordering::SeqCst), 0);
++    let second = call_send(&bridge, json!({"type": "attachment", "url": source_url}), "repaired-after-reopen")
++        .expect("a fresh valid send remains available after repeated refusal");
++    assert_eq!(second["sent"], true);
++    assert_ne!(second["messageId"], repaired["messageId"]);
++    let second_owned = assert_observed_owned_media(
++        &fixture, &observer.resolutions()[0], &source_url, "repair.png", PNG, "repaired-after-reopen", true,
++    );
++    assert_ne!(second_owned, first_owned, "fresh send owns a distinct file");
++    assert_eq!(fixture.entries().len(), committed_entries.len() + 1);
++    assert_eq!(fixture.media_files().len(), committed_files.len() + 1);
++    assert_eq!(fs::read(&second_owned).expect("second repaired managed bytes"), PNG);
++    assert_eq!(fs::read(&source).expect("source survives all refused and accepted calls"), PNG);
++    fixture.assert_custody_idle();
++    fixture.assert_no_host_request();
++    drop(bridge);
++    drop(observer);
++    fixture.close();
++}
++
++#[test]
++fn local_media_file_url_app_agent_management_refuses_image_before_outward_send() {
++    fn bridge_for(
++        fixture: &LocalMediaAppFixture,
++        wake_requests: &Arc<Mutex<Vec<AgentWakeRequest>>>,
++        agent_messages: &Arc<Mutex<Vec<String>>>,
++    ) -> (AgentManagementToolBridge, Arc<ProductionAgentManagementSink>, RoutedToolDefinition) {
++        let observed_wakes = Arc::clone(wake_requests);
++        let messaging = Arc::new(ProductionAgentToAgentMessaging::new(
++            Arc::clone(&fixture.deps().session_workers),
++            Arc::new(move |request| observed_wakes.lock().expect("wake observations").push(request.clone())),
++            None,
++        ));
++        let sink = Arc::new(ProductionAgentManagementSink {
++            sessions: Arc::clone(&fixture.deps().session_workers),
++            forever_box: Arc::clone(&fixture.deps().forever_box),
++            messaging,
++            agent_messages: Arc::clone(agent_messages),
++            agent_id: fixture.agent_id.clone(),
++            session_key: Some(fixture.session_key.clone()),
++            reply_to_id: None,
++        });
++        let sink_port: Arc<dyn AgentManagementSink> = sink.clone();
++        let bridge = AgentManagementToolBridge::new(Arc::new(UnusedLocalMediaDelegate), sink_port);
++        let tool = bridge.list_tools().expect("actual first-party tool definitions").into_iter()
++            .find(|tool| tool.name == "SendToAgent").expect("actual SendToAgent definition");
++        (bridge, sink, tool)
++    }
++
++    let mut fixture = LocalMediaAppFixture::new("agent-management");
++    let (source, source_url) = fixture.source("agent-image.png", PNG);
++    let invalid_url = encoded_separator_url(&source_url);
++    let target_id = fixture.deps().session_workers.materialize_new_session(None, "user", None)
++        .expect("actual recipient Session").id;
++    let source_entries = fixture.entries();
++    let target_entries = fixture.deps().session_workers.read_agent_transcript_entries(&target_id)
++        .expect("actual target transcript");
++    let source_admission = fixture.admission();
++    let target_admission = media_admission(&fixture.deps().session_workers, &target_id);
++    let source_files = fixture.media_files();
++    let wake_requests = Arc::new(Mutex::new(Vec::<AgentWakeRequest>::new()));
++    let agent_messages = Arc::new(Mutex::new(Vec::<String>::new()));
++
++    for cycle in 0..2 {
++        let (bridge, sink, tool) = bridge_for(&fixture, &wake_requests, &agent_messages);
++        let image = AgentMessageImage { url: invalid_url.clone(), alt: Some("refuse".into()) };
++        assert_invalid_source(sink.resolve_image_source(&image, "direct-agent-image")
++            .expect_err("the actual AgentManagement sink must not return the invalid original URL"));
++        assert_invalid_source(bridge.call_tool(&tool, json!({
++            "target_id": target_id, "message": "must not escape URL admission",
++            "images": [{"url": invalid_url, "alt": "refuse"}],
++        }), "agent-image-invalid").expect_err("the actual bridge propagates image admission refusal"));
++        for attempt in 0..2 {
++            // A later invalid URL must refuse the value batch before the earlier
++            // valid image can create an unowned managed file in this distinct sink.
++            assert_invalid_source(bridge.call_tool(&tool, json!({
++                "target_id": target_id, "message": "admit both image sources before materialization",
++                "images": [
++                    {"url": source_url, "alt": "valid first source"},
++                    {"url": invalid_url, "alt": "invalid later source"},
++                ],
++            }), &format!("agent-image-later-invalid-{cycle}-{attempt}"))
++                .expect_err("later invalid URL must refuse before any image resolves"));
++            assert_eq!(fixture.entries(), source_entries);
++            assert_eq!(fixture.deps().session_workers.read_agent_transcript_entries(&target_id)
++                .expect("target remains unchanged"), target_entries);
++            assert_eq!(fixture.admission(), source_admission);
++            assert_eq!(media_admission(&fixture.deps().session_workers, &target_id), target_admission);
++            assert_eq!(fixture.media_files(), source_files);
++            assert_eq!(fs::read(&source).expect("original image remains"), PNG);
++            assert!(wake_requests.lock().expect("actual messaging wake port").is_empty());
++            assert!(agent_messages.lock().expect("actual outgoing message tracking").is_empty());
++            fixture.assert_custody_idle();
++            fixture.assert_no_host_request();
++        }
++        let remote = AgentMessageImage {
++            url: "https://example.invalid/agent-image.png".into(), alt: Some("remote".into()),
++        };
++        let resolved = sink.resolve_image_source(&remote, "agent-image-https").expect("non-file passthrough");
++        assert_eq!(resolved.url, remote.url);
++        assert_eq!(resolved.alt, remote.alt);
++        assert_eq!(fixture.media_files(), source_files);
++        drop(bridge);
++        drop(sink);
++        fixture = fixture.reopen();
++        assert_eq!(fixture.entries(), source_entries);
++        assert_eq!(fixture.media_files(), source_files, "owner reopen must not conceal accumulated files");
++        fixture.assert_custody_idle();
++    }
++
++    // Actual positive control: the same source and bridge can materialize a
++    // local image and persist an outgoing message after the repeated refusal.
++    // The wake port observes the real messaging owner; it does not run a target Agent.
++    let (bridge, sink, tool) = bridge_for(&fixture, &wake_requests, &agent_messages);
++    let message = "valid local image after refusal";
++    let result = bridge.call_tool(&tool, json!({
++        "target_id": target_id, "message": message,
++        "images": [{"url": source_url, "alt": "admitted local source"}],
++    }), "agent-image-valid-after-refusal").expect("valid native source reaches actual messaging");
++    assert!(result.as_str().expect("actual messaging result").starts_with("Sent to "));
++    let committed_files = fixture.media_files();
++    let added = committed_files.difference(&source_files).cloned().collect::<Vec<_>>();
++    assert_eq!(added.len(), 1, "exactly one actual managed image is materialized");
++    assert_eq!(fs::read(&added[0]).expect("committed managed image bytes"), PNG);
++    let managed_url = file_url_for_path(&added[0]).expect("native managed image URL");
++    let committed_entries = fixture.entries();
++    assert_eq!(committed_entries.len(), source_entries.len() + 1);
++    assert_eq!(&committed_entries[..source_entries.len()], source_entries.as_slice());
++    let entry = committed_entries.last().expect("actual outgoing transcript entry");
++    assert_eq!(entry["toAgent"]["id"], target_id);
++    assert_eq!(entry["content"], message);
++    assert_eq!(entry["images"][0]["url"], managed_url);
++    assert_eq!(entry["images"][0]["alt"], "admitted local source");
++    {
++        let wakes = wake_requests.lock().expect("actual messaging wake port");
++        assert_eq!(wakes.len(), 1);
++        assert_eq!(wakes[0].agent_id, target_id);
++        assert_eq!(wakes[0].source_agent_id, fixture.agent_id);
++        assert_eq!(wakes[0].selected_images.len(), 1);
++        assert_eq!(wakes[0].selected_images[0]["data"], json!(PNG));
++        assert_eq!(wakes[0].inbound.as_ref().expect("actual inbound envelope")["images"][0]["url"], managed_url);
++    }
++    assert_eq!(agent_messages.lock().expect("actual outgoing tracking").as_slice(), &[message.to_string()]);
++    assert_eq!(fixture.deps().session_workers.read_agent_transcript_entries(&target_id)
++        .expect("wake observation does not execute the target"), target_entries);
++    fixture.assert_custody_idle();
++    fixture.assert_no_host_request();
++    drop(bridge);
++    drop(sink);
++    fixture = fixture.reopen();
++    assert_eq!(fixture.entries(), committed_entries);
++    assert_eq!(fixture.media_files(), committed_files);
++    assert_eq!(fs::read(&added[0]).expect("managed bytes survive actual owner reopen"), PNG);
++    assert_eq!(fs::read(&source).expect("source retained after successful send"), PNG);
++    fixture.assert_custody_idle();
++    fixture.close();
++}
++
++#[test]
++fn local_media_file_url_app_preserves_https_without_local_custody() {
++    let fixture = LocalMediaAppFixture::new("https");
++    let initial_entries = fixture.entries();
++    let initial_admission = fixture.admission();
++    let initial_files = fixture.media_files();
++    let (bridge, observer) = fixture.bridge();
++    // The URI is only stored/passed through; no HTTP client or live account is
++    // involved. Encoded slash is deliberately legal in this non-file URI.
++    let url = "https://example.invalid/media/%2Fimage.png?download=1";
++    let result = call_send(&bridge, json!({"type": "attachment", "url": url}), "https-passthrough")
++        .expect("HTTPS remains a normal SendMessage attachment");
++    assert_eq!(result["sent"], true);
++    let observations = observer.resolutions();
++    assert_eq!(observations.len(), 1);
++    assert_eq!(observations[0].resolved.url, url);
++    assert!(observations[0].resolved.file_name.is_none());
++    assert_eq!(observations[0].admission, initial_admission);
++    assert!(observations[0].pending_work_id.is_none());
++    assert!(observations[0].owned_bytes.is_empty());
++    assert_eq!(observer.sends.load(Ordering::SeqCst), 1);
++    let entries = fixture.entries();
++    assert_eq!(entries.len(), initial_entries.len() + 1);
++    assert_eq!(&entries[..initial_entries.len()], initial_entries.as_slice());
++    let entry = entries.last().expect("actual persisted HTTPS message");
++    assert_eq!(entry["id"], result["messageId"]);
++    assert_eq!(entry["kind"], "send-message");
++    assert_eq!(entry["sessionKey"], fixture.session_key);
++    assert_eq!(entry["message"]["url"], url);
++    assert!(entry["message"].get("file_name").is_none());
++    assert_eq!(fixture.media_files(), initial_files);
++    fixture.assert_custody_idle();
++    fixture.assert_no_host_request();
++    drop(bridge);
++    drop(observer);
++    fixture.close();
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/connectors/channel_attachment.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/connectors/channel_attachment.rs
+index 356e901..723006c 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/connectors/channel_attachment.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/connectors/channel_attachment.rs
+@@ -59,6 +59,7 @@ pub fn resolve_channel_attachment(raw_url: Option<&str>) -> Option<ResolvedChann
+ 
+     let local_path = to_local_channel_attachment_path(raw_url)?;
+     let resolved = reanchor_sand_path(&local_path);
++    crate::extensions::attachments::media_reference::admit_local_media_path(&resolved).ok()?;
+     let metadata = fs::metadata(&resolved).ok()?;
+     if !metadata.is_file()
+         || metadata.len() == 0
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/extensions/attachments/media_file_context.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/media_file_context.rs
+index 2372f03..0777b2f 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/extensions/attachments/media_file_context.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/media_file_context.rs
+@@ -14,7 +14,10 @@
+ use std::path::{Path, PathBuf};
+ use regex::Regex;
+ use serde::{Deserialize, Serialize};
+-use url::Url;
++
++use crate::extensions::attachments::media_reference::{
++    admit_local_media_path, resolve_local_file_url,
++};
+ 
+ /// Shared input/output pixel cap for Rastermill/image processing operations.
+ pub const MAX_IMAGE_INPUT_PIXELS: usize = 25_000_000;
+@@ -170,6 +173,12 @@ pub fn resolve_local_media_path(source: &str) -> Option<PathBuf> {
+         return None;
+     }
+ 
++    match resolve_local_file_url(trimmed) {
++        Ok(Some(path)) => return Some(path),
++        Err(_) => return None,
++        Ok(None) => {}
++    }
++
+     let lower = trimmed.to_ascii_lowercase();
+     if lower.starts_with("data:")
+         || lower.starts_with("http:")
+@@ -180,53 +189,22 @@ pub fn resolve_local_media_path(source: &str) -> Option<PathBuf> {
+         return None;
+     }
+ 
+-    if lower.starts_with("file:") {
+-        if lower.contains("%2f") || lower.contains("%5c") {
+-            return None;
+-        }
+-
+-        let mut url_str = trimmed;
+-        let mut single_slash_buf = String::new();
+-        if !lower.starts_with("file://") && lower.starts_with("file:") {
+-            let rest = &trimmed[5..];
+-            let trimmed_rest = rest.trim_start_matches('/');
+-            single_slash_buf = format!("file:///{}", trimmed_rest);
+-            url_str = &single_slash_buf;
+-        }
+-
+-        let parsed = Url::parse(url_str).ok()?;
+-        if let Some(host) = parsed.host_str() {
+-            if !host.is_empty() && host != "localhost" {
+-                return None;
+-            }
+-        }
+-        return parsed.to_file_path().ok();
+-    }
+-
+-    if trimmed.starts_with('~') {
+-        if trimmed == "~" {
+-            return home_dir();
+-        }
+-        if trimmed.starts_with("~/") || trimmed.starts_with("~\\") {
+-            let sub = &trimmed[2..];
+-            return home_dir().map(|h| h.join(sub));
+-        }
+-    }
+-
+     let p = Path::new(trimmed);
+-    if p.is_absolute() {
+-        return Some(p.to_path_buf());
+-    }
+-
+     let is_windows_drive = trimmed.len() >= 3
+         && trimmed.as_bytes()[0].is_ascii_alphabetic()
+         && trimmed.as_bytes()[1] == b':'
+         && (trimmed.as_bytes()[2] == b'/' || trimmed.as_bytes()[2] == b'\\');
+-    if is_windows_drive {
+-        return Some(PathBuf::from(trimmed));
+-    }
+-
+-    None
++    let resolved = if trimmed == "~" {
++        home_dir()?
++    } else if trimmed.starts_with("~/") || trimmed.starts_with("~\\") {
++        home_dir()?.join(&trimmed[2..])
++    } else if p.is_absolute() || is_windows_drive {
++        p.to_path_buf()
++    } else {
++        return None;
++    };
++    admit_local_media_path(&resolved).ok()?;
++    Some(resolved)
+ }
+ 
+ /// Best-effort temp file cleanup helper.
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/extensions/attachments/media_reference.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/media_reference.rs
+index 71b1913..860278b 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/extensions/attachments/media_reference.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/media_reference.rs
+@@ -1,10 +1,11 @@
++use std::cell::Cell;
+ use std::fs;
+ use std::io::{self, Read};
+ use std::path::{Component, Path, PathBuf};
+ use regex::Regex;
+ use std::sync::LazyLock;
+ use thiserror::Error;
+-use url::Url;
++use url::{SyntaxViolation, Url};
+ 
+ #[derive(Debug, Error, PartialEq, Eq, Clone)]
+ pub enum MediaReferenceError {
+@@ -14,6 +15,171 @@ pub enum MediaReferenceError {
+     PathNotAllowed(String),
+ }
+ 
++/// Reject unsafe local path spellings before a reader performs any filesystem work.
++/// This is admission only, not a root-capability or filesystem-identity check.
++pub fn admit_local_media_path(path: &Path) -> Result<(), MediaReferenceError> {
++    let bytes = path.as_os_str().as_encoded_bytes();
++    if bytes.contains(&0) {
++        return Err(MediaReferenceError::InvalidPath(
++            "Local media paths cannot contain NUL".into(),
++        ));
++    }
++
++    #[cfg(windows)]
++    {
++        let is_separator = |index: usize| {
++            matches!(bytes.get(index).copied(), Some(b'/') | Some(b'\\'))
++        };
++        let has_drive = |index: usize| {
++            bytes.get(index).is_some_and(|byte| byte.is_ascii_alphabetic())
++                && bytes.get(index + 1) == Some(&b':')
++        };
++        let namespace = if is_separator(0)
++            && is_separator(1)
++            && is_separator(3)
++            && matches!(bytes.get(2).copied(), Some(b'?') | Some(b'.'))
++        {
++            bytes.get(2).copied()
++        } else {
++            None
++        };
++        let drive_colon = if has_drive(0) && is_separator(2) {
++            Some(1)
++        } else if namespace.is_some() && has_drive(4) && is_separator(6) {
++            Some(5)
++        } else {
++            None
++        };
++        if is_separator(0)
++            && is_separator(1)
++            && !(namespace == Some(b'?') && drive_colon == Some(5))
++        {
++            return Err(MediaReferenceError::PathNotAllowed(
++                "Local media paths cannot use Windows network or device paths".into(),
++            ));
++        }
++        if let Some(colon) = bytes.iter().position(|byte| *byte == b':') {
++            if Some(colon) != drive_colon || bytes[colon + 1..].contains(&b':') {
++                return Err(MediaReferenceError::PathNotAllowed(
++                    "Local media paths cannot use Windows filesystem namespace aliases".into(),
++                ));
++            }
++        }
++    }
++    Ok(())
++}
++
++fn has_file_url_scheme(raw: &str) -> bool {
++    // Match the URL parser's C0/space trim and embedded ASCII tab/newline removal.
++    // This is only the classification of parse failures, never a path parser.
++    let mut prefix = raw
++        .trim_matches(|character: char| character <= '\u{0020}')
++        .chars()
++        .filter(|character| !matches!(*character, '\t' | '\r' | '\n'));
++    "file:".chars().all(|expected| {
++        prefix.next().is_some_and(|actual| actual.eq_ignore_ascii_case(&expected))
++    })
++}
++
++/// Distinguish non-file sources, admitted local file URLs, and rejected file URLs.
++/// Conversion failures never become manually reconstructed paths or passthrough URLs.
++pub fn resolve_local_file_url(raw: &str) -> Result<Option<PathBuf>, MediaReferenceError> {
++    let removed_remote_host = Cell::new(false);
++    let record_violation = |violation| {
++        if matches!(violation, SyntaxViolation::FileWithHostAndWindowsDrive) {
++            removed_remote_host.set(true);
++        }
++    };
++    let parsed = match Url::options()
++        .syntax_violation_callback(Some(&record_violation))
++        .parse(raw)
++    {
++        Ok(parsed) if parsed.scheme() == "file" => parsed,
++        Ok(_) => return Ok(None),
++        Err(error) if has_file_url_scheme(raw) => {
++            return Err(MediaReferenceError::InvalidPath(format!(
++                "Invalid local file URL: {error}",
++            )));
++        }
++        Err(_) => return Ok(None),
++    };
++    // url 2.5.8 can erase a remote host when the path starts with a drive letter.
++    // Its syntax callback retains that refusal even after host normalization.
++    if removed_remote_host.get()
++        || parsed.host_str().is_some_and(|host| !host.is_empty() && host != "localhost")
++        || !parsed.username().is_empty()
++        || parsed.password().is_some()
++        || parsed.port().is_some()
++    {
++        return Err(MediaReferenceError::PathNotAllowed(
++            "Local file URLs must not contain a remote authority, userinfo, or port".into(),
++        ));
++    }
++
++    let pathname = parsed.path();
++    let bytes = pathname.as_bytes();
++    let mut index = 0;
++    while index < bytes.len() {
++        if bytes[index] != b'%' {
++            index += 1;
++            continue;
++        }
++        let hex = |byte: u8| match byte {
++            b'0'..=b'9' => Some(byte - b'0'),
++            b'a'..=b'f' => Some(byte - b'a' + 10),
++            b'A'..=b'F' => Some(byte - b'A' + 10),
++            _ => None,
++        };
++        let octet = bytes.get(index + 1).copied().and_then(hex).zip(
++            bytes.get(index + 2).copied().and_then(hex),
++        ).map(|(high, low)| high * 16 + low);
++        let Some(octet) = octet else {
++            return Err(MediaReferenceError::InvalidPath(
++                "Local file URL pathname contains an invalid percent escape".into(),
++            ));
++        };
++        if matches!(octet, b'/' | b'\\') {
++            return Err(MediaReferenceError::InvalidPath(
++                "Local file URL pathname cannot encode path separators".into(),
++            ));
++        }
++        index += 3;
++    }
++    let decoded = percent_encoding::percent_decode_str(pathname).decode_utf8().map_err(|_| {
++        MediaReferenceError::InvalidPath("Local file URL pathname must be valid UTF-8".into())
++    })?;
++    if decoded.contains('\0') {
++        return Err(MediaReferenceError::InvalidPath(
++            "Local file URL pathname cannot contain NUL".into(),
++        ));
++    }
++    #[cfg(windows)]
++    {
++        let decoded = decoded.as_bytes();
++        // to_file_path's Windows implementation assumes an absolute drive path.
++        // Check first so a bare C: cannot reach its debug assertion or the filesystem.
++        if decoded.first() != Some(&b'/')
++            || !decoded.get(1).is_some_and(|byte| byte.is_ascii_alphabetic())
++            || decoded.get(2) != Some(&b':')
++            || decoded.get(3) != Some(&b'/')
++        {
++            return Err(MediaReferenceError::InvalidPath(
++                "Local file URL must contain an absolute Windows drive path".into(),
++            ));
++        }
++    }
++    let path = parsed.to_file_path().map_err(|_| {
++        MediaReferenceError::InvalidPath("Local file URL cannot be converted to a native path".into())
++    })?;
++    if !path.is_absolute() {
++        return Err(MediaReferenceError::InvalidPath(
++            "Local file URL must resolve to an absolute path".into(),
++        ));
++    }
++    admit_local_media_path(&path)?;
++    Ok(Some(path))
++}
++
+ #[derive(Debug, Clone, PartialEq, Eq)]
+ pub struct InboundMediaUri {
+     pub id: String,
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/extensions/attachments/web_media.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/web_media.rs
+index 9912720..98bf139 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/extensions/attachments/web_media.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/extensions/attachments/web_media.rs
+@@ -6,11 +6,11 @@
+ //! - `src/media/web-media.animated-webp.test.ts`
+ //! - `src/media/web-media.file-url.windows.test.ts`
+ 
+-use std::cell::Cell;
+ use std::fs;
+ use std::path::{Path, PathBuf};
+ use serde::{Deserialize, Serialize};
+-use url::{SyntaxViolation, Url};
++#[cfg(test)]
++use url::Url;
+ 
+ use crate::extensions::attachments::host_read_media_policy::{
+     assert_host_read_media_allowed, AssertHostReadParams,
+@@ -20,7 +20,9 @@ use crate::extensions::attachments::image_ops::{
+     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
+ };
+ use crate::extensions::attachments::media_file_context::ImageOptimizationLimitError;
+-use crate::extensions::attachments::media_reference::read_outbound_media_file_bounded;
++use crate::extensions::attachments::media_reference::{
++    admit_local_media_path, read_outbound_media_file_bounded, resolve_local_file_url,
++};
+ use crate::extensions::attachments::media_store::{detect_mime_from_buffer, extract_original_filename};
+ use crate::extensions::attachments::media_store_shared::format_media_size;
+ 
+@@ -289,53 +291,36 @@ fn file_url_has_extra_leading_path_separator(url_str: &str) -> bool {
+     ) && matches!(bytes.next(), Some(b'/' | b'\\'))
+ }
+ 
+-/// Resolves single-slash or standard file URL to path string.
+-pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
+-    let invalid = |message: &str| WebMediaError::LocalAccess {
++fn resolve_web_media_file_url(url_str: &str) -> Result<Option<PathBuf>, WebMediaError> {
++    let path = resolve_local_file_url(url_str).map_err(|error| WebMediaError::LocalAccess {
+         code: "invalid-file-url".to_string(),
+-        message: message.to_string(),
+-    };
+-    let removed_host = Cell::new(false);
+-    let parsed = Url::options()
+-        .syntax_violation_callback(Some(&|violation| {
+-            if violation == SyntaxViolation::FileWithHostAndWindowsDrive {
+-                removed_host.set(true);
+-            }
+-        }))
+-        .parse(url_str)
+-        .map_err(|_| invalid("Invalid file URL"))?;
+-    if parsed.scheme() != "file" {
+-        return Err(invalid("Not a file URL"));
+-    }
+-    if removed_host.get()
+-        || parsed.host_str().is_some_and(|host| {
+-            !host.is_empty() && !host.eq_ignore_ascii_case("localhost")
+-        })
+-    {
+-        return Err(invalid("File URLs with remote hosts are not allowed"));
+-    }
+-    if file_url_has_extra_leading_path_separator(url_str) {
+-        return Err(invalid("File URL contains extra leading path separators"));
+-    }
+-
+-    let path = parsed.path().to_ascii_lowercase();
+-    if path.contains("%2f") || path.contains("%5c") {
+-        return Err(invalid("Encoded path separators in file URL"));
+-    }
+-
+-    // url's Windows converter can assert on a bare drive. A second segment,
+-    // even the empty segment in /C:/, supplies the required root separator.
+-    #[cfg(windows)]
+-    if parsed.path_segments().and_then(|mut segments| segments.nth(1)).is_none() {
+-        return Err(invalid("File URL cannot be converted to an absolute local path"));
++        message: error.to_string(),
++    })?;
++    if let Some(path) = path.as_ref() {
++        // Inspect original spelling so normalization cannot conceal empty
++        // leading path segments, including immediately after localhost.
++        if file_url_has_extra_leading_path_separator(url_str) {
++            return Err(WebMediaError::LocalAccess {
++                code: "invalid-file-url".to_string(),
++                message: "File URL contains extra leading path separators".to_string(),
++            });
++        }
++        // Keep this adapter's existing stricter Unix/resolved-network policy.
++        assert_no_windows_network_path(&path.to_string_lossy(), "Local file URL")
++            .map_err(|_| WebMediaError::LocalAccess {
++                code: "invalid-file-url".to_string(),
++                message: "File URL resolves to a network path".to_string(),
++            })?;
+     }
++    Ok(path)
++}
+ 
+-    let file_path = parsed
+-        .to_file_path()
+-        .map_err(|_| invalid("File URL cannot be converted to an absolute local path"))?;
+-    assert_no_windows_network_path(&file_path.to_string_lossy(), "Local file URL")
+-        .map_err(|_| invalid("File URL resolves to a network path"))?;
+-    Ok(file_path)
++/// Resolves single-slash or standard file URLs through shared local admission.
++pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
++    resolve_web_media_file_url(url_str)?.ok_or_else(|| WebMediaError::LocalAccess {
++        code: "invalid-file-url".to_string(),
++        message: "Not a file URL".to_string(),
++    })
+ }
+ 
+ /// Loads web media from local file path or URL with size caps and image optimization.
+@@ -357,8 +342,8 @@ fn load_web_media_with_local_reader(
+ 
+     assert_no_windows_network_path(&cleaned, "Local media path")?;
+ 
+-    let file_path = if cleaned.to_ascii_lowercase().starts_with("file:") {
+-        file_url_to_path(&cleaned)?
++    let file_path = if let Some(path) = resolve_web_media_file_url(&cleaned)? {
++        path
+     } else if let Some(ws) = &options.workspace_dir {
+         let p = Path::new(&cleaned);
+         if p.is_absolute() {
+@@ -392,6 +377,11 @@ fn load_web_media_with_local_reader(
+         assert_no_windows_network_path(&file_path.to_string_lossy(), "Local media path")?;
+     }
+ 
++    admit_local_media_path(&file_path).map_err(|error| WebMediaError::LocalAccess {
++        code: "path-not-allowed".to_string(),
++        message: error.to_string(),
++    })?;
++
+     local_reader(&file_path, options)
+ }
+ 
+@@ -542,9 +532,19 @@ mod file_url_admission_tests {
+                     "FILE://127.0.0.1/share/image.png",
+                     "file://[::1]/share/image.png",
+                     "file://tmp/fua-boundary-only/image.png",
++                    "file://server/C:/safe/image.png",
++                    "\u{001f}f\ti\rL\ne://server/C:/safe/image.png",
+                     "file://localhost./share/image.png",
+                     r"file:\\files.example\share\image.png",
+                     "FILE:////files.example/share/image.png",
++                    "file://///files.example/share/image.png",
++                    r"file:/\/\files.example\share\image.png",
++                    "FiLe:/\t/\r/\n/files.example/share/image.png",
++                    "file://files.example/C:/private/image.png",
++                    "file://localhost.example/C|/private/image.png",
++                    "FILE://127.0.0.1/C:/private/image.png",
++                    "file://[::1]/C:/private/image.png",
++                    "file://files.example/./C:/private/image.png",
+                     "file:////C:/fua-boundary-only/image.png",
+                     r"file:/\/\C:/fua-boundary-only/image.png",
+                     r"file:\/\\C:/fua-boundary-only/image.png",
+@@ -585,6 +585,11 @@ mod file_url_admission_tests {
+                     "FILE:///C:/safe/folder%2Fimage.png",
+                     "file:///C:/safe/folder%5cimage.png",
+                     "FILE:///C:/safe/folder%5Cimage.png",
++                    "file:///C:/safe/image%GG.png",
++                    "file:///C:/safe/image%FF.png",
++                    "file:///C:/safe/image%00.png",
++                    "file:///C:/safe/image%.png",
++                    "\u{001f}f\ti\rL\ne://localhost:bad/image.png",
+                 ] {
+                     assert_reader_not_entered(reference, &options, "invalid-file-url");
+                 }
+@@ -604,6 +609,7 @@ mod file_url_admission_tests {
+                     "FiLe://localhost/C:",
+                     "file:///C:?ignored=/",
+                     "file:///C:#ignored=/",
++                    "file:///C:/safe/image.png%3Astream",
+                 ] {
+                     assert_reader_not_entered(reference, &options, "invalid-file-url");
+                 }
+@@ -632,6 +638,10 @@ mod file_url_admission_tests {
+             };
+             assert_reader_not_entered("image.png", &options, "network-path-not-allowed");
+         }
++        #[cfg(windows)]
++        for reference in [r"C:\safe\image.png:stream", r"C:relative.png"] {
++            assert_reader_not_entered(reference, &WebMediaOptions::default(), "path-not-allowed");
++        }
+     }
+ 
+     #[test]
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/runner/tools/sand_agent_management_tools.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/runner/tools/sand_agent_management_tools.rs
+index e8cf800..22e7f26 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/runner/tools/sand_agent_management_tools.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/runner/tools/sand_agent_management_tools.rs
+@@ -97,6 +97,10 @@ fn parse_images(value:Option<&Value>)->Result<Vec<AgentMessageImage>,ProviderSes
+         let o=row.as_object().ok_or_else(||ProviderSessionError::Tool(format!("images[{index}] must be an object")))?;
+         let url=o.get("url").and_then(Value::as_str).map(str::trim).filter(|v|!v.is_empty()).ok_or_else(||ProviderSessionError::Tool(format!("images[{index}].url is required")))?;
+         if !is_valid_attachment_url(url){return Err(ProviderSessionError::Tool(format!("images[{index}].url must include a file:// or https:// scheme")));}
++        // Admit the complete value batch before the caller starts resolving
++        // any image. AgentManagement has no SendMessage per-call rollback.
++        crate::extensions::attachments::media_reference::resolve_local_file_url(url)
++            .map_err(|error|ProviderSessionError::Tool(format!("invalid local media file URL: {error}")))?;
+         images.push(AgentMessageImage{url:url.into(),alt:optional_trimmed(o.get("alt")).map(ToOwned::to_owned)});
+     }Ok(images)
+ }
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/runner/tools/send_message_tool.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/runner/tools/send_message_tool.rs
+index 5a2afd5..9e12d7d 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/src/runner/tools/send_message_tool.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/src/runner/tools/send_message_tool.rs
+@@ -5,8 +5,6 @@ use std::sync::{
+ };
+ use std::time::{SystemTime, UNIX_EPOCH};
+ 
+-use url::Url;
+-
+ use prost::Message;
+ use serde_json::{Value, json};
+ 
+@@ -41,11 +39,9 @@ pub struct ResolvedAttachmentSource {
+ }
+ 
+ pub fn file_path_from_file_url(raw: &str) -> Option<PathBuf> {
+-    let url = Url::parse(raw).ok()?;
+-    if url.scheme() != "file" {
+-        return None;
+-    }
+-    url.to_file_path().ok()
++    crate::extensions::attachments::media_reference::resolve_local_file_url(raw)
++        .ok()
++        .flatten()
+ }
+ 
+ pub fn identity_attachment_source(raw: &str) -> ResolvedAttachmentSource {
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/channel_attachment_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/channel_attachment_contract.rs
+index 85fd507..887f2cb 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/channel_attachment_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/channel_attachment_contract.rs
+@@ -122,3 +122,87 @@ fn frozen_shared_media_inventory_drives_channel_classification() {
+ 
+     fs::remove_dir_all(root).unwrap();
+ }
++
++#[test]
++fn lfa_channel_native_url_variants_preserve_bytes_and_metadata() {
++    let root = scratch("lfa-native");
++    fs::create_dir_all(&root).expect("native fixture directory");
++    let name = "café Ω image.PNG";
++    let path = root.join(name);
++    let bytes = b"unchanged channel attachment bytes";
++    fs::write(&path, bytes).expect("write source bytes");
++    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
++    let expected = ResolvedChannelAttachment::Upload {
++        is_image: true,
++        bytes: bytes.to_vec(),
++        filename: name.into(),
++        mime: "image/png".into(),
++    };
++    for source in [
++        url.clone(),
++        url.replacen("file://", "FILE:", 1),
++        url.replacen("file://", "file://localhost", 1),
++        format!("\u{001f}f\ti\rL\ne:{}\n", &url[5..]),
++        format!("{url}?signature=%2F#preview%5C"),
++    ] {
++        assert_eq!(to_local_channel_attachment_path(&source), Some(path.clone()));
++        assert_eq!(resolve_channel_attachment(Some(&source)), Some(expected.clone()));
++    }
++    assert_eq!(fs::read(&path).expect("source retained"), bytes);
++    fs::remove_dir_all(root).expect("remove native fixture");
++}
++
++#[test]
++fn lfa_channel_invalid_file_urls_never_become_local_paths() {
++    // Pure conversion only for remote authorities: no metadata/open of a share.
++    for source in [
++        "file://server/share/image.png",
++        "file://127.0.0.1/share/image.png",
++        "file://server/C:/safe/image.png",
++        "\u{001f}f\tiLe://localhost:99/image.png",
++        "file://[invalid/image.png",
++    ] {
++        assert!(to_local_channel_attachment_path(source).is_none(), "{source:?}");
++    }
++}
++
++#[test]
++fn lfa_channel_invalid_encoding_preserves_source_and_valid_retry() {
++    let root = scratch("lfa-encoding");
++    fs::create_dir_all(&root).expect("native fixture directory");
++    let name = "literal%GG.png";
++    let path = root.join(name);
++    let bytes = b"literal percent source must remain intact";
++    fs::write(&path, bytes).expect("write literal percent source");
++    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
++    assert!(url.contains("%25GG"));
++    let invalid = url.replacen("%25GG", "%GG", 1);
++    assert!(to_local_channel_attachment_path(&invalid).is_none());
++    for _ in 0..2 {
++        assert!(resolve_channel_attachment(Some(&invalid)).is_none());
++        assert_eq!(resolve_channel_attachment(Some(&url)), Some(ResolvedChannelAttachment::Upload {
++            is_image: true,
++            bytes: bytes.to_vec(),
++            filename: name.into(),
++            mime: "image/png".into(),
++        }));
++    }
++    assert_eq!(fs::read(&path).expect("source retained"), bytes);
++    fs::remove_dir_all(root).expect("remove percent fixture");
++}
++
++#[cfg(windows)]
++#[test]
++fn lfa_windows_channel_paths_reject_network_and_alias_spellings() {
++    for source in [
++        r"\\server\share\image.png",
++        r"/\server/share/image.png",
++        r"\\?\UNC\server\share\image.png",
++        r"\\.\C:\safe\image.png",
++        r"C:\safe\file.txt:secret.png",
++        "file:///C:/safe/file.txt%3Asecret.png",
++        "file:///var/tmp/image.png",
++    ] {
++        assert!(to_local_channel_attachment_path(source).is_none(), "{source}");
++    }
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/local_media_file_url_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/local_media_file_url_contract.rs
+new file mode 100644
+index 0000000..5170951
+--- /dev/null
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/local_media_file_url_contract.rs
+@@ -0,0 +1,199 @@
++use std::path::{Path, PathBuf};
++
++use mahayana_host_runtime::extensions::attachments::media_reference::{
++    admit_local_media_path, resolve_local_file_url,
++};
++
++fn native_file_url(name: &str) -> (PathBuf, String) {
++    let path = std::env::temp_dir().join(name);
++    let url = url::Url::from_file_path(&path).expect("native absolute file URL");
++    (path, url.to_string())
++}
++
++#[test]
++fn lfa_shared_owner_distinguishes_non_file_sources() {
++    for source in [
++        "",
++        "relative/image.png",
++        "https://example.invalid/image.png",
++        "http://example.invalid/image.png",
++        "data:image/png;base64,AQID",
++        "media://inbound/image.png",
++        "file-name.png",
++        "file",
++        "ftp://example.invalid/image.png",
++        "\u{00a0}file:///tmp/image.png",
++    ] {
++        assert_eq!(resolve_local_file_url(source), Ok(None), "{source:?}");
++    }
++}
++
++#[test]
++fn lfa_shared_owner_preserves_native_file_url_variants() {
++    let (path, url) = native_file_url("lfa café Ω image.png");
++    let variants = [
++        url.clone(),
++        url.replacen("file:", "FILE:", 1),
++        url.replacen("file:", "fIlE:", 1),
++        url.replacen("file://", "FILE:", 1),
++        url.replacen("file://", "file://localhost", 1),
++        url.replacen("file://", "file://LOCALHOST", 1),
++        url.replacen("file://", "file://%6cocalhost", 1),
++        format!("\u{001f} \tf\ti\rL\ne:{}\r\n\u{0001}", &url[5..]),
++    ];
++    for source in variants {
++        assert_eq!(resolve_local_file_url(&source), Ok(Some(path.clone())), "{source:?}");
++    }
++}
++
++#[test]
++fn lfa_shared_owner_rejects_all_remote_authorities() {
++    for source in [
++        "file://server/share/image.png",
++        "FILE://not-attacker/share/image.png",
++        "file://attacker/share/image.png",
++        "file://127.0.0.1/share/image.png",
++        "file://[::1]/share/image.png",
++        "file://%73erver/share/image.png",
++        "file://localhost.example/share/image.png",
++        "\u{001f}f\ti\nle://server/share/image.png",
++        // url 2.5.8 otherwise removes this host while normalizing a drive path.
++        "file://server/C:/safe/image.png",
++        "file://127.0.0.1/C:/safe/image.png",
++    ] {
++        assert!(resolve_local_file_url(source).is_err(), "{source:?}");
++    }
++}
++
++#[test]
++fn lfa_shared_owner_rejects_malformed_file_urls_after_normalization() {
++    for source in [
++        "file://[invalid/image.png",
++        "file://localhost:99/image.png",
++        "file://user@localhost/image.png",
++        "file://user:password@localhost/image.png",
++        "\u{0001} \tf\ti\rLe://localhost:bad/image.png\n",
++    ] {
++        assert!(resolve_local_file_url(source).is_err(), "{source:?}");
++    }
++}
++
++#[test]
++fn lfa_shared_owner_rejects_bad_path_escapes_without_fallback() {
++    let (_, url) = native_file_url("lfa-path");
++    for suffix in [
++        "%",
++        "%0",
++        "%GG",
++        "%2fimage.png",
++        "%2Fimage.png",
++        "%5cimage.png",
++        "%5Cimage.png",
++        "%ff",
++        "%C0%AF",
++        "%ED%A0%80",
++        "%E2%82",
++        "%00image.png",
++        "literal\0image.png",
++    ] {
++        let source = format!("{url}{suffix}");
++        assert!(resolve_local_file_url(&source).is_err(), "{source:?}");
++    }
++}
++
++#[test]
++fn lfa_shared_owner_decodes_path_once_and_ignores_url_metadata() {
++    let (path, url) = native_file_url("lfa literal%2F café #.png");
++    assert!(url.contains("%252F"), "the fixture must encode a literal percent");
++    let source = format!("{url}?signature=%2F%GG#preview%5C%FF");
++    assert_eq!(resolve_local_file_url(&source), Ok(Some(path)));
++}
++
++#[test]
++fn lfa_shared_owner_keeps_refusal_stateless() {
++    let (path, url) = native_file_url("lfa-after-refusal.png");
++    let invalid = format!("{url}%FF");
++    for _ in 0..3 {
++        assert!(resolve_local_file_url(&invalid).is_err());
++        assert_eq!(resolve_local_file_url(&url), Ok(Some(path.clone())));
++    }
++}
++
++#[test]
++fn lfa_path_guard_rejects_nul_on_every_platform() {
++    assert!(admit_local_media_path(Path::new("ordinary\0image.png")).is_err());
++}
++
++#[cfg(unix)]
++#[test]
++fn lfa_unix_path_guard_preserves_colon_and_double_slash_paths() {
++    for source in ["/tmp/file:stream.png", "//local/path/image.png", "/tmp/café Ω.png"] {
++        assert!(admit_local_media_path(Path::new(source)).is_ok(), "{source}");
++    }
++}
++
++#[cfg(unix)]
++#[test]
++fn lfa_unix_file_url_preserves_posix_control() {
++    assert_eq!(
++        resolve_local_file_url("FILE:/var/tmp/caf%C3%A9%20image.png"),
++        Ok(Some(PathBuf::from("/var/tmp/café image.png"))),
++    );
++    assert_eq!(
++        resolve_local_file_url("file:///var/tmp/file%3Astream.png"),
++        Ok(Some(PathBuf::from("/var/tmp/file:stream.png"))),
++    );
++}
++
++#[cfg(windows)]
++#[test]
++fn lfa_windows_shared_owner_rejects_drive_less_and_alias_urls() {
++    for source in [
++        "file:///var/tmp/image.png",
++        "file:///C:",
++        "file:///C%3A",
++        "file:///C%3Arelative/image.png",
++        "file:///C:/safe/file.txt:secret.png",
++        "file:///C:/safe/file.txt%3Asecret.png",
++        "file:////server/share/image.png",
++        "file://localhost//server/share/image.png",
++    ] {
++        assert!(resolve_local_file_url(source).is_err(), "{source}");
++    }
++}
++
++#[cfg(windows)]
++#[test]
++fn lfa_windows_path_guard_rejects_network_and_namespace_aliases() {
++    for source in [
++        r"\\server\share\image.png",
++        "//server/share/image.png",
++        r"/\server/share/image.png",
++        r"\/server/share/image.png",
++        r"\\.\C:\safe\image.png",
++        r"\\?\UNC\server\share\image.png",
++        r"\\?\GLOBALROOT\Device\HarddiskVolume1\image.png",
++        r"\\?\C:",
++        r"C:relative.png",
++        r"C:\safe\image.png:secret",
++        r"C:\safe\file:secret.png",
++        r"\\?\C:\safe\image.png:secret",
++        "relative:stream",
++    ] {
++        assert!(admit_local_media_path(Path::new(source)).is_err(), "{source}");
++    }
++}
++
++#[cfg(windows)]
++#[test]
++fn lfa_windows_path_guard_accepts_rooted_drives() {
++    for source in [
++        r"C:\",
++        r"C:\safe\image.png",
++        "c:/safe/café Ω image.png",
++        r"\\?\C:\",
++        r"\\?\C:\safe\image.png",
++    ] {
++        assert!(admit_local_media_path(Path::new(source)).is_ok(), "{source}");
++    }
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/openclaw_media_file_context_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/openclaw_media_file_context_contract.rs
+index d947f0c..2c2365d 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/openclaw_media_file_context_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/openclaw_media_file_context_contract.rs
+@@ -136,15 +136,30 @@ fn test_ocrm_file_ctx_03_resolve_local_media_path() {
+     assert!(resolve_local_media_path("file://remote-server/share/image.png").is_none());
+ 
+     // Valid file URL resolves
+-    let file_url = "file:///tmp/valid-image.png";
+-    let resolved = resolve_local_media_path(file_url).expect("resolves valid file url");
+-    assert_eq!(resolved, PathBuf::from("/tmp/valid-image.png"));
++    let native_path = std::env::temp_dir().join("café valid-image.png");
++    let file_url = url::Url::from_file_path(&native_path).expect("native absolute file URL");
++    let uppercase_single_slash = file_url.as_str().replacen("file://", "FiLe:", 1);
++    let resolved = resolve_local_media_path(&uppercase_single_slash).expect("resolves valid file url");
++    assert_eq!(resolved, native_path);
++    #[cfg(unix)]
++    assert_eq!(
++        resolve_local_media_path("file:///tmp/valid-image.png"),
++        Some(PathBuf::from("/tmp/valid-image.png")),
++    );
++    #[cfg(windows)]
++    assert!(resolve_local_media_path("file:///tmp/valid-image.png").is_none());
+ 
+     // Absolute filesystem path resolves
+-    let abs_path = "/var/log/openclaw.log";
++    let abs_path = std::env::temp_dir().join("openclaw.log");
+     assert_eq!(
+-        resolve_local_media_path(abs_path).expect("resolves absolute path"),
+-        PathBuf::from(abs_path)
++        resolve_local_media_path(abs_path.to_str().expect("native fixture path"))
++            .expect("resolves absolute path"),
++        abs_path,
++    );
++    #[cfg(unix)]
++    assert_eq!(
++        resolve_local_media_path("/var/log/openclaw.log"),
++        Some(PathBuf::from("/var/log/openclaw.log")),
+     );
+ 
+     // Home directory path resolution
+@@ -365,12 +380,23 @@ fn test_ocrm_file_ctx_08_gateway_service_dispatch() {
+     );
+ 
+     // Gateway dispatch for resolveLocalMediaPath
+-    let path_args = json!({ "source": "file:///tmp/sample.png" });
++    let native_path = tmp.join("sample.png");
++    let native_url = url::Url::from_file_path(&native_path).expect("native absolute file URL");
++    let path_args = json!({ "source": native_url.as_str() });
+     let path_result = service
+         .dispatch_gateway("resolveLocalMediaPath", &path_args)
+         .expect("handler exists")
+         .expect("success");
+-    assert_eq!(path_result.as_str().unwrap(), "/tmp/sample.png");
++    assert_eq!(PathBuf::from(path_result.as_str().unwrap()), native_path);
++
++    let posix_path_result = service
++        .dispatch_gateway("resolveLocalMediaPath", &json!({ "source": "file:///tmp/sample.png" }))
++        .expect("handler exists")
++        .expect("success");
++    #[cfg(unix)]
++    assert_eq!(posix_path_result.as_str().unwrap(), "/tmp/sample.png");
++    #[cfg(windows)]
++    assert!(posix_path_result.is_null());
+ 
+     // Gateway dispatch for renderDocumentTruncation
+     let trunc_args = json!({
+@@ -391,3 +417,50 @@ fn test_ocrm_file_ctx_08_gateway_service_dispatch() {
+     );
+     let _ = fs::remove_dir_all(&tmp);
+ }
++
++#[test]
++fn lfa_file_context_uses_shared_admission_without_lossy_fallback() {
++    let path = std::env::temp_dir().join("lfa café Ω.png");
++    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
++    let normalized = format!("\u{001f}f\ti\rL\ne:{}?signature=%2F#preview%5C", &url[5..]);
++    assert_eq!(resolve_local_media_path(&normalized), Some(path.clone()));
++    for source in [
++        "file://server/share/image.png".to_string(),
++        "file://server/C:/safe/image.png".to_string(),
++        "file://[invalid/image.png".to_string(),
++        format!("{url}%GG"),
++        format!("{url}%FF"),
++        format!("{url}%00x"),
++    ] {
++        assert!(resolve_local_media_path(&source).is_none(), "{source:?}");
++        assert_eq!(resolve_local_media_path(&url), Some(path.clone()));
++    }
++}
++
++#[cfg(windows)]
++#[test]
++fn lfa_windows_file_context_rejects_plain_network_and_alias_paths() {
++    // Path resolution is pure; no network share or device is accessed.
++    for source in [
++        r"\\server\share\image.png",
++        r"/\server/share/image.png",
++        r"\/server/share/image.png",
++        r"\\.\C:\safe\image.png",
++        r"\\?\UNC\server\share\image.png",
++        r"C:\safe\file.txt:secret.png",
++        r"C:relative.png",
++        r"~\image.png:secret",
++    ] {
++        assert!(resolve_local_media_path(source).is_none(), "{source}");
++    }
++    let extended_drive = r"\\?\C:\safe\image.png";
++    assert_eq!(resolve_local_media_path(extended_drive), Some(PathBuf::from(extended_drive)));
++}
++
++#[cfg(unix)]
++#[test]
++fn lfa_unix_file_context_preserves_colon_file_names() {
++    let path = PathBuf::from("/tmp/lfa-image:part.png");
++    assert_eq!(resolve_local_media_path(path.to_str().unwrap()), Some(path.clone()));
++    assert_eq!(resolve_local_media_path("file:///tmp/lfa-image%3Apart.png"), Some(path));
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/openclaw_web_media_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/openclaw_web_media_contract.rs
+index 4c7f27c..7e3b39f 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/openclaw_web_media_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/openclaw_web_media_contract.rs
+@@ -183,6 +183,15 @@ fn test_ocrm_web_media_file_url_and_traversal_guards() {
+         .expect("decode file URL");
+     assert_eq!(decoded_path, native_path);
+ 
++    #[cfg(unix)]
++    assert_eq!(
++        file_url_to_path("FILE:///var/tmp/caf%C3%A9%20image.png").expect("POSIX file URL"),
++        PathBuf::from("/var/tmp/café image.png"),
++    );
++    #[cfg(windows)]
++    assert!(file_url_to_path("FILE:///var/tmp/caf%C3%A9%20image.png").is_err());
++
++
+     // Traversal rejection in file URL
+     assert!(file_url_to_path("FILE:///C:/safe/folder%2Fsecret.png").is_err());
+     assert!(file_url_to_path("FILE:///C:/safe/folder%5Csecret.png").is_err());
+@@ -201,6 +210,15 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+         "file://user:secret@localhost/share/image.png",
+         "file://localhost:8080/share/image.png",
+         "FILE:////files.example/share/image.png",
++        "file://///files.example/share/image.png",
++        r"file:/\/\files.example\share\image.png",
++        "FiLe:/\t/\r/\n/files.example/share/image.png",
++        "\u{0001}Fi\tle:/\t/\r/\n/files.example/share/image.png",
++        "file://files.example/C:/private/image.png",
++        "file://localhost.example/C|/private/image.png",
++        "FILE://127.0.0.1/C:/private/image.png",
++        "file://[::1]/C:/private/image.png",
++        "file://files.example/./C:/private/image.png",
+         "file:////C:/safe/image.png",
+         r"file:/\/\C:/safe/image.png",
+         r"file:\/\\C:/safe/image.png",
+@@ -1023,3 +1041,83 @@ fn test_ocrm_web_media_reader_aliases_keep_actual_root_checks() {
+     }
+     assert_eq!(fs::read(&outside).unwrap(), b"outside bytes");
+ }
++
++#[test]
++fn lfa_web_media_uses_shared_invalid_file_url_boundary() {
++    // Pure adapter calls: never ask the filesystem to touch a remote share.
++    for source in [
++        "file://server/share/image.png",
++        "file://127.0.0.1/share/image.png",
++        "file://server/C:/safe/image.png",
++        "file://localhost:99/image.png",
++        "file://[invalid/image.png",
++        "FILE:////server/share/image.png",
++        "\u{001f}f\tiLe:////server/share/image.png",
++        "https://example.invalid/image.png",
++    ] {
++        match file_url_to_path(source).expect_err("unadmitted file URL") {
++            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
++            other => panic!("Expected invalid-file-url, got {other:?}: {source:?}"),
++        }
++    }
++}
++
++#[test]
++fn lfa_web_media_normalized_file_urls_reach_loader_and_service() {
++    let temp = TempTestDir::new("lfa-native-urls");
++    let service = test_attachments_service(&temp.path);
++    let name = "café Ω report.HTML";
++    let path = temp.path.join(name);
++    let bytes = b"<html><body>same local source bytes</body></html>";
++    fs::write(&path, bytes).expect("write native local source");
++    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
++    for source in [
++        url.clone(),
++        url.replacen("file://", "FiLe:", 1),
++        url.replacen("file://", "file://localhost", 1),
++        format!("\u{001f} f\ti\rL\ne:{}\n", &url[5..]),
++        format!("{url}?signature=%2F%GG#preview%5C"),
++    ] {
++        assert_eq!(file_url_to_path(&source).expect("admitted file URL"), path);
++        assert_explicit_html_loads(&service, &source, bytes, name);
++    }
++    let reopened = test_attachments_service(&temp.path);
++    assert_explicit_html_loads(&reopened, &url, bytes, name);
++    assert_eq!(fs::read(&path).expect("original source retained"), bytes);
++}
++
++#[test]
++fn lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry() {
++    let temp = TempTestDir::new("lfa-invalid-encoding");
++    let service = test_attachments_service(&temp.path);
++    let name = "café%GG.html";
++    let path = temp.path.join(name);
++    let bytes = b"<html><body>a literal percent is a valid filename</body></html>";
++    fs::write(&path, bytes).expect("write percent-name source");
++    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
++    assert!(url.contains("%25GG"));
++    let options = WebMediaOptions {
++        optimize_images: true,
++        html_publication: Some("explicit".into()),
++        local_roots: Some(vec![temp.path.clone()]),
++        ..Default::default()
++    };
++    for source in [
++        url.replacen("%25GG", "%GG", 1),
++        format!("{url}%FF"),
++        format!("{url}%00x"),
++        format!("{url}%"),
++    ] {
++        match load_web_media(&source, &options).expect_err("invalid pathname admission") {
++            WebMediaError::LocalAccess { code, .. } => assert_eq!(code, "invalid-file-url"),
++            other => panic!("Expected invalid-file-url, got {other:?}: {source:?}"),
++        }
++        let error = service.dispatch_gateway("loadWebMedia", &json!({
++            "url": source,
++            "htmlPublication": "explicit",
++        })).expect("direct service adapter is handled").expect_err("same admission refusal");
++        assert!(error.starts_with("Local media access error [invalid-file-url]:"));
++        assert_explicit_html_loads(&service, &url, bytes, name);
++    }
++    assert_eq!(fs::read(&path).expect("source unchanged after refusal"), bytes);
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/sand_agent_management_tools_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/sand_agent_management_tools_contract.rs
+index 5e54aa0..28372cd 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/sand_agent_management_tools_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/sand_agent_management_tools_contract.rs
+@@ -38,3 +38,48 @@ fn create_and_update_tools_delegate_with_merge_semantics(){
+  let updated=bridge.call_tool(&tools[2],json!({"agent_id":"agent-b","description":"new persona"}),"update").expect("update");assert!(updated.as_str().unwrap().contains("agent-b"));
+  assert_eq!(sink.updates.lock().unwrap().as_slice(),&[("agent-b".into(),None,Some("new persona".into()))]);
+ }
++
++#[test]
++fn lfa_agent_management_batch_admits_all_urls_before_resolving() {
++    let sink = Arc::new(Sink::default());
++    let bridge = AgentManagementToolBridge::new(Arc::new(Delegate), sink.clone());
++    let tools = bridge.list_tools().expect("first-party tools");
++    let send = &tools[0];
++    let native = url::Url::from_file_path(std::env::temp_dir().join("lfa café image.png"))
++        .expect("native absolute URL").to_string();
++    let invalid = [
++        format!("{native}%2Fextra"),
++        format!("{native}%FF"),
++        "file://files.example/share/image.png".to_string(),
++        "file://files.example/C:/image.png".to_string(),
++    ];
++    for (index, invalid) in invalid.iter().enumerate() {
++        let error = bridge.call_tool(send, json!({
++            "target_id": "other", "message": "validate the full batch",
++            "images": [{"url": native}, {"url": invalid}],
++        }), &format!("lfa-invalid-{index}")).expect_err("bad later URL refuses the batch");
++        match error {
++            ProviderSessionError::Tool(message) => assert!(message.starts_with("invalid local media file URL:")),
++            other => panic!("unexpected refusal: {other:?}"),
++        }
++        assert!(sink.resolved_images.lock().unwrap().is_empty(), "no image resolver entry before full admission");
++        assert!(sink.sends.lock().unwrap().is_empty(), "no send after source refusal");
++        assert!(sink.sent_images.lock().unwrap().is_empty());
++    }
++
++    // This port only observes boundary entry; it performs no filesystem or
++    // network work. The actual App fixture separately checks managed files.
++    let https = "https://example.invalid/image.png";
++    assert_eq!(bridge.call_tool(send, json!({
++        "target_id": "other", "message": "valid after refusal",
++        "images": [{"url": native}, {"url": https}],
++    }), "lfa-valid").expect("admitted batch reaches the existing sink"), Value::String("sent".into()));
++    assert_eq!(sink.resolved_images.lock().unwrap().as_slice(), &[
++        ("lfa-valid".to_string(), native.clone()),
++        ("lfa-valid".to_string(), https.to_string()),
++    ]);
++    assert_eq!(sink.sent_images.lock().unwrap().as_slice(), &[
++        vec![format!("resolved:{native}"), format!("resolved:{https}")],
++    ]);
++    assert_eq!(sink.sends.lock().unwrap().len(), 1);
++}
+diff --git a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/send_message_tool_contract.rs b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/send_message_tool_contract.rs
+index 84efaed..8c334d3 100644
+--- a/workspace/scratch/7d27ea239237/media-admission-r3-base/source/host/tests/send_message_tool_contract.rs
++++ b/workspace/scratch/7d27ea239237/media-admission-r3/source/host/tests/send_message_tool_contract.rs
+@@ -646,3 +646,40 @@ fn shipping_send_message_composes_cloud_title_and_generated_interaction_observat
+     assert!(TURN_TOOLSET.contains("send_message.with_interaction_sink")
+         || TURN_TOOLSET.contains("send_bridge.with_interaction_sink"));
+ }
++
++#[test]
++fn lfa_send_message_file_url_facade_preserves_admitted_metadata() {
++    use mahayana_host_runtime::runner::tools::send_message_tool::{
++        file_path_from_file_url, identity_attachment_source,
++    };
++    let path = std::env::temp_dir().join("lfa café Ω image.png");
++    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
++    let source = format!("\u{001f}f\ti\rL\ne:{}?signature=%2F#preview%5C", &url[5..]);
++    assert_eq!(file_path_from_file_url(&source), Some(path));
++    let projected = identity_attachment_source(&source);
++    assert_eq!(projected.file_name.as_deref(), Some("lfa café Ω image.png"));
++    assert_eq!(projected.url, source);
++}
++
++#[test]
++fn lfa_send_message_file_url_facade_refuses_unsafe_local_sources() {
++    use mahayana_host_runtime::runner::tools::send_message_tool::{
++        file_path_from_file_url, identity_attachment_source,
++    };
++    // This Option facade is metadata-only. The real App sinks must use the
++    // shared Result API so these refusals cannot become successful passthrough.
++    for source in [
++        "file://server/share/image.png",
++        "file://server/C:/safe/image.png",
++        "file://localhost:99/image.png",
++        "file://[invalid/image.png",
++        "file:///C:/safe/image%2Fsecret.png",
++        "file:///C:/safe/image%5Csecret.png",
++        "file:///C:/safe/image%GG.png",
++        "file:///C:/safe/image%FF.png",
++        "file:///C:/safe/image%00x.png",
++    ] {
++        assert!(file_path_from_file_url(source).is_none(), "{source}");
++        assert!(identity_attachment_source(source).file_name.is_none(), "{source}");
++    }
++}

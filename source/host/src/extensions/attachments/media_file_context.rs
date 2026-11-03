@@ -14,7 +14,10 @@
 use std::path::{Path, PathBuf};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use url::Url;
+
+use crate::extensions::attachments::media_reference::{
+    admit_local_media_path, resolve_local_file_url,
+};
 
 /// Shared input/output pixel cap for Rastermill/image processing operations.
 pub const MAX_IMAGE_INPUT_PIXELS: usize = 25_000_000;
@@ -170,6 +173,12 @@ pub fn resolve_local_media_path(source: &str) -> Option<PathBuf> {
         return None;
     }
 
+    match resolve_local_file_url(trimmed) {
+        Ok(Some(path)) => return Some(path),
+        Err(_) => return None,
+        Ok(None) => {}
+    }
+
     let lower = trimmed.to_ascii_lowercase();
     if lower.starts_with("data:")
         || lower.starts_with("http:")
@@ -180,53 +189,22 @@ pub fn resolve_local_media_path(source: &str) -> Option<PathBuf> {
         return None;
     }
 
-    if lower.starts_with("file:") {
-        if lower.contains("%2f") || lower.contains("%5c") {
-            return None;
-        }
-
-        let mut url_str = trimmed;
-        let mut single_slash_buf = String::new();
-        if !lower.starts_with("file://") && lower.starts_with("file:") {
-            let rest = &trimmed[5..];
-            let trimmed_rest = rest.trim_start_matches('/');
-            single_slash_buf = format!("file:///{}", trimmed_rest);
-            url_str = &single_slash_buf;
-        }
-
-        let parsed = Url::parse(url_str).ok()?;
-        if let Some(host) = parsed.host_str() {
-            if !host.is_empty() && host != "localhost" {
-                return None;
-            }
-        }
-        return parsed.to_file_path().ok();
-    }
-
-    if trimmed.starts_with('~') {
-        if trimmed == "~" {
-            return home_dir();
-        }
-        if trimmed.starts_with("~/") || trimmed.starts_with("~\\") {
-            let sub = &trimmed[2..];
-            return home_dir().map(|h| h.join(sub));
-        }
-    }
-
     let p = Path::new(trimmed);
-    if p.is_absolute() {
-        return Some(p.to_path_buf());
-    }
-
     let is_windows_drive = trimmed.len() >= 3
         && trimmed.as_bytes()[0].is_ascii_alphabetic()
         && trimmed.as_bytes()[1] == b':'
         && (trimmed.as_bytes()[2] == b'/' || trimmed.as_bytes()[2] == b'\\');
-    if is_windows_drive {
-        return Some(PathBuf::from(trimmed));
-    }
-
-    None
+    let resolved = if trimmed == "~" {
+        home_dir()?
+    } else if trimmed.starts_with("~/") || trimmed.starts_with("~\\") {
+        home_dir()?.join(&trimmed[2..])
+    } else if p.is_absolute() || is_windows_drive {
+        p.to_path_buf()
+    } else {
+        return None;
+    };
+    admit_local_media_path(&resolved).ok()?;
+    Some(resolved)
 }
 
 /// Best-effort temp file cleanup helper.

@@ -1,0 +1,446 @@
+[
+  {
+    "result": "failed-or-incomplete",
+    "subject_commit": "e19a0a265e400a4c9b1d96520c84fb612a3843e8",
+    "subject_tree": "5be2d7ca128dae5fefc8f7551e7088934daf19ac",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    "run_id": "41571103928",
+    "run_attempt": "1",
+    "job": "media-store-windows",
+    "runner_os": "Windows",
+    "inputs_unchanged": true,
+    "artifact_id": 13201234032,
+    "job_id": 125703932910,
+    "archive": "windows-e19.zip",
+    "archive_sha256": "e6724c09ab10215588c4a9ccb9c632b477b5af66cdd4e94af8e70c58ef3c66e2",
+    "receipt_sha256": "70d57a102a37b91163e61190ac5088f5b9fe6ba9bf3e10adfc2459e4c5e5011a",
+    "executions": [
+      {
+        "case": "cleanup-owner",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 8,
+        "missing": [],
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "a41d4ba7eeb5e75f60e235692730ff6a793d76dd83244bebec1e4d932aaa3fcf",
+        "log_hash_matches": true
+      },
+      {
+        "case": "cleanup-consumers",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 16,
+        "missing": [],
+        "summaries": [
+          [
+            16,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "bc465af4eb8c495fb8a33f784d28a9c8c7bac5cec9ee7d3c05dcc55e5e81cfd3",
+        "log_hash_matches": true
+      },
+      {
+        "case": "html-policy",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 9,
+        "missing": [],
+        "summaries": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "143854547c6fa9ee1f5602bb3b28e01f865f4ddf8b1ce8cbf2f6055a813efd93",
+        "log_hash_matches": true
+      },
+      {
+        "case": "host-read-format",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 1,
+        "missing": [],
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "dd6d0e19a014e84a9a21927fe58d111c420bbad667fbf7cc368ec82b92b9fb41",
+        "log_hash_matches": true
+      },
+      {
+        "case": "file-url-admission",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 6,
+        "missing": [],
+        "summaries": [
+          [
+            6,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "8a2248f53e6ae12ba3a38d07b95e2b14030b2726c6154d9e8b11af2c1895dfa5",
+        "log_hash_matches": true
+      },
+      {
+        "case": "explicit-html-consumers",
+        "cargo_exit": 101,
+        "capture_exit": 0,
+        "oracle_accepted": false,
+        "passed_names": 22,
+        "missing": [
+          "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references"
+        ],
+        "summaries": [],
+        "log_sha256": "7bf08cb08fb238ba582f12b4c323f18aa2209444346b40a53fab3e83e9d089d0",
+        "log_hash_matches": true
+      },
+      {
+        "case": "image-probe-consumers",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 16,
+        "missing": [],
+        "summaries": [
+          [
+            16,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "dc4c8cdc45db4e2acdf3af0878edbe51def9aee125924ef5abd231ffb343094d",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-owner",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 8,
+        "missing": [],
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "d458bd8ed43862b53357f45ac1652a4a159a650f7d3c3aa815e156e0fbb4de38",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-public",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 17,
+        "missing": [],
+        "summaries": [
+          [
+            17,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "66c8336c1fe2c4af38f5cb9db667756091b09e55eaeaf10b3766e1c2d31812c0",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-box-consumer",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 1,
+        "missing": [],
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "3da1bb6845588d269a61b318ef79ada0c23332b857a405310b2aa5038a4fac2a",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-image-consumer",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 1,
+        "missing": [],
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "1b93583a78c98d570d4fcce5e311f1713fab4d33e1be08795de6ffb287897fd8",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-channel-consumers",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 4,
+        "missing": [],
+        "summaries": [
+          [
+            4,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "677186773485ee8b1ffc1844f8d2e589623a36c52b6ed45b4c2aa38b7236cebd",
+        "log_hash_matches": true
+      }
+    ]
+  },
+  {
+    "result": "failed-or-incomplete",
+    "subject_commit": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+    "subject_tree": "b544c1d377ca82618cdadcf5106cb3c10d82411b",
+    "upstream": {
+      "repository": "openclaw/openclaw",
+      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
+    },
+    "run_id": "41571310630",
+    "run_attempt": "1",
+    "job": "media-store-windows",
+    "runner_os": "Windows",
+    "inputs_unchanged": true,
+    "artifact_id": 13201906203,
+    "job_id": 125704599418,
+    "archive": "windows-3438.zip",
+    "archive_sha256": "8309821e43697663608552956c136e7335f5848f7fc056904a758e0a3cd68655",
+    "receipt_sha256": "91228ec78220456afdfb795c1b4c34d3e05560e37527b1205107d5b4d791644d",
+    "executions": [
+      {
+        "case": "cleanup-owner",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 8,
+        "missing": [],
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "d944c488970eb390ab75e48b076dcbad7a0e3939ea9fec1d9a2a9bf953b5a059",
+        "log_hash_matches": true
+      },
+      {
+        "case": "cleanup-consumers",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 16,
+        "missing": [],
+        "summaries": [
+          [
+            16,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "70f0685629c96e6df1119fc733dbbe3efcc5ae5a7789e71cc7653cb9f4e7b133",
+        "log_hash_matches": true
+      },
+      {
+        "case": "html-policy",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 9,
+        "missing": [],
+        "summaries": [
+          [
+            9,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "bbd93876a8539987412a64b318f192c1b55d64d542cb159eb41fb89aedba720f",
+        "log_hash_matches": true
+      },
+      {
+        "case": "host-read-format",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 1,
+        "missing": [],
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "7da6ea41957007b3770e7b2d15098c0b8835b421394d39fb3e974168fad2fd4c",
+        "log_hash_matches": true
+      },
+      {
+        "case": "file-url-admission",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 6,
+        "missing": [],
+        "summaries": [
+          [
+            6,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "37b7975c58d51d18d313d8c11e1127a971cf9018c85a04b7287ca7280bdb7cd1",
+        "log_hash_matches": true
+      },
+      {
+        "case": "explicit-html-consumers",
+        "cargo_exit": 101,
+        "capture_exit": 0,
+        "oracle_accepted": false,
+        "passed_names": 22,
+        "missing": [
+          "test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references"
+        ],
+        "summaries": [],
+        "log_sha256": "8613e71bae205445abdde7e1937723a0edf84aa098afb6ad009aec35445e91fe",
+        "log_hash_matches": true
+      },
+      {
+        "case": "image-probe-consumers",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 16,
+        "missing": [],
+        "summaries": [
+          [
+            16,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "6e151b083889dda58de7435e0cc93c5d37b93c5780ba97752dccd013ecb307df",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-owner",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 8,
+        "missing": [],
+        "summaries": [
+          [
+            8,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "fa994e72dcdc9d03a7ebc84fbd5d23ec1b74f84043ef27cc50afd189b4db875c",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-public",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 17,
+        "missing": [],
+        "summaries": [
+          [
+            17,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "588b7c39284d0b4b4af553fce1450563908e2eecd99bc3fe3b681aa4df4e62c5",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-box-consumer",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 1,
+        "missing": [],
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "6fa96f06dfdcbc1e76918b2bd3a16d315b6fd471c68aaffca42924156cb10593",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-image-consumer",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 1,
+        "missing": [],
+        "summaries": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "537e59ba2e6e3eedc503a623d6d0164676ae554b33b9dafc1e6e565441727430",
+        "log_hash_matches": true
+      },
+      {
+        "case": "bounded-reader-channel-consumers",
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true,
+        "passed_names": 4,
+        "missing": [],
+        "summaries": [
+          [
+            4,
+            0,
+            0
+          ]
+        ],
+        "log_sha256": "ebfaca3e07e12111a4d3b86c827ec37c9c52b43fee186847b9ebf0579077a238",
+        "log_hash_matches": true
+      }
+    ]
+  }
+]

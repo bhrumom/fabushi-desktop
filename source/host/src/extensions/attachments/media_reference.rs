@@ -1,10 +1,11 @@
+use std::cell::Cell;
 use std::fs;
 use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
 use regex::Regex;
 use std::sync::LazyLock;
 use thiserror::Error;
-use url::Url;
+use url::{SyntaxViolation, Url};
 
 #[derive(Debug, Error, PartialEq, Eq, Clone)]
 pub enum MediaReferenceError {
@@ -12,6 +13,194 @@ pub enum MediaReferenceError {
     InvalidPath(String),
     #[error("path-not-allowed: {0}")]
     PathNotAllowed(String),
+}
+
+/// Reject unsafe local path spellings before a reader performs any filesystem work.
+/// This is admission only, not a root-capability or filesystem-identity check.
+pub fn admit_local_media_path(path: &Path) -> Result<(), MediaReferenceError> {
+    let bytes = path.as_os_str().as_encoded_bytes();
+    if bytes.contains(&0) {
+        return Err(MediaReferenceError::InvalidPath(
+            "Local media paths cannot contain NUL".into(),
+        ));
+    }
+
+    #[cfg(windows)]
+    {
+        let is_separator = |index: usize| {
+            matches!(bytes.get(index).copied(), Some(b'/') | Some(b'\\'))
+        };
+        let has_drive = |index: usize| {
+            bytes.get(index).is_some_and(|byte| byte.is_ascii_alphabetic())
+                && bytes.get(index + 1) == Some(&b':')
+        };
+        let namespace = if is_separator(0)
+            && is_separator(1)
+            && is_separator(3)
+            && matches!(bytes.get(2).copied(), Some(b'?') | Some(b'.'))
+        {
+            bytes.get(2).copied()
+        } else {
+            None
+        };
+        let drive_colon = if has_drive(0) && is_separator(2) {
+            Some(1)
+        } else if namespace.is_some() && has_drive(4) && is_separator(6) {
+            Some(5)
+        } else {
+            None
+        };
+        if is_separator(0)
+            && is_separator(1)
+            && !(namespace == Some(b'?') && drive_colon == Some(5))
+        {
+            return Err(MediaReferenceError::PathNotAllowed(
+                "Local media paths cannot use Windows network or device paths".into(),
+            ));
+        }
+        if let Some(colon) = bytes.iter().position(|byte| *byte == b':') {
+            if Some(colon) != drive_colon || bytes[colon + 1..].contains(&b':') {
+                return Err(MediaReferenceError::PathNotAllowed(
+                    "Local media paths cannot use Windows filesystem namespace aliases".into(),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn has_file_url_scheme(raw: &str) -> bool {
+    // Match the URL parser's C0/space trim and embedded ASCII tab/newline removal.
+    // This is only the classification of parse failures, never a path parser.
+    let mut prefix = raw
+        .trim_matches(|character: char| character <= '\u{0020}')
+        .chars()
+        .filter(|character| !matches!(*character, '\t' | '\r' | '\n'));
+    "file:".chars().all(|expected| {
+        prefix.next().is_some_and(|actual| actual.eq_ignore_ascii_case(&expected))
+    })
+}
+
+/// Distinguish non-file sources, admitted local file URLs, and rejected file URLs.
+/// Conversion failures never become manually reconstructed paths or passthrough URLs.
+pub fn resolve_local_file_url(raw: &str) -> Result<Option<PathBuf>, MediaReferenceError> {
+    let removed_remote_host = Cell::new(false);
+    let record_violation = |violation| {
+        if matches!(violation, SyntaxViolation::FileWithHostAndWindowsDrive) {
+            removed_remote_host.set(true);
+        }
+    };
+    let parsed = match Url::options()
+        .syntax_violation_callback(Some(&record_violation))
+        .parse(raw)
+    {
+        Ok(parsed) if parsed.scheme() == "file" => parsed,
+        Ok(_) => return Ok(None),
+        Err(error) if has_file_url_scheme(raw) => {
+            return Err(MediaReferenceError::InvalidPath(format!(
+                "Invalid local file URL: {error}",
+            )));
+        }
+        Err(_) => return Ok(None),
+    };
+    // url 2.5.8 can erase a remote host when the path starts with a drive letter.
+    // Its syntax callback retains that refusal even after host normalization.
+    if removed_remote_host.get()
+        || parsed.host_str().is_some_and(|host| !host.is_empty() && host != "localhost")
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.port().is_some()
+    {
+        return Err(MediaReferenceError::PathNotAllowed(
+            "Local file URLs must not contain a remote authority, userinfo, or port".into(),
+        ));
+    }
+
+    #[cfg(windows)]
+    let parsed = {
+        let pathname = parsed.path();
+        let bytes = pathname.as_bytes();
+        // url 2.5.8 can leave a literal pipe in the first drive segment after
+        // parsing an empty/localhost authority. Normalize only that rooted
+        // drive delimiter, after authority admission, through the URL owner.
+        // Encoded pipes and bare drives still fail the existing checks below.
+        if bytes.first() == Some(&b'/')
+            && bytes.get(1).is_some_and(|byte| byte.is_ascii_alphabetic())
+            && bytes.get(2) == Some(&b'|')
+            && bytes.get(3) == Some(&b'/')
+        {
+            let mut pathname = pathname.to_owned();
+            pathname.replace_range(2..3, ":");
+            let mut parsed = parsed;
+            parsed.set_path(&pathname);
+            parsed
+        } else {
+            parsed
+        }
+    };
+
+    let pathname = parsed.path();
+    let bytes = pathname.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] != b'%' {
+            index += 1;
+            continue;
+        }
+        let hex = |byte: u8| match byte {
+            b'0'..=b'9' => Some(byte - b'0'),
+            b'a'..=b'f' => Some(byte - b'a' + 10),
+            b'A'..=b'F' => Some(byte - b'A' + 10),
+            _ => None,
+        };
+        let octet = bytes.get(index + 1).copied().and_then(hex).zip(
+            bytes.get(index + 2).copied().and_then(hex),
+        ).map(|(high, low)| high * 16 + low);
+        let Some(octet) = octet else {
+            return Err(MediaReferenceError::InvalidPath(
+                "Local file URL pathname contains an invalid percent escape".into(),
+            ));
+        };
+        if matches!(octet, b'/' | b'\\') {
+            return Err(MediaReferenceError::InvalidPath(
+                "Local file URL pathname cannot encode path separators".into(),
+            ));
+        }
+        index += 3;
+    }
+    let decoded = percent_encoding::percent_decode_str(pathname).decode_utf8().map_err(|_| {
+        MediaReferenceError::InvalidPath("Local file URL pathname must be valid UTF-8".into())
+    })?;
+    if decoded.contains('\0') {
+        return Err(MediaReferenceError::InvalidPath(
+            "Local file URL pathname cannot contain NUL".into(),
+        ));
+    }
+    #[cfg(windows)]
+    {
+        let decoded = decoded.as_bytes();
+        // to_file_path's Windows implementation assumes an absolute drive path.
+        // Check first so a bare C: cannot reach its debug assertion or the filesystem.
+        if decoded.first() != Some(&b'/')
+            || !decoded.get(1).is_some_and(|byte| byte.is_ascii_alphabetic())
+            || decoded.get(2) != Some(&b':')
+            || decoded.get(3) != Some(&b'/')
+        {
+            return Err(MediaReferenceError::InvalidPath(
+                "Local file URL must contain an absolute Windows drive path".into(),
+            ));
+        }
+    }
+    let path = parsed.to_file_path().map_err(|_| {
+        MediaReferenceError::InvalidPath("Local file URL cannot be converted to a native path".into())
+    })?;
+    if !path.is_absolute() {
+        return Err(MediaReferenceError::InvalidPath(
+            "Local file URL must resolve to an absolute path".into(),
+        ));
+    }
+    admit_local_media_path(&path)?;
+    Ok(Some(path))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

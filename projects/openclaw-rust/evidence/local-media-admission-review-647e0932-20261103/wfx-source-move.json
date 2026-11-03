@@ -1,0 +1,13 @@
+{
+  "incoming": "e19a0a265e400a4c9b1d96520c84fb612a3843e8",
+  "base": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "static_source_comparison_only": true,
+  "deindented_prior_body_sha256": "8f0044fd5f4d4d4fe6224d1d146ec47ee5e9f7dac3e7ba9722259b4514b1582f",
+  "incoming_body_without_self_input_sha256": "8f0044fd5f4d4d4fe6224d1d146ec47ee5e9f7dac3e7ba9722259b4514b1582f",
+  "same_body_except_self_input": true,
+  "workflow_before_bytes": 530211,
+  "workflow_incoming_bytes": 428924,
+  "body_diff": "",
+  "integrated_workflow_bytes": 431076,
+  "LFA_script_delta": "Only add both existing LFA facade required names and change the complete SendMessage summary15to17. Preserve13/14/zero failures/ignored and every existing command/control."
+}

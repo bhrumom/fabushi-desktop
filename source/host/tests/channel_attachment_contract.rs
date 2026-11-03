@@ -122,3 +122,87 @@ fn frozen_shared_media_inventory_drives_channel_classification() {
 
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn lfa_channel_native_url_variants_preserve_bytes_and_metadata() {
+    let root = scratch("lfa-native");
+    fs::create_dir_all(&root).expect("native fixture directory");
+    let name = "café Ω image.PNG";
+    let path = root.join(name);
+    let bytes = b"unchanged channel attachment bytes";
+    fs::write(&path, bytes).expect("write source bytes");
+    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
+    let expected = ResolvedChannelAttachment::Upload {
+        is_image: true,
+        bytes: bytes.to_vec(),
+        filename: name.into(),
+        mime: "image/png".into(),
+    };
+    for source in [
+        url.clone(),
+        url.replacen("file://", "FILE:", 1),
+        url.replacen("file://", "file://localhost", 1),
+        format!("\u{001f}f\ti\rL\ne:{}\n", &url[5..]),
+        format!("{url}?signature=%2F#preview%5C"),
+    ] {
+        assert_eq!(to_local_channel_attachment_path(&source), Some(path.clone()));
+        assert_eq!(resolve_channel_attachment(Some(&source)), Some(expected.clone()));
+    }
+    assert_eq!(fs::read(&path).expect("source retained"), bytes);
+    fs::remove_dir_all(root).expect("remove native fixture");
+}
+
+#[test]
+fn lfa_channel_invalid_file_urls_never_become_local_paths() {
+    // Pure conversion only for remote authorities: no metadata/open of a share.
+    for source in [
+        "file://server/share/image.png",
+        "file://127.0.0.1/share/image.png",
+        "file://server/C:/safe/image.png",
+        "\u{001f}f\tiLe://localhost:99/image.png",
+        "file://[invalid/image.png",
+    ] {
+        assert!(to_local_channel_attachment_path(source).is_none(), "{source:?}");
+    }
+}
+
+#[test]
+fn lfa_channel_invalid_encoding_preserves_source_and_valid_retry() {
+    let root = scratch("lfa-encoding");
+    fs::create_dir_all(&root).expect("native fixture directory");
+    let name = "literal%GG.png";
+    let path = root.join(name);
+    let bytes = b"literal percent source must remain intact";
+    fs::write(&path, bytes).expect("write literal percent source");
+    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
+    assert!(url.contains("%25GG"));
+    let invalid = url.replacen("%25GG", "%GG", 1);
+    assert!(to_local_channel_attachment_path(&invalid).is_none());
+    for _ in 0..2 {
+        assert!(resolve_channel_attachment(Some(&invalid)).is_none());
+        assert_eq!(resolve_channel_attachment(Some(&url)), Some(ResolvedChannelAttachment::Upload {
+            is_image: true,
+            bytes: bytes.to_vec(),
+            filename: name.into(),
+            mime: "image/png".into(),
+        }));
+    }
+    assert_eq!(fs::read(&path).expect("source retained"), bytes);
+    fs::remove_dir_all(root).expect("remove percent fixture");
+}
+
+#[cfg(windows)]
+#[test]
+fn lfa_windows_channel_paths_reject_network_and_alias_spellings() {
+    for source in [
+        r"\\server\share\image.png",
+        r"/\server/share/image.png",
+        r"\\?\UNC\server\share\image.png",
+        r"\\.\C:\safe\image.png",
+        r"C:\safe\file.txt:secret.png",
+        "file:///C:/safe/file.txt%3Asecret.png",
+        "file:///var/tmp/image.png",
+    ] {
+        assert!(to_local_channel_attachment_path(source).is_none(), "{source}");
+    }
+}

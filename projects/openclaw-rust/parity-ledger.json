@@ -6588,17 +6588,22 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Streaming progress draft composition, reasoning/commentary line formatting, and local attachment 50 MiB upload cap enforcement with safe mime resolution.",
+      "behavior": "Streaming progress draft composition, reasoning/commentary line formatting, and local attachment 50 MiB upload cap enforcement with safe mime resolution. LFA-v1 validates the final reanchored local path before metadata and bounded reading. Actual Xuser publication consumes this reader through AttachmentsService; refused images keep the existing None/omission outcome.",
       "blocker_ids": [],
       "capability_ids": [
         "channel.attachment_resolver"
       ],
       "dependencies": [
-        "mahayana_host_runtime::connectors"
+        "mahayana_host_runtime::connectors",
+        "source/host/src/extensions/attachments/media_reference.rs"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_channel_delivery_contract.rs",
-        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md"
+        "projects/openclaw-rust/dossiers/channels-outbound-delivery-scoped.md",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -6626,7 +6631,10 @@
       },
       "invariants": [
         "Attachments exceeding 50 MiB rejected",
-        "MIME type and image flag resolved accurately from header magic bytes"
+        "MIME type and image flag resolved accurately from header magic bytes",
+        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
+        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling",
+        "LFA-v1 does not verify the broader historical MIME or every channel-provider responsibility; current narrow admission and bounded byte consumer are the selected claims"
       ],
       "migration_rollback": "Reject attachment and log error without crashing host",
       "oracle_ids": [
@@ -6670,7 +6678,10 @@
         "symbol": "resolve_channel_attachment"
       },
       "tests": [
-        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o05_attachment_50_mib_limit"
+        "source/host/tests/openclaw_channel_delivery_contract.rs::test_ocrm_channel_o05_attachment_50_mib_limit",
+        "source/host/tests/channel_attachment_contract.rs::lfa_channel_native_url_variants_preserve_bytes_and_metadata",
+        "source/host/tests/channel_attachment_contract.rs::lfa_channel_invalid_encoding_preserves_source_and_valid_retry",
+        "source/host/tests/channel_attachment_contract.rs::lfa_windows_channel_paths_reject_network_and_alias_spellings"
       ],
       "typed_contracts": [
         "resolve_channel_attachment"
@@ -13053,17 +13064,22 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Resolves raw media reference string to local filesystem PathBuf when not a remote URL or data URL, normalizing single-slash and mixed-case file URLs, rejecting UNC hostnames and encoded traversal separators (%2f, %5c), and expanding tilde home directory paths.",
+      "behavior": "Resolves raw media reference string to local filesystem PathBuf when not a remote URL or data URL, normalizing single-slash and mixed-case file URLs, rejecting UNC hostnames and encoded traversal separators (%2f, %5c), and expanding tilde home directory paths. LFA-v1 delegates file URL conversion and platform path spelling admission to the existing media-reference owner, including native absolute paths and home expansion. Invalid input retains the current None result.",
       "blocker_ids": [],
       "capability_ids": [
         "media.local_path"
       ],
       "dependencies": [
-        "mahayana_host_runtime::connectors::channel_attachment"
+        "mahayana_host_runtime::connectors::channel_attachment",
+        "source/host/src/extensions/attachments/media_reference.rs"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_media_file_context_contract.rs",
-        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md"
+        "projects/openclaw-rust/dossiers/media-file-context-local-path-scoped.md",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -13081,9 +13097,11 @@
       "invariants": [
         "Remote media URLs (http, https, media, blob, data) return None",
         "File URLs containing %2f or %5c return None to prevent path traversal",
-        "UNC hostnames return None"
+        "UNC hostnames return None",
+        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
+        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling"
       ],
-      "migration_rollback": "Fallback to standard Url::to_file_path without UNC / traversal checks",
+      "migration_rollback": "Keep source refusal in the existing path owner; do not fall back to unchecked Url::to_file_path or lossy/manual path reconstruction",
       "oracle_ids": [
         "OCRM-FILE-CTX-O03",
         "OCRM-FILE-CTX-O08"
@@ -13110,7 +13128,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Low; hardens local file path resolution against URL encoding exploit vectors",
+      "risk": "High; this resolver feeds actual local Channel/Xuser metadata/read and must reject unsafe Windows path spellings before filesystem access",
       "selected_owner": "source/host/src/extensions/attachments/media_file_context.rs",
       "source_refs": [
         {
@@ -13147,7 +13165,10 @@
       },
       "tests": [
         "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_03_resolve_local_media_path",
-        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_08_gateway_service_dispatch"
+        "source/host/tests/openclaw_media_file_context_contract.rs::test_ocrm_file_ctx_08_gateway_service_dispatch",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/tests/openclaw_media_file_context_contract.rs::lfa_file_context_uses_shared_admission_without_lossy_fallback",
+        "source/host/tests/openclaw_media_file_context_contract.rs::lfa_windows_file_context_rejects_plain_network_and_alias_paths"
       ],
       "typed_contracts": [
         "resolve_local_media_path(source: &str) -> Option<PathBuf>"
@@ -14281,7 +14302,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Media reference scheme classification, sandbox path rewrite (media/inbound/<id>), and local store resolution.",
+      "behavior": "Media reference scheme classification, sandbox path rewrite (media/inbound/<id>), and local store resolution. LFA-v1 adds a typed local-file URL admission result and pure platform path spelling guard consumed by the actual Runner/agent-management source readers, Channel/Xuser reader, and existing web-media adapter.",
       "blocker_ids": [],
       "capability_ids": [
         "media.reference_resolution"
@@ -14293,7 +14314,12 @@
         "source/host/tests/openclaw_media_reference_contract.rs",
         "projects/openclaw-rust/dossiers/media-reference-probe-scoped.md",
         "projects/openclaw-rust/docs/specs/media-reference-unicode-safety.md",
-        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs"
+        "source/host/src/extensions/cross_user_sharing/production_unicode_tests.rs",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs",
+        "source/host/tests/sand_agent_management_tools_contract.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -14323,16 +14349,18 @@
       ],
       "id": "OCRM-RESP-MEDIA-REFERENCE-RESOLUTION-001",
       "integration": {
-        "consumer": "source/host/src/extensions/attachments/attachments_service.rs",
-        "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::classify_media_reference_source",
+        "consumer": "main::resolve_production_attachment_source propagates refusal in both actual sinks; media_file_context and channel_attachment reject before metadata/read; web_media preserves invalid-file-url refusal; AgentManagementToolBridge preflights the complete image value batch through the same owner before any per-image resolver call",
+        "entrypoint": "source/host/src/extensions/attachments/media_reference.rs::{classify_media_reference_source, resolve_local_file_url, admit_local_media_path}",
         "owner": "source/host/src/extensions/attachments/media_reference.rs",
-        "producer": "source/host/src/extensions/attachments/attachments_service.rs"
+        "producer": "Existing Attachments consumers, production Runner SendMessage and AgentManagement source resolution, and Channel/Xuser attachment resolution"
       },
       "invariants": [
         "Windows drive paths not classified as unsupported schemes",
-        "Sandbox paths rewritten to media/inbound/<id>"
+        "Sandbox paths rewritten to media/inbound/<id>",
+        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
+        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling"
       ],
-      "migration_rollback": "Direct local path resolution",
+      "migration_rollback": "Retain fail-closed media admission and suspend affected delivery if unsafe source conversion would otherwise be restored; no durable-state migration",
       "oracle_ids": [
         "OCRM-MEDIA-REF-O02",
         "OCRM-MEDIA-REF-O03"
@@ -14358,7 +14386,7 @@
       ],
       "responsibility_kind": "business-runtime",
       "reviewer": "xuyao@ombhrum.com",
-      "risk": "Low; accurate scheme dispatch and sandbox containment",
+      "risk": "High; URL normalization, Windows remote/share/device/alternate-stream aliases and invalid-source versus non-file classification precede real media reads and outward publication",
       "selected_owner": "source/host/src/extensions/attachments/media_reference.rs",
       "source_refs": [],
       "status": {
@@ -14376,12 +14404,18 @@
       },
       "tests": [
         "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_02_classify_media_reference_source",
-        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite"
+        "source/host/tests/openclaw_media_reference_contract.rs::test_ocrm_media_ref_03_inbound_path_resolution_and_sandbox_rewrite",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/tests/send_message_tool_contract.rs::lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
+        "source/host/app/src/tests/local_media_file_url_tests.rs",
+        "source/host/tests/sand_agent_management_tools_contract.rs::lfa_agent_management_batch_admits_all_urls_before_resolving"
       ],
       "typed_contracts": [
         "MediaReferenceSourceInfo",
         "MediaSandboxPathRewrite",
-        "InboundMediaReference"
+        "InboundMediaReference",
+        "resolve_local_file_url(raw: &str) -> Result<Option<PathBuf>, MediaReferenceError>",
+        "admit_local_media_path(path: &Path) -> Result<(), MediaReferenceError>"
       ],
       "unit_id": "OCRM-UNIT-MEDIA-004"
     },
@@ -15952,7 +15986,7 @@
     },
     {
       "adr_refs": [],
-      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:). HHP-v2 connects only the existing direct service local explicit HTML contract: exact opt-in on .html/.htm validates actual bounded bytes, returns text/html and document with unchanged bytes, and leaves generated trust absent. The broad remote, image-optimization, chat and permission-scope responsibilities remain applicable and are not accepted by this slice. FUA-v1 rejects every nonlocal file URL authority and native conversion failure before the existing local-reader boundary, and checks workspace-resolved network namespaces before filesystem work. Native file URL bytes and filenames remain covered by actual loader/service controls; this is not a public Gateway registration or general read-authority completion.",
+      "behavior": "Unified web media loader and optimizer supporting local file paths, file:// URLs with percent-decoding, and remote HTTP/HTTPS resources. Enforces strict SSRF protection by forbidding Windows UNC network paths, blocks directory traversal escaping local root allowlists, preserves animated WebP frames against lossy single-frame transcode, and strips legacy media directive prefixes (@media:, media:). HHP-v2 connects only the existing direct service local explicit HTML contract: exact opt-in on .html/.htm validates actual bounded bytes, returns text/html and document with unchanged bytes, and leaves generated trust absent. The broad remote, image-optimization, chat and permission-scope responsibilities remain applicable and are not accepted by this slice. FUA-v1 rejects every nonlocal file URL authority and native conversion failure before the existing local-reader boundary, and checks workspace-resolved network namespaces before filesystem work. Native file URL bytes and filenames remain covered by actual loader/service controls; this is not a public Gateway registration or general read-authority completion. LFA-v1 preserves refusal after file-URL conversion failure and reuses the shared media-reference admission before roots canonicalization and bounded read. Its existing stricter cross-platform raw four-slash restriction remains explicit.",
       "blocker_ids": [
         "BL-MEDIA-WEB-PIPELINE-CONSUMERS-001"
       ],
@@ -15962,7 +15996,8 @@
       "dependencies": [
         "source/host/src/extensions/attachments/image_ops.rs",
         "source/host/src/extensions/attachments/media_store.rs",
-        "source/host/src/extensions/attachments/host_read_media_policy.rs"
+        "source/host/src/extensions/attachments/host_read_media_policy.rs",
+        "source/host/src/extensions/attachments/media_reference.rs"
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_web_media_contract.rs",
@@ -15971,7 +16006,11 @@
         "projects/openclaw-rust/scripts/capture_media_cleanup.py",
         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
-        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -16011,7 +16050,9 @@
         "Omitted, unknown and non-HTML modes preserve existing loading behavior; MIME signature coverage beyond the existing detector remains an explicit full-equivalence gap",
         "Only structurally parsed local file URLs with empty/localhost host may reach native path conversion; no slash-stripping or lossy fallback revives rejected URLs",
         "The private synchronous admission-to-local-reader boundary rejects remote URLs and prohibited resolved network paths before canonicalize, metadata, open or read; roots and sandbox flags do not bypass URL admission",
-        "Native Windows local verbatim-drive workspaces remain local; UNC and device namespaces are refused before the local-reader boundary"
+        "Native Windows local verbatim-drive workspaces remain local; UNC and device namespaces are refused before the local-reader boundary",
+        "LFA-v1 uses one existing media-reference admission owner; invalid file URLs never become ordinary non-file passthrough, and URL/path admission performs no filesystem or network operation",
+        "LFA-v1 does not establish read permission, opened-handle confinement, generated HTML origin, or known/unknown media persistence outcome handling"
       ],
       "migration_rollback": "Reject remote URL and unverified paths fail-closed",
       "oracle_ids": [
@@ -16076,7 +16117,10 @@
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references",
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery",
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_service_refusal_keeps_public_admission_closed",
-        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_authority_alias_is_not_read"
+        "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_file_url_authority_alias_is_not_read",
+        "source/host/tests/openclaw_web_media_contract.rs::lfa_web_media_uses_shared_invalid_file_url_boundary",
+        "source/host/tests/openclaw_web_media_contract.rs::lfa_web_media_normalized_file_urls_reach_loader_and_service",
+        "source/host/tests/openclaw_web_media_contract.rs::lfa_web_media_invalid_path_encoding_keeps_error_class_and_retry"
       ],
       "typed_contracts": [
         "load_web_media(uri_or_path: &str, options: &WebMediaOptions) -> Result<WebMediaResult, String>",

@@ -1,0 +1,44 @@
+{
+  "observation": "Post-freeze dependency acquisition evidence; does not rewrite original R1/R2 historical source-review state or promote whole-package review",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "version": "url 2.5.8",
+  "archive_bytes": 86512,
+  "archive_sha256": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
+  "lock_match": "Host and App Cargo.lock checksums",
+  "version_commit": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce",
+  "vcs_info_member_sha256": "79d39e19f84f35830fef9637c62027c992e1107f6d850abce545f8277bd99aed",
+  "parser": {
+    "bytes": 69061,
+    "sha256": "2dd4210e1773fc5d3fdc15ce506ecff30dbf8eb358a79bbbc2835cc30d513c3a",
+    "git_blob": "dbdf9b906238c20ef0896d114d5cb8ad69197e34",
+    "exact_member_equality_with_reviewed_version_source": true,
+    "read_ranges": [
+      "225-240",
+      "327-331",
+      "1344-1379"
+    ]
+  },
+  "lib": {
+    "bytes": 107800,
+    "sha256": "51f47a93654528f3b8cb92c94fc26ad25775860d84197fff0c3124a687f8c5e3",
+    "git_blob": "f1558682b6287d0cba1cd93d84cee6cf6cbeaf44",
+    "exact_member_equality_with_reviewed_version_source": true,
+    "scoped_contract": "parse options syntax-violation callback and native path conversion; no full-file reading claim"
+  },
+  "legal_member_identity": {
+    "LICENSE-APACHE": {
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    "LICENSE-MIT": {
+      "sha256": "b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5",
+      "bytes": 1072
+    }
+  },
+  "durable_archive_carrier": {
+    "commit": "073b98b4826c8125d0a42d15f8ccdbfebb5eb488",
+    "index": "projects/openclaw-rust/evidence/media-947-dependency-carrier-20261103/index.json",
+    "scope": "Existing immutable carrier index reports embedded exact crate and selected legal files; this recovery rechecked local acquired archive bytes and selected members, not all carrier parts."
+  },
+  "remaining": "Full path-alias parity, complete dependency recursion/license disposition and global source/acceptance closure remain open. No local/htch executable validation."
+}

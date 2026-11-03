@@ -136,15 +136,30 @@ fn test_ocrm_file_ctx_03_resolve_local_media_path() {
     assert!(resolve_local_media_path("file://remote-server/share/image.png").is_none());
 
     // Valid file URL resolves
-    let file_url = "file:///tmp/valid-image.png";
-    let resolved = resolve_local_media_path(file_url).expect("resolves valid file url");
-    assert_eq!(resolved, PathBuf::from("/tmp/valid-image.png"));
+    let native_path = std::env::temp_dir().join("café valid-image.png");
+    let file_url = url::Url::from_file_path(&native_path).expect("native absolute file URL");
+    let uppercase_single_slash = file_url.as_str().replacen("file://", "FiLe:", 1);
+    let resolved = resolve_local_media_path(&uppercase_single_slash).expect("resolves valid file url");
+    assert_eq!(resolved, native_path);
+    #[cfg(unix)]
+    assert_eq!(
+        resolve_local_media_path("file:///tmp/valid-image.png"),
+        Some(PathBuf::from("/tmp/valid-image.png")),
+    );
+    #[cfg(windows)]
+    assert!(resolve_local_media_path("file:///tmp/valid-image.png").is_none());
 
     // Absolute filesystem path resolves
-    let abs_path = "/var/log/openclaw.log";
+    let abs_path = std::env::temp_dir().join("openclaw.log");
     assert_eq!(
-        resolve_local_media_path(abs_path).expect("resolves absolute path"),
-        PathBuf::from(abs_path)
+        resolve_local_media_path(abs_path.to_str().expect("native fixture path"))
+            .expect("resolves absolute path"),
+        abs_path,
+    );
+    #[cfg(unix)]
+    assert_eq!(
+        resolve_local_media_path("/var/log/openclaw.log"),
+        Some(PathBuf::from("/var/log/openclaw.log")),
     );
 
     // Home directory path resolution
@@ -365,12 +380,23 @@ fn test_ocrm_file_ctx_08_gateway_service_dispatch() {
     );
 
     // Gateway dispatch for resolveLocalMediaPath
-    let path_args = json!({ "source": "file:///tmp/sample.png" });
+    let native_path = tmp.join("sample.png");
+    let native_url = url::Url::from_file_path(&native_path).expect("native absolute file URL");
+    let path_args = json!({ "source": native_url.as_str() });
     let path_result = service
         .dispatch_gateway("resolveLocalMediaPath", &path_args)
         .expect("handler exists")
         .expect("success");
-    assert_eq!(path_result.as_str().unwrap(), "/tmp/sample.png");
+    assert_eq!(PathBuf::from(path_result.as_str().unwrap()), native_path);
+
+    let posix_path_result = service
+        .dispatch_gateway("resolveLocalMediaPath", &json!({ "source": "file:///tmp/sample.png" }))
+        .expect("handler exists")
+        .expect("success");
+    #[cfg(unix)]
+    assert_eq!(posix_path_result.as_str().unwrap(), "/tmp/sample.png");
+    #[cfg(windows)]
+    assert!(posix_path_result.is_null());
 
     // Gateway dispatch for renderDocumentTruncation
     let trunc_args = json!({
@@ -390,4 +416,51 @@ fn test_ocrm_file_ctx_08_gateway_service_dispatch() {
         "[Partial document: requested page selection limited to 5 pages; text truncated.]"
     );
     let _ = fs::remove_dir_all(&tmp);
+}
+
+#[test]
+fn lfa_file_context_uses_shared_admission_without_lossy_fallback() {
+    let path = std::env::temp_dir().join("lfa café Ω.png");
+    let url = url::Url::from_file_path(&path).expect("native absolute file URL").to_string();
+    let normalized = format!("\u{001f}f\ti\rL\ne:{}?signature=%2F#preview%5C", &url[5..]);
+    assert_eq!(resolve_local_media_path(&normalized), Some(path.clone()));
+    for source in [
+        "file://server/share/image.png".to_string(),
+        "file://server/C:/safe/image.png".to_string(),
+        "file://[invalid/image.png".to_string(),
+        format!("{url}%GG"),
+        format!("{url}%FF"),
+        format!("{url}%00x"),
+    ] {
+        assert!(resolve_local_media_path(&source).is_none(), "{source:?}");
+        assert_eq!(resolve_local_media_path(&url), Some(path.clone()));
+    }
+}
+
+#[cfg(windows)]
+#[test]
+fn lfa_windows_file_context_rejects_plain_network_and_alias_paths() {
+    // Path resolution is pure; no network share or device is accessed.
+    for source in [
+        r"\\server\share\image.png",
+        r"/\server/share/image.png",
+        r"\/server/share/image.png",
+        r"\\.\C:\safe\image.png",
+        r"\\?\UNC\server\share\image.png",
+        r"C:\safe\file.txt:secret.png",
+        r"C:relative.png",
+        r"~\image.png:secret",
+    ] {
+        assert!(resolve_local_media_path(source).is_none(), "{source}");
+    }
+    let extended_drive = r"\\?\C:\safe\image.png";
+    assert_eq!(resolve_local_media_path(extended_drive), Some(PathBuf::from(extended_drive)));
+}
+
+#[cfg(unix)]
+#[test]
+fn lfa_unix_file_context_preserves_colon_file_names() {
+    let path = PathBuf::from("/tmp/lfa-image:part.png");
+    assert_eq!(resolve_local_media_path(path.to_str().unwrap()), Some(path.clone()));
+    assert_eq!(resolve_local_media_path("file:///tmp/lfa-image%3Apart.png"), Some(path));
 }

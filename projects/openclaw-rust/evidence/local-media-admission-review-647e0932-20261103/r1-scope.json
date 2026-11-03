@@ -1,0 +1,210 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+  "contract": "LFA-v1 with FUA-v1 normalization/native-conversion recovery",
+  "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+  "base_tree": "97181e47831735417e4aeb8197d9a62a5d66b12d",
+  "starting_head": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixed_upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "scope_mode": "complete 20-path integrated production/consumer/test/workflow/capture/spec/ledger/RTM/evidence change; reused original LFA tree6a6e8cf and FUA R2 recovery source, preserving incoming SGF work and prior artifacts",
+  "snapshot": "/workspace/scratch/7d27ea239237/media-admission-r1",
+  "base_snapshot": "/workspace/scratch/7d27ea239237/media-admission-r1-base",
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 514412,
+      "sha256": "24ad1efb973ae013b48ff064fab8fe0f23c65da5d4c30ac7eddef0ed8dca8f33",
+      "git_blob": "878c50de122b1b5dd8c83bbfeaeec87d9039c58c",
+      "base_blob": "16f9a69bf8c80d869b61411e3934653ca6a67870"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 14241,
+      "sha256": "e72bb8b6a00d0853ab448412dee943197c815eb1c4faec310b0627afc0d23428",
+      "git_blob": "0c923b5fc38eac3b7d9d80a9de906af1d4bf7e03",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 12700,
+      "sha256": "65bb1d52b42a7c2183420e0eebe15d46ac392c0b0c412adbff2217392d88d758",
+      "git_blob": "12dafdc789de410302aff4562cc3432945184bea",
+      "base_blob": "8057987d1ec0ed53f87343f1ff65063808eca44a"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 12262,
+      "sha256": "0708b39ce7145a36c2f60f111c8aa93477bb64a18f6284b0ac1884553022fef1",
+      "git_blob": "3694addf9afb7470a1398c43afe81f8a06fa21dc",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 8006,
+      "sha256": "d34281ec14603ed64df52f58107cd17c17322512875c026caddc50d8a6063af4",
+      "git_blob": "40844282d947bf6f7c769bb35cc05b80dac8a59e",
+      "base_blob": null
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 1424951,
+      "sha256": "528b41b2b47a212d7feaa12df2ce8e94af0fe14100f3dd7ca459e75684bce44e",
+      "git_blob": "e9304c81b3fe856f95a5566db230d93355f19365",
+      "base_blob": "df9cba558cccc210b35a811e9b5f9f3f8817cd79"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 147867,
+      "sha256": "0788c222f0ecfe56f5bfea741b1717ec07808111d78b318732255cdc27fb1a3b",
+      "git_blob": "2fdb3b6a522fa55854ab0399dcf76268e2a9eb23",
+      "base_blob": "1d74ab6a725b6bab93428ce571d16944a05afa92"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_media_cleanup.py",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 22759,
+      "sha256": "804d0700ec4e9a5c921a8f18082f3480f22c0b911ffe9f6f46cb6abfcc616ba6",
+      "git_blob": "61ec9ca1827cc175b877f4fc046c2f06fa47d356",
+      "base_blob": "7eed829018250ca297538df614f3929ea5a09058"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 989517,
+      "sha256": "6558299a5332f45d304a57d47fc23557baa24123b671c533f575e664a80a0db1",
+      "git_blob": "6a3c7035fa0c43fdc4b513baa93fa0c224b072c0",
+      "base_blob": "4312a8ee014ccda8b44e7eab2a8b2feee9e0e1c3"
+    },
+    {
+      "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 30874,
+      "sha256": "6031061dbab909410e1391c5dcb8fa39cf1af8298a441986210e4b2996dd4885",
+      "git_blob": "b00e0e4b367ab5abc41c42ca0d453824fd1ff317",
+      "base_blob": null
+    },
+    {
+      "path": "source/host/src/connectors/channel_attachment.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 3208,
+      "sha256": "7cff2caf2a4ae941f00b5c41d4134aa333f4657077a9146313398556ad0d85e9",
+      "git_blob": "723006c2a5b054fc9ddc47f58fdb4ebd8639351e",
+      "base_blob": "356e901feb2328729f882afe487fbe0199f4a40a"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_file_context.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 9938,
+      "sha256": "041e8addb24aa00ae8f86df7a458315d44e4f2ae678a079a8fbed9c37e9a2080",
+      "git_blob": "0777b2fff28f09e5a6f276ed71c6ec776d6601e6",
+      "base_blob": "2372f03102c106fdb93d3c5a50e71a74c80e55b3"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/media_reference.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 17163,
+      "sha256": "33f022b58446cd15606e0398f658233f529523bd35c196d90b83ddcb96f205df",
+      "git_blob": "8d547f434ddb15e8119b724554a346e5eeb3bce0",
+      "base_blob": "acbed906d06b496b481fd4d4b5c604d9fc3eda57"
+    },
+    {
+      "path": "source/host/src/extensions/attachments/web_media.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 26514,
+      "sha256": "aaa3473697a36d2e22b3b212572ccd7b556c645d4a86798423a6c7f800ae02bf",
+      "git_blob": "041078abfae537ab8a9a9a0044c8fec9970d9494",
+      "base_blob": "3e26c08770379911d6502bb778c0078deda822ed"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 16713,
+      "sha256": "9fcb3f301ebf9f0191fa019e606f6cf9123ff13268c02eee1f182a91caa04f35",
+      "git_blob": "9e12d7d2b457715f0fac168e5e4f262e6ef15985",
+      "base_blob": "5a2afd591da79f24652b59eef2be6c05ecb1134c"
+    },
+    {
+      "path": "source/host/tests/channel_attachment_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 8003,
+      "sha256": "712a51c8240dd0e612eb52644f715f53d56773e59d162d5a87bcaa74239b1a6d",
+      "git_blob": "887f2cb3ea78060be617ad1c039f5b28306c6ac0",
+      "base_blob": "85fd507cc4a63401c879ab2b7ae95b9887016f55"
+    },
+    {
+      "path": "source/host/tests/local_media_file_url_contract.rs",
+      "status": "A",
+      "mode": "100644",
+      "bytes": 6227,
+      "sha256": "6b0b9634348dcbc75c728237d0a8e936b1e0ef5ba1bff88077e76da295d259fd",
+      "git_blob": "5170951a59fb94d8c1a3673586690a9dc8315a88",
+      "base_blob": null
+    },
+    {
+      "path": "source/host/tests/openclaw_media_file_context_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 17023,
+      "sha256": "22a62e8c3e1cf2945da22fa93b53d983cbba7a9e65584d2b8f06a3de50bf9c45",
+      "git_blob": "2c2365d9f2ab380bd2fc4374dba4096a1911fd0f",
+      "base_blob": "d947f0c4f440c0cae751769a97823b5511966b35"
+    },
+    {
+      "path": "source/host/tests/openclaw_web_media_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 40304,
+      "sha256": "f2bec76d5662295688b8ddfd50e6bf83ed00d4a758a3906951cfcfb2e5541714",
+      "git_blob": "a965e74b2e4097da9b3bf5fda4d8742b240f07e9",
+      "base_blob": "752687912e16ceb804fa63b6a172251dc53d0943"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "status": "M",
+      "mode": "100644",
+      "bytes": 25035,
+      "sha256": "bf20eb522055db43112c01d09fcf039b6104b2f5dbb9dddda76172ede3f4540c",
+      "git_blob": "8c334d36e4b507842a38509b945956fe5085beb7",
+      "base_blob": "84efaed7bf499b516923bf4435da45be830a85cd"
+    }
+  ],
+  "complete_diff": "/workspace/scratch/7d27ea239237/media-admission-r1-complete.patch",
+  "complete_diff_sha256": "d37db7a1f0d16fc766dcf158de958739e45f1776d9d5535023025971dd4be4f0",
+  "diff_exit": 1,
+  "diff_stderr": "",
+  "review_policy": "New blind general/security and pinned structure/reuse/performance review of the complete integrated scope; prior FUA and original author snapshots are not approval",
+  "local_or_htch_executable_validation": false,
+  "candidate_tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
+  "candidate_tree_readback": {
+    "entries": 10493,
+    "truncated": false,
+    "all20BlobsMatched": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "recorded_before_resolution": true,
+  "incoming": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "incoming_tree": "4e69dc6d77f4ff4508e02cdd7064084530db9b6e",
+  "media_commit": "071aeb6af1b223cceee9d81b5f7df3bad484d5a4",
+  "decisions": [
+    {"id": "LFA-INCOMING-BR-01", "decision": "PRESERVE", "reason": "The existing media owner has now published arithmetic-safe, fallible bounded reads, actual-handle regular-file admission and Unix nonblocking open. Preserve all reader/service/test bytes. Add LFA pure shared admission in the existing media_reference owner, without changing the reader body."},
+    {"id": "LFA-INCOMING-FUA-02", "decision": "REUSE", "reason": "Root and independent source audit confirm incoming raw-prefix guard also covers localhost authority followed by doubled path separators and preserves file://C://dir interior separators. Reuse that existing helper unchanged instead of the narrower unpublished leading-four-separator helper. Call it only for a structurally recognized file URL before any I/O; shared converter remains sole host/percent/native owner. Preserve all incoming and LFA refusal table entries and positive controls."},
+    {"id": "LFA-INCOMING-CAPTURE-03", "decision": "UNION", "reason": "Preserve every BR and LFA group, exact positive and source input. Execute the shared full channel target only once under its incoming label with the union of required names. Keep all thirteen qualification controls and command/capture/summary/uniqueness/failed/ignored/identity checks."},
+    {"id": "LFA-INCOMING-COMMON-04", "decision": "PRESERVE", "reason": "Retain incoming Memory/Device/Runner production and OCRM state. Three-way merge workflow/App/ledger/RTM. Workflow-size extraction already has a separate existing owner/candidate; do not duplicate it or import its source review as runtime acceptance."}
+  ],
+  "validation": "Source reading, Git merge and byte identity only; full integrated R2 review and exact-H Actions still required. No product validation is run locally."
+}

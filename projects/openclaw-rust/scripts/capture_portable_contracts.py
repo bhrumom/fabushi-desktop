@@ -630,6 +630,8 @@ cases = [
         "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
         "delivery_counter_tracks_only_successful_shipping_send_side_effects",
         "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+        "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+        "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
         "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
         "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
         "generated_send_message_text_success_survives_session_backfill_reopen",
@@ -1058,7 +1060,7 @@ for label, command, required in cases:
             r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
         accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]
     if label == "generated-send-message-contracts":
-        accepted = (accepted and sorted(counts) == [(13, 0, 0), (14, 0, 0), (15, 0, 0)]
+        accepted = (accepted and sorted(counts) == [(13, 0, 0), (14, 0, 0), (17, 0, 0)]
             and len(passed) == len(required))
     if label == "canonical-root-admission-contracts":
         accepted = accepted and canonical_contract_results_accepted(cargo_exit, capture_exit, required, text)

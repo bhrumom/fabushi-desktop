@@ -5,8 +5,6 @@ use std::sync::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use url::Url;
-
 use prost::Message;
 use serde_json::{Value, json};
 
@@ -41,11 +39,9 @@ pub struct ResolvedAttachmentSource {
 }
 
 pub fn file_path_from_file_url(raw: &str) -> Option<PathBuf> {
-    let url = Url::parse(raw).ok()?;
-    if url.scheme() != "file" {
-        return None;
-    }
-    url.to_file_path().ok()
+    crate::extensions::attachments::media_reference::resolve_local_file_url(raw)
+        .ok()
+        .flatten()
 }
 
 pub fn identity_attachment_source(raw: &str) -> ResolvedAttachmentSource {

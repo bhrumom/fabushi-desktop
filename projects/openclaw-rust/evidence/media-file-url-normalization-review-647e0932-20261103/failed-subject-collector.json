@@ -1,0 +1,66 @@
+{
+  "collector_state": "completed-and-frozen",
+  "frozen_at": "2026-11-03T02:51:20.451040+00:00",
+  "last_runtime_observation": "runtime-jobs-4.json (approximately 2026-11-03 02:48 UTC)",
+  "freeze_instruction": "Parent requested final as-of report with macOS queued preserved, all Linux failure/Windows passing evidence retained, and no further unchanged-state polling.",
+  "subject_commit": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+  "subject_tree": "a85fe54f86823ff30b682f91ff97b1daca3f1318",
+  "parent": "d26d44d1441c05e3dbb7dc18eb908ab042cbdae9",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstream_tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "source_run": 41567768550,
+  "runtime_run": 41567768358,
+  "run_attempt": 1,
+  "overall_fua_acceptance": false,
+  "linux": {
+    "status": "failure",
+    "classification": "IMPL_BUG",
+    "job_id": 125693323289,
+    "artifact_id": 13200058555,
+    "passed": 76,
+    "failed": 3,
+    "groups": 7,
+    "assessment": "linux-media-assessment.json",
+    "cause": "FILE://// authority-shaped paths normalize to local paths and cross the local-reader boundary; retained and new assertions fail."
+  },
+  "windows": {
+    "status": "passed-for-selected-seven-groups",
+    "job_id": 125693323398,
+    "artifact_id": 13200270481,
+    "passed": 76,
+    "failed": 0,
+    "groups": 7,
+    "assessment": "windows-media-qualified-assessment.json",
+    "input_bytes": "All30 input SHA-256 values/sizes match canonical H LF bytes after native CRLF checkout conversion; normalized Git blobs match H and before/after snapshots are identical."
+  },
+  "macOS": {
+    "status": "queued-unverified",
+    "job_id": 125693323245,
+    "artifact_id": null,
+    "executed_count": null,
+    "assessment": "No pass/fail/blocker inference from queue state."
+  },
+  "source_authority": {
+    "status": "structural-success-closure-open",
+    "artifact_id": 13199968694,
+    "risk_contract_tests": 33,
+    "materialization_tests": 21,
+    "inventory_entries": 62130,
+    "assessment": "source-authority-assessment.json",
+    "dependency_lfs_closure": "open",
+    "g02_final": "not-run",
+    "independent_review": "pending",
+    "all_eight_completion_flags": false
+  },
+  "scope_constraints": {
+    "read_only_source": true,
+    "writes_only_owned_evidence_directory": true,
+    "local_or_htch_product_or_instrument_validation": false,
+    "rerun_or_dispatch": false,
+    "source_edits": false,
+    "assertion_weakening": false
+  },
+  "primary_report": "FINAL-ASSESSMENT.md",
+  "manifest": "evidence-manifest.json",
+  "manifest_detached_hash": "evidence-manifest.sha256"
+}

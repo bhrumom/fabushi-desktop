@@ -1,0 +1,23 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "phase": "two-file incoming integration before edits",
+  "base": "370c6680b6b8c072615875d72be67ca0e45ebe45",
+  "base_tree": "b31903209a22e8fbd77e5eb4a9a865723a98f54c",
+  "prior_candidate_tree": "9a9afd4841590abc646805b8308c6e716821f067",
+  "prior_base": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "decision": "FIX",
+  "rationale": "Preserve incoming canonical prior-root production and all Plugins work. Root read the complete PRID-v1 contract and the two shared-file patches. Only workflow and extracted portable capture overlap the media scope. Three-way merge those files against exact78, retaining both LFA selections and incoming independent groups, source bindings, historical reader step and credential exclusion. Do not alter incoming checkpoint, Plugin production, fixtures, evidence, locks or statuses. R5 remains immutable and its reviews retain only its exact source subject; the two new merged files require fresh focused review before publication.",
+  "paths": [
+    ".github/workflows/rust-desktop-runtime.yml",
+    "projects/openclaw-rust/scripts/capture_portable_contracts.py"
+  ],
+  "incoming_spec": {
+    "path": "projects/openclaw-rust/docs/specs/canonical-prior-root-identity.md",
+    "blob": "472f9242e1dd72f225bed8ebbad724df3e46ef17",
+    "root_read_complete": true
+  },
+  "validation": "No local or htch execution; new exact-H Actions required. Incoming78 Windows terminal success is an old native contract result, not validation of this LFA product extension.",
+  "acceptance": "No current source-convergence or runtime acceptance is asserted by this merge decision. No OCRM/global flag promotion."
+}

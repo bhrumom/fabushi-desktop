@@ -1853,6 +1853,8 @@ jobs:
                   "agent_media_persistence_is_atomic_and_separates_images_from_attachments",
                   "delivery_counter_tracks_only_successful_shipping_send_side_effects",
                   "shipping_send_message_composes_cloud_title_and_generated_interaction_observation",
+                  "lfa_send_message_file_url_facade_preserves_admitted_metadata",
+                  "lfa_send_message_file_url_facade_refuses_unsafe_local_sources",
                   "transcript_read_owner_matches_frozen_page_window_tail_and_thread_semantics",
                   "durable_outline_resolves_frozen_user_steps_send_message_task_and_shell_semantics",
                   "generated_send_message_text_success_survives_session_backfill_reopen",
@@ -3961,6 +3963,13 @@ jobs:
               "source/host/app/Cargo.toml", "source/host/app/Cargo.lock",
               "source/host/app/src/main.rs", "source/host/app/src/tests/automation_terminal_custody_tests.rs",
               "source/host/app/src/tests/config_secret_boundary_tests.rs",
+              "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+              "source/host/app/src/tests/local_media_file_url_tests.rs",
+              "source/host/src/extensions/attachments/media_reference.rs",
+              "source/host/src/runner/tools/send_message_tool.rs",
+              "source/host/src/runner/tools/sand_agent_management_tools.rs",
+              "source/host/src/extensions/session/agent_db.rs",
+              "source/host/src/extensions/attachments/media_store.rs",
               "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
               "projects/openclaw-rust/docs/specs/channel-outbound-host-lane.md",
               "source/host/app/src/tests/channel_failure_handoff_tests.rs",
@@ -4050,6 +4059,8 @@ jobs:
               "contract": "AUTO-BACKEND-HISTORY-v2/AUTO-BACKEND-ADMISSION-v1/AUTO-FRESH-CUSTODY-v1/AUTO-LEGACY-SLOT-CUSTODY-v1/OCRM-CONFIG-PUBLIC-SECRET-v1/CS05-INPUT-v1/MCP-RECEIVED-CATALOG-v1/HSA-v1/DPS-v1/PRC-v1/DVR-v1/DRT-v1/DTR-v1",
               "channel_contract": "OCRM-CHANNEL-FAILURE-LIVE-CUSTODY-v1/CWR-v1/CFL-CHECKED-v1",
               "model_contract": "CMI-v1/CWB-v1",
+              "local_media_file_url_contract": "LFA-v1",
+              "local_media_file_url_scope": "Actual production SendMessage and AgentManagement sinks with Session/Transcript/ForeverBox owners: malformed file URL refusal before local read/materialization/outward send; prior-image custody cleanup and durable fence release after later refusal; native and Unicode materialization, original-byte preservation, repeated refusal and successful repair across real owner reopen; HTTPS passthrough without local custody. Controlled transport is not live channel/provider or packaged-platform acceptance, and persistence unknown-outcome handling remains separate.",
               "subject_commit": head,
               "subject_tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
               "upstream": {key: lock["upstream"][key] for key in ("repository", "commit", "tree")},
@@ -4236,6 +4247,16 @@ jobs:
                   "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_history_without_observation",
                   "tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_retains_failed_turn_without_completion_or_replay",
               ]
+              local_media_file_url_required = ["tests::local_media_file_url_tests::" + name for name in [
+                  "local_media_file_url_app_rejects_invalid_before_materialization",
+                  "local_media_file_url_app_rolls_back_earlier_image_on_later_refusal",
+                  "local_media_file_url_app_commits_native_and_unicode_media_across_reopen",
+                  "local_media_file_url_app_repeated_refusal_then_repair_survives_reopen",
+                  "local_media_file_url_app_agent_management_refuses_image_before_outward_send",
+                  "local_media_file_url_app_preserves_https_without_local_custody",
+              ]]
+              required += local_media_file_url_required
+              receipt["local_media_file_url_required_tests"] = local_media_file_url_required
               receipt["required_tests"] = required
               save()
               for index, name in enumerate(required):

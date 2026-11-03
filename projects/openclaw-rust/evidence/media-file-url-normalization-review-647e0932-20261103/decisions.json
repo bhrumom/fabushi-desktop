@@ -1,0 +1,129 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "scope": "Unpublished FUA R2 historical source review and H364 execution recovery; not approval of integrated LFA",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "failed_executed_subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+  "source_review_tree": "a2b9d3a154145d8071cc63909a5e6a20feeb7731",
+  "source_review_was_published_as_product": false,
+  "review_results": [
+    {
+      "reviewer": "/root/fua_general_r2",
+      "model": "configured; no model override",
+      "effort": "xhigh explicitly accepted by spawn adapter",
+      "fork_turns": "none",
+      "report": "general.md",
+      "sha256": "e3258f73ef46352d77a2a5f8ffc2d2f00863562c9a768c7f2b6b102fc03163e6",
+      "verdict": "REQUEST_CHANGES",
+      "finding": "FUA-R2-GEN-01"
+    },
+    {
+      "reviewer": "/root/fua_structure_r2",
+      "model": "gpt-6.1-sol explicitly accepted by spawn adapter",
+      "effort": "xhigh explicitly accepted by spawn adapter",
+      "fork_turns": "none",
+      "report": "structure.md",
+      "sha256": "5eeba37b23848526880e7794a599dbf145031fdfcef6f4ba3adbce3609634cbe",
+      "verdict": "REQUEST_CHANGES",
+      "finding": "FUA-STRUCT-R2-01"
+    }
+  ],
+  "root_decisions": [
+    {
+      "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+      "round": 1,
+      "finding_id": "FUA-NORMALIZATION-01",
+      "classification": "IMPL_BUG",
+      "decision": "FIX",
+      "recorded_before_fix": true,
+      "subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+      "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+      "runtime_run": 41567768358,
+      "artifact_id": 13200058555,
+      "artifact_sha256": "c3bd83ea7fe568848b3b432e45a14011e730f894b48548c64b6f555693b78352",
+      "failure": "The pure owner counter enters once for FILE:////files.example/share/image.png; converter returns /files.example/share/image.png. Existing four-slash rejection and new owner/converter assertions fail.",
+      "raw_logs": {
+        "file-url-admission.log": "f01a32539a38becff9443ee28d4c55049bfd3d6f7e6a52d4eb06ca39682478da",
+        "explicit-html-consumers.log": "4e22d9aa0a716ab94a54449b98cf0096056339af222eac1156b66002ef23706a"
+      },
+      "actual_failures": {
+        "owner": {
+          "passed": 4,
+          "failed": 1,
+          "command_exit": 101,
+          "capture_exit": 0
+        },
+        "web_consumers": {
+          "passed": 19,
+          "failed": 2,
+          "command_exit": 101,
+          "capture_exit": 0
+        }
+      },
+      "retained_positive_groups": {
+        "cleanup_owner": 7,
+        "cleanup_consumers": 17,
+        "html_policy": 12,
+        "host_read_format": 1,
+        "image_probe": 16
+      },
+      "cause": "Locked url2.5.8 parse_path normalizes leading empty file path segments before returning Url (parser.rs1371-1378). Post-parse host and post-conversion network checks cannot reconstruct the discarded separators. The same parser can remove a host when a Windows drive segment is encountered (parser.rs1344-1363), which must also not defeat the declared nonlocal-authority refusal.",
+      "version_source": {
+        "commit": "d6ea13c5f8e7e6e627f6390161b3e185bda5e5ce",
+        "parser_blob": "dbdf9b906238c20ef0896d114d5cb8ad69197e34",
+        "ranges": [
+          "512-565",
+          "1318-1379"
+        ]
+      },
+      "fix_direction": "Preserve a pre-normalization rejection of four or more leading file separators, including mixed slash/backslash and ignored URL tab/newline spelling. Reject FileWithHostAndWindowsDrive normalization through the existing parser syntax-violation callback. Retain structural scheme/host/conversion checks and private no-I/O boundary. Add variants to existing controls; remove no assertion.",
+      "invalidated_evidence": "R1 source convergence is not runtime acceptance. FUA admission/web groups require a corrected exact-H execution; old failed receipt remains failed. Native Windows prior result stays attached to364 only.",
+      "forbidden": "No changed expectation, assertion removal, gate bypass, test skip, unchanged rerun or local/htch executable verification."
+    },
+    {
+      "finding_id": "FUA-WINDOWS-ABSOLUTE-02",
+      "recorded_before_integrating_fix": true,
+      "basis": "source-confirmed possible debug assertion/native drive-relative return; no local execution or fabricated failing CI case",
+      "subject": "FUA R2 frozen tree a2b9d3a154145d8071cc63909a5e6a20feeb7731; file_url_to_path native conversion boundary",
+      "trigger": "On Windows, file:///C: (or encoded-drive colon) has only a drive segment; published url2.5.8 to_file_path builds C: and asserts native absolute path.",
+      "dependency": {
+        "archive_sha256": "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed",
+        "lib_git_blob": "f1558682b6287d0cba1cd93d84cee6cf6cbeaf44",
+        "ranges": [
+          "3139-3191"
+        ]
+      },
+      "contract": "FUA-02/LFA-03 require an admitted native absolute path or typed refusal before local effects.",
+      "decision": "REUSE_EXISTING_LFA_FIX",
+      "existing_source": "/tmp/fabushi-647e-pairing/local-file-url-r1/candidate/source/host/src/extensions/attachments/media_reference.rs",
+      "existing_candidate_tree": "6a6e8cf0c1b9e74df84a369dd3c639cd0b750d31",
+      "integration": "Reuse native drive-root precondition and absolute-result check already in the shared existing media_reference owner. Preserve FUA normalization prefix guard/zero-reader assertions and actual LFA App propagation; do not publish a duplicate parser owner.",
+      "review": "FUA R2 remains source-only historical frozen slice, no runtime or whole-LFA approval. Full integrated scope requires new independent reviews and exact-H Actions.",
+      "retained": "No prior failed receipt, valid assertion, source identity, unit state or global completion flag is changed."
+    }
+  ],
+  "deduplication": "The two R2 P2 findings confirm the same native Windows drive-root precondition gap, preserved under FUA-WINDOWS-ABSOLUTE-02; do not count them as independent runtime executions.",
+  "disposition": "Reuse existing LFA shared converter precondition and original App integration. Preserve original failed tests and add root/encoded drive controls. Complete integrated20path tree3129fb0c3897bdf78d50e1cd067cc3dd65310297 receives fresh independent full-scope review and exact-H Actions; those outcomes are not yet known in this record.",
+  "raw_artifact_mapping": [
+    {
+      "original": "ci-fua-364/linux-media-13200058555.zip",
+      "repository_file": "linux-media-364.zip",
+      "artifact_id": 13200058555,
+      "sha256": "c3bd83ea7fe568848b3b432e45a14011e730f894b48548c64b6f555693b78352",
+      "subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+      "result": "76 passed /3 failed; IMPL_BUG; complete original media receipt and seven raw logs"
+    },
+    {
+      "original": "ci-fua-364/windows-media-13200270481.zip",
+      "repository_file": "windows-media-364.zip",
+      "artifact_id": 13200270481,
+      "sha256": "53abdc0e5fc11c3d0999e8464f2f9516c74bd50b806fb382f217959227cd11fd",
+      "subject": "3647531d1d47d1c690b98a06f0156ae2734ff7ad",
+      "result": "76 passed /0 failed; exact-H CRLF checkout identities qualified; complete original receipt and seven raw logs"
+    }
+  ],
+  "collector_note": "failed-subject-collector.json preserves original bytes and historical scratch-relative assessment names. Embedded original ZIPs contain actual receipts/logs. Source structure evidence remains its GitHub artifact13199968694, no new source closure or OS acceptance claimed.",
+  "source_acquisition_amendment": "dependency-member-confirmation.json records later acquisition of the exact lock-matching url crate without rewriting prior review facts.",
+  "status_flags_promoted": false,
+  "local_or_htch_executable_validation": false
+}

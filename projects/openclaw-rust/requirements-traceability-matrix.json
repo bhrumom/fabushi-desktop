@@ -1039,7 +1039,11 @@
         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
         "source/host/tests/pending_wake_rearm_contract.rs",
         "source/host/tests/durable_recovery_stores_contract.rs",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R15",
@@ -1376,7 +1380,11 @@
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R23",
@@ -1506,6 +1514,10 @@
         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
         "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs",
         "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
         "projects/openclaw-rust/evidence/memory-synthesis-identity-d56b3d1d-20261103/source-contract.json",
         "source/host/src/extensions/memory/production_identity_tests.rs",
@@ -2398,7 +2410,11 @@
         "source/host/src/extensions/transcript/pending_wake_rearm.rs",
         "source/host/tests/pending_wake_rearm_contract.rs",
         "source/host/tests/durable_recovery_stores_contract.rs",
-        "source/host/tests/transcript_manager_contract.rs"
+        "source/host/tests/transcript_manager_contract.rs",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC15",
@@ -2849,7 +2865,11 @@
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/dependency-contract.json",
         "projects/openclaw-rust/evidence/codex-workspace-binding-d56b3d1d-20261103/compaction-source-contract.json",
         "projects/openclaw-rust/docs/specs/media-html-policy-safety.md",
-        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json"
+        "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC23",
@@ -2998,6 +3018,10 @@
         "projects/openclaw-rust/evidence/media-html-image-contract-647e0932-20261103.json",
         "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
         "projects/openclaw-rust/evidence/media-file-url-admission-647e0932-20261103.json",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+        "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/app/src/tests/local_media_file_url_tests.rs",
         "projects/openclaw-rust/docs/specs/device-token-rotation-wire.md",
         "source/host/tests/device_token_rotation_wire_authority_contract.rs",
         "source/host/tests/device_token_rotation_wire_gateway_contract.rs",

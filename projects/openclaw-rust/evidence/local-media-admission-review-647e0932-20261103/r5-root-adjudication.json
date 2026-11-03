@@ -1,0 +1,27 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 5,
+  "base": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+  "candidate_tree": "9a9afd4841590abc646805b8308c6e716821f067",
+  "prior_candidate_tree": "76e6c26d754179ee5af447ecec689a2de844b476",
+  "root_read_both_reports_completely": true,
+  "verdict": "APPROVED for the full eight-path integration delta and its necessary adjacency",
+  "findings": [],
+  "reviews": [
+    {
+      "file": "r5-general.md",
+      "sha256": "0438c87393651df6cb143d25d829c1d4f663b30aaeb72685dbee727ada87957b",
+      "effort": "xhigh actually applied",
+      "model": "configured model retained"
+    },
+    {
+      "file": "r5-structure.md",
+      "sha256": "47a1b858a0ef0698ca6596e87f2d503b51c632a58575e54beacc46fde9ce62a9",
+      "effort": "xhigh actually applied",
+      "model": "gpt-6.1-sol actually applied"
+    }
+  ],
+  "coverage": "Retain the R4 source verdict only for unchanged blobs and unaffected context. R5 reviewers independently assess the eight changed source paths plus adjacent consumers; neither claims a new complete21-path review. Two historical JSON remain under the root serial audit. R6 independently changes two shared capture files and requires its own source verdict.",
+  "boundary": "No exact R5 runtime result or current final-source acceptance. No source/dependency/global completion or unit-verified promotion."
+}

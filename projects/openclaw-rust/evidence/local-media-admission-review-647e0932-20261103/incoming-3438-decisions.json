@@ -1,0 +1,12 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "recorded_before_integration": true,
+  "incoming": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+  "base_tree": "b544c1d377ca82618cdadcf5106cb3c10d82411b",
+  "decisions": [
+    {"id": "LFA-WFX-INTEGRATE-01", "decision": "REUSE", "reason": "The existing WFX owner published e19a0a265e400a4c9b1d96520c84fb612a3843e8, extracting the current portable capture into capture_portable_contracts.py. Preserve that source move and the full caller/receipt/artifact contract. Apply LFA's two SendMessage positive names and15to17 summary change in the new script, retaining the outside-workflow required names and six actual App cases. No new capture runner or gate deletion."},
+    {"id": "LFA-INVENTORY-3438-02", "decision": "PRESERVE", "reason": "Incoming Actions canonical inventory shards/manifest and mapped/unclassified counts are retained exactly. Merge only our existing four responsibility row changes; do not promote statuses or eight flags or regenerate sources locally."}
+  ],
+  "review_boundary": "R2 treea4f1c59eb577a45c1b05da1de0a8f13644dc1a5c and its ongoing reviews remain immutable. Integration goes to a separate R3 snapshot with complete diff plus focused delta review before publication. No runtime pass inherited from the source move."
+}

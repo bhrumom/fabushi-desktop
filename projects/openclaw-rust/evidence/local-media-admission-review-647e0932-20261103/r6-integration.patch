@@ -1,0 +1,84 @@
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index 580eabc..eebbd9c 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -4303,6 +4303,15 @@ jobs:
+               print(json.dumps(receipt, indent=2), flush=True)
+           sys.exit(0 if receipt["result"] == "passed" else 1)
+           PY
++      - name: Prove historical prior-root recovery through the current Host and shipping App
++        id: prior_root_identity
++        if: ${{ steps.automation_app.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
++        env:
++          TMPDIR: ${{ env.NATIVE_PATH_FIXTURES }}
++          CARGO_TARGET_DIR: ${{ github.workspace }}/source/host/target
++          CARGO_BUILD_JOBS: '1'
++        shell: bash
++        run: python3 projects/openclaw-rust/scripts/capture_prior_root_contracts.py
+       - name: Test native link-preview HTTP, Coordinator and app dispatch on the existing Linux Host cache
+         id: link_preview_gateway
+         if: ${{ always() && steps.native_paths.outcome == 'success' && ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) }}
+@@ -4451,12 +4460,12 @@ jobs:
+           raise SystemExit(0 if accepted else 1)
+           PY
+       - name: Preserve failed owned native-path and Automation fixtures
+-        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
++        if: ${{ failure() && (steps.native_paths.outcome == 'failure' || steps.channel_pending_recovery.outcome == 'failure' || steps.automation_admission.outcome == 'failure' || steps.automation_app.outcome == 'failure' || steps.prior_root_identity.outcome == 'failure' || steps.link_preview_gateway.outcome == 'failure') }}
+         shell: bash
+         run: |
+           set -euo pipefail
+           if [ -d "$NATIVE_PATH_FIXTURES" ]; then
+-            tar -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/owned-fixtures.tar .
++            tar --exclude='original-turn-credential.json' -C "$NATIVE_PATH_FIXTURES" -cf .evidence/sqlite-native-path/owned-fixtures.tar .
+           fi
+       - name: Upload native SQLite path evidence
+         if: ${{ always() && steps.native_paths.outcome != 'skipped' }}
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index 07da058..62bc1cd 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -173,6 +173,8 @@ inputs = [
+     "source/host/src/runner/inactive_turn_agent_stream.rs",
+     "source/host/src/runner/stream_attempt.rs",
+     "source/host/tests/production_checkpoint_restart_contract.rs",
++    "source/host/tests/support/prior_root_historical_fixture.rs",
++    "projects/openclaw-rust/docs/specs/canonical-prior-root-identity.md",
+     "source/host/src/connectors/channel_delivery.rs",
+     "source/host/tests/runner_production_bridge_contract.rs",
+     "source/host/tests/production_turn_input_projection_contract.rs",
+@@ -938,6 +940,17 @@ cases = [
+         "canonical_root_admission_early_errors_permanently_revoke_prior_completion",
+         "canonical_root_admission_post_durable_journal_failure_refuses_stale_sink",
+     ]),
++    ("canonical-prior-root-image", base + ["--lib", "prior_root_identity_tests::", "--", "--test-threads=1"], [
++        "runner::production_agent_checkpoint::prior_root_identity_tests::prior_root_fresh_publication_refuses_old_hash_and_present_empty_omission",
++        "runner::production_agent_checkpoint::prior_root_identity_tests::prior_root_reconciliation_accepts_only_the_exact_two_writer_images",
++        "runner::production_agent_checkpoint::prior_root_identity_tests::prior_root_validation_preserves_absence_and_content_addressed_controls",
++        "runner::production_agent_checkpoint::prior_root_identity_tests::prior_root_validation_refuses_duplicate_unsupported_and_malformed_user_images",
++    ]),
++    ("canonical-prior-root-process", base + ["--test", "production_checkpoint_restart_contract", "prior_root_historical_fixture::", "--", "--test-threads=1", "--skip", "prior_root_historical_fixture::export_base_writer_fixtures", "--skip", "prior_root_historical_fixture::consume_base_writer_fixtures"], [
++        "prior_root_historical_fixture::current_writer_present_empty_root_has_exact_identity_and_fresh_completion",
++        "prior_root_historical_fixture::current_writer_legacy_without_alias_has_exact_identity_and_fresh_completion",
++        "prior_root_historical_fixture::rehashed_user_image_faults_reach_the_specific_fresh_process_semantic_refusal",
++    ]),
+     ("canonical-root-admission-contracts", base + ["--no-fail-fast", "--test", "production_turn_agent_owner_contract", "--test", "production_agent_checkpoint_contract", "--test", "production_agent_store_recovery_contract", "--test", "canonical_checkpoint_recovery_contract", "--test", "host_runner_composition_production_wiring_contract", "--test", "transcript_mirror_production_provider_contract", "--", "--test-threads=1"], [
+         "production_owner_retains_not_started_when_input_preparation_refuses",
+         "production_sink_rejects_stale_snapshot_before_mirror_recovery",
+@@ -998,7 +1011,7 @@ for label, output, cargo_exit, capture_exit, expected in [
+ 
+ receipt = {
+     "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
+-    "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DTR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1"],
++    "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DRT-v1", "DTR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1", "OCRM-SEND-MESSAGE-FIDELITY-v1", "MSI-v1", "OCRM-CANONICAL-PRIOR-ROOT-IDENTITY-v1"],
+     "memory_synthesis_identity_scope": "Per-snapshot MemorySynthesis uses one admitted model/credential identity across proposal, verification and retries. Native and Codex controls reach the production factory, actual HTTP assembly, Session apply gate and FileMemoryStore with owned credentials. Same-context token rotation is accepted; account/workspace drift and cancellation preserve memory/temporal bytes. Stale starts a new snapshot admission. Detached-worker drain, atomic cancellation/commit, original evidence account binding, durable synthesis recovery and real providers remain unaccepted.",
+     "send_message_fidelity_scope": "SGF-v1 preserves actual completed SendMessage producer wire through existing canonical field 2 independently of live observation, using a fresh invocation recorder and checked receipt/callback/drain custody. Actual Session success-only decoding retains full-envelope and effective oneof semantics through backfill/reopen. Controlled actual App SQL sends compare message identity, normalized arguments, timestamps, live/canonical bytes and Journal projection; original typed failure, completion revocation and two fresh owner reads retain no replay or marker authority. Real providers/channels, external delivery ACK, lost SQL identity reconstruction, original interrupted-turn restart, rich variants and packaged-platform acceptance remain open.",
+     "codex_workspace_binding_scope": "Actual private credential loading, per-turn source/workspace continuity, same-workspace rotation, recreated retry/checkpoint refusal, one-401 refresh before persistence and bound/fresh Memory consumers through real HTTP with owned redirected destinations. Real service, external-writer settlement and process-restart acceptance remain open.",
+@@ -1038,7 +1051,7 @@ for label, command, required in cases:
+     missing = [name for name in required if passed.count(name) != 1]
+     counts = successful_test_summaries(text)
+     accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
+-    if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http", "memory-synthesis-identity", "generated-send-message-recorder"):
++    if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http", "memory-synthesis-identity", "generated-send-message-recorder", "canonical-prior-root-image", "canonical-prior-root-process"):
+         accepted = accepted and counts == [(len(required), 0, 0)]
+     complete_counts = None
+     if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-role-token-revocation-authority", "device-role-token-revocation-gateway", "device-token-rotation-wire-authority", "device-token-rotation-wire-gateway", "device-pairing-retained-stream"):

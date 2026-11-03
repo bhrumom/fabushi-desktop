@@ -1,0 +1,34 @@
+{
+  "finding_id": "LFA-AGENT-IMAGE-BATCH-01",
+  "decision": "FIX",
+  "recorded_before_fix": true,
+  "candidate_tree": "3129fb0c3897bdf78d50e1cd067cc3dd65310297",
+  "base": "497c2c7a7bc5201aead83d3d36e44f52ba164d04",
+  "source_evidence": "AgentManagementToolBridge parse_images constructs the complete Vec but checks only scheme; then resolves each source sequentially. ProductionAgentManagementSink ignores owned_path from the shared resolver. After a valid first image creates a managed file, a later URL rejection returns early without SendMessage abort custody.",
+  "source_blob": "e8cf8008e9c4eab2dbd909289ab6fa9a1345726c",
+  "source_ranges": [
+    "11-22",
+    "55-65",
+    "93-101"
+  ],
+  "source_confirmation": "Root directly read exact source after independent structure reviewer preliminary finding; no local execution or fabricated observed orphan",
+  "contract": "LFA invalid-source admission must cause no materialization or outward message; actual AgentManagement adjacent consumer is in scope",
+  "fix": "Reuse shared pure resolve_local_file_url inside existing parse_images before any per-image sink resolution. The full value batch passes parsing before .into_iter begins; no new store, custody owner or trait interface. Keep actual sink direct-call admission. Add real App valid-first/invalid-later no-effects case and native bridge regression/positive selection.",
+  "limits": "This addresses deterministic invalid URL refusal in a batch. Later file-read/persistence/delivery failures and unknown write outcomes remain separate existing work; no broad cleanup or crash guarantee is claimed.",
+  "review": "New immutable R2 with complete scope plus delta and independent review required before publication; all R1 findings retained.",
+  "independent_R1_findings": [
+    {
+      "review": "reviews/media-admission-general-r1.md",
+      "finding": "LFA-GEN-R1-01",
+      "sha256": "19c9acf61a1e576801ac4ea408e326c9fdf8f0d12c511c9327caaa689694df4b",
+      "verdict": "REQUEST_CHANGES"
+    },
+    {
+      "review": "reviews/media-admission-structure-r1.md",
+      "finding": "R1-STRUCT-01",
+      "sha256": "398e78394ab18cbe03919ba61221c4daf555a9a0a70fb3aa2da15544782987c1",
+      "verdict": "REQUEST_CHANGES"
+    }
+  ],
+  "root_review_read": "Both complete terminal reports read; same source-confirmed finding accepted. Strengthen actual App oracle with repeated refusal across owner reopen and subsequent actual local-image materialization/send. No additional production scope or state owner."
+}

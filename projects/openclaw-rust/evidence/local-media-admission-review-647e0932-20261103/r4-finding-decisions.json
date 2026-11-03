@@ -1,0 +1,60 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "review_round": 4,
+  "recorded_before_product_edit": true,
+  "recorded_at": "2026-11-03T03:27:55.843941+00:00",
+  "base": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+  "prior_tree": "e9a172d00139550e8a055a61bf06e225b9d4166c",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "review": {
+    "path": "/workspace/scratch/7d27ea239237/reviews/media-admission-general-r2.md",
+    "sha256": "c13b348e2ea9835bc21b9a4a67f83057a6e934d3ceca3fbbca1240d53048922f",
+    "root_read_complete": true,
+    "verdict": "CHANGES_REQUIRED"
+  },
+  "findings": [
+    {
+      "id": "R2-GEN-01",
+      "decision": "FIX",
+      "severity": "P2",
+      "reason": "The retained native Windows rooted positive requires literal triple-slash C|. Root independently read the exact locked parser and converter and confirmed its empty-host extra-segment branch skips drive normalization; current shared decoded-prefix admission therefore also refuses it. The adjacent failed raw loop is unlabeled and is not R2 execution. Do not remove its valid assertion.",
+      "repair": "In existing media_reference::resolve_local_file_url, only on Windows and after original authority/violation refusal, normalize parsed literal /ASCII-letter|/ via URL path setter before existing strict decoding, absolute-drive check and native conversion. No unchecked native path/failure fallback. Preserve all negative controls; extend existing native/shared/real-byte table cases and include source in failure messages.",
+      "scope": [
+        "source/host/src/extensions/attachments/media_reference.rs",
+        "source/host/src/extensions/attachments/web_media.rs",
+        "source/host/tests/local_media_file_url_contract.rs",
+        "source/host/tests/openclaw_web_media_contract.rs",
+        "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md"
+      ]
+    }
+  ],
+  "spec": {
+    "path": "projects/openclaw-rust/docs/specs/local-media-file-url-admission.md",
+    "sha256": "24ac4f1a9f31f626e8c8f3787ef9f1e3aa82cec16ea0546c82a2824498c9cabe",
+    "requirement": "LFA-03a",
+    "written_before_product_edit": true
+  },
+  "failed_evidence": "ci-media-windows-roots/windows-root-failure-receipts.json",
+  "preserved": {
+    "all_prior_assertions": true,
+    "all_native_case_counts": {
+      "Linux": 163,
+      "macOS": 163,
+      "Windows": 158
+    },
+    "native_groups": 16,
+    "native_inputs": 46,
+    "app_cases": 6,
+    "portable_summaries": [
+      13,
+      14,
+      17
+    ],
+    "BR_reader_body": "unchanged",
+    "WFX_extracted_capture": "unchanged",
+    "ledger_statuses": "unchanged",
+    "all_eight_global_flags": false
+  },
+  "review_required": "Fresh blind GENERAL/security and pinned gpt-6.1-sol structure/reuse/performance, xhigh, complete frozen scope plus five-file repair and adjacent consumers.",
+  "validation": "Exact published-H GitHub Actions only; no local or htch execution; no unchanged-H rerun; prior failed and positive evidence retains original subject."
+}

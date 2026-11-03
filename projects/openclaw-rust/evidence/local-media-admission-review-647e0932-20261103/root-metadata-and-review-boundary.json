@@ -1,0 +1,39 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "recorded_at": "2026-11-03T03:34:15.715860+00:00",
+  "root_source_metadata_read": [
+    {
+      "path": "projects/openclaw-rust/evidence/local-media-file-url-647e0932-20261103.json",
+      "blob": "0722207d574b638c1e9984737f85cb05fa3aa3b7",
+      "read": "complete original candidate declaration; current source consumers, prior receipts and declared non-acceptance limits cross-checked"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/media-file-url-normalization-recovery-647e0932-20261103.json",
+      "blob": "721190ec1e165a8fbdf9e5764d779796000e71e9",
+      "read": "complete original candidate declaration; current source consumers, prior receipts and declared non-acceptance limits cross-checked"
+    }
+  ],
+  "historical_record_boundary": "The two unchanged R2 candidate records retain their original base, pending-review/Actions wording and prior finding history. They do not describe final publication or supersede the later R3/R4 identities. This is not a second OCRM ledger or status promotion.",
+  "blind_review_boundary": {
+    "r3_structure": "INCOMPLETE after disclosed embedded historical review/decision text exposure. Preserve report/source identity facts, do not count as required blind approval.",
+    "report_sha256": "7eb31a1abd3ba5f90b846af8d064039ce0e07d7ca1433c5bd2d272ce2122d352",
+    "recovery": "Fresh R4 general and pinned structure reviewers cover all21 non-evidence paths in the same frozen23path scope. Both explicitly confirmed no historical finding/decision/report exposure. Root serially audits the two historical evidence JSON files. No earlier review approval is required or transferred to their final verdicts.",
+    "r4_tree": "76e6c26d754179ee5af447ecec689a2de844b476",
+    "approval": "pending terminal R4 reports"
+  },
+  "historical_findings": {
+    "R1_agent_management": "retained FIX and actual source/App controls",
+    "R2_windows_pipe": "retained FIX recorded before R4 product edit",
+    "no_reports_rewritten": true
+  },
+  "incoming_a27": {
+    "head": "a27a3a6daec5377a56f61221b34ac3f3c8c4005e",
+    "tree": "a15cb66584e1b51e82ae97098491657fe629bf59",
+    "delta_from3438": "Two evidence-only commits add9disjoint archive/index files; no product/test/workflow/schema/lock/ledger source delta. Preserve exact incoming tree outside reviewed23paths.",
+    "archive_index_blob": "8fedc3c881cfe3753550854e604f5b22da9f1aeb",
+    "note": "Index inspected for identity/boundaries/overlap; 115 archive members are not claimed fully reread or reaccepted by this root. No duplicate source migration is introduced."
+  },
+  "current_runtime": "Not run for R4; e19/3438 Windows failed receipts remain failed and bind only their own exactsubjects.",
+  "flags_promoted": false,
+  "full_unit_acceptance": false
+}

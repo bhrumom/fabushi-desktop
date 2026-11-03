@@ -1,0 +1,39 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 7,
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "incoming_head": "2a6dfc0f7295b3b6ad3e372afa5be4d27951b11a",
+  "incoming_tree": "16977e8995befe89bfa975e2f1a4a98849fe6dbb",
+  "prior_base": "370c6680b6b8c072615875d72be67ca0e45ebe45",
+  "prior_candidate_tree": "efd035bd168369022a1a8b2131511ef20daf1646",
+  "before_edits": true,
+  "decisions": [
+    {
+      "id": "R7-IC01",
+      "action": "FIX",
+      "scope": "workflow and portable capture",
+      "reason": "Preserve incoming DTR owner44/HTTP14/retained27 wiring and large-distinct-scope required name while retaining both LFA strict gates and incoming PRID integration. No acceptance/count relaxation."
+    },
+    {
+      "id": "R7-IC02",
+      "action": "FIX",
+      "scope": "web media owner integration",
+      "reason": "Incoming 8e5 repeats the rooted literal pipe normalization already implemented in shared resolve_local_file_url. Retain the single shared conversion owner and web adapter's original stricter path-prefix/network refusal; preserve incoming new no-reader-entry negatives. Do not reintroduce a second URL parser/normalizer."
+    },
+    {
+      "id": "R7-IC03",
+      "action": "FIX",
+      "scope": "web media contract",
+      "reason": "Union all incoming refusal cases and value-labelled native-byte/service diagnostics, retaining all four LFA pipe variants, all five native rooted positives, dependency-refusal characterization and existing LFA negatives. No removal of valid assertions."
+    },
+    {
+      "id": "R7-IC04",
+      "action": "FIX",
+      "scope": "FUA contract",
+      "reason": "Retain historical FUA-WIN-ORACLE and incoming FUA-PIPE provenance, qualify shared-owner guard order consistently with LFA-03a/03b; upstream runtime compatibility remains unverified. Preserve both histories without declaring old failures product regressions."
+    }
+  ],
+  "preservation": "Every incoming nonoverlapping path remains at its exact incoming tree blob, including plugin/device production, incoming media source/review evidence and original Windows artifact.",
+  "verification": "Source/data/Git operations only. No local executable validation, current-H Actions or global status promotion."
+}

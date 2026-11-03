@@ -97,6 +97,10 @@ fn parse_images(value:Option<&Value>)->Result<Vec<AgentMessageImage>,ProviderSes
         let o=row.as_object().ok_or_else(||ProviderSessionError::Tool(format!("images[{index}] must be an object")))?;
         let url=o.get("url").and_then(Value::as_str).map(str::trim).filter(|v|!v.is_empty()).ok_or_else(||ProviderSessionError::Tool(format!("images[{index}].url is required")))?;
         if !is_valid_attachment_url(url){return Err(ProviderSessionError::Tool(format!("images[{index}].url must include a file:// or https:// scheme")));}
+        // Admit the complete value batch before the caller starts resolving
+        // any image. AgentManagement has no SendMessage per-call rollback.
+        crate::extensions::attachments::media_reference::resolve_local_file_url(url)
+            .map_err(|error|ProviderSessionError::Tool(format!("invalid local media file URL: {error}")))?;
         images.push(AgentMessageImage{url:url.into(),alt:optional_trimmed(o.get("alt")).map(ToOwned::to_owned)});
     }Ok(images)
 }
