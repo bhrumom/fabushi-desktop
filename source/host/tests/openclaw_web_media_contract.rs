@@ -202,6 +202,7 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         "file://localhost:8080/share/image.png",
         "FILE:////files.example/share/image.png",
         "file:////C:/safe/image.png",
+        "file:////C|/safe/image.png",
         r"file:/\/\C:/safe/image.png",
         r"file:\/\\C:/safe/image.png",
         r"file:\\\/C:/safe/image.png",
@@ -219,6 +220,8 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         r"file:\\files.example\C:\safe\image.png",
         "file:///C:/safe/folder%2fimage.png",
         "FILE:///C:/safe/folder%5Cimage.png",
+        "file:///C|/safe/folder%2fimage.png",
+        "FILE:///C|/safe/folder%5Cimage.png",
         "https://localhost/image.png",
     ] {
         match file_url_to_path(reference).expect_err("invalid reference must not become a path") {
@@ -237,7 +240,10 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         "file://C:",
         "file:///C:",
         "file:///C|",
-        "file:///C|/",
+        "file:///C%7C/",
+        "file:///C%7c/",
+        "file:///1|/",
+        "file:///CC|/",
         "file:///C%3A",
         "file:///C%3a",
         "FiLe://localhost/C:",
@@ -250,7 +256,7 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
         }
     }
     #[cfg(windows)]
-    for reference in ["file:///C:/", "file://C:/", "file:/C|/", "file:///C%3A/"] {
+    for reference in ["file:///C:/", "file://C:/", "file:/C|/", "file:///C|/", "file:///C%3A/"] {
         let path = file_url_to_path(reference)
             .unwrap_or_else(|error| panic!("rooted drive {reference:?} must remain valid: {error:?}"));
         assert_eq!(path, PathBuf::from(r"C:\"), "rooted drive {reference:?}");
@@ -279,12 +285,16 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
     let references = references.chain([
         format!("file://{}", native_url.path().trim_start_matches('/')),
         format!("file://{}", native_url.path().trim_start_matches('/').replacen('/', "//", 1)),
+        format!("file://{}", native_url.path().replacen(':', "|", 1)),
+        format!("file://localhost{}", native_url.path().replacen(':', "|", 1)),
     ]);
     for reference in references.flat_map(|reference| {
         let with_components = format!("{reference}?next=%2F%5C#part=%5C%2F");
         [reference, with_components]
     }) {
-        assert_eq!(file_url_to_path(&reference).unwrap(), path);
+        let decoded = file_url_to_path(&reference)
+            .unwrap_or_else(|error| panic!("native fixture URL {reference:?}: {error:?}"));
+        assert_eq!(decoded, path, "{reference:?}");
         let mut options = WebMediaOptions {
             max_bytes: Some(bytes.len()),
             local_roots: Some(vec![temp.path.clone()]),
@@ -292,18 +302,20 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
             html_publication: Some("explicit".to_string()),
             ..Default::default()
         };
-        let loaded = load_web_media(&reference, &options).expect("native local URL inside allowed root");
-        assert_eq!(loaded.buffer, bytes);
-        assert_eq!(loaded.file_name.as_deref(), Some(name));
-        assert_eq!(loaded.content_type.as_deref(), Some("text/html"));
+        let loaded = load_web_media(&reference, &options)
+            .unwrap_or_else(|error| panic!("native local URL {reference:?} inside allowed root: {error:?}"));
+        assert_eq!(loaded.buffer, bytes, "{reference:?}");
+        assert_eq!(loaded.file_name.as_deref(), Some(name), "{reference:?}");
+        assert_eq!(loaded.content_type.as_deref(), Some("text/html"), "{reference:?}");
         assert_explicit_html_loads(&service, &reference, bytes, name);
 
         options.max_bytes = Some(bytes.len() - 1);
-        assert!(matches!(load_web_media(&reference, &options), Err(WebMediaError::TooLarge(_))));
+        assert!(matches!(load_web_media(&reference, &options), Err(WebMediaError::TooLarge(_))), "{reference:?}");
         let error = service.dispatch_gateway("loadWebMedia", &json!({
             "url": reference, "maxBytes": bytes.len() - 1, "htmlPublication": "explicit"
-        })).expect("service handles loader").expect_err("service retains byte cap");
-        assert!(error.starts_with("Media exceeds "), "{error}");
+        })).unwrap_or_else(|| panic!("service handles loader for {reference:?}"))
+            .expect_err(&format!("service retains byte cap for {reference:?}"));
+        assert!(error.starts_with("Media exceeds "), "{reference:?}: {error}");
         assert_explicit_html_loads(&service, &reference, bytes, name);
         assert_eq!(fs::read(&path).unwrap(), bytes);
     }
@@ -516,8 +528,9 @@ fn assert_explicit_html_loads(
         "kind": "document",
         "fileName": file_name,
     });
-    let loaded = load_web_media(url, &options).expect("explicit HTML loader result");
-    assert_eq!(serde_json::to_value(loaded).unwrap(), expected);
+    let loaded = load_web_media(url, &options)
+        .unwrap_or_else(|error| panic!("explicit HTML loader result for {url:?}: {error:?}"));
+    assert_eq!(serde_json::to_value(loaded).unwrap(), expected, "{url:?}");
 
     let dispatched = service
         .dispatch_gateway(
@@ -528,10 +541,10 @@ fn assert_explicit_html_loads(
                 "htmlPublication": "explicit",
             }),
         )
-        .expect("loadWebMedia is handled")
-        .expect("explicit HTML service result");
+        .unwrap_or_else(|| panic!("loadWebMedia is handled for {url:?}"))
+        .unwrap_or_else(|error| panic!("explicit HTML service result for {url:?}: {error}"));
     // Exact object equality also requires generated trust to stay absent.
-    assert_eq!(dispatched, expected);
+    assert_eq!(dispatched, expected, "{url:?}");
 }
 
 fn assert_explicit_html_rejected(service: &AttachmentsService, url: &str) {

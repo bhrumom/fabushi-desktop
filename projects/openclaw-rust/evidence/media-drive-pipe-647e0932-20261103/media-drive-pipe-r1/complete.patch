@@ -1,0 +1,233 @@
+diff --git a/projects/openclaw-rust/docs/specs/media-file-url-admission.md b/projects/openclaw-rust/docs/specs/media-file-url-admission.md
+index af7a5ffac2435d673923c2b55010bcf84e23faf0..8b3bc15887b5dc6ebace7d7805ae63bc125d2a8e 100644
+--- a/projects/openclaw-rust/docs/specs/media-file-url-admission.md
++++ b/projects/openclaw-rust/docs/specs/media-file-url-admission.md
+@@ -169,3 +169,58 @@ and existing capability/identity/transport obligations remain applicable
+ followup work. Neither this correction nor BR's generic reader promotes the
+ complete FUA/media row or any global acceptance flag. Every native execution
+ and exact current-H input/log/exit observation remains required in Actions.
++
++## Windows rooted drive-pipe recovery — FUA-PIPE-01
++
++The exact-H Windows job
++[`41571310630/125704599418`](https://github.com/bhrumom/fabushi-desktop/actions/runs/41571310630/job/125704599418)
++at `3438eb5bac755c399c9ec686414bbb4c0816888d` failed
++`test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references` at line
++253: `rooted drive remains valid` returned `invalid-file-url` with
++`File URL cannot be converted to an absolute local path`. The web contract
++reported 22 passed/1 failed, cargo exit 101 and capture exit 0; the other 11
++media capture cases were accepted. Preserve this failed receipt/artifact
++`13201906203`; it is not an environment failure or acceptance evidence.
++
++The old panic omitted the reference. Static tracing of the actual locked
++`url-2.5.8.crate` identifies the third positive, `file:///C|/`: `parse_file_host`
++returns the empty-host flag, `parse_file` adds a slash before the still-leading
++slash, and `parse_path` consequently misses its first-segment drive-letter
++normalization. Removing leading empty segments afterward leaves `/C|/`; the
++Windows converter rejects its literal pipe. This is a source-traced trigger,
++not a reference printed by the failed run. The same converter already supports
++`C%3A`, so encoded-colon conversion is not the repair.
++
++Fixed U calls `@openclaw/fs-safe` 0.27.0 `safeFileURLToPath`; its exact source
++`openclaw/fs-safe@67dee5ef4c03655a2aa98893539475ad041cb61b`,
++`src/local-file-access.ts`, applies Node URL/native conversion after host and
++encoded-separator admission. Fixed U permits Node 24.16.0. That Node version's
++bundled `deps/ada/ada.cpp` sends an empty file host through path-start and
++normalizes a first literal ASCII drive-letter pipe to a colon; its
++`lib/internal/url.js::getPathFromURLWin32` then yields the rooted native path.
++The asserted positive is a source-supported compatibility requirement.
++
++- **FUA-PIPE-01:** On Windows only, after every existing scheme, original-host,
++  leading-separator, encoded-separator and bare-root guard, normalize exactly
++  the first parsed `/[A-Za-z]|/` component to `/[A-Za-z]:/` and delegate to the
++  existing `Url::to_file_path`. Keep final network-path refusal. Do not decode
++  another spelling, recover a failed authority, build a native path manually,
++  add a dependency/owner, or change Unix behavior.
++- **FUA-PIPE-02:** Retain all four existing rooted-drive positives and every
++  existing negative. Include the reference in rooted-drive failure diagnostics.
++  Pin refusal of encoded pipes, non-letter/long drive tokens, bare drives,
++  prohibited leading separators and encoded separators before the private
++  reader; roots and sandbox variants do not bypass admission.
++- **FUA-PIPE-03:** Extend the existing Windows native temp-file and actual
++  Attachments service fixture with literal-pipe drive URLs, including localhost
++  and query/fragment variants. They must retain exact Unicode/space/percent
++  filenames, bytes, explicit HTML behavior, cap refusal and fresh recovery.
++  A synthetic path-only assertion is insufficient consumer evidence.
++
++Focused recovery must run in Actions on the new frozen H: the changed URL
++admission owner controls and full `openclaw_web_media_contract` with positive
++name/summary/exit evidence, retaining still-valid unrelated case evidence at
++its original subject. Do not rerun unchanged inputs merely to select a green
++attempt. Broader percent-decoding, encoded drive-letter spelling, dot-path
++normalization, namespace/device policy and all other deferred/full-media
++obligations above remain open; this repair does not claim their closure.
+diff --git a/source/host/src/extensions/attachments/web_media.rs b/source/host/src/extensions/attachments/web_media.rs
+index 9912720f7c6eff6b53444b1912e3b291613d33e4..e3af38b17fd7b91627493b89d6174636f719e109 100644
+--- a/source/host/src/extensions/attachments/web_media.rs
++++ b/source/host/src/extensions/attachments/web_media.rs
+@@ -330,6 +330,22 @@ pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
+         return Err(invalid("File URL cannot be converted to an absolute local path"));
+     }
+ 
++    // url 2.5.8 can retain a literal drive pipe after an empty file host.
++    // Node normalizes that rooted drive before native path conversion.
++    #[cfg(windows)]
++    let parsed = {
++        let mut parsed = parsed;
++        if matches!(
++            parsed.path().as_bytes(),
++            [b'/', drive, b'|', b'/', ..] if drive.is_ascii_alphabetic()
++        ) {
++            let mut normalized_path = parsed.path().to_owned();
++            normalized_path.replace_range(2..3, ":");
++            parsed.set_path(&normalized_path);
++        }
++        parsed
++    };
++
+     let file_path = parsed
+         .to_file_path()
+         .map_err(|_| invalid("File URL cannot be converted to an absolute local path"))?;
+@@ -546,6 +562,7 @@ mod file_url_admission_tests {
+                     r"file:\\files.example\share\image.png",
+                     "FILE:////files.example/share/image.png",
+                     "file:////C:/fua-boundary-only/image.png",
++                    "file:////C|/fua-boundary-only/image.png",
+                     r"file:/\/\C:/fua-boundary-only/image.png",
+                     r"file:\/\\C:/fua-boundary-only/image.png",
+                     r"file:\\\/C:/fua-boundary-only/image.png",
+@@ -585,6 +602,8 @@ mod file_url_admission_tests {
+                     "FILE:///C:/safe/folder%2Fimage.png",
+                     "file:///C:/safe/folder%5cimage.png",
+                     "FILE:///C:/safe/folder%5Cimage.png",
++                    "file:///C|/safe/folder%2fimage.png",
++                    "FILE:///C|/safe/folder%5Cimage.png",
+                 ] {
+                     assert_reader_not_entered(reference, &options, "invalid-file-url");
+                 }
+@@ -599,6 +618,10 @@ mod file_url_admission_tests {
+                     "file://C:",
+                     "file:///C:",
+                     "file:///C|",
++                    "file:///C%7C/",
++                    "file:///C%7c/",
++                    "file:///1|/",
++                    "file:///CC|/",
+                     "file:///C%3A",
+                     "file:///C%3a",
+                     "FiLe://localhost/C:",
+diff --git a/source/host/tests/openclaw_web_media_contract.rs b/source/host/tests/openclaw_web_media_contract.rs
+index 4c7f27cc2ac3e8533a5befd5e2a9e7f841113ac6..94d50b5e4a9c51f97da1e3f017052615edbc64ac 100644
+--- a/source/host/tests/openclaw_web_media_contract.rs
++++ b/source/host/tests/openclaw_web_media_contract.rs
+@@ -202,6 +202,7 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+         "file://localhost:8080/share/image.png",
+         "FILE:////files.example/share/image.png",
+         "file:////C:/safe/image.png",
++        "file:////C|/safe/image.png",
+         r"file:/\/\C:/safe/image.png",
+         r"file:\/\\C:/safe/image.png",
+         r"file:\\\/C:/safe/image.png",
+@@ -219,6 +220,8 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+         r"file:\\files.example\C:\safe\image.png",
+         "file:///C:/safe/folder%2fimage.png",
+         "FILE:///C:/safe/folder%5Cimage.png",
++        "file:///C|/safe/folder%2fimage.png",
++        "FILE:///C|/safe/folder%5Cimage.png",
+         "https://localhost/image.png",
+     ] {
+         match file_url_to_path(reference).expect_err("invalid reference must not become a path") {
+@@ -237,6 +240,10 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+         "file://C:",
+         "file:///C:",
+         "file:///C|",
++        "file:///C%7C/",
++        "file:///C%7c/",
++        "file:///1|/",
++        "file:///CC|/",
+         "file:///C%3A",
+         "file:///C%3a",
+         "FiLe://localhost/C:",
+@@ -250,7 +257,9 @@ fn test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references() {
+     }
+     #[cfg(windows)]
+     for reference in ["file:///C:/", "file://C:/", "file:///C|/", "file:///C%3A/"] {
+-        assert_eq!(file_url_to_path(reference).expect("rooted drive remains valid"), PathBuf::from(r"C:\"));
++        let decoded = file_url_to_path(reference)
++            .unwrap_or_else(|error| panic!("rooted drive {reference:?} remains valid: {error:?}"));
++        assert_eq!(decoded, PathBuf::from(r"C:\"), "{reference:?}");
+     }
+ }
+ 
+@@ -276,12 +285,16 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
+     let references = references.chain([
+         format!("file://{}", native_url.path().trim_start_matches('/')),
+         format!("file://{}", native_url.path().trim_start_matches('/').replacen('/', "//", 1)),
++        format!("file://{}", native_url.path().replacen(':', "|", 1)),
++        format!("file://localhost{}", native_url.path().replacen(':', "|", 1)),
+     ]);
+     for reference in references.flat_map(|reference| {
+         let with_components = format!("{reference}?next=%2F%5C#part=%5C%2F");
+         [reference, with_components]
+     }) {
+-        assert_eq!(file_url_to_path(&reference).unwrap(), path);
++        let decoded = file_url_to_path(&reference)
++            .unwrap_or_else(|error| panic!("native fixture URL {reference:?}: {error:?}"));
++        assert_eq!(decoded, path, "{reference:?}");
+         let mut options = WebMediaOptions {
+             max_bytes: Some(bytes.len()),
+             local_roots: Some(vec![temp.path.clone()]),
+@@ -289,18 +302,20 @@ fn test_ocrm_web_media_file_url_native_bytes_service_and_cap_recovery() {
+             html_publication: Some("explicit".to_string()),
+             ..Default::default()
+         };
+-        let loaded = load_web_media(&reference, &options).expect("native local URL inside allowed root");
+-        assert_eq!(loaded.buffer, bytes);
+-        assert_eq!(loaded.file_name.as_deref(), Some(name));
+-        assert_eq!(loaded.content_type.as_deref(), Some("text/html"));
++        let loaded = load_web_media(&reference, &options)
++            .unwrap_or_else(|error| panic!("native local URL {reference:?} inside allowed root: {error:?}"));
++        assert_eq!(loaded.buffer, bytes, "{reference:?}");
++        assert_eq!(loaded.file_name.as_deref(), Some(name), "{reference:?}");
++        assert_eq!(loaded.content_type.as_deref(), Some("text/html"), "{reference:?}");
+         assert_explicit_html_loads(&service, &reference, bytes, name);
+ 
+         options.max_bytes = Some(bytes.len() - 1);
+-        assert!(matches!(load_web_media(&reference, &options), Err(WebMediaError::TooLarge(_))));
++        assert!(matches!(load_web_media(&reference, &options), Err(WebMediaError::TooLarge(_))), "{reference:?}");
+         let error = service.dispatch_gateway("loadWebMedia", &json!({
+             "url": reference, "maxBytes": bytes.len() - 1, "htmlPublication": "explicit"
+-        })).expect("service handles loader").expect_err("service retains byte cap");
+-        assert!(error.starts_with("Media exceeds "), "{error}");
++        })).unwrap_or_else(|| panic!("service handles loader for {reference:?}"))
++            .expect_err(&format!("service retains byte cap for {reference:?}"));
++        assert!(error.starts_with("Media exceeds "), "{reference:?}: {error}");
+         assert_explicit_html_loads(&service, &reference, bytes, name);
+         assert_eq!(fs::read(&path).unwrap(), bytes);
+     }
+@@ -513,8 +528,9 @@ fn assert_explicit_html_loads(
+         "kind": "document",
+         "fileName": file_name,
+     });
+-    let loaded = load_web_media(url, &options).expect("explicit HTML loader result");
+-    assert_eq!(serde_json::to_value(loaded).unwrap(), expected);
++    let loaded = load_web_media(url, &options)
++        .unwrap_or_else(|error| panic!("explicit HTML loader result for {url:?}: {error:?}"));
++    assert_eq!(serde_json::to_value(loaded).unwrap(), expected, "{url:?}");
+ 
+     let dispatched = service
+         .dispatch_gateway(
+@@ -525,10 +541,10 @@ fn assert_explicit_html_loads(
+                 "htmlPublication": "explicit",
+             }),
+         )
+-        .expect("loadWebMedia is handled")
+-        .expect("explicit HTML service result");
++        .unwrap_or_else(|| panic!("loadWebMedia is handled for {url:?}"))
++        .unwrap_or_else(|error| panic!("explicit HTML service result for {url:?}: {error}"));
+     // Exact object equality also requires generated trust to stay absent.
+-    assert_eq!(dispatched, expected);
++    assert_eq!(dispatched, expected, "{url:?}");
+ }
+ 
+ fn assert_explicit_html_rejected(service: &AttachmentsService, url: &str) {

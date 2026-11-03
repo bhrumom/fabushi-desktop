@@ -1,0 +1,3 @@
+M	projects/openclaw-rust/docs/specs/media-file-url-admission.md
+M	source/host/src/extensions/attachments/web_media.rs
+M	source/host/tests/openclaw_web_media_contract.rs

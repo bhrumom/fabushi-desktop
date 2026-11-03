@@ -1,0 +1,102 @@
+{
+  "format": "OCRM-bounded-review-decisions-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "OCRM-MEDIA-FILE-URL-ADMISSION-v1/FUA-PIPE",
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "source_rounds": [
+    {
+      "round": 1,
+      "base": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+      "snapshot_tree": "7ae5865f15158a5eeec67ac1a34e2a49f1171dd6",
+      "reviewers": [
+        {
+          "name": "/root/media_pipe_general_r1",
+          "model": "inherited GPT-6 Astra Pro",
+          "effort": "xhigh",
+          "verdict": "APPROVE source-only",
+          "report": "media-drive-pipe-r1/general-review.md"
+        },
+        {
+          "name": "/root/media_pipe_structure_r1",
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "verdict": "APPROVE source-only",
+          "report": "media-drive-pipe-r1/structure-review.md"
+        }
+      ],
+      "findings": []
+    },
+    {
+      "round": 2,
+      "base": "fee4f179b640489774208fa3ce653a3868b641bf",
+      "snapshot_tree": "5a207a6a1914ba448f4511ed48e68787fb7f2d42",
+      "scope_manifest": "media-drive-pipe-r2/manifest.json",
+      "reviewers": [
+        {
+          "name": "/root/media_pipe_general_r2_blind",
+          "model": "inherited GPT-6 Astra Pro",
+          "effort": "xhigh",
+          "verdict": "APPROVE source-only",
+          "report": "media-drive-pipe-r2/general-review.md"
+        },
+        {
+          "name": "/root/media_pipe_structure_r2",
+          "model": "gpt-6.1-sol",
+          "effort": "xhigh",
+          "verdict": "APPROVE source-only",
+          "report": "media-drive-pipe-r2/structure-review.md"
+        }
+      ],
+      "findings": []
+    }
+  ],
+  "integration_decisions": [
+    {
+      "id": "FUA-PIPE-INCOMING-78AA",
+      "decision": "FIX",
+      "recorded_before_integration_edit": true,
+      "incoming_commit": "78aa967cc9400bb5c207441b2a78dbf7021d596c",
+      "incoming_classification": "TEST_FLAW under the pre-PIPE native converter contract",
+      "failure_subject": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+      "classification_for_compatibility_scope": "IMPL_BUG",
+      "rationale": "The locked Rust converter indeed refuses the literal empty-host drive-pipe form. Independently read fixed-U fs-safe 0.27.0 and permitted Node v24.16.0 accept it after structural parsing and drive normalization. Preserve the historical oracle-correction record, but explicitly supersede this one refusal through the source-supported FUA-PIPE compatibility amendment before native conversion; all parse, authority, encoded-separator, bare-root and final network refusals remain. This changes the production normalizer instead of merely dropping a failed positive.",
+      "required_integration": "Retain all four pre-78aa rooted positives, retain incoming file:/C|/ as a fifth positive, preserve all remaining negatives and add real native file/service pipe cases. Preserve incoming evidence and unrelated prior-root/device changes. Freeze the reconciled three-path scope and request fresh blind reviews before publication."
+    }
+  ],
+  "historical_failure": {
+    "run_id": 41571310630,
+    "job_id": 125704599418,
+    "artifact_id": 13201906203,
+    "subject_commit": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+    "subject_tree": "b544c1d377ca82618cdadcf5106cb3c10d82411b",
+    "archive": "windows3438-media.zip",
+    "sha256": "8309821e43697663608552956c136e7335f5848f7fc056904a758e0a3cd68655",
+    "bytes": 90120,
+    "result": "failed-or-incomplete",
+    "failed_case": "explicit-html-consumers",
+    "cargo_exit": 101,
+    "capture_exit": 0,
+    "other_accepted_cases": 11,
+    "trigger_attribution": "source-traced; the historical panic did not print the URL reference"
+  },
+  "local_executable_validation": false,
+  "execution_status": "pending final exact H Actions",
+  "broad_unit_verified": false,
+  "global_flags_changed": false,
+  "non_verdict_attempts": [
+    {
+      "reviewer": "/root/media_pipe_general_r2",
+      "reason": "Rejected before review: inherited context contained previous reports. Replaced with a fresh fork-none blind reviewer; no verdict, source edit or execution from this attempt is used."
+    }
+  ],
+  "publication_integration": {
+    "reviewed_three_path_blobs_unchanged": true,
+    "incoming_plugin_commits_preserved": true,
+    "execution": "Skip duplicate interim runs; final same-branch plugin integration H must execute both affected scopes in existing Actions. No intermediate acceptance claim.",
+    "preserved_device_scope_recovery": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "abandoned_commit": "e90f79abcafe043846f8fd8d1618b1383d6b26a7: branch advanced before lease update; object is not claimed as delivered",
+    "materialization_base": "0c7da50fcf457184f38d6a61b73f8e32810cff49",
+    "publication_parent_binding": "The delivered Git commit parent binds the final integration base. A remote compare against 54b32b96ff827f4fee56fed494c866ca8c8b53ec must prove no media-scope path changed before adopting a newer base tree; all unrelated incoming paths remain in that base."
+  }
+}

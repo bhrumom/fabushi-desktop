@@ -330,6 +330,22 @@ pub fn file_url_to_path(url_str: &str) -> Result<PathBuf, WebMediaError> {
         return Err(invalid("File URL cannot be converted to an absolute local path"));
     }
 
+    // url 2.5.8 can retain a literal drive pipe after an empty file host.
+    // Node normalizes that rooted drive before native path conversion.
+    #[cfg(windows)]
+    let parsed = {
+        let mut parsed = parsed;
+        if matches!(
+            parsed.path().as_bytes(),
+            [b'/', drive, b'|', b'/', ..] if drive.is_ascii_alphabetic()
+        ) {
+            let mut normalized_path = parsed.path().to_owned();
+            normalized_path.replace_range(2..3, ":");
+            parsed.set_path(&normalized_path);
+        }
+        parsed
+    };
+
     let file_path = parsed
         .to_file_path()
         .map_err(|_| invalid("File URL cannot be converted to an absolute local path"))?;
@@ -546,6 +562,7 @@ mod file_url_admission_tests {
                     r"file:\\files.example\share\image.png",
                     "FILE:////files.example/share/image.png",
                     "file:////C:/fua-boundary-only/image.png",
+                    "file:////C|/fua-boundary-only/image.png",
                     r"file:/\/\C:/fua-boundary-only/image.png",
                     r"file:\/\\C:/fua-boundary-only/image.png",
                     r"file:\\\/C:/fua-boundary-only/image.png",
@@ -585,6 +602,8 @@ mod file_url_admission_tests {
                     "FILE:///C:/safe/folder%2Fimage.png",
                     "file:///C:/safe/folder%5cimage.png",
                     "FILE:///C:/safe/folder%5Cimage.png",
+                    "file:///C|/safe/folder%2fimage.png",
+                    "FILE:///C|/safe/folder%5Cimage.png",
                 ] {
                     assert_reader_not_entered(reference, &options, "invalid-file-url");
                 }
@@ -599,6 +618,10 @@ mod file_url_admission_tests {
                     "file://C:",
                     "file:///C:",
                     "file:///C|",
+                    "file:///C%7C/",
+                    "file:///C%7c/",
+                    "file:///1|/",
+                    "file:///CC|/",
                     "file:///C%3A",
                     "file:///C%3a",
                     "FiLe://localhost/C:",

@@ -1,0 +1,19 @@
+{
+  "repository_root": "/workspace/scratch/425c55809bda/fabushi-desktop",
+  "base_commit": "3438eb5bac755c399c9ec686414bbb4c0816888d",
+  "starting_head": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "scope_mode": "explicit three paths; preserve isolated plugin batch",
+  "snapshot_tree": "7ae5865f15158a5eeec67ac1a34e2a49f1171dd6",
+  "paths": [
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+    "source/host/src/extensions/attachments/web_media.rs",
+    "source/host/tests/openclaw_web_media_contract.rs"
+  ],
+  "blob_ids": {
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md": "8b3bc15887b5dc6ebace7d7805ae63bc125d2a8e",
+    "source/host/src/extensions/attachments/web_media.rs": "e3af38b17fd7b91627493b89d6174636f719e109",
+    "source/host/tests/openclaw_web_media_contract.rs": "94d50b5e4a9c51f97da1e3f017052615edbc64ac"
+  },
+  "no_local_executable_validation": true,
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845"
+}

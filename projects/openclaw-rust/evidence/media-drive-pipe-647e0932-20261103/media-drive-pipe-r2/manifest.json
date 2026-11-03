@@ -1,0 +1,20 @@
+{
+  "repository_root": "/workspace/scratch/425c55809bda/fabushi-desktop",
+  "base_commit": "fee4f179b640489774208fa3ce653a3868b641bf",
+  "starting_head": "0e845ce1679e0cdf95346adc54f5d58bf06464e8",
+  "scope_mode": "exact three media paths; reconcile incoming 78aa oracle amendment and preserve fee prior-root changes",
+  "snapshot_tree": "5a207a6a1914ba448f4511ed48e68787fb7f2d42",
+  "prior_snapshot_tree": "7ae5865f15158a5eeec67ac1a34e2a49f1171dd6",
+  "paths": [
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md",
+    "source/host/src/extensions/attachments/web_media.rs",
+    "source/host/tests/openclaw_web_media_contract.rs"
+  ],
+  "blob_ids": {
+    "projects/openclaw-rust/docs/specs/media-file-url-admission.md": "5733cb70842535cde24eb2bd0465a42c864e15ac",
+    "source/host/src/extensions/attachments/web_media.rs": "e3af38b17fd7b91627493b89d6174636f719e109",
+    "source/host/tests/openclaw_web_media_contract.rs": "1423e74eea806fe7656b29d14aa96dfd0c47174c"
+  },
+  "upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "no_local_executable_validation": true
+}

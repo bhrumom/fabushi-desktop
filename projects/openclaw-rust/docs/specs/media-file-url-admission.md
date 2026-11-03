@@ -188,3 +188,68 @@ test name, complete selected count and strict capture. Production admission,
 fallback removal, dependency locks, BR/HHP/IPB and all broader compatibility
 obligations remain unchanged. The corrected exact-H Windows result is required;
 source inference alone is not a passing result or a permanent scope exemption.
+
+## Windows rooted drive-pipe recovery — FUA-PIPE-01
+
+The preceding FUA-WIN-ORACLE-01 section is retained as the historical decision
+published at `78aa967cc9400bb5c207441b2a78dbf7021d596c`, under the then-unchanged
+native converter. This amendment supersedes only its refusal of
+`file:///C|/`: source-supported compatibility now requires the guarded Windows
+normalization below. FUA-02 still propagates failures after that normalization;
+there is no recovery after a failed conversion or rejected authority. Preserve
+the incoming `file:/C|/` positive as well as all other still-valid controls.
+
+The exact-H Windows job
+[`41571310630/125704599418`](https://github.com/bhrumom/fabushi-desktop/actions/runs/41571310630/job/125704599418)
+at `3438eb5bac755c399c9ec686414bbb4c0816888d` failed
+`test_ocrm_web_media_file_url_rejects_nonlocal_and_invalid_references` at line
+253: `rooted drive remains valid` returned `invalid-file-url` with
+`File URL cannot be converted to an absolute local path`. The web contract
+reported 22 passed/1 failed, cargo exit 101 and capture exit 0; the other 11
+media capture cases were accepted. Preserve this failed receipt/artifact
+`13201906203`; it is not an environment failure or acceptance evidence.
+
+The old panic omitted the reference. Static tracing of the actual locked
+`url-2.5.8.crate` identifies the third positive, `file:///C|/`: `parse_file_host`
+returns the empty-host flag, `parse_file` adds a slash before the still-leading
+slash, and `parse_path` consequently misses its first-segment drive-letter
+normalization. Removing leading empty segments afterward leaves `/C|/`; the
+Windows converter rejects its literal pipe. This is a source-traced trigger,
+not a reference printed by the failed run. The same converter already supports
+`C%3A`, so encoded-colon conversion is not the repair.
+
+Fixed U calls `@openclaw/fs-safe` 0.27.0 `safeFileURLToPath`; its exact source
+`openclaw/fs-safe@67dee5ef4c03655a2aa98893539475ad041cb61b`,
+`src/local-file-access.ts`, applies Node URL/native conversion after host and
+encoded-separator admission. Fixed U permits Node 24.16.0. That Node version's
+bundled `deps/ada/ada.cpp` sends an empty file host through path-start and
+normalizes a first literal ASCII drive-letter pipe to a colon; its
+`lib/internal/url.js::getPathFromURLWin32` then yields the rooted native path.
+The asserted positive is a source-supported compatibility requirement.
+
+- **FUA-PIPE-01:** On Windows only, after every existing scheme, original-host,
+  leading-separator, encoded-separator and bare-root guard, normalize exactly
+  the first parsed `/[A-Za-z]|/` component to `/[A-Za-z]:/` and delegate to the
+  existing `Url::to_file_path`. Keep final network-path refusal. Do not decode
+  another spelling, recover a failed authority, build a native path manually,
+  add a dependency/owner, or change Unix behavior.
+- **FUA-PIPE-02:** Retain all four pre-78aa rooted-drive positives plus incoming
+  `file:/C|/`. The incoming `file:///C|/` refusal is superseded by the guarded
+  compatibility implementation and its positive; retain every other negative.
+  Include the reference in rooted-drive failure diagnostics.
+  Pin refusal of encoded pipes, non-letter/long drive tokens, bare drives,
+  prohibited leading separators and encoded separators before the private
+  reader; roots and sandbox variants do not bypass admission.
+- **FUA-PIPE-03:** Extend the existing Windows native temp-file and actual
+  Attachments service fixture with literal-pipe drive URLs, including localhost
+  and query/fragment variants. They must retain exact Unicode/space/percent
+  filenames, bytes, explicit HTML behavior, cap refusal and fresh recovery.
+  A synthetic path-only assertion is insufficient consumer evidence.
+
+Focused recovery must run in Actions on the new frozen H: the changed URL
+admission owner controls and full `openclaw_web_media_contract` with positive
+name/summary/exit evidence, retaining still-valid unrelated case evidence at
+its original subject. Do not rerun unchanged inputs merely to select a green
+attempt. Broader percent-decoding, encoded drive-letter spelling, dot-path
+normalization, namespace/device policy and all other deferred/full-media
+obligations above remain open; this repair does not claim their closure.
