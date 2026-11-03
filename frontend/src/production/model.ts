@@ -427,6 +427,14 @@ function transcriptReactionFields(entry: Record<string, unknown>): Pick<Transcri
   return { reactions: projection.reactions, myReactions: projection.myReactions };
 }
 
+function visibleForwardOriginAuthorName(value: Record<string, unknown>): string | undefined {
+  if (!isRecord(value.forwardContext)) return undefined;
+  const privacy = isRecord(value.forwardContext.privacy) ? value.forwardContext.privacy : null;
+  if (privacy?.dropSenderNames === true || privacy?.dropCaptions === true) return undefined;
+  const origin = isRecord(value.forwardContext.origin) ? value.forwardContext.origin : null;
+  return origin == null ? undefined : stringValue(origin.authorName);
+}
+
 export function projectTranscriptEntry(value: unknown, index: number, agentName: string, agentId?: string | null): ProductionTranscriptEntry | null {
   if (!isRecord(value)) return null;
   const id = stringValue(value.id) ?? `entry-${index}`;
@@ -435,6 +443,8 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
     : typeof value.remoteMessageId === "number" && Number.isSafeInteger(value.remoteMessageId) && value.remoteMessageId > 0
       ? String(value.remoteMessageId)
       : undefined;
+  const humanAuthorName = value.authorKind === "human" ? stringValue(value.authorName) : undefined;
+  const forwardedFromAuthorName = value.authorKind === "human" ? visibleForwardOriginAuthorName(value) : undefined;
   const transcriptAuthor = {
     ...(value.authorKind === "human" ? {
       authorKind: "human" as const,
@@ -443,6 +453,8 @@ export function projectTranscriptEntry(value: unknown, index: number, agentName:
       queuedOffline: value.queuedOffline === true,
     } : {}),
     ...(typeof value.authorId === "string" ? { authorId: value.authorId } : {}),
+    ...(humanAuthorName === undefined ? {} : { authorName: humanAuthorName }),
+    ...(forwardedFromAuthorName === undefined ? {} : { forwardedFromAuthorName }),
     ...(humanRemoteMessageId === undefined ? {} : { remoteMessageId: humanRemoteMessageId }),
   };
   const composedAtMs = typeof (value.composedAtMs ?? value.queuedAtMs) === "number" && Number.isFinite(value.composedAtMs ?? value.queuedAtMs)

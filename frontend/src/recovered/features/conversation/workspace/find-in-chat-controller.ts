@@ -4,6 +4,8 @@ export type FindableTranscriptEntry =
       readonly kind: "message";
       readonly text: string;
       readonly author?: string;
+      readonly authorName?: string;
+      readonly forwardedFromAuthorName?: string;
       readonly attachments?: readonly { readonly name: string }[];
     }
   | { readonly id: string; readonly kind: "notice"; readonly text: string }
@@ -68,6 +70,8 @@ export function findInChatSearchText(
     return [
       typeof message.text === "string" ? message.text : "",
       typeof message.author === "string" ? message.author : "",
+      typeof message.authorName === "string" ? message.authorName : "",
+      typeof message.forwardedFromAuthorName === "string" ? message.forwardedFromAuthorName : "",
       ...(Array.isArray(message.attachments)
         ? message.attachments.flatMap((attachment) => typeof attachment?.name === "string" ? [attachment.name] : [])
         : []),
@@ -108,12 +112,20 @@ export function findInChatSearchText(
   }
 }
 
+function tokenizeFindQuery(value: string): string[] {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9_@#\u0080-\uffff]+/i)
+    .filter((token) => token.length > 0);
+}
+
 function matchesFor(
   entries: readonly FindableTranscriptEntry[],
   query: string,
 ): FindInChatMatch[] {
   if (query.trim().length === 0) return [];
   const needle = query.toLowerCase();
+  const queryTerms = tokenizeFindQuery(query.trim());
   const result: FindInChatMatch[] = [];
 
   for (const entry of entries) {
@@ -124,6 +136,13 @@ function matchesFor(
       result.push({ entryId: entry.id, occurrence });
       occurrence += 1;
       at = text.indexOf(needle, at + needle.length);
+    }
+    if (
+      occurrence === 0
+      && queryTerms.length > 1
+      && queryTerms.every((term) => text.includes(term))
+    ) {
+      result.push({ entryId: entry.id, occurrence: 0 });
     }
   }
   return result;

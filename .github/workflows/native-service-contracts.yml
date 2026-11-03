@@ -8,6 +8,8 @@ on:
       - 'source/host/src/extensions/transcript/extension.rs'
       - 'source/host/src/extensions/transcript/roster_emit.rs'
       - 'source/host/src/extensions/transcript/roster_search.rs'
+      - 'native/mahayana-messaging/src/search.rs'
+      - 'frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
       - 'source/host/tests/roster_search_contract.rs'
       - 'source/host/tests/session_gateway_contract.rs'
@@ -380,6 +382,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          cargo test --locked --manifest-path source/host/Cargo.toml -p fabushi-messaging-core --lib recipient_policy_tests -- --nocapture 2>&1 | tee artifacts/native-message/messaging-core-search.log
+          grep -Fx 'test search::recipient_policy_tests::forward_origin_visibility_and_multi_term_field_matching_enforce_domain_policy ... ok' artifacts/native-message/messaging-core-search.log
           cargo test --locked --manifest-path source/host/Cargo.toml --test roster_search_contract -- --nocapture 2>&1 | tee artifacts/native-message/roster-search.log
           grep -Eq 'test result: ok\. 4 passed; 0 failed; 0 ignored;' artifacts/native-message/roster-search.log
           grep -Fx 'test canonical_search_merges_authenticated_human_and_agent_conversations_and_enforces_account_isolation ... ok' artifacts/native-message/roster-search.log

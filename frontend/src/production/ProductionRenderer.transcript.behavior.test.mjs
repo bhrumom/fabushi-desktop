@@ -573,6 +573,25 @@ test("human_entry_refresh_requeries_search_and_discards_older_results", { timeou
   await f.frames();
   assert.equal(await f.count("searchHumanMessages"), beforeEmptyQuery);
   assert.equal(beforeEmptyQuery, 8, "only the eight explicit current-query stages may dispatch");
+  await f.openFind("OriginArchitect Beta");
+  const forwardOriginRead = await f.request("searchHumanMessages", {
+    conversationId: B,
+    query: "OriginArchitect Beta",
+    account: "fixture-b",
+  }, betaRead.id);
+  await f.resolveRequest(forwardOriginRead, {
+    entries: [
+      {
+        ...betaRow,
+        content: "forwarded roadmap in Beta",
+        forwardContext: {
+          privacy: { dropSenderNames: false, dropCaptions: false },
+          origin: { authorId: "peer-origin", authorName: "OriginArchitect" },
+        },
+      },
+    ],
+  });
+  await f.findState("OriginArchitect Beta", "1/1");
   assert.ok((await f.call("requests")).filter((request) => request.method === "searchHumanMessages").every((request) => request.settled));
   await f.noSend();
 });

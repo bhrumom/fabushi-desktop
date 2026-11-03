@@ -329,6 +329,139 @@ fn canonical_search_merges_authenticated_human_and_agent_conversations_and_enfor
         json!([human_agent_handoff, human_first])
     );
 
+    let multi_term_scoped = dispatch_production_session_gateway_call(
+        &session,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": conversation_id,
+            "query": "local needle-report.pdf",
+            "limit": 10
+        }),
+    )
+    .expect("multi-term searchHumanMessages method")
+    .expect("multi-term searchHumanMessages");
+    assert_eq!(multi_term_scoped, json!([human_first]));
+
+    let multi_term_media = dispatch_production_session_gateway_call(
+        &session,
+        "searchMedia",
+        &json!({"query": "local pdf", "limit": 10}),
+    )
+    .expect("multi-term searchMedia method")
+    .expect("multi-term searchMedia");
+    let multi_term_media_array = multi_term_media.as_array().expect("multi-term media array");
+    assert_eq!(multi_term_media_array.len(), 1);
+    assert_eq!(multi_term_media_array[0]["agentId"], conversation_id);
+    assert_eq!(multi_term_media_array[0]["entryId"], human_first["id"]);
+
+    let origin_agent = session
+        .materialize_new_session(Some(&profile("OriginArchitect")), "user", None)
+        .expect("origin agent");
+    let origin_message = session
+        .append_human_agent_message(
+            &conversation_id,
+            &origin_agent.id,
+            "stream-origin-1",
+            "quarterly architecture roadmap",
+            990.0,
+        )
+        .expect("origin handoff message");
+    let bob_conversation = session
+        .create_human_conversation("human-bob", "Bob")
+        .expect("bob conversation");
+    let bob_id = bob_conversation["id"]
+        .as_str()
+        .expect("bob conversation id")
+        .to_string();
+    let carol_conversation = session
+        .create_human_conversation("human-carol", "Carol")
+        .expect("carol conversation");
+    let carol_id = carol_conversation["id"]
+        .as_str()
+        .expect("carol conversation id")
+        .to_string();
+
+    session
+        .forward_human_message(
+            &conversation_id,
+            origin_message["id"].as_str().expect("origin message id"),
+            std::slice::from_ref(&bob_id),
+            "fwd-keep-origin",
+            false,
+            false,
+        )
+        .expect("forward preserving origin author");
+    session
+        .forward_human_message(
+            &conversation_id,
+            origin_message["id"].as_str().expect("origin message id"),
+            std::slice::from_ref(&carol_id),
+            "fwd-drop-origin",
+            true,
+            false,
+        )
+        .expect("forward dropping origin author");
+
+    let bob_forward_matches = dispatch_production_session_gateway_call(
+        &session,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": bob_id,
+            "query": "OriginArchitect roadmap",
+            "limit": 10
+        }),
+    )
+    .expect("bob searchHumanMessages method")
+    .expect("bob searchHumanMessages");
+    assert_eq!(bob_forward_matches.as_array().map(Vec::len), Some(1));
+
+    let carol_hidden_origin_matches = dispatch_production_session_gateway_call(
+        &session,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": carol_id,
+            "query": "OriginArchitect",
+            "limit": 10
+        }),
+    )
+    .expect("carol origin searchHumanMessages method")
+    .expect("carol origin searchHumanMessages");
+    assert_eq!(carol_hidden_origin_matches, json!([]));
+
+    let carol_content_matches = dispatch_production_session_gateway_call(
+        &session,
+        "searchHumanMessages",
+        &json!({
+            "conversationId": carol_id,
+            "query": "architecture roadmap",
+            "limit": 10
+        }),
+    )
+    .expect("carol content searchHumanMessages method")
+    .expect("carol content searchHumanMessages");
+    assert_eq!(carol_content_matches.as_array().map(Vec::len), Some(1));
+
+    let cross_conversation_origin_search = dispatch_production_session_gateway_call(
+        &session,
+        "searchAgents",
+        &json!({"query": "OriginArchitect roadmap", "limit": 10}),
+    )
+    .expect("origin searchAgents method")
+    .expect("origin searchAgents");
+    let origin_search_array = cross_conversation_origin_search
+        .as_array()
+        .expect("origin searchAgents array");
+    assert_eq!(origin_search_array.len(), 2);
+    assert!(origin_search_array
+        .iter()
+        .any(|item| item["agentId"] == bob_id));
+    assert!(origin_search_array
+        .iter()
+        .any(|item| item["agentId"] == conversation_id));
+    assert!(!origin_search_array
+        .iter()
+        .any(|item| item["agentId"] == carol_id));
+
     session.shutdown();
 
     let foreign_memory = Arc::new(

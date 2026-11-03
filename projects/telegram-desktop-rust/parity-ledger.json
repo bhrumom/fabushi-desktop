@@ -50245,6 +50245,54 @@
           "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
           "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
           "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/data/data_history_messages.h",
+          "object": "5c8276867846c861baf208d2e1f059f4edeedf3d"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/data/data_history_messages.cpp",
+          "object": "412f30c67ae3d39442a38dce66ae123d864ab4ac"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/storage/storage_sparse_ids_list.h",
+          "object": "2f892a0e11cc4b92d16d82aa9f61dc471a7c0fe2"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/storage/storage_sparse_ids_list.cpp",
+          "object": "cc0e3ed6b2c763326c2c16635a7671a747ef506b"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/data/data_sparse_ids.h",
+          "object": "10dbe9037e3221a0d42154d21f84a8af0286c552"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/data/data_sparse_ids.cpp",
+          "object": "1f11a0424294023ee486a87e1ba194cabd9bd87a"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/data/data_search_controller.h",
+          "object": "289a6b7e4e091cbf5ce9424d18a1b5f08396f979"
+        },
+        {
+          "repository": "telegramdesktop/tdesktop",
+          "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+          "path": "Telegram/SourceFiles/data/data_search_controller.cpp",
+          "object": "5c1869566dd0551bdf9679aa71c2e1be8392dd93"
         }
       ],
       "source_kind": "source",
@@ -50382,7 +50430,12 @@
         "frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs",
         "frontend/src/production/ProductionRenderer.transcript.fixture.tsx",
         "frontend/src/recovered/features/conversation/workspace/pdf-viewer.css",
-        "frontend/src/recovered/features/conversation/workspace/view.css"
+        "frontend/src/recovered/features/conversation/workspace/view.css",
+        "native/mahayana-messaging/src/search.rs",
+        "source/host/src/extensions/transcript/roster_search.rs",
+        "source/host/tests/roster_search_contract.rs",
+        "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
       ],
       "fabushi_target_symbols": [
         "validate_remote_human_message",
@@ -50479,7 +50532,15 @@
         "transcriptAttachmentIdentity",
         "open_human_forward_recovery_owner",
         "deliver_forward_batch_while_locked",
-        "pending_human_forward_is_batch_owned"
+        "pending_human_forward_is_batch_owned",
+        "query_matches_fields",
+        "visible_forward_origin_author",
+        "human_entry_visible_forward_origin_author",
+        "search_human_messages",
+        "collect_human_conversation_search_results",
+        "collect_human_conversation_media_results",
+        "visibleForwardOriginAuthorName",
+        "findInChatSearchText"
       ],
       "target_language": "Rust Host/service boundary with existing TypeScript renderer projection",
       "language_rationale": "Extend the existing production owners in their current implementation languages; no upstream C++ runtime copy, alternate message engine or new owner is introduced.",
@@ -50628,7 +50689,8 @@
         "Current exacte8ee557383661694c44a590950f2fdc8631c39a9 source shows same-conversation and roster starvation at reaction replay error. The scoped repair reuses Native status/credential handling, Session locks and SQLite/feed, existing Renderer error-to-local-read fallback and CallSession owner; service deployment remains unverified.",
         "At exact source base 04ba336789a46d926bf8b49c90f40b4dfedece84, read_human_conversation_metadata checked Human kind, requested/persisted ID and participant shape but did not bind the pair to the deterministic human_direct_conversation_id. The bounded repair adds that existing owner check before cached or cold owners are returned.",
         "Exact6d42fa7d64d6059ae010891a20d41dfacc51f246 has actual Host/Transcript update wiring, but nonempty Human search is not invalidated; MessageActionAnchor can return before hooks; gallery and spreadsheet retain removed resource state. This scoped batch reuses the existing controllers/provider instead of adding an owner.",
-        "NMR-UI-ENTRY-REFRESH-01 repair retains existing viewer z-index 4000 and reserves the production 52px window chrome band; private retained-forward journal classification/recovery does not grant ordinary canonical conversation admission."
+        "NMR-UI-ENTRY-REFRESH-01 repair retains existing viewer z-index 4000 and reserves the production 52px window chrome band; private retained-forward journal classification/recovery does not grant ordinary canonical conversation admission.",
+        "TDRP-UI-SEARCH domain-backed multi-term & forward-origin search: native/mahayana-messaging/src/search.rs (tokenize, query_matches_fields, visible_forward_origin_author) wired into ProductionSessionWorkers (search_human_recipients, search_human_messages, human_entry_visible_forward_origin_author), roster_search.rs (build_content_snippet, human_entry_search_snippet, collect_human_conversation_media_results), and frontend/src/production/model.ts + find-in-chat-controller.ts (visibleForwardOriginAuthorName, findInChatSearchText)."
       ],
       "test_evidence": [
         "authored-at-6cf9d2e5979f236ba75e49a3b1a85e935b62bf70:source/host/tests/session_gateway_contract.rs#shipping_human_send_uploads_attachment_and_binds_reply_to_server_identity",
@@ -50744,7 +50806,8 @@
         "NMR-AC-RETAINED-TELEGRAM-01 retains Feature10, extends original Runtime9 with2 and AppHost7 with1; Linux/macOS selected groups become10+11+6+8+5=40. Require three exact case names and complete containing-H Actions; nested child summaries are not additional top-level cases. Old Social/policy/Agent and every message/UI/Electron/shipping gate remain.",
         "NMR-AC-REACTION-RECOVERY-01 retains original77 Human cases plus4 new exact named cases; requires containing-H Human81/reconciliation125, UI205, owner40, actualMac2+2 and all shipping gates. Authored expectations are not execution evidence.",
         "Authored one additional assertion in the existing shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation matrix for participants-rebound-peer. It requires open_human_conversation_db_owner to refuse the rebound pair. Exact-H Actions run41564603392 is nonterminal at the time of this record; no execution pass is claimed.",
-        "NMR-AC-UI-ENTRY-REFRESH-01 requires original8 plus4 exact real Renderer behavior cases (12); total UI209=Node173+projection13+author23, zero failures/skips/retries. Human81/reconciliation125, owner40, actualMac2+2 and all existing gates remain. These pending obligations are not execution evidence."
+        "NMR-AC-UI-ENTRY-REFRESH-01 requires original8 plus4 exact real Renderer behavior cases (12); total UI209=Node173+projection13+author23, zero failures/skips/retries. Human81/reconciliation125, owner40, actualMac2+2 and all existing gates remain. These pending obligations are not execution evidence.",
+        "TDRP-UI-SEARCH domain-backed multi-term & forward-origin search authored: native/mahayana-messaging/src/search.rs#recipient_policy_tests::forward_origin_visibility_and_multi_term_field_matching_enforce_domain_policy, source/host/tests/roster_search_contract.rs#canonical_search_merges_authenticated_human_and_agent_conversations_and_enforces_account_isolation (4/4), frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts#find-in-chat searches visible text, wraps navigation and resets on scope (19/19), and frontend/src/production/ProductionRenderer.transcript.behavior.test.mjs#human_entry_refresh_requeries_search_and_discards_older_results (13/13); containing-H Actions required."
       ],
       "target_commit": "59f5fa24827812f78336c464995d161f403dedfb",
       "workflow_run": 41508537631,
@@ -51579,7 +51642,8 @@
         "Exact H1bcdae6dffa038768250daa41fc4f7c0ff9c6852/run41552585826/job125643584508 UI terminal success194/194 with compiled Renderer,0fail/skip/retry/flaky; receipt a527545e0a191afdf5209c65fb24571f2e3e03fc, artifact13192994087 SHA2568e704ef5ffa8dc4d270c4fd92018cf3dcd2cdd071188db0ccb6861a923bbe510. New runtime/origin candidates require their own H.",
         "Prior exacte8ee557383661694c44a590950f2fdc8631c39a9 run41560824752 reconciliation job125670726762 passed121 (Human77); owner job125670726674 passed40 selected outer cases (10+11+6+8+5). Source run41560824735 passed161 Node/37 Python/schema0 and unaccepted-candidate-consistent. These prior inputs do not qualify the new reaction continuation changes; UI/shipping remained nonterminal at preparation.",
         "Prerequisite exact6d42fa7d64d6059ae010891a20d41dfacc51f246/run41563429938: job125679139806 passed125 includingHuman81; UI125679140092 passed205 retry0; owner125679140064 passed40; Electron125679140130 passed100 plus actual compile. Source41563429876 passed161Node/37Python/schema0 and unaccepted candidate. Actual Mac41563429896/job125679138961 passedPlugins2/Human2 retry0. OriginalUI failure1de remains retained. The new UI source requires containing-H execution; native shipping job125679140188 remains queued at this preparation.",
-        "Exact a0e6cd2ded523f59add3a7ade6bd43890b448300/run41565477479: UI job125685842485 executed209,206 passed/3 failed (empty-editor placeholder oracle, actual PDF pointer overlap, StrictMode mount-read oracle); reconciliation125685842433 executed84,80 passed/4 failed before remaining41. Failures retained and repaired by cause; these candidates require new containing-H execution. Exact43529823ffc669d6118d79ea493c67cdd5f2be69 source41565715729 passed161Node/37Python/schema0/unaccepted candidate. Later6f7 source41566271637 passed161/37 then schema rejected4 redundant review fields;14 missing exact review relations also require repair. No source, product or independent acceptance is granted. Concurrent3a4af377451d915795466362b084247e05975101 removed the four redundant fields and added scoped viewer read sharing; preserve that source. The14 exact relations remain missing at this reviewed input."
+        "Exact a0e6cd2ded523f59add3a7ade6bd43890b448300/run41565477479: UI job125685842485 executed209,206 passed/3 failed (empty-editor placeholder oracle, actual PDF pointer overlap, StrictMode mount-read oracle); reconciliation125685842433 executed84,80 passed/4 failed before remaining41. Failures retained and repaired by cause; these candidates require new containing-H execution. Exact43529823ffc669d6118d79ea493c67cdd5f2be69 source41565715729 passed161Node/37Python/schema0/unaccepted candidate. Later6f7 source41566271637 passed161/37 then schema rejected4 redundant review fields;14 missing exact review relations also require repair. No source, product or independent acceptance is granted. Concurrent3a4af377451d915795466362b084247e05975101 removed the four redundant fields and added scoped viewer read sharing; preserve that source. The14 exact relations remain missing at this reviewed input.",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41675446262@8fed5053b4c579f1a6b2a7583eca1b899f782cf3:attempt1:completed/success across all 9 active jobs: native-message-shipping-compile job126054702742 (artifact13251287828 sha256:42d050209370f3087be99f34b53496b49829c2ec55309770de64fbbcf373fba8, mahayana-gateway 9/9 including real_mahayana_gateway_stdio_round_trips_desktop_full_mcp_and_closes_cleanly_on_eof), native-message-ui job126054702834 (artifact13249763536 sha256:1ffd0b8cda4cb0630305656d0461d43d2be5a74b643a4e1d282cfc3e7f78a070, Node174 including ProductionRenderer.transcript.behavior.test.mjs 13/13 + projection13 + author23 = UI210), native-message-reconciliation job126054702963 (artifact13250208254 sha256:19d3e9d5cea537bdc383c0824f90c1c0778bbb0fbda7f3ae68906ad47d94ba3a, Human81 + roster_search_contract 4/4 = 129), desktop-social-owner-behaviors job126054702586 (artifact13250348058 sha256:6e7be9ed421d9a8b8f9a62754fe74ee49cd8cd61fb12a6cf8135bd321d37f4e1, 40/40), retained-direct-ffi-compatibility job126054702835 (artifact13250092801 sha256:4e2af5cb38ed38ec9d5ff62b7c44d3571a3ff487e1274c30c9f525eefa068ce8, 15/15+1 ignored), gateway-peer-durability ubuntu-24.04 job126054702880 (artifact13249538412 sha256:af65d64c0952106bba81c1ddcc8b8b9b34c298d3def77e6c155e7497a95d74aa, 23/23), gateway-peer-durability windows-2025 job126054702978 (artifact13251265037 sha256:cc9edc613d799c7757f20d95f752784e0b08ecacce9a4bf37333cea08c148518, 23/23), native-message-electron job126054703108 (artifact13249439509 sha256:2ba41ece4590a3bd1f6aaacc0cc48130a0e2b801affdc3f8f8896eed2782afa0), windows-update-publisher job126054702591 (artifact13249174789 sha256:9f71063f15e1720c2f9789840c22d9536df161fc569e3dbe0ebda2b67b80e364). Qualifies canonical Search consolidation + mahayana-gateway mutex fix at 8fed5053b4c579f1a6b2a7583eca1b899f782cf3; the subsequent domain-backed multi-term & forward-origin search batch requires its own containing-H Actions."
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "blocked",
@@ -52143,7 +52207,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52158,7 +52224,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52173,7 +52241,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52188,7 +52258,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52203,7 +52275,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52218,7 +52292,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52233,7 +52309,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52248,7 +52326,9 @@
       "evidence": [
         "projects/telegram-desktop-rust/research/native-message-known-overlap-fixed-u.md#round-7-sparse-history-and-parser-review"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001"
+      ]
     },
     {
       "repository": "telegramdesktop/tdesktop",

@@ -34,7 +34,7 @@ import {
   isForwardToggleShortcut,
   nextForwardRecipientIndex,
 } from "../../production/forward-recipient-navigation.ts";
-import { projectTranscriptPageResult } from "../../production/model.ts";
+import { projectTranscriptEntry, projectTranscriptPageResult } from "../../production/model.ts";
 import type { ConversationTranscriptEntry } from "./conversation/workspace/model.ts";
 import {
   createTranscriptPaginationController,
@@ -224,6 +224,53 @@ test("find-in-chat searches visible text, wraps navigation and resets on scope",
   assert.equal(controller.getSnapshot().generation, priorGeneration + 1);
   assert.equal(controller.getSnapshot().query, "");
   assert.equal(controller.getSnapshot().matches.length, 0);
+
+  const visibleForward = projectTranscriptEntry({
+    id: "human-fwd-visible",
+    kind: "message",
+    role: "user",
+    authorKind: "human",
+    authorId: "peer-alice",
+    authorName: "Alice Sender",
+    content: "quarterly roadmap summary",
+    attachments: [{ path: "/tmp/quarterly.xlsx", name: "quarterly.xlsx" }],
+    forwardContext: {
+      privacy: { dropSenderNames: false, dropCaptions: false },
+      origin: { authorId: "peer-origin", authorName: "OriginArchitect" },
+    },
+    timestampMs: 1000,
+    delivery: "sent",
+  }, 0, "Alice", "human-conv-1");
+  const anonymousForward = projectTranscriptEntry({
+    id: "human-fwd-anon",
+    kind: "message",
+    role: "user",
+    authorKind: "human",
+    authorId: "peer-alice",
+    authorName: "Alice Sender",
+    content: "quarterly roadmap summary",
+    forwardContext: {
+      privacy: { dropSenderNames: true, dropCaptions: false },
+      origin: { authorId: "peer-origin", authorName: "OriginArchitect" },
+    },
+    timestampMs: 1001,
+    delivery: "sent",
+  }, 1, "Alice", "human-conv-1");
+  assert.ok(visibleForward && visibleForward.kind === "message");
+  assert.ok(anonymousForward && anonymousForward.kind === "message");
+  assert.equal(visibleForward.authorName, "Alice Sender");
+  assert.equal(visibleForward.forwardedFromAuthorName, "OriginArchitect");
+  assert.equal(anonymousForward.forwardedFromAuthorName, undefined);
+
+  controller.replaceEntries([visibleForward, anonymousForward]);
+  controller.setQuery("OriginArchitect roadmap");
+  assert.deepEqual(controller.getSnapshot().matches, [
+    { entryId: "human-fwd-visible", occurrence: 0 },
+  ]);
+  controller.setQuery("Alice quarterly.xlsx");
+  assert.deepEqual(controller.getSnapshot().matches, [
+    { entryId: "human-fwd-visible", occurrence: 0 },
+  ]);
   controller.dispose();
 });
 

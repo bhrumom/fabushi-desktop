@@ -251,6 +251,8 @@ export interface TranscriptMessage {
   /** Host-owned identity used to correlate Human settlement without crossing authors. */
   authorKind?: "human";
   authorId?: string;
+  authorName?: string;
+  forwardedFromAuthorName?: string;
   remoteMessageId?: string;
   /** General composition time; it does not by itself prove offline origin. */
   composedAtMs?: number;

@@ -3428,20 +3428,22 @@ impl ProductionSessionWorkers {
                 if normalized_query.is_empty() {
                     return true;
                 }
-                let title_matches = conversation
+                let mut fields = Vec::new();
+                if let Some(title) = conversation
                     .get("title")
                     .and_then(serde_json::Value::as_str)
-                    .is_some_and(|title| title.to_lowercase().contains(&normalized_query));
-                let participant_matches = conversation
+                {
+                    fields.push(title);
+                }
+                if let Some(ids) = conversation
                     .get("participantIds")
                     .and_then(serde_json::Value::as_array)
-                    .is_some_and(|ids| {
-                        ids.iter().any(|id| {
-                            id.as_str()
-                                .is_some_and(|id| id.to_lowercase().contains(&normalized_query))
-                        })
-                    });
-                title_matches || participant_matches
+                {
+                    for id in ids.iter().filter_map(serde_json::Value::as_str) {
+                        fields.push(id);
+                    }
+                }
+                fabushi_messaging_core::query_matches_fields(&normalized_query, &fields)
             })
             .collect::<Vec<_>>();
 
@@ -4956,6 +4958,26 @@ impl ProductionSessionWorkers {
             .ok_or_else(|| "Human reaction intent disappeared before settlement".to_string())
     }
 
+    pub(crate) fn human_entry_visible_forward_origin_author(
+        entry: &serde_json::Value,
+    ) -> Option<&str> {
+        let context = entry.get("forwardContext")?;
+        let privacy = fabushi_messaging_core::ForwardPrivacy {
+            drop_sender_names: context
+                .pointer("/privacy/dropSenderNames")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+            drop_captions: context
+                .pointer("/privacy/dropCaptions")
+                .and_then(serde_json::Value::as_bool)
+                .unwrap_or(false),
+        };
+        let origin_author_name = context
+            .pointer("/origin/authorName")
+            .and_then(serde_json::Value::as_str);
+        fabushi_messaging_core::visible_forward_origin_author(privacy, origin_author_name)
+    }
+
     pub fn search_human_messages(
         &self,
         conversation_id: &str,
@@ -4970,26 +4992,33 @@ impl ProductionSessionWorkers {
         let limit = limit.clamp(1, 200);
         let mut matches = Vec::new();
         for entry in transcript.into_iter().rev() {
-            let content_match = entry
-                .get("content")
-                .and_then(serde_json::Value::as_str)
-                .is_some_and(|value| value.to_lowercase().contains(&query));
-            let author_match = entry
+            let mut fields = Vec::new();
+            if let Some(author_name) = entry
                 .get("authorName")
                 .and_then(serde_json::Value::as_str)
-                .is_some_and(|value| value.to_lowercase().contains(&query));
-            let attachment_match = entry
+            {
+                fields.push(author_name);
+            }
+            if let Some(origin_author) = Self::human_entry_visible_forward_origin_author(&entry) {
+                fields.push(origin_author);
+            }
+            if let Some(content) = entry.get("content").and_then(serde_json::Value::as_str) {
+                fields.push(content);
+            }
+            if let Some(attachments) = entry
                 .get("attachments")
                 .and_then(serde_json::Value::as_array)
-                .is_some_and(|attachments| {
-                    attachments.iter().any(|attachment| {
-                        attachment
-                            .get("name")
-                            .and_then(serde_json::Value::as_str)
-                            .is_some_and(|value| value.to_lowercase().contains(&query))
-                    })
-                });
-            if content_match || author_match || attachment_match {
+            {
+                for attachment in attachments {
+                    if let Some(name) = attachment
+                        .get("name")
+                        .and_then(serde_json::Value::as_str)
+                    {
+                        fields.push(name);
+                    }
+                }
+            }
+            if fabushi_messaging_core::query_matches_fields(&query, &fields) {
                 matches.push(entry);
                 if matches.len() >= limit {
                     break;

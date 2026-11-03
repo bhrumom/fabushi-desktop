@@ -110,8 +110,18 @@ pub fn build_content_snippet(text: &str, normalized_query: &str) -> Option<Strin
         return None;
     }
     let lowered = flat.to_lowercase();
-    let index = lowered.find(normalized_query)?;
-    let query_end = index.saturating_add(normalized_query.len());
+    let (index, match_len) = if let Some(index) = lowered.find(normalized_query) {
+        (index, normalized_query.len())
+    } else if fabushi_messaging_core::query_matches_fields(normalized_query, &[&flat]) {
+        fabushi_messaging_core::tokenize(normalized_query)
+            .into_iter()
+            .filter_map(|term| lowered.find(&term).map(|pos| (pos, term.len())))
+            .min_by_key(|(pos, _)| *pos)
+            .unwrap_or((0, normalized_query.len().min(flat.len())))
+    } else {
+        return None;
+    };
+    let query_end = index.saturating_add(match_len);
     let start = char_boundary_at_or_after(&flat, index.saturating_sub(SNIPPET_LEAD));
     let end = char_boundary_at_or_before(
         &flat,
@@ -427,6 +437,13 @@ fn human_entry_search_snippet(entry: &Value, normalized_query: &str) -> Option<S
     {
         parts.push(author_name);
     }
+    if let Some(origin_author) =
+        ProductionSessionWorkers::human_entry_visible_forward_origin_author(entry)
+    {
+        if !parts.contains(&origin_author) {
+            parts.push(origin_author);
+        }
+    }
     if !content.trim().is_empty() {
         parts.push(content.trim());
     }
@@ -513,13 +530,36 @@ fn collect_human_conversation_media_results(
                     .map(str::to_string)
                     .or_else(|| human_attachment_mime(file_name));
                 let kind = attachment_kind_name(classify_human_attachment(file_name, path)).to_string();
+                let mut media_fields = vec![file_name, ext.as_str(), kind.as_str()];
+                if let Some(mime_str) = mime.as_deref() {
+                    media_fields.push(mime_str);
+                }
+                if let Some(author_name) = entry
+                    .get("authorName")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                {
+                    media_fields.push(author_name);
+                }
+                if let Some(origin_author) =
+                    ProductionSessionWorkers::human_entry_visible_forward_origin_author(entry)
+                {
+                    media_fields.push(origin_author);
+                }
+                if let Some(caption) = entry
+                    .get("content")
+                    .and_then(Value::as_str)
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                {
+                    media_fields.push(caption);
+                }
                 let matches_query = normalized_query.is_empty()
-                    || file_name.to_lowercase().contains(&normalized_query)
-                    || ext.to_lowercase().contains(&normalized_query)
-                    || kind.to_lowercase().contains(&normalized_query)
-                    || mime
-                        .as_deref()
-                        .is_some_and(|value| value.to_lowercase().contains(&normalized_query));
+                    || fabushi_messaging_core::query_matches_fields(
+                        &normalized_query,
+                        &media_fields,
+                    );
                 if !matches_query {
                     continue;
                 }

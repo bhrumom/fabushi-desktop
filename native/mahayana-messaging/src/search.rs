@@ -347,7 +347,7 @@ impl SearchIndex {
     }
 }
 
-fn tokenize(text: &str) -> BTreeSet<String> {
+pub fn tokenize(text: &str) -> BTreeSet<String> {
     text.to_lowercase()
         .split(|character: char| {
             !character.is_alphanumeric() && character != '_' && character != '@' && character != '#'
@@ -357,7 +357,7 @@ fn tokenize(text: &str) -> BTreeSet<String> {
         .collect()
 }
 
-fn score_terms(query: &BTreeSet<String>, indexed: &BTreeSet<String>) -> u32 {
+pub fn score_terms(query: &BTreeSet<String>, indexed: &BTreeSet<String>) -> u32 {
     query
         .iter()
         .map(|term| {
@@ -370,6 +370,64 @@ fn score_terms(query: &BTreeSet<String>, indexed: &BTreeSet<String>) -> u32 {
             }
         })
         .sum()
+}
+
+/// Canonical forward-origin author visibility boundary for search and transcript projection.
+///
+/// Enforces `ForwardPrivacy::normalized()` (`drop_sender_names || drop_captions`) so
+/// origin author attribution is never indexed or exposed when sender names or captions
+/// were dropped.
+pub fn visible_forward_origin_author<'a>(
+    privacy: crate::message::ForwardPrivacy,
+    origin_author_name: Option<&'a str>,
+) -> Option<&'a str> {
+    if privacy.normalized().drop_sender_names {
+        return None;
+    }
+    origin_author_name
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+/// Canonical domain multi-field query matcher for conversation/message/media search.
+///
+/// Matches when the normalized query is a contiguous substring of any field or the
+/// joined fields, or when every tokenized query term matches across the tokenized
+/// or lowered fields.
+pub fn query_matches_fields(query: &str, fields: &[&str]) -> bool {
+    let normalized = query.trim().to_lowercase();
+    if normalized.is_empty() {
+        return false;
+    }
+    let non_empty: Vec<&str> = fields
+        .iter()
+        .map(|field| field.trim())
+        .filter(|field| !field.is_empty())
+        .collect();
+    if non_empty.is_empty() {
+        return false;
+    }
+    if non_empty
+        .iter()
+        .any(|field| field.to_lowercase().contains(&normalized))
+    {
+        return true;
+    }
+    let joined = non_empty.join(" ");
+    let joined_lower = joined.to_lowercase();
+    if joined_lower.contains(&normalized) {
+        return true;
+    }
+    let query_terms = tokenize(&normalized);
+    if query_terms.is_empty() {
+        return false;
+    }
+    let indexed = tokenize(&joined_lower);
+    query_terms.iter().all(|term| {
+        indexed.contains(term)
+            || indexed.iter().any(|candidate| candidate.contains(term))
+            || joined_lower.contains(term.as_str())
+    })
 }
 
 fn message_search_text(message: &Message) -> String {
@@ -515,5 +573,47 @@ mod recipient_policy_tests {
         assert!(!parsed.require_game);
         assert!(!parsed.source_protected_content);
         assert_eq!(parsed.content_kind, RecipientContentKind::Standard);
+    }
+
+    #[test]
+    fn forward_origin_visibility_and_multi_term_field_matching_enforce_domain_policy() {
+        use crate::message::ForwardPrivacy;
+
+        assert_eq!(
+            visible_forward_origin_author(
+                ForwardPrivacy {
+                    drop_sender_names: false,
+                    drop_captions: false,
+                },
+                Some("  Alice Origin  ")
+            ),
+            Some("Alice Origin")
+        );
+        assert_eq!(
+            visible_forward_origin_author(
+                ForwardPrivacy {
+                    drop_sender_names: true,
+                    drop_captions: false,
+                },
+                Some("Alice Origin")
+            ),
+            None
+        );
+        assert_eq!(
+            visible_forward_origin_author(
+                ForwardPrivacy {
+                    drop_sender_names: false,
+                    drop_captions: true,
+                },
+                Some("Alice Origin")
+            ),
+            None
+        );
+
+        let fields = ["Alice Origin", "Quarterly planning summary", "quarterly-report.xlsx"];
+        assert!(query_matches_fields("alice quarterly.xlsx", &fields));
+        assert!(query_matches_fields("origin summary", &fields));
+        assert!(!query_matches_fields("alice missing-token", &fields));
+        assert!(!query_matches_fields("   ", &fields));
     }
 }
