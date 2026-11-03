@@ -9634,7 +9634,7 @@ fn shipping_human_forward_padded_history_nonce_cannot_bypass_source_reauthorizat
                 HumanSyncHttpReply::Json(201, body)
             }
         } else if request.starts_with("GET /api/social/messages?") {
-            let messages = service_accepted.lock().unwrap().clone().into_iter().collect();
+            let messages: Vec<serde_json::Value> = service_accepted.lock().unwrap().clone().into_iter().collect();
             let messages = messages.into_iter().map(|mut message: serde_json::Value| {
                 let original = message["clientRequestId"].as_str().expect("forward nonce").to_string();
                 message["clientRequestId"] = json!(format!(" {original} "));
