@@ -1,8 +1,8 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::io::{self, BufReader, Cursor, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
 use std::sync::{
-    Arc, Mutex,
+    Arc, Condvar, Mutex,
     atomic::{AtomicBool, Ordering},
     mpsc::{self, Receiver, RecvTimeoutError, Sender},
 };
@@ -19,7 +19,9 @@ use crate::gateway_command_error::{
 };
 pub use crate::gateway_command_error::GatewayCommandError;
 use crate::gateway_config::{GatewayServerConfig, GatewayTlsConfig, is_loopback_host};
-use crate::device_pairing_owner::{DeviceTokenAuthorization, parse_device_pairing_join_request_path};
+use crate::device_pairing_owner::{
+    DeviceTokenAuthorization, is_device_pairing_join_code, parse_device_pairing_join_request_path,
+};
 use crate::gateway_protocol::{
     GATEWAY_PREPARE_UPGRADE_PATH, is_grok_gateway_command, parse_command_args,
     slim_command_result, slim_event,
@@ -349,6 +351,275 @@ pub struct GatewayServer {
     thread: Option<JoinHandle<()>>,
 }
 
+#[derive(Clone, Copy)]
+struct JoinLimitPolicy {
+    failures: usize,
+    window: Duration,
+    lockout: Duration,
+    entries: usize,
+}
+
+impl Default for JoinLimitPolicy {
+    fn default() -> Self {
+        Self {
+            failures: 10,
+            window: Duration::from_secs(60),
+            lockout: Duration::from_secs(300),
+            entries: 10_000,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum JoinRejection {
+    Limited(Duration),
+    Unavailable,
+}
+
+#[derive(Default)]
+struct JoinPeerState {
+    failures: VecDeque<Instant>,
+    locked_until: Option<Instant>,
+}
+
+impl JoinPeerState {
+    fn refresh(&mut self, now: Instant, policy: JoinLimitPolicy) {
+        if let Some(until) = self.locked_until {
+            if now < until {
+                return;
+            }
+            self.locked_until = None;
+            self.failures.clear();
+        }
+        while self.failures.front().is_some_and(|at| {
+            now.saturating_duration_since(*at) >= policy.window
+        }) {
+            self.failures.pop_front();
+        }
+    }
+
+    fn check(&mut self, now: Instant, policy: JoinLimitPolicy) -> Result<(), JoinRejection> {
+        self.refresh(now, policy);
+        match self.locked_until {
+            Some(until) => Err(JoinRejection::Limited(until.duration_since(now))),
+            None => Ok(()),
+        }
+    }
+
+    fn fail(&mut self, now: Instant, policy: JoinLimitPolicy) {
+        self.refresh(now, policy);
+        if self.locked_until.is_some() {
+            return;
+        }
+        self.failures.push_back(now);
+        if self.failures.len() == policy.failures {
+            self.locked_until = Some(now + policy.lockout);
+        }
+    }
+
+    fn reset(&mut self) {
+        self.failures.clear();
+        self.locked_until = None;
+    }
+}
+
+fn join_peer_ip(peer: IpAddr) -> IpAddr {
+    match peer {
+        IpAddr::V6(ip) => ip.to_ipv4_mapped().map(IpAddr::V4).unwrap_or(peer),
+        _ => peer,
+    }
+}
+
+fn join_retry_seconds(delay: Duration) -> u64 {
+    (delay.as_secs() + u64::from(delay.subsec_nanos() != 0)).max(1)
+}
+
+#[derive(Default)]
+struct JoinTurnState {
+    serving: u64,
+    failed: bool,
+}
+
+#[derive(Default)]
+struct JoinPeer {
+    state: Mutex<JoinPeerState>,
+    turns: Mutex<JoinTurnState>,
+    ready: Condvar,
+}
+
+#[derive(Default)]
+struct JoinEntry {
+    peer: Arc<JoinPeer>,
+    next_ticket: u64,
+}
+
+impl JoinEntry {
+    // Called only inside the short map critical section: observable reservation
+    // order must not depend on which waiting thread wins a mutex next.
+    fn reserve(&mut self) -> Result<JoinReservation, JoinRejection> {
+        let ticket = self.next_ticket;
+        self.next_ticket = ticket.checked_add(1).ok_or(JoinRejection::Unavailable)?;
+        Ok(JoinReservation { peer: Arc::clone(&self.peer), ticket, has_turn: false })
+    }
+}
+
+struct JoinReservation {
+    peer: Arc<JoinPeer>,
+    ticket: u64,
+    has_turn: bool,
+}
+
+impl JoinReservation {
+    fn wait_turn(&mut self) -> Result<(), JoinRejection> {
+        let mut turns = match self.peer.turns.lock() {
+            Ok(turns) => turns,
+            Err(poisoned) => {
+                poisoned.into_inner().failed = true;
+                self.peer.ready.notify_all();
+                return Err(JoinRejection::Unavailable);
+            }
+        };
+        while !turns.failed && self.ticket > turns.serving {
+            turns = match self.peer.ready.wait(turns) {
+                Ok(turns) => turns,
+                Err(poisoned) => {
+                    poisoned.into_inner().failed = true;
+                    self.peer.ready.notify_all();
+                    return Err(JoinRejection::Unavailable);
+                }
+            };
+        }
+        if turns.failed || self.ticket != turns.serving {
+            turns.failed = true;
+            self.peer.ready.notify_all();
+            return Err(JoinRejection::Unavailable);
+        }
+        self.has_turn = true;
+        Ok(())
+    }
+}
+
+impl Drop for JoinReservation {
+    fn drop(&mut self) {
+        {
+            let mut turns = match self.peer.turns.lock() {
+                Ok(turns) => turns,
+                Err(poisoned) => {
+                    let mut turns = poisoned.into_inner();
+                    turns.failed = true;
+                    turns
+                }
+            };
+            if thread::panicking() || !self.has_turn || turns.serving != self.ticket {
+                // An abandoned queue slot cannot leave a permanent hole, and
+                // unwinding cannot let a waiter enter possibly poisoned state.
+                turns.failed = true;
+            } else if !turns.failed {
+                match turns.serving.checked_add(1) {
+                    Some(next) => turns.serving = next,
+                    None => turns.failed = true,
+                }
+            }
+        }
+        self.peer.ready.notify_all();
+    }
+}
+
+// This transient state belongs to one Gateway generation. Each reservation
+// pins its peer until settlement; capacity cannot replace live or queued state.
+struct JoinRateLimiter {
+    policy: JoinLimitPolicy,
+    peers: Mutex<BTreeMap<IpAddr, JoinEntry>>,
+}
+
+impl JoinRateLimiter {
+    fn new(policy: JoinLimitPolicy) -> Self {
+        Self { policy, peers: Mutex::new(BTreeMap::new()) }
+    }
+
+    fn reserve(&self, peer: IpAddr, now: Instant) -> Result<JoinReservation, JoinRejection> {
+        let peer = join_peer_ip(peer);
+        let mut peers = self.peers.lock().map_err(|_| JoinRejection::Unavailable)?;
+        if let Some(entry) = peers.get_mut(&peer) {
+            return entry.reserve();
+        }
+        if peers.len() >= self.policy.entries {
+            let mut idle = None;
+            let mut expired = None;
+            for (key, entry) in peers.iter() {
+                if Arc::strong_count(&entry.peer) != 1 || entry.next_ticket == u64::MAX {
+                    continue;
+                }
+                // Never wait for a peer while holding the global map lock.
+                let Ok(turns) = entry.peer.turns.try_lock() else { continue };
+                if turns.failed || turns.serving != entry.next_ticket {
+                    continue;
+                }
+                let Ok(mut state) = entry.peer.state.try_lock() else { continue };
+                state.refresh(now, self.policy);
+                if state.locked_until.is_some() {
+                    continue;
+                }
+                if state.failures.is_empty() {
+                    expired = Some(*key);
+                    break;
+                }
+                idle.get_or_insert(*key);
+            }
+            if let Some(key) = expired.or(idle) {
+                peers.remove(&key);
+            } else {
+                return Err(JoinRejection::Limited(Duration::from_secs(1)));
+            }
+        }
+        let mut entry = JoinEntry::default();
+        let reservation = entry.reserve()?;
+        peers.insert(peer, entry);
+        Ok(reservation)
+    }
+
+    fn attempt<F>(
+        &self,
+        peer: IpAddr,
+        stop: &AtomicBool,
+        operation: F,
+    ) -> Result<Result<Option<Value>, GatewayCommandError>, JoinRejection>
+    where F: FnOnce() -> Result<Option<Value>, GatewayCommandError> {
+        self.attempt_with_clock(peer, stop, Instant::now, operation)
+    }
+
+    fn attempt_with_clock<F, C>(
+        &self,
+        peer: IpAddr,
+        stop: &AtomicBool,
+        clock: C,
+        operation: F,
+    ) -> Result<Result<Option<Value>, GatewayCommandError>, JoinRejection>
+    where
+        F: FnOnce() -> Result<Option<Value>, GatewayCommandError>,
+        C: Fn() -> Instant,
+    {
+        if stop.load(Ordering::Acquire) {
+            return Err(JoinRejection::Unavailable);
+        }
+        let mut reservation = self.reserve(peer, clock())?;
+        reservation.wait_turn()?;
+        let mut state = reservation.peer.state.lock().map_err(|_| JoinRejection::Unavailable)?;
+        if stop.load(Ordering::Acquire) {
+            return Err(JoinRejection::Unavailable);
+        }
+        state.check(clock(), self.policy)?;
+        let outcome = operation();
+        match &outcome {
+            Ok(Some(_)) => state.reset(),
+            Ok(None) => state.fail(clock(), self.policy),
+            Err(_) => {}
+        }
+        // Both the per-peer guard and its reservation end before any HTTP I/O.
+        Ok(outcome)
+    }
+}
+
 impl GatewayServer {
     pub fn port(&self) -> u16 {
         self.port
@@ -480,12 +751,13 @@ pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer
     };
     let stop = Arc::new(AtomicBool::new(false));
     let thread_stop = Arc::clone(&stop);
+    let join_limiter = Arc::new(JoinRateLimiter::new(JoinLimitPolicy::default()));
     let deps = Arc::new(deps);
     let thread_deps = Arc::clone(&deps);
     let thread = thread::spawn(move || {
         while !thread_stop.load(Ordering::Acquire) {
             match listener.accept() {
-                Ok((stream, _)) => {
+                Ok((stream, peer)) => {
                     // The listener is nonblocking so the accept loop can observe shutdown.
                     // On BSD/macOS accepted descriptors may retain nonblocking behavior, while
                     // rustls' StreamOwned performs a blocking handshake over Read/Write.
@@ -495,6 +767,7 @@ pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer
                     }
                     let connection_deps = Arc::clone(&thread_deps);
                     let connection_stop = Arc::clone(&thread_stop);
+                    let connection_join_limiter = Arc::clone(&join_limiter);
                     let connection_tls = tls_config.clone();
                     thread::spawn(move || {
                         let stream = match connection_tls {
@@ -504,7 +777,10 @@ pub fn start_gateway_server(deps: GatewayServerDeps) -> io::Result<GatewayServer
                             },
                             None => GatewayStream::Plain(stream),
                         };
-                        let _ = handle_connection(stream, &connection_deps, &connection_stop);
+                        let _ = handle_connection(
+                            stream, &connection_deps, &connection_stop,
+                            peer.ip(), &connection_join_limiter,
+                        );
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
@@ -769,7 +1045,9 @@ fn write_response(
         409 => "Conflict",
         304 => "Not Modified",
         413 => "Payload Too Large",
+        429 => "Too Many Requests",
         500 => "Internal Server Error",
+        503 => "Service Unavailable",
         _ => "Response",
     };
     write!(
@@ -860,6 +1138,43 @@ fn respond_pairing_error(
         &encoded,
         &[("Cache-Control", "no-store")],
     )
+}
+
+fn serve_pairing_join(
+    stream: &mut GatewayStream,
+    deps: &GatewayServerDeps,
+    stop: &AtomicBool,
+    limiter: &JoinRateLimiter,
+    peer: IpAddr,
+    request: &HttpRequest,
+    shortcode: &str,
+    query: Option<&str>,
+) -> io::Result<()> {
+    let outcome = limiter.attempt(peer, stop, || {
+        if request.method != "GET" || query.is_some() || !is_device_pairing_join_code(shortcode) {
+            return Ok(None);
+        }
+        deps.api.redeem_device_pairing_join_code(shortcode)
+    });
+    match outcome {
+        Err(JoinRejection::Limited(delay)) => {
+            let retry = join_retry_seconds(delay).to_string();
+            write_response(
+                stream, 429, "application/json", br#"{"error":"rate_limited"}"#,
+                &[("Cache-Control", "no-store"), ("Retry-After", retry.as_str())],
+            )
+        }
+        Err(JoinRejection::Unavailable) => respond_pairing_error(stream, 503, "unavailable"),
+        Ok(Err(error)) => respond_pairing_error(stream, error.status(), error.to_string()),
+        Ok(Ok(None)) => respond_pairing_error(stream, 404, "not_found"),
+        Ok(Ok(Some(payload))) => write_response(
+            stream, 200, "application/json",
+            &serde_json::to_vec(&payload).map_err(|error| {
+                io::Error::other(format!("gateway response serialization failed: {error}"))
+            })?,
+            &[("Cache-Control", "no-store")],
+        ),
+    }
 }
 
 fn parse_channels(query: Option<&str>) -> Option<Vec<String>> {
@@ -1239,6 +1554,8 @@ fn handle_connection(
     mut stream: GatewayStream,
     deps: &GatewayServerDeps,
     stop: &AtomicBool,
+    peer: IpAddr,
+    join_limiter: &JoinRateLimiter,
 ) -> io::Result<()> {
     let request = match read_request(&mut stream) {
         Ok(request) => request,
@@ -1263,6 +1580,13 @@ fn handle_connection(
     }
 
     let (path, query) = split_target(&request.target);
+    // A join code is this public namespace's credential. Throttle and validate
+    // before optional bearer/nonce/revision processing can touch another owner.
+    if let Some(shortcode) = parse_device_pairing_join_request_path(path) {
+        return serve_pairing_join(
+            &mut stream, deps, stop, join_limiter, peer, &request, shortcode, query,
+        );
+    }
     if request.method == "GET" && path == GATEWAY_HEALTH_PATH {
         let health = deps.api.health();
         let mut value = json!({
@@ -1280,8 +1604,6 @@ fn handle_connection(
     }
 
     let events = request.method == "GET" && path == GATEWAY_EVENTS_PATH;
-    let pairing_join = request.method == "GET"
-        && parse_device_pairing_join_request_path(path).is_some();
     let prepare = request.method == "POST" && path == GATEWAY_PREPARE_UPGRADE_PATH;
     let avatar = request.method == "GET" && path.starts_with(&format!("{GATEWAY_AVATARS_PATH}/"));
     let command = request.method == "POST"
@@ -1292,7 +1614,7 @@ fn handle_connection(
     let local_responses = request.method == "POST" && path == GATEWAY_LOCAL_EXEC_RESPONSES_PATH;
     let webauthn_requests = request.method == "GET" && path == GATEWAY_WEBAUTHN_REQUESTS_PATH;
     let webauthn_responses = request.method == "POST" && path == GATEWAY_WEBAUTHN_RESPONSES_PATH;
-    if !(events || pairing_join || prepare || avatar || command || local_requests || local_responses || webauthn_requests || webauthn_responses) {
+    if !(events || prepare || avatar || command || local_requests || local_responses || webauthn_requests || webauthn_responses) {
         return respond_error(
             &mut stream,
             404,
@@ -1316,8 +1638,7 @@ fn handle_connection(
         return respond_error(&mut stream, 401, "webauthn requires gateway authentication");
     }
 
-    let allows_unauthenticated = pairing_join
-        || (command && matches!(method, "device.pair.request" | "device.pair.status"));
+    let allows_unauthenticated = command && matches!(method, "device.pair.request" | "device.pair.status");
     let mut authenticated = false;
     let mut device_authorization = None;
 
@@ -1558,33 +1879,6 @@ fn handle_connection(
             Err(error) => respond_error(&mut stream, error.status(), error.to_string()),
         };
     }
-    if pairing_join {
-        if query.is_some() {
-            return respond_pairing_error(&mut stream, 404, "not_found");
-        }
-        let shortcode = parse_device_pairing_join_request_path(path).unwrap_or_default();
-        if shortcode.is_empty() {
-            return respond_pairing_error(&mut stream, 404, "not_found");
-        }
-        let payload = match deps.api.redeem_device_pairing_join_code(shortcode) {
-            Ok(Some(payload)) => payload,
-            Ok(None) => return respond_pairing_error(&mut stream, 404, "not_found"),
-            Err(error) => {
-                return respond_pairing_error(&mut stream, error.status(), error.to_string());
-            }
-        };
-        return write_response(
-            &mut stream,
-            200,
-            "application/json",
-            &serde_json::to_vec(&payload).map_err(|error| {
-                io::Error::other(format!("gateway response serialization failed: {error}"))
-            })?,
-            &[("Cache-Control", "no-store")],
-        );
-    }
-
-
     let args = match parse_command_args(&request.body) {
         Ok(value) => value,
         Err(error) => {
@@ -1642,6 +1936,405 @@ fn handle_connection(
             }
             respond_error(&mut stream, status, error.to_string())
         }
+    }
+}
+
+#[cfg(test)]
+mod join_rate_limit_tests {
+    use super::{JoinLimitPolicy, JoinPeerState, JoinRateLimiter, JoinRejection, join_peer_ip, join_retry_seconds};
+    use crate::gateway_command_error::GatewayCommandError;
+    use serde_json::{Value, json};
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    use std::sync::{Arc, atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering}, mpsc};
+    use std::thread;
+    use std::time::{Duration, Instant};
+
+    fn peer(id: u8) -> IpAddr { IpAddr::V4(Ipv4Addr::new(198, 51, 100, id)) }
+
+    fn seed(limiter: &JoinRateLimiter, ip: IpAddr, now: Instant, count: usize) {
+        for _ in 0..count {
+            assert!(limiter.attempt_with_clock(ip, &AtomicBool::new(false), || now, || Ok(None))
+                .expect("admitted miss").expect("controlled miss").is_none());
+        }
+    }
+
+    fn failures(limiter: &JoinRateLimiter, ip: IpAddr) -> Vec<Instant> {
+        let peers = limiter.peers.lock().expect("inspect map");
+        let state = peers.get(&join_peer_ip(ip)).expect("tracked peer").peer.state.lock().expect("inspect peer");
+        state.failures.iter().copied().collect()
+    }
+
+    fn reserve_idle(limiter: &JoinRateLimiter, ip: IpAddr, now: Instant) {
+        let mut reservation = limiter.reserve(ip, now).expect("reserve idle peer");
+        reservation.wait_turn().expect("idle turn");
+    }
+
+    fn wait_for_reservations(limiter: &JoinRateLimiter, ip: IpAddr, count: usize) {
+        let deadline = Instant::now() + Duration::from_secs(3);
+        loop {
+            if let Ok(peers) = limiter.peers.try_lock() {
+                if peers.get(&join_peer_ip(ip)).is_some_and(|entry| Arc::strong_count(&entry.peer) >= count) {
+                    return;
+                }
+            }
+            assert!(Instant::now() < deadline, "no causal queued peer-reservation witness");
+            thread::yield_now();
+        }
+    }
+
+    #[test]
+    fn join_limit_defaults_window_lockout_and_retry_boundaries() {
+        let policy = JoinLimitPolicy::default();
+        assert_eq!((policy.failures, policy.entries), (10, 10_000));
+        assert_eq!((policy.window, policy.lockout), (Duration::from_secs(60), Duration::from_secs(300)));
+        let base = Instant::now();
+        let mut state = JoinPeerState::default();
+        for _ in 0..9 { state.fail(base, policy); }
+        assert!(state.check(base + Duration::from_millis(59_999), policy).is_ok());
+        assert_eq!(state.failures.len(), 9);
+        assert!(state.check(base + policy.window, policy).is_ok());
+        assert!(state.failures.is_empty(), "exact cutoff expires old misses");
+        let threshold = base + policy.window;
+        for _ in 0..10 { state.fail(threshold, policy); }
+        let until = threshold + policy.lockout;
+        assert_eq!(state.locked_until, Some(until));
+        assert_eq!(state.check(threshold + Duration::from_millis(1), policy),
+            Err(JoinRejection::Limited(Duration::from_millis(299_999))));
+        assert_eq!(join_retry_seconds(Duration::from_millis(299_999)), 300);
+        assert_eq!(join_retry_seconds(Duration::from_nanos(1)), 1);
+        assert_eq!(join_retry_seconds(Duration::from_secs(1)), 1);
+        for _ in 0..20 { state.fail(threshold + Duration::from_secs(1), policy); }
+        assert_eq!(state.failures.len(), 10, "history never grows past threshold");
+        assert_eq!(state.locked_until, Some(until), "denials cannot extend lockout");
+        assert!(state.check(until, policy).is_ok());
+        assert!(state.failures.is_empty());
+        state.fail(until, policy);
+        assert_eq!(state.failures.len(), 1, "served lockout starts a fresh history");
+        assert!(state.locked_until.is_none());
+    }
+
+    #[test]
+    fn join_limit_success_isolation_and_storage_error_accounting() {
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy::default());
+        let now = Instant::now();
+        let stop = AtomicBool::new(false);
+        seed(&limiter, peer(1), now, 9);
+        seed(&limiter, peer(2), now, 9);
+        assert_eq!(limiter.attempt_with_clock(peer(1), &stop, || now, || Ok(Some(Value::Null)))
+            .expect("admitted legacy null").expect("actual success"), Some(Value::Null));
+        assert!(failures(&limiter, peer(1)).is_empty());
+        assert_eq!(failures(&limiter, peer(2)).len(), 9);
+        let error = limiter.attempt_with_clock(peer(2), &stop, || now, || {
+            Err(GatewayCommandError::Internal("storage refusal".into()))
+        }).expect("error attempt admitted").expect_err("owner error remains an error");
+        assert_eq!(error.to_string(), "storage refusal");
+        assert_eq!(failures(&limiter, peer(2)).len(), 9, "error neither spends nor resets misses");
+        seed(&limiter, peer(2), now, 1);
+        assert!(matches!(limiter.attempt_with_clock(peer(2), &stop, || now, || panic!("blocked owner")),
+            Err(JoinRejection::Limited(_))));
+    }
+
+    #[test]
+    fn join_limit_mapped_peers_share_strict_loopback_budget() {
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy::default());
+        let now = Instant::now();
+        let ipv4 = IpAddr::V4(Ipv4Addr::LOCALHOST);
+        let mapped = IpAddr::V6(Ipv4Addr::LOCALHOST.to_ipv6_mapped());
+        assert_eq!(join_peer_ip(mapped), ipv4);
+        seed(&limiter, ipv4, now, 10);
+        assert!(matches!(limiter.attempt_with_clock(mapped, &AtomicBool::new(false), || now, || panic!("mapped bypass")),
+            Err(JoinRejection::Limited(_))));
+        let ipv6 = IpAddr::V6(Ipv6Addr::LOCALHOST);
+        seed(&limiter, ipv6, now, 10);
+        assert!(matches!(limiter.attempt_with_clock(ipv6, &AtomicBool::new(false), || now, || panic!("loopback bypass")),
+            Err(JoinRejection::Limited(_))));
+        assert_eq!(limiter.peers.lock().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn join_limit_capacity_reclaims_expired_before_idle_and_keeps_lockouts() {
+        let now = Instant::now();
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy { entries: 2, ..JoinLimitPolicy::default() });
+        seed(&limiter, peer(1), now + Duration::from_secs(59), 1);
+        seed(&limiter, peer(2), now, 1);
+        reserve_idle(&limiter, peer(3), now + Duration::from_secs(60));
+        {
+            let peers = limiter.peers.lock().unwrap();
+            assert!(peers.contains_key(&peer(1)) && peers.contains_key(&peer(3)));
+            assert!(!peers.contains_key(&peer(2)));
+        }
+        let full = JoinRateLimiter::new(JoinLimitPolicy { entries: 1, ..JoinLimitPolicy::default() });
+        seed(&full, peer(1), now, 10);
+        assert!(matches!(full.reserve(peer(2), now + Duration::from_secs(1)), Err(JoinRejection::Limited(_))));
+        assert_eq!(full.peers.lock().unwrap().len(), 1);
+        assert!(full.peers.lock().unwrap().contains_key(&peer(1)), "live lockout is never evicted");
+        reserve_idle(&full, peer(2), now + Duration::from_secs(300));
+        assert!(!full.peers.lock().unwrap().contains_key(&peer(1)));
+        seed(&full, peer(2), now + Duration::from_secs(301), 1);
+        reserve_idle(&full, peer(3), now + Duration::from_secs(302));
+        assert_eq!(full.peers.lock().unwrap().len(), 1);
+        assert!(full.peers.lock().unwrap().contains_key(&peer(3)));
+    }
+
+    #[test]
+    fn join_limit_live_and_queued_reservations_cannot_be_evicted() {
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy { entries: 1, ..JoinLimitPolicy::default() });
+        let now = Instant::now();
+        let stop = AtomicBool::new(false);
+        let mut reservation = limiter.reserve(peer(1), now).expect("pin original identity");
+        reservation.wait_turn().unwrap();
+        let entry = Arc::clone(&reservation.peer);
+        let held = entry.state.lock().unwrap();
+        thread::scope(|scope| {
+            let queued = scope.spawn(|| limiter.attempt_with_clock(peer(1), &stop, || now, || Ok(None)));
+            wait_for_reservations(&limiter, peer(1), 4);
+            assert!(matches!(limiter.reserve(peer(2), now), Err(JoinRejection::Limited(_))));
+            assert!(Arc::ptr_eq(&limiter.peers.lock().unwrap().get(&peer(1)).unwrap().peer, &entry));
+            drop(held);
+            drop(reservation);
+            assert!(queued.join().unwrap().expect("queued admission").expect("miss").is_none());
+        });
+        assert_eq!(failures(&limiter, peer(1)).len(), 1);
+        assert!(matches!(limiter.reserve(peer(2), now), Err(JoinRejection::Limited(_))), "live retained guard still pins identity");
+        drop(entry);
+        reserve_idle(&limiter, peer(2), now);
+        assert_eq!(limiter.peers.lock().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn join_limit_serializes_whole_attempt_without_blocking_other_peers() {
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy { failures: 1, ..JoinLimitPolicy::default() });
+        let now = Instant::now();
+        let stop = AtomicBool::new(false);
+        let queued_calls = AtomicUsize::new(0);
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        thread::scope(|scope| {
+            let limiter_ref = &limiter;
+            let stop_ref = &stop;
+            let first = scope.spawn(move || limiter_ref.attempt_with_clock(peer(1), stop_ref, || now, || {
+                entered_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).expect("release owned first attempt");
+                Ok(None)
+            }));
+            entered_rx.recv_timeout(Duration::from_secs(3)).expect("first owner entered");
+            let queued = scope.spawn(|| limiter.attempt_with_clock(peer(1), &stop, || now, || {
+                queued_calls.fetch_add(1, Ordering::SeqCst);
+                Ok(None)
+            }));
+            wait_for_reservations(&limiter, peer(1), 3);
+            let (other_tx, other_rx) = mpsc::channel();
+            let limiter_ref = &limiter;
+            let stop_ref = &stop;
+            scope.spawn(move || other_tx.send(limiter_ref.attempt_with_clock(peer(2), stop_ref, || now, || Ok(Some(json!(7))))).unwrap());
+            assert_eq!(other_rx.recv_timeout(Duration::from_secs(3)).expect("independent peer progresses")
+                .expect("other admission").expect("other result"), Some(json!(7)));
+            release_tx.send(()).unwrap();
+            assert!(first.join().unwrap().expect("first admission").expect("first miss").is_none());
+            assert!(matches!(queued.join().unwrap(), Err(JoinRejection::Limited(_))));
+        });
+        assert_eq!(queued_calls.load(Ordering::SeqCst), 0);
+        assert_eq!(failures(&limiter, peer(1)).len(), 1);
+    }
+
+    #[test]
+    fn join_limit_reserved_turns_are_fifo_for_mixed_outcomes() {
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy { failures: 2, ..JoinLimitPolicy::default() });
+        let now = Instant::now();
+        let stop = AtomicBool::new(false);
+        seed(&limiter, peer(1), now, 1);
+        let (order_tx, order_rx) = mpsc::channel();
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        thread::scope(|scope| {
+            let limiter_ref = &limiter;
+            let stop_ref = &stop;
+            let first_order = order_tx.clone();
+            let first = scope.spawn(move || limiter_ref.attempt_with_clock(peer(1), stop_ref, || now, || {
+                first_order.send(0).unwrap();
+                entered_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).expect("release first reserved owner");
+                Ok(Some(Value::Null))
+            }));
+            entered_rx.recv_timeout(Duration::from_secs(3)).expect("first owner entered");
+            let second = scope.spawn(|| limiter.attempt_with_clock(peer(1), &stop, || now, || {
+                order_tx.send(1).unwrap(); Ok(None)
+            }));
+            wait_for_reservations(&limiter, peer(1), 3);
+            let third = scope.spawn(|| limiter.attempt_with_clock(peer(1), &stop, || now, || {
+                order_tx.send(2).unwrap(); Ok(Some(json!(["legacy"])))
+            }));
+            wait_for_reservations(&limiter, peer(1), 4);
+            let fourth = scope.spawn(|| limiter.attempt_with_clock(peer(1), &stop, || now, || {
+                order_tx.send(3).unwrap(); Ok(None)
+            }));
+            wait_for_reservations(&limiter, peer(1), 5);
+            assert_eq!(order_rx.try_iter().collect::<Vec<_>>(), vec![0], "queued owners cannot enter early");
+            release_tx.send(()).unwrap();
+            assert_eq!(first.join().unwrap().expect("first admission").expect("first success"), Some(Value::Null));
+            assert!(second.join().unwrap().expect("second admission").expect("second miss").is_none());
+            assert_eq!(third.join().unwrap().expect("third admission").expect("third success"), Some(json!(["legacy"])));
+            assert!(fourth.join().unwrap().expect("fourth admission").expect("fourth miss").is_none());
+        });
+        assert_eq!(order_rx.try_iter().collect::<Vec<_>>(), vec![1, 2, 3], "reservation order is observable");
+        assert_eq!(failures(&limiter, peer(1)), vec![now], "mixed FIFO outcomes leave only the final miss");
+    }
+
+    #[test]
+    fn join_limit_clock_is_sampled_after_queue_and_owner_settlement() {
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy::default());
+        let base = Instant::now();
+        let clock = AtomicU64::new(0);
+        let stop = AtomicBool::new(false);
+        let mut reservation = limiter.reserve(peer(1), base).unwrap();
+        reservation.wait_turn().unwrap();
+        let entry = Arc::clone(&reservation.peer);
+        let mut held = entry.state.lock().unwrap();
+        for _ in 0..10 { held.fail(base, limiter.policy); }
+        thread::scope(|scope| {
+            let queued = scope.spawn(|| limiter.attempt_with_clock(
+                peer(1), &stop, || base + Duration::from_secs(clock.load(Ordering::SeqCst)), || Ok(Some(Value::Null)),
+            ));
+            wait_for_reservations(&limiter, peer(1), 4);
+            clock.store(300, Ordering::SeqCst);
+            drop(held);
+            drop(reservation);
+            assert_eq!(queued.join().unwrap().expect("fresh clock after queued turn").expect("success"), Some(Value::Null));
+        });
+        seed(&limiter, peer(2), base + Duration::from_secs(300), 9);
+        clock.store(300, Ordering::SeqCst);
+        assert!(limiter.attempt_with_clock(peer(2), &stop,
+            || base + Duration::from_secs(clock.load(Ordering::SeqCst)),
+            || { clock.store(360, Ordering::SeqCst); Ok(None) },
+        ).expect("owner entered").expect("settled miss").is_none());
+        assert_eq!(failures(&limiter, peer(2)), vec![base + Duration::from_secs(360)]);
+    }
+
+    #[test]
+    fn join_limit_stop_refuses_queued_turn_but_settles_entered_result() {
+        let limiter = JoinRateLimiter::new(JoinLimitPolicy::default());
+        let now = Instant::now();
+        let stop = AtomicBool::new(false);
+        seed(&limiter, peer(1), now, 9);
+        let queued_calls = AtomicUsize::new(0);
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        thread::scope(|scope| {
+            let limiter_ref = &limiter;
+            let stop_ref = &stop;
+            let entered = scope.spawn(move || limiter_ref.attempt_with_clock(peer(1), stop_ref, || now, || {
+                entered_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).expect("release entered operation");
+                Ok(Some(Value::Null))
+            }));
+            entered_rx.recv_timeout(Duration::from_secs(3)).expect("operation already entered");
+            let queued = scope.spawn(|| limiter.attempt_with_clock(peer(1), &stop, || now, || {
+                queued_calls.fetch_add(1, Ordering::SeqCst); Ok(None)
+            }));
+            wait_for_reservations(&limiter, peer(1), 3);
+            stop.store(true, Ordering::Release);
+            release_tx.send(()).unwrap();
+            assert_eq!(entered.join().unwrap().expect("entered result still settles").expect("actual success"), Some(Value::Null));
+            assert!(matches!(queued.join().unwrap(), Err(JoinRejection::Unavailable)));
+        });
+        assert_eq!(queued_calls.load(Ordering::SeqCst), 0);
+        assert!(failures(&limiter, peer(1)).is_empty(), "actual success resets despite later stop");
+        assert!(matches!(limiter.attempt(peer(2), &stop, || panic!("stopped admission")), Err(JoinRejection::Unavailable)));
+        assert_eq!(limiter.peers.lock().unwrap().len(), 1, "stopped admission does not reserve a new peer");
+    }
+
+    #[test]
+    fn join_limit_poisoned_admission_state_fails_closed() {
+        let stop = AtomicBool::new(false);
+        let map_poison = JoinRateLimiter::new(JoinLimitPolicy::default());
+        thread::scope(|scope| {
+            assert!(scope.spawn(|| {
+                let _held = map_poison.peers.lock().unwrap();
+                panic!("controlled map poison");
+            }).join().is_err());
+        });
+        assert!(matches!(map_poison.attempt(peer(1), &stop, || panic!("poisoned map bypass")), Err(JoinRejection::Unavailable)));
+        let peer_poison = JoinRateLimiter::new(JoinLimitPolicy::default());
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let (queued_tx, queued_rx) = mpsc::channel();
+        thread::scope(|scope| {
+            let limiter_ref = &peer_poison;
+            let stop_ref = &stop;
+            let entered = scope.spawn(move || limiter_ref.attempt(peer(1), stop_ref, || {
+                entered_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).expect("release panicking owner");
+                panic!("controlled owner unwind");
+            }));
+            entered_rx.recv_timeout(Duration::from_secs(3)).expect("owner entered before poison");
+            let limiter_ref = &peer_poison;
+            let stop_ref = &stop;
+            let queued = scope.spawn(move || queued_tx.send(limiter_ref.attempt(peer(1), stop_ref, || {
+                panic!("queued owner entered after unwind")
+            })).unwrap());
+            wait_for_reservations(&peer_poison, peer(1), 3);
+            release_tx.send(()).unwrap();
+            assert!(entered.join().is_err(), "actual owner unwind poisons its admission state");
+            assert!(matches!(queued_rx.recv_timeout(Duration::from_secs(3)).expect("unwind wakes queued reservation"),
+                Err(JoinRejection::Unavailable)));
+            queued.join().unwrap();
+        });
+        assert!(matches!(peer_poison.attempt(peer(1), &stop, || panic!("poisoned peer bypass")), Err(JoinRejection::Unavailable)));
+        assert!(peer_poison.attempt(peer(2), &stop, || Ok(None)).expect("independent healthy peer").expect("miss").is_none());
+
+        let turns_poison = JoinRateLimiter::new(JoinLimitPolicy::default());
+        reserve_idle(&turns_poison, peer(1), Instant::now());
+        let entry = Arc::clone(&turns_poison.peers.lock().unwrap().get(&peer(1)).unwrap().peer);
+        thread::scope(|scope| {
+            assert!(scope.spawn(move || {
+                let _held = entry.turns.lock().unwrap();
+                panic!("controlled turn-state poison");
+            }).join().is_err());
+        });
+        assert!(matches!(turns_poison.attempt(peer(1), &stop, || panic!("poisoned turn bypass")), Err(JoinRejection::Unavailable)));
+    }
+
+    #[test]
+    fn join_limit_abandoned_or_exhausted_turns_fail_closed() {
+        let now = Instant::now();
+        let stop = AtomicBool::new(false);
+        let abandoned = JoinRateLimiter::new(JoinLimitPolicy { entries: 1, ..JoinLimitPolicy::default() });
+        let mut first = abandoned.reserve(peer(1), now).unwrap();
+        first.wait_turn().unwrap();
+        let omitted = abandoned.reserve(peer(1), now).unwrap();
+        let (queued_tx, queued_rx) = mpsc::channel();
+        thread::scope(|scope| {
+            let limiter_ref = &abandoned;
+            let stop_ref = &stop;
+            let queued = scope.spawn(move || queued_tx.send(limiter_ref.attempt(peer(1), stop_ref, || {
+                panic!("abandoned reservation bypass")
+            })).unwrap());
+            wait_for_reservations(&abandoned, peer(1), 4);
+            drop(omitted);
+            assert!(matches!(queued_rx.recv_timeout(Duration::from_secs(3)).expect("abandoned slot wakes later turn"),
+                Err(JoinRejection::Unavailable)));
+            queued.join().unwrap();
+            drop(first);
+        });
+        assert!(matches!(abandoned.attempt(peer(1), &stop, || panic!("invalidated peer bypass")), Err(JoinRejection::Unavailable)));
+        assert!(matches!(abandoned.reserve(peer(2), now), Err(JoinRejection::Limited(_))), "invalidated state cannot be recycled into a new budget");
+
+        let exhausted = JoinRateLimiter::new(JoinLimitPolicy { entries: 1, ..JoinLimitPolicy::default() });
+        reserve_idle(&exhausted, peer(1), now);
+        {
+            let mut peers = exhausted.peers.lock().unwrap();
+            let entry = peers.get_mut(&peer(1)).unwrap();
+            entry.next_ticket = u64::MAX - 1;
+            entry.peer.turns.lock().unwrap().serving = u64::MAX - 1;
+        }
+        assert_eq!(exhausted.attempt_with_clock(peer(1), &stop, || now, || Ok(Some(Value::Null)))
+            .expect("last representable reservation").expect("last result"), Some(Value::Null));
+        assert!(matches!(exhausted.attempt(peer(1), &stop, || panic!("exhausted ticket bypass")), Err(JoinRejection::Unavailable)));
+        assert!(matches!(exhausted.reserve(peer(2), now), Err(JoinRejection::Limited(_))), "exhausted identity cannot be evicted and restarted");
+        let peers = exhausted.peers.lock().unwrap();
+        let entry = peers.get(&peer(1)).unwrap();
+        assert_eq!(entry.next_ticket, u64::MAX);
+        assert_eq!(entry.peer.turns.lock().unwrap().serving, u64::MAX);
     }
 }
 

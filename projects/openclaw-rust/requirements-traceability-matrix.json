@@ -49,7 +49,9 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R03",
@@ -139,7 +141,9 @@
         "source/host/tests/device_pairing_rotation_gateway_contract.rs",
         "projects/openclaw-rust/docs/specs/codex-model-identity.md",
         "source/host/src/extensions/inference/codex_model_identity_tests.rs",
-        "source/host/app/src/tests/codex_model_admission_tests.rs"
+        "source/host/app/src/tests/codex_model_admission_tests.rs",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -785,7 +789,9 @@
         "projects/openclaw-rust/docs/specs/codex-model-identity.md",
         "source/host/src/extensions/inference/codex_model_identity_tests.rs",
         "source/host/app/src/tests/codex_model_admission_tests.rs",
-        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R13",
@@ -856,7 +862,9 @@
         "source/host/tests/device_pairing_rotation_gateway_contract.rs",
         "projects/openclaw-rust/docs/specs/codex-model-identity.md",
         "source/host/src/extensions/inference/codex_model_identity_tests.rs",
-        "source/host/app/src/tests/codex_model_admission_tests.rs"
+        "source/host/app/src/tests/codex_model_admission_tests.rs",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-R14",
@@ -1974,7 +1982,9 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC11",
@@ -2097,7 +2107,9 @@
         "source/host/tests/device_pairing_join_admission_contract.rs",
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
-        "source/host/tests/device_pairing_rotation_gateway_contract.rs"
+        "source/host/tests/device_pairing_rotation_gateway_contract.rs",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC14",
@@ -2239,7 +2251,9 @@
         "projects/openclaw-rust/docs/specs/codex-model-identity.md",
         "source/host/src/extensions/inference/codex_model_identity_tests.rs",
         "source/host/app/src/tests/codex_model_admission_tests.rs",
-        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC17",
@@ -2308,7 +2322,9 @@
         "projects/openclaw-rust/docs/specs/codex-model-identity.md",
         "source/host/src/extensions/inference/codex_model_identity_tests.rs",
         "source/host/app/src/tests/codex_model_admission_tests.rs",
-        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC18",
@@ -2645,7 +2661,9 @@
         "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
         "source/host/tests/device_pairing_rotation_authority_contract.rs",
         "source/host/tests/device_pairing_rotation_gateway_contract.rs",
-        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json"
+        "projects/openclaw-rust/evidence/memory-episode-append-647e0932-20261102.json",
+        "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+        "source/host/tests/gateway_join_admission_contract.rs"
       ],
       "gate_ids": [],
       "id": "OCRM-AC24",

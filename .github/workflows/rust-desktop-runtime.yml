@@ -337,6 +337,8 @@ jobs:
               "source/host/tests/device_pairing_rotation_gateway_contract.rs",
               "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
               "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
+              "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+              "source/host/tests/gateway_join_admission_contract.rs",
               "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
               "source/host/tests/transcript_manager_contract.rs",
               "source/host/tests/memory_gateway_authorization_contract.rs",
@@ -1258,6 +1260,97 @@ jobs:
           raise SystemExit(0 if accepted else 1)
           PY
           exit "$join_status"
+      - name: Test public device join ingress admission
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source "$OCRM_RECOVERY_EVIDENCE_DIR/run-check.sh"
+          join_ingress_status=0
+          run_recovery_check device-join-limit-state cargo test --locked --manifest-path source/host/Cargo.toml --lib gateway_server::join_rate_limit_tests:: -- --test-threads=1 || join_ingress_status=1
+          run_recovery_check device-join-ingress-http cargo test --locked --manifest-path source/host/Cargo.toml --test gateway_join_admission_contract -- --test-threads=1 || join_ingress_status=1
+          run_recovery_check device-join-legacy-http cargo test --locked --manifest-path source/host/Cargo.toml --test gateway_server_contract pairing_join_route -- --test-threads=1 || join_ingress_status=1
+          run_recovery_check device-join-tls cargo test --locked --manifest-path source/host/Cargo.toml --test gateway_server_contract gateway_serves_real_tls_when_cert_and_key_are_configured -- --exact --test-threads=1 || join_ingress_status=1
+          python3 - <<'PY' || join_ingress_status=1
+          import hashlib, json, os, re, runpy, shlex, subprocess
+          from pathlib import Path
+          root = Path(os.environ["OCRM_RECOVERY_EVIDENCE_DIR"])
+          subject = json.loads((root / "subject.json").read_text())
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          tree = subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip()
+          read_command_evidence = runpy.run_path(str(root / "command-evidence.py"))["read_command_evidence"]
+          base = ['cargo', 'test', '--locked', '--manifest-path', 'source/host/Cargo.toml']
+          cases = [
+              ('device-join-limit-state', base + ['--lib', 'gateway_server::join_rate_limit_tests::', '--', '--test-threads=1'], [
+                  'gateway_server::join_rate_limit_tests::join_limit_defaults_window_lockout_and_retry_boundaries',
+                  'gateway_server::join_rate_limit_tests::join_limit_success_isolation_and_storage_error_accounting',
+                  'gateway_server::join_rate_limit_tests::join_limit_mapped_peers_share_strict_loopback_budget',
+                  'gateway_server::join_rate_limit_tests::join_limit_capacity_reclaims_expired_before_idle_and_keeps_lockouts',
+                  'gateway_server::join_rate_limit_tests::join_limit_live_and_queued_reservations_cannot_be_evicted',
+                  'gateway_server::join_rate_limit_tests::join_limit_serializes_whole_attempt_without_blocking_other_peers',
+                  'gateway_server::join_rate_limit_tests::join_limit_clock_is_sampled_after_queue_and_owner_settlement',
+                  'gateway_server::join_rate_limit_tests::join_limit_stop_refuses_queued_turn_but_settles_entered_result',
+                  'gateway_server::join_rate_limit_tests::join_limit_poisoned_admission_state_fails_closed',
+                  'gateway_server::join_rate_limit_tests::join_limit_reserved_turns_are_fifo_for_mixed_outcomes',
+                  'gateway_server::join_rate_limit_tests::join_limit_abandoned_or_exhausted_turns_fail_closed',
+              ]),
+              ('device-join-ingress-http', base + ['--test', 'gateway_join_admission_contract', '--', '--test-threads=1'], [
+                  'join_http_default_budget_ignores_headers_and_blocks_before_owner_callbacks',
+                  'join_http_namespace_failures_count_without_owner_access',
+                  'join_http_success_resets_budget_for_legacy_payloads',
+                  'join_http_storage_errors_neither_spend_nor_reset_budget',
+                  'join_http_last_slot_concurrency_settles_before_next_admission',
+                  'join_http_new_generation_keeps_old_inflight_state_separate',
+                  'join_http_lost_response_consumes_once_without_replay',
+              ]),
+              ('device-join-legacy-http', base + ['--test', 'gateway_server_contract', 'pairing_join_route', '--', '--test-threads=1'], [
+                  'gateway_pairing_join_route_reaches_sqlite_owner_and_burns_code',
+                  'gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code',
+              ]),
+              ('device-join-tls', base + ['--test', 'gateway_server_contract', 'gateway_serves_real_tls_when_cert_and_key_are_configured', '--', '--exact', '--test-threads=1'], [
+                  'gateway_serves_real_tls_when_cert_and_key_are_configured',
+              ]),
+          ]
+          inputs = [
+              ".github/workflows/rust-desktop-runtime.yml",
+              "projects/openclaw-rust/upstream.lock.json",
+              "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+              "source/host/Cargo.toml", "source/host/Cargo.lock",
+              "source/host/src/gateway_server.rs", "source/host/src/device_pairing_owner.rs",
+              "source/host/src/host_gateway_api.rs", "source/host/src/gateway_command_error.rs",
+              "source/host/tests/gateway_join_admission_contract.rs",
+              "source/host/tests/gateway_server_contract.rs",
+          ]
+          receipt = {key: subject[key] for key in (
+              "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os")}
+          receipt.update({"contract": "DJL-v1", "executions": [],
+              "inputs_sha256": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in inputs},
+              "scope": "Private state controls and actual plain/TLS Gateway, direct socket identity, strict loopback budget, FIFO reservation/settlement, owner-error accounting, pre-auth refusal, real file-backed code custody, stop/restart generation and lost-response controls. No trusted-proxy/configurable-policy, real companion device, unknown COMMIT/crash, full drain or packaged acceptance."})
+          for label, expected, required in cases:
+              command_path = root / (label + ".command.txt")
+              log_path = root / (label + ".log")
+              command = command_path.read_text().strip() if command_path.is_file() else ""
+              raw = log_path.read_bytes() if log_path.is_file() else b""
+              text = raw.decode("utf-8", errors="replace")
+              passed = re.findall(r"^test (\S+) \.\.\. ok$", text, re.MULTILINE)
+              missing = [name for name in required if passed.count(name) != 1]
+              summaries = [tuple(map(int, values)) for values in re.findall(
+                  r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
+              evidence = read_command_evidence(root, label)
+              accepted = (head == subject["subject_commit"] == os.environ["FABUSHI_TARGET_SHA"]
+                  and tree == subject["subject_tree"] and shlex.split(command) == expected
+                  and evidence["accepted"] and not missing and summaries == [(len(required), 0, 0)])
+              receipt["executions"].append({"case": label, "command": command,
+                  **evidence, "required_tests": required, "observed_passed_test_names": passed,
+                  "missing_or_nonunique_positive_results": missing, "summaries": summaries,
+                  "log_sha256": hashlib.sha256(raw).hexdigest(), "oracle_accepted": accepted})
+          accepted = len(receipt["executions"]) == len(cases) and all(case["oracle_accepted"] for case in receipt["executions"])
+          receipt["result"] = "passed" if accepted else "failed-or-incomplete"
+          (root / "device-join-ingress.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          print(json.dumps(receipt, indent=2))
+          raise SystemExit(0 if accepted else 1)
+          PY
+          exit "$join_ingress_status"
       - name: Test native Runtime provider dispatch admission
         id: ocrm_native_runtime
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-config') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer') }}
@@ -3041,6 +3134,7 @@ jobs:
               "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
               "source/host/tests/device_pairing_join_admission_contract.rs",
               "source/host/src/gateway_command_error.rs",
+              "source/host/tests/gateway_server_contract.rs",
               "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
               "projects/openclaw-rust/docs/specs/channel-inbound-worker-handoff.md",
               "source/host/Cargo.toml", "source/host/Cargo.lock",
@@ -3107,6 +3201,8 @@ jobs:
               "source/host/tests/device_pairing_rotation_gateway_contract.rs",
               "projects/openclaw-rust/docs/specs/device-pairing-authenticated-rotation.md",
               "projects/openclaw-rust/docs/specs/device-pairing-revision-admission.md",
+              "projects/openclaw-rust/docs/specs/device-pairing-join-ingress.md",
+              "source/host/tests/gateway_join_admission_contract.rs",
               "source/host/src/extensions/session/production.rs",
               "projects/openclaw-rust/evidence/memory-gateway-authorization-647e0932-20261102.json",
               "source/host/src/host_gateway_api.rs",
@@ -3417,6 +3513,35 @@ jobs:
                   "join_concurrent_file_owners_publish_one_payload",
                   "join_gateway_reports_storage_failure_and_preserves_public_recovery",
               ]),
+              ('device-join-limit-state', base + ['--lib', 'gateway_server::join_rate_limit_tests::', '--', '--test-threads=1'], [
+                  'gateway_server::join_rate_limit_tests::join_limit_defaults_window_lockout_and_retry_boundaries',
+                  'gateway_server::join_rate_limit_tests::join_limit_success_isolation_and_storage_error_accounting',
+                  'gateway_server::join_rate_limit_tests::join_limit_mapped_peers_share_strict_loopback_budget',
+                  'gateway_server::join_rate_limit_tests::join_limit_capacity_reclaims_expired_before_idle_and_keeps_lockouts',
+                  'gateway_server::join_rate_limit_tests::join_limit_live_and_queued_reservations_cannot_be_evicted',
+                  'gateway_server::join_rate_limit_tests::join_limit_serializes_whole_attempt_without_blocking_other_peers',
+                  'gateway_server::join_rate_limit_tests::join_limit_clock_is_sampled_after_queue_and_owner_settlement',
+                  'gateway_server::join_rate_limit_tests::join_limit_stop_refuses_queued_turn_but_settles_entered_result',
+                  'gateway_server::join_rate_limit_tests::join_limit_poisoned_admission_state_fails_closed',
+                  'gateway_server::join_rate_limit_tests::join_limit_reserved_turns_are_fifo_for_mixed_outcomes',
+                  'gateway_server::join_rate_limit_tests::join_limit_abandoned_or_exhausted_turns_fail_closed',
+              ]),
+              ('device-join-ingress-http', base + ['--test', 'gateway_join_admission_contract', '--', '--test-threads=1'], [
+                  'join_http_default_budget_ignores_headers_and_blocks_before_owner_callbacks',
+                  'join_http_namespace_failures_count_without_owner_access',
+                  'join_http_success_resets_budget_for_legacy_payloads',
+                  'join_http_storage_errors_neither_spend_nor_reset_budget',
+                  'join_http_last_slot_concurrency_settles_before_next_admission',
+                  'join_http_new_generation_keeps_old_inflight_state_separate',
+                  'join_http_lost_response_consumes_once_without_replay',
+              ]),
+              ('device-join-legacy-http', base + ['--test', 'gateway_server_contract', 'pairing_join_route', '--', '--test-threads=1'], [
+                  'gateway_pairing_join_route_reaches_sqlite_owner_and_burns_code',
+                  'gateway_public_pairing_join_route_redeems_once_and_rejects_query_or_empty_code',
+              ]),
+              ('device-join-tls', base + ['--test', 'gateway_server_contract', 'gateway_serves_real_tls_when_cert_and_key_are_configured', '--', '--exact', '--test-threads=1'], [
+                  'gateway_serves_real_tls_when_cert_and_key_are_configured',
+              ]),
               ("production-memory-synthesis", base + ["--lib", "extensions::memory::production::append_read_tests::", "--", "--test-threads=1"], [
                   "extensions::memory::production::append_read_tests::production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
                   "extensions::memory::production::append_read_tests::production_synthesis_preserves_invalid_and_stale_temporal_controls",
@@ -3542,7 +3667,7 @@ jobs:
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1"],
               "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
               "checkpoint_publication_scope": "Actual provider checkpoint writer: private owned staging, exact payload preservation, no-clobber final publication, directory-entry barriers including retry after a failed creation barrier, and retained visible payload after a controlled final barrier failure. Actual shell adapter retains a completed file effect as uncheckpointed after real store refusal and explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance.",
               "session_namespace_scope": "SNI-v1 runs the complete existing path, Agent lifecycle and Agent Session targets. Real Session/Human stores cover reserved Agent path refusal before locks, markers and caches; whole-batch lifecycle and Gateway preflight before all hooks; distinct typed Agent/Human cache owners in both opening orders; Agent close/retire/delete, unchanged Human bytes and reopen; and retained valid deletion/admission controls. Colon-bearing filesystem controls run on Unix. This is not every filesystem alias, external parent replacement, Windows or packaged acceptance, Human attachment admission, membership revocation or a new permission owner.",
@@ -3555,7 +3680,7 @@ jobs:
               "inputs_sha256": {path: hashlib.sha256(pathlib.Path(path).read_bytes()).hexdigest() for path in inputs},
               "planned_commands": [{"case": label, "command": command, "required_positive_names": required} for label, command, required in cases],
               "executions": [], "result": "failed-or-incomplete",
-              "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
+              "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
           }
           for label, command, required in cases:
               receipt["active_case"] = label
@@ -3576,7 +3701,7 @@ jobs:
               missing = [name for name in required if passed.count(name) != 1]
               counts = [tuple(map(int, count)) for count in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
-              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "memory-account-binding", "codex-model-identity"):
+              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
               if label == "session-owner-namespace":
                   accepted = (accepted and len(counts) == 3
