@@ -1,0 +1,120 @@
+{
+  "schema": "ocrm-immutable-review-scope-v1",
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "session": "memory-synthesis-snapshot-647e0932-20261103",
+  "round": 1,
+  "base_commit": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
+  "base_tree": "3a54174842026d25cbc8f6c4a42e1bab377e510c",
+  "starting_head": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
+  "snapshot_commit": "7e2b41893ea4800bab46fb6b84eecf4d6d6cd49c",
+  "snapshot_tree": "8cc9accdb936d342850873b713ea18f437a70aee",
+  "scope_mode": "explicit-twelve-path-complete-production-batch",
+  "complete_scope": [
+    {
+      "path": "source/host/src/extensions/memory/memory_service.rs",
+      "status": "modified",
+      "before_blob": "abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4",
+      "after_blob": "f4e77202b3fd7bd59f4d1c5572211a1c2c6cc2a0"
+    },
+    {
+      "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
+      "status": "modified",
+      "before_blob": "2036760fd35ddd7c4de2baf09c345305c9651d4a",
+      "after_blob": "e7c7c1669fa6fa7a51b9dfe75fb57eb80fa3e27b"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production.rs",
+      "status": "modified",
+      "before_blob": "38deca4dbbcb78536ae7ccbe84fce989633b96da",
+      "after_blob": "f45cf96676c3dad4fb72d954956681d21e377140"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_append_read_tests.rs",
+      "status": "modified",
+      "before_blob": "70d227908f5cc537239480a5334b60b2991ead77",
+      "after_blob": "7dc05a68f5d58420200d44fec1404e4050f137bf"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_identity_tests.rs",
+      "status": "modified",
+      "before_blob": "a536a31c0c8ba6d56d119e63973f48f22f6065c1",
+      "after_blob": "b9d2a2457b5464991fc21cb3c6fd17c4249d46fc"
+    },
+    {
+      "path": "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
+      "status": "added",
+      "before_blob": null,
+      "after_blob": "4a0aaaf6d1ae4a7905c654d36c9e999bca3445bc"
+    },
+    {
+      "path": "source/host/tests/memory_synthesis_store_contract.rs",
+      "status": "modified",
+      "before_blob": "d0c2545e3aff1461578be30d76e931eff96f7452",
+      "after_blob": "2546fa0c7de4b596fbfd539af7fc5cbbd5a03ddd"
+    },
+    {
+      "path": "source/host/tests/memory_synthesis_service_contract.rs",
+      "status": "modified",
+      "before_blob": "6460a1ad9e930819c93bd0584329f4bdf1efcfd6",
+      "after_blob": "03ef1e198da5a98adcce5726f3b1fef6a677ea1f"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "status": "modified",
+      "before_blob": "0a53c7f781189b145e67b2c64b56d8dd9f3ac34a",
+      "after_blob": "c63851a254b26a5a841dd07f2d8e37e4694b2ecc"
+    },
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "status": "modified",
+      "before_blob": "d72e5591ecb27a29439e55d778ada74a343279bc",
+      "after_blob": "472b9bea1cabfb8f3eb9731c02c1ea74f8d82701"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "status": "modified",
+      "before_blob": "3422c11400b60393f0f68d9e0e2dfb55715d22d4",
+      "after_blob": "0f59b5d5d49a742ee47cb08fc9dfb0de66b4eed5"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
+      "status": "added",
+      "before_blob": null,
+      "after_blob": "440527533e19c733141568e7accb7f1c50fb77ac"
+    }
+  ],
+  "complete_patch": {
+    "blob": "d5c51850f245d73c72fac31ec34fbac79d0edc3b",
+    "bytes": 178714,
+    "sha256": "ccbd7ff450bd2c82e0229903dfea7bd3e78ecafd328d2ab4265e98865598084c",
+    "rename_aware": true,
+    "binary_safe": true,
+    "binary_changes": 0,
+    "renames": 0,
+    "qualification": "All twelve declared paths are UTF-8 regular files; no renames or binary changes; complete additions and all base-to-candidate changed hunks are included."
+  },
+  "spec": {
+    "path": "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
+    "blob": "f64cdce30fa33c20c371b177d9100031c4faf260",
+    "contract": "MSSA-v1",
+    "carrier": "19100decdaba01486a15340ddf46e9f9987324eb"
+  },
+  "isolation": "Git API tree from exact base and only declared blobs; no real developer index or unrelated working state modified",
+  "validation": "Not executed; GitHub Actions only after independent source review",
+  "phases": {
+    "implementation": {
+      "model": "configured-parent",
+      "effort": "xhigh",
+      "reason": "Filesystem input admission, required production trait, cancellation/evidence settlement, native lifecycle and real inference/Session consumers"
+    },
+    "general": {
+      "model": "configured-parent",
+      "effort": "xhigh"
+    },
+    "structure": {
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh"
+    }
+  }
+}

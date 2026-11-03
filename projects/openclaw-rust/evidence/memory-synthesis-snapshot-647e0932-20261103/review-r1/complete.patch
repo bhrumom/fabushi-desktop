@@ -1,0 +1,2176 @@
+diff --git a/source/host/src/extensions/memory/memory_service.rs b/source/host/src/extensions/memory/memory_service.rs
+index abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4..f4e77202b3fd7bd59f4d1c5572211a1c2c6cc2a0 100644
+--- a/source/host/src/extensions/memory/memory_service.rs
++++ b/source/host/src/extensions/memory/memory_service.rs
+@@ -393,7 +393,18 @@
+     }
+ 
+     pub fn prepare_synthesis(&self) -> SynthesisSnapshot {
+-        let (fingerprint, mut facts) = self.read_synthesis_state();
++        Self::snapshot_from_synthesis_state(self.read_synthesis_state())
++    }
++
++    /// Admit every selected input before returning a bounded synthesis snapshot.
++    /// Fingerprint and facts come from the same reads, including files beyond the limit.
++    pub fn prepare_synthesis_checked(&self) -> io::Result<SynthesisSnapshot> {
++        Ok(Self::snapshot_from_synthesis_state(self.read_synthesis_state_checked()?))
++    }
++
++    fn snapshot_from_synthesis_state(
++        (fingerprint, mut facts): (String, Vec<SynthesisStoredFact>),
++    ) -> SynthesisSnapshot {
+         facts.sort_by(|left, right| {
+             usize::from(right.origin == MemoryOrigin::Explicit)
+                 .cmp(&usize::from(left.origin == MemoryOrigin::Explicit))
+@@ -524,8 +535,6 @@
+     }
+ 
+     fn read_synthesis_state(&self) -> (String, Vec<SynthesisStoredFact>) {
+-        let mut hasher = Sha256::new();
+-        let mut output = Vec::new();
+         let mut files = vec![(self.profile_file.clone(), MemoryKind::Profile)];
+         let mut logs = match fs::read_dir(&self.log_dir) {
+             Ok(entries) => entries
+@@ -537,8 +546,61 @@
+         };
+         logs.sort();
+         files.extend(logs.into_iter().map(|path| (path, MemoryKind::Log)));
++        self.read_synthesis_files(files, |path, _| {
++            Ok(fs::read_to_string(path).unwrap_or_default())
++        }).expect("best-effort synthesis reads never return an error")
++    }
++
++    fn read_synthesis_state_checked(&self) -> io::Result<(String, Vec<SynthesisStoredFact>)> {
++        let mut files = vec![(self.profile_file.clone(), MemoryKind::Profile)];
++        let mut logs = match fs::metadata(&self.log_dir) {
++            Ok(metadata) => {
++                if !metadata.is_dir() {
++                    return Err(io::Error::new(
++                        io::ErrorKind::NotADirectory,
++                        "memory log input is not a directory",
++                    ));
++                }
++                // Synthesis selects all .md paths, including symlinks and type
++                // obstacles. Do not substitute the listing's regular-file filter.
++                let mut paths = Vec::new();
++                for entry in fs::read_dir(&self.log_dir)? {
++                    let path = entry?.path();
++                    if path.extension().and_then(|value| value.to_str()) == Some("md") {
++                        paths.push(path);
++                    }
++                }
++                paths
++            }
++            Err(error)
++                if error.kind() == io::ErrorKind::NotFound
++                    && optional_memory_input_is_absent(&self.log_dir) => Vec::new(),
++            Err(error) => return Err(error),
++        };
++        logs.sort();
++        files.extend(logs.into_iter().map(|path| (path, MemoryKind::Log)));
++        self.read_synthesis_files(files, |path, kind| {
++            match fs::read_to_string(path) {
++                Ok(raw) => Ok(raw),
++                Err(error)
++                    if kind == MemoryKind::Profile
++                        && error.kind() == io::ErrorKind::NotFound
++                        && optional_memory_input_is_absent(path) => Ok(String::new()),
++                // Once a log is selected, even its disappearance refuses admission.
++                Err(error) => Err(error),
++            }
++        })
++    }
++
++    fn read_synthesis_files(
++        &self,
++        files: Vec<(PathBuf, MemoryKind)>,
++        read: impl Fn(&Path, MemoryKind) -> io::Result<String>,
++    ) -> io::Result<(String, Vec<SynthesisStoredFact>)> {
++        let mut hasher = Sha256::new();
++        let mut output = Vec::new();
+         for (path, kind) in files {
+-            let raw = fs::read_to_string(&path).unwrap_or_default();
++            let raw = read(&path, kind)?;
+             hasher.update(path.to_string_lossy().as_bytes());
+             hasher.update([0]);
+             hasher.update(raw.as_bytes());
+@@ -568,7 +630,7 @@
+             }
+         }
+         let fingerprint = format!("{:x}", hasher.finalize());
+-        (fingerprint, output)
++        Ok((fingerprint, output))
+     }
+ 
+     fn metadata_path(&self, content: &str, origin: MemoryOrigin) -> PathBuf {
+diff --git a/source/host/src/extensions/memory/memory_synthesis_service.rs b/source/host/src/extensions/memory/memory_synthesis_service.rs
+index 2036760fd35ddd7c4de2baf09c345305c9651d4a..e7c7c1669fa6fa7a51b9dfe75fb57eb80fa3e27b 100644
+--- a/source/host/src/extensions/memory/memory_synthesis_service.rs
++++ b/source/host/src/extensions/memory/memory_synthesis_service.rs
+@@ -466,7 +466,7 @@
+ use super::memory_service::FileMemoryStore;
+ 
+ pub trait SynthesisTarget: Send + Sync {
+-    fn prepare_synthesis(&self) -> SynthesisSnapshot;
++    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot>;
+     fn apply_synthesis(
+         &self,
+         snapshot: &SynthesisSnapshot,
+@@ -479,8 +479,8 @@
+ }
+ 
+ impl SynthesisTarget for FileMemoryStore {
+-    fn prepare_synthesis(&self) -> SynthesisSnapshot {
+-        FileMemoryStore::prepare_synthesis(self)
++    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot> {
++        FileMemoryStore::prepare_synthesis_checked(self)
+     }
+ 
+     fn apply_synthesis(
+@@ -1083,12 +1083,30 @@
+             self.finish(agent_id, &evidence, temporal);
+             return SynthesisOutcome::NoWork;
+         };
+-        let snapshot = target.prepare_synthesis();
+         let started = (self.options.now)();
+-
++        let acquired = target.prepare_synthesis();
++        // Acquisition may block in filesystem I/O. Lifetime cancellation owns
++        // settlement even when that I/O subsequently returns an error.
+         if self.cancel.is_cancelled() {
+             return SynthesisOutcome::NoWork;
+         }
++        let snapshot = match acquired {
++            Ok(snapshot) => snapshot,
++            Err(_) => {
++                // No model job or write has started. Preserve the due marker and
++                // use existing captured-evidence settlement without model retries.
++                self.finish(agent_id, &evidence, temporal);
++                self.report(
++                    SynthesisReportOutcome::Failed,
++                    Some(agent_id.to_string()),
++                    evidence.len(),
++                    0,
++                    0,
++                    started,
++                );
++                return SynthesisOutcome::Failed;
++            }
++        };
+         if snapshot.memories.is_empty() && evidence.is_empty() {
+             if temporal {
+                 target.mark_temporal_review(started);
+diff --git a/source/host/src/extensions/memory/production.rs b/source/host/src/extensions/memory/production.rs
+index 38deca4dbbcb78536ae7ccbe84fce989633b96da..f45cf96676c3dad4fb72d954956681d21e377140 100644
+--- a/source/host/src/extensions/memory/production.rs
++++ b/source/host/src/extensions/memory/production.rs
+@@ -68,8 +68,8 @@
+ }
+ 
+ impl SynthesisTarget for ProductionSynthesisTarget {
+-    fn prepare_synthesis(&self) -> SynthesisSnapshot {
+-        self.store.prepare_synthesis()
++    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot> {
++        self.store.prepare_synthesis_checked()
+     }
+ 
+     fn apply_synthesis(
+@@ -190,3 +190,7 @@
+ #[cfg(test)]
+ #[path = "production_identity_tests.rs"]
+ mod identity_tests;
++
++#[cfg(test)]
++#[path = "production_snapshot_read_tests.rs"]
++mod snapshot_read_tests;
+diff --git a/source/host/src/extensions/memory/production_append_read_tests.rs b/source/host/src/extensions/memory/production_append_read_tests.rs
+index 70d227908f5cc537239480a5334b60b2991ead77..7dc05a68f5d58420200d44fec1404e4050f137bf 100644
+--- a/source/host/src/extensions/memory/production_append_read_tests.rs
++++ b/source/host/src/extensions/memory/production_append_read_tests.rs
+@@ -55,7 +55,7 @@
+             MemoryKind::Profile => MemoryKind::Log,
+             MemoryKind::Log => MemoryKind::Profile,
+         };
+-        assert_eq!(target.apply_synthesis(&target.prepare_synthesis(), &[
++        assert_eq!(target.apply_synthesis(&target.prepare_synthesis().expect("readable admitted synthesis snapshot"), &[
+             SynthesisChange::Create { content: SOURCE_FACT.into(), kind: source_kind },
+             SynthesisChange::Create { content: DESTINATION_HISTORY.into(), kind: destination_kind },
+             SynthesisChange::Create { content: RETIRED_FACT.into(), kind: source_kind },
+@@ -87,7 +87,7 @@
+     }
+ 
+     fn assert_committed_history(&self) {
+-        let records = self.target.prepare_synthesis().memories;
++        let records = self.target.prepare_synthesis().expect("readable admitted synthesis snapshot").memories;
+         assert!(!records.iter().any(|record| record.content == SOURCE_FACT));
+         assert!(records.iter().any(|record| record.content == DESTINATION_HISTORY));
+         assert!(records.iter().any(|record| record.content == EXPLICIT_FACT
+@@ -103,8 +103,14 @@
+     }
+ 
+     fn close(self) {
+-        self.workers.shutdown();
+-        fs::remove_dir_all(self.root).expect("remove owned temporal fixture");
++        let Self { root, workers, target, .. } = self;
++        assert_eq!(Arc::strong_count(&target), 1, "retire service-held targets before cleanup");
++        workers.shutdown();
++        drop(target);
++        let owner = Arc::downgrade(&workers);
++        drop(workers);
++        assert!(owner.upgrade().is_none(), "Session owner must retire before native cleanup");
++        fs::remove_dir_all(root).expect("remove owned temporal fixture");
+     }
+ }
+ 
+@@ -173,11 +179,11 @@
+             fs::read_to_string(&destination).unwrap());
+         let mut corrupt = repaired.as_bytes().to_vec();
+         corrupt.extend_from_slice(&[0xff, 0xfe]);
+-        fs::write(&destination, &corrupt).unwrap();
+-        assert_eq!(fs::read(&destination).unwrap(), corrupt);
+-        assert_eq!(fs::read_to_string(&destination).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
+-        let before = memory_tree(&fixture.memory_dir());
+-        let snapshot = fixture.target.prepare_synthesis();
++
++        // Admit a genuinely readable empty destination. The fixture will corrupt
++        // it only after acquisition, independently of MSSA's earlier read refusal.
++        fs::write(&destination, b"").unwrap();
++        let snapshot = fixture.target.prepare_synthesis().expect("readable empty append destination");
+         let source = snapshot.memories.iter().find(|record| record.content == SOURCE_FACT).unwrap();
+         assert_ne!(source.kind, destination_kind);
+         assert_eq!(source.origin, MemoryOrigin::Synthesis);
+@@ -185,18 +191,36 @@
+         let changes = [SynthesisChange::Update {
+             id: source.id.clone(), content: UPDATED_FACT.into(), kind: destination_kind,
+         }];
++        fs::write(&destination, &corrupt).unwrap();
++        assert_eq!(fs::read(&destination).unwrap(), corrupt);
++        assert_eq!(fs::read_to_string(&destination).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
++        assert!(fixture.target.prepare_synthesis().is_err());
++        assert_eq!(fixture.target.store.prepare_synthesis().fingerprint, snapshot.fingerprint,
++            "legacy apply fingerprint represents both empty and unreadable text as empty");
++        let before = memory_tree(&fixture.memory_dir());
+         assert_eq!(fixture.target.apply_synthesis(&snapshot, &changes, NOW_MS),
+-            SynthesisApplyResult::Failed, "the actual Session gate must retain Store I/O failure");
++            SynthesisApplyResult::Failed, "actual Session gate must retain append-stage I/O failure");
+         assert_eq!(memory_tree(&fixture.memory_dir()), before);
+ 
++        fs::write(&destination, b"").expect("restore readable admission input before service");
+         let requests = Arc::new(Mutex::new(Vec::new()));
+         let proposed = Arc::clone(&requests);
++        let corrupt_path = destination.clone();
++        let corrupt_bytes = corrupt.clone();
++        let apply_store = fixture.target.store.clone();
++        let admitted_fingerprint = snapshot.fingerprint.clone();
+         let (service, reports) = service_for(&fixture, move |request, _| {
+             let source = request.current_memories.iter()
+                 .find(|record| record.content == SOURCE_FACT).expect("readable synthesized source");
+             assert_eq!(source.origin, MemoryOrigin::Synthesis);
+             let evidence_id = if request.new_evidence.is_empty() {
+                 assert!(!request.current_memories.iter().any(|record| record.content == DESTINATION_HISTORY));
++                fs::write(&corrupt_path, &corrupt_bytes).expect("owned post-acquisition fault");
++                assert_eq!(fs::read(&corrupt_path).unwrap(), corrupt_bytes);
++                assert_eq!(fs::read_to_string(&corrupt_path).unwrap_err().kind(),
++                    std::io::ErrorKind::InvalidData);
++                assert!(apply_store.prepare_synthesis_checked().is_err());
++                assert_eq!(apply_store.prepare_synthesis().fingerprint, admitted_fingerprint);
+                 "clock"
+             } else {
+                 assert_eq!(request.new_evidence.len(), 1);
+@@ -208,12 +232,10 @@
+             proposed.lock().unwrap().push(request);
+             Ok(output)
+         });
+-        // The due marker and corrupt file precede start, so this is an actual
+-        // temporal attempt. No background poller or provider account is started.
+         service.start();
+         assert_eq!(service.run_now(), vec![SynthesisOutcome::Failed]);
+         assert_eq!(memory_tree(&fixture.memory_dir()), before,
+-            "temporal apply refusal must preserve all memory, origin, tombstone and review bytes");
++            "only the fixture fault changes bytes; append refusal must preserve its full baseline");
+         assert!(fixture.target.is_temporal_review_due(NOW_MS));
+         assert_eq!(reports.lock().unwrap().as_slice(), &[SynthesisReport {
+             outcome: SynthesisReportOutcome::Failed,
+@@ -227,7 +249,7 @@
+         assert_eq!(fixture.workers.read_session_work_admission(&fixture.target.agent_id).unwrap(), admission);
+ 
+         fs::write(&destination, &repaired).expect("fixture-owned repair");
+-        assert_ne!(fixture.target.prepare_synthesis().fingerprint, snapshot.fingerprint);
++        assert_ne!(fixture.target.prepare_synthesis().unwrap().fingerprint, snapshot.fingerprint);
+         service.record_turn(&fixture.target.agent_id, Some("repair-evidence".into()),
+             "The destination was repaired; retain the updated fact.", "Acknowledged.", NOW_MS);
+         assert_eq!(service.run_now(), vec![SynthesisOutcome::Committed]);
+@@ -246,6 +268,7 @@
+         drop(reports);
+         assert!(service.run_now().is_empty());
+         service.dispose();
++        drop(service);
+         fixture.close();
+     }
+ }
+@@ -254,7 +277,7 @@
+ fn production_synthesis_preserves_invalid_and_stale_temporal_controls() {
+     let fixture = Fixture::new("invalid-control", MemoryKind::Profile);
+     let before = memory_tree(&fixture.memory_dir());
+-    let snapshot = fixture.target.prepare_synthesis();
++    let snapshot = fixture.target.prepare_synthesis().expect("readable admitted synthesis snapshot");
+     let raw = update_proposal("unknown-snapshot-id", fixture.destination_kind, "clock");
+     let parsed = parse_memory_synthesis_changes(&raw).expect("valid parsed update");
+     assert!(uses_known_evidence(&HashSet::new(), &parsed, true));
+@@ -285,11 +308,12 @@
+     assert!(service.run_now().is_empty());
+     assert_eq!(proposals.load(Ordering::SeqCst), 1);
+     service.dispose();
++    drop(service);
+     fixture.close();
+ 
+     let fixture = Fixture::new("stale-control", MemoryKind::Log);
+     let before = memory_tree(&fixture.memory_dir());
+-    let snapshot = fixture.target.prepare_synthesis();
++    let snapshot = fixture.target.prepare_synthesis().expect("readable admitted synthesis snapshot");
+     let destination = fixture.destination();
+     let concurrent = format!("{}\n<!-- Concurrent readable edit during proposal -->\n",
+         fs::read_to_string(&destination).unwrap());
+@@ -315,7 +339,7 @@
+     assert_eq!(memory_tree(&fixture.memory_dir()), expected,
+         "Stale adds no writes beyond the fixture's concurrent edit, including no review marker");
+     assert!(fixture.target.is_temporal_review_due(NOW_MS));
+-    assert_ne!(fixture.target.prepare_synthesis().fingerprint, snapshot.fingerprint);
++    assert_ne!(fixture.target.prepare_synthesis().expect("readable admitted synthesis snapshot").fingerprint, snapshot.fingerprint);
+     assert_eq!(reports.lock().unwrap().as_slice(), &[SynthesisReport {
+         outcome: SynthesisReportOutcome::Stale,
+         agent_id: Some(fixture.target.agent_id.clone()),
+@@ -329,5 +353,6 @@
+     assert_eq!(reports.lock().unwrap()[1].outcome, SynthesisReportOutcome::Committed);
+     assert!(service.run_now().is_empty());
+     service.dispose();
++    drop(service);
+     fixture.close();
+ }
+diff --git a/source/host/src/extensions/memory/production_identity_tests.rs b/source/host/src/extensions/memory/production_identity_tests.rs
+index a536a31c0c8ba6d56d119e63973f48f22f6065c1..b9d2a2457b5464991fc21cb3c6fd17c4249d46fc 100644
+--- a/source/host/src/extensions/memory/production_identity_tests.rs
++++ b/source/host/src/extensions/memory/production_identity_tests.rs
+@@ -393,7 +393,7 @@
+         store:memory.synthesis_target_for_agent(&agent.id).unwrap(),
+         service:Arc::clone(&memory),
+     };
+-    assert_eq!(target.apply_synthesis(&target.prepare_synthesis(), &[
++    assert_eq!(target.apply_synthesis(&target.prepare_synthesis().expect("readable admitted synthesis snapshot"), &[
+         SynthesisChange::Create { content:SOURCE.into(), kind:MemoryKind::Profile },
+         SynthesisChange::Create { content:RETIRED.into(), kind:MemoryKind::Log },
+     ], NOW), SynthesisApplyResult::Committed);
+@@ -459,7 +459,7 @@
+         assert_eq!(reports.lock().unwrap().len(), 2);
+         assert_eq!(reports.lock().unwrap()[1].evidence_count, 1,
+             "the refused snapshot evidence must settle without erasing later evidence");
+-        let facts = target.prepare_synthesis().memories;
++        let facts = target.prepare_synthesis().expect("readable admitted synthesis snapshot").memories;
+         assert_eq!(facts.iter().filter(|fact| fact.content == UPDATED).count(), 1);
+         assert!(!facts.iter().any(|fact| fact.content == SOURCE || fact.content == RETIRED));
+         assert!(facts.iter().any(|fact| fact.content == EXPLICIT && fact.origin == MemoryOrigin::Explicit));
+diff --git a/source/host/src/extensions/memory/production_snapshot_read_tests.rs b/source/host/src/extensions/memory/production_snapshot_read_tests.rs
+new file mode 100644
+index 0000000000000000000000000000000000000000..4a0aaaf6d1ae4a7905c654d36c9e999bca3445bc
+--- /dev/null
++++ b/source/host/src/extensions/memory/production_snapshot_read_tests.rs
+@@ -0,0 +1,540 @@
++//! MSSA-v1 through the actual production Memory factory, Native HTTP and Session.
++//! The peer accepts only post-repair requests with complete persisted facts.
++
++use std::collections::BTreeMap;
++use std::fs::{self, File, OpenOptions};
++use std::io::{Read, Write};
++use std::net::{TcpListener, TcpStream};
++use std::path::{Path, PathBuf};
++use std::process::{Child, Command, Stdio};
++use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
++use std::sync::{Arc, Mutex};
++use std::thread::{self, JoinHandle};
++use std::time::{Duration, Instant};
++
++use serde_json::{Value, json};
++
++use super::{ProductionSynthesisTarget, production_memory_synthesis_options};
++use crate::extensions::auth::auth_service::{HostAuthEnvironment, HostAuthServiceOptions};
++use crate::extensions::auth::extension::start_host_auth_extension_with_options;
++use crate::extensions::experiments::extension::{HostExperimentsExtension, HostExperimentsOptions};
++use crate::extensions::inference::inference_service::InferenceRoute;
++use crate::extensions::inference::production::start_production_inference_extension;
++use crate::extensions::inference::provider_session::RoutedProvider;
++use crate::extensions::memory::memory_service::{
++    MemoryKind, MemoryOrigin, MemorySynthesisBridge, SynthesisApplyResult, SynthesisChange,
++    format_memory_date, memory_id_for,
++};
++use crate::extensions::memory::memory_synthesis_service::{
++    MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS, MEMORY_SYNTHESIS_PROMPT_MARKER,
++    MEMORY_SYNTHESIS_VERIFICATION_PROMPT_MARKER, MemorySynthesisService, SynthesisOutcome,
++    SynthesisReport, SynthesisReportOutcome, SynthesisTarget,
++};
++use crate::extensions::session::agent_session::SandAgentSessionStore;
++use crate::extensions::session::production::ProductionSessionWorkers;
++use crate::extensions::settings::settings_service::SettingsService;
++
++const NOW: i64 = 1_700_000_000_000;
++const MODEL: &str = "Native/MSSA/CaseSensitive";
++const TOKEN: &str = "mssa-private-fixture-token";
++const PROFILE: &str = "MSSA persisted profile sentinel";
++const LOG: &str = "MSSA persisted monthly sentinel";
++const EXPLICIT: &str = "MSSA explicit fact remains protected";
++const RETIRED: &str = "MSSA retired fact stays forgotten";
++const CREATED: &str = "MSSA repair completed through production inference";
++const REFRESH: &str = ".dreaming/next-refresh-at";
++const CHILD_TEST: &str = "FABUSHI_MSSA_NATIVE_CHILD_TEST";
++const CHILD_ROOT: &str = "FABUSHI_MSSA_NATIVE_CHILD_ROOT";
++const CHILD_NONCE: &str = "FABUSHI_MSSA_NATIVE_CHILD_NONCE";
++
++fn private_write(path: &Path, bytes: &[u8]) {
++    let mut options = OpenOptions::new();
++    options.create_new(true).write(true);
++    #[cfg(unix)]
++    {
++        use std::os::unix::fs::OpenOptionsExt;
++        options.mode(0o600);
++    }
++    let mut file = options.open(path).expect("create owned private fixture file");
++    file.write_all(bytes).expect("write owned private fixture file");
++    file.sync_all().expect("sync owned private fixture file");
++}
++
++fn read_bounded_fixture_file(path: &Path, limit: u64) -> std::io::Result<Vec<u8>> {
++    let metadata = fs::symlink_metadata(path)?;
++    if !metadata.file_type().is_file() || metadata.len() > limit {
++        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,
++            "fixture file type or size is outside its diagnostic bound"));
++    }
++    let file = File::open(path)?;
++    let metadata = file.metadata()?;
++    if !metadata.is_file() || metadata.len() > limit {
++        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,
++            "opened fixture file type or size is outside its diagnostic bound"));
++    }
++    let mut bytes = Vec::new();
++    file.take(limit + 1).read_to_end(&mut bytes)?;
++    if bytes.len() as u64 > limit {
++        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData,
++            "fixture file grew beyond its diagnostic bound"));
++    }
++    Ok(bytes)
++}
++
++fn read_fixture_diagnostic(path: &Path) -> std::io::Result<String> {
++    String::from_utf8(read_bounded_fixture_file(path, 1024 * 1024)?)
++        .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidData,
++            "fixture diagnostic is not UTF-8"))
++}
++
++fn memory_tree(root: &Path) -> BTreeMap<PathBuf, Option<Vec<u8>>> {
++    let mut pending = vec![root.to_path_buf()];
++    let mut tree = BTreeMap::new();
++    while let Some(path) = pending.pop() {
++        let relative = path.strip_prefix(root).unwrap().to_owned();
++        let kind = fs::symlink_metadata(&path).unwrap().file_type();
++        if kind.is_dir() {
++            tree.insert(relative, None);
++            for entry in fs::read_dir(&path).unwrap() {
++                pending.push(entry.unwrap().path());
++            }
++        } else {
++            assert!(kind.is_file(), "fixture owns ordinary files and directories");
++            tree.insert(relative, Some(fs::read(&path).unwrap()));
++        }
++    }
++    tree
++}
++
++struct Request {
++    evidence: String,
++    verify: bool,
++    payload: Value,
++}
++
++fn read_request(stream: &mut TcpStream) -> Result<Request, String> {
++    stream.set_nonblocking(false).map_err(|_| "accepted socket mode")?;
++    stream.set_read_timeout(Some(Duration::from_secs(5))).map_err(|_| "request timeout")?;
++    stream.set_write_timeout(Some(Duration::from_secs(5))).map_err(|_| "response timeout")?;
++    let deadline = Instant::now() + Duration::from_secs(10);
++    let mut bytes = Vec::new();
++    loop {
++        if Instant::now() >= deadline { return Err("request deadline".into()); }
++        let mut chunk = [0; 8192];
++        let count = stream.read(&mut chunk).map_err(|_| "request read")?;
++        if count == 0 { return Err("incomplete request".into()); }
++        bytes.extend_from_slice(&chunk[..count]);
++        if bytes.len() > 1024 * 1024 { return Err("request size bound".into()); }
++        let Some(end) = bytes.windows(4).position(|part| part == b"\r\n\r\n") else { continue; };
++        let headers = std::str::from_utf8(&bytes[..end]).map_err(|_| "header encoding")?;
++        if headers.lines().next() != Some("POST /v1/responses HTTP/1.1") {
++            return Err("unexpected method/path".into());
++        }
++        let mut length = None;
++        let mut authorized = false;
++        for header in headers.lines().skip(1) {
++            let (name, value) = header.split_once(':').ok_or("header syntax")?;
++            if name.eq_ignore_ascii_case("content-length") {
++                if length.replace(value.trim().parse::<usize>().map_err(|_| "body length")?).is_some() {
++                    return Err("duplicate length".into());
++                }
++            } else if name.eq_ignore_ascii_case("authorization") {
++                if authorized || value.trim() != format!("Bearer {TOKEN}") {
++                    return Err("Native fixture authorization".into());
++                }
++                authorized = true;
++            }
++        }
++        let length = length.ok_or("missing body length")?;
++        if length > 1024 * 1024 { return Err("body size bound".into()); }
++        if bytes.len() < end + 4 + length { continue; }
++        if !authorized { return Err("missing Native authorization".into()); }
++        let body: Value = serde_json::from_slice(&bytes[end + 4..end + 4 + length])
++            .map_err(|_| "request JSON")?;
++        if body["model"] != MODEL { return Err("actual selected model".into()); }
++        if body.get("tools").is_some_and(|value| value.as_array().is_none_or(|tools| !tools.is_empty())) {
++            return Err("summary exposed tools".into());
++        }
++        let input = body["input"].as_array().ok_or("summary input")?;
++        let user = input.iter().rev().find(|item| item["role"] == "user")
++            .and_then(|item| item["content"].as_str()).ok_or("summary user message")?;
++        let payload: Value = serde_json::from_str(user).map_err(|_| "Memory request JSON")?;
++        let verify = payload.get("proposedChanges").is_some();
++        let marker = if verify { MEMORY_SYNTHESIS_VERIFICATION_PROMPT_MARKER }
++            else { MEMORY_SYNTHESIS_PROMPT_MARKER };
++        if !body["instructions"].as_str().is_some_and(|text| text.contains(marker)) {
++            return Err("actual Memory system prompt".into());
++        }
++        let facts = payload["currentMemories"].as_array().ok_or("current memories")?;
++        for required in [PROFILE, LOG, EXPLICIT] {
++            if !facts.iter().any(|fact| fact["content"] == required) {
++                return Err("incomplete persisted snapshot reached actual transport".into());
++            }
++        }
++        if facts.iter().any(|fact| fact["content"] == RETIRED) {
++            return Err("forgotten fact reached transport".into());
++        }
++        let evidence_key = if verify { "evidence" } else { "newEvidence" };
++        let evidence = payload[evidence_key].as_array().ok_or("evidence")?;
++        if evidence.len() != 1 { return Err("captured evidence did not settle".into()); }
++        let evidence = evidence[0]["id"].as_str().ok_or("evidence id")?.to_string();
++        if !["snapshot-repair-profile", "snapshot-repair-log", "snapshot-repair-all-queued"]
++            .contains(&evidence.as_str()) {
++            return Err("a request was dispatched during refused acquisition".into());
++        }
++        return Ok(Request { evidence, verify, payload });
++    }
++}
++
++fn respond(stream: &mut TcpStream, output: Value) -> Result<(), String> {
++    let events = [
++        json!({"type":"response.output_text.delta","delta":output.to_string()}),
++        json!({"type":"response.completed","response":{
++            "id":"mssa-response","usage":{"input_tokens":11,"output_tokens":2},"output":[],
++        }}),
++    ];
++    let body = events.iter().map(|event| format!("data: {event}\n\n")).collect::<String>();
++    write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len())
++        .map_err(|_| "response write".into())
++}
++
++struct Peer {
++    endpoint: String,
++    requests: Arc<Mutex<Vec<Request>>>,
++    stop: Arc<AtomicBool>,
++    worker: Option<JoinHandle<Result<(), String>>>,
++}
++
++impl Peer {
++    fn start(root: &Path) -> Self {
++        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("owned loopback listener");
++        listener.set_nonblocking(true).unwrap();
++        let origin = format!("http://{}", listener.local_addr().unwrap());
++        private_write(&root.join("credential.json"), json!({
++            "version":1,"issuer":origin,"accessToken":TOKEN,"expiresAtMs":4_102_444_800_000_u64,
++            "sessionId":"mssa-session","deviceId":"mssa-device","userId":"mssa-user",
++        }).to_string().as_bytes());
++        let endpoint = format!("{origin}/v1/responses");
++        let requests = Arc::new(Mutex::new(Vec::new()));
++        let captured = requests.clone();
++        let stop = Arc::new(AtomicBool::new(false));
++        let stopped = stop.clone();
++        let worker = thread::spawn(move || {
++            let deadline = Instant::now() + Duration::from_secs(60);
++            while !stopped.load(Ordering::Acquire) {
++                if Instant::now() >= deadline { return Err("peer deadline".into()); }
++                let (mut stream, _) = match listener.accept() {
++                    Ok(value) => value,
++                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
++                        thread::sleep(Duration::from_millis(2));
++                        continue;
++                    }
++                    Err(_) => return Err("peer accept".into()),
++                };
++                let request = read_request(&mut stream)?;
++                let output = if request.verify {
++                    let changes = request.payload["proposedChanges"].as_array().ok_or("verification changes")?;
++                    if changes.len() != 1 || changes[0]["content"] != CREATED {
++                        return Err("verification did not observe actual repair proposal".into());
++                    }
++                    json!({"approved":true})
++                } else {
++                    json!({"changes":[{
++                        "action":"create","content":CREATED,"kind":"profile",
++                        "sourceEvidenceIds":[request.evidence],
++                    }]})
++                };
++                captured.lock().unwrap().push(request);
++                respond(&mut stream, output)?;
++            }
++            Ok(())
++        });
++        Self { endpoint, requests, stop, worker: Some(worker) }
++    }
++
++    fn finish(&mut self) -> Result<(), String> {
++        self.stop.store(true, Ordering::Release);
++        self.worker.take().expect("owned peer worker").join()
++            .unwrap_or_else(|_| Err("peer panicked".into()))
++    }
++}
++
++impl Drop for Peer {
++    fn drop(&mut self) {
++        self.stop.store(true, Ordering::Release);
++        // Failure cleanup joins only this fixture-owned, deadline-bounded worker.
++        if let Some(worker) = self.worker.take() { let _ = worker.join(); }
++    }
++}
++
++struct OwnedChild {
++    process: Child,
++    terminal: bool,
++    retirement: Option<String>,
++}
++
++impl OwnedChild {
++    fn retire_once(&mut self) -> String {
++        if let Some(result) = &self.retirement { return result.clone(); }
++        self.retirement = Some("retirement started; terminal unknown".into());
++        let kill = self.process.kill();
++        let deadline = Instant::now() + Duration::from_secs(3);
++        let observed = loop {
++            let state = match self.process.try_wait() {
++                Ok(Some(status)) => { self.terminal = true; break format!("terminal={status:?}"); }
++                Ok(None) => "still running".to_string(),
++                Err(error) => format!("terminal observation failed: {error}"),
++            };
++            if Instant::now() >= deadline { break format!("terminal=false; {state}"); }
++            thread::sleep(Duration::from_millis(10));
++        };
++        let result = format!("kill={kill:?}; {observed}");
++        self.retirement = Some(result.clone());
++        result
++    }
++
++    fn wait_bounded(&mut self) -> Result<std::process::ExitStatus, String> {
++        let deadline = Instant::now() + Duration::from_secs(60);
++        loop {
++            match self.process.try_wait() {
++                Ok(Some(status)) => { self.terminal = true; return Ok(status); }
++                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(10)),
++                observed => {
++                    let retirement = self.retire_once();
++                    return Err(format!("child wait failed: {observed:?}; {retirement}"));
++                }
++            }
++        }
++    }
++}
++
++impl Drop for OwnedChild {
++    fn drop(&mut self) {
++        if !self.terminal && self.retirement.is_none() {
++            eprintln!("MSSA child retirement: {}", self.retire_once());
++        }
++    }
++}
++
++fn run_child(root: &Path) {
++    let settings = Arc::new(SettingsService::new(root.join("settings.json")));
++    settings.set_host_settings(&json!({
++        "inferenceProvider":"codex",
++        "agentDefaultModel":{"provider":"fabushi","modelId":MODEL,"maxMode":true,"parameters":[]},
++    })).unwrap();
++    let auth = start_host_auth_extension_with_options(HostAuthServiceOptions {
++        environment: HostAuthEnvironment::from_pairs([(
++            "FABUSHI_HOST_ACCESS_CREDENTIAL_FILE".into(),
++            root.join("credential.json").to_string_lossy().into_owned(),
++        )]),
++        backend_url: Some("http://127.0.0.1:9".into()), backend: None,
++        machine_id: Arc::new(|| Ok("mssa-device".into())),
++        log: Arc::new(|_| {}), now_ms: Arc::new(|| 10_000),
++    }, Arc::new(|_| Ok(None))).unwrap();
++    let inference = Arc::new(start_production_inference_extension(Arc::new(auth),
++        Arc::new(HostExperimentsExtension::new(HostExperimentsOptions {
++            is_dev_build:false, env_gate_overrides:None,
++        })), settings));
++    assert_eq!(inference.route(), InferenceRoute::Routed(RoutedProvider::Fabushi));
++
++    for case in ["profile", "log", "all-queued"] {
++        let workers = Arc::new(ProductionSessionWorkers::with_agents_root(root.join(case).join("agents"), 500));
++        let sessions = SandAgentSessionStore::new(workers.clone());
++        let agent = sessions.create_session(None, "user", None).unwrap();
++        drop(sessions);
++        workers.bind_memory_synthesis_gate();
++        let memory = workers.memory_service();
++        let target = ProductionSynthesisTarget {
++            agent_id:agent.id.clone(), store:memory.synthesis_target_for_agent(&agent.id).unwrap(),
++            service:memory.clone(),
++        };
++        let empty = target.prepare_synthesis().expect("healthy initial snapshot");
++        assert_eq!(target.apply_synthesis(&empty, &[
++            SynthesisChange::Create { content:PROFILE.into(), kind:MemoryKind::Profile },
++            SynthesisChange::Create { content:LOG.into(), kind:MemoryKind::Log },
++            SynthesisChange::Create { content:RETIRED.into(), kind:MemoryKind::Log },
++        ], NOW), SynthesisApplyResult::Committed);
++        workers.with_agent_admitted_filesystem_mutation(&agent.id, || {
++            target.store.add_memory(EXPLICIT, NOW, MemoryKind::Profile).map_err(|error| error.to_string())?;
++            target.store.remove_memory(&memory_id_for(RETIRED)).map_err(|error| error.to_string())?;
++            target.store.mark_temporal_review(NOW - MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS - 1)
++                .map_err(|error| error.to_string())
++        }).unwrap();
++        let healthy = target.prepare_synthesis().unwrap();
++        let directory = target.store.get_location();
++        let marker = fs::read(directory.join(REFRESH)).unwrap();
++        let admission = workers.read_session_work_admission(&agent.id).unwrap();
++        let reports = Arc::new(Mutex::new(Vec::<SynthesisReport>::new()));
++        let reported = reports.clone();
++        let allocations = Arc::new(AtomicUsize::new(0));
++        let allocated = allocations.clone();
++        let mut options = production_memory_synthesis_options(memory.clone(), inference.clone(), root.to_owned());
++        let actual_factory = options.job_factory.clone();
++        options.job_factory = Arc::new(move || {
++            allocated.fetch_add(1, Ordering::SeqCst);
++            actual_factory()
++        });
++        options.now = Arc::new(|| NOW);
++        options.deadline = Duration::from_secs(5);
++        options.retry_attempts = 1;
++        options.report = Some(Arc::new(move |report| reported.lock().unwrap().push(report)));
++        let synthesis = Arc::new(MemorySynthesisService::new(options));
++        let bridge: Arc<dyn MemorySynthesisBridge> = synthesis.clone();
++        memory.set_synthesis_bridge(Arc::downgrade(&bridge));
++        if case == "all-queued" { synthesis.start(); }
++        let profile = directory.join("profile.md");
++        let log = directory.join("log").join(format!("{}.md", &format_memory_date(NOW)[..7]));
++        let paths = match case {
++            "profile" => vec![profile],
++            "log" => vec![log],
++            _ => vec![profile, log],
++        };
++        let mut repairs = Vec::new();
++        for path in paths {
++            let original = fs::read(&path).unwrap();
++            let mut corrupt = original.clone();
++            corrupt.extend_from_slice(&[0xff, 0xfe]);
++            fs::write(&path, &corrupt).unwrap();
++            assert_eq!(fs::read(&path).unwrap(), corrupt);
++            assert_eq!(fs::read_to_string(&path).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
++            repairs.push((path, original));
++        }
++        if case != "all-queued" { synthesis.start(); }
++        // The wholly unreadable case has only the already queued temporal work.
++        if case != "all-queued" {
++            assert!(memory.record_memory_evidence(&agent.id, Some("snapshot-refused-evidence".into()),
++                "refused input", "refused reply", NOW));
++        }
++        let before = memory_tree(&directory);
++        assert_eq!(synthesis.run_now(), vec![SynthesisOutcome::Failed]);
++        assert_eq!(allocations.load(Ordering::SeqCst), 0, "refused acquisition allocates no real job");
++        assert_eq!(memory_tree(&directory), before);
++        assert_eq!(fs::read(directory.join(REFRESH)).unwrap(), marker);
++        assert!(target.is_temporal_review_due(NOW));
++        assert_eq!(workers.read_session_work_admission(&agent.id).unwrap(), admission);
++        assert_eq!(reports.lock().unwrap().as_slice(), &[SynthesisReport {
++            outcome:SynthesisReportOutcome::Failed, agent_id:Some(agent.id.clone()),
++            evidence_count:usize::from(case != "all-queued"), input_memory_count:0,
++            change_count:0, duration_ms:0,
++        }]);
++        assert!(synthesis.run_now().is_empty(), "refused acquisition settles without immediate replay");
++
++        for (path, bytes) in repairs { fs::write(path, bytes).expect("explicit owned repair"); }
++        assert_eq!(target.prepare_synthesis().unwrap(), healthy);
++        assert!(memory.record_memory_evidence(&agent.id, Some(format!("snapshot-repair-{case}")),
++            "The readable snapshot may now be reviewed.", "Acknowledged.", NOW));
++        assert_eq!(synthesis.run_now(), vec![SynthesisOutcome::Committed]);
++        assert_eq!(allocations.load(Ordering::SeqCst), 1);
++        assert_eq!(reports.lock().unwrap().len(), 2);
++        assert_eq!(reports.lock().unwrap()[1].outcome, SynthesisReportOutcome::Committed);
++        assert_eq!(reports.lock().unwrap()[1].evidence_count, 1);
++        let final_snapshot = target.prepare_synthesis().unwrap();
++        for original in &healthy.memories { assert!(final_snapshot.memories.contains(original)); }
++        let created = final_snapshot.memories.iter().filter(|record| record.content == CREATED).collect::<Vec<_>>();
++        assert_eq!(created.len(), 1);
++        assert_eq!(created[0].origin, MemoryOrigin::Synthesis);
++        assert!(directory.join(".dreaming/tombstones").join(format!("{}.deleted", memory_id_for(RETIRED))).is_file());
++        assert_eq!(fs::read(directory.join(REFRESH)).unwrap(),
++            format!("{}\n", NOW + MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS).into_bytes());
++        assert_eq!(workers.read_session_work_admission(&agent.id).unwrap(), admission);
++        assert!(synthesis.run_now().is_empty());
++        memory.clear_synthesis_bridge();
++        drop(bridge);
++        synthesis.dispose();
++        drop(synthesis);
++        workers.shutdown();
++        drop(target);
++        drop(memory);
++        let owner = Arc::downgrade(&workers);
++        drop(workers);
++        assert!(owner.upgrade().is_none(), "retire actual Session owners before terminal receipt");
++    }
++}
++
++#[test]
++fn production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers() {
++    const NAME: &str = "production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers";
++    let (_, module) = module_path!().split_once("::").unwrap();
++    let exact = format!("{module}::{NAME}");
++    if let Ok(selected) = std::env::var(CHILD_TEST) {
++        assert_eq!(selected, exact);
++        let root = PathBuf::from(std::env::var_os(CHILD_ROOT).unwrap());
++        run_child(&root);
++        private_write(&root.join("completed.json"), json!({
++            "test":exact,"nonce":std::env::var(CHILD_NONCE).unwrap(),
++            "pid":std::process::id(),"completed":true,
++        }).to_string().as_bytes());
++        return;
++    }
++    let root = std::env::temp_dir().join(format!("mssa-native-{}", uuid::Uuid::new_v4()));
++    let mut directory = fs::DirBuilder::new();
++    #[cfg(unix)]
++    {
++        use std::os::unix::fs::DirBuilderExt;
++        directory.mode(0o700);
++    }
++    directory.create(&root).unwrap();
++    for name in ["home", "profile", "codex", "tmp"] { fs::create_dir(root.join(name)).unwrap(); }
++    let mut peer = Peer::start(&root);
++    let nonce = uuid::Uuid::new_v4().to_string();
++    let stdout_path = root.join("stdout.log");
++    let stderr_path = root.join("stderr.log");
++    let mut command = Command::new(std::env::current_exe().unwrap());
++    command.env_clear();
++    // Cargo's dynamic-library paths and native loader roots are the only
++    // inherited inputs. Product/provider/root configuration is fixture-owned.
++    for key in ["PATH", "SystemRoot", "WINDIR", "LD_LIBRARY_PATH",
++        "DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH"] {
++        if let Some(value) = std::env::var_os(key) { command.env(key, value); }
++    }
++    command.args(["--exact", &exact, "--nocapture", "--test-threads=1"])
++        .env(CHILD_TEST, &exact).env(CHILD_ROOT, &root).env(CHILD_NONCE, &nonce)
++        .env("HOME", root.join("home")).env("USERPROFILE", root.join("profile"))
++        .env("CODEX_HOME", root.join("codex"))
++        .env("TMPDIR", root.join("tmp")).env("TEMP", root.join("tmp")).env("TMP", root.join("tmp"))
++        .env("FABUSHI_PRODUCT_MODE", "1").env("SAND_PACKAGED", "1")
++        .env("FABUSHI_RESPONSES_URL", &peer.endpoint)
++        .env("FABUSHI_HOST_ACCESS_CREDENTIAL_FILE", root.join("credential.json"))
++        .env("NO_PROXY", "*").env("no_proxy", "*")
++        .stdout(Stdio::from(File::create(&stdout_path).unwrap()))
++        .stderr(Stdio::from(File::create(&stderr_path).unwrap()));
++    let mut child = OwnedChild { process:command.spawn().unwrap(), terminal:false, retirement:None };
++    drop(command);
++    let pid = child.process.id();
++    let status = child.wait_bounded();
++    let peer_result = peer.finish();
++    let stdout = read_fixture_diagnostic(&stdout_path).unwrap_or_else(|error| {
++        panic!("MSSA stdout unavailable within bound; retained={}: {error}", root.display())
++    });
++    let stderr = read_fixture_diagnostic(&stderr_path).unwrap_or_else(|error| {
++        panic!("MSSA stderr unavailable within bound; retained={}: {error}", root.display())
++    });
++    assert!(matches!(&status, Ok(status) if status.success()) && peer_result.is_ok(),
++        "MSSA child/peer failed: child={status:?}; peer={peer_result:?}; retained={}\n{stdout}\n{stderr}",
++        root.display());
++    assert!(child.terminal);
++    let receipt_bytes = read_bounded_fixture_file(&root.join("completed.json"), 16 * 1024)
++        .unwrap_or_else(|error| {
++            panic!("MSSA terminal receipt unavailable within bound; retained={}: {error}", root.display())
++        });
++    let receipt: Value = serde_json::from_slice(&receipt_bytes).expect("valid bounded terminal receipt");
++    assert_eq!(receipt, json!({"test":exact,"nonce":nonce,"pid":pid,"completed":true}));
++    for sensitive in [TOKEN, PROFILE, LOG, EXPLICIT] {
++        assert!(!stdout.contains(sensitive) && !stderr.contains(sensitive),
++            "successful fixture diagnostics must not expose private data");
++    }
++    let requests = peer.requests.lock().unwrap();
++    assert_eq!(requests.len(), 6, "exactly proposal + verification after each of three repairs");
++    for (index, case) in ["profile", "log", "all-queued"].iter().enumerate() {
++        let proposal = &requests[index * 2];
++        let verification = &requests[index * 2 + 1];
++        assert!(!proposal.verify && verification.verify);
++        assert_eq!(proposal.evidence, format!("snapshot-repair-{case}"));
++        assert_eq!(verification.evidence, proposal.evidence);
++        assert_eq!(proposal.payload["currentMemories"], verification.payload["currentMemories"]);
++    }
++    drop(requests);
++    drop(peer);
++    drop(child);
++    fs::remove_dir_all(root).expect("strict cleanup after owned process and peer termination");
++}
+diff --git a/source/host/tests/memory_synthesis_store_contract.rs b/source/host/tests/memory_synthesis_store_contract.rs
+index d0c2545e3aff1461578be30d76e931eff96f7452..2546fa0c7de4b596fbfd539af7fc5cbbd5a03ddd 100644
+--- a/source/host/tests/memory_synthesis_store_contract.rs
++++ b/source/host/tests/memory_synthesis_store_contract.rs
+@@ -85,7 +85,7 @@
+ 
+ impl Drop for SynthesisAppendFixture {
+     fn drop(&mut self) {
+-        let _ = fs::remove_dir_all(&self.root);
++        fs::remove_dir_all(&self.root).expect("remove owned synthesis append fixture");
+     }
+ }
+ 
+@@ -410,4 +410,147 @@
+     );
+     assert_eq!(store.count_memories(), 0);
+     let _ = fs::remove_dir_all(root);
++}
++
++#[test]
++fn checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection() {
++    let (root, store) = temp_store();
++    let absent = store.prepare_synthesis_checked().expect("genuinely absent inputs");
++    assert_eq!(absent, store.prepare_synthesis());
++    assert!(!store.get_location().exists(), "acquisition must not create Memory");
++    fs::create_dir_all(store.get_location().join("log")).unwrap();
++    fs::write(store.get_location().join("profile.md"), b"").unwrap();
++    assert_eq!(store.prepare_synthesis_checked().unwrap(), absent);
++    store.add_memory("Explicit Unicode 中文 🦀 \u{fffd}", 1_700_000_000_000, MemoryKind::Profile).unwrap();
++    let profile = store.get_location().join("profile.md");
++    let mut raw = fs::read_to_string(&profile).unwrap();
++    raw.push_str("- (2023-11-12) Older profile\ninvalid fact\n- (2023-99-99) Invalid date\n");
++    fs::write(&profile, &raw).unwrap();
++    fs::write(store.get_location().join("log/2023-10.md"),
++        "- (2023-10-01) Repeated log\n- (2023-10-02) Older log\n").unwrap();
++    fs::write(store.get_location().join("log/2023-11.md"),
++        "- (2023-11-01) Repeated log\n- (2023-11-02) Newer log\n").unwrap();
++    fs::create_dir(store.get_location().join("log/ignored")).unwrap();
++    fs::write(store.get_location().join("log/ignored.bin"), [0xff]).unwrap();
++    let checked = store.prepare_synthesis_checked().unwrap();
++    assert_eq!(checked, store.prepare_synthesis(), "same fingerprint, parser, ranking and dedup");
++    assert_eq!(checked, store.prepare_synthesis_checked().unwrap());
++    assert_eq!(checked.memories.iter().map(|record| record.content.as_str()).collect::<Vec<_>>(),
++        vec!["Explicit Unicode 中文 🦀 \u{fffd}", "Older profile", "Newer log", "Repeated log", "Older log"]);
++    assert_eq!(checked.memories[0].origin, MemoryOrigin::Explicit);
++    raw.push_str("<!-- fingerprint retains even unparsed raw content -->\n");
++    fs::write(&profile, raw).unwrap();
++    let changed = store.prepare_synthesis_checked().unwrap();
++    assert_ne!(changed.fingerprint, checked.fingerprint);
++    assert_eq!(changed.memories, checked.memories);
++    drop(store);
++    fs::remove_dir_all(root).expect("remove owned snapshot projection fixture");
++}
++
++#[test]
++fn checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers() {
++    for relative in ["profile.md", "log/2026-09.md"] {
++        let fixture = SynthesisAppendFixture::new();
++        let original = fixture.store.prepare_synthesis_checked().unwrap();
++        let (path, repaired, observed_error) = fixture.corrupt_destination(relative);
++        let before = synthesis_memory_tree(&fixture.store.get_location());
++        let error = fixture.store.prepare_synthesis_checked().unwrap_err();
++        assert_eq!(error.kind(), observed_error.kind());
++        assert_eq!(error.raw_os_error(), observed_error.raw_os_error());
++        let reopened = FileMemoryStore::with_synthesis_metadata(fixture.store.get_location(), true);
++        assert_eq!(reopened.prepare_synthesis_checked().unwrap_err().kind(), observed_error.kind());
++        assert_eq!(synthesis_memory_tree(&fixture.store.get_location()), before);
++        fs::write(path, repaired).expect("explicit fixture repair");
++        assert_eq!(fixture.store.prepare_synthesis_checked().unwrap(), original);
++        assert_eq!(reopened.prepare_synthesis_checked().unwrap(), original);
++    }
++}
++
++#[test]
++fn checked_synthesis_snapshot_reads_beyond_the_input_limit() {
++    use mahayana_host_runtime::extensions::memory::memory_service::MEMORY_SYNTHESIS_INPUT_LIMIT;
++    let (root, store) = temp_store();
++    fs::create_dir_all(store.get_location().join("log")).unwrap();
++    let profile = (0..MEMORY_SYNTHESIS_INPUT_LIMIT + 1)
++        .map(|index| format!("- (2023-11-14) Profile fact {index}\n")).collect::<String>();
++    fs::write(store.get_location().join("profile.md"), profile).unwrap();
++    let older = store.get_location().join("log/2000-01.md");
++    let repaired = b"- (2000-01-01) Older selected fact\n";
++    fs::write(&older, repaired).unwrap();
++    let healthy = store.prepare_synthesis_checked().unwrap();
++    assert_eq!(healthy.memories.len(), MEMORY_SYNTHESIS_INPUT_LIMIT);
++    assert!(healthy.memories.iter().all(|record| record.kind == MemoryKind::Profile));
++    let mut corrupt = repaired.to_vec();
++    corrupt.push(0xff);
++    fs::write(&older, &corrupt).unwrap();
++    assert_eq!(fs::read_to_string(&older).unwrap_err().kind(), io::ErrorKind::InvalidData);
++    let before = synthesis_memory_tree(&store.get_location());
++    assert_eq!(store.prepare_synthesis_checked().unwrap_err().kind(), io::ErrorKind::InvalidData);
++    assert_eq!(synthesis_memory_tree(&store.get_location()), before);
++    fs::write(older, repaired).unwrap();
++    assert_eq!(store.prepare_synthesis_checked().unwrap(), healthy);
++    drop(store);
++    fs::remove_dir_all(root).expect("remove owned bounded-input fixture");
++}
++
++#[test]
++fn checked_synthesis_snapshot_refuses_native_type_obstacles() {
++    for obstacle in ["profile", "log-root", "selected-log", "ancestor"] {
++        let (root, store) = temp_store();
++        let memory = store.get_location();
++        fs::create_dir_all(&memory).unwrap();
++        match obstacle {
++            "profile" => {
++                fs::create_dir(memory.join("profile.md")).unwrap();
++                fs::write(memory.join("profile.md/untouched"), b"owned sentinel").unwrap();
++            }
++            "log-root" => { fs::write(memory.join("log"), b"owned sentinel").unwrap(); }
++            "selected-log" => {
++                fs::create_dir_all(memory.join("log/selected.md")).unwrap();
++                fs::write(memory.join("log/selected.md/untouched"), b"owned sentinel").unwrap();
++            }
++            "ancestor" => {
++                fs::remove_dir(&memory).unwrap();
++                fs::write(&memory, b"owned ancestor sentinel").unwrap();
++            }
++            _ => unreachable!(),
++        }
++        let before = synthesis_memory_tree(&memory);
++        assert!(store.prepare_synthesis_checked().is_err(), "{obstacle} must refuse");
++        assert_eq!(synthesis_memory_tree(&memory), before);
++        if memory.is_dir() { fs::remove_dir_all(&memory).unwrap(); }
++        else { fs::remove_file(&memory).unwrap(); }
++        assert!(store.prepare_synthesis_checked().unwrap().memories.is_empty());
++        assert!(!memory.exists(), "successful missing input remains read-only");
++        drop(store);
++        fs::remove_dir_all(root).expect("remove owned native obstacle fixture");
++    }
++}
++
++#[cfg(unix)]
++#[test]
++fn checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs() {
++    use std::os::unix::fs::symlink;
++    for relative in ["profile.md", "log/linked.md"] {
++        let (root, store) = temp_store();
++        fs::create_dir_all(store.get_location().join("log")).unwrap();
++        let owned_target = root.join("owned-target.md");
++        let link = store.get_location().join(relative);
++        let raw = b"- (2023-11-14) Readable symlink fact\n";
++        fs::write(&owned_target, raw).unwrap();
++        symlink(&owned_target, &link).unwrap();
++        let healthy = store.prepare_synthesis_checked().unwrap();
++        assert_eq!(healthy, store.prepare_synthesis());
++        assert_eq!(healthy.memories.len(), 1);
++        fs::remove_file(&owned_target).unwrap();
++        assert!(fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
++        assert!(store.prepare_synthesis_checked().is_err());
++        assert_eq!(fs::read_link(&link).unwrap(), owned_target);
++        assert!(!owned_target.exists());
++        fs::write(&owned_target, raw).unwrap();
++        assert_eq!(store.prepare_synthesis_checked().unwrap(), healthy);
++        assert_eq!(fs::read(&owned_target).unwrap(), raw);
++        drop(store);
++        fs::remove_dir_all(root).expect("remove owned symlink fixture");
++    }
+ }
+diff --git a/source/host/tests/memory_synthesis_service_contract.rs b/source/host/tests/memory_synthesis_service_contract.rs
+index 6460a1ad9e930819c93bd0584329f4bdf1efcfd6..03ef1e198da5a98adcce5726f3b1fef6a677ea1f 100644
+--- a/source/host/tests/memory_synthesis_service_contract.rs
++++ b/source/host/tests/memory_synthesis_service_contract.rs
+@@ -4,10 +4,12 @@
+ use std::sync::{Arc, Mutex, Weak, mpsc};
+ use std::time::Duration;
+ 
+-use mahayana_host_runtime::extensions::memory::memory_service::{FileMemoryStore, MemoryKind};
++use mahayana_host_runtime::extensions::memory::memory_service::{
++    FileMemoryStore, MemoryKind, SynthesisApplyResult, SynthesisChange, SynthesisSnapshot,
++};
+ use mahayana_host_runtime::extensions::memory::memory_synthesis_service::{
+     MEMORY_SYNTHESIS_DEADLINE_MS, MEMORY_SYNTHESIS_DEBOUNCE_MS,
+-    MEMORY_SYNTHESIS_POLL_INTERVAL_MS, MemoryEvidence, MemorySynthesisOptions,
++    MEMORY_SYNTHESIS_POLL_INTERVAL_MS, MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS, MemoryEvidence, MemorySynthesisOptions,
+     MemorySynthesisService, SynthesisInferenceError, SynthesisModelJob, SynthesisOutcome,
+     SynthesisReportOutcome, SynthesisTarget,
+     bounded_evidence_text, parse_memory_synthesis_changes, synthesis_request_json,
+@@ -478,4 +480,139 @@
+     assert!(service.run_now().is_empty());
+     service.dispose();
+     fs::remove_dir_all(root).unwrap();
++}
++
++struct BlockedSnapshotTarget {
++    store: Arc<FileMemoryStore>,
++    entered: mpsc::SyncSender<()>,
++    release: Mutex<mpsc::Receiver<()>>,
++    block_once: AtomicBool,
++    applies: Arc<AtomicUsize>,
++    reviews: Arc<AtomicUsize>,
++}
++
++impl SynthesisTarget for BlockedSnapshotTarget {
++    fn prepare_synthesis(&self) -> std::io::Result<SynthesisSnapshot> {
++        if self.block_once.swap(false, Ordering::SeqCst) {
++            self.entered.send(()).expect("announce actual read boundary");
++            self.release.lock().unwrap().recv_timeout(Duration::from_secs(5))
++                .expect("release owned read boundary");
++        }
++        self.store.prepare_synthesis_checked()
++    }
++
++    fn apply_synthesis(&self, snapshot: &SynthesisSnapshot, changes: &[SynthesisChange],
++        now: i64) -> SynthesisApplyResult {
++        self.applies.fetch_add(1, Ordering::SeqCst);
++        self.store.apply_synthesis(snapshot, changes, now).unwrap_or(SynthesisApplyResult::Failed)
++    }
++
++    fn has_memories(&self) -> bool { self.store.has_memories() }
++    fn is_temporal_review_due(&self, now: i64) -> bool { self.store.is_temporal_review_due(now) }
++    fn mark_temporal_review(&self, now: i64) {
++        self.reviews.fetch_add(1, Ordering::SeqCst);
++        self.store.mark_temporal_review(now).unwrap();
++    }
++}
++
++fn blocked_snapshot_read(cancel: bool) {
++    let (root, store) = temp_store();
++    let now = 1_700_000_000_000;
++    store.add_memory("Complete readable snapshot fact", now, MemoryKind::Profile).unwrap();
++    store.mark_temporal_review(now - MEMORY_SYNTHESIS_REFRESH_INTERVAL_MS - 1).unwrap();
++    let profile = store.get_location().join("profile.md");
++    let marker = store.get_location().join(".dreaming/next-refresh-at");
++    let repaired = fs::read(&profile).unwrap();
++    let review_bytes = fs::read(&marker).unwrap();
++    let (entered_tx, entered_rx) = mpsc::sync_channel(1);
++    let (release_tx, release_rx) = mpsc::sync_channel(1);
++    let applies = Arc::new(AtomicUsize::new(0));
++    let reviews = Arc::new(AtomicUsize::new(0));
++    let target: Arc<dyn SynthesisTarget> = Arc::new(BlockedSnapshotTarget {
++        store: store.clone(), entered: entered_tx, release: Mutex::new(release_rx),
++        block_once: AtomicBool::new(true), applies: applies.clone(), reviews: reviews.clone(),
++    });
++    let listed = target.clone();
++    let selected = target.clone();
++    let factories = Arc::new(AtomicUsize::new(0));
++    let allocated = factories.clone();
++    let requests = Arc::new(Mutex::new(Vec::new()));
++    let proposed = requests.clone();
++    let mut options = MemorySynthesisOptions::new_with_job_factory(
++        Arc::new(move || vec![("agent".into(), listed.clone())]),
++        Arc::new(move |id| (id == "agent").then(|| selected.clone())),
++        Arc::new(move || {
++            allocated.fetch_add(1, Ordering::SeqCst);
++            let proposed = proposed.clone();
++            SynthesisModelJob::new(Arc::new(move |request, _| {
++                proposed.lock().unwrap().push(request);
++                Ok(json!({"changes":[]}))
++            }), Some(Arc::new(|_, _| panic!("empty proposal does not verify"))))
++        }),
++    );
++    options.now = Arc::new(move || now);
++    options.retry_attempts = 3;
++    let reports = Arc::new(Mutex::new(Vec::new()));
++    let reported = reports.clone();
++    options.report = Some(Arc::new(move |report| reported.lock().unwrap().push(report)));
++    let service = Arc::new(MemorySynthesisService::new(options));
++    service.start();
++    service.record_turn("agent", Some("refused-evidence".into()), "first user", "first reply", now);
++    let running = service.clone();
++    let worker = std::thread::spawn(move || running.run_now());
++    entered_rx.recv_timeout(Duration::from_secs(5)).expect("owned acquisition entered");
++    let mut corrupt = repaired.clone();
++    corrupt.push(0xff);
++    fs::write(&profile, &corrupt).unwrap();
++    assert_eq!(fs::read_to_string(&profile).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
++    service.record_turn("agent", Some("concurrent-evidence".into()), "later user", "later reply", now);
++    if cancel { service.dispose(); }
++    release_tx.send(()).unwrap();
++    assert_eq!(worker.join().expect("owned acquisition worker"),
++        vec![if cancel { SynthesisOutcome::NoWork } else { SynthesisOutcome::Failed }]);
++    assert_eq!(factories.load(Ordering::SeqCst), 0);
++    assert!(requests.lock().unwrap().is_empty());
++    assert_eq!(applies.load(Ordering::SeqCst), 0);
++    assert_eq!(reviews.load(Ordering::SeqCst), 0);
++    assert_eq!(fs::read(&profile).unwrap(), corrupt);
++    assert_eq!(fs::read(&marker).unwrap(), review_bytes);
++    assert!(store.is_temporal_review_due(now));
++    if cancel {
++        assert!(reports.lock().unwrap().is_empty(), "cancelled acquisition cannot report Failed");
++        assert!(service.run_now().is_empty());
++    } else {
++        let report = reports.lock().unwrap()[0].clone();
++        assert_eq!(report.outcome, SynthesisReportOutcome::Failed);
++        assert_eq!((report.evidence_count, report.input_memory_count, report.change_count), (1, 0, 0));
++        assert_eq!(reports.lock().unwrap().len(), 1);
++        fs::write(&profile, &repaired).expect("explicit repair after read refusal");
++        assert_eq!(service.run_now(), vec![SynthesisOutcome::NoWork]);
++        let requests = requests.lock().unwrap();
++        assert_eq!(requests.len(), 1);
++        assert_eq!(requests[0].new_evidence.iter().map(|item| item.id.as_str()).collect::<Vec<_>>(),
++            vec!["concurrent-evidence"], "only captured evidence settles on refusal");
++        assert_eq!(requests[0].current_memories.len(), 1);
++        assert_eq!(requests[0].current_memories[0].content, "Complete readable snapshot fact");
++        drop(requests);
++        assert_eq!(factories.load(Ordering::SeqCst), 1);
++        assert_eq!(reports.lock().unwrap()[1].outcome, SynthesisReportOutcome::NoWork);
++        assert!(service.run_now().is_empty(), "neither failed nor repaired attempt replays");
++        assert_eq!(fs::read(&marker).unwrap(), review_bytes,
++            "later evidence-only NoWork retains the existing temporal settlement policy");
++    }
++    service.dispose();
++    drop(service);
++    drop(target);
++    drop(store);
++    fs::remove_dir_all(root).expect("remove retired acquisition fixture");
++}
++
++#[test]
++fn snapshot_read_refusal_settles_only_captured_evidence_and_recovers() {
++    blocked_snapshot_read(false);
++}
++
++#[test]
++fn snapshot_read_cancellation_suppresses_failure_and_model_work() {
++    blocked_snapshot_read(true);
+ }
+diff --git a/projects/openclaw-rust/scripts/capture_portable_contracts.py b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+index 0a53c7f781189b145e67b2c64b56d8dd9f3ac34a..c63851a254b26a5a841dd07f2d8e37e4694b2ecc 100644
+--- a/projects/openclaw-rust/scripts/capture_portable_contracts.py
++++ b/projects/openclaw-rust/scripts/capture_portable_contracts.py
+@@ -1,6 +1,6 @@
+ import hashlib, json, os, pathlib, re, subprocess
+ validation_scope = os.environ.get("OCRM_PORTABLE_SCOPE", "full")
+-if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
++if validation_scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation", "memory-synthesis-snapshot"):
+     raise ValueError("Unknown portable contract scope")
+ root = (pathlib.Path(".evidence") / validation_scope if validation_scope != "full"
+     else pathlib.Path(".evidence/sqlite-native-path/channel-pending-recovery"))
+@@ -416,7 +416,42 @@
+     "source/host/app/src/main.rs",
+     "source/host/tests/device_pairing_join_admission_contract.rs"
+ ]
+-inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs) | set(djc_reader_observation_inputs))
++memory_synthesis_snapshot_inputs = [
++    "projects/openclaw-rust/upstream.lock.json",
++    "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++    "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
++    "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
++    "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
++    "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
++    ".github/workflows/rust-desktop-runtime.yml",
++    "projects/openclaw-rust/scripts/capture_portable_contracts.py",
++    "source/host/Cargo.toml",
++    "source/host/Cargo.lock",
++    "source/host/app/Cargo.toml",
++    "source/host/app/Cargo.lock",
++    "source/host/app/src/main.rs",
++    "source/host/src/extensions/memory/memory_service.rs",
++    "source/host/src/extensions/memory/memory_synthesis_service.rs",
++    "source/host/src/extensions/memory/production.rs",
++    "source/host/src/extensions/memory/production_append_read_tests.rs",
++    "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
++    "source/host/src/extensions/memory/production_identity_tests.rs",
++    "source/host/src/extensions/memory/extension.rs",
++    "source/host/src/host_production_extensions.rs",
++    "source/host/src/extensions/session/production.rs",
++    "source/host/src/extensions/inference/production.rs",
++    "source/host/src/extensions/inference/summary_job.rs",
++    "source/host/tests/memory_service_contract.rs",
++    "source/host/tests/memory_synthesis_store_contract.rs",
++    "source/host/tests/memory_synthesis_service_contract.rs",
++    "source/host/src/watched_directory.rs",
++    "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs",
++    "source/host/src/extensions/inference/provider_session.rs",
++    "source/host/src/extensions/inference/codex_request_binding.rs",
++    "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
++    "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
++]
++inputs = sorted(set(inputs) | set(box_response_inputs) | set(local_exec_outcome_inputs) | set(plugin_admission_lock_inputs) | set(memory_checked_list_inputs) | set(djc_reader_observation_inputs) | set(memory_synthesis_snapshot_inputs))
+ base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
+ integration = base + ["--no-fail-fast"]
+ for target in ("durable_recovery_stores_contract", "pending_wake_rearm_contract",
+@@ -1792,6 +1827,114 @@
+         for name in required:
+             if name not in matches[0][2]:
+                 matches[0][2].append(name)
++# MSSA-v1 extends existing full-plan parents; no second runtime or runner.
++memory_synthesis_snapshot_store_names = [
++    "synthesis_create_read_errors_preserve_memory_and_metadata",
++    "synthesis_cross_kind_update_read_errors_preserve_source_and_metadata",
++    "synthesis_batch_preflights_later_append_before_earlier_remove",
++    "explicit_memories_are_protected_from_synthesis_updates_and_removals",
++    "synthesis_create_update_remove_round_trip_marks_origin_and_temporal_review",
++    "stale_snapshot_cannot_commit_and_user_deletion_tombstones_recreation",
++    "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
++    "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
++    "checked_synthesis_snapshot_reads_beyond_the_input_limit",
++    "checked_synthesis_snapshot_refuses_native_type_obstacles",
++    "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
++]
++memory_synthesis_snapshot_service_names = [
++    "parser_rejects_unknown_evidence_and_clock_only_creation",
++    "proposal_and_verification_commit_through_synthesis_target",
++    "verifier_rejection_does_not_commit_and_retryable_failures_stop_at_bound",
++    "evidence_bounding_keeps_both_ends",
++    "frozen_synthesis_prompts_and_wire_payloads_are_preserved",
++    "frozen_production_scheduling_constants_are_enforced",
++    "synthesis_deadline_cancels_verification_and_reports_terminal_failure",
++    "typed_identity_refusals_settle_without_retry_or_temporal_review",
++    "one_snapshot_factory_survives_worker_timeout_and_retry",
++    "stale_resnapshot_allocates_new_job_and_preserves_concurrent_evidence",
++    "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
++    "snapshot_read_cancellation_suppresses_failure_and_model_work"
++]
++memory_synthesis_snapshot_codex_names = [
++    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retains_snapshot_model_route_and_rotating_token",
++    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_rejects_workspace_change_before_verification_and_recovers",
++    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_retries_share_identity_and_refuse_recapture",
++    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_temporal_refusal_preserves_metadata",
++    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_dispose_during_proposal_stops_verification",
++    "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::memory_synthesis_codex_admission_deadline_retains_identity_and_sticky_refusal"
++]
++memory_synthesis_snapshot_production_names = [
++    "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
++]
++memory_synthesis_snapshot_parents = {
++    "memory-checked-list-store": "integration",
++    "memory-synthesis-snapshot-store": "integration",
++    "memory-synthesis-snapshot-service": "integration",
++    "production-memory-synthesis": "production-memory-synthesis",
++    "memory-synthesis-identity": "memory-synthesis-identity",
++    "memory-synthesis-snapshot-codex": "codex-workspace-http",
++    "memory-synthesis-snapshot-production": "memory-synthesis-snapshot-production",
++}
++memory_synthesis_snapshot_expected_counts = {"unix": 63, "windows": 61}
++memory_synthesis_snapshot_retained = {
++    label: (label, list(command), list(required))
++    for label, command, required in cases
++    if label in ("production-memory-synthesis", "memory-synthesis-identity")
++}
++
++def memory_synthesis_snapshot_plan(platform):
++    if platform not in memory_synthesis_snapshot_expected_counts:
++        raise ValueError("Unsupported synthesis snapshot native platform")
++    native_store = [row for row in memory_checked_list_plan(platform)
++        if row[0] == "memory-checked-list-store"]
++    if len(native_store) != 1:
++        raise ValueError("Synthesis snapshot needs the complete existing native store target")
++    store_names = [name for name in memory_synthesis_snapshot_store_names
++        if platform == "unix"
++        or name != "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"]
++    selected = native_store + [
++        ("memory-synthesis-snapshot-store", base + ["--test",
++            "memory_synthesis_store_contract", "--", "--test-threads=1"], store_names),
++        ("memory-synthesis-snapshot-service", base + ["--test",
++            "memory_synthesis_service_contract", "--", "--test-threads=1"],
++            list(memory_synthesis_snapshot_service_names)),
++        memory_synthesis_snapshot_retained["production-memory-synthesis"],
++        memory_synthesis_snapshot_retained["memory-synthesis-identity"],
++        ("memory-synthesis-snapshot-codex", base + ["--lib",
++            "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::", "--", "--test-threads=1"],
++            list(memory_synthesis_snapshot_codex_names)),
++        ("memory-synthesis-snapshot-production", base + ["--lib",
++            "extensions::memory::production::snapshot_read_tests::", "--", "--test-threads=1"],
++            list(memory_synthesis_snapshot_production_names)),
++    ]
++    expected = memory_synthesis_snapshot_expected_counts[platform]
++    if (len(selected) != 7 or len({row[0] for row in selected}) != 7
++        or sum(len(row[2]) for row in selected) != expected
++        or len({name for _, _, required in selected for name in required}) != expected):
++        raise ValueError("Synthesis snapshot plan is incomplete or duplicated")
++    return [(label, list(command), list(required)) for label, command, required in selected]
++
++memory_synthesis_snapshot_cases = memory_synthesis_snapshot_plan(memory_checked_list_native_platform)
++memory_synthesis_snapshot_required = {
++    label: tuple(required) for label, _, required in memory_synthesis_snapshot_cases}
++memory_synthesis_snapshot_filtered = {
++    "production-memory-synthesis", "memory-synthesis-identity",
++    "memory-synthesis-snapshot-codex", "memory-synthesis-snapshot-production",
++}
++for label, command, required in memory_synthesis_snapshot_cases:
++    parent = memory_synthesis_snapshot_parents[label]
++    matches = [case for case in cases if case[0] == parent]
++    if parent == label and not matches:
++        cases.append((label, command, required))
++    else:
++        if len(matches) != 1:
++            raise ValueError("Synthesis snapshot lost a unique full-plan parent")
++        if parent == label and (matches[0][1] != command or matches[0][2] != required):
++            raise ValueError("Synthesis snapshot changed a retained parent")
++        for name in required:
++            if name not in matches[0][2]:
++                matches[0][2].append(name)
++
+ full_cases = list(cases)
+ memory_checked_list_parent_contracts = {
+     label: (tuple(command), tuple(required))
+@@ -1799,6 +1942,12 @@
+     if label in set(memory_checked_list_parents.values())
+ }
+ 
++memory_synthesis_snapshot_parent_contracts = {
++    label: (tuple(command), tuple(required))
++    for label, command, required in full_cases
++    if label in set(memory_synthesis_snapshot_parents.values())
++}
++
+ custody_box_labels = (
+     "box-response-manager", "box-response-codec", "box-response-runner-bridge",
+     "box-response-spill", "box-response-prompt-glue", "box-response-manager-exhaustion",
+@@ -1853,11 +2002,24 @@
+ 
+ 
+ def select_portable_cases(scope, declared):
+-    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation"):
++    if scope not in ("full", "custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-fixture-lifecycle", "djc-reader-observation", "memory-synthesis-snapshot"):
+         raise ValueError("Unknown portable contract scope")
+     indexed = {label: (label, command, required) for label, command, required in declared}
+     if len(indexed) != len(declared):
+         raise ValueError("Duplicate portable case label")
++    if scope == "memory-synthesis-snapshot":
++        for parent, expected in memory_synthesis_snapshot_parent_contracts.items():
++            if parent not in indexed:
++                raise ValueError("Synthesis snapshot lost a full-plan parent")
++            _, command, required = indexed[parent]
++            if (tuple(command), tuple(required)) != expected:
++                raise ValueError("Synthesis snapshot parent command or names drifted")
++        selected = memory_synthesis_snapshot_plan(memory_checked_list_native_platform)
++        for label, _, names in selected:
++            required = indexed[memory_synthesis_snapshot_parents[label]][2]
++            if any(required.count(name) != 1 for name in names):
++                raise ValueError("Synthesis snapshot needs each exact parent name once")
++        return selected
+     if scope == "djc-reader-observation":
+         if "device-pairing-join" not in indexed:
+             raise ValueError("DJC reader observation lost its complete parent target")
+@@ -2113,10 +2275,57 @@
+         {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
+     assert actual == expected, f"MGL fixture platform plan failed: {platform}"
+ 
++memory_synthesis_snapshot_selection_controls = []
++memory_synthesis_snapshot_variants = [
++    ("qualified-snapshot-plan", full_cases, True),
++    ("duplicate-parent-label", full_cases + [full_cases[0]], False),
++]
++for parent in memory_synthesis_snapshot_parent_contracts:
++    memory_synthesis_snapshot_variants.extend([
++        ("missing-parent:" + parent, [case for case in full_cases if case[0] != parent], False),
++        ("changed-parent-command:" + parent,
++            [(label, command + ["--foreign"], required) if label == parent
++                else (label, command, required) for label, command, required in full_cases], False),
++    ])
++for label, _, names in memory_synthesis_snapshot_cases:
++    parent = memory_synthesis_snapshot_parents[label]
++    for name in names:
++        memory_synthesis_snapshot_variants.extend([
++            ("missing-positive:" + name,
++                [(item, command, [value for value in required if value != name])
++                    if item == parent else (item, command, required)
++                    for item, command, required in full_cases], False),
++            ("duplicate-positive:" + name,
++                [(item, command, required + [name]) if item == parent
++                    else (item, command, required) for item, command, required in full_cases], False),
++        ])
++for control, declared, expected in memory_synthesis_snapshot_variants:
++    try:
++        selected = select_portable_cases("memory-synthesis-snapshot", declared)
++        actual = selected == memory_synthesis_snapshot_cases
++    except ValueError:
++        actual = False
++    memory_synthesis_snapshot_selection_controls.append(
++        {"case": control, "expected": expected, "actual": actual})
++    assert actual == expected, f"MSSA selection oracle failed: {control}"
++for platform, expected in [("unix", True), ("windows", True), ("foreign", False)]:
++    try:
++        selected = memory_synthesis_snapshot_plan(platform)
++        names = {name for _, _, required in selected for name in required}
++        actual = (len(selected) == 7
++            and len(names) == memory_synthesis_snapshot_expected_counts[platform]
++            and ("checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
++                in names) == (platform == "unix"))
++    except ValueError:
++        actual = False
++    memory_synthesis_snapshot_selection_controls.append(
++        {"case": "native-platform-plan:" + platform, "expected": expected, "actual": actual})
++    assert actual == expected, f"MSSA platform plan failed: {platform}"
++
+ for selected_scope, expected in [("full", True), ("custody-recovery", True),
+     ("background-custody", True), ("background-custody-recovery", True),
+     ("memory-checked-list", False), ("memory-fixture-lifecycle", False),
+-    ("djc-reader-observation", False)]:
++    ("djc-reader-observation", False), ("memory-synthesis-snapshot", False)]:
+     actual = any(label.startswith("box-response-")
+         for label, _, _ in select_portable_cases(selected_scope, full_cases))
+     selection_controls.append({"case": "box-producer-required-" + selected_scope,
+@@ -2508,7 +2717,17 @@
+ djc_reader_inputs_before = source_bindings(djc_reader_observation_inputs)
+ assert all(item["matches_head_bytes"] for item in djc_reader_inputs_before.values()), "DJC reader source input differs from exact H"
+ 
++memory_synthesis_snapshot_inputs_before = source_bindings(memory_synthesis_snapshot_inputs)
++assert all(item["matches_head_bytes"] for item in memory_synthesis_snapshot_inputs_before.values()), "MSSA source input differs from exact H"
++
+ receipt = {
++    "memory_synthesis_snapshot_contract": "MSSA-v1",
++    "memory_synthesis_snapshot_selected_here": validation_scope in ("full", "memory-synthesis-snapshot"),
++    "memory_synthesis_snapshot_expected_positive_count": memory_synthesis_snapshot_expected_counts[memory_checked_list_native_platform],
++    "memory_synthesis_snapshot_required_names": {label: list(names)
++        for label, names in memory_synthesis_snapshot_required.items()},
++    "memory_synthesis_snapshot_selection_controls": memory_synthesis_snapshot_selection_controls,
++    "memory_synthesis_snapshot_inputs_before": memory_synthesis_snapshot_inputs_before,
+     "djc_reader_observation_contract": "DJC-09",
+     "djc_reader_observation_selected_here": validation_scope == "djc-reader-observation",
+     "djc_reader_selection_controls": djc_reader_selection_controls,
+@@ -2674,10 +2893,29 @@
+         "reason": "Only the retained reader fixture/observation instrument changes; compile its exact integration target.",
+     }
+ 
++if validation_scope == "memory-synthesis-snapshot":
++    receipt["scope"] = ("MSSA-v1: checked complete-before-projection synthesis acquisition, existing "
++        "Failed/cancellation/evidence settlement, unchanged durable bytes, actual Native production "
++        "factory and Session-gated recovery, retained write-stage refusal and Native/Codex identity "
++        "controls. Three complete integration targets and four private module groups; 63 Unix or "
++        "61 Windows exact names. Ordinary prompt reads, concurrent filesystem snapshots, metadata "
++        "error classification, durable synthesis restart, real providers and full Memory/platform "
++        "package/OCRM acceptance remain open. Requirement metadata is not execution evidence.")
++    if os.name == "nt":
++        receipt["shipping_host_verification"] = {
++            "result": "not-executed", "accepted": False,
++            "reason": "Windows shipping App signal-hook repair remains a separate Host lifecycle batch; this job compiles and runs the selected Host library consumers.",
++        }
++
+ # RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
+ # the complete Host test graph once; this is a compile gate, not test evidence.
+ constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
+-if validation_scope == "djc-reader-observation":
++if validation_scope == "memory-synthesis-snapshot":
++    constructor_command = constructor_command[:-1] + ["--lib"]
++    for target in ("memory_service_contract", "memory_synthesis_store_contract",
++        "memory_synthesis_service_contract"):
++        constructor_command.extend(["--test", target])
++elif validation_scope == "djc-reader-observation":
+     constructor_command = constructor_command[:-1] + ["--test", "device_pairing_join_admission_contract"]
+ elif validation_scope == "memory-fixture-lifecycle":
+     constructor_command = constructor_command[:-1]
+@@ -2903,6 +3141,10 @@
+         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_TEST_BIN"] = str(daemon_binary)
+     if label in ("box-response-shell-capture-consumer", "box-response-background-custody-consumer") and capture_passed:
+         child_environment_overrides["FABUSHI_BOX_EXEC_DAEMON_CAPTURE_TEST_BIN"] = str(capture_binary)
++    if label in memory_synthesis_snapshot_required:
++        owned_tmp = (root / "owned-tmp").resolve()
++        owned_tmp.mkdir(parents=True, exist_ok=True)
++        child_environment_overrides.update({name: str(owned_tmp) for name in ("TMPDIR", "TMP", "TEMP")})
+     child_environment = dict(os.environ, **child_environment_overrides) if child_environment_overrides else None
+     try:
+         if label == "box-response-real-daemon" and not daemon_passed:
+@@ -2924,7 +3166,7 @@
+     except OSError as error:
+         capture_exit, execution_error = 1, str(error)
+     text = raw.decode("utf-8", errors="replace")
+-    if label in memory_checked_list_required:
++    if label in memory_checked_list_required or label in memory_synthesis_snapshot_required:
+         text = text.replace("\r\n", "\n")
+     print(text, flush=True)
+     raw_passed = successful_test_names(text)
+@@ -2959,6 +3201,12 @@
+         complete_counts = [tuple(map(int, count)) for count in re.findall(
+             r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
+             text, re.MULTILINE)]
++    if label in memory_synthesis_snapshot_required:
++        accepted = exact_target_results_accepted(cargo_exit, capture_exit, required, text,
++            label in memory_synthesis_snapshot_filtered)
++        complete_counts = [tuple(map(int, count)) for count in re.findall(
++            r"^test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out; finished in [0-9.]+s[ \t]*$",
++            text, re.MULTILINE)]
+     djc_trace_records, djc_trace_errors, djc_trace_accepted = [], [], None
+     if label in djc_reader_observation_labels:
+         djc_trace_records, djc_trace_errors = djc_reader_trace_records(text)
+@@ -3043,7 +3291,13 @@
+     and all(item["matches_head_bytes"] for item in djc_reader_inputs_after.values()))
+ receipt["djc_reader_inputs_after"] = djc_reader_inputs_after
+ receipt["djc_reader_sources_unchanged"] = djc_reader_sources_unchanged
+-accepted = (djc_reader_sources_unchanged
++memory_synthesis_snapshot_inputs_after = source_bindings(memory_synthesis_snapshot_inputs)
++memory_synthesis_snapshot_sources_unchanged = (
++    memory_synthesis_snapshot_inputs_after == memory_synthesis_snapshot_inputs_before
++    and all(item["matches_head_bytes"] for item in memory_synthesis_snapshot_inputs_after.values()))
++receipt["memory_synthesis_snapshot_inputs_after"] = memory_synthesis_snapshot_inputs_after
++receipt["memory_synthesis_snapshot_sources_unchanged"] = memory_synthesis_snapshot_sources_unchanged
++accepted = (memory_synthesis_snapshot_sources_unchanged and djc_reader_sources_unchanged
+     and (palette_exported if palette_required else True) and len(receipt["executions"]) == len(cases)
+     and all(case["oracle_accepted"] for case in receipt["executions"])
+     and box_response_sources_unchanged and (not box_producer_required or (daemon_unchanged and capture_unchanged))
+diff --git a/.github/workflows/rust-desktop-runtime.yml b/.github/workflows/rust-desktop-runtime.yml
+index d72e5591ecb27a29439e55d778ada74a343279bc..472b9bea1cabfb8f3eb9731c02c1ea74f8d82701 100644
+--- a/.github/workflows/rust-desktop-runtime.yml
++++ b/.github/workflows/rust-desktop-runtime.yml
+@@ -23,6 +23,7 @@
+           - ocrm-memory-native-binding
+           - ocrm-memory-fixture-lifecycle
+           - ocrm-djc-reader-observation
++          - ocrm-memory-synthesis-snapshot
+           - ocrm-local-exec-runtime
+           - ocrm-local-exec-capture
+   push:
+@@ -83,7 +84,7 @@
+ 
+ jobs:
+   rust-host:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: macos-15
+     timeout-minutes: 90
+     steps:
+@@ -3023,7 +3024,7 @@
+           retention-days: 90
+ 
+   config-restore-linux:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: OCRM installation key restore boundary / Linux
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+@@ -3184,7 +3185,7 @@
+           retention-days: 90
+ 
+   sqlite-native-path:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: ubuntu-24.04
+     # LDB adds two native domains and normal Host/Coordinator builds; existing
+     # product observation deadlines and failure assertions remain unchanged.
+@@ -4486,7 +4487,7 @@
+           retention-days: 90
+ 
+   media-store-windows:
+-    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ ((!((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-mcp-native') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-mcp-native):')))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: OCRM media cleanup / Windows
+     runs-on: windows-2025
+     timeout-minutes: 45
+@@ -4533,7 +4534,7 @@
+           retention-days: 90
+ 
+   pressure-profiler-platform:
+-    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     name: Pressure profiler / ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     timeout-minutes: 45
+@@ -4589,7 +4590,7 @@
+           -- --exact --nocapture
+ 
+   platform-worker:
+-    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
++    if: ${{ (((github.event_name != 'workflow_dispatch' || (inputs.validation_scope != 'ocrm-config' && inputs.validation_scope != 'ocrm-mcp-native')) && !(github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer')) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):')))))) && !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-runtime') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-runtime):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):')))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 45
+     steps:
+@@ -4629,7 +4630,7 @@
+         run: cargo check --target wasm32-unknown-unknown -p mahayana-platform-worker --manifest-path source/mahayana/mahayana-rs/Cargo.toml
+ 
+   renderer:
+-    if: ${{ !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):'))) }}
++    if: ${{ !(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) && !((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-local-exec-capture') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-local-exec-capture):'))) }}
+     runs-on: ubuntu-24.04
+     timeout-minutes: 30
+     env:
+@@ -5557,23 +5558,23 @@
+ 
+ 
+   custody-recovery:
+-    if: ${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) }}
++    if: ${{ (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-custody-recovery):'))) || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))))))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))))) }}
+     name: OCRM selected native contracts / ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     timeout-minutes: 60
+     strategy:
+       fail-fast: false
+       matrix:
+-        os: ${{ fromJSON(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) && '["windows-2025"]' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))) && '["ubuntu-24.04", "macos-15", "windows-2025"]' || '["ubuntu-24.04", "macos-15"]') }}
++        os: ${{ fromJSON(((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):'))) && '["windows-2025"]' || ((((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):')))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):')))) && '["ubuntu-24.04", "macos-15", "windows-2025"]' || '["ubuntu-24.04", "macos-15"]') }}
+     env:
+       CARGO_TERM_COLOR: never
+       CARGO_BUILD_JOBS: '2'
+       CARGO_PROFILE_DEV_DEBUG: '0'
+       CARGO_PROFILE_TEST_DEBUG: '0'
+       CARGO_INCREMENTAL: '0'
+-      OCRM_PORTABLE_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}
+-      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/unselected-palette.json
+-      TMPDIR: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/owned-tmp
++      OCRM_PORTABLE_SCOPE: ${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):'))) && 'memory-synthesis-snapshot' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}
++      OCRM_PALETTE_FIXTURE_PATH: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):'))) && 'memory-synthesis-snapshot' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/unselected-palette.json
++      TMPDIR: ${{ github.workspace }}/.evidence/${{ ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-synthesis-snapshot') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-synthesis-snapshot):'))) && 'memory-synthesis-snapshot' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-djc-reader-observation') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-djc-reader-observation):'))) && 'djc-reader-observation' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-fixture-lifecycle') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-fixture-lifecycle):'))) && 'memory-fixture-lifecycle' || (((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-checked-list') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-checked-list):'))) || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-memory-native-binding') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-memory-native-binding):')))) && 'memory-checked-list' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody-recovery') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody-recovery):'))) && 'background-custody-recovery' || ((github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'ocrm-background-custody') || (github.event_name == 'push' && github.ref == 'refs/heads/codex/openclaw-rust-fusion-chat-20261101-writer' && startsWith(github.event.head_commit.message, 'fix(ocrm-background-custody):'))) && 'background-custody' || 'custody-recovery' }}/owned-tmp
+       PYTHONUTF8: '1'
+     steps:
+       - name: Preserve exact tracked bytes on the disposable Windows runner
+@@ -5631,7 +5632,7 @@
+           python3 - <<'PY'
+           import hashlib, json, os, pathlib, subprocess
+           scope = os.environ["OCRM_PORTABLE_SCOPE"]
+-          assert scope in ("custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list")
++          assert scope in ("custody-recovery", "background-custody", "background-custody-recovery", "memory-checked-list", "memory-synthesis-snapshot")
+           root = pathlib.Path(".evidence") / scope
+           head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+           assert head == os.environ["FABUSHI_TARGET_SHA"]
+@@ -5639,7 +5640,8 @@
+           raw = (root / "shipping-host.log").read_bytes()
+           status = int(os.environ["CRF_HOST_COMPILE_EXIT"])
+           receipt = {
+-              "contract": ("MGL-v1-shipping-compile" if scope == "memory-checked-list"
++              "contract": ("MSSA-v1-shipping-compile" if scope == "memory-synthesis-snapshot"
++                  else "MGL-v1-shipping-compile" if scope == "memory-checked-list"
+                   else "BGC-v1-recovery-shipping-compile" if scope == "background-custody-recovery"
+                   else "BGC-v1-shipping-compile" if scope == "background-custody" else "CRF-v1-shipping-compile"),
+               "validation_scope": scope,
+diff --git a/projects/openclaw-rust/requirements-traceability-matrix.json b/projects/openclaw-rust/requirements-traceability-matrix.json
+index 3422c11400b60393f0f68d9e0e2dfb55715d22d4..0f59b5d5d49a742ee47cb08fc9dfb0de66b4eed5 100644
+--- a/projects/openclaw-rust/requirements-traceability-matrix.json
++++ b/projects/openclaw-rust/requirements-traceability-matrix.json
+@@ -969,7 +969,10 @@
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
+-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
++        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
++        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-R13",
+@@ -1008,7 +1011,13 @@
+         "MGS-06",
+         "MGL-07",
+         "MGL-08",
+-        "DJC-09"
++        "DJC-09",
++        "MSSA-01",
++        "MSSA-02",
++        "MSSA-03",
++        "MSSA-04",
++        "MSSA-05",
++        "MSSA-06"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#5",
+       "responsibility_ids": [
+@@ -2598,7 +2607,10 @@
+         "source/host/tests/session_paths_contract.rs",
+         "source/host/tests/memory_extension_contract.rs",
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h511bce-terminal-assessment.json",
+-        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json"
++        "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
++        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
++        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC13",
+@@ -2621,7 +2633,13 @@
+         "MGS-05",
+         "MGS-06",
+         "MGL-07",
+-        "MGL-08"
++        "MGL-08",
++        "MSSA-01",
++        "MSSA-02",
++        "MSSA-03",
++        "MSSA-04",
++        "MSSA-05",
++        "MSSA-06"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2862,7 +2880,10 @@
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
+-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
++        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
++        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC17",
+@@ -2913,7 +2934,13 @@
+         "MGS-06",
+         "MGL-07",
+         "MGL-08",
+-        "DJC-09"
++        "DJC-09",
++        "MSSA-01",
++        "MSSA-02",
++        "MSSA-03",
++        "MSSA-04",
++        "MSSA-05",
++        "MSSA-06"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -2999,7 +3026,10 @@
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
+-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
++        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
++        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC18",
+@@ -3032,7 +3062,13 @@
+         "MGS-06",
+         "MGL-07",
+         "MGL-08",
+-        "DJC-09"
++        "DJC-09",
++        "MSSA-01",
++        "MSSA-02",
++        "MSSA-03",
++        "MSSA-04",
++        "MSSA-05",
++        "MSSA-06"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+@@ -3494,7 +3530,10 @@
+         "projects/openclaw-rust/evidence/memory-checked-list-647e0932-20261103/h6266-exhaustion-and-decisions.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/observation-source-contract.json",
+         "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-recovered-assessment.json",
+-        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log"
++        "projects/openclaw-rust/evidence/device-join-and-notice-647e0932-20261103/h-e383-device-pairing-join.log",
++        "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++        "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
++        "source/host/src/extensions/memory/production_snapshot_read_tests.rs"
+       ],
+       "gate_ids": [],
+       "id": "OCRM-AC24",
+@@ -3587,7 +3626,13 @@
+         "MGS-06",
+         "MGL-07",
+         "MGL-08",
+-        "DJC-09"
++        "DJC-09",
++        "MSSA-01",
++        "MSSA-02",
++        "MSSA-03",
++        "MSSA-04",
++        "MSSA-05",
++        "MSSA-06"
+       ],
+       "requirement_text_source": "docs/specs/openclaw-rust-equivalence-migration.md#15",
+       "responsibility_ids": [
+diff --git a/projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json b/projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..440527533e19c733141568e7accb7f1c50fb77ac
+--- /dev/null
++++ b/projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json
+@@ -0,0 +1,305 @@
++{
++  "schema": "ocrm-scoped-production-source-contract-v1",
++  "contract": "MSSA-v1",
++  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
++  "authority": {
++    "repository": "bhrumom/fabushi-desktop",
++    "investigation_base": "45847ae07d0af58e8caaea4dcdad60c179da0631",
++    "implementation_base": "19100decdaba01486a15340ddf46e9f9987324eb",
++    "integration_base": "238ee2a3ce904a8fb71ae0771b57398bb6a6007e",
++    "live_main_observed": "5528062177e3865eef60a073a066cca144f9e3e8",
++    "upstream": {
++      "repository": "openclaw/openclaw",
++      "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
++      "tree": "90c8aab39972da11cfad220361781d49e1bc6700"
++    },
++    "source_lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
++    "agents_blob": "e4682748087759b2d4bb2b3a47916b6148e8a6f2",
++    "main_spec_blob": "69c9667af2328e20a1fba09ebf80c5aab4d5c336",
++    "module_map_blob": "15b93d08a4426d1f09c5a5a66dd3e62a288bb3b3",
++    "spec": {
++      "path": "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++      "blob": "f64cdce30fa33c20c371b177d9100031c4faf260",
++      "carrier": "19100decdaba01486a15340ddf46e9f9987324eb"
++    }
++  },
++  "production_behavior": "Memory synthesis obtains every selected fact input before ranking/limiting or model job allocation. A refused acquisition settles the captured attempt through existing Failed handling; repair admits a fresh complete snapshot to the existing inference factory and Session-gated file mutation.",
++  "owners": {
++    "primary": "OCRM-M20 existing extensions/memory FileMemoryStore, MemoryService and MemorySynthesisService",
++    "consumers": [
++      "OCRM-M07 existing Session MemorySynthesisBridge/admission gate",
++      "Existing ProductionInferenceExtension and per-snapshot Native/Codex SummaryInferenceJob identity",
++      "Existing HostMemoryExtension temporal/evidence scheduling and Host telemetry"
++    ],
++    "new_runtime_owner": false,
++    "new_store": false,
++    "new_scheduler": false,
++    "new_dependency": false,
++    "new_RPC_or_persistent_schema": false
++  },
++  "chain": {
++    "entry": "host_production_extensions -> create_production_memory_synthesis -> HostMemoryExtension start/poll",
++    "producer": "Current evidence queue or due temporal attempt",
++    "acquisition": "SynthesisTarget::prepare_synthesis required io::Result; FileMemoryStore and ProductionSynthesisTarget call prepare_synthesis_checked",
++    "state": "Existing canonical Memory profile/log files, origin/tombstone projection, next-refresh-at, and existing in-memory attempt/evidence queue",
++    "execution": "One admitted production job per successful snapshot, existing proposal/verification/retry handling",
++    "consumer": "Existing Session MemoryService apply_synthesis admission, FileMemoryStore strict append preflight and telemetry",
++    "read_failure": "Cancel after acquisition takes precedence. Otherwise Failed with captured evidence_count and input_count/change_count zero; finish captured IDs only, no factory/proposal/verifier/apply/temporal-review/Ok event or implicit model retry",
++    "recovery": "Due bytes remain due; existing poll or distinct later evidence acquires fresh current inputs after repair. No newly promised durable attempt recovery."
++  },
++  "source_review": [
++    {
++      "role": "fixed-U-input-contract",
++      "repository": "openclaw/openclaw",
++      "path": "extensions/memory-core/src/short-term-promotion-memory-write.ts",
++      "blob": "d225aca8f60d6b9424a2d0c2b57820b60f12ac71",
++      "depth": "implementation and callers relevant to optional absence, failed reads and promotion inputs; not a global full-source reading credit"
++    },
++    {
++      "role": "fixed-U-apply-consumer",
++      "repository": "openclaw/openclaw",
++      "path": "extensions/memory-core/src/short-term-promotion-apply.ts",
++      "blob": "8027ca1a0832c0bcfc90ea38d02122778e27a164",
++      "depth": "implementation/state-effect review for promotion read and apply boundaries"
++    },
++    {
++      "role": "fixed-U-model-consumer",
++      "repository": "openclaw/openclaw",
++      "path": "extensions/memory-core/src/dreaming-consolidation.ts",
++      "blob": "a3529dfaa42674a74ca92d677223df77d9f236a1",
++      "depth": "implementation and error/fallback consumer contract; model-plan fallback does not authorize unreadable input becoming successful empty data"
++    },
++    {
++      "role": "Fabushi-high-risk",
++      "paths": [
++        "source/host/src/extensions/memory/memory_service.rs",
++        "source/host/src/extensions/memory/memory_synthesis_service.rs",
++        "source/host/src/extensions/memory/production.rs",
++        "source/host/src/extensions/memory/production_append_read_tests.rs",
++        "source/host/src/extensions/memory/production_identity_tests.rs",
++        "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
++        "source/host/tests/memory_synthesis_store_contract.rs",
++        "source/host/tests/memory_synthesis_service_contract.rs"
++      ],
++      "depth": "complete changed functions/modules and actual producer, Session/inference consumer, cancellation, temporal and write-stage recovery boundaries; immutable independent complete-scope review remains required"
++    },
++    {
++      "role": "unchanged-dependencies",
++      "paths": [
++        "source/host/Cargo.toml",
++        "source/host/Cargo.lock",
++        "source/host/app/Cargo.toml",
++        "source/host/app/Cargo.lock"
++      ],
++      "depth": "existing resolution/build use; no added download, patch, generator, LFS or license input in this batch; inherited source-closure work remains open"
++    }
++  ],
++  "implementation_files": [
++    {
++      "path": "source/host/src/extensions/memory/memory_service.rs",
++      "before_blob": "abcde0d5ba3f73dfb60dcd7607bee1eb55a868c4",
++      "after_blob": "f4e77202b3fd7bd59f4d1c5572211a1c2c6cc2a0"
++    },
++    {
++      "path": "source/host/src/extensions/memory/memory_synthesis_service.rs",
++      "before_blob": "2036760fd35ddd7c4de2baf09c345305c9651d4a",
++      "after_blob": "e7c7c1669fa6fa7a51b9dfe75fb57eb80fa3e27b"
++    },
++    {
++      "path": "source/host/src/extensions/memory/production.rs",
++      "before_blob": "38deca4dbbcb78536ae7ccbe84fce989633b96da",
++      "after_blob": "f45cf96676c3dad4fb72d954956681d21e377140"
++    },
++    {
++      "path": "source/host/src/extensions/memory/production_append_read_tests.rs",
++      "before_blob": "70d227908f5cc537239480a5334b60b2991ead77",
++      "after_blob": "7dc05a68f5d58420200d44fec1404e4050f137bf"
++    },
++    {
++      "path": "source/host/src/extensions/memory/production_identity_tests.rs",
++      "before_blob": "a536a31c0c8ba6d56d119e63973f48f22f6065c1",
++      "after_blob": "b9d2a2457b5464991fc21cb3c6fd17c4249d46fc"
++    },
++    {
++      "path": "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
++      "before_blob": null,
++      "after_blob": "4a0aaaf6d1ae4a7905c654d36c9e999bca3445bc"
++    },
++    {
++      "path": "source/host/tests/memory_synthesis_store_contract.rs",
++      "before_blob": "d0c2545e3aff1461578be30d76e931eff96f7452",
++      "after_blob": "2546fa0c7de4b596fbfd539af7fc5cbbd5a03ddd"
++    },
++    {
++      "path": "source/host/tests/memory_synthesis_service_contract.rs",
++      "before_blob": "6460a1ad9e930819c93bd0584329f4bdf1efcfd6",
++      "after_blob": "03ef1e198da5a98adcce5726f3b1fef6a677ea1f"
++    }
++  ],
++  "contract_oracles": [
++    {
++      "id": "MSSA-01",
++      "requirement": "One complete checked read set before projection; same-read fingerprint and facts, original ranking/dedup/512 bound",
++      "tests": [
++        "checked_synthesis_snapshot_preserves_absent_empty_and_readable_projection",
++        "checked_synthesis_snapshot_reads_beyond_the_input_limit"
++      ]
++    },
++    {
++      "id": "MSSA-02",
++      "requirement": "Precise absence and native selected-path errors without silently changing synthesis selection/symlink policy",
++      "tests": [
++        "checked_synthesis_snapshot_refuses_corrupt_inputs_and_recovers",
++        "checked_synthesis_snapshot_refuses_native_type_obstacles",
++        "checked_synthesis_snapshot_preserves_readable_symlinks_and_refuses_dangling_inputs"
++      ],
++      "platform_note": "Symlink control Unix only; native type obstacles and absence controls required on all three runners"
++    },
++    {
++      "id": "MSSA-03",
++      "requirement": "Required fallible production target before job and both NoWork branches",
++      "tests": [
++        "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
++        "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
++      ]
++    },
++    {
++      "id": "MSSA-04",
++      "requirement": "Existing Failed settlement preserves distinct evidence, durable tree/due bytes and cancellation precedence",
++      "tests": [
++        "snapshot_read_refusal_settles_only_captured_evidence_and_recovers",
++        "snapshot_read_cancellation_suppresses_failure_and_model_work"
++      ]
++    },
++    {
++      "id": "MSSA-05",
++      "requirement": "Actual factory/Native HTTP zero request before repair and Session-gated fresh complete recovery, unchanged admission/history",
++      "tests": [
++        "extensions::memory::production::snapshot_read_tests::production_native_synthesis_snapshot_refuses_unreadable_inputs_before_dispatch_and_recovers"
++      ]
++    },
++    {
++      "id": "MSSA-06",
++      "requirement": "Independent actual append preflight after admitted snapshot, both kinds and earlier removal preserved; MSI identities retained",
++      "tests": [
++        "production_synthesis_read_failure_preserves_temporal_bytes_and_recovers",
++        "production_synthesis_preserves_invalid_and_stale_temporal_controls"
++      ],
++      "retained_modules": [
++        "extensions::memory::production::identity_tests::",
++        "extensions::inference::provider_session::codex_request_workspace_tests::synthesis_identity_tests::"
++      ]
++    }
++  ],
++  "production_fixture": {
++    "transport": "Owned loopback HTTP only; real production factory/request assembly/verification and Session apply",
++    "native_cases": [
++      "corrupt profile with readable log",
++      "corrupt monthly log with readable profile",
++      "already queued temporal attempt with wholly unreadable fact input"
++    ],
++    "positive_oracle": "Exactly six HTTP requests total: one proposal and one verification only after each repair, complete persisted facts, distinct repair evidence IDs, exactly one permitted apply per case",
++    "process": "Same exact private test reexecution with test/nonce/PID receipt, env_clear plus named native loader paths, owned HOME/profile/Codex/temp/credentials/endpoints and proxy bypass",
++    "bounds": {
++      "child_seconds": 60,
++      "forced_retirement_seconds": 3,
++      "peer_seconds": 60,
++      "peer_read_seconds": 5,
++      "request_bytes": 1048576,
++      "stdout_bytes": 1048576,
++      "stderr_bytes": 1048576,
++      "terminal_receipt_bytes": 16384
++    },
++    "failure_policy": "Forced cleanup cannot pass. Bounded regular-file UTF-8 diagnostics fail on oversize rather than truncating, failure roots retained. Retire exact child, peer, target closures and Session owner before strict deletion."
++  },
++  "verification": {
++    "state": "not-executed",
++    "environment": "GitHub Actions only",
++    "workflow": ".github/workflows/rust-desktop-runtime.yml",
++    "scope": "ocrm-memory-synthesis-snapshot",
++    "capture": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
++    "push_prefix": "fix(ocrm-memory-synthesis-snapshot):",
++    "platforms": [
++      "ubuntu-24.04",
++      "macos-15",
++      "windows-2025"
++    ],
++    "groups": 7,
++    "source_declared_counts": {
++      "unix": 63,
++      "windows": 61
++    },
++    "count_qualification": "Source-declared expected counts; no execution result yet",
++    "groups_expected": {
++      "native_store": {
++        "unix": 25,
++        "windows": 24
++      },
++      "synthesis_store": {
++        "unix": 11,
++        "windows": 10
++      },
++      "synthesis_service": 12,
++      "production_append": 2,
++      "native_identity": 6,
++      "codex_identity": 6,
++      "production_snapshot": 1
++    },
++    "compile": "cargo check --locked --manifest-path source/host/Cargo.toml --lib --test memory_service_contract --test memory_synthesis_store_contract --test memory_synthesis_service_contract; selected private Cargo unit commands also compile their graph",
++    "shipping": "Existing ordinary App compilation on Linux/macOS only. Windows shipping signal-hook repair is an independent pending Host lifecycle batch; no package or shipping acceptance.",
++    "evidence": "Exact H/tree/U; each declared source matches H before/after; unique exact positive names with complete count/zero ignored/measured; whole integration targets zero filtered; private modules permit filtered counts; command/capture exits and hashed raw logs; existing 11 strict-result controls and new 141 Unix/137 Windows parent/name/platform selection controls.",
++    "input_paths": [
++      "projects/openclaw-rust/upstream.lock.json",
++      "projects/openclaw-rust/docs/specs/memory-synthesis-snapshot-admission.md",
++      "projects/openclaw-rust/docs/specs/memory-append-read-integrity.md",
++      "projects/openclaw-rust/docs/specs/memory-gateway-selector-boundary.md",
++      "projects/openclaw-rust/docs/specs/memory-synthesis-job-identity.md",
++      "projects/openclaw-rust/evidence/memory-synthesis-snapshot-647e0932-20261103/source-contract.json",
++      ".github/workflows/rust-desktop-runtime.yml",
++      "projects/openclaw-rust/scripts/capture_portable_contracts.py",
++      "source/host/Cargo.toml",
++      "source/host/Cargo.lock",
++      "source/host/app/Cargo.toml",
++      "source/host/app/Cargo.lock",
++      "source/host/app/src/main.rs",
++      "source/host/src/extensions/memory/memory_service.rs",
++      "source/host/src/extensions/memory/memory_synthesis_service.rs",
++      "source/host/src/extensions/memory/production.rs",
++      "source/host/src/extensions/memory/production_append_read_tests.rs",
++      "source/host/src/extensions/memory/production_snapshot_read_tests.rs",
++      "source/host/src/extensions/memory/production_identity_tests.rs",
++      "source/host/src/extensions/memory/extension.rs",
++      "source/host/src/host_production_extensions.rs",
++      "source/host/src/extensions/session/production.rs",
++      "source/host/src/extensions/inference/production.rs",
++      "source/host/src/extensions/inference/summary_job.rs",
++      "source/host/tests/memory_service_contract.rs",
++      "source/host/tests/memory_synthesis_store_contract.rs",
++      "source/host/tests/memory_synthesis_service_contract.rs",
++      "source/host/src/watched_directory.rs",
++      "source/host/src/extensions/telemetry/memory_synthesis_telemetry.rs",
++      "source/host/src/extensions/inference/provider_session.rs",
++      "source/host/src/extensions/inference/codex_request_binding.rs",
++      "source/host/src/extensions/inference/codex_request_workspace_tests.rs",
++      "source/host/src/extensions/inference/codex_synthesis_identity_tests.rs"
++    ],
++    "Box_producers_selected": false,
++    "normal_campaign_budget": 1,
++    "focused_recovery_campaign_budget": 1
++  },
++  "preservation": {
++    "source_ledger_read_flags_changed": false,
++    "source_inventory_counts_changed": false,
++    "completion_flags_changed": false,
++    "RTM_acceptance_statuses_changed": false,
++    "retained_failed_DJC": "H45847 macOS original eight-second observation remains failed/DEFER; independent MSSA evidence cannot accept it",
++    "unchanged_native_capabilities": "Existing ordinary prompt facade, parser/origin/tombstone/ranking, mutation admission, model identity, write-stage refusal and existing Fabushi owners are retained."
++  },
++  "limitations": [
++    "No real Native/Codex provider account compatibility from loopback responses",
++    "No atomic concurrent multi-file filesystem snapshot or hostile replacement policy",
++    "Origin/tombstone metadata error classification and ordinary-turn prompt read behavior remain separate",
++    "No durable synthesis attempt or original-process-loss recovery guarantee",
++    "No full Memory/upstream equivalence, plugin/channel/node/device, UI, soak, signed package, upgrade/rollback or independent final ACCEPT"
++  ]
++}
