@@ -111,9 +111,17 @@ run `41574595343`, original final artifact `13204320664` found that the scoped
 upload's default hidden-file exclusion omits four inventoried
 `agents/.call-sessions.db` copies from directory payloads. Both historical
 copies remain in the original `historical-fixtures.tar.gz`; the two current
-`state-after` copies have no archive. This is an evidence-capture defect. Keep
-the original command, source/binary and runtime positives, and record that the
-current-consumer raw-byte inventory cannot be fully rechecked at that H.
+`state-after` copies have no standalone ZIP member or consumer archive at that
+H. Their complete original bytes are nevertheless retained in the uploaded
+`persistent-image-after.json` files at `/other_files/agents~1.call-sessions.db`:
+each is a 32,768-element u8 array, SHA-256
+`678a56ce2376b5996556e3f692199423d285feaa36a55aa04076b25370e63974`, matching
+the original consumer inventory and byte-for-byte equal to its BASE tar member.
+Thus the standalone directory payload is incomplete, while the full original
+content comparison remains possible using these original representations.
+Preserve both facts and the original command, source/binary and runtime
+positives. The archive requirement below closes the standalone packaging gap;
+it does not rewrite the old artifact or replace any retained assertion.
 
 Before declaring the capture complete, the existing capture script must also
 archive the already closed, inventoried `current-consumer` subtree as
