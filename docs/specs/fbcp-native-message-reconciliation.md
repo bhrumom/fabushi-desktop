@@ -3025,6 +3025,29 @@ that subsequent explicit canonical contract. Full source/legal, platform,
 service, Bot, quality and independent ACCEPT remain required.
 
 
+### NMR-AC-UI-ENTRY-REFRESH-01 — Execution-derived repair controls
+
+The failed exact a0e6cd2ded523f59add3a7ade6bd43890b448300/run41565477479
+remains evidence. Empty prompt verification must distinguish the real editor's
+single empty paragraph and ProseMirror trailing-break cursor placeholder from
+serialized draft content; whitespace, extra paragraphs and tokens still fail.
+Retain the real development bootstrap's StrictMode and current provider's
+activation/source/bounded-read Promise sharing. Measure the exact external
+read count before any row update: one shared read per fresh activation under
+the containing production provider, with zero additional reads from unrelated
+updates or row/attachment reordering. Keep stale-result, account, resource-owner,
+fresh-open and download controls; implement no read cache inside the fixture.
+The earlier two-external-read failure belongs to its original source head.
+
+PDF and media viewers must retain the existing 52px window-chrome band and
+their existing stacking level. Verify the actual PDF Download pointer action
+and that the real Linux window control is still hit-testable with the viewer
+open. Do not force clicks, raise viewers above window controls, substitute a
+parser, relax timeouts, or claim fullscreen titlebar metrics the current owner
+does not publish. All12 original/current Renderer cases and containing-H209
+remain required. This clarification changes no public message contract.
+
+
 ## NMR-CONVERSATION-IDENTITY-01 — Canonical Human pair admission
 
 The existing Session/Transcript `ProductionSessionWorkers` and `SandAgentDb` remain the only desktop Human conversation and message owners. The canonical conversation ID is derived from the sorted, length-prefixed UTF-8 participant pair by `human_direct_conversation_id`. A readable metadata row is not sufficient authority if its participant pair no longer hashes to the requested conversation ID.
