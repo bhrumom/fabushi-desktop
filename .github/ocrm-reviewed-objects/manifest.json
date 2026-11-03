@@ -1,0 +1,14 @@
+{
+  "repository": "bhrumom/fabushi-desktop",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 2,
+  "base_commit": "3a36b4ec63e095dd4c08518abbf53145c1d339f5",
+  "candidate_tree": "48a90b0e8a30a0b64a8f251903e197350d8d11c3",
+  "target_path": "source/host/app/src/main.rs",
+  "before_blob": "c3ee3dc9d1647853bace9dcb944878211edfcc2c",
+  "after_blob": "ba9c43c65e8f5b2473677a615b331808d53a125a",
+  "after_bytes": 986561,
+  "patch_sha256": "7ba8446887e817f8950cb024df4ecea9450b5b9667a07861d3dc316b489fc980",
+  "product_contract": "OCRM-RUNNER-STARTUP-PREFLIGHT-v1",
+  "execution_claim": "Staging is Git object delivery only. Product source review and exact-H Actions are separate; no executable validation is performed by this carrier."
+}
