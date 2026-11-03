@@ -7,7 +7,7 @@
   "reviewed_candidate": "ed6e0b09205f26a723395571692b8cfb1870f9da",
   "reviewed_tree": "52f5512c1b9c19be0304bb0647603ef6a68eaa3f",
   "review_packet": "af5749a9a4dcef821827f4118f61547e58c6eeef",
-  "review_status": "Both fresh reviewers have reported the same concrete integration defect; final reports are being collected. This records the runner's current arbitration before applying this fix, not a convergence verdict.",
+  "review_status": "Both fresh blind full-scope reviews are terminal with one consolidated P2 finding; source repair is required before a fresh focused review.",
   "findings": [
     {
       "id": "RMD-R1-OPAQUE-REVISION",
@@ -56,5 +56,36 @@
     "source_converged": false,
     "execution": "not-run",
     "global_flags_promoted": false
+  },
+  "reviews": [
+    {
+      "lens": "GENERAL",
+      "agent": "/root/rmd_r1_general",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "verdict": "one-P2-changes-required",
+      "scope": "complete21pathscope and required adjacent owners",
+      "carrier": "completed conversation report; no full report uploaded"
+    },
+    {
+      "lens": "STRUCTURE",
+      "agent": "/root/rmd_r1_structure",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "verdict": "REQUEST_CHANGES",
+      "scope": "complete21pathscope and required adjacent owners",
+      "carrier": "completed conversation report; no full report uploaded"
+    }
+  ],
+  "identity_scope": {
+    "decision": "COMPROMISE",
+    "blocking_revision_fix": "FIX",
+    "rationale": "Both reports also suggest removing Session ID normalization. The newly added RMD owner already compares the original expected Session ID exactly, and the existing DB session_admission_identity_is_bound compares stored session_id against the trimmed persisted metadata agentId. Thus every identity accepted by the new RMD path reaches the existing normalization unchanged. Keep that historical compatibility behavior for other callers; repair the actual supported opaque-revision failure without broadening unrelated Session-ID semantics. The current wrong/padded identity refusals remain mandatory.",
+    "evidence": [
+      "production.rs::apply_session_model_selection original expected_session_id comparison before the atomic writer",
+      "agent_db.rs::session_admission_identity_is_bound metadata identity binding",
+      "main.rs ordinary communicationPolicy/archive ingress retains its existing explicit trimming contract"
+    ],
+    "new_round_from_this_nonblocking_scope_choice": false
   }
 }
