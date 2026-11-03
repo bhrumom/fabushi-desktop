@@ -17422,7 +17422,9 @@
         "frontend/src/recovered/features/session-model-settings.contract.test.ts",
         "source/host/tests/agent_session_contract.rs",
         "source/host/tests/openclaw_model_picker_contract.rs",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md",
+        "source/host/tests/session_model_selection_policy_regression.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -17455,7 +17457,7 @@
       "oracle_ids": [
         "OCRM-SESSION-O04"
       ],
-      "owner_decision": "Existing Session SQLite/Inference/Settings owners reused. Bounded native configured-default reset wired at source, full model picker and catalog selection remain not-wired, status verification not-run until exact-H Actions evidence.",
+      "owner_decision": "Existing Session SQLite/Inference/Settings owners reused. Bounded native configured-default reset wired at source, full model picker and catalog selection remain not-wired, status verification not-run until exact-H Actions evidence. Scoped 2026-11-04 policy hardening: write-scoped operator authority, complete generation observation, session-bound placement and case-preserved catalog identity; tests are authored and remain unverified pending exact-H Actions. General picker catalog/producer still not wired.",
       "postconditions": [
         "Inference queries use session override when specified"
       ],
@@ -17500,7 +17502,9 @@
         "source/host/tests/openclaw_model_picker_contract.rs::model_picker_display_hint_cannot_clear_override",
         "source/host/tests/openclaw_sessions_and_config_contract.rs::native_session_model_default_reset_uses_one_authenticated_rust_mutation_path",
         "source/host/tests/settings_service_contract.rs::checked_session_model_source_rejects_invalid_provider_and_never_normalizes_bytes",
-        "frontend/src/recovered/features/session-model-settings.contract.test.ts"
+        "frontend/src/recovered/features/session-model-settings.contract.test.ts",
+        "source/host/tests/openclaw_model_picker_contract.rs::model_picker_rejects_readonly_incomplete_fence_foreign_placement_and_case_alias",
+        "source/host/tests/session_model_selection_policy_regression.rs::selection_store_policy_refusal_preserves_sqlite_generation_and_default"
       ],
       "typed_contracts": [
         "Session model override resolver",
@@ -22420,7 +22424,9 @@
         "frontend/src/recovered/features/session-model-settings.contract.test.ts",
         "source/host/tests/agent_session_contract.rs",
         "source/host/tests/openclaw_sessions_and_config_contract.rs",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md",
+        "source/host/tests/session_model_selection_policy_regression.rs"
       ],
       "existing_owner_candidates": [
         {
@@ -22487,7 +22493,7 @@
         "OCRM-MODEL-PICKER-O03",
         "OCRM-MODEL-PICKER-O04"
       ],
-      "owner_decision": "Existing Session SQLite/Inference/Settings owners reused. Bounded native configured-default reset wired at source, full model picker and catalog selection remain not-wired, status verification not-run until exact-H Actions evidence.",
+      "owner_decision": "Existing Session SQLite/Inference/Settings owners reused. Bounded native configured-default reset wired at source, full model picker and catalog selection remain not-wired, status verification not-run until exact-H Actions evidence. Scoped 2026-11-04 policy hardening: write-scoped operator authority, complete generation observation, session-bound placement and case-preserved catalog identity; tests are authored and remain unverified pending exact-H Actions. General picker catalog/producer still not wired.",
       "postconditions": [
         "Model selection validated against operator authority and placement fences, entry mutated if allowed"
       ],
@@ -22552,7 +22558,9 @@
         "source/host/tests/openclaw_model_picker_contract.rs::model_picker_display_hint_cannot_clear_override",
         "source/host/tests/openclaw_sessions_and_config_contract.rs::native_session_model_default_reset_uses_one_authenticated_rust_mutation_path",
         "source/host/tests/settings_service_contract.rs::checked_session_model_source_rejects_invalid_provider_and_never_normalizes_bytes",
-        "frontend/src/recovered/features/session-model-settings.contract.test.ts"
+        "frontend/src/recovered/features/session-model-settings.contract.test.ts",
+        "source/host/tests/openclaw_model_picker_contract.rs::model_picker_rejects_readonly_incomplete_fence_foreign_placement_and_case_alias",
+        "source/host/tests/session_model_selection_policy_regression.rs::selection_store_policy_refusal_preserves_sqlite_generation_and_default"
       ],
       "typed_contracts": [
         "ModelPickerCapabilityProfile",

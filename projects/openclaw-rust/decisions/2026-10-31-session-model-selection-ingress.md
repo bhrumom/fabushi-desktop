@@ -136,3 +136,23 @@ Their full picker mutation boundary and pending responsibilities remain open.
 Implementation and exact-H evidence for the bounded reset are required before
 any scoped completion claim; no broad wiring/verification/acceptance or global
 flag is promoted by this decision.
+
+## 2026-11-04 scoped policy-fence hardening (round 2)
+
+The existing Rust `model_picker_service` remains the only picker policy owner,
+with the existing Session SQLite mutation as its sole write path. When a trusted
+operator context is supplied, its model allow-list **cannot** substitute for
+`operator.write`/`operator.admin`; incomplete one-sided generation
+observations conflict, placement observations from a different session
+conflict, and catalog matching preserves exact model-ID case used by the
+provider transport. Explicit selection of a case-distinct model must not
+silently clear a default override. Scoped policy and SQLite no-write contracts
+cover these negative transitions and a valid exact-case selection.
+
+This change does **not** invent a producer for the multi-provider live
+catalog, scoped visibility, placement, or operator model policy. The shipping
+Gateway/Settings action is still the previously authorized native default
+reset only. The broader interactive picker, provider-accepted user turn,
+complete source closure, UI and platform acceptance remain unverified and
+open. The fixed U is `1440bb1771372334bea23d7642bb52deb7db1845`;
+the exact H and GitHub Actions evidence must be bound after publication.

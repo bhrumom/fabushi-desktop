@@ -206,7 +206,9 @@
         "frontend/src/recovered/features/agent-info/settings/view.tsx",
         "frontend/src/production/ProductionRenderer.tsx",
         "source/host/tests/openclaw_model_picker_contract.rs",
-        "source/host/tests/agent_session_contract.rs"
+        "source/host/tests/agent_session_contract.rs",
+        "source/host/tests/session_model_selection_policy_regression.rs",
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R04",
@@ -429,7 +431,9 @@
         "frontend/src/production/ProductionRenderer.tsx",
         "source/host/tests/openclaw_model_picker_contract.rs",
         "source/host/tests/agent_session_contract.rs",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/session_model_selection_policy_regression.rs",
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R06",
@@ -555,7 +559,9 @@
         "frontend/src/production/ProductionRenderer.tsx",
         "source/host/tests/openclaw_model_picker_contract.rs",
         "source/host/tests/agent_session_contract.rs",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/session_model_selection_policy_regression.rs",
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
       ],
       "gate_ids": [],
       "id": "OCRM-R08",
@@ -2141,7 +2147,9 @@
         "frontend/src/production/ProductionRenderer.tsx",
         "source/host/tests/openclaw_model_picker_contract.rs",
         "source/host/tests/agent_session_contract.rs",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/session_model_selection_policy_regression.rs",
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC06",
@@ -2303,7 +2311,9 @@
         "frontend/src/production/ProductionRenderer.tsx",
         "source/host/tests/openclaw_model_picker_contract.rs",
         "source/host/tests/agent_session_contract.rs",
-        "source/host/tests/settings_service_contract.rs"
+        "source/host/tests/settings_service_contract.rs",
+        "source/host/tests/session_model_selection_policy_regression.rs",
+        "projects/openclaw-rust/decisions/2026-10-31-session-model-selection-ingress.md"
       ],
       "gate_ids": [],
       "id": "OCRM-AC08",

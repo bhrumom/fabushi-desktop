@@ -455,3 +455,90 @@ fn model_picker_display_hint_cannot_clear_override() {
     assert_eq!(entry.provider_override.as_deref(), Some("cursor"));
     assert_eq!(entry.model_override.as_deref(), Some("new"));
 }
+
+#[test]
+fn model_picker_rejects_readonly_incomplete_fence_foreign_placement_and_case_alias() {
+    let catalog = [ModelCatalogEntry {
+        provider: "fabushi".into(),
+        id: "ModelCase".into(),
+        name: None, context_window: None, context_tokens: Some(8192),
+        api: None, base_url: None, reasoning: None,
+    }];
+    let visibility = ModelVisibilityPolicy::default();
+    let read_only = AdmittedRunOperatorAuthority {
+        profile_id: "reader".into(),
+        scopes: vec!["operator.read".into()],
+        allowed_models: None,
+    };
+    let writer = AdmittedRunOperatorAuthority {
+        profile_id: "writer".into(),
+        scopes: vec!["operator.write".into()],
+        allowed_models: Some(vec!["fabushi/ModelCase".into()]),
+    };
+    let foreign_placement = WorkerPlacementContext {
+        session_id: "different-agent".into(), state: "active".into(),
+        execution_mode: Some("cloud".into()), generation: 7,
+    };
+    let mut entry = SessionModelEntryState {
+        session_id: "agent-main".into(),
+        provider_override: Some("fabushi".into()),
+        model_override: Some("older".into()),
+        updated_at: 17,
+        ..Default::default()
+    };
+    let before = entry.clone();
+    let apply = |entry: &mut SessionModelEntryState,
+                 authority: Option<&AdmittedRunOperatorAuthority>,
+                 placement: Option<&WorkerPlacementContext>,
+                 initial: Option<u64>, current: Option<u64>, model: &str| {
+        apply_session_model_selection(entry, ApplySessionModelSelectionParams {
+            agent_id: "agent-main",
+            session_key: "agent:agent-main:main",
+            default_provider: "fabushi",
+            default_model: "modelcase",
+            current_provider: "fabushi",
+            current_model: "older",
+            model_catalog: &catalog,
+            visibility_policy: Some(&visibility),
+            operator_authority: authority,
+            placement_context: placement,
+            candidate_execution_mode: Some("cloud"),
+            initial_generation: initial,
+            current_generation: current,
+            request: SessionModelSelectionRequest {
+                provider: "fabushi".into(), model: model.into(),
+                is_default: false, reset_to_default: false, alias: None,
+                profile_override: None, runtime: SessionModelSelectionRuntime::Unchanged,
+            },
+        }, 50)
+    };
+    assert!(matches!(
+        apply(&mut entry, Some(&read_only), None, Some(7), Some(7), "ModelCase"),
+        ApplySessionModelSelectionResult::Rejected { reason: ModelPickerRejectReason::NotAllowed, .. }
+    ));
+    assert_eq!(entry, before);
+    for (initial, current) in [(Some(7), None), (None, Some(7)), (Some(7), Some(8))] {
+        assert!(matches!(
+            apply(&mut entry, Some(&writer), None, initial, current, "ModelCase"),
+            ApplySessionModelSelectionResult::Conflict { .. }
+        ));
+        assert_eq!(entry, before);
+    }
+    assert!(matches!(
+        apply(&mut entry, Some(&writer), Some(&foreign_placement), Some(7), Some(7), "ModelCase"),
+        ApplySessionModelSelectionResult::Conflict { .. }
+    ));
+    assert_eq!(entry, before);
+    assert!(matches!(
+        apply(&mut entry, Some(&writer), None, Some(7), Some(7), "modelcase"),
+        ApplySessionModelSelectionResult::Rejected { reason: ModelPickerRejectReason::UnknownProvider, .. }
+    ));
+    assert_eq!(entry, before);
+    assert!(matches!(
+        apply(&mut entry, Some(&writer), None, Some(7), Some(7), "ModelCase"),
+        ApplySessionModelSelectionResult::Applied(_)
+    ));
+    // Configured "modelcase" and catalog "ModelCase" are distinct provider IDs.
+    assert_eq!(entry.provider_override.as_deref(), Some("fabushi"));
+    assert_eq!(entry.model_override.as_deref(), Some("ModelCase"));
+}

@@ -145,6 +145,11 @@ pub struct AdmittedRunOperatorAuthority {
 
 impl AdmittedRunOperatorAuthority {
     pub fn allows(&self, provider: &str, model: &str) -> bool {
+        // An admitted model allow-list does not grant write authority. This
+        // context must come from the Gateway/Runner owner, never a UI payload.
+        if !self.scopes.iter().any(|scope| matches!(scope.as_str(), "operator.write" | "operator.admin")) {
+            return false;
+        }
         match &self.allowed_models {
             None => true,
             Some(allowed) => {
@@ -299,12 +304,12 @@ pub fn apply_session_model_selection(
     }
 
     // 2. Concurrency / generation fence check
-    if let (Some(init_gen), Some(curr_gen)) = (params.initial_generation, params.current_generation) {
-        if init_gen != curr_gen {
-            return ApplySessionModelSelectionResult::Conflict {
-                message: SESSION_CONFLICT_MESSAGE.to_string(),
-            };
-        }
+    match (params.initial_generation, params.current_generation) {
+        (Some(initial), Some(current)) if initial == current => {}
+        (None, None) => {} // Legacy bounded reset has its separate Session admission CAS.
+        _ => return ApplySessionModelSelectionResult::Conflict {
+            message: SESSION_CONFLICT_MESSAGE.to_string(),
+        },
     }
 
     let reset_to_default = params.request.reset_to_default;
@@ -345,7 +350,13 @@ pub fn apply_session_model_selection(
         }
     }
 
-    // 5. Active worker placement fence check
+    // 5. A placement observation must belong to this session. An otherwise
+    // compatible mode on another session is not authority to change this one.
+    if params.placement_context.is_some_and(|placement| placement.session_id != entry.session_id) {
+        return ApplySessionModelSelectionResult::Conflict {
+            message: SESSION_PLACEMENT_CHANGED_MESSAGE.to_string(),
+        };
+    }
     if let Some(placement_err) = resolve_active_placement_model_selection_error(
         params.placement_context,
         params.candidate_execution_mode,
@@ -359,7 +370,9 @@ pub fn apply_session_model_selection(
     // 6. Resolve catalog entry & context tokens
     let catalog_match = params.model_catalog.iter().find(|e| {
         e.provider.eq_ignore_ascii_case(selected_provider)
-            && e.id.eq_ignore_ascii_case(selected_model)
+            // Request model IDs are case-preserved at the actual provider transport.
+            // A case-folded display key must not authorize a different model.
+            && e.id == selected_model
     });
     if !reset_to_default && catalog_match.is_none() {
         return ApplySessionModelSelectionResult::Rejected {
@@ -374,8 +387,8 @@ pub fn apply_session_model_selection(
     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
     // A caller's display hint cannot clear a persisted model override.
     let is_default_selection = reset_to_default
-        || (model_key(selected_provider, selected_model)
-            == model_key(params.default_provider, params.default_model));
+        || (selected_provider.eq_ignore_ascii_case(params.default_provider)
+            && selected_model == params.default_model);
 
     let model_changed = if is_default_selection {
         entry.model_override.is_some() || entry.provider_override.is_some()
