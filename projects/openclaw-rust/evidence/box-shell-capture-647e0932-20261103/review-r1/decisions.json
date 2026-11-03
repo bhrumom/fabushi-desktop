@@ -118,6 +118,21 @@
       "oracles": "Actual post-spawn setup failure after controlled real child admission/effect; early wait or unwind boundary after actual stream workers start; stop remains non-clean while cleanup remains owned and later recovers through actual retained child/workers. Preserve all prior identity, stream/handoff, foreground producer/Host consumer and disconnect assertions.",
       "execution": "not-run",
       "state": "FIX recorded before source correction"
+    },
+    {
+      "id": "SC-PRE-R2-HANDOFF-ORACLE",
+      "classification": "TEST_FLAW",
+      "priority": "P2",
+      "decision": "FIX",
+      "source_candidate_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
+      "anchors": [
+        "source/box-exec-daemon/src/server.rs:3449-3490"
+      ],
+      "failure": "The handoff oracle gives its real child only a one-second sleep before exit. A sufficiently delayed request can observe child exit before its 20ms background handoff, making expected Backgrounded dependent on scheduling rather than the intended ownership transition.",
+      "repair": "Keep the real child alive behind a bounded, owned release gate until the actual Backgrounded event is observed; then release it and preserve actual prefix/tail/footer, prior-capture retention, cleanup and no-resignal assertions. Ensure failing fixture paths release/clean only their owned resources.",
+      "rationale": "Source shows the child can terminate independently of the assertion's required handoff. Repair the fixture's causal ordering rather than increase arbitrary sleeps, remove assertions or rerun for green.",
+      "execution": "not-run",
+      "state": "Recorded before applying fixture correction"
     }
   ],
   "retained_follow_on": [
