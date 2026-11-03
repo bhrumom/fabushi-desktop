@@ -136,3 +136,47 @@ Durable movement supported by the exact source reads recorded in this dossier:
 - `acceptance.accepted: false`
 
 All six entries recorded here remain unknown until all applicable forward-option, eligibility, lifecycle, feedback and settlement responsibilities have bidirectional traceability, shipping wiring, exact-head tests/evidence, and release acceptance.
+
+
+## Exact-U forward callgraph supplement — 2026-11-03
+
+The four pending source files above have now been read in full again at the fixed U, and their production consumers have been read at the same U. The source-review records are marked complete for these exact file identities and mapped to existing responsibilities; the feature-level gaps below remain open.
+
+### ForwardPanel owner and state transitions
+
+- `ForwardPanel::update(to, draft)` compares destination thread, source item list and options; when changed it destroys the prior reactive lifetime, installs the new draft, subscribes to source-item removal, and clears the draft when its typed topic or sublist destination is destroyed. It publishes `itemsUpdated` after the update.
+- `itemRemoved` removes only the matching source item, refreshes the derived preview and publishes the update. It does not itself dispatch a send.
+- `applyOptions` first calls `NormalizeForwardOptions`, writes the normalized options and exact item IDs back to the owning History forward draft, then repaints. `editToNextOption` cycles PreserveInfo → NoSenderNames → NoNamesAndCaptions when captions exist → PreserveInfo.
+- `updateTexts/checkTexts` derives sender labels from original sender/hidden-sender metadata, de-duplicates known senders, and selects a version from the name/caption options and sender-name versions. It uses the first source item for the single-message preview, hides captions when requested, and drops disallowed custom emoji when provenance is hidden.
+- `CanHideForwardAuthor` refuses hiding for forced-forwarded information and for rich pages when the account cannot author rich messages; rich-page hiding also depends on premium. `HideForwardAuthorPremiumRequired` identifies the case where the control should show a premium prompt rather than allow a privacy change. `NormalizeForwardOptions` is the final source eligibility clamp.
+- `ClearDraftReplyTo` is a separate existing reply-draft operation: it only clears the matching reply identity, resets suggestion state, preserves the rest of the draft, removes a now-null local draft or writes the surviving draft, then schedules cloud save for the same thread.
+
+### Actual caller and send path
+
+- `boxes/share_box.cpp`: selected recipient rows are resolved to typed `Data::Thread` objects. The default forward callback reloads source items, refuses empty sources/targets, normalizes rich-page options, checks send eligibility and paid-send approval, then maps the one normalized privacy snapshot to MTProto `f_drop_author` and `f_drop_media_captions` flags for every destination. Each destination can have its own request set; the final toast is delayed until all requests settle. Any destination failure suppresses the all-success toast. Comment text is dispatched through the existing ordinary send path separately from forwarded messages.
+- `apiwrap.cpp`: the shared `ApiWrap::forwardMessages` owner normalizes options again before building forward requests. It maps the canonical option to the same author/caption flags and only creates a local optimistic message for the single-message PreserveInfo case. Saved-music items use the existing document send path rather than the forward request.
+- `history_view_draft_options.cpp`: the forward selector preview normalizes before projecting local preview messages and carries the resulting privacy bits into the preview. The forward/reply/link draft editor re-normalizes on entry and before committing a selected option; the hide/show controls respect source eligibility and premium restrictions.
+- `window_peer_menu.cpp`: direct Forward-to-Saved-Messages resolves the existing forward draft, dispatches through `ApiWrap::forwardMessages`, then uses the shared phrase factory and saved-message navigation filter after success.
+- `history_view_top_peers_selector.cpp`: quick-forward completion uses the same phrase factory and saved-message navigation filter.
+- `history_view_self_forwards_tagger.cpp`: self-forward tag feedback deliberately sets `toSelfWithPremiumIsEmpty=false`, so its UI does not inherit the ordinary premium self-toast suppression.
+- `chat_helpers/share_message_phrase_factory.cpp`: one destination names the peer, two destinations name both peers, larger fan-out uses a count, and self targets link to Saved Messages. The optional premium flag suppresses the normal self-success phrase; the icon and click filter are separate projections.
+
+### Source-to-responsibility mapping and remaining gaps
+
+- `history_view_forward_panel.h/.cpp` map to existing send-options, typed thread-destination, topic-eligibility and privacy responsibilities. They are source review complete; they do not prove Fabushi shipping parity for every topic/sublist, source-removal or reply-draft/cloud-save edge.
+- `share_message_phrase_factory.h/.cpp` map to the existing FBCP forwarding and send-options responsibility. They are source review complete; the exact saved/self/premium feedback, one/two/many destination wording and session-window navigation still need product-side responsibility and exact-H behavior acceptance.
+- The source UI and API normalize privacy at multiple boundaries, but source reads do not prove live service behavior, partial fan-out recovery, destination authorization freshness, or that a presentation toast is only shown for the exact settled destination set.
+- The Fabushi production owner remains the existing Session/Transcript + durable HumanForwardBatch journal + authenticated Native service. Do not recreate Telegram's ShareBox, MTProto request state, or toast owner. Reuse current Host policy and durable batch recovery, then project truthful settled feedback through the existing renderer.
+
+### Exact fixed-U caller identities read
+
+| Caller | Blob |
+|---|---|
+| `Telegram/SourceFiles/boxes/share_box.cpp` | `f4787dbb34cdb5fb2af78a69ae7537e91e06395a` |
+| `Telegram/SourceFiles/window/window_peer_menu.cpp` | `864a8103df594c634cb1017c7bf2733da13885f2` |
+| `Telegram/SourceFiles/apiwrap.cpp` | `342e501177996be3c083ba7985d3720a53100b51` |
+| `Telegram/SourceFiles/history/view/controls/history_view_draft_options.cpp` | `5bdc9891bb130433a30cf4add1c72bb0cfb973b9` |
+| `Telegram/SourceFiles/history/view/history_view_top_peers_selector.cpp` | `2c452f7258228e319c58bdc703f8883253c77981` |
+| `Telegram/SourceFiles/history/view/history_view_self_forwards_tagger.cpp` | `e3cb5d4e920f205c6b0d553359eb2c9995c94943` |
+
+These are exact-U caller blobs and scoped reads, not claims that every caller file was fully read. The four reviewed source files are complete at their exact recorded blobs; recursive source, build-time, generated, resource, tooling and legal closure remain independently unaccepted.

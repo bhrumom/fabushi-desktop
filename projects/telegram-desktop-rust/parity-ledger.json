@@ -51959,12 +51959,20 @@
       "category": "mixed-ui",
       "risk": "high",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire file read at fixed U. Full forward/reply draft, destination lifetime and source eligibility obligations still require decomposition and exact responsibility mapping; not credited as complete.",
+      "status": "complete",
+      "rationale": "Complete exact-U file read plus scoped production caller/consumer reads. The source contract and state transitions are understood and mapped to the listed existing responsibilities. This source-review completion does not imply legal approval, full recursive source closure, or product/release acceptance.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02",
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#exact-u-forward-callgraph-supplement--2026-11-03"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "TDRP-R9-SHARE-SEND-OPTIONS-001",
+        "TDRP-R9-SHARE-THREAD-DESTINATION-001",
+        "TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001",
+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+        "FBCP-NMR-001"
+      ],
+      "reviewed_source_blob": "b5847bfe6e651f5e3bc52480192afd664a37c8b8"
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -51974,12 +51982,20 @@
       "category": "mixed-ui",
       "risk": "high",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire file and scoped consumers read. Forced provenance/rich-page eligibility, source removal, typed destination destruction, matching reply/suggestion clearing and delayed cloud-save obligations remain open; source reading alone does not close these mappings.",
+      "status": "complete",
+      "rationale": "Complete exact-U file read plus scoped production caller/consumer reads. The source contract and state transitions are understood and mapped to the listed existing responsibilities. This source-review completion does not imply legal approval, full recursive source closure, or product/release acceptance.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02",
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#exact-u-forward-callgraph-supplement--2026-11-03"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "TDRP-R9-SHARE-SEND-OPTIONS-001",
+        "TDRP-R9-SHARE-THREAD-DESTINATION-001",
+        "TDRP-R9-SHARE-TOPIC-ELIGIBILITY-001",
+        "TDRP-R9-SHARE-FORWARD-PRIVACY-001",
+        "FBCP-NMR-001"
+      ],
+      "reviewed_source_blob": "eaa0108dd32dbadc21727ed4583c329d3badc85e"
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -51989,12 +52005,17 @@
       "category": "mixed-ui",
       "risk": "medium",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire declaration read. Complete destination/self/premium-aware terminal feedback and navigation responsibility mapping remains open.",
+      "status": "complete",
+      "rationale": "Complete exact-U file read plus scoped production caller/consumer reads. The source contract and state transitions are understood and mapped to the listed existing responsibilities. This source-review completion does not imply legal approval, full recursive source closure, or product/release acceptance.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02",
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#exact-u-forward-callgraph-supplement--2026-11-03"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001",
+        "TDRP-R9-SHARE-SEND-OPTIONS-001"
+      ],
+      "reviewed_source_blob": "86865db47439dbce848fc812df2554335d3e004c"
     },
     {
       "repository": "telegramdesktop/tdesktop",
@@ -52004,12 +52025,17 @@
       "category": "mixed-ui",
       "risk": "medium",
       "review_depth": "deep",
-      "status": "pending",
-      "rationale": "Entire implementation read. Saved/self/premium, one/two/many destination feedback and session-window navigation exceed the existing generic settlement count; decomposition and production closure remain open.",
+      "status": "complete",
+      "rationale": "Complete exact-U file read plus scoped production caller/consumer reads. The source contract and state transitions are understood and mapped to the listed existing responsibilities. This source-review completion does not imply legal approval, full recursive source closure, or product/release acceptance.",
       "evidence": [
-        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02"
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#fixed-u-forward-intent-review--2026-11-02",
+        "projects/telegram-desktop-rust/dossiers/forward-options-complete-read.md#exact-u-forward-callgraph-supplement--2026-11-03"
       ],
-      "responsibility_ids": []
+      "responsibility_ids": [
+        "FBCP-NMR-001",
+        "TDRP-R9-SHARE-SEND-OPTIONS-001"
+      ],
+      "reviewed_source_blob": "1437bbfbd86b9d6649faae0bed7eed755e06337e"
     },
     {
       "repository": "telegramdesktop/tdesktop",
