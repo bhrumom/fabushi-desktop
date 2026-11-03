@@ -1,0 +1,67 @@
+diff --git a/.github/workflows/ocrm-p0-authority.yml b/.github/workflows/ocrm-p0-authority.yml
+index 7d55bc935ac2c73f7dd9f48a3b614a75bcb943d4..3e3e51517abec7bc7e2aed034238969ffac171e5 100644
+--- a/.github/workflows/ocrm-p0-authority.yml
++++ b/.github/workflows/ocrm-p0-authority.yml
+@@ -595,7 +595,7 @@
+                       and commit.get("sha") == carrier_sha
+                       and isinstance(commit.get("message"), str)
+                       and "[ocrm-recover-djc-e383-command-evidence]" in commit["message"]
+-                      and not any(marker in commit["message"] for marker in legacy_persistence_markers)
++                      and not any(marker in commit["message"].lower() for marker in legacy_persistence_markers)
+                       and event["head_commit"].get("message") == commit["message"]
+                       and [parent.get("sha") for parent in commit.get("parents", [])] == [before],
+                       "unapproved_collector_carrier")
+@@ -830,18 +830,24 @@
+                           == control_before, "valid_carrier_control")
+                   controls.append({"control": "djc_workflow_only_carrier", "result": "accepted"})
+                   for legacy_marker in legacy_persistence_markers:
+-                      combined_message = control_message + " " + legacy_marker
+-                      combined_event = {**control_event, "head_commit": {
+-                          **control_event["head_commit"], "message": combined_message}}
+-                      combined_commit = {**control_commit, "message": combined_message}
+-                      try:
+-                          validate_carrier_push(combined_event, combined_commit, control_compare, control_after)
+-                      except CollectionRefusal as error:
+-                          require(error.args == ("unapproved_collector_carrier",), "wrong_control_refusal")
+-                          controls.append({"control": "djc_conflicting_legacy_marker",
+-                                           "marker": legacy_marker, "result": "rejected"})
+-                      else:
+-                          raise CollectionRefusal("accepted_conflicting_carrier_control")
++                      for spelling, raw_marker in (
++                              ("lowercase", legacy_marker),
++                              ("uppercase", legacy_marker.upper()),
++                              ("mixedcase", "".join(character.upper() if index % 2 else character
++                                                  for index, character in enumerate(legacy_marker)))):
++                          combined_message = control_message + " " + raw_marker
++                          combined_event = {**control_event, "head_commit": {
++                              **control_event["head_commit"], "message": combined_message}}
++                          combined_commit = {**control_commit, "message": combined_message}
++                          try:
++                              validate_carrier_push(combined_event, combined_commit, control_compare, control_after)
++                          except CollectionRefusal as error:
++                              require(error.args == ("unapproved_collector_carrier",), "wrong_control_refusal")
++                              controls.append({"control": "djc_conflicting_legacy_marker",
++                                               "marker": legacy_marker, "spelling": spelling,
++                                               "raw_marker": raw_marker, "result": "rejected"})
++                          else:
++                              raise CollectionRefusal("accepted_conflicting_carrier_control")
+                   for label, event_delta, commit_delta, compare_delta in (
+                           ("product_files", {}, {}, {"files": control_compare["files"] + [
+                               {"filename": "source/host/src/device_pairing_owner.rs", "status": "modified", "sha": "4" * 40}]}),
+diff --git a/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md b/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
+index 44b3b7c695fb75d4e069ae7875eb6d599806017d..9daeb38d9752328a06e36bdf7fe44c4218db6742 100644
+--- a/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
++++ b/projects/openclaw-rust/docs/specs/device-pairing-join-admission.md
+@@ -214,7 +214,11 @@
+ commit changing only this authority workflow. Mixed product paths, multiple
+ commits, absent/truncated identity or an unresolved comparison refuse collection.
+ The DJC profile also refuses every legacy marker that suppresses persistence,
+-even when the same commit otherwise qualifies as a workflow-only carrier.
++even when the same commit otherwise qualifies as a workflow-only carrier. This
++check is case-insensitive, matching GitHub Actions `contains()`; raw event/API
++message equality remains exact. Controls cover lowercase, uppercase and mixed
++case for each legacy marker with the same original message in both fixtures,
++so an incidental message mismatch cannot masquerade as marker rejection.
+ The marker grants no exemption from normal source-authority or persistence jobs;
+ those existing owners retain their normal gates and permissions on every push.
+ This avoids a marker-based route around product source authority. The collector

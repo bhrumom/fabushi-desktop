@@ -1,0 +1,94 @@
+{
+  "schema": "ocrm-independent-review-convergence-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "review_round": 4,
+  "repository": "bhrumom/fabushi-desktop",
+  "base": "511bcebf08738c59ec0313a425a591a327d9cd20",
+  "base_tree": "49b5ad915c48c7a10d67d4c6a6c3e42f54f27d16",
+  "candidate_commit": "544bfa86f7221f84ec83edaebceb24f5cb14f729",
+  "candidate_tree": "63711b44e8362fa7cf5f7a81d03637a2fe0f88b0",
+  "scope_blob": "0555dfc6de9985c67cf3f874a9527722b158c715",
+  "complete_diff_blob": "1479053b226536519c90687e7776fc8263202f0d",
+  "fix_delta_blob": "5b9f34479f3cc65a529aa87bd9fe93557336e372",
+  "files": [
+    {
+      "path": ".github/workflows/ocrm-p0-authority.yml",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "2d22dce2d6067e7f4c16c3c01ed95c58cd3354df",
+      "candidate_blob": "3e3e51517abec7bc7e2aed034238969ffac171e5",
+      "candidate_utf8": {
+        "bytes": 74356,
+        "sha256": "03c7eea12539ec2cf61f18567f0cb1c3a9a26a058fedb56467cd7af18f8665dd"
+      }
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md",
+      "status": "modified",
+      "mode": "100644",
+      "base_blob": "c8c06d437ba32bbe642d62ca4e63f5a0e944455c",
+      "candidate_blob": "9daeb38d9752328a06e36bdf7fe44c4218db6742",
+      "candidate_utf8": {
+        "bytes": 14848,
+        "sha256": "bb0b1b69e6c932f05f57ec7a6533017c8bfb5fbe2b37290977bf12c0e171d77d"
+      }
+    }
+  ],
+  "reviewers": [
+    {
+      "worker": "/root/djc_collector_r4_general",
+      "lens": "GENERAL",
+      "model": "configured parent model",
+      "effort": "xhigh",
+      "fresh_blind": true,
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "findings": [],
+      "read_depth": "Complete522-line original scope diff,68-line focused delta, full1126-line candidate workflow/full231-line behavior spec; frozen historical initializer/complete subject paths/wrapper/projector/DJC receipt/upload; current runtime trigger/consumer, normal authority/persistence/CAS/dispatch.",
+      "limits": "No executable validation, binary archive acquisition/rehash or product acceptance. An unrelated historical upstream title in drift prose was incidental, not review context or evidence."
+    },
+    {
+      "worker": "/root/djc_collector_r4_structure",
+      "lens": "STRUCTURE",
+      "model": "gpt-6.1-sol",
+      "effort": "xhigh",
+      "fresh_blind": true,
+      "verdict": "APPROVED_SOURCE_ONLY",
+      "findings": [],
+      "read_depth": "Complete original scope and fix delta, full workflow/spec; carrier event/API/range admission, normal authority/persistence, shared transport/archive/output/error lifecycle, historical root and selected receipt producers, current trigger and upload consumers.",
+      "limits": "Source-only; archive bytes unread/unhashed, controls unexecuted."
+    }
+  ],
+  "result": "source-review-converged; actual transport remains unexecuted",
+  "decisions_retained": [
+    "review-existing-artifact-r1/decisions.json",
+    "review-existing-artifact-r2/decisions.json",
+    "review-existing-artifact-r3/decisions.json"
+  ],
+  "activation_contract": {
+    "required_commit_change_set": [
+      ".github/workflows/ocrm-p0-authority.yml"
+    ],
+    "exact_workflow_blob": "3e3e51517abec7bc7e2aed034238969ffac171e5",
+    "marker": "[ocrm-recover-djc-e383-command-evidence]",
+    "no_legacy_markers": true,
+    "no_skip_ci_directive": true,
+    "exact_spec_already_persisted": "9daeb38d9752328a06e36bdf7fe44c4218db6742",
+    "normal_source_authority_and_persistence_retained": true,
+    "read_only_collector": true
+  },
+  "source_subject": {
+    "H": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
+    "run": 41642220354,
+    "attempt": 1,
+    "job": 125938337174,
+    "conclusion": "failure",
+    "artifact": 13233434578
+  },
+  "limits": [
+    "Activation is separate from this two-path review snapshot and packet preservation.",
+    "Collector success means transport only; no new product campaign and no failed DJC outcome is replaced.",
+    "All global flags and final G/AC acceptance remain unchanged."
+  ],
+  "full_reports": "Terminal independent reports in task conversation; this file is their convergence index."
+}
