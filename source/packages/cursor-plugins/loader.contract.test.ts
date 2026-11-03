@@ -223,26 +223,31 @@ test("failed cache publication removes only its staging directory", async (t) =>
 });
 
 
-test("filesystem EACCES during cache installation is an install failure, not clone authentication", async (t) => {
-  const cache = await cacheFixture(t);
-  const plugin = entry();
-  const filesystemError = Object.assign(new Error("permission denied while publishing plugin cache"), { code: "EACCES" });
-  const result = await loadFromMarketplaceSource({
-    client: {
-      async listEnabledPlugins() { return { plugins: [plugin] }; },
-      async installPlugin() { throw filesystemError; },
-    },
-    userId: "fixture-user",
-    cacheManager: cache,
-    pruneOldVersions: false,
+for (const code of ["EACCES", "EPERM", "EROFS"] as const) {
+  test(`filesystem ${code} during cache installation is an install failure, not clone authentication`, async (t) => {
+    const cache = await cacheFixture(t);
+    const plugin = entry();
+    const filesystemError = Object.assign(
+      new Error("permission denied while publishing plugin cache"),
+      { code },
+    );
+    const result = await loadFromMarketplaceSource({
+      client: {
+        async listEnabledPlugins() { return { plugins: [plugin] }; },
+        async installPlugin() { throw filesystemError; },
+      },
+      userId: "fixture-user",
+      cacheManager: cache,
+      pruneOldVersions: false,
+    });
+    assert.equal(result.failures.length, 1);
+    assert.equal(result.failures[0]?.errorType, "install");
+    assert.match(result.failures[0]?.errorMessage ?? "", /permission denied/i);
+    assert.equal(await cache.isCached({
+      marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version,
+    }), false);
   });
-  assert.equal(result.failures.length, 1);
-  assert.equal(result.failures[0]?.errorType, "install");
-  assert.match(result.failures[0]?.errorMessage ?? "", /permission denied/i);
-  assert.equal(await cache.isCached({
-    marketplaceSlug: "cursor-public", pluginId: plugin.pluginId, version: plugin.version,
-  }), false);
-});
+}
 
 test("an older failed install cannot remove a successor published cache directory", async (t) => {
   const cache = await cacheFixture(t);
