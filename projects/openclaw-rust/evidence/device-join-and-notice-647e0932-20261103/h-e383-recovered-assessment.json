@@ -1,0 +1,609 @@
+{
+  "schema": "ocrm-djc-recovered-evidence-assessment-v1",
+  "task_id": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "repository": "bhrumom/fabushi-desktop",
+  "upstream": {
+    "repository": "openclaw/openclaw",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "lock_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b"
+  },
+  "subject": {
+    "commit": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
+    "tree": "4887f541b94d5adcbfddc2dff8a48d8d922a307d",
+    "run": 41642220354,
+    "attempt": 1,
+    "job": 125938337174,
+    "runner": "macos-15",
+    "status": "completed",
+    "conclusion": "failure"
+  },
+  "carrier": {
+    "commit": "6278f9a4dc85051c9d4b9416ab33f8e525151821",
+    "tree": "b7a3a52c1f89b591f65192188edc355813d31bed",
+    "run": 41654535799,
+    "attempt": 1,
+    "collector_job": 125981212876,
+    "source_job": 125981212377,
+    "persistence_job": 125982382506,
+    "status": "completed",
+    "conclusion": "success",
+    "product_validation_executed_by_carrier": false,
+    "admission": {
+      "after": "6278f9a4dc85051c9d4b9416ab33f8e525151821",
+      "before": "73e3c5366e902005dacc961485f04ecae0d44b19",
+      "carrier_commit": "6278f9a4dc85051c9d4b9416ab33f8e525151821",
+      "carrier_tree": "b7a3a52c1f89b591f65192188edc355813d31bed",
+      "collection_state": "partial",
+      "complete_push_commits": 1,
+      "complete_push_files": [
+        {
+          "blob": "3e3e51517abec7bc7e2aed034238969ffac171e5",
+          "path": ".github/workflows/ocrm-p0-authority.yml",
+          "status": "modified"
+        }
+      ],
+      "kind": "carrier-admission",
+      "normal_persistence_exempted": false,
+      "normal_source_authority_exempted": false,
+      "product_validation_executed_by_carrier": false,
+      "source_attempt": 1,
+      "source_job": 125938337174,
+      "source_run": 41642220354,
+      "source_subject": "e3837eac2c6bd693f058ccc58268ed97df2c1f99"
+    }
+  },
+  "transport": {
+    "artifacts": [
+      {
+        "artifact_id": 13233434578,
+        "bytes": 1811356,
+        "name": "ocrm-recovery-commands-e3837eac2c6bd693f058ccc58268ed97df2c1f99-41642220354-1",
+        "selected_raw_complete": true,
+        "sha256": "89d74935aca99b8b6003dac9edc4bac62535857abb6959e88f0b2251de5bf410",
+        "unselected_commands_validated": false,
+        "validated_inputs": {
+          ".github/workflows/rust-desktop-runtime.yml": {
+            "bytes": 462342,
+            "git_blob": "bc0f5de312135db7a531779478b37dc7c4ab8f7e",
+            "sha256": "64e3e72497af491fb627beccc950a622229bdc2aeec3024be38b0914126c4a55"
+          },
+          "projects/openclaw-rust/docs/specs/device-pairing-join-admission.md": {
+            "bytes": 10565,
+            "git_blob": "d8b5f89ea136cf6710a425b5ca40f5301d81173f",
+            "sha256": "fb194ac79324aa8b8ae9056df0f19e841258d25c728aa121ea7edd2cc361d92a"
+          },
+          "projects/openclaw-rust/upstream.lock.json": {
+            "bytes": 3495,
+            "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+            "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849"
+          },
+          "source/host/Cargo.lock": {
+            "bytes": 119989,
+            "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+            "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf"
+          },
+          "source/host/Cargo.toml": {
+            "bytes": 1899,
+            "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+            "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb"
+          },
+          "source/host/app/src/main.rs": {
+            "bytes": 1008894,
+            "git_blob": "d261aa4428899dc8932a4e3e219f9e2d889428ce",
+            "sha256": "ee4fbd723f07691452a6970eb7577270ad5d9a5d26bacb86cfeda6709af7bb37"
+          },
+          "source/host/src/device_pairing_owner.rs": {
+            "bytes": 103155,
+            "git_blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23",
+            "sha256": "719a84fe502691e1a14008167f3652174b9a7fe7bd3975ed34067b5351885073"
+          },
+          "source/host/src/gateway_command_error.rs": {
+            "bytes": 6296,
+            "git_blob": "799a47b3f741f9e9bb224d481cb08a241113529d",
+            "sha256": "879b40b479dd6ab66acb8150e06888b4c95ca66eee7cd1428e1286acee3fc43d"
+          },
+          "source/host/src/gateway_server.rs": {
+            "bytes": 97871,
+            "git_blob": "2cc83cf387ae37c3b1c28663f72d9d0492e84ccd",
+            "sha256": "965935140600220ff2eaedc19c85ab325325b270677edc924663497db42b337a"
+          },
+          "source/host/src/host_gateway_api.rs": {
+            "bytes": 12641,
+            "git_blob": "127b340f120f931af778783aabcf338869fe0bc8",
+            "sha256": "290a798b0fca502991f0b064943edb0fcdd5e05d5de2f7dfbcdfd2f115624337"
+          },
+          "source/host/tests/device_pairing_join_admission_contract.rs": {
+            "bytes": 50035,
+            "git_blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
+            "sha256": "611b65aa25dbda7d5bd6c1c43a062731768339f52768d07f9ab00485b40c4756"
+          }
+        }
+      }
+    ],
+    "carrier_attempt": 1,
+    "carrier_commit": "6278f9a4dc85051c9d4b9416ab33f8e525151821",
+    "carrier_run": 41654535799,
+    "collection_profile": "djc-e383",
+    "log_bytes": 3224357,
+    "log_lines": 30361,
+    "log_sha256": "b34c0026134447334abc69d71716658dbe444dea68072da7f7a26132964254bb",
+    "outcome_bytes": 483692,
+    "outcome_complete": true,
+    "outcome_records": 859,
+    "product_validation_executed_by_carrier": false,
+    "repository": "bhrumom/fabushi-desktop",
+    "retention_days": 7,
+    "source_attempt": 1,
+    "source_conclusion": "failure",
+    "source_job": 125938337174,
+    "source_job_conclusion": "failure",
+    "source_job_name": "rust-host",
+    "source_run": 41642220354,
+    "source_run_conclusion": "failure",
+    "source_run_status": "completed",
+    "source_subject": "e3837eac2c6bd693f058ccc58268ed97df2c1f99",
+    "source_tree": "4887f541b94d5adcbfddc2dff8a48d8d922a307d"
+  },
+  "collector_log": {
+    "bytes": 599559,
+    "sha256": "1a394fd61c8a4e7f769993e64d235d389d3f60f200c18d903de1be12969de2a5"
+  },
+  "controls": {
+    "count": 56,
+    "results": [
+      {
+        "control": "subject_commit",
+        "result": "rejected"
+      },
+      {
+        "control": "run_attempt",
+        "result": "rejected"
+      },
+      {
+        "control": "archive_member_path",
+        "result": "rejected"
+      },
+      {
+        "control": "duplicate_archive_member",
+        "result": "rejected"
+      },
+      {
+        "control": "upload_id_format_': '",
+        "result": "accepted"
+      },
+      {
+        "control": "upload_id_format_' '",
+        "result": "accepted"
+      },
+      {
+        "control": "upload_id_format_' is '",
+        "result": "accepted"
+      },
+      {
+        "control": "upload_wrong_id",
+        "result": "rejected"
+      },
+      {
+        "control": "upload_id_prefix",
+        "result": "rejected"
+      },
+      {
+        "control": "upload_wrong_digest",
+        "result": "rejected"
+      },
+      {
+        "control": "upload_digest_prefix",
+        "result": "rejected"
+      },
+      {
+        "control": "upload_missing_id",
+        "result": "rejected"
+      },
+      {
+        "control": "upload_missing_digest",
+        "result": "rejected"
+      },
+      {
+        "canary": {
+          "legacy": "##[error]fixture",
+          "modern": "::error::fixture"
+        },
+        "control": "workflow_command_round_trip",
+        "result": "accepted"
+      },
+      {
+        "control": "colored_harness_target",
+        "result": "accepted"
+      },
+      {
+        "control": "non_harness_line",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_workflow_only_carrier",
+        "result": "accepted"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-563-command-evidence]",
+        "raw_marker": "[ocrm-recover-563-command-evidence]",
+        "result": "rejected",
+        "spelling": "lowercase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-563-command-evidence]",
+        "raw_marker": "[OCRM-RECOVER-563-COMMAND-EVIDENCE]",
+        "result": "rejected",
+        "spelling": "uppercase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-563-command-evidence]",
+        "raw_marker": "[OcRm-rEcOvEr-563-cOmMaNd-eViDeNcE]",
+        "result": "rejected",
+        "spelling": "mixedcase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-812-command-evidence]",
+        "raw_marker": "[ocrm-recover-812-command-evidence]",
+        "result": "rejected",
+        "spelling": "lowercase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-812-command-evidence]",
+        "raw_marker": "[OCRM-RECOVER-812-COMMAND-EVIDENCE]",
+        "result": "rejected",
+        "spelling": "uppercase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-812-command-evidence]",
+        "raw_marker": "[OcRm-rEcOvEr-812-cOmMaNd-eViDeNcE]",
+        "result": "rejected",
+        "spelling": "mixedcase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-563-command-evidence-v2]",
+        "raw_marker": "[ocrm-recover-563-command-evidence-v2]",
+        "result": "rejected",
+        "spelling": "lowercase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-563-command-evidence-v2]",
+        "raw_marker": "[OCRM-RECOVER-563-COMMAND-EVIDENCE-V2]",
+        "result": "rejected",
+        "spelling": "uppercase"
+      },
+      {
+        "control": "djc_conflicting_legacy_marker",
+        "marker": "[ocrm-recover-563-command-evidence-v2]",
+        "raw_marker": "[OcRm-rEcOvEr-563-cOmMaNd-eViDeNcE-V2]",
+        "result": "rejected",
+        "spelling": "mixedcase"
+      },
+      {
+        "control": "djc_carrier_product_files",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_product_only",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_multiple_commits",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_wrong_parent",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_wrong_before",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_zero_before",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_wrong_head",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_wrong_repository",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_unresolved_files",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_carrier_renamed_workflow",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_root_manifest_missing_input",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_selected_members",
+        "result": "accepted"
+      },
+      {
+        "control": "djc_missing_capture-exit-codes.tsv",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_missing_command-exit-codes.tsv",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_missing_console-evidence.jsonl",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_missing_device-pairing-join.command.txt",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_missing_device-pairing-join.log",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_missing_device-pairing-join.receipt.json",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_missing_subject.json",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_raw_member",
+        "result": "accepted"
+      },
+      {
+        "control": "djc_raw_bytes",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_raw_digest",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_raw_lines",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_failed_receipt",
+        "result": "accepted"
+      },
+      {
+        "control": "djc_failed_receipt_result",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_failed_receipt_command",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_failed_receipt_exit",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_failed_receipt_capture",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_command_table",
+        "result": "rejected"
+      },
+      {
+        "control": "djc_command_table",
+        "result": "rejected"
+      }
+    ],
+    "role": "Collector controls only; not product behavior"
+  },
+  "raw_log": {
+    "file": "h-e383-device-pairing-join.log",
+    "bytes": 43473,
+    "sha256": "47b78cb8103f0d9d5d25e7d3eed12c65c826138ad5401390e8d4dcf407b55bc8",
+    "lines": 809,
+    "root_verification": "Reconstructed all 809 uniquely ordered numbered text records with LF. Actual bytes and SHA-256 match the validated archive member. Original ZIP body hash was checked in Actions, not downloaded by the root connector.",
+    "complete_receipt": {
+      "artifact": "djc",
+      "bytes": 43473,
+      "carrier_commit": "6278f9a4dc85051c9d4b9416ab33f8e525151821",
+      "collection_state": "partial",
+      "file": "device-pairing-join.log",
+      "kind": "selected-raw-complete",
+      "lines": 809,
+      "product_validation_executed_by_carrier": false,
+      "sha256": "47b78cb8103f0d9d5d25e7d3eed12c65c826138ad5401390e8d4dcf407b55bc8",
+      "source_attempt": 1,
+      "source_job": 125938337174,
+      "source_product_result": "failed",
+      "source_run": 41642220354,
+      "source_subject": "e3837eac2c6bd693f058ccc58268ed97df2c1f99"
+    }
+  },
+  "result": {
+    "cargo_exit": 101,
+    "capture_exit": 0,
+    "passed": 8,
+    "failed": 1,
+    "seconds": 13.17,
+    "verdict": "TEST_FLAW; retained original eight-second observation unresolved",
+    "failed_name": "join_storage_commit_refusal_never_publishes_payload",
+    "timing_phases": [
+      {
+        "line": 784,
+        "milliseconds": 12,
+        "event": "reader-fence-acquired"
+      },
+      {
+        "line": 785,
+        "milliseconds": 12,
+        "event": "owner-call-started"
+      },
+      {
+        "line": 786,
+        "milliseconds": 59,
+        "event": "journaled-write-observed"
+      },
+      {
+        "line": 787,
+        "milliseconds": 8126,
+        "event": "original-8s-observation-expired"
+      },
+      {
+        "line": 788,
+        "milliseconds": 8416,
+        "event": "owner-returned",
+        "result": "internal-error"
+      },
+      {
+        "line": 789,
+        "milliseconds": 8416,
+        "event": "storage-error-status-and-redaction-checked"
+      },
+      {
+        "line": 790,
+        "milliseconds": 8416,
+        "event": "reader-fence-explicitly-released"
+      },
+      {
+        "line": 791,
+        "milliseconds": 8418,
+        "event": "refused-row-preservation-checked"
+      },
+      {
+        "line": 792,
+        "milliseconds": 8420,
+        "event": "owner-reopened"
+      },
+      {
+        "line": 793,
+        "milliseconds": 8423,
+        "event": "fresh-redemption-after-unlock-checked"
+      },
+      {
+        "line": 794,
+        "milliseconds": 8424,
+        "event": "consumed-marker-checked"
+      }
+    ],
+    "parent": {
+      "milliseconds": 8522,
+      "exit": 101,
+      "clock": "Different origin from child; not subtractable"
+    },
+    "original_assertion_retained": true,
+    "later_assertions_do_not_erase_timed_failure": true
+  },
+  "source_review": {
+    "owner": {
+      "path": "source/host/src/device_pairing_owner.rs",
+      "blob": "9825003cf1f7047027aa1b8e496c40f0c1693a23"
+    },
+    "test": {
+      "path": "source/host/tests/device_pairing_join_admission_contract.rs",
+      "blob": "92967b7dd7e69d8b5686b93075db347eb3a023a5",
+      "earlier_blob": "da4940bbca310d82a317b61ad6940b51e36a0c42",
+      "lock_case_logic_same": true
+    },
+    "finding": "Worker writes pre-call phase before public invocation and result phase before send; receiver starts only after journal observation/phase output. These timestamps do not directly bracket invocation, return, send or wait.",
+    "dependency_contract": {
+      "repository": "rusqlite/rusqlite",
+      "commit": "2a1790a69107cd03dae85d501dcbdb11c5b32ef3",
+      "version": "0.39.0",
+      "sqlite_sys": "0.37.0 bundled",
+      "reviewer": "independent source assessor",
+      "paths": [
+        "src/busy.rs",
+        "src/inner_connection.rs",
+        "src/transaction.rs"
+      ],
+      "fact": "Default 5000ms busy sleep budget is not a public-call deadline; consuming failed commit can be followed by rollback in Drop. Nonempty journal does not identify exact statement failure."
+    },
+    "credit": "Scoped implementation/call/observation and dependency-contract reading only; no global fixed-U reading promotion."
+  },
+  "independent_assessment": {
+    "agent": "/root/djc_recovered_timing_assess",
+    "mode": "read-only",
+    "effort": "inherited configured xhigh",
+    "terminal": "completed",
+    "classification": "TEST_FLAW",
+    "unrecoverable": false,
+    "cause_not_proven": [
+      "production defect",
+      "eight-second public guarantee",
+      "macOS/load/logging/SQLite-specific delay"
+    ]
+  },
+  "decisions": [
+    {
+      "id": "DJC-READER-OBSERVATION-001",
+      "decision": "FIX",
+      "category": "TEST_FLAW",
+      "reason": "Causal source observation is available after original artifact recovery. Instrument exact in-memory call/send/wait/join/release boundaries and notify before post-result diagnostics; preserve original assertions and deadlines.",
+      "allowed_paths": [
+        "source/host/tests/device_pairing_join_admission_contract.rs",
+        "existing selected verification adapter"
+      ],
+      "prohibited": [
+        "production timeout/retry/test hooks",
+        "increased eight-second/120-second/five-second boundaries",
+        "unchanged rerun",
+        "replacing failure with DJC-07 positive",
+        "claiming private COMMIT duration from public-call timestamps"
+      ]
+    }
+  ],
+  "retained": {
+    "earlier_failure": {
+      "subject": "6d8c241b609948c4266e1e40c8f559795b317473",
+      "run": 41618863245,
+      "job": 125859112570
+    },
+    "whole_case_positives": [
+      "join_concurrent_file_owners_publish_one_payload",
+      "join_deferred_commit_refusal_is_qualified_and_preserves_recovery",
+      "join_expiry_and_legacy_json_preserve_single_use_contract",
+      "join_expiry_is_rechecked_after_a_delayed_successful_commit",
+      "join_gateway_reports_storage_failure_and_preserves_public_recovery",
+      "join_malformed_rows_are_consumed_durably_before_content_validation",
+      "join_storage_read_failure_is_distinct_and_recovers_without_consuming",
+      "join_storage_write_failure_preserves_row_and_redacts_errors"
+    ],
+    "full_acceptance": false
+  },
+  "next_bounded_instrument": {
+    "contract": "DJC-09",
+    "scope": "djc-reader-observation",
+    "selected_names": [
+      "join_storage_commit_refusal_never_publishes_payload",
+      "join_reader_observation_notifies_before_diagnostic_release",
+      "join_reader_observation_cannot_notify_before_operation_return"
+    ],
+    "platforms": [
+      "ubuntu-24.04",
+      "macos-15"
+    ],
+    "compile": "Only changed Host integration target",
+    "budget": "One changed-instrument focused Actions campaign after fresh independent source review; classify any retained failure using the new boundaries before another action."
+  },
+  "acceptance": {
+    "full_unit_verified": false,
+    "shipping_accepted": false,
+    "global_flags_promoted": false,
+    "collector_success_is_product_success": false
+  }
+}

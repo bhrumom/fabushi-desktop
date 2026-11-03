@@ -1,0 +1,809 @@
+[1m[33mwarning[0m[1m: unused import: `AgentActivity`[0m
+  [1m[94m--> [0msrc/extensions/transcript/production_runtime.rs:15:44
+   [1m[94m|[0m
+[1m[94m15[0m [1m[94m|[0m use crate::sand_activity::{ActivityUpdate, AgentActivity};
+   [1m[94m|[0m                                            [1m[33m^^^^^^^^^^^^^[0m
+   [1m[94m|[0m
+   [1m[94m= [0m[1mnote[0m: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+[1m[33mwarning[0m[1m: unused import: `DateTime`[0m
+ [1m[94m--> [0msrc/extensions/transcript/automation_run_path.rs:5:14
+  [1m[94m|[0m
+[1m[94m5[0m [1m[94m|[0m use chrono::{DateTime, Local, TimeZone, Utc};
+  [1m[94m|[0m              [1m[33m^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `ConversationStructureRefs`[0m
+  [1m[94m--> [0msrc/extensions/session/session_conversation_state.rs:34:5
+   [1m[94m|[0m
+[1m[94m34[0m [1m[94m|[0m     ConversationStructureRefs, OutlineItem as RecoveryOutlineItem,
+   [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Oneof`[0m
+ [1m[94m--> [0msrc/extensions/box_store_sync/sand_box_store_v2_client.rs:4:22
+  [1m[94m|[0m
+[1m[94m4[0m [1m[94m|[0m use prost::{Message, Oneof};
+  [1m[94m|[0m                      [1m[33m^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `SandBoxStoreCompletedPart`[0m
+  [1m[94m--> [0msrc/extensions/box_store_sync/sand_box_store_v2_client.rs:12:5
+   [1m[94m|[0m
+[1m[94m12[0m [1m[94m|[0m     SandBoxStoreCompletedPart, SandBoxStoreListPage, SandBoxStoreMultipartCompletion,
+   [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `json`[0m
+  [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:16:18
+   [1m[94m|[0m
+[1m[94m16[0m [1m[94m|[0m use serde_json::{json, Map, Value};
+   [1m[94m|[0m                  [1m[33m^^^^[0m
+
+[1m[33mwarning[0m[1m: unused imports: `BOX_STORE_BLOBS_PREFIX` and `BOX_STORE_MANIFEST_VERSION`[0m
+  [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:38:46
+   [1m[94m|[0m
+[1m[94m38[0m [1m[94m|[0m     BoxStoreManifest, BoxStoreManifestEntry, BOX_STORE_BLOBS_PREFIX, BOX_STORE_MANIFEST_REL_PATH,
+   [1m[94m|[0m                                              [1m[33m^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m39[0m [1m[94m|[0m     BOX_STORE_MANIFEST_VERSION, SAND_MANIFEST_V2_ENV,
+   [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES`[0m
+  [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:56:40
+   [1m[94m|[0m
+[1m[94m56[0m [1m[94m|[0m     plan_periodic_cycle, BOX_HOME_DIR, BOX_HOME_PRUNE_GUARDED_FOREIGN_TREES, BOX_HOME_REL_PREFIX,
+   [1m[94m|[0m                                        [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `WorkspaceIgnore`[0m
+  [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:86:28
+   [1m[94m|[0m
+[1m[94m86[0m [1m[94m|[0m     load_workspace_ignore, WorkspaceIgnore, SAND_BOX_WORKSPACE_DEFAULT_IGNORE_PATTERNS,
+   [1m[94m|[0m                            [1m[33m^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::fmt`[0m
+ [1m[94m--> [0msrc/extensions/box_lifecycle/production.rs:1:5
+  [1m[94m|[0m
+[1m[94m1[0m [1m[94m|[0m use std::fmt;
+  [1m[94m|[0m     [1m[33m^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `run_codex_direct_responses_with_cancel`[0m
+  [1m[94m--> [0msrc/extensions/inference/provider_session.rs:35:45
+   [1m[94m|[0m
+[1m[94m35[0m [1m[94m|[0m     CodexDirectTransport, CodexDirectUsage, run_codex_direct_responses_with_cancel,
+   [1m[94m|[0m                                             [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `DiskPressureReport`[0m
+  [1m[94m--> [0msrc/extensions/forever_box/disk_pressure.rs:17:44
+   [1m[94m|[0m
+[1m[94m17[0m [1m[94m|[0m     DiskPressureLevel, DiskPressureLogger, DiskPressureReport, DiskPressureReporter,
+   [1m[94m|[0m                                            [1m[33m^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Oneof`[0m
+ [1m[94m--> [0msrc/extensions/auto_review/sand_backend_smart_mode_classifier_exec.rs:4:22
+  [1m[94m|[0m
+[1m[94m4[0m [1m[94m|[0m use prost::{Message, Oneof};
+  [1m[94m|[0m                      [1m[33m^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `regex::Regex`[0m
+  [1m[94m--> [0msrc/extensions/attachments/input_files.rs:13:5
+   [1m[94m|[0m
+[1m[94m13[0m [1m[94m|[0m use regex::Regex;
+   [1m[94m|[0m     [1m[33m^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Path`[0m
+ [1m[94m--> [0msrc/extensions/attachments/load_options.rs:6:17
+  [1m[94m|[0m
+[1m[94m6[0m [1m[94m|[0m use std::path::{Path, PathBuf};
+  [1m[94m|[0m                 [1m[33m^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `SaveMediaSourceError`[0m
+  [1m[94m--> [0msrc/extensions/attachments/media_fetch.rs:22:5
+   [1m[94m|[0m
+[1m[94m22[0m [1m[94m|[0m     SaveMediaSourceError, SaveMediaSourceErrorCode,
+   [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused imports: `PathBuf` and `Path`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_generation_service.rs:2:17
+  [1m[94m|[0m
+[1m[94m2[0m [1m[94m|[0m use std::path::{Path, PathBuf};
+  [1m[94m|[0m                 [1m[33m^^^^[0m  [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::collections::HashMap`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:1:5
+  [1m[94m|[0m
+[1m[94m1[0m [1m[94m|[0m use std::collections::HashMap;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::fs::File`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:2:5
+  [1m[94m|[0m
+[1m[94m2[0m [1m[94m|[0m use std::fs::File;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::io::Read`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:3:5
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::io::Read;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::path::Path`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:4:5
+  [1m[94m|[0m
+[1m[94m4[0m [1m[94m|[0m use std::path::Path;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::sync::LazyLock`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:5:5
+  [1m[94m|[0m
+[1m[94m5[0m [1m[94m|[0m use std::sync::LazyLock;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::time::Instant`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:6:5
+  [1m[94m|[0m
+[1m[94m6[0m [1m[94m|[0m use std::time::Instant;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused imports: `SeekFrom` and `Seek`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_store.rs:3:27
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::io::{self, Read, Seek, SeekFrom, Write};
+  [1m[94m|[0m                           [1m[33m^^^^[0m  [1m[33m^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Component`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_store.rs:4:17
+  [1m[94m|[0m
+[1m[94m4[0m [1m[94m|[0m use std::path::{Component, Path, PathBuf};
+  [1m[94m|[0m                 [1m[33m^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused imports: `Value` and `json`[0m
+  [1m[94m--> [0msrc/extensions/attachments/media_store.rs:10:18
+   [1m[94m|[0m
+[1m[94m10[0m [1m[94m|[0m use serde_json::{Value, json};
+   [1m[94m|[0m                  [1m[33m^^^^^[0m  [1m[33m^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `format_media_size`[0m
+  [1m[94m--> [0msrc/extensions/attachments/media_store.rs:15:70
+   [1m[94m|[0m
+[1m[94m15[0m [1m[94m|[0m     MEDIA_FILE_MODE, SaveMediaSourceError, SaveMediaSourceErrorCode, format_media_size,
+   [1m[94m|[0m                                                                      [1m[33m^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `HashSet`[0m
+ [1m[94m--> [0msrc/extensions/attachments/media_understanding_service.rs:1:33
+  [1m[94m|[0m
+[1m[94m1[0m [1m[94m|[0m use std::collections::{HashMap, HashSet};
+  [1m[94m|[0m                                 [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::collections::HashSet`[0m
+ [1m[94m--> [0msrc/extensions/attachments/parse_output.rs:8:5
+  [1m[94m|[0m
+[1m[94m8[0m [1m[94m|[0m use std::collections::HashSet;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Duration`[0m
+  [1m[94m--> [0msrc/extensions/attachments/remote_workspace_file.rs:10:17
+   [1m[94m|[0m
+[1m[94m10[0m [1m[94m|[0m use std::time::{Duration, Instant};
+   [1m[94m|[0m                 [1m[33m^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Sha256`[0m
+  [1m[94m--> [0msrc/extensions/attachments/staged_inputs.rs:13:20
+   [1m[94m|[0m
+[1m[94m13[0m [1m[94m|[0m use sha2::{Digest, Sha256};
+   [1m[94m|[0m                    [1m[33m^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `ImageMetadata`[0m
+  [1m[94m--> [0msrc/extensions/attachments/web_media.rs:20:35
+   [1m[94m|[0m
+[1m[94m20[0m [1m[94m|[0m     read_image_probe_from_header, ImageMetadata, MAX_IMAGE_BYTES,
+   [1m[94m|[0m                                   [1m[33m^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Path`[0m
+ [1m[94m--> [0msrc/extensions/content_search/search_index_writer.rs:3:17
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::path::{Path, PathBuf};
+  [1m[94m|[0m                 [1m[33m^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `HashSet`[0m
+ [1m[94m--> [0msrc/extensions/plugin_sdk/api_baseline.rs:2:33
+  [1m[94m|[0m
+[1m[94m2[0m [1m[94m|[0m use std::collections::{HashMap, HashSet};
+  [1m[94m|[0m                                 [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `PathBuf`[0m
+ [1m[94m--> [0msrc/extensions/plugin_sdk/api_baseline.rs:3:23
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::path::{Path, PathBuf};
+  [1m[94m|[0m                       [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Path`[0m
+ [1m[94m--> [0msrc/extensions/plugin_sdk/archive_blob.rs:6:17
+  [1m[94m|[0m
+[1m[94m6[0m [1m[94m|[0m use std::path::{Path, PathBuf};
+  [1m[94m|[0m                 [1m[33m^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `json`[0m
+ [1m[94m--> [0msrc/extensions/plugin_sdk/channel_entry.rs:2:18
+  [1m[94m|[0m
+[1m[94m2[0m [1m[94m|[0m use serde_json::{json, Value};
+  [1m[94m|[0m                  [1m[33m^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::collections::HashMap`[0m
+ [1m[94m--> [0msrc/extensions/plugin_sdk/channel_entry.rs:3:5
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::collections::HashMap;
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused imports: `Engine as _` and `engine::general_purpose::STANDARD`[0m
+ [1m[94m--> [0msrc/extensions/plugins/clawhub.rs:1:14
+  [1m[94m|[0m
+[1m[94m1[0m [1m[94m|[0m use base64::{engine::general_purpose::STANDARD, Engine as _};
+  [1m[94m|[0m              [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m  [1m[33m^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Sha256`[0m
+ [1m[94m--> [0msrc/extensions/plugins/clawhub.rs:3:20
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use sha2::{Digest, Sha256};
+  [1m[94m|[0m                    [1m[33m^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `HashMap`[0m
+ [1m[94m--> [0msrc/extensions/plugins/commands.rs:2:24
+  [1m[94m|[0m
+[1m[94m2[0m [1m[94m|[0m use std::collections::{HashMap, HashSet};
+  [1m[94m|[0m                        [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Arc`[0m
+ [1m[94m--> [0msrc/extensions/plugins/commands.rs:4:17
+  [1m[94m|[0m
+[1m[94m4[0m [1m[94m|[0m use std::sync::{Arc, Condvar, Mutex};
+  [1m[94m|[0m                 [1m[33m^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Arc`[0m
+ [1m[94m--> [0msrc/extensions/plugins/computer_use.rs:3:17
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::sync::{Arc, Mutex};
+  [1m[94m|[0m                 [1m[33m^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `HashSet`[0m
+ [1m[94m--> [0msrc/extensions/plugins/config.rs:3:33
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::collections::{HashMap, HashSet};
+  [1m[94m|[0m                                 [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Map`[0m
+ [1m[94m--> [0msrc/runner/tools/sand_multitask_todo_tool.rs:5:18
+  [1m[94m|[0m
+[1m[94m5[0m [1m[94m|[0m use serde_json::{Map, Value, json};
+  [1m[94m|[0m                  [1m[33m^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `std::fmt`[0m
+ [1m[94m--> [0msrc/box/box_transfer.rs:3:5
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use std::fmt;
+  [1m[94m|[0m     [1m[33m^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Arc`[0m
+ [1m[94m--> [0msrc/workflows/workflow_library.rs:5:17
+  [1m[94m|[0m
+[1m[94m5[0m [1m[94m|[0m use std::sync::{Arc, OnceLock};
+  [1m[94m|[0m                 [1m[33m^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `HashMap`[0m
+ [1m[94m--> [0msrc/agents/agent_roster.rs:1:24
+  [1m[94m|[0m
+[1m[94m1[0m [1m[94m|[0m use std::collections::{HashMap, HashSet};
+  [1m[94m|[0m                        [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `ProductionAgentStoreWorkerBackend`[0m
+ [1m[94m--> [0msrc/transcript_mirror/production_provider.rs:6:5
+  [1m[94m|[0m
+[1m[94m6[0m [1m[94m|[0m     ProductionAgentStoreWorkerBackend, TranscriptMirrorOffloadPool, WorkerBlobStore,
+  [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Path`[0m
+ [1m[94m--> [0msrc/device_pairing_owner.rs:2:17
+  [1m[94m|[0m
+[1m[94m2[0m [1m[94m|[0m use std::path::{Path, PathBuf};
+  [1m[94m|[0m                 [1m[33m^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Digest`[0m
+  [1m[94m--> [0msrc/extensions/attachments/staged_inputs.rs:13:12
+   [1m[94m|[0m
+[1m[94m13[0m [1m[94m|[0m use sha2::{Digest, Sha256};
+   [1m[94m|[0m            [1m[33m^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `Digest`[0m
+ [1m[94m--> [0msrc/extensions/plugins/clawhub.rs:3:12
+  [1m[94m|[0m
+[1m[94m3[0m [1m[94m|[0m use sha2::{Digest, Sha256};
+  [1m[94m|[0m            [1m[33m^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused import: `PermissionsExt`[0m
+  [1m[94m--> [0msrc/extensions/snapshot/git_backup_manager.rs:14:54
+   [1m[94m|[0m
+[1m[94m14[0m [1m[94m|[0m use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+   [1m[94m|[0m                                                      [1m[33m^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: unused variable: `session_key`[0m
+   [1m[94m--> [0msrc/extensions/transcript/agent_to_agent_messaging.rs:302:44
+    [1m[94m|[0m
+[1m[94m302[0m [1m[94m|[0m         let pending_turn_id = if let (Some(session_key), Some(source_admission)) =
+    [1m[94m|[0m                                            [1m[33m^^^^^^^^^^^[0m [1m[33mhelp: if this is intentional, prefix it with an underscore: `_session_key`[0m
+    [1m[94m|[0m
+    [1m[94m= [0m[1mnote[0m: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+    [1m[94m--> [0msrc/extensions/transcript/production_runtime.rs:1592:13
+     [1m[94m|[0m
+[1m[94m1592[0m [1m[94m|[0m         let mut result = if suppress_stale_turn {
+     [1m[94m|[0m             [1m[94m----[0m[1m[33m^^^^^^[0m
+     [1m[94m|[0m             [1m[94m|[0m
+     [1m[94m|[0m             [1m[94mhelp: remove this `mut`[0m
+     [1m[94m|[0m
+     [1m[94m= [0m[1mnote[0m: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+[1m[33mwarning[0m[1m: value assigned to `persisted_echo_entry_id` is never read[0m
+    [1m[94m--> [0msrc/extensions/transcript/production_runtime.rs:1396:59
+     [1m[94m|[0m
+[1m[94m1396[0m [1m[94m|[0m         let mut persisted_echo_entry_id: Option<String> = None;
+     [1m[94m|[0m                                                           [1m[33m^^^^[0m [1m[33mthis value is reassigned later and never used[0m
+[1m[94m...[0m
+[1m[94m1438[0m [1m[94m|[0m                             persisted_echo_entry_id =
+     [1m[94m|[0m                             [1m[94m-----------------------[0m [1m[94m`persisted_echo_entry_id` is overwritten here before the previous value is read[0m
+     [1m[94m|[0m
+     [1m[94m= [0m[1mnote[0m: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+[1m[33mwarning[0m[1m: value assigned to `persisted_send_context` is never read[0m
+    [1m[94m--> [0msrc/extensions/transcript/production_runtime.rs:1397:42
+     [1m[94m|[0m
+[1m[94m1397[0m [1m[94m|[0m         let mut persisted_send_context = PersistedSendContext::default();
+     [1m[94m|[0m                                          [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m [1m[33mthis value is reassigned later and never used[0m
+[1m[94m...[0m
+[1m[94m1437[0m [1m[94m|[0m                             persisted_send_context = persisted.into();
+     [1m[94m|[0m                             [1m[94m----------------------[0m [1m[94m`persisted_send_context` is overwritten here before the previous value is read[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+    [1m[94m--> [0msrc/extensions/session/agent_db.rs:2069:13
+     [1m[94m|[0m
+[1m[94m2069[0m [1m[94m|[0m         let mut guard = self
+     [1m[94m|[0m             [1m[94m----[0m[1m[33m^^^^^[0m
+     [1m[94m|[0m             [1m[94m|[0m
+     [1m[94m|[0m             [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+    [1m[94m--> [0msrc/extensions/session/agent_db.rs:2694:13
+     [1m[94m|[0m
+[1m[94m2694[0m [1m[94m|[0m         let mut guard = self
+     [1m[94m|[0m             [1m[94m----[0m[1m[33m^^^^^[0m
+     [1m[94m|[0m             [1m[94m|[0m
+     [1m[94m|[0m             [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+    [1m[94m--> [0msrc/extensions/session/agent_db.rs:5155:13
+     [1m[94m|[0m
+[1m[94m5155[0m [1m[94m|[0m         let mut guard = self
+     [1m[94m|[0m             [1m[94m----[0m[1m[33m^^^^^[0m
+     [1m[94m|[0m             [1m[94m|[0m
+     [1m[94m|[0m             [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/extensions/box_store_sync/box_copy_in.rs:948:25
+    [1m[94m|[0m
+[1m[94m948[0m [1m[94m|[0m                     let mut event = build_copy_in_watchdog_event(
+    [1m[94m|[0m                         [1m[94m----[0m[1m[33m^^^^^[0m
+    [1m[94m|[0m                         [1m[94m|[0m
+    [1m[94m|[0m                         [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: value assigned to `manifest_committed` is never read[0m
+    [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:1555:17
+     [1m[94m|[0m
+[1m[94m1555[0m [1m[94m|[0m                 manifest_committed = false;
+     [1m[94m|[0m                 [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+     [1m[94m|[0m
+     [1m[94m= [0m[1mhelp[0m: maybe it is overwritten before being read?
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+  [1m[94m--> [0msrc/extensions/cloud_workers/store.rs:60:13
+   [1m[94m|[0m
+[1m[94m60[0m [1m[94m|[0m         let mut file = File::open(path).map_err(CloudWorkerStoreError::Read)?;
+   [1m[94m|[0m             [1m[94m----[0m[1m[33m^^^^[0m
+   [1m[94m|[0m             [1m[94m|[0m
+   [1m[94m|[0m             [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: value assigned to `held` is never read[0m
+   [1m[94m--> [0msrc/extensions/telemetry/structured_log_telemetry.rs:312:29
+    [1m[94m|[0m
+[1m[94m312[0m [1m[94m|[0m [1m[94m...[0m                   held = false;
+    [1m[94m|[0m                       [1m[33m^^^^^^^^^^^^[0m
+    [1m[94m|[0m
+    [1m[94m= [0m[1mhelp[0m: maybe it is overwritten before being read?
+
+[1m[33mwarning[0m[1m: value assigned to `held` is never read[0m
+   [1m[94m--> [0msrc/extensions/telemetry/structured_log_telemetry.rs:329:29
+    [1m[94m|[0m
+[1m[94m329[0m [1m[94m|[0m [1m[94m...[0m                   held = false;
+    [1m[94m|[0m                       [1m[33m^^^^^^^^^^^^[0m
+    [1m[94m|[0m
+    [1m[94m= [0m[1mhelp[0m: maybe it is overwritten before being read?
+
+[1m[33mwarning[0m[1m: unused variable: `current_ref`[0m
+   [1m[94m--> [0msrc/extensions/inference/model_picker_service.rs:374:9
+    [1m[94m|[0m
+[1m[94m374[0m [1m[94m|[0m     let current_ref = format!("{}/{}", params.current_provider, params.current_model);
+    [1m[94m|[0m         [1m[33m^^^^^^^^^^^[0m [1m[33mhelp: if this is intentional, prefix it with an underscore: `_current_ref`[0m
+
+[1m[33mwarning[0m[1m: value assigned to `should_sync` is never read[0m
+   [1m[94m--> [0msrc/extensions/wallpaper/wallpaper_service.rs:149:9
+    [1m[94m|[0m
+[1m[94m149[0m [1m[94m|[0m           should_sync = false;
+    [1m[94m|[0m           [1m[33m^^^^^^^^^^^^^^^^^^^[0m [1m[33mthis value is reassigned later and never used[0m
+[1m[94m...[0m
+[1m[94m185[0m [1m[94m|[0m [1m[94m/[0m         should_sync = wait_for_next(
+[1m[94m186[0m [1m[94m|[0m [1m[94m|[0m             &inner,
+[1m[94m187[0m [1m[94m|[0m [1m[94m|[0m             &receiver,
+[1m[94m188[0m [1m[94m|[0m [1m[94m|[0m             Duration::from_millis(remaining_ms),
+[1m[94m189[0m [1m[94m|[0m [1m[94m|[0m         );
+    [1m[94m|[0m [1m[94m|_________-[0m [1m[94m`should_sync` is overwritten here before the previous value is read[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:268:9
+    [1m[94m|[0m
+[1m[94m268[0m [1m[94m|[0m     let mut audio_streams: Vec<&Value> = streams
+    [1m[94m|[0m         [1m[94m----[0m[1m[33m^^^^^^^^^^^^^[0m
+    [1m[94m|[0m         [1m[94m|[0m
+    [1m[94m|[0m         [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/extensions/attachments/media_probe.rs:279:9
+    [1m[94m|[0m
+[1m[94m279[0m [1m[94m|[0m     let mut video_streams: Vec<&Value> = streams
+    [1m[94m|[0m         [1m[94m----[0m[1m[33m^^^^^^^^^^^^^[0m
+    [1m[94m|[0m         [1m[94m|[0m
+    [1m[94m|[0m         [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/extensions/attachments/media_store.rs:614:9
+    [1m[94m|[0m
+[1m[94m614[0m [1m[94m|[0m     let mut file = options.open(path)?;
+    [1m[94m|[0m         [1m[94m----[0m[1m[33m^^^^[0m
+    [1m[94m|[0m         [1m[94m|[0m
+    [1m[94m|[0m         [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: unused variable: `ttl`[0m
+  [1m[94m--> [0msrc/extensions/plugin_sdk/channel_runtime.rs:98:36
+   [1m[94m|[0m
+[1m[94m98[0m [1m[94m|[0m     pub fn claim(&self, key: &str, ttl: Duration) -> ReplayClaimResult {
+   [1m[94m|[0m                                    [1m[33m^^^[0m [1m[33mhelp: if this is intentional, prefix it with an underscore: `_ttl`[0m
+
+[1m[33mwarning[0m[1m: unused variable: `v`[0m
+    [1m[94m--> [0msrc/extensions/plugins/capability_catalog.rs:2298:17
+     [1m[94m|[0m
+[1m[94m2298[0m [1m[94m|[0m         for (k, v) in configured_channels {
+     [1m[94m|[0m                 [1m[33m^[0m [1m[33mhelp: if this is intentional, prefix it with an underscore: `_v`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/extensions/snapshot/git_backup_manager.rs:764:9
+    [1m[94m|[0m
+[1m[94m764[0m [1m[94m|[0m     let mut file = open_unaliased_readonly(path)
+    [1m[94m|[0m         [1m[94m----[0m[1m[33m^^^^[0m
+    [1m[94m|[0m         [1m[94m|[0m
+    [1m[94m|[0m         [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/extensions/snapshot/git_backup_manager.rs:877:9
+    [1m[94m|[0m
+[1m[94m877[0m [1m[94m|[0m     let mut file = open_unaliased_readonly(path)
+    [1m[94m|[0m         [1m[94m----[0m[1m[33m^^^^[0m
+    [1m[94m|[0m         [1m[94m|[0m
+    [1m[94m|[0m         [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/runner/tools/send_message_schema.rs:221:21
+    [1m[94m|[0m
+[1m[94m221[0m [1m[94m|[0m                 let mut path = prefix.clone();
+    [1m[94m|[0m                     [1m[94m----[0m[1m[33m^^^^[0m
+    [1m[94m|[0m                     [1m[94m|[0m
+    [1m[94m|[0m                     [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: variable does not need to be mutable[0m
+   [1m[94m--> [0msrc/runner/tools/communicate_tool.rs:126:9
+    [1m[94m|[0m
+[1m[94m126[0m [1m[94m|[0m     let mut payload = executing_payload(tool_name, activity);
+    [1m[94m|[0m         [1m[94m----[0m[1m[33m^^^^^^^[0m
+    [1m[94m|[0m         [1m[94m|[0m
+    [1m[94m|[0m         [1m[94mhelp: remove this `mut`[0m
+
+[1m[33mwarning[0m[1m: unused variable: `stderr`[0m
+   [1m[94m--> [0msrc/box/box_windows.rs:173:53
+    [1m[94m|[0m
+[1m[94m173[0m [1m[94m|[0m         ShellExecutionOutcome::Success { exit_code, stderr }
+    [1m[94m|[0m                                                     [1m[33m^^^^^^[0m [1m[33mhelp: try ignoring the field: `stderr: _`[0m
+
+[1m[33mwarning[0m[1m: method `sync_baseline` is never used[0m
+    [1m[94m--> [0msrc/extensions/transcript/automation_runtime.rs:1260:8
+     [1m[94m|[0m
+[1m[94m 494[0m [1m[94m|[0m impl AutomationRuntime {
+     [1m[94m|[0m [1m[94m----------------------[0m [1m[94mmethod in this implementation[0m
+[1m[94m...[0m
+[1m[94m1260[0m [1m[94m|[0m     fn sync_baseline(&self, agent_id: &str, definitions: &[AutomationRecord]) {
+     [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^[0m
+     [1m[94m|[0m
+     [1m[94m= [0m[1mnote[0m: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+[1m[33mwarning[0m[1m: method `assert_agent_transcript_write_admission` is never used[0m
+    [1m[94m--> [0msrc/extensions/session/production.rs:2510:8
+     [1m[94m|[0m
+[1m[94m 279[0m [1m[94m|[0m impl ProductionSessionWorkers {
+     [1m[94m|[0m [1m[94m-----------------------------[0m [1m[94mmethod in this implementation[0m
+[1m[94m...[0m
+[1m[94m2510[0m [1m[94m|[0m     fn assert_agent_transcript_write_admission(&self, agent_id: &str) -> Result<(), String> {
+     [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `apply_download_owner` is never used[0m
+   [1m[94m--> [0msrc/extensions/box_store_sync/box_copy_in.rs:550:4
+    [1m[94m|[0m
+[1m[94m550[0m [1m[94m|[0m fn apply_download_owner(path: &Path, owner: Option<(u32, u32)>) -> Result<(), String> {
+    [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `openclaw_portable_backup_enabled` is never used[0m
+   [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:105:4
+    [1m[94m|[0m
+[1m[94m105[0m [1m[94m|[0m fn openclaw_portable_backup_enabled() -> bool {
+    [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `load_manifest` is never used[0m
+    [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:1723:4
+     [1m[94m|[0m
+[1m[94m1723[0m [1m[94m|[0m fn load_manifest(store: &dyn BoxObjectStore) -> Result<Option<BoxStoreManifest>, String> {
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `write_manifest_if_unchanged` is never used[0m
+    [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:1727:4
+     [1m[94m|[0m
+[1m[94m1727[0m [1m[94m|[0m fn write_manifest_if_unchanged(
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `write_manifest` is never used[0m
+    [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:1754:4
+     [1m[94m|[0m
+[1m[94m1754[0m [1m[94m|[0m fn write_manifest(
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `sync_store_db_snapshots` is never used[0m
+    [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:2257:4
+     [1m[94m|[0m
+[1m[94m2257[0m [1m[94m|[0m fn sync_store_db_snapshots(
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `sync_store_db_snapshots_with_options` is never used[0m
+    [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:2277:4
+     [1m[94m|[0m
+[1m[94m2277[0m [1m[94m|[0m fn sync_store_db_snapshots_with_options(
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `is_excluded` is never used[0m
+    [1m[94m--> [0msrc/extensions/box_store_sync/production.rs:2783:4
+     [1m[94m|[0m
+[1m[94m2783[0m [1m[94m|[0m fn is_excluded(rel_path: &str, excludes: &[&str]) -> bool {
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: constant `MAX_ENV_NAME_CHARS` is never used[0m
+ [1m[94m--> [0msrc/extensions/cloud_workers/auxiliary.rs:6:7
+  [1m[94m|[0m
+[1m[94m6[0m [1m[94m|[0m const MAX_ENV_NAME_CHARS: usize = 128;
+  [1m[94m|[0m       [1m[33m^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: constant `MAX_ARCHIVE_MEMBER_CHARS` is never used[0m
+ [1m[94m--> [0msrc/extensions/cloud_workers/artifact_admission.rs:8:7
+  [1m[94m|[0m
+[1m[94m8[0m [1m[94m|[0m const MAX_ARCHIVE_MEMBER_CHARS: usize = 4096;
+  [1m[94m|[0m       [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `validate_archive_member_path` is never used[0m
+   [1m[94m--> [0msrc/extensions/cloud_workers/artifact_admission.rs:204:8
+    [1m[94m|[0m
+[1m[94m204[0m [1m[94m|[0m pub fn validate_archive_member_path(path: &str) -> Result<(), CloudWorkerArtifactAdmissionError> {
+    [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `is_windows_drive_path` is never used[0m
+   [1m[94m--> [0msrc/extensions/cloud_workers/artifact_admission.rs:224:4
+    [1m[94m|[0m
+[1m[94m224[0m [1m[94m|[0m fn is_windows_drive_path(path: &str) -> bool {
+    [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: fields `windows_instance_name` and `windows_previous_profile_interval` are never read[0m
+   [1m[94m--> [0msrc/extensions/telemetry/pressure_cpu_profiler.rs:320:5
+    [1m[94m|[0m
+[1m[94m316[0m [1m[94m|[0m struct ProductionCpuProfilerState {
+    [1m[94m|[0m        [1m[94m--------------------------[0m [1m[94mfields in this struct[0m
+[1m[94m...[0m
+[1m[94m320[0m [1m[94m|[0m     windows_instance_name: Option<String>,
+    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m321[0m [1m[94m|[0m     windows_previous_profile_interval: Option<u64>,
+    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps` is never used[0m
+    [1m[94m--> [0msrc/extensions/inference/provider_session.rs:1750:4
+     [1m[94m|[0m
+[1m[94m1750[0m [1m[94m|[0m fn run_fabushi_provider_text_with_lifecycle_reporting_usage_with_max_steps(
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `run_openrouter_provider_text` is never used[0m
+    [1m[94m--> [0msrc/extensions/inference/provider_session.rs:2742:4
+     [1m[94m|[0m
+[1m[94m2742[0m [1m[94m|[0m fn run_openrouter_provider_text(
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `run_openrouter_provider_text_with_lifecycle` is never used[0m
+    [1m[94m--> [0msrc/extensions/inference/provider_session.rs:2756:4
+     [1m[94m|[0m
+[1m[94m2756[0m [1m[94m|[0m fn run_openrouter_provider_text_with_lifecycle(
+     [1m[94m|[0m    [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: methods `persist_uninstall_transition` and `persist_auth_transition` are never used[0m
+   [1m[94m--> [0msrc/extensions/mcp/plugin_skills.rs:816:8
+    [1m[94m|[0m
+[1m[94m637[0m [1m[94m|[0m impl SandPluginSkillsService {
+    [1m[94m|[0m [1m[94m----------------------------[0m [1m[94mmethods in this implementation[0m
+[1m[94m...[0m
+[1m[94m816[0m [1m[94m|[0m     fn persist_uninstall_transition(
+    [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+[1m[94m...[0m
+[1m[94m867[0m [1m[94m|[0m     fn persist_auth_transition(
+    [1m[94m|[0m        [1m[33m^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `persist_uninstall_image` is never used[0m
+   [1m[94m--> [0msrc/extensions/mcp/plugin_skills_uninstall_state.rs:427:15
+    [1m[94m|[0m
+[1m[94m427[0m [1m[94m|[0m pub(super) fn persist_uninstall_image(
+    [1m[94m|[0m               [1m[33m^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: function `inspect_failed_auth_publication` is never used[0m
+   [1m[94m--> [0msrc/extensions/mcp/plugin_skills_uninstall_state.rs:480:15
+    [1m[94m|[0m
+[1m[94m480[0m [1m[94m|[0m pub(super) fn inspect_failed_auth_publication(
+    [1m[94m|[0m               [1m[33m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: field `revocation_reason` is never read[0m
+   [1m[94m--> [0msrc/extensions/mcp/installable_package/policy.rs:418:5
+    [1m[94m|[0m
+[1m[94m409[0m [1m[94m|[0m struct TrustKey {
+    [1m[94m|[0m        [1m[94m--------[0m [1m[94mfield in this struct[0m
+[1m[94m...[0m
+[1m[94m418[0m [1m[94m|[0m     revocation_reason: String,
+    [1m[94m|[0m     [1m[33m^^^^^^^^^^^^^^^^^[0m
+    [1m[94m|[0m
+    [1m[94m= [0m[1mnote[0m: `TrustKey` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+[1m[33mwarning[0m[1m: method `as_str` is never used[0m
+  [1m[94m--> [0msrc/extensions/node_host/secret_materializer.rs:35:19
+   [1m[94m|[0m
+[1m[94m20[0m [1m[94m|[0m impl NodeHostSecretInputRef {
+   [1m[94m|[0m [1m[94m---------------------------[0m [1m[94mmethod in this implementation[0m
+[1m[94m...[0m
+[1m[94m35[0m [1m[94m|[0m     pub(crate) fn as_str(&self) -> &str {
+   [1m[94m|[0m                   [1m[33m^^^^^^[0m
+
+[1m[33mwarning[0m[1m: associated function `new` is never used[0m
+  [1m[94m--> [0msrc/extensions/node_host/secret_materializer.rs:68:19
+   [1m[94m|[0m
+[1m[94m65[0m [1m[94m|[0m impl NodeHostCloudflareAccessCredentials {
+   [1m[94m|[0m [1m[94m----------------------------------------[0m [1m[94massociated function in this implementation[0m
+[1m[94m...[0m
+[1m[94m68[0m [1m[94m|[0m     pub(crate) fn new(
+   [1m[94m|[0m                   [1m[33m^^^[0m
+
+[1m[33mwarning[0m[1m: function `hex_nibble` is never used[0m
+   [1m[94m--> [0msrc/agent_isolation/conversation_blob_store.rs:392:4
+    [1m[94m|[0m
+[1m[94m392[0m [1m[94m|[0m fn hex_nibble(value: u8) -> Option<u8> {
+    [1m[94m|[0m    [1m[33m^^^^^^^^^^[0m
+
+[1m[33mwarning[0m[1m: variant `Enum` is never constructed[0m
+ [1m[94m--> [0m/Users/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-9efc0c09abccb5c5/out/agent_tool_json_schema.rs:5:47
+  [1m[94m|[0m
+[1m[94m5[0m [1m[94m|[0m enum AgentToolJsonMapValueKind { Scalar(u64), Enum(&'static [(i64, &'static str)]), Message(&'static str) }
+  [1m[94m|[0m      [1m[94m-------------------------[0m                [1m[33m^^^^[0m
+  [1m[94m|[0m      [1m[94m|[0m
+  [1m[94m|[0m      [1m[94mvariant in this enum[0m
+  [1m[94m|[0m
+  [1m[94m= [0m[1mnote[0m: `AgentToolJsonMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+[1m[33mwarning[0m[1m: field `optional` is never read[0m
+ [1m[94m--> [0m/Users/runner/work/fabushi-desktop/fabushi-desktop/source/host/target/debug/build/mahayana-host-runtime-9efc0c09abccb5c5/out/agent_tool_json_schema.rs:9:123
+  [1m[94m|[0m
+[1m[94m9[0m [1m[94m|[0m struct AgentToolJsonFieldDescriptor { number: u64, json_name: &'static str, kind: AgentToolJsonFieldKind, repeated: bool, optional: b[1m[94m...[0m
+  [1m[94m|[0m        [1m[94m----------------------------[0m [1m[94mfield in this struct[0m                                                                  [1m[33m^^^^^^^^[0m
+  [1m[94m|[0m
+  [1m[94m= [0m[1mnote[0m: `AgentToolJsonFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+[1m[33mwarning[0m[1m: variant `Enum` is never constructed[0m
+ [1m[94m--> [0msrc/cloud_agents/cloud_agent_trace_format.rs:8:5
+  [1m[94m|[0m
+[1m[94m6[0m [1m[94m|[0m enum CloudAgentProtoMapValueKind {
+  [1m[94m|[0m      [1m[94m---------------------------[0m [1m[94mvariant in this enum[0m
+[1m[94m7[0m [1m[94m|[0m     Scalar(u64),
+[1m[94m8[0m [1m[94m|[0m     Enum,
+  [1m[94m|[0m     [1m[33m^^^^[0m
+  [1m[94m|[0m
+  [1m[94m= [0m[1mnote[0m: `CloudAgentProtoMapValueKind` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+[1m[33mwarning[0m[1m: field `proto_name` is never read[0m
+  [1m[94m--> [0msrc/cloud_agents/cloud_agent_trace_format.rs:26:5
+   [1m[94m|[0m
+[1m[94m24[0m [1m[94m|[0m struct CloudAgentProtoFieldDescriptor {
+   [1m[94m|[0m        [1m[94m------------------------------[0m [1m[94mfield in this struct[0m
+[1m[94m25[0m [1m[94m|[0m     number: u64,
+[1m[94m26[0m [1m[94m|[0m     proto_name: &'static str,
+   [1m[94m|[0m     [1m[33m^^^^^^^^^^[0m
+   [1m[94m|[0m
+   [1m[94m= [0m[1mnote[0m: `CloudAgentProtoFieldDescriptor` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+[1m[33mwarning[0m[1m: field `db_path` is never read[0m
+  [1m[94m--> [0msrc/device_pairing_owner.rs:17:5
+   [1m[94m|[0m
+[1m[94m15[0m [1m[94m|[0m pub struct DevicePairingOwner {
+   [1m[94m|[0m            [1m[94m------------------[0m [1m[94mfield in this struct[0m
+[1m[94m16[0m [1m[94m|[0m     conn: Mutex<Connection>,
+[1m[94m17[0m [1m[94m|[0m     db_path: Option<PathBuf>,
+   [1m[94m|[0m     [1m[33m^^^^^^^[0m
+
+[1m[33mwarning[0m: `mahayana-host-runtime` (lib) generated 107 warnings (run `cargo fix --lib -p mahayana-host-runtime` to apply 68 suggestions)
+[1m[92m   Compiling[0m mahayana-host-runtime v0.1.0 (/Users/runner/work/fabushi-desktop/fabushi-desktop/source/host)
+[1m[92m    Finished[0m `test` profile [unoptimized + debuginfo] target(s) in 2.04s
+[1m[92m     Running[0m tests/device_pairing_join_admission_contract.rs (source/host/target/debug/deps/device_pairing_join_admission_contract-a80668ba8e02fd29)
+
+running 9 tests
+test join_concurrent_file_owners_publish_one_payload ... ok
+test join_deferred_commit_refusal_is_qualified_and_preserves_recovery ... ok
+test join_expiry_and_legacy_json_preserve_single_use_contract ... ok
+test join_expiry_is_rechecked_after_a_delayed_successful_commit ... ok
+test join_gateway_reports_storage_failure_and_preserves_public_recovery ... ok
+test join_malformed_rows_are_consumed_durably_before_content_validation ... ok
+test join_storage_commit_refusal_never_publishes_payload ... FAILED
+test join_storage_read_failure_is_distinct_and_recovers_without_consuming ... ok
+test join_storage_write_failure_preserves_row_and_redacts_errors ... ok
+
+failures:
+
+---- join_storage_commit_refusal_never_publishes_payload stdout ----
+DJC owned-child harness controls passed; these are not SQL refusal evidence
+
+thread 'join_storage_commit_refusal_never_publishes_payload' (131878) panicked at tests/device_pairing_join_admission_contract.rs:283:9:
+DJC owned child failed; evidence retained at /var/folders/y3/p6x0rn5562l5qyxy7x6jqrsc0000gn/T/fabushi-join-child-82117f86-c133-49ba-975e-1317d44348e1: FailedExit; pid=32291; elapsed_ms=8522; exit=exit status: 101
+child stdout:
+
+running 1 test
+test join_storage_commit_refusal_never_publishes_payload ... FAILED
+
+failures:
+
+failures:
+    join_storage_commit_refusal_never_publishes_payload
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 8.43s
+
+
+child stderr:
+DJC phase=reader-fence-acquired; elapsed_ms=12
+DJC phase=owner-call-started; elapsed_ms=12
+DJC phase=journaled-write-observed; elapsed_ms=59
+DJC phase=original-8s-observation-expired; elapsed_ms=8126
+DJC phase=owner-returned; elapsed_ms=8416; result_class=internal-error
+DJC phase=storage-error-status-and-redaction-checked; elapsed_ms=8416
+DJC phase=reader-fence-explicitly-released; elapsed_ms=8416
+DJC phase=refused-row-preservation-checked; elapsed_ms=8418
+DJC phase=owner-reopened; elapsed_ms=8420
+DJC phase=fresh-redemption-after-unlock-checked; elapsed_ms=8423
+DJC phase=consumed-marker-checked; elapsed_ms=8424
+
+thread 'join_storage_commit_refusal_never_publishes_payload' (131893) panicked at tests/device_pairing_join_admission_contract.rs:657:9:
+DJC original observation failed despite later diagnostics: ["bounded actual commit refusal: original 8s observation timed out"]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+DJC fixture retained for failure evidence: /var/folders/y3/p6x0rn5562l5qyxy7x6jqrsc0000gn/T/fabushi-join-child-82117f86-c133-49ba-975e-1317d44348e1/commit-refusal
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    join_storage_commit_refusal_never_publishes_payload
+
+test result: FAILED. 8 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.17s
+
+[1m[91merror[0m: test failed, to rerun pass `--test device_pairing_join_admission_contract`

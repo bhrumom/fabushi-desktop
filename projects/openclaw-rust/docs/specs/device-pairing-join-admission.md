@@ -228,3 +228,72 @@ carrier SHA/run. Its successful receipt means complete evidence transport only.
 No scoped DJC equivalence, real onboarding/device acceptance, global flag or
 final G/AC status advances from collection. Inspect the recovered phases before
 deciding the next causal instrument under the independent recovery assessment.
+
+
+## DJC-09 — observe real reader-lock completion boundaries
+
+DJC-08 transport completed at carrier `6278f9a4dc85051c9d4b9416ab33f8e525151821`,
+run `41654535799`, attempt1, collector job `125981212876`. The original
+subject remains `e3837eac2c6bd693f058ccc58268ed97df2c1f99`, tree
+`4887f541b94d5adcbfddc2dff8a48d8d922a307d`, failed macOS job
+`125938337174` / run `41642220354`. All809 raw log lines were recovered;
+the reconstructed43,473 bytes have the original SHA-256
+`47b78cb8103f0d9d5d25e7d3eed12c65c826138ad5401390e8d4dcf407b55bc8`.
+The recovered assessment and original selected log are retained alongside this
+batch's evidence. Transport success does not change the original8pass/1fail.
+
+The independent assessment keeps the unresolved observation as TEST_FLAW.
+The journal was observed at59ms; the original8-second wait expired at8126ms;
+the result phase reported Internal at8416ms with the reader still held.
+Full-row preservation, explicit unlock, reopen and fresh single-use redemption
+then passed before the original assertion failed. Keep those facts and the
+eight whole-case positives bound to their original subject. Parent/child phase
+clocks have separate origins and must not be subtracted from one another.
+
+The failed source assumption is that logged phases and completion notification
+after result logging directly measure public-call completion. They do not.
+Only in the retained lock case, capture monotonic offsets in memory immediately
+adjacent to call entry/return, send entry/completion, receiver wait entry/return,
+worker join completion and explicit reader release. Notify completion before
+post-result diagnostics; return call/send timing with the worker result so it
+survives the existing timeout-and-join path. Emit the detailed record after the
+measured observation/join, before potentially failing result assertions, and
+emit release boundaries after the actual explicit rollback/close. Preserve
+early phases for partial failures. Record actual send/receive outcomes and
+redacted result class; no credentials, shortcode, payload, SQL or raw DB error.
+
+Keep the exact original `recv_timeout(Duration::from_secs(8))`, every stored-row,
+error/redaction, reopen/repair/single-use and final observation-failure assertion,
+the120-second owned-child boundary and five-second owned termination boundary.
+The reader remains held through refusal and join. No product owner change,
+private connection accessor, retry or timeout change is authorized. Recorded
+adjacent boundaries still include thread descheduling; they cannot locate a
+private SQL statement or separate SQL waiting from scheduling inside the call.
+The dependency's default5000ms busy sleep budget is not a public-call deadline.
+
+Two deterministic observation controls exercise the same observation helper:
+`join_reader_observation_notifies_before_diagnostic_release` holds post-return
+diagnostics behind an explicit handshake and requires parent completion before
+releasing it; `join_reader_observation_cannot_notify_before_operation_return`
+holds the operation before return and requires no completion until actual
+return is released. Bounded handshakes must be retired on failure. These are
+instrument-order controls, not SQLite/product evidence. Missing/mismatched
+boundary records, disconnected notifications, inconsistent ordering, missing
+controls or invalid summaries fail closed. Existing owned-child controls remain.
+
+After fresh independent review, `djc-reader-observation` selects exactly the
+retained lock case and these two controls on Ubuntu24.04 and macOS15. For each
+name use the existing target with `cargo test --locked --manifest-path
+source/host/Cargo.toml --test device_pairing_join_admission_contract NAME --
+--exact --test-threads=1 --nocapture`; compile that changed target first. The
+receipt binds the complete expected three-name subset and exact commands to
+H and the preserved full target plan, with zero failed/ignored/measured tests,
+no missing/duplicated names, actual command/capture exits and before/after source
+identities. Carry unchanged historical positives without reporting their
+execution at the new H; keep the ordinary full target requirements, including
+the original reader assertion, intact.
+
+This authorizes one changed-instrument focused campaign, not another unchanged
+broad run. If the8-second assertion still fails, preserve it and classify the
+new boundaries before choosing any further instrument. A future passing timed
+observation is not a product latency guarantee or full DJC/OCRM acceptance.
