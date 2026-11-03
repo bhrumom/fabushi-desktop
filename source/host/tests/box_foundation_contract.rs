@@ -20,7 +20,6 @@ use mahayana_host_runtime::r#box::protected_path_guard::{
 use mahayana_host_runtime::ports::r#box::{
     NO_MONITOR_COMPUTER_USE_EXECUTOR, NoMonitorComputerUseExecutor,
     SAND_BOX_FIRST_FORK_WINDOW_INDEX, SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE,
-    SAND_BOX_NOT_READY_MESSAGE, SAND_BOX_NOT_RESPONDING_MESSAGE,
     SandBoxDaemonUnreachableError, SandBoxNoMonitorAvailableError,
     box_not_ready_message_for_error, is_no_monitor_computer_use_executor,
     is_primary_window_index,
@@ -37,12 +36,12 @@ fn box_port_preserves_readiness_messages_window_indices_and_no_monitor_identity(
     let timeout = SandBoxDaemonUnreachableError::new("timeout", "timed out");
     assert_eq!(
         box_not_ready_message_for_error(&timeout),
-        SAND_BOX_NOT_RESPONDING_MESSAGE
+        "Computer connection failed [daemon_timeout]; startup state is unknown. Diagnostic: timed out"
     );
     let refused = SandBoxDaemonUnreachableError::new("refused", "connection refused");
     assert_eq!(
         box_not_ready_message_for_error(&refused),
-        SAND_BOX_NOT_READY_MESSAGE
+        "Computer connection failed [daemon_refused]; startup state is unknown. Diagnostic: connection refused"
     );
 
     assert!(is_primary_window_index(0));
@@ -56,6 +55,18 @@ fn box_port_preserves_readiness_messages_window_indices_and_no_monitor_identity(
     assert!(!is_no_monitor_computer_use_executor(&detached));
     let denied: Result<(), _> = NO_MONITOR_COMPUTER_USE_EXECUTOR.execute();
     assert!(denied.is_err());
+}
+
+#[test]
+fn unknown_connection_diagnostics_are_bounded_and_not_replaced_by_startup_claims() {
+    let error = std::io::Error::new(std::io::ErrorKind::Other, format!("actual failure\n{}", "故".repeat(5000)));
+    let message = box_not_ready_message_for_error(&error);
+    assert!(message.contains("actual failure"));
+    assert!(message.contains("startup state is unknown"));
+    assert!(!message.contains("downloading"));
+    assert!(!message.contains("Try again"));
+    assert!(!message.contains('\n'));
+    assert!(message.chars().count() < 2200);
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

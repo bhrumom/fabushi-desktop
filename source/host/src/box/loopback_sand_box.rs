@@ -105,13 +105,14 @@ impl Default for LoopbackSandBoxOptions {
 
 #[derive(Debug, Error)]
 pub enum LoopbackSandBoxError {
-    #[error(transparent)]
+    // Keep the typed daemon error in source() for model-facing classification.
+    #[error("{0}")]
     Daemon(#[from] SandBoxDaemonUnreachableError),
     #[error(transparent)]
     ProtectedPath(#[from] SandProtectedPathError),
     #[error(transparent)]
     Unreadable(#[from] BoxFileUnreadableError),
-    #[error(transparent)]
+    #[error("{0}")]
     Io(#[from] std::io::Error),
     #[error("{0}")]
     Transport(String),

@@ -3,11 +3,11 @@ use std::error::Error;
 use thiserror::Error;
 
 pub const SAND_BOX_NOT_READY_MESSAGE: &str =
-    "The computer is still starting up (downloading its image or booting). Try again in a moment.";
+    "The computer is currently reported as preparing. No command was executed; readiness has not been established.";
 pub const SAND_BOX_NOT_RESPONDING_MESSAGE: &str =
-    "The computer isn't responding — it may be wedged. Try again in a moment, or recover it from Settings → Updates → Update Fabushi's Computer.";
+    "The computer's execution service did not respond. No successful connection was established.";
 pub const SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE: &str =
-    "Every desktop monitor on the shared computer is in use right now, so this agent can't get its own screen. Wait a moment and try again — one frees up when another agent or parallel computer-use subagent finishes.";
+    "No private desktop monitor is available for this agent. This does not establish whether the computer is starting up.";
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 #[error("{message}")]
@@ -35,16 +35,35 @@ impl Default for SandBoxNoMonitorAvailableError {
     }
 }
 
-pub fn box_not_ready_message_for_error(error: &(dyn Error + 'static)) -> &'static str {
-    if error.downcast_ref::<SandBoxNoMonitorAvailableError>().is_some() {
-        return SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE;
-    }
-    if let Some(error) = error.downcast_ref::<SandBoxDaemonUnreachableError>() {
-        if matches!(error.outcome.as_str(), "timeout" | "crash") {
-            return SAND_BOX_NOT_RESPONDING_MESSAGE;
+pub fn box_not_ready_message_for_error(error: &(dyn Error + 'static)) -> String {
+    let mut node = Some(error);
+    let mut kind = "unclassified".to_string();
+    let mut diagnostics = Vec::new();
+    // Error implementations may have cycles. Bound both traversal and output.
+    for _ in 0..16 {
+        let Some(current) = node else { break; };
+        let text: String = current.to_string().chars().take(1024)
+            .map(|ch| if ch.is_control() { ' ' } else { ch }).collect();
+        if !diagnostics.contains(&text) { diagnostics.push(text); }
+        if current.downcast_ref::<SandBoxNoMonitorAvailableError>().is_some() {
+            return SAND_BOX_NO_MONITOR_AVAILABLE_MESSAGE.to_string();
         }
+        if let Some(daemon) = current.downcast_ref::<SandBoxDaemonUnreachableError>() {
+            kind = match daemon.outcome.as_str() {
+                "refused" => "daemon_refused",
+                "timeout" => "daemon_timeout",
+                "crash" => "daemon_crash",
+                _ => "daemon_unreachable",
+            }.to_string();
+        } else if kind == "unclassified" {
+            if let Some(io) = current.downcast_ref::<std::io::Error>() {
+                kind = format!("io/{:?}", io.kind());
+            }
+        }
+        node = current.source();
     }
-    SAND_BOX_NOT_READY_MESSAGE
+    let detail: String = diagnostics.join("; caused by: ").chars().take(2048).collect();
+    format!("Computer connection failed [{kind}]; startup state is unknown. Diagnostic: {detail}")
 }
 
 #[derive(Debug)]

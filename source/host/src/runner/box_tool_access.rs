@@ -1,7 +1,8 @@
-use std::collections::BTreeSet;
-use std::sync::Arc;
+use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Arc, Mutex};
 
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 use crate::extensions::inference::provider_session::{
     ProviderSessionError, RoutedToolDefinition,
@@ -173,6 +174,8 @@ pub struct RunnerBoxToolBridge {
     upstream: Arc<dyn RoutedToolBridge>,
     box_resources: Arc<dyn RunnerBoxResourcePort>,
     shell_review: Option<BoxShellAutoReviewCallback>,
+    // Per-turn observations only. Hashes avoid retaining source/credentials in args.
+    repeated_failures: Arc<Mutex<BTreeMap<String, (String, usize)>>>,
 }
 
 impl RunnerBoxToolBridge {
@@ -184,12 +187,48 @@ impl RunnerBoxToolBridge {
             upstream,
             box_resources,
             shell_review: None,
+            repeated_failures: Arc::new(Mutex::new(BTreeMap::new())),
         }
     }
 
     pub fn with_shell_review(mut self, review: BoxShellAutoReviewCallback) -> Self {
         self.shell_review = Some(review);
         self
+    }
+
+    fn observe_resource_failure(
+        &self,
+        signature: Option<String>,
+        result: Result<Value, ProviderSessionError>,
+    ) -> Result<Value, ProviderSessionError> {
+        let Some(signature) = signature else { return result; };
+        let mut observations = self.repeated_failures.lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        match result {
+            Err(ProviderSessionError::Tool(mut message)) => {
+                let error_hash = format!("{:x}", Sha256::digest(message.as_bytes()));
+                // An advisory is best-effort; never grow memory or evict an observed
+                // repeat merely because a turn also tried many distinct diagnostics.
+                if observations.len() >= 64 && !observations.contains_key(&signature) {
+                    return Err(ProviderSessionError::Tool(message));
+                }
+                let (last_error, count) = observations.entry(signature)
+                    .or_insert_with(|| (error_hash.clone(), 0));
+                if *last_error != error_hash {
+                    *last_error = error_hash;
+                    *count = 0;
+                }
+                *count = count.saturating_add(1);
+                if *count == 2 {
+                    message.push_str("\n[Tool observation: the same call with identical arguments has returned this same error again. Repetition alone is not evidence of progress or startup. Use the actual diagnostic to decide whether a new action is justified, or report the blocker and finish the turn. If a write may have run, reconcile its result before retrying. This advisory does not cancel the turn.]");
+                }
+                Err(ProviderSessionError::Tool(message))
+            }
+            other => {
+                if other.is_ok() { observations.remove(&signature); }
+                other
+            }
+        }
     }
 
     fn is_box_tool(tool: &RoutedToolDefinition) -> bool {
@@ -329,7 +368,13 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
                 result
             });
         }
-        match tool.name.as_str() {
+        // Box tool schemas use scalar fields. Sort their top-level keys so merely
+        // reordering JSON cannot turn an identical call into a new observation.
+        let fields = args.as_object().map(|object| object.iter().collect::<BTreeMap<_, _>>())
+            .unwrap_or_default();
+        let signature = serde_json::to_vec(&(tool.name.as_str(), fields)).ok()
+            .map(|bytes| format!("{:x}", Sha256::digest(bytes)));
+        let result = match tool.name.as_str() {
             RUNNER_BOX_SHELL_TOOL_NAME => {
                 let request = Self::parse_shell_request(&args, tool_call_id)?;
                 if let Some(review) = self.shell_review.as_ref() {
@@ -346,6 +391,7 @@ impl RoutedToolBridge for RunnerBoxToolBridge {
                 "Unsupported Runner box tool {}",
                 tool.name
             ))),
-        }
+        };
+        self.observe_resource_failure(signature, result)
     }
 }

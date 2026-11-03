@@ -3,6 +3,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { appendFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { acceptBotMiniAppAuthoring } from './bot-miniapp-authoring-acceptance';
 
 const realAcceptance = process.env.OBF_REAL_ACCEPTANCE === '1';
 const executable = process.env.FABUSHI_ELECTRON_EXECUTABLE?.trim() || '';
@@ -704,7 +705,7 @@ test.describe('signed candidate packaged acceptance', () => {
   test.skip(!realAcceptance, 'Set OBF_REAL_ACCEPTANCE=1 to run signed packaged acceptance.');
 
   test('exact candidate covers Agent network, two-Agent isolation, lifecycle, latency and plugins', async () => {
-    test.setTimeout(20 * 60_000);
+    test.setTimeout((process.env.FABUSHI_BOT_MINIAPP_ACCEPTANCE === '1' ? 35 : 20) * 60_000);
     expect(executable, 'FABUSHI_ELECTRON_EXECUTABLE is required').toBeTruthy();
     expect(sourceSha, 'OBF_SOURCE_SHA must be the exact candidate HEAD').toMatch(/^[0-9a-f]{40}$/);
     expect(expectedSourceSha, 'OBF_EXPECTED_SOURCE_SHA must be a full SHA').toMatch(/^[0-9a-f]{40}$/);
@@ -846,6 +847,10 @@ test.describe('signed candidate packaged acceptance', () => {
       await expect(builderTurn).toContainText('FABUSHI-BUILDER-ONLY-5937');
       await expect(page.getByRole('log', { name: 'Conversation transcript' })).not.toContainText('FABUSHI-RESEARCH-ONLY-7421');
       await screenshot(page, '04-two-agent-isolation');
+
+      if (process.env.FABUSHI_BOT_MINIAPP_ACCEPTANCE === '1') {
+        await acceptBotMiniAppAuthoring(page, evidenceRoot, sourceSha);
+      }
 
       await openAgent(page, 'Chief');
       await installLifecycleCapture(page);
