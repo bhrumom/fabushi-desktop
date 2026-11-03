@@ -258,7 +258,8 @@
         "37596344185@154014fb1e61c212c0cdcbfef2d3c8cbcabda8ff",
         "37596506426@cde8979d4939b2c65b6e593f4534bf6016e15799",
         "37596744958@cc318d81532c44f8710681039cc1dba3dafe72cc",
-        "37597016700@d99de586173377e4618fc1956bb2f30be8f1db11"
+        "37597016700@d99de586173377e4618fc1956bb2f30be8f1db11",
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41741838098@7820d0ee214f4e202baa68ee0b3d22e71971fae4:attempt1:job126284992895:completed/success:tdrp-canonical-search-contract.spec.ts 4/4; artifact13282590077 sha256:41b362b83d5239419a9ffaae9ced9ac4a9e381ad1567352919c2930c2e640802; independent-review job126285242745 artifact13281237881 sha256:705206d5a07c54cd7b1a2d6f3fdf20100e9f08f227ee09a4bc11c0fe11e1ceab; bounded component proof, no formal release ACCEPT"
       ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
@@ -504,7 +505,9 @@
       ],
       "coverage_matrix_status": "pending",
       "flake_status": "stable",
-      "test_execution_evidence": [],
+      "test_execution_evidence": [
+        "https://github.com/bhrumom/fabushi-desktop/actions/runs/41741830234@7820d0ee214f4e202baa68ee0b3d22e71971fae4:attempt1:job126284967722:completed/success:tdrp-external-url-auth-policy.spec.ts 4/4; artifact13282665037 sha256:584140c4812a5c4792e86b30198021fadb5f2a7f102043eb8b0b80ed9591f49e; independent-review job126285144607 artifact13281696139 sha256:f94df9447a92f60cf468bbdb81884fd21c444dcbc4fef435328e9d5aa089c06f; bounded component proof, no formal release ACCEPT"
+      ],
       "acceptance_reviewer": null,
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted telegramdesktop/tdesktop security semantics; no Telegram runtime or product-branded auth owner was retained.",

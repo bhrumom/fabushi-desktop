@@ -3483,26 +3483,17 @@ impl ProductionSessionWorkers {
                 sender_is_participant,
             );
         if let Some(permissions_val) = metadata.get("permissions") {
-            if let Some(permissions) = permissions_val.as_object() {
-                let is_canonical_snake_snapshot = permissions.contains_key("can_send_messages")
-                    || permissions.contains_key("can_send_media")
-                    || permissions.contains_key("can_send_polls")
-                    || permissions.contains_key("can_send_other")
-                    || permissions.contains_key("can_send_inline")
-                    || permissions.contains_key("can_send_games");
-                if is_canonical_snake_snapshot {
-                    if let Ok(parsed) = serde_json::from_value::<
-                        fabushi_messaging_core::ConversationPermissions,
-                    >(permissions_val.clone())
-                    {
-                        input.can_send_messages = parsed.can_send_messages;
-                        input.can_send_media = parsed.can_send_media;
-                        input.can_send_polls = parsed.can_send_polls;
-                        input.can_send_other = parsed.can_send_other;
-                        input.can_send_inline = parsed.can_send_inline;
-                        input.can_send_games = parsed.can_send_games;
-                    }
-                }
+            if let Ok(parsed) = serde_json::from_value::<
+                fabushi_messaging_core::ConversationPermissions,
+            >(permissions_val.clone())
+            {
+                input.can_send_messages = parsed.can_send_messages;
+                input.can_send_media = parsed.can_send_media;
+                input.can_send_polls = parsed.can_send_polls;
+                input.can_send_other = parsed.can_send_other;
+                input.can_send_inline = parsed.can_send_inline;
+                input.can_send_games = parsed.can_send_games;
+            } else if let Some(permissions) = permissions_val.as_object() {
                 if let Some(v) = permissions
                     .get("canSendMessages")
                     .and_then(serde_json::Value::as_bool)
@@ -6223,9 +6214,13 @@ mod sharebox_shipping_tests {
             .set_metadata(
                 "permissions",
                 serde_json::json!({
-                    "can_send_messages": true,
-                    "can_send_media": true,
-                    "can_send_polls": true
+                    "canSendMessages": true,
+                    "canSendMedia": true,
+                    "canSendPolls": true,
+                    "canAddMembers": true,
+                    "canPinMessages": true,
+                    "canManageTopics": true,
+                    "canManageCalls": true
                 }),
             )
             .unwrap());
