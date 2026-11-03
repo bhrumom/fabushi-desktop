@@ -1,0 +1,101 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "batch": "MCP-ORIGIN-DISPATCH-v1",
+  "specifiedBase": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "integrationBase": "9059d0c4493505851339ab228ec0d58a6023c904",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "preImplementationSpecBlob": "1a5edb91bc4a943a1b7d73ffadcb52a1c9df0d59",
+  "decisions": [
+    {
+      "id": "OD-INTEGRATION-01",
+      "decision": "FIX",
+      "classification": "IMPL_BUG",
+      "beforeEdit": true,
+      "findingSource": "Native implementation worker's separate source integration read, not a compiler run",
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "finding": "Three compact function/struct literal lines were missed by the mechanical constructor edit. The shared RoutedToolDefinition now requires origin; send_to_agent_definition, create_agent_definition and update_agent_definition do not initialize it.",
+      "fix": "Set origin: None on each existing built-in definition, preserving public fields and its existing execution owner. Retain the complete Host test-graph compile gate and independently review the final complete scope."
+    }
+  ],
+  "execution": "not-run; GitHub Actions only",
+  "unitVerified": false,
+  "globalAcceptance": false,
+  "phase": "R1_SOURCE_CONVERGED; exact published-H executable evidence pending",
+  "frozenReviewBase": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "frozenReviewTree": "474e8c79e8f01dbd1ba0da32fdef08ee51312c49",
+  "sourceReviewMembers": 77,
+  "publicationBase": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "reviews": [
+    {
+      "lens": "general/security/lifetime",
+      "task": "/root/mcp_origin_r1_security_review",
+      "acceptedLaunch": {
+        "model": "gpt-6-astra",
+        "effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "sha256": "0b5ddf76cc9bfaf2a13eba63c95d3a9b611c7b07cd30e886f56aeea671944a11",
+      "bytes": 25693,
+      "rootRead": "complete",
+      "verdict": "APPROVE_SOURCE_ONLY",
+      "findings": []
+    },
+    {
+      "lens": "structure/reuse/performance",
+      "task": "/root/mcp_origin_r1_structure_review",
+      "acceptedLaunch": {
+        "model": "gpt-6.1-sol",
+        "effort": "xhigh",
+        "fork_turns": "none"
+      },
+      "sha256": "1ce5ef70b2a66132f1baf1c8e1aa1ed7118c864ca01d05fbf395bc46bd7026df",
+      "bytes": 22744,
+      "rootRead": "complete",
+      "verdict": "APPROVE_SOURCE_ONLY",
+      "findings": []
+    }
+  ],
+  "launchVisibility": "Explicit model/effort/fork parameters accepted by collaboration.spawn_agent; no fallback/error. Independent hidden applied-runtime fields are not exposed.",
+  "evidenceQualification": "The existing generated-result carrier case remains in the complete control-server target. Preserve and inspect its actual named passing row; the27-name new-origin receipt alone does not individually establish that old case.",
+  "publicationRace": {
+    "abandonedUnreferencedCommit": "89ee19e5fc9fba3066c264d05fdf09ef7f70e9e2",
+    "reason": "Pre-update branch read observed incoming862; update_ref was not called. No delivered/verified claim for that orphan."
+  },
+  "incomingIntegration": {
+    "head": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+    "paths": 37,
+    "bytes": 3475062,
+    "overlapWithMcp77": [],
+    "proof": "GitHub complete commit/compare plus exact fetched Git objects and private-index fulltree reconstruction; all77MCP blobs and foreigntracked edits preserved.",
+    "rootReads": "Both R6 final reviews and campaign decision, complete five-source/spec publication patch, actual App rollback/abort owner, original Hfc raw failures and receipts. No full257/37file semantic reading claim.",
+    "runtime": "H862 runtime41586608776 attempt1 in progress; source41586608762 attempt1 success observed by independent evidence agent. Neither result is MCP execution."
+  },
+  "nextExecution": {
+    "campaign": "One initial changed-input MCP-ORIGIN-DISPATCH-v1 exact-H writer-push set",
+    "trigger": "Existing source/runtime workflows on the next final source+review publication; no duplicate dispatch",
+    "reason": "The first MCP77 executable subject adds a public Host descriptor field, actualApp wiring and native resource-lifetime boundaries. Both source lenses converge, and known shared Hfc fixture/oracle causes are repaired in862.",
+    "required": [
+      "Complete Host test-graph compilation",
+      "canonical MCP state target and both actual projection controls",
+      "four actual App received-catalog/review/origin cases with existing exact harness/feature checks",
+      "complete native plugin/Skills target set including27required names and the old generated-result carrier passing row",
+      "complete production account target and3new exact names",
+      "existing inherited shared-contract/App/background/MSU and source authority gates remain selected"
+    ],
+    "oracle": "Exact publishedH, command/exit/input/log identity, positive case names, no skipped/ignored/cancelled claim; priorH862/Hfc results remain their own subjects.",
+    "cost": "Reuse existing writer-specific selectors, jobs and caches; inherited prerequisite superset remains. No per-file/full-platform extra campaign.",
+    "failurePolicy": "Classify original failures; retain valid unchanged-input positives. A failed shared contract is repaired before dependent work, without rerunning an unchanged failed input."
+  },
+  "openResponsibilities": [
+    "Official and Box final resource boundaries",
+    "same-manager registration revocation",
+    "native credential/session epoch capture",
+    "canonical Rust permission migration",
+    "scoped G01/G02 semantic authority",
+    "full source/dependency/legal closure",
+    "real provider/channel/plugin/node/device/UI/platform/package/upgrade/rollback/soak and independent ACCEPT"
+  ],
+  "recordedAt": "2026-11-03T05:58:27.929381+00:00"
+}

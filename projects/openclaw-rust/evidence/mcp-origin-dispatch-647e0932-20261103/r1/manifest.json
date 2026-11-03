@@ -1,0 +1,952 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "reviewRound": 1,
+  "contract": "MCP-ORIGIN-DISPATCH-v1",
+  "repositoryRoot": "/workspace/scratch/29e7135d8bfe/fabushi-desktop",
+  "base": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "baseTree": "efb2a28c92d2f24cd4f6bbbd84d86709c0b2f028",
+  "startingHead": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "implementationSourceBase": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "preImplementationSpecBlob": "1a5edb91bc4a943a1b7d73ffadcb52a1c9df0d59",
+  "upstreamU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "upstreamTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "tree": "474e8c79e8f01dbd1ba0da32fdef08ee51312c49",
+  "paths": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "21027a8dac6fc0b23959cf84c946f88fe24fad26",
+      "bytes": 462897,
+      "sha256": "77b3fa3d64f6e932a7a121fc977a31d57fbaa7f3b41122d8612fb24c6658ae36"
+    },
+    {
+      "path": "desktop/scripts/build-electron-runtime.mjs",
+      "blob": "effeffd58a684e803d64715494097c8b741f43c7",
+      "bytes": 4403,
+      "sha256": "8bc05ff626d2e9aba20c04567c24301c6db24a853c0915ffb4382ab4e1721ff8"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+      "blob": "1a5edb91bc4a943a1b7d73ffadcb52a1c9df0d59",
+      "bytes": 47065,
+      "sha256": "a87b03d7001bbfebd2c874d1cdad802281e9b508b77cc7c229a6cb157a8d3fb3"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "a5b005be86ceee0230448d16f24a0d7cadbbcb25",
+      "bytes": 1457987,
+      "sha256": "84bc5447c6fa954e6f2025a38fd3776f1024179bb2e8dc9ffb8184115b227b5e"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "9a59949b150ef7f9b31ecbc45b2a65283074ec68",
+      "bytes": 162807,
+      "sha256": "5f8ca7ac653081e3715110dddfa31e629e83585978c0f23bc418ff1b2b47f0ad"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "18bf24178b066f063391d395e3b30d888205b442",
+      "bytes": 108225,
+      "sha256": "bf8d447c9028ae219f390eaec8c317eb3b1e1aaff111dfedf50144cf30cadf55"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "blob": "1684a9cfafd02f6cdd96091b7b85d9efb3f3dbcc",
+      "bytes": 30725,
+      "sha256": "d464cd0a6d77640852196654639ee8f20e513e09d2614091cdc08d293a6866fb"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+      "blob": "3605572af9d62734a6cc79d1f801ddf2a158eeab",
+      "bytes": 41704,
+      "sha256": "4ba9573a2b1ab3ea7ca3876b5d89729925de4dad62b9891c9720a043e7e150d1"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+      "blob": "b2c987bd59817ce00cacf3555ee64c8a804f2a42",
+      "bytes": 16484,
+      "sha256": "19c04ce8a66fa4798a7a909ab8917f410d91efea469501fabdd19c5a23fa4866"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-control-server.ts",
+      "blob": "64f335a78cbc0ca190f42caf225476eb1d2e30cc",
+      "bytes": 6123,
+      "sha256": "ff605845486949f95d1d827034db2023cd0547e1c00d214e57bd164f1c6274bc"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-executors.test.ts",
+      "blob": "ce64821253c942771e08694b55edf273fb34fa8d",
+      "bytes": 13804,
+      "sha256": "9b1e0174446f986919ec2ec3d1964e1a0437baf89c11eb21c7e5e9f00bc7464b"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-executors.ts",
+      "blob": "206624baf04310d6b77e10ea28ae3c4b156a7e1f",
+      "bytes": 31536,
+      "sha256": "7dd00f49ab5b45eb685ed10e10b33c01ae669aeb7399430f0384bab8b822fd6e"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-launcher.ts",
+      "blob": "50c1c7ff634839fc02266efdf742c5db39252b8d",
+      "bytes": 4032,
+      "sha256": "4ccadc75ee716f42a22acf606e40842b5bb041b47c4dc6b1c886ab0041d63809"
+    },
+    {
+      "path": "source/electron-main/coordinator/production-provider.ts",
+      "blob": "c21a21b5803775e74716994afe44a68b4b1ece1e",
+      "bytes": 32099,
+      "sha256": "7f4ef4e3fd947711f6c644f41fcea5b2f03ea804dfe1ed8dbf56731ca40ad6dc"
+    },
+    {
+      "path": "source/electron-main/main-production-services.ts",
+      "blob": "5729119ba67f1ffadc21abac2d5b87f062943ebf",
+      "bytes": 69551,
+      "sha256": "9f55d88dffcedc8324eebea561b3d03e9d7a9ef1afa12ce4826cd4615ea48aa2"
+    },
+    {
+      "path": "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "blob": "6b73527351ef9bb7a11e75c75dfc26f27a5002e1",
+      "bytes": 15137,
+      "sha256": "112e9d800199d859d0e7efa30f2f7990d9dd46be462e9c93144fa5498edd7b64"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "blob": "7e523aef17d0d47f4291b28cc38984d11c52c066",
+      "bytes": 118389,
+      "sha256": "d0a8758117392df76a8d6dcac4451a30acdc1154569ba3c46a888c13a0abc777"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.ts",
+      "blob": "b1d651721db46b8752fc9c1ef95b689082e6c94a",
+      "bytes": 9211,
+      "sha256": "08b73fdb79038af9ab04809b0657e71c26fdf09e28e78b6f59342bec4ed8c240"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "blob": "eafdf6a0cbae3651bb70d55c5cae719e31a89fdb",
+      "bytes": 1006523,
+      "sha256": "fb2a641904f9a9fd4403b0aaac16377c3c71053e8724adf7b81c4882f7c2bc9d"
+    },
+    {
+      "path": "source/host/src/cloud_agents/cloud_agent_tool.rs",
+      "blob": "382715a992433b4900749cd65ac12e289fe33e5a",
+      "bytes": 33697,
+      "sha256": "5c55a5b2e9967b987ba767c96bbb282bd348938ef07f6f71ff6fdb9d083f99a4"
+    },
+    {
+      "path": "source/host/src/extensions/inference/provider_session.rs",
+      "blob": "5cba4171ca0ea2806c1f5b715ca366581196c841",
+      "bytes": 171004,
+      "sha256": "e1efcc11e46796f33576aac961d9015a1cd4772e1c2df7b07a79aba66dd10f10"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/production_box_state.rs",
+      "blob": "7ed580dabb0edfd522c2ef5c6415b7d2fdf76e50",
+      "bytes": 6242,
+      "sha256": "407afc1250866f571f3d30ccb22d3b1e677cabfff2bde1d8bb5bd1f88a0d9aee"
+    },
+    {
+      "path": "source/host/src/ports/mcp_state_executor.rs",
+      "blob": "82aae3d6897b758c6c74eee206015409318c5be6",
+      "bytes": 9758,
+      "sha256": "70cb9d7c501f244c09ae30110d39f7bd1792f87cf66142685047a1d7b0dc25f7"
+    },
+    {
+      "path": "source/host/src/runner/box_tool_access.rs",
+      "blob": "7d856c9f39bf50642d3d757451f0cc954bc47b1b",
+      "bytes": 12361,
+      "sha256": "3b20eecd475ea5b8c4631eb48449024bb027a6275cd11936ef795fa6419c9dc2"
+    },
+    {
+      "path": "source/host/src/runner/coordinator_tool_relay.rs",
+      "blob": "64f0548dd1c93c6813039aaa5dce6b2ab3b8f0d1",
+      "bytes": 18956,
+      "sha256": "534a9c5c125991106cccd7d4bb5695d1424757aa73daf29ccd6ee4e40ac36131"
+    },
+    {
+      "path": "source/host/src/runner/tools/box_help_tool.rs",
+      "blob": "dc4c282b6b70f4f7f79ac15bb383f06838e46b47",
+      "bytes": 5879,
+      "sha256": "22465ed3131e08b54b45bed966a23b6b258006f3aa7f9371a7f7a15b8e1d3eac"
+    },
+    {
+      "path": "source/host/src/runner/tools/mcp_meta_tools.rs",
+      "blob": "aed2d181ba495ad529f4eb083a42a76b6c460439",
+      "bytes": 20290,
+      "sha256": "1bba4246148ca399eac1d4d99008e38c8a986ab486d182e993a0455b231c0859"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "blob": "b846e5238562896cdfd35c20aa11b28f6e12b2d0",
+      "bytes": 8680,
+      "sha256": "e39efa3e05154159fa6e9fa73eadb06b173519611604bbe45cca0c32fab33087"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_await_shell_tool.rs",
+      "blob": "ef4ab7f5835396bac1ec4d9b28d3e2e52e9d25b5",
+      "bytes": 12534,
+      "sha256": "99b32952b769afb41543cc14cabf16f29073ddb1d582fd443356ccbb6a6955cb"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_browser_tools.rs",
+      "blob": "5144b22f69433e86e665c9b6324bc181b8a766ba",
+      "bytes": 38575,
+      "sha256": "f7567d3a5bef3fdb28b5b84f0b3bd80a773a4ed239360ea1d46a3007fe3d97bc"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_computer_tool.rs",
+      "blob": "1b3f4d6608876535607a57b422ed9aeee49f9655",
+      "bytes": 27740,
+      "sha256": "716b292a26db2b4dccfb56ba18511751e48ca6910840e13469a3a11f9bf55751"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_external_machine_tools.rs",
+      "blob": "7f70954155982bc208fda2ded5019001914a7cb6",
+      "bytes": 9964,
+      "sha256": "70aa2c47200089e98a584863697897c22923af4fc3419d61a8c2ee622cc8279b"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_file_transfer_tools.rs",
+      "blob": "bcff5d7743cb92423754db13e847f94b53b85617",
+      "bytes": 12713,
+      "sha256": "274aae75461ccc4e0d4cfbca0f42c6165aee9960f7c4a2e27ab3e5f50a966fb9"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_generate_image_tool.rs",
+      "blob": "ea30731cb35d34943b8225ddebd8d9829eea7317",
+      "bytes": 11337,
+      "sha256": "21db6df2a105c82e50cf4283832aa3cf3fc4b757415746d5b46217143118bcbd"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_mcp_management_tools.rs",
+      "blob": "61d592676b2f6bcd5c469f091bb1975f750585d2",
+      "bytes": 43329,
+      "sha256": "f4baf1fafeb3be5edc1323b77c250a80fbfe716a7a089f7d3f2d9c4fe9f6ece0"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_multitask_todo_tool.rs",
+      "blob": "cdd1654f19bdb4f1eb1ca009346e2824e8e40ce5",
+      "bytes": 11567,
+      "sha256": "52bb8a2a07edecceba7732851c7ac8f112629267e8dd6bdbc27943a906d6156b"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_reaction_tool.rs",
+      "blob": "96bd37f8d1703d337da92d101a4186a66b850993",
+      "bytes": 6409,
+      "sha256": "0e7823a403464092db19d096edfb1418b45d523ded3536d315c49fbb527d1395"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_state_tool.rs",
+      "blob": "fe0bb0832669723d0df93b18f562d1a9e9970634",
+      "bytes": 24803,
+      "sha256": "f52edd95716b1f37404663ceeca4cdd8d607adc6578afd67789bb5ed42cde42a"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_subagent_management_tools.rs",
+      "blob": "1573fbe0b18203fe79d596675e1f0c8396fe50ad",
+      "bytes": 11438,
+      "sha256": "2d1d313e12c6a3162fc5fb8ba3df2549ef66577f6599199d3a67c7f58131201d"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_task_subagent_tool.rs",
+      "blob": "c12134aff0d106a5931b59c8d3bea48a3e992f18",
+      "bytes": 5344,
+      "sha256": "8f8f2591e6ae9b90e450bd97604b10c76cf724fa5057f8ea464ec7200c9eafaf"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_web_tools.rs",
+      "blob": "b01ebb034d23337bc345bef750c911cc8447b9f2",
+      "bytes": 8618,
+      "sha256": "d3ce724b5d128b885faa91884a1ebfd97551357115a2fb4395b1ae0997cb937a"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "blob": "75c7ef377d9fd5482d1082138064cccdacbe48b5",
+      "bytes": 16926,
+      "sha256": "0a841a167d7e9e81be736cf81d1d54abf70dd8b16acf1d641dee3ced7c14ad15"
+    },
+    {
+      "path": "source/host/src/runner/tools/turn_toolset.rs",
+      "blob": "605b17103d3f46a48538f9df4312425ae125dc37",
+      "bytes": 32495,
+      "sha256": "aa7f600621ab72fba29446b893cc926991dfd8ad03a55f08c2351c7d02b52c62"
+    },
+    {
+      "path": "source/host/src/runner/turn_agent_composition.rs",
+      "blob": "f4d8138ca1ff8063903ed206160eeb6702e983f6",
+      "bytes": 38876,
+      "sha256": "9a2cbfd6b4f66354867cee30f860478269fd0df18e782e3ee0c3c0c4333e2c48"
+    },
+    {
+      "path": "source/host/src/runner/turn_agent_composition/tool_call_recorder_tests.rs",
+      "blob": "a3a6618ced8384d4edc93704a6bfff580d959bbf",
+      "bytes": 33010,
+      "sha256": "b5e2d1b25779b6901fcb2dd76bdd20a2ef2787919b5a5ae20584ddaa7508d43d"
+    },
+    {
+      "path": "source/host/tests/box_mcp_exec_contract.rs",
+      "blob": "46420600c3db19f6d6f358bb1e28fc558220fdb4",
+      "bytes": 3491,
+      "sha256": "4664eb6627d4a782c60ffcffecea89e6f29568b62b212613ac6ef0c89d1807eb"
+    },
+    {
+      "path": "source/host/tests/client_side_tool_v2_projection_contract.rs",
+      "blob": "6ff566e2dd2ae05d936f231de4c4ae4c3f0ff91f",
+      "bytes": 21389,
+      "sha256": "9618f65c07bed39bb00f6ae7d3fb1a11969d3cdd14be08ac8cf0051d6fbb887e"
+    },
+    {
+      "path": "source/host/tests/cursor_inference_transport_contract.rs",
+      "blob": "23118694b64ac543d545108640adb4ccd4a76d55",
+      "bytes": 13335,
+      "sha256": "f2ee1d2da580844297530172049155afa0b62c89f8c033bda647cbb89511ac79"
+    },
+    {
+      "path": "source/host/tests/external_machine_tool_contract.rs",
+      "blob": "92ec3c41244ef00b1552d621151658b24d13cea3",
+      "bytes": 7653,
+      "sha256": "5ee20d6b21240ac0fa1515a8cbc74f6b051e0e42ef55562425634a357b365511"
+    },
+    {
+      "path": "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+      "blob": "9b0e5fa162dfe224c90bba1a725a23dc0404ac2f",
+      "bytes": 39884,
+      "sha256": "f65ece10f3f9f06c5c90202478215c1f8564950c93e627dea94f6ca3796f94e8"
+    },
+    {
+      "path": "source/host/tests/inference_provider_session_contract.rs",
+      "blob": "f5192b9237c041c663508823b2cbad2fa92450ca",
+      "bytes": 23688,
+      "sha256": "1f24b6c472c789d4bbaaf354651a2a780323b591ab37023bd4201fc5c1b095b9"
+    },
+    {
+      "path": "source/host/tests/mcp_meta_tools_contract.rs",
+      "blob": "a16364eacc694c89e37012021775668bb5cd0844",
+      "bytes": 5865,
+      "sha256": "6b1233b94953cab0796218fd81d3d79b7c3bf0bf43fd05ddd0e40053766ffb53"
+    },
+    {
+      "path": "source/host/tests/mcp_state_executor_contract.rs",
+      "blob": "c7aa74419cd77abb20c1da925e0a37c564063de9",
+      "bytes": 11448,
+      "sha256": "25c5741a6384b6fb1bf03ef4af24f18dbbaa81c97cb24650cf9fa5334d0b6b80"
+    },
+    {
+      "path": "source/host/tests/openclaw_memory_contract.rs",
+      "blob": "a50d3c7390a755b82734cf6313148227958d88d8",
+      "bytes": 14960,
+      "sha256": "06143bcbe715e2f6c2fc200d55576f23c13ac4fa86e6ecab8f4b7b8754b45cc4"
+    },
+    {
+      "path": "source/host/tests/production_checkpoint_restart_contract.rs",
+      "blob": "dc46aef65c9f5dc65903196e519aac6bcf9564ad",
+      "bytes": 206121,
+      "sha256": "5f119e724e09cfa04b82b79dae77140ac413e7b9f0998411d65473f85dfe57d3"
+    },
+    {
+      "path": "source/host/tests/production_turn_input_projection_contract.rs",
+      "blob": "88d4a82e933cf63ab12e2dc7d92c598cc5642a89",
+      "bytes": 27729,
+      "sha256": "ef9f85a7d673710e7b14718690233fb131cfe72ff723d021cedb527af7b21cba"
+    },
+    {
+      "path": "source/host/tests/runner_box_tool_composition_contract.rs",
+      "blob": "65d6142be02840f89bfcf7408287e00663272ade",
+      "bytes": 9434,
+      "sha256": "387ffb4aaf7509c5db2edaa5fa9d6f9349a8c2d150aaa69ad486a18105e0792b"
+    },
+    {
+      "path": "source/host/tests/runner_communicate_listener_contract.rs",
+      "blob": "e1ba4f0240d9680ff0a3691232d6a4922615918b",
+      "bytes": 11278,
+      "sha256": "a67641ed125558cde21dafef08e475ea21a27a74fa7464b0cfbcd57e9c3357b9"
+    },
+    {
+      "path": "source/host/tests/runner_effect_custody_contract.rs",
+      "blob": "f0d9e2b2d6e1b94d0338bcf3ad7a8ab071c325db",
+      "bytes": 81490,
+      "sha256": "b134936f9a52e023cfc87cf2d4573b1d5f72781b78fc6613c4a79ff456a27e77"
+    },
+    {
+      "path": "source/host/tests/runner_production_bridge_contract.rs",
+      "blob": "696e43f1dbcd88f4f98358463d3384ac5c2713d5",
+      "bytes": 32384,
+      "sha256": "2ba7ebb252b3ec664a6472c74696e387ae01b875ae1de091d7da7c877321ec73"
+    },
+    {
+      "path": "source/host/tests/runner_routed_provider_contract.rs",
+      "blob": "39a19db6cc41ab3e5bb42168f7cbfd6eb7e17816",
+      "bytes": 63058,
+      "sha256": "751520b6e5bce1fd5966e938d99a00d8526dc00bc8143cce7c65486b97a0e3d6"
+    },
+    {
+      "path": "source/host/tests/sand_action_audit_contract.rs",
+      "blob": "6999681247230bbca2c98196fb2c82abdc52cba0",
+      "bytes": 5422,
+      "sha256": "4b6b762cdf1e3d8bc2cc93843212427a8dd139f0ff769eef18a272152ca4d03f"
+    },
+    {
+      "path": "source/host/tests/sand_browser_tools_contract.rs",
+      "blob": "5caf3e0c7b7175b6808109d8ed459641c4b0e44f",
+      "bytes": 24002,
+      "sha256": "1f2a946c465bc0d14bd325d9af7ff16dc1060277c8fe0535a61c3f975003a798"
+    },
+    {
+      "path": "source/host/tests/sand_mcp_management_tools_contract.rs",
+      "blob": "39df7eb8be5a9c6d74ecced2900067346f155d15",
+      "bytes": 14204,
+      "sha256": "772db6ca4d5c21cda8402a6447a9173c7ed20ae77b880566c74903edb1c75600"
+    },
+    {
+      "path": "source/host/tests/sand_reaction_tool_contract.rs",
+      "blob": "9a0f3020cc5b4902159fd98cafb6c2fd767db711",
+      "bytes": 5151,
+      "sha256": "0ad835761b0263388422e4b8adcc761de99c88f15be55c36ee52402677cd00b7"
+    },
+    {
+      "path": "source/host/tests/sand_spotlight_tools_contract.rs",
+      "blob": "9698db000d4000b514c351699baf1c5d92689b94",
+      "bytes": 3562,
+      "sha256": "af00403cbc7e96e2e42eaf2a1a2eb3781153c0ca68d7ab98717e3b027f9e467e"
+    },
+    {
+      "path": "source/host/tests/sand_state_tool_contract.rs",
+      "blob": "5398cb621d013e608a4a8021c3fe71f8a680bb21",
+      "bytes": 14958,
+      "sha256": "9ac354a225259d3152c10d6881ba8b508fe9ce0f1c1b9afb42bcb2dfce69ab76"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "blob": "396c27b41d8b223dcde3d550f45b61939a5c4295",
+      "bytes": 29940,
+      "sha256": "49d1fb866db3426b9f66285a8aa11877a0194f00164f88ee131f906319ca390e"
+    },
+    {
+      "path": "source/host/tests/turn_observation_contract.rs",
+      "blob": "7271a1b61bf25edc2e7cbc3f4cbb87c0b3bcfe02",
+      "bytes": 23367,
+      "sha256": "dbefb11a6236ee881cfcbdd4120a34227f6c7e2aae8cc28a3cab68b89c005fcb"
+    },
+    {
+      "path": "source/host/tests/turn_toolset_await_mcp_contract.rs",
+      "blob": "2615f4126b66a2e22211eccea5b92e6afb24b020",
+      "bytes": 7390,
+      "sha256": "42029c1c958108a4d476a3d4ff6d5a09ecc256a4b8e8ebd78d836ac2afd7e575"
+    },
+    {
+      "path": "source/host/tests/turn_toolset_contract.rs",
+      "blob": "0dd1d4fa1be3165892acd4f1345c8816634ff467",
+      "bytes": 17368,
+      "sha256": "1b0171ae84b1e12bfbce18c53464988dfd49536cd5a0ba6c2b50745c4f3c0c62"
+    },
+    {
+      "path": "source/shared/node/cursor-backend/backend-mcp-exec.ts",
+      "blob": "db92e823e711204e87f54f8a54372df326a82622",
+      "bytes": 10172,
+      "sha256": "41875756b25f60f8504e5da88b120bb22a98b22bee6407610a69ef16cfcdccd7"
+    },
+    {
+      "path": "source/shared/node/cursor-backend/backend-mcp-origin.contract.test.ts",
+      "blob": "79bdbde6c51ce56506755abb559f3d5be6325056",
+      "bytes": 26872,
+      "sha256": "8a6420898f23c66e68d4fdb288585237a549760b4d1787ae4fa4bee133a3a18f"
+    },
+    {
+      "path": "source/shared/node/cursor-backend/cursor-inference.ts",
+      "blob": "8cc6b46db1f36c34c81ab3160e1abcb878c66091",
+      "bytes": 14541,
+      "sha256": "4227dd58f38544fee8d72502a774fe32f4e8ce7ac5f93f3c7fc119c3af27aad6"
+    },
+    {
+      "path": "source/shared/node/mcp/mcp-result-factory.ts",
+      "blob": "503e2960484f5fd52b6b449de9c95941764be877",
+      "bytes": 1982,
+      "sha256": "dc837c0a4b44b61eff7ff62d9333a2051a09febffaee90650ab4d49e21dd030a"
+    },
+    {
+      "path": "source/shared/node/mcp/tools-discovery.ts",
+      "blob": "cb6a0dc007d8abddf0589ee56982cb13b9dfe9f0",
+      "bytes": 19439,
+      "sha256": "23d94b5a0d7ca4bb7ee51799055e2ff4b20ecddcf19593b9512bfd7c90f7d363"
+    },
+    {
+      "path": "source/shared/rpc/coordinator-port.ts",
+      "blob": "154b9c0f2e356288fc84bd9226a542fd492d20ee",
+      "bytes": 8110,
+      "sha256": "7ef8569e8970d4e8fdc3b1bf149a5b4e0a22cdd47bf84c269aa18ff41cc0f15e"
+    }
+  ],
+  "members": [
+    {
+      "path": ".github/workflows/rust-desktop-runtime.yml",
+      "blob": "21027a8dac6fc0b23959cf84c946f88fe24fad26",
+      "bytes": 462897,
+      "sha256": "77b3fa3d64f6e932a7a121fc977a31d57fbaa7f3b41122d8612fb24c6658ae36"
+    },
+    {
+      "path": "desktop/scripts/build-electron-runtime.mjs",
+      "blob": "effeffd58a684e803d64715494097c8b741f43c7",
+      "bytes": 4403,
+      "sha256": "8bc05ff626d2e9aba20c04567c24301c6db24a853c0915ffb4382ab4e1721ff8"
+    },
+    {
+      "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+      "blob": "1a5edb91bc4a943a1b7d73ffadcb52a1c9df0d59",
+      "bytes": 47065,
+      "sha256": "a87b03d7001bbfebd2c874d1cdad802281e9b508b77cc7c229a6cb157a8d3fb3"
+    },
+    {
+      "path": "projects/openclaw-rust/parity-ledger.json",
+      "blob": "a5b005be86ceee0230448d16f24a0d7cadbbcb25",
+      "bytes": 1457987,
+      "sha256": "84bc5447c6fa954e6f2025a38fd3776f1024179bb2e8dc9ffb8184115b227b5e"
+    },
+    {
+      "path": "projects/openclaw-rust/requirements-traceability-matrix.json",
+      "blob": "9a59949b150ef7f9b31ecbc45b2a65283074ec68",
+      "bytes": 162807,
+      "sha256": "5f8ca7ac653081e3715110dddfa31e629e83585978c0f23bc418ff1b2b47f0ad"
+    },
+    {
+      "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+      "blob": "18bf24178b066f063391d395e3b30d888205b442",
+      "bytes": 108225,
+      "sha256": "bf8d447c9028ae219f390eaec8c317eb3b1e1aaff111dfedf50144cf30cadf55"
+    },
+    {
+      "path": "source/electron-main/adapters/mcp-oauth.ts",
+      "blob": "1684a9cfafd02f6cdd96091b7b85d9efb3f3dbcc",
+      "bytes": 30725,
+      "sha256": "d464cd0a6d77640852196654639ee8f20e513e09d2614091cdc08d293a6866fb"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+      "blob": "3605572af9d62734a6cc79d1f801ddf2a158eeab",
+      "bytes": 41704,
+      "sha256": "4ba9573a2b1ab3ea7ca3876b5d89729925de4dad62b9891c9720a043e7e150d1"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+      "blob": "b2c987bd59817ce00cacf3555ee64c8a804f2a42",
+      "bytes": 16484,
+      "sha256": "19c04ce8a66fa4798a7a909ab8917f410d91efea469501fabdd19c5a23fa4866"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-control-server.ts",
+      "blob": "64f335a78cbc0ca190f42caf225476eb1d2e30cc",
+      "bytes": 6123,
+      "sha256": "ff605845486949f95d1d827034db2023cd0547e1c00d214e57bd164f1c6274bc"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-executors.test.ts",
+      "blob": "ce64821253c942771e08694b55edf273fb34fa8d",
+      "bytes": 13804,
+      "sha256": "9b1e0174446f986919ec2ec3d1964e1a0437baf89c11eb21c7e5e9f00bc7464b"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-executors.ts",
+      "blob": "206624baf04310d6b77e10ea28ae3c4b156a7e1f",
+      "bytes": 31536,
+      "sha256": "7dd00f49ab5b45eb685ed10e10b33c01ae669aeb7399430f0384bab8b822fd6e"
+    },
+    {
+      "path": "source/electron-main/coordinator/coordinator-launcher.ts",
+      "blob": "50c1c7ff634839fc02266efdf742c5db39252b8d",
+      "bytes": 4032,
+      "sha256": "4ccadc75ee716f42a22acf606e40842b5bb041b47c4dc6b1c886ab0041d63809"
+    },
+    {
+      "path": "source/electron-main/coordinator/production-provider.ts",
+      "blob": "c21a21b5803775e74716994afe44a68b4b1ece1e",
+      "bytes": 32099,
+      "sha256": "7f4ef4e3fd947711f6c644f41fcea5b2f03ea804dfe1ed8dbf56731ca40ad6dc"
+    },
+    {
+      "path": "source/electron-main/main-production-services.ts",
+      "blob": "5729119ba67f1ffadc21abac2d5b87f062943ebf",
+      "bytes": 69551,
+      "sha256": "9f55d88dffcedc8324eebea561b3d03e9d7a9ef1afa12ce4826cd4615ea48aa2"
+    },
+    {
+      "path": "source/electron-main/mcp/desktop-mcp-manager.ts",
+      "blob": "6b73527351ef9bb7a11e75c75dfc26f27a5002e1",
+      "bytes": 15137,
+      "sha256": "112e9d800199d859d0e7efa30f2f7990d9dd46be462e9c93144fa5498edd7b64"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+      "blob": "7e523aef17d0d47f4291b28cc38984d11c52c066",
+      "bytes": 118389,
+      "sha256": "d0a8758117392df76a8d6dcac4451a30acdc1154569ba3c46a888c13a0abc777"
+    },
+    {
+      "path": "source/electron-main/mcp/mcp-runtime.ts",
+      "blob": "b1d651721db46b8752fc9c1ef95b689082e6c94a",
+      "bytes": 9211,
+      "sha256": "08b73fdb79038af9ab04809b0657e71c26fdf09e28e78b6f59342bec4ed8c240"
+    },
+    {
+      "path": "source/host/app/src/main.rs",
+      "blob": "eafdf6a0cbae3651bb70d55c5cae719e31a89fdb",
+      "bytes": 1006523,
+      "sha256": "fb2a641904f9a9fd4403b0aaac16377c3c71053e8724adf7b81c4882f7c2bc9d"
+    },
+    {
+      "path": "source/host/src/cloud_agents/cloud_agent_tool.rs",
+      "blob": "382715a992433b4900749cd65ac12e289fe33e5a",
+      "bytes": 33697,
+      "sha256": "5c55a5b2e9967b987ba767c96bbb282bd348938ef07f6f71ff6fdb9d083f99a4"
+    },
+    {
+      "path": "source/host/src/extensions/inference/provider_session.rs",
+      "blob": "5cba4171ca0ea2806c1f5b715ca366581196c841",
+      "bytes": 171004,
+      "sha256": "e1efcc11e46796f33576aac961d9015a1cd4772e1c2df7b07a79aba66dd10f10"
+    },
+    {
+      "path": "source/host/src/extensions/mcp/production_box_state.rs",
+      "blob": "7ed580dabb0edfd522c2ef5c6415b7d2fdf76e50",
+      "bytes": 6242,
+      "sha256": "407afc1250866f571f3d30ccb22d3b1e677cabfff2bde1d8bb5bd1f88a0d9aee"
+    },
+    {
+      "path": "source/host/src/ports/mcp_state_executor.rs",
+      "blob": "82aae3d6897b758c6c74eee206015409318c5be6",
+      "bytes": 9758,
+      "sha256": "70cb9d7c501f244c09ae30110d39f7bd1792f87cf66142685047a1d7b0dc25f7"
+    },
+    {
+      "path": "source/host/src/runner/box_tool_access.rs",
+      "blob": "7d856c9f39bf50642d3d757451f0cc954bc47b1b",
+      "bytes": 12361,
+      "sha256": "3b20eecd475ea5b8c4631eb48449024bb027a6275cd11936ef795fa6419c9dc2"
+    },
+    {
+      "path": "source/host/src/runner/coordinator_tool_relay.rs",
+      "blob": "64f0548dd1c93c6813039aaa5dce6b2ab3b8f0d1",
+      "bytes": 18956,
+      "sha256": "534a9c5c125991106cccd7d4bb5695d1424757aa73daf29ccd6ee4e40ac36131"
+    },
+    {
+      "path": "source/host/src/runner/tools/box_help_tool.rs",
+      "blob": "dc4c282b6b70f4f7f79ac15bb383f06838e46b47",
+      "bytes": 5879,
+      "sha256": "22465ed3131e08b54b45bed966a23b6b258006f3aa7f9371a7f7a15b8e1d3eac"
+    },
+    {
+      "path": "source/host/src/runner/tools/mcp_meta_tools.rs",
+      "blob": "aed2d181ba495ad529f4eb083a42a76b6c460439",
+      "bytes": 20290,
+      "sha256": "1bba4246148ca399eac1d4d99008e38c8a986ab486d182e993a0455b231c0859"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_agent_management_tools.rs",
+      "blob": "b846e5238562896cdfd35c20aa11b28f6e12b2d0",
+      "bytes": 8680,
+      "sha256": "e39efa3e05154159fa6e9fa73eadb06b173519611604bbe45cca0c32fab33087"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_await_shell_tool.rs",
+      "blob": "ef4ab7f5835396bac1ec4d9b28d3e2e52e9d25b5",
+      "bytes": 12534,
+      "sha256": "99b32952b769afb41543cc14cabf16f29073ddb1d582fd443356ccbb6a6955cb"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_browser_tools.rs",
+      "blob": "5144b22f69433e86e665c9b6324bc181b8a766ba",
+      "bytes": 38575,
+      "sha256": "f7567d3a5bef3fdb28b5b84f0b3bd80a773a4ed239360ea1d46a3007fe3d97bc"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_computer_tool.rs",
+      "blob": "1b3f4d6608876535607a57b422ed9aeee49f9655",
+      "bytes": 27740,
+      "sha256": "716b292a26db2b4dccfb56ba18511751e48ca6910840e13469a3a11f9bf55751"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_external_machine_tools.rs",
+      "blob": "7f70954155982bc208fda2ded5019001914a7cb6",
+      "bytes": 9964,
+      "sha256": "70aa2c47200089e98a584863697897c22923af4fc3419d61a8c2ee622cc8279b"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_file_transfer_tools.rs",
+      "blob": "bcff5d7743cb92423754db13e847f94b53b85617",
+      "bytes": 12713,
+      "sha256": "274aae75461ccc4e0d4cfbca0f42c6165aee9960f7c4a2e27ab3e5f50a966fb9"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_generate_image_tool.rs",
+      "blob": "ea30731cb35d34943b8225ddebd8d9829eea7317",
+      "bytes": 11337,
+      "sha256": "21db6df2a105c82e50cf4283832aa3cf3fc4b757415746d5b46217143118bcbd"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_mcp_management_tools.rs",
+      "blob": "61d592676b2f6bcd5c469f091bb1975f750585d2",
+      "bytes": 43329,
+      "sha256": "f4baf1fafeb3be5edc1323b77c250a80fbfe716a7a089f7d3f2d9c4fe9f6ece0"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_multitask_todo_tool.rs",
+      "blob": "cdd1654f19bdb4f1eb1ca009346e2824e8e40ce5",
+      "bytes": 11567,
+      "sha256": "52bb8a2a07edecceba7732851c7ac8f112629267e8dd6bdbc27943a906d6156b"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_reaction_tool.rs",
+      "blob": "96bd37f8d1703d337da92d101a4186a66b850993",
+      "bytes": 6409,
+      "sha256": "0e7823a403464092db19d096edfb1418b45d523ded3536d315c49fbb527d1395"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_state_tool.rs",
+      "blob": "fe0bb0832669723d0df93b18f562d1a9e9970634",
+      "bytes": 24803,
+      "sha256": "f52edd95716b1f37404663ceeca4cdd8d607adc6578afd67789bb5ed42cde42a"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_subagent_management_tools.rs",
+      "blob": "1573fbe0b18203fe79d596675e1f0c8396fe50ad",
+      "bytes": 11438,
+      "sha256": "2d1d313e12c6a3162fc5fb8ba3df2549ef66577f6599199d3a67c7f58131201d"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_task_subagent_tool.rs",
+      "blob": "c12134aff0d106a5931b59c8d3bea48a3e992f18",
+      "bytes": 5344,
+      "sha256": "8f8f2591e6ae9b90e450bd97604b10c76cf724fa5057f8ea464ec7200c9eafaf"
+    },
+    {
+      "path": "source/host/src/runner/tools/sand_web_tools.rs",
+      "blob": "b01ebb034d23337bc345bef750c911cc8447b9f2",
+      "bytes": 8618,
+      "sha256": "d3ce724b5d128b885faa91884a1ebfd97551357115a2fb4395b1ae0997cb937a"
+    },
+    {
+      "path": "source/host/src/runner/tools/send_message_tool.rs",
+      "blob": "75c7ef377d9fd5482d1082138064cccdacbe48b5",
+      "bytes": 16926,
+      "sha256": "0a841a167d7e9e81be736cf81d1d54abf70dd8b16acf1d641dee3ced7c14ad15"
+    },
+    {
+      "path": "source/host/src/runner/tools/turn_toolset.rs",
+      "blob": "605b17103d3f46a48538f9df4312425ae125dc37",
+      "bytes": 32495,
+      "sha256": "aa7f600621ab72fba29446b893cc926991dfd8ad03a55f08c2351c7d02b52c62"
+    },
+    {
+      "path": "source/host/src/runner/turn_agent_composition.rs",
+      "blob": "f4d8138ca1ff8063903ed206160eeb6702e983f6",
+      "bytes": 38876,
+      "sha256": "9a2cbfd6b4f66354867cee30f860478269fd0df18e782e3ee0c3c0c4333e2c48"
+    },
+    {
+      "path": "source/host/src/runner/turn_agent_composition/tool_call_recorder_tests.rs",
+      "blob": "a3a6618ced8384d4edc93704a6bfff580d959bbf",
+      "bytes": 33010,
+      "sha256": "b5e2d1b25779b6901fcb2dd76bdd20a2ef2787919b5a5ae20584ddaa7508d43d"
+    },
+    {
+      "path": "source/host/tests/box_mcp_exec_contract.rs",
+      "blob": "46420600c3db19f6d6f358bb1e28fc558220fdb4",
+      "bytes": 3491,
+      "sha256": "4664eb6627d4a782c60ffcffecea89e6f29568b62b212613ac6ef0c89d1807eb"
+    },
+    {
+      "path": "source/host/tests/client_side_tool_v2_projection_contract.rs",
+      "blob": "6ff566e2dd2ae05d936f231de4c4ae4c3f0ff91f",
+      "bytes": 21389,
+      "sha256": "9618f65c07bed39bb00f6ae7d3fb1a11969d3cdd14be08ac8cf0051d6fbb887e"
+    },
+    {
+      "path": "source/host/tests/cursor_inference_transport_contract.rs",
+      "blob": "23118694b64ac543d545108640adb4ccd4a76d55",
+      "bytes": 13335,
+      "sha256": "f2ee1d2da580844297530172049155afa0b62c89f8c033bda647cbb89511ac79"
+    },
+    {
+      "path": "source/host/tests/external_machine_tool_contract.rs",
+      "blob": "92ec3c41244ef00b1552d621151658b24d13cea3",
+      "bytes": 7653,
+      "sha256": "5ee20d6b21240ac0fa1515a8cbc74f6b051e0e42ef55562425634a357b365511"
+    },
+    {
+      "path": "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+      "blob": "9b0e5fa162dfe224c90bba1a725a23dc0404ac2f",
+      "bytes": 39884,
+      "sha256": "f65ece10f3f9f06c5c90202478215c1f8564950c93e627dea94f6ca3796f94e8"
+    },
+    {
+      "path": "source/host/tests/inference_provider_session_contract.rs",
+      "blob": "f5192b9237c041c663508823b2cbad2fa92450ca",
+      "bytes": 23688,
+      "sha256": "1f24b6c472c789d4bbaaf354651a2a780323b591ab37023bd4201fc5c1b095b9"
+    },
+    {
+      "path": "source/host/tests/mcp_meta_tools_contract.rs",
+      "blob": "a16364eacc694c89e37012021775668bb5cd0844",
+      "bytes": 5865,
+      "sha256": "6b1233b94953cab0796218fd81d3d79b7c3bf0bf43fd05ddd0e40053766ffb53"
+    },
+    {
+      "path": "source/host/tests/mcp_state_executor_contract.rs",
+      "blob": "c7aa74419cd77abb20c1da925e0a37c564063de9",
+      "bytes": 11448,
+      "sha256": "25c5741a6384b6fb1bf03ef4af24f18dbbaa81c97cb24650cf9fa5334d0b6b80"
+    },
+    {
+      "path": "source/host/tests/openclaw_memory_contract.rs",
+      "blob": "a50d3c7390a755b82734cf6313148227958d88d8",
+      "bytes": 14960,
+      "sha256": "06143bcbe715e2f6c2fc200d55576f23c13ac4fa86e6ecab8f4b7b8754b45cc4"
+    },
+    {
+      "path": "source/host/tests/production_checkpoint_restart_contract.rs",
+      "blob": "dc46aef65c9f5dc65903196e519aac6bcf9564ad",
+      "bytes": 206121,
+      "sha256": "5f119e724e09cfa04b82b79dae77140ac413e7b9f0998411d65473f85dfe57d3"
+    },
+    {
+      "path": "source/host/tests/production_turn_input_projection_contract.rs",
+      "blob": "88d4a82e933cf63ab12e2dc7d92c598cc5642a89",
+      "bytes": 27729,
+      "sha256": "ef9f85a7d673710e7b14718690233fb131cfe72ff723d021cedb527af7b21cba"
+    },
+    {
+      "path": "source/host/tests/runner_box_tool_composition_contract.rs",
+      "blob": "65d6142be02840f89bfcf7408287e00663272ade",
+      "bytes": 9434,
+      "sha256": "387ffb4aaf7509c5db2edaa5fa9d6f9349a8c2d150aaa69ad486a18105e0792b"
+    },
+    {
+      "path": "source/host/tests/runner_communicate_listener_contract.rs",
+      "blob": "e1ba4f0240d9680ff0a3691232d6a4922615918b",
+      "bytes": 11278,
+      "sha256": "a67641ed125558cde21dafef08e475ea21a27a74fa7464b0cfbcd57e9c3357b9"
+    },
+    {
+      "path": "source/host/tests/runner_effect_custody_contract.rs",
+      "blob": "f0d9e2b2d6e1b94d0338bcf3ad7a8ab071c325db",
+      "bytes": 81490,
+      "sha256": "b134936f9a52e023cfc87cf2d4573b1d5f72781b78fc6613c4a79ff456a27e77"
+    },
+    {
+      "path": "source/host/tests/runner_production_bridge_contract.rs",
+      "blob": "696e43f1dbcd88f4f98358463d3384ac5c2713d5",
+      "bytes": 32384,
+      "sha256": "2ba7ebb252b3ec664a6472c74696e387ae01b875ae1de091d7da7c877321ec73"
+    },
+    {
+      "path": "source/host/tests/runner_routed_provider_contract.rs",
+      "blob": "39a19db6cc41ab3e5bb42168f7cbfd6eb7e17816",
+      "bytes": 63058,
+      "sha256": "751520b6e5bce1fd5966e938d99a00d8526dc00bc8143cce7c65486b97a0e3d6"
+    },
+    {
+      "path": "source/host/tests/sand_action_audit_contract.rs",
+      "blob": "6999681247230bbca2c98196fb2c82abdc52cba0",
+      "bytes": 5422,
+      "sha256": "4b6b762cdf1e3d8bc2cc93843212427a8dd139f0ff769eef18a272152ca4d03f"
+    },
+    {
+      "path": "source/host/tests/sand_browser_tools_contract.rs",
+      "blob": "5caf3e0c7b7175b6808109d8ed459641c4b0e44f",
+      "bytes": 24002,
+      "sha256": "1f2a946c465bc0d14bd325d9af7ff16dc1060277c8fe0535a61c3f975003a798"
+    },
+    {
+      "path": "source/host/tests/sand_mcp_management_tools_contract.rs",
+      "blob": "39df7eb8be5a9c6d74ecced2900067346f155d15",
+      "bytes": 14204,
+      "sha256": "772db6ca4d5c21cda8402a6447a9173c7ed20ae77b880566c74903edb1c75600"
+    },
+    {
+      "path": "source/host/tests/sand_reaction_tool_contract.rs",
+      "blob": "9a0f3020cc5b4902159fd98cafb6c2fd767db711",
+      "bytes": 5151,
+      "sha256": "0ad835761b0263388422e4b8adcc761de99c88f15be55c36ee52402677cd00b7"
+    },
+    {
+      "path": "source/host/tests/sand_spotlight_tools_contract.rs",
+      "blob": "9698db000d4000b514c351699baf1c5d92689b94",
+      "bytes": 3562,
+      "sha256": "af00403cbc7e96e2e42eaf2a1a2eb3781153c0ca68d7ab98717e3b027f9e467e"
+    },
+    {
+      "path": "source/host/tests/sand_state_tool_contract.rs",
+      "blob": "5398cb621d013e608a4a8021c3fe71f8a680bb21",
+      "bytes": 14958,
+      "sha256": "9ac354a225259d3152c10d6881ba8b508fe9ce0f1c1b9afb42bcb2dfce69ab76"
+    },
+    {
+      "path": "source/host/tests/send_message_tool_contract.rs",
+      "blob": "396c27b41d8b223dcde3d550f45b61939a5c4295",
+      "bytes": 29940,
+      "sha256": "49d1fb866db3426b9f66285a8aa11877a0194f00164f88ee131f906319ca390e"
+    },
+    {
+      "path": "source/host/tests/turn_observation_contract.rs",
+      "blob": "7271a1b61bf25edc2e7cbc3f4cbb87c0b3bcfe02",
+      "bytes": 23367,
+      "sha256": "dbefb11a6236ee881cfcbdd4120a34227f6c7e2aae8cc28a3cab68b89c005fcb"
+    },
+    {
+      "path": "source/host/tests/turn_toolset_await_mcp_contract.rs",
+      "blob": "2615f4126b66a2e22211eccea5b92e6afb24b020",
+      "bytes": 7390,
+      "sha256": "42029c1c958108a4d476a3d4ff6d5a09ecc256a4b8e8ebd78d836ac2afd7e575"
+    },
+    {
+      "path": "source/host/tests/turn_toolset_contract.rs",
+      "blob": "0dd1d4fa1be3165892acd4f1345c8816634ff467",
+      "bytes": 17368,
+      "sha256": "1b0171ae84b1e12bfbce18c53464988dfd49536cd5a0ba6c2b50745c4f3c0c62"
+    },
+    {
+      "path": "source/shared/node/cursor-backend/backend-mcp-exec.ts",
+      "blob": "db92e823e711204e87f54f8a54372df326a82622",
+      "bytes": 10172,
+      "sha256": "41875756b25f60f8504e5da88b120bb22a98b22bee6407610a69ef16cfcdccd7"
+    },
+    {
+      "path": "source/shared/node/cursor-backend/backend-mcp-origin.contract.test.ts",
+      "blob": "79bdbde6c51ce56506755abb559f3d5be6325056",
+      "bytes": 26872,
+      "sha256": "8a6420898f23c66e68d4fdb288585237a549760b4d1787ae4fa4bee133a3a18f"
+    },
+    {
+      "path": "source/shared/node/cursor-backend/cursor-inference.ts",
+      "blob": "8cc6b46db1f36c34c81ab3160e1abcb878c66091",
+      "bytes": 14541,
+      "sha256": "4227dd58f38544fee8d72502a774fe32f4e8ce7ac5f93f3c7fc119c3af27aad6"
+    },
+    {
+      "path": "source/shared/node/mcp/mcp-result-factory.ts",
+      "blob": "503e2960484f5fd52b6b449de9c95941764be877",
+      "bytes": 1982,
+      "sha256": "dc837c0a4b44b61eff7ff62d9333a2051a09febffaee90650ab4d49e21dd030a"
+    },
+    {
+      "path": "source/shared/node/mcp/tools-discovery.ts",
+      "blob": "cb6a0dc007d8abddf0589ee56982cb13b9dfe9f0",
+      "bytes": 19439,
+      "sha256": "23d94b5a0d7ca4bb7ee51799055e2ff4b20ecddcf19593b9512bfd7c90f7d363"
+    },
+    {
+      "path": "source/shared/rpc/coordinator-port.ts",
+      "blob": "154b9c0f2e356288fc84bd9226a542fd492d20ee",
+      "bytes": 8110,
+      "sha256": "7ef8569e8970d4e8fdc3b1bf149a5b4e0a22cdd47bf84c269aa18ff41cc0f15e"
+    }
+  ],
+  "scopeMode": "Complete explicit source, shared-contract, composition, constructor, test, existing CI and canonical ledger/RTM delta; private index; all foreign work and evidence carriers excluded",
+  "patch": {
+    "bytes": 245016,
+    "sha256": "6c8e25f105e0f73ec98873568f216a95414148c86213e5309bdca89b6c5d7ce7"
+  },
+  "sourceContext": "Incoming 9059 DFA/MSU production and 4e80 evidence retained. Known fc App media fixture and background-wake oracle failures are outside this scope, independently under recovery; no new campaign until integrated repairs.",
+  "execution": "not-run; immutable Git identity snapshot only; GitHub Actions required",
+  "unitVerified": false,
+  "globalAcceptance": false
+}

@@ -173,6 +173,7 @@ impl RoutedToolBridge for CountingBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         self.list_calls.fetch_add(1, Ordering::SeqCst);
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "mcp__demo".into(),
             provider_identifier: "demo".into(),
             tool_name: "demo".into(),
@@ -291,6 +292,7 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
 
     let frozen = composition
         .with_projected_mcp_tools(vec![RoutedToolDefinition {
+            origin: None,
             name: "mcp__frozen".into(),
             provider_identifier: "demo".into(),
             tool_name: "frozen".into(),
@@ -519,6 +521,7 @@ fn production_turn_agent_projection_refuses_unsupported_snapshot_capability() {
 
 fn permissive_catalog() -> Vec<RoutedMcpMetaToolDefinition> {
     let first = RoutedToolDefinition {
+        origin: None,
         name: "public_z".into(),
         provider_identifier: "z-provider".into(),
         tool_name: "raw-z".into(),
@@ -528,6 +531,7 @@ fn permissive_catalog() -> Vec<RoutedMcpMetaToolDefinition> {
     let tools = vec![
         first.clone(),
         RoutedToolDefinition {
+            origin: None,
             name: "public_a".into(),
             provider_identifier: "a-provider".into(),
             tool_name: "raw-a".into(),
@@ -536,6 +540,7 @@ fn permissive_catalog() -> Vec<RoutedMcpMetaToolDefinition> {
         },
         first,
         RoutedToolDefinition {
+            origin: None,
             name: String::new(),
             provider_identifier: String::new(),
             tool_name: String::new(),
@@ -543,6 +548,7 @@ fn permissive_catalog() -> Vec<RoutedMcpMetaToolDefinition> {
             input_schema: serde_json::json!(false),
         },
         RoutedToolDefinition {
+            origin: None,
             name: "public_a_second".into(),
             provider_identifier: "a-provider".into(),
             tool_name: String::new(),
@@ -550,6 +556,7 @@ fn permissive_catalog() -> Vec<RoutedMcpMetaToolDefinition> {
             input_schema: serde_json::json!(17),
         },
         RoutedToolDefinition {
+            origin: None,
             name: "  public_z_last  ".into(),
             provider_identifier: "z-provider".into(),
             tool_name: "  raw-z-last  ".into(),
@@ -558,6 +565,19 @@ fn permissive_catalog() -> Vec<RoutedMcpMetaToolDefinition> {
         },
     ];
     let mut meta: Vec<_> = tools.into_iter().map(RoutedMcpMetaToolDefinition::from).collect();
+    let relay = mahayana_host_runtime::runner::coordinator_tool_relay::CoordinatorToolRelay::new(
+        mahayana_host_runtime::gateway_server::GatewayEventHub::default(),
+    );
+    for (index, row) in meta.iter_mut().enumerate() {
+        let origin = mahayana_host_runtime::extensions::inference::provider_session::RoutedMcpOrigin::from_wire(
+            &serde_json::json!({
+                "version": 1,
+                "coordinatorSourceId": "1b42cc41-58cd-46a0-aa38-20dfcd52b5d7",
+                "mcpAttemptId": format!("cb62c476-c3f1-4d22-a6e4-{:012x}", index + 1),
+            }),
+        ).unwrap();
+        row.tool.origin = Some(relay.bind_tool_origin(origin).unwrap());
+    }
     meta[0].plugin = Some(serde_json::json!(false));
     meta[0].marketplace = Some(serde_json::json!(["market", 7]));
     meta[0].plugin_id = Some(String::new());
@@ -642,6 +662,9 @@ fn composition_and_live_toolset_projection_preserve_typed_catalog_refusal() {
 fn live_mcp_projection_preserves_first_seen_grouping_and_complete_descriptors() {
     let meta_tools = permissive_catalog();
     let tools: Vec<_> = meta_tools.iter().map(|meta| meta.tool.clone()).collect();
+    assert!(tools.iter().all(|tool| tool.origin.is_some()));
+    assert_ne!(tools[0].origin, tools[2].origin,
+        "equal public names carry distinct per-row custody; a name lookup cannot restore it");
     // Explicit oracle: providers appear z, a, blank, and rows retain their
     // original order inside each group, including the duplicate z row.
     let expected: Vec<_> = [0, 2, 5, 1, 4, 3].iter().map(|&index| tools[index].clone()).collect();

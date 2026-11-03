@@ -60,6 +60,7 @@ fn mcp_descriptors_group_by_server_and_sort_tools_like_frozen_meta_options() {
     let tools = vec![
         RoutedMcpMetaToolDefinition {
             tool: RoutedToolDefinition {
+                origin: None,
                 name: "github_zeta".into(),
                 provider_identifier: "github".into(),
                 tool_name: "zeta".into(),
@@ -73,6 +74,7 @@ fn mcp_descriptors_group_by_server_and_sort_tools_like_frozen_meta_options() {
         },
         RoutedMcpMetaToolDefinition {
             tool: RoutedToolDefinition {
+                origin: None,
                 name: "notion_query".into(),
                 provider_identifier: "notion".into(),
                 tool_name: "query".into(),
@@ -86,6 +88,7 @@ fn mcp_descriptors_group_by_server_and_sort_tools_like_frozen_meta_options() {
         },
         RoutedMcpMetaToolDefinition {
             tool: RoutedToolDefinition {
+                origin: None,
                 name: "github_alpha".into(),
                 provider_identifier: "github".into(),
                 tool_name: "alpha".into(),
@@ -126,6 +129,7 @@ fn mcp_descriptors_group_by_server_and_sort_tools_like_frozen_meta_options() {
 #[test]
 fn routed_tool_effective_name_prefers_provider_tool_name() {
     let tool = RoutedToolDefinition {
+        origin: None,
         name: "github_search".into(),
         provider_identifier: "github".into(),
         tool_name: "search".into(),
@@ -135,12 +139,14 @@ fn routed_tool_effective_name_prefers_provider_tool_name() {
     assert_eq!(effective_routed_tool_name(&tool), "search");
 
     let fallback = RoutedToolDefinition {
+        origin: None,
         tool_name: " ".into(),
         ..tool
     };
     assert_eq!(effective_routed_tool_name(&fallback), "github_search");
 
     let dynamic = RoutedToolDefinition {
+        origin: None,
         name: "CallMcpTool".into(),
         provider_identifier: "mahayana-mcp-meta".into(),
         tool_name: "CallMcpTool".into(),

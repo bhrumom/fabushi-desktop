@@ -84,6 +84,7 @@ fn wire(call: &CompletedRoutedToolCall) -> AgentToolCall {
 
 fn other_tool() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: "ordinary_tool".into(), provider_identifier: "fixture-provider".into(),
         tool_name: "ordinary_tool".into(), description: Some("ordinary tool".into()),
         input_schema: json!({"type":"object"}),

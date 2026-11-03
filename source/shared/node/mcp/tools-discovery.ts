@@ -11,7 +11,7 @@ import {
 } from "../../../internal/scheduling.js";
 import { displayRowOwnsIdentifier } from "./mcp-definition-source.js";
 import { SandMcpConfigError } from "./mcp-config-error.js";
-import { generatedMcpResultFactory } from "./mcp-result-factory.js";
+import { generatedMcpResultFactory, type McpDispatchAssertion } from "./mcp-result-factory.js";
 import {
   reportMcpHostEdgeDegraded,
   reportMcpHostEdgeFailure,
@@ -418,6 +418,7 @@ export function createMcpToolsDiscovery(
   async function executeToolRaw(
     args: any,
     auditIdentity: any,
+    assertDispatchCurrent?: McpDispatchAssertion,
   ): Promise<McpResultLike> {
     if (await isHttpProvider(args.providerIdentifier)) {
       // Provider resolution can publish the cold manager's account identity.
@@ -429,8 +430,10 @@ export function createMcpToolsDiscovery(
         args: toJsonArgs(args.args),
         toolCallId: args.toolCallId,
         agentId: auditIdentity?.agentId,
-      });
-      reportFirstCall(args.providerIdentifier, result.result.case !== "error");
+      }, assertDispatchCurrent);
+      // A pre-effect refusal did not make a connector call.
+      if (result.result.case !== "rejected")
+        reportFirstCall(args.providerIdentifier, result.result.case !== "error");
       return result;
     }
     const boxMcpExec = boxMcpExecSlot;
@@ -506,12 +509,13 @@ export function createMcpToolsDiscovery(
       _ctx: unknown,
       args: any,
       auditIdentity: any,
+      assertDispatchCurrent?: McpDispatchAssertion,
     ): Promise<McpResultLike> {
       const displayServer = displayRowForIdentifier(args.providerIdentifier);
       const displayName = displayServer?.name ?? args.providerIdentifier;
       const disabled = disabledToolResult(args);
       if (disabled != null) return disabled;
-      const raw = await executeToolRaw(args, auditIdentity);
+      const raw = await executeToolRaw(args, auditIdentity, assertDispatchCurrent);
       return applyCustomInstructionsToMcpResult(
         raw,
         displayName,

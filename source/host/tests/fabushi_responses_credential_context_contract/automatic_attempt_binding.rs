@@ -287,6 +287,7 @@ struct EffectBridge {
 impl RoutedToolBridge for EffectBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(if self.enabled { vec![RoutedToolDefinition {
+            origin: None,
             name: "effect".into(), provider_identifier: "automatic-attempt-contract".into(),
             tool_name: "effect".into(), description: Some("Append a counted effect receipt".into()),
             input_schema: json!({"type": "object", "properties": {"delta": {"type": "integer"}}}),

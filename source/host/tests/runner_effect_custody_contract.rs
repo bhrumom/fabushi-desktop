@@ -941,6 +941,7 @@ struct CountedBridge {
 impl RoutedToolBridge for CountedBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "effect".into(), provider_identifier: "custody-contract".into(),
             tool_name: "effect".into(), description: None,
             input_schema: json!({"type":"object"}),
@@ -1023,6 +1024,7 @@ fn real_mcp_response_loss_refuses_more_effects_on_the_same_attempt() {
     impl RoutedToolBridge for GatedBridge {
         fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
             Ok(vec![RoutedToolDefinition {
+                origin: None,
                 name: "effect".into(), provider_identifier: "custody-contract".into(),
                 tool_name: "effect".into(), description: None,
                 input_schema: json!({"type":"object"}),
@@ -1455,6 +1457,7 @@ struct GeneratedRelayBridge {
 impl RoutedToolBridge for GeneratedRelayBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "b".into(), provider_identifier: "custody-contract".into(),
             tool_name: "b".into(), description: None,
             input_schema: json!({"type":"object"}),

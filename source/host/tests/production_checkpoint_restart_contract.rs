@@ -1220,6 +1220,7 @@ struct GeneratedHistoryBridge {
 impl RoutedToolBridge for GeneratedHistoryBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "b".into(), provider_identifier: "generated-history-contract".into(),
             tool_name: "b".into(), description: None, input_schema: json!({"type":"object"}),
         }])
@@ -1376,6 +1377,7 @@ struct OriginalEffectBridge {
 impl RoutedToolBridge for OriginalEffectBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "b".into(), provider_identifier: "original-turn-contract".into(),
             tool_name: "b".into(), description: None, input_schema: json!({"type":"object"}),
         }])
@@ -2651,6 +2653,7 @@ impl RoutedToolBridge for CanonicalRootBridge {
             }));
         }
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "b".into(), provider_identifier: "canonical-root-contract".into(),
             tool_name: "b".into(), description: None, input_schema: json!({"type":"object"}),
         }])

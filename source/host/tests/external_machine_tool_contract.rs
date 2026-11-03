@@ -22,6 +22,7 @@ struct BaseBridge;
 impl RoutedToolBridge for BaseBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "base_tool".into(),
             provider_identifier: "base".into(),
             tool_name: "base_tool".into(),

@@ -13,7 +13,12 @@ import {
   createDashboardSandBackendMcpExec,
   type DashboardMcpExecClient,
 } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
-import { generatedMcpResultFactory } from "../../shared/node/mcp/mcp-result-factory.js";
+import {
+  generatedMcpResultFactory,
+  MCP_ORIGIN_RETIRED,
+  McpOriginRetiredError,
+} from "../../shared/node/mcp/mcp-result-factory.js";
+import type { CoordinatorControlSourceContext, CoordinatorFrame } from "../../shared/rpc/coordinator-port.js";
 
 test("a throwing problem reporter cannot prevent protocol settlement", async () => {
   const server = createCoordinatorControlServer({
@@ -38,6 +43,71 @@ test("a throwing problem reporter cannot prevent protocol settlement", async () 
 
   assert.equal((await server.settled).outcome, "protocol-breach");
 });
+
+for (const retirement of ["dispose", "port-close", "shutdown", "protocol-breach"] as const) {
+  test("OD-01 concrete control source retires before callbacks on " + retirement, async () => {
+    const captures: CoordinatorControlSourceContext[] = [];
+    const posted: CoordinatorFrame[] = [];
+    const callbackStates: string[] = [];
+    let retirementCallbacks = 0;
+    let server!: ReturnType<typeof createCoordinatorControlServer>;
+    const request = { kind: "request", requestId: "capture", method: "capture", args: {
+      sourceId: "00000000-0000-0000-0000-000000000000",
+      source: { sourceId: "00000000-0000-0000-0000-000000000000" },
+    } };
+    const duringRetirement = () => {
+      retirementCallbacks += 1;
+      try { captures[0]!.assertCurrent(); callbackStates.push("live"); }
+      catch (error) { callbackStates.push(error instanceof McpOriginRetiredError ? "retired" : "other-error"); }
+      server.handleMessage({ ...request, requestId: "reentrant" });
+    };
+    server = createCoordinatorControlServer({
+      post(frame) {
+        posted.push(frame);
+        if (frame.kind === "lifecycle" && frame.phase === "shutdown") duringRetirement();
+      },
+      executors: { capture(args, source) {
+        assert.deepEqual(args, request.args);
+        captures.push(source);
+        return source.sourceId;
+      } },
+      onEvent: {},
+      onProblem: duringRetirement,
+    });
+    server.handleMessage({ kind: "lifecycle", phase: "hello", protocolVersion: 1 });
+    server.handleMessage(request);
+    assert.equal(captures.length, 1);
+    const source = captures[0]!;
+    assert.notEqual(source.sourceId, request.args.sourceId);
+    assert.match(source.sourceId, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    assert.equal(source.assertCurrent(), undefined);
+    if (retirement === "dispose") server.dispose();
+    else if (retirement === "port-close") server.handlePortClosed();
+    else if (retirement === "shutdown") server.handleMessage({ kind: "lifecycle", phase: "shutdown", reason: "requested", detail: null });
+    else server.handleMessage({ kind: "event", family: "undeclared", payload: null });
+    await server.settled;
+    assert.throws(source.assertCurrent, McpOriginRetiredError);
+    server.handleMessage({ ...request, requestId: "after-retirement" });
+    server.dispose();
+    assert.equal(captures.length, 1);
+    assert.equal(posted.filter((frame) => frame.kind === "reply").length, 0, "a retired port cannot claim delivery of the pending result");
+    assert.equal(retirementCallbacks, retirement === "dispose" ? 1 : retirement === "protocol-breach" ? 2 : 0);
+    assert.deepEqual(callbackStates, Array(retirementCallbacks).fill("retired"), "retirement precedes diagnostics and post callbacks");
+
+    let replacement: CoordinatorControlSourceContext | undefined;
+    const next = createCoordinatorControlServer({
+      post() {}, executors: { capture: (_args, current) => { replacement = current; } },
+      onEvent: {}, onProblem: (detail) => assert.fail(detail),
+    });
+    next.handleMessage({ kind: "lifecycle", phase: "hello", protocolVersion: 1 });
+    next.handleMessage(request);
+    assert.ok(replacement);
+    assert.notEqual(replacement.sourceId, source.sourceId);
+    assert.equal(replacement.assertCurrent(), undefined);
+    assert.throws(source.assertCurrent, McpOriginRetiredError);
+    next.dispose();
+  });
+}
 
 function bounded<T>(promise: Promise<T>, label: string): Promise<T> {
   return new Promise<T>((resolvePromise, reject) => {
@@ -160,6 +230,7 @@ test("MCP results retain their discriminants through native ports and the shippi
   const rawResult = { content: [{ type: "text", text }], isError: true, structuredContent: nested };
   const producers = new Map<string, () => unknown | Promise<unknown>>([
     ["official-error", () => officialError],
+    ["origin-retired", () => generatedMcpResultFactory.rejected(MCP_ORIGIN_RETIRED)],
     ["backend-deadline", () => backend.executeTool({
       serverIdentifier: "fixture", toolName: "write", args: {}, toolCallId: "wire-deadline",
     })],
@@ -240,6 +311,9 @@ test("MCP results retain their discriminants through native ports and the shippi
     }
     assert.deepEqual(received.get("official-error").value, {
       result: { case: "error", value: { error: "official transport result is unknown" } },
+    });
+    assert.deepEqual(received.get("origin-retired").value, {
+      result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED } },
     });
     const deadline = received.get("backend-deadline").value;
     assert.equal(deadline.result.case, "error");

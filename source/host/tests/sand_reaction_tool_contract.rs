@@ -15,6 +15,7 @@ struct Delegate;
 impl RoutedToolBridge for Delegate {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "mcp.demo".into(),
             provider_identifier: "demo".into(),
             tool_name: "demo".into(),

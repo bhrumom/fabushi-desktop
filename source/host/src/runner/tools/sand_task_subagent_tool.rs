@@ -63,6 +63,7 @@ fn task_definition(allowed_subagent_types: Option<&[String]>) -> RoutedToolDefin
         None => json!({"type":"string","minLength":1}),
     };
     RoutedToolDefinition {
+        origin: None,
         name: SAND_TASK_TOOL_NAME.into(),
         provider_identifier: "fabushi-runner".into(),
         tool_name: SAND_TASK_TOOL_NAME.into(),

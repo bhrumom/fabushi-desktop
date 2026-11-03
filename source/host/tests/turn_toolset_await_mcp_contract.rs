@@ -26,6 +26,7 @@ struct BaseBridge;
 impl RoutedToolBridge for BaseBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "base_tool".into(),
             provider_identifier: "base".into(),
             tool_name: "base_tool".into(),
@@ -155,6 +156,7 @@ fn turn_toolset_owns_box_and_external_await_shell_surfaces() {
 #[test]
 fn turn_toolset_owns_projected_dynamic_mcp_and_meta_discovery() {
     let projected = RoutedToolDefinition {
+        origin: None,
         name: "issues_lookup".into(),
         provider_identifier: "linear".into(),
         tool_name: "lookup".into(),

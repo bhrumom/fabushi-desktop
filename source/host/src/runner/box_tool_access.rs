@@ -116,6 +116,7 @@ pub trait RunnerBoxResourcePort: Send + Sync {
 pub fn runner_box_tool_definitions() -> Vec<RoutedToolDefinition> {
     vec![
         RoutedToolDefinition {
+            origin: None,
             name: RUNNER_BOX_SHELL_TOOL_NAME.into(),
             provider_identifier: RUNNER_BOX_TOOL_PROVIDER.into(),
             tool_name: RUNNER_BOX_SHELL_TOOL_NAME.into(),
@@ -146,6 +147,7 @@ pub fn runner_box_tool_definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: RUNNER_BOX_READ_TOOL_NAME.into(),
             provider_identifier: RUNNER_BOX_TOOL_PROVIDER.into(),
             tool_name: RUNNER_BOX_READ_TOOL_NAME.into(),

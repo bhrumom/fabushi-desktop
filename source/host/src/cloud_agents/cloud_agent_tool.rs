@@ -84,6 +84,7 @@ impl CloudAgentToolBridge {
 
 pub fn cloud_agent_tool_definition() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: CLOUD_AGENT_TOOL_NAME.into(),
         provider_identifier: "fabushi-runner".into(),
         tool_name: CLOUD_AGENT_TOOL_NAME.into(),

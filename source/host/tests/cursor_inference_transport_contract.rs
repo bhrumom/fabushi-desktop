@@ -113,6 +113,7 @@ fn cursor_request_is_connect_framed_and_accepts_frozen_tool_schema() {
             },
         ],
         &[RoutedToolDefinition {
+            origin: None,
             name: "calendar_list".into(),
             provider_identifier: "calendar".into(),
             tool_name: "list".into(),
@@ -206,6 +207,7 @@ impl CursorInferenceStreamTransport for FakeCursorTransport {
 #[test]
 fn cursor_provider_loop_executes_tools_once_and_resumes_from_accepted_checkpoint() {
     let tools = vec![RoutedToolDefinition {
+        origin: None,
         name: "calendar_list".into(),
         provider_identifier: "calendar".into(),
         tool_name: "list".into(),
@@ -304,6 +306,7 @@ fn cursor_provider_loop_executes_tools_once_and_resumes_from_accepted_checkpoint
 #[test]
 fn cursor_partial_tool_callback_reports_real_accumulated_state_and_model_call_identity() {
     let tools = vec![RoutedToolDefinition {
+        origin: None,
         name: "Shell".into(),
         provider_identifier: "mahayana-box".into(),
         tool_name: "Shell".into(),

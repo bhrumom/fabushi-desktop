@@ -26,6 +26,18 @@ import type { DesktopMcpManagerFacade } from "./desktop-mcp-manager.js";
 import { createMcpRuntime } from "./mcp-runtime.js";
 import { OfficialMcpService } from "./official-mcp-service.js";
 import { SandUserSecretsStore } from "../secrets/user-secrets-store.js";
+import { createCoordinatorControlServer } from "../coordinator/coordinator-control-server.js";
+import {
+  parseMcpRoutedOrigin,
+  type CoordinatorControlSourceContext,
+  type McpRoutedOrigin,
+} from "../../shared/rpc/coordinator-port.js";
+import {
+  generatedMcpResultFactory,
+  MCP_ORIGIN_RETIRED,
+  McpOriginRetiredError,
+  type McpDispatchAssertion,
+} from "../../shared/node/mcp/mcp-result-factory.js";
 
 test("shipping MCP runtime forwards discovery failure through the dedicated callback", async () => {
   let managerOptions: any;
@@ -129,6 +141,36 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+// Use the concrete producer's context; wire arguments cannot mint this lease.
+function nativeRoutedSource(t: TestContext) {
+  let source: CoordinatorControlSourceContext | undefined;
+  const server = createCoordinatorControlServer({
+    post() {},
+    executors: { capture: (_args, current) => { source = current; } },
+    onEvent: {},
+    onProblem: (detail) => assert.fail(detail),
+  });
+  t.after(() => server.dispose());
+  server.handleMessage({ kind: "lifecycle", phase: "hello", protocolVersion: 1 });
+  server.handleMessage({ kind: "request", requestId: "capture", method: "capture", args: null });
+  assert.ok(source);
+  return { source, server };
+}
+
+function catalogOrigin(catalog: unknown): McpRoutedOrigin {
+  assert.ok(Array.isArray(catalog));
+  const origin = parseMcpRoutedOrigin(catalog[0]?.origin);
+  assert.ok(origin, "the production adapter must stamp its original native source and Attempt");
+  return origin;
+}
+
+function assertOriginRejected(value: unknown): void {
+  assert.ok(value instanceof McpResult, "pre-dispatch refusal uses the actual generated result");
+  assert.deepEqual(value.result, { case: "rejected", value: generatedMcpResultFactory.rejected(MCP_ORIGIN_RETIRED).result.value });
+}
+
+const constructionTool = { providerIdentifier: "connector", name: "tool", toolName: "tool" };
+
 type ConstructionManager = Pick<DesktopMcpManagerFacade,
   "dispose" | "setAuthCompletionObserver" | "listRoutedTools" | "executeRoutedTool">;
 type ConstructionDeps = Parameters<typeof createMcpRuntime<ConstructionManager>>[0];
@@ -176,7 +218,7 @@ function constructionManager(hooks: {
       observer = listener;
       hooks.observe?.(listener);
     },
-    async listRoutedTools() { calls.list += 1; return ["current-tool"]; },
+    async listRoutedTools() { calls.list += 1; return [constructionTool]; },
     async executeRoutedTool() { calls.execute += 1; return "executed"; },
   };
   return { manager, calls, complete(completion: unknown) { observer?.(completion); } };
@@ -672,7 +714,7 @@ for (const boundary of ["entry", "service", "token"] as const) {
 }
 
 function constructionAdapter(deps: ConstructionDeps) {
-  return createProductionMcpOAuthAdapter({
+  const service = createProductionMcpOAuthAdapter({
     resolveRuntimeDeps: () => ({
       ...deps,
       // This controlled factory implements only the facade methods exercised
@@ -681,10 +723,239 @@ function constructionAdapter(deps: ConstructionDeps) {
     }),
     resolveDesktopDeps: () => { throw new Error("Desktop IPC is outside this routed-operation test"); },
   }).create({ machineId: "construction-machine" } as ProductionServiceContext);
+  assert.ok(!(service instanceof Promise));
+  return service;
+}
+
+test("OD-02 captured Attempt is reserved once and stale lookup never constructs a replacement", async () => {
+  const old = constructionManager();
+  const replacement = constructionManager();
+  let factories = 0;
+  const runtime = createMcpRuntime(constructionDeps(async () => ++factories === 1 ? old.manager : replacement.manager));
+  try {
+    const first = runtime.captureMcpAttempt();
+    assert.match(first.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    assert.equal(runtime.captureMcpAttempt(), first);
+    assert.equal(runtime.requireMcpAttempt(first.id), first);
+    assert.equal(runtime.ensureMcpManager(), first.promise);
+    assert.equal(first.assertCurrent(), undefined);
+    assert.equal(await first.promise, old.manager);
+    assert.equal(factories, 1);
+
+    const resetting = runtime.resetMcpManager();
+    assert.throws(first.assertCurrent, McpOriginRetiredError);
+    assert.throws(() => runtime.requireMcpAttempt(first.id), McpOriginRetiredError);
+    await resetting;
+    assert.equal(factories, 1, "lookup must not reserve or invoke B after reset");
+    const second = runtime.captureMcpAttempt();
+    assert.notEqual(second.id, first.id);
+    assert.equal(await second.promise, replacement.manager);
+    assert.throws(() => runtime.requireMcpAttempt(first.id), McpOriginRetiredError);
+    assert.equal(runtime.requireMcpAttempt(second.id), second);
+    assert.equal(factories, 2);
+    await runtime.dispose();
+    assert.throws(second.assertCurrent, McpOriginRetiredError);
+    assert.throws(() => runtime.requireMcpAttempt(second.id), McpOriginRetiredError);
+    assert.equal(factories, 2);
+  } finally { await runtime.dispose(); }
+});
+
+for (const boundary of ["factory", "catalog"] as const) {
+  for (const retirement of ["source", "attempt"] as const) {
+    test("OD-02/03 held " + boundary + " cannot publish origin after " + retirement + " retirement", { timeout: 10_000 }, async (t) => {
+      const { source, server } = nativeRoutedSource(t);
+      const entered = deferred<void>();
+      const factory = deferred<ConstructionManager>();
+      const catalog = deferred<unknown>();
+      const old = constructionManager();
+      const replacement = constructionManager();
+      let factories = 0;
+      let oldLists = 0;
+      const oldManager: ConstructionManager = {
+        ...old.manager,
+        async listRoutedTools() {
+          oldLists += 1;
+          if (boundary === "catalog") { entered.resolve(); return await catalog.promise; }
+          return [constructionTool];
+        },
+      };
+      const adapter = constructionAdapter(constructionDeps(async () => {
+        if (++factories > 1) return replacement.manager;
+        if (boundary === "factory") { entered.resolve(); return await factory.promise; }
+        return oldManager;
+      }));
+      t.after(async () => {
+        factory.resolve(oldManager);
+        catalog.resolve([constructionTool]);
+        await adapter.dispose();
+      });
+      const pending = adapter.listRoutedTools(source);
+      const refused = assert.rejects(pending, (error) => retirement === "source" || boundary === "catalog"
+        ? error instanceof McpOriginRetiredError
+        : error instanceof Error && error.message === "MCP manager construction is retired.");
+      await entered.promise;
+      if (retirement === "source") server.dispose();
+      else await adapter.resetMcpManager();
+      factory.resolve(oldManager);
+      catalog.resolve([constructionTool]);
+      await refused;
+      assert.equal(oldLists, boundary === "catalog" ? 1 : 0);
+      assert.equal(old.calls.execute, 0);
+      assert.equal(factories, 1, "a stale listing cannot silently construct B");
+      const freshSource = nativeRoutedSource(t).source;
+      const fresh = await adapter.listRoutedTools(freshSource);
+      const origin = catalogOrigin(fresh);
+      assert.equal(origin.coordinatorSourceId, freshSource.sourceId);
+      assert.equal(factories, retirement === "attempt" ? 2 : 1);
+      assert.deepEqual(fresh, [{ ...constructionTool, origin }]);
+    });
+  }
+}
+
+test("OD-02/05 stale and malformed origins cannot construct or borrow manager B", { timeout: 10_000 }, async (t) => {
+  const sourceA = nativeRoutedSource(t);
+  const sourceB = nativeRoutedSource(t);
+  const old = constructionManager();
+  const replacement = constructionManager();
+  const replacementStarted = deferred<void>();
+  const replacementFactory = deferred<ConstructionManager>();
+  let factories = 0;
+  const adapter = constructionAdapter(constructionDeps(async () => {
+    if (++factories === 1) return old.manager;
+    replacementStarted.resolve();
+    return await replacementFactory.promise;
+  }));
+  t.after(async () => { replacementFactory.resolve(replacement.manager); await adapter.dispose(); });
+  const originA = catalogOrigin(await adapter.listRoutedTools(sourceA.source));
+  const request = { ...constructionTool, args: { original: true }, toolCallId: "original-call", agentId: "original-agent", origin: originA };
+  await adapter.resetMcpManager();
+  assertOriginRejected(await adapter.executeRoutedTool(request, sourceA.source));
+  assertOriginRejected(await adapter.executeRoutedTool(structuredClone(request), sourceB.source));
+  for (const origin of [undefined, null, [], { ...originA, version: 2 }, { ...originA, mcpAttemptId: "invalid" }]) {
+    assertOriginRejected(await adapter.executeRoutedTool({ ...request, origin }, sourceB.source));
+  }
+  assert.equal(factories, 1, "neither missing Attempt nor a foreign source can initiate manager B");
+  assert.equal(old.calls.execute, 0);
+  assert.equal(replacement.calls.execute, 0);
+
+  const pendingB = adapter.listRoutedTools(sourceB.source);
+  void pendingB.catch(() => {});
+  await replacementStarted.promise;
+  assertOriginRejected(await adapter.executeRoutedTool({ ...request, origin: { ...originA, coordinatorSourceId: sourceB.source.sourceId } }, sourceB.source));
+  assert.equal(replacement.calls.execute, 0, "stale execute settles without awaiting the held B factory");
+  replacementFactory.resolve(replacement.manager);
+  const originB = catalogOrigin(await pendingB);
+  assert.notEqual(originB.mcpAttemptId, originA.mcpAttemptId);
+  assertOriginRejected(await adapter.executeRoutedTool({ ...request, origin: { ...originA, coordinatorSourceId: sourceB.source.sourceId } }, sourceB.source));
+  sourceA.server.dispose();
+  assertOriginRejected(await adapter.executeRoutedTool({ ...request, origin: { ...originB, coordinatorSourceId: sourceA.source.sourceId } }, sourceA.source));
+  assert.equal(replacement.calls.execute, 0, "an existing B cannot be borrowed by A");
+  assert.equal(await adapter.executeRoutedTool({ ...request, origin: originB }, sourceB.source), "executed");
+  assert.equal(factories, 2);
+  assert.equal(replacement.calls.execute, 1);
+});
+
+for (const retirement of ["source", "attempt"] as const) {
+  test("OD-02 execute rechecks original " + retirement + " after the manager await", async (t) => {
+    const { source, server } = nativeRoutedSource(t);
+    const old = constructionManager();
+    const replacement = constructionManager();
+    let factories = 0;
+    const adapter = constructionAdapter(constructionDeps(async () => ++factories === 1 ? old.manager : replacement.manager));
+    t.after(async () => { await adapter.dispose(); });
+    const origin = catalogOrigin(await adapter.listRoutedTools(source));
+    const request = { ...constructionTool, args: {}, toolCallId: "post-manager-await", origin };
+    // execute has reached its await of this already-resolved manager promise.
+    // Retire synchronously before that continuation can invoke the facade.
+    const pending = adapter.executeRoutedTool(request, source);
+    if (retirement === "source") server.dispose();
+    else await adapter.resetMcpManager();
+    assertOriginRejected(await pending);
+    assert.equal(old.calls.execute, 0);
+    assert.equal(factories, 1);
+    const freshSource = nativeRoutedSource(t).source;
+    const freshOrigin = catalogOrigin(await adapter.listRoutedTools(freshSource));
+    assert.equal(await adapter.executeRoutedTool({ ...request, origin: freshOrigin }, freshSource), "executed");
+    assert.equal(retirement === "source" ? old.calls.execute : replacement.calls.execute, 1);
+    assert.equal(factories, retirement === "source" ? 1 : 2);
+  });
+}
+
+test("OD-03 native origin stamping preserves malformed received catalogs and permissive row values", async (t) => {
+  const { source } = nativeRoutedSource(t);
+  let returned: unknown;
+  const owned = constructionManager();
+  const adapter = constructionAdapter(constructionDeps(async () => ({
+    ...owned.manager,
+    listRoutedTools: async () => returned,
+  })));
+  t.after(async () => { await adapter.dispose(); });
+  for (const malformed of [null, undefined, {}, "not-an-array", 7]) {
+    returned = malformed;
+    assert.equal(await adapter.listRoutedTools(source), malformed);
+  }
+  const valid = { name: "", providerIdentifier: "", toolName: "raw", inputSchema: null, extra: { keep: true } };
+  const badRow = { providerIdentifier: "connector", toolName: "tool" };
+  returned = [valid, null, "bad", 0, [], badRow, valid];
+  const listed = await adapter.listRoutedTools(source) as unknown[];
+  const origin = catalogOrigin(listed);
+  assert.deepEqual(listed, [{ ...valid, origin }, null, "bad", 0, [], { ...badRow, origin }, { ...valid, origin }]);
+  assert.equal((listed[0] as { extra: unknown }).extra, valid.extra);
+  assert.equal((returned as unknown[])[0], valid, "the producer does not mutate the manager's descriptor");
+  returned = [];
+  assert.deepEqual(await adapter.listRoutedTools(source), []);
+});
+
+for (const outcome of ["success", "server-error", "failure", "typed-failure"] as const) {
+  test("OD-05/07 native adapter preserves admitted late " + outcome + " after source and Attempt retirement", async (t) => {
+    const { source, server } = nativeRoutedSource(t);
+    const entered = deferred<void>();
+    const result = deferred<unknown>();
+    const owned = constructionManager();
+    const received: unknown[] = [];
+    let assertion: McpDispatchAssertion | undefined;
+    let factories = 0;
+    const adapter = constructionAdapter(constructionDeps(async () => {
+      factories += 1;
+      return {
+        ...owned.manager,
+        async executeRoutedTool(request, assertDispatchCurrent) {
+          assert.ok(assertDispatchCurrent);
+          assertion = assertDispatchCurrent;
+          assert.equal(assertDispatchCurrent(), undefined);
+          received.push(request);
+          entered.resolve();
+          return await result.promise;
+        },
+      };
+    }));
+    t.after(async () => { result.resolve(null); await adapter.dispose(); });
+    const origin = catalogOrigin(await adapter.listRoutedTools(source));
+    const request = { providerIdentifier: "provider", name: "public-name", toolName: "raw-name", args: { value: 7 }, toolCallId: "call-7", agentId: "agent-7", origin };
+    const failure = outcome === "typed-failure" ? new McpOriginRetiredError() : new Error(MCP_ORIGIN_RETIRED);
+    const pending = adapter.executeRoutedTool(request, source);
+    const observed = outcome === "failure" || outcome === "typed-failure"
+      ? assert.rejects(pending, (error) => error === failure)
+      : pending;
+    await entered.promise;
+    assert.equal(received[0], request);
+    server.dispose();
+    await adapter.resetMcpManager();
+    assert.ok(assertion);
+    assert.throws(assertion, McpOriginRetiredError);
+    const success = new McpResult({ result: { case: "success", value: new McpSuccess({ isError: outcome === "server-error" }) } });
+    if (outcome === "failure" || outcome === "typed-failure") result.reject(failure);
+    else result.resolve(success);
+    const settled = await observed;
+    if (outcome === "success" || outcome === "server-error") assert.equal(settled, success);
+    assert.deepEqual(received, [request]);
+    assert.equal(factories, 1, "a late outcome cannot re-list, retry, or construct a fresh manager");
+  });
 }
 
 for (const action of ["reset", "dispose"] as const) {
-  test("MC-06 shipping adapter " + action + " rejects pending routed operations before facade I/O", async () => {
+  test("MC-06 shipping adapter " + action + " rejects pending routed operations before facade I/O", async (t) => {
+    const { source } = nativeRoutedSource(t);
     const started = deferred<void>();
     const held = deferred<ConstructionManager>();
     const old = constructionManager();
@@ -696,17 +967,21 @@ for (const action of ["reset", "dispose"] as const) {
       return held.promise;
     }));
     const request = { providerIdentifier: "connector", name: "tool", toolName: "tool", args: {}, toolCallId: "construction-call" };
-    const listRejected = assert.rejects(adapter.listRoutedTools(), /construction is retired/);
-    const executeRejected = assert.rejects(adapter.executeRoutedTool(request), /construction is retired/);
+    const listRejected = assert.rejects(adapter.listRoutedTools(source), /construction is retired/);
+    // OD requires a completed catalog origin before execute may await an
+    // Attempt; an unbound request must refuse even while listing is pending.
+    const executeRejected = adapter.executeRoutedTool(request, source).then(assertOriginRejected);
     await started.promise;
     assert.equal(factories, 1);
     if (action === "reset") {
       await adapter.resetMcpManager();
-      assert.deepEqual(await adapter.listRoutedTools(), ["current-tool"]);
-      assert.equal(await adapter.executeRoutedTool(request), "executed");
+      const catalog = await adapter.listRoutedTools(source);
+      const origin = catalogOrigin(catalog);
+      assert.deepEqual(catalog, [{ ...constructionTool, origin }]);
+      assert.equal(await adapter.executeRoutedTool({ ...request, origin }, source), "executed");
     } else {
       await adapter.dispose();
-      await assert.rejects(adapter.listRoutedTools(), /adapter is disposed/);
+      await assert.rejects(adapter.listRoutedTools(source), /adapter is disposed/);
     }
     held.resolve(old.manager);
     await Promise.all([listRejected, executeRejected]);
@@ -720,7 +995,8 @@ for (const action of ["reset", "dispose"] as const) {
   });
 }
 
-test("MC-03 shipping adapter awaits and propagates manager teardown failure", async () => {
+test("MC-03 shipping adapter awaits and propagates manager teardown failure", async (t) => {
+  const { source } = nativeRoutedSource(t);
   const started = deferred<void>();
   const cleanup = deferred<void>();
   const failure = new Error("Shutdown cleanup failed");
@@ -729,7 +1005,8 @@ test("MC-03 shipping adapter awaits and propagates manager teardown failure", as
     return cleanup.promise;
   } });
   const adapter = constructionAdapter(constructionDeps(async () => owned.manager));
-  assert.deepEqual(await adapter.listRoutedTools(), ["current-tool"]);
+  const catalog = await adapter.listRoutedTools(source);
+  assert.deepEqual(catalog, [{ ...constructionTool, origin: catalogOrigin(catalog) }]);
   let settled = false;
   const disposal = Promise.resolve(adapter.dispose());
   const rejected = assert.rejects(disposal, (error) => error === failure);
@@ -872,7 +1149,8 @@ for (const outcome of ["success", "failure"] as const) {
 }
 
 for (const action of ["reset", "dispose"] as const) {
-  test("MB-04 shipping adapter " + action + " refuses a facade paused before Box dispatch", async () => {
+  test("MB-04 shipping adapter " + action + " refuses a facade paused before Box dispatch", async (t) => {
+    const { source } = nativeRoutedSource(t);
     const started = deferred<void>();
     const release = deferred<void>();
     const old = constructionManager();
@@ -894,17 +1172,19 @@ for (const action of ["reset", "dispose"] as const) {
         },
       };
     }, { executeBoxMcpToolRaw: async (payload) => { rawCalls.push(payload); return "result-" + payload; } }));
-    const request = { providerIdentifier: "connector", name: "tool", toolName: "tool", args: {}, toolCallId: "box-retirement-call" };
-    const refused = assert.rejects(adapter.executeRoutedTool(request), /construction is retired/);
+    const origin = catalogOrigin(await adapter.listRoutedTools(source));
+    const request = { providerIdentifier: "connector", name: "tool", toolName: "tool", args: {}, toolCallId: "box-retirement-call", origin };
+    const refused = assert.rejects(adapter.executeRoutedTool(request, source), /construction is retired/);
     await started.promise;
     assert.equal(oldFacadeCalls, 1);
     assert.deepEqual(rawCalls, []);
     if (action === "reset") {
       await adapter.resetMcpManager();
-      assert.equal(await adapter.executeRoutedTool(request), "result-bbbb");
+      const replacementOrigin = catalogOrigin(await adapter.listRoutedTools(source));
+      assert.equal(await adapter.executeRoutedTool({ ...request, origin: replacementOrigin }, source), "result-bbbb");
     } else {
       await adapter.dispose();
-      await assert.rejects(adapter.executeRoutedTool(request), /adapter is disposed/);
+      assertOriginRejected(await adapter.executeRoutedTool(request, source));
     }
     release.resolve();
     await refused;

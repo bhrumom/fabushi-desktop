@@ -214,7 +214,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     CodexResponsesRequestBinding, FabushiResponsesRequestBinding,
     McpCatalogKind, McpCatalogReason, McpCatalogRefusal,
     ProviderMessage, ProviderSessionError, RoutedProvider,
-    RoutedMcpMetaToolDefinition, RoutedToolDefinition, configured_routed_provider,
+    RoutedMcpMetaToolDefinition, RoutedMcpOrigin, RoutedToolDefinition, configured_routed_provider,
     capture_codex_responses_request_binding, capture_fabushi_responses_request_binding,
 };
 use mahayana_host_runtime::extensions::session::agent_db::{
@@ -8389,7 +8389,7 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
             .relay
             .request(ROUTED_TOOL_LIST_METHOD, serde_json::json!({}))
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))
-            .and_then(decode_routed_tools);
+            .and_then(|value| decode_routed_tools(value, &self.relay));
         if let Err(error) = result.as_ref() {
             let report = McpDiscoveryFailedReport {
                 error_class: "provider_session_error".into(),
@@ -8414,7 +8414,7 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
             .relay
             .request(ROUTED_TOOL_LIST_METHOD, serde_json::json!({}))
             .map_err(|error| ProviderSessionError::Tool(error.to_string()))
-            .and_then(decode_routed_mcp_meta_tools);
+            .and_then(|value| decode_routed_mcp_meta_tools(value, &self.relay));
         if let Err(error) = result.as_ref() {
             let report = McpDiscoveryFailedReport {
                 error_class: "provider_session_error".into(),
@@ -8442,6 +8442,8 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
                 return Ok(serde_json::Value::String(reason));
             }
         }
+        self.relay.validate_tool_origin(tool.origin.as_ref())
+            .map_err(coordinator_tool_execution_error)?;
         let activity_args = serde_json::json!({
             "providerIdentifier": tool.provider_identifier,
             "serverIdentifier": tool.provider_identifier,
@@ -8464,6 +8466,7 @@ impl RoutedToolBridge for CoordinatorRoutedToolBridge {
                     "providerIdentifier": tool.provider_identifier,
                     "name": tool.name,
                     "toolName": tool.tool_name,
+                    "origin": tool.origin.as_ref().map(|binding| binding.origin()),
                     "args": args,
                     "toolCallId": tool_call_id,
                     "agentId": self.agent_id,
@@ -8489,6 +8492,7 @@ fn decode_routed_catalog_row(
     row: &serde_json::Value,
     index: usize,
     kind: McpCatalogKind,
+    relay: &CoordinatorToolRelay,
 ) -> Result<RoutedToolDefinition, ProviderSessionError> {
     let required = |field: &str, reason| {
         row.get(field).and_then(serde_json::Value::as_str)
@@ -8507,11 +8511,20 @@ fn decode_routed_catalog_row(
         input_schema: row.get("inputSchema").cloned().unwrap_or_else(|| {
             serde_json::json!({"type":"object","additionalProperties":true})
         }),
+        origin: Some({
+            let origin = row.get("origin").and_then(RoutedMcpOrigin::from_wire)
+                .ok_or_else(|| ProviderSessionError::McpCatalog(McpCatalogRefusal {
+                    kind, row: Some(index), reason: McpCatalogReason::OriginInvalid,
+                }))?;
+            relay.bind_tool_origin(origin)
+                .map_err(|error| ProviderSessionError::Tool(error.to_string()))?
+        }),
     })
 }
 
 fn decode_routed_tools(
     value: serde_json::Value,
+    relay: &CoordinatorToolRelay,
 ) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
     let kind = McpCatalogKind::Tools;
     let rows = value.as_array().ok_or_else(|| {
@@ -8520,12 +8533,13 @@ fn decode_routed_tools(
         })
     })?;
     rows.iter().enumerate()
-        .map(|(index, row)| decode_routed_catalog_row(row, index, kind))
+        .map(|(index, row)| decode_routed_catalog_row(row, index, kind, relay))
         .collect()
 }
 
 fn decode_routed_mcp_meta_tools(
     value: serde_json::Value,
+    relay: &CoordinatorToolRelay,
 ) -> Result<Vec<RoutedMcpMetaToolDefinition>, ProviderSessionError> {
     let kind = McpCatalogKind::MetaTools;
     let rows = value.as_array().ok_or_else(|| {
@@ -8535,7 +8549,7 @@ fn decode_routed_mcp_meta_tools(
     })?;
     rows.iter().enumerate().map(|(index, row)| {
         Ok(RoutedMcpMetaToolDefinition {
-            tool: decode_routed_catalog_row(row, index, kind)?,
+            tool: decode_routed_catalog_row(row, index, kind, relay)?,
             plugin: row.get("plugin").cloned().filter(|value| !value.is_null()),
             marketplace: row.get("marketplace").cloned().filter(|value| !value.is_null()),
             plugin_id: row.get("pluginId").and_then(serde_json::Value::as_str).map(str::to_string),
@@ -19993,6 +20007,14 @@ mod tests {
         }
     }
 
+    fn routed_mcp_origin_value() -> serde_json::Value {
+        serde_json::json!({
+            "version": 1,
+            "coordinatorSourceId": "13ab2925-fb6f-4fbe-93eb-a568b70300ae",
+            "mcpAttemptId": "c30c78b6-2adb-49cd-a393-71ab682b191f",
+        })
+    }
+
     fn received_catalog_from_shipping_relay(
         fixture: &RoutedProviderTerminalFixture,
         value: serde_json::Value,
@@ -20048,7 +20070,8 @@ mod tests {
         use super::{McpCatalogKind, McpCatalogReason, McpCatalogRefusal, ProviderSessionError};
         use serde_json::json;
         let fixture = RoutedProviderTerminalFixture::new();
-        let valid = json!({"name":"public","providerIdentifier":"provider","toolName":"raw"});
+        let valid = json!({"name":"public","providerIdentifier":"provider","toolName":"raw",
+            "origin":routed_mcp_origin_value()});
         for kind in [McpCatalogKind::Tools, McpCatalogKind::MetaTools] {
             for value in [serde_json::Value::Null, json!({"secret":"must-not-leak"}),
                           json!("must-not-leak"), json!(42)] {
@@ -20060,6 +20083,31 @@ mod tests {
                     })), "{error:?}");
                 assert!(!error.to_string().contains("must-not-leak"));
             }
+            for invalid in [
+                serde_json::Value::Null,
+                json!({"version":2,"coordinatorSourceId":"must-not-leak","mcpAttemptId":"must-not-leak"}),
+                json!({"version":1,"coordinatorSourceId":"must-not-leak","mcpAttemptId":42}),
+                json!({"version":1,"coordinatorSourceId":"13ab2925-fb6f-4fbe-93eb-a568b70300ae\n",
+                       "mcpAttemptId":"c30c78b6-2adb-49cd-a393-71ab682b191f"}),
+                json!({"version":1,"coordinatorSourceId":"13AB2925-FB6F-4FBE-93EB-A568B70300AE",
+                       "mcpAttemptId":"c30c78b6-2adb-49cd-a393-71ab682b191f"}),
+            ] {
+                for row in 0..3 {
+                    let mut rows = vec![valid.clone(); 3];
+                    rows[row]["origin"] = invalid.clone();
+                    let error = received_catalog_from_shipping_relay(&fixture, json!(rows), kind)
+                        .expect_err("invalid origin cannot produce a partial accepted catalog");
+                    assert!(matches!(&error, ProviderSessionError::McpCatalog(refusal)
+                        if *refusal == (McpCatalogRefusal { kind, row: Some(row), reason: McpCatalogReason::OriginInvalid })));
+                    assert!(!format!("{error:?} {error}").contains("must-not-leak"));
+                }
+            }
+            let mut missing = valid.clone();
+            missing.as_object_mut().unwrap().remove("origin");
+            let error = received_catalog_from_shipping_relay(&fixture, json!([missing]), kind).unwrap_err();
+            assert!(matches!(error, ProviderSessionError::McpCatalog(McpCatalogRefusal {
+                reason: McpCatalogReason::OriginInvalid, row: Some(0), ..
+            })));
             for (field, reason) in [
                 ("name", McpCatalogReason::NameMustBeString),
                 ("providerIdentifier", McpCatalogReason::ProviderIdentifierMustBeString),
@@ -20092,7 +20140,7 @@ mod tests {
         use super::McpCatalogKind;
         use serde_json::json;
         let fixture = RoutedProviderTerminalFixture::new();
-        let values = json!([
+        let mut values = json!([
             {"name":"public","providerIdentifier":"server","toolName":"raw",
              "description":"description","inputSchema":null,
              "plugin":{"custom":true},"marketplace":["arbitrary"],
@@ -20102,6 +20150,7 @@ mod tests {
              "marketplace":42,"pluginId":42,"marketplaceId":null},
             {"name":"","providerIdentifier":"","toolName":"","plugin":null,"marketplace":null}
         ]);
+        for row in values.as_array_mut().unwrap() { row["origin"] = routed_mcp_origin_value(); }
         for kind in [McpCatalogKind::Tools, McpCatalogKind::MetaTools] {
             assert!(received_catalog_from_shipping_relay(&fixture, json!([]), kind)
                 .expect("empty is valid").is_empty());
@@ -20112,6 +20161,10 @@ mod tests {
                 vec!["public", "public", ""]);
             assert_eq!(tools[0].tool.provider_identifier, "server");
             assert_eq!(tools[0].tool.tool_name, "raw");
+            for row in &tools {
+                assert_eq!(serde_json::to_value(row.tool.origin.as_ref().unwrap().origin()).unwrap(),
+                    routed_mcp_origin_value(), "every row retains its native source independently of public names");
+            }
             assert_eq!(tools[0].tool.description.as_deref(), Some("description"));
             assert_eq!(tools[0].tool.input_schema, serde_json::Value::Null);
             assert_eq!(tools[1].tool.description, None);
@@ -20148,6 +20201,7 @@ mod tests {
 
         let fixture = RoutedProviderTerminalFixture::new();
         let tool = RoutedToolDefinition {
+            origin: None,
             name: "mcp_write".into(),
             provider_identifier: "mcp-server".into(),
             tool_name: "write".into(),
@@ -20166,6 +20220,10 @@ mod tests {
         ] {
             let events = super::GatewayEventHub::default();
             let relay = Arc::new(CoordinatorToolRelay::with_timeout(events.clone(), Duration::from_secs(5)));
+            let mut tool = tool.clone();
+            tool.origin = Some(relay.bind_tool_origin(
+                super::RoutedMcpOrigin::from_wire(&routed_mcp_origin_value()).unwrap(),
+            ).unwrap());
             let weak = Arc::downgrade(&relay);
             let requests = Arc::new(Mutex::new(Vec::new()));
             let observed = Arc::clone(&requests);
@@ -20202,6 +20260,7 @@ mod tests {
             assert_eq!(observed.len(), 2);
             assert_eq!(observed[1]["args"], json!({
                 "providerIdentifier":"mcp-server","name":"mcp_write","toolName":"write",
+                "origin":routed_mcp_origin_value(),
                 "args":{"value":"write once"},"toolCallId":"call-boundary","agentId":"bridge-agent",
             }));
             assert_eq!(bridge.relay.pending_count(), 0);
@@ -20230,6 +20289,96 @@ mod tests {
         fixture.close();
     }
 
+
+    #[test]
+    fn routed_mcp_origin_survives_review_and_refuses_replacement_relay() {
+        use mahayana_host_runtime::runner::coordinator_tool_relay::{
+            CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, ROUTED_TOOL_LIST_METHOD,
+        };
+        use super::{CoordinatorRoutedToolBridge, ProviderSessionError, RoutedToolBridge};
+        use serde_json::json;
+        use std::sync::{Arc, Mutex, mpsc};
+        use std::time::Duration;
+
+        let fixture = RoutedProviderTerminalFixture::new();
+        let returned = json!({"result":{"case":"success","value":{
+            "content":[{"type":"text","text":"entered once"}],"isError":false,
+        }}});
+        let make = |origin: serde_json::Value, review: Option<super::RoutedMcpAutoReviewCallback>| {
+            let events = super::GatewayEventHub::default();
+            let relay = Arc::new(CoordinatorToolRelay::with_timeout(events.clone(), Duration::from_secs(5)));
+            let weak = Arc::downgrade(&relay);
+            let requests = Arc::new(Mutex::new(Vec::new()));
+            let observed = Arc::clone(&requests);
+            let reply = returned.clone();
+            let listener = events.subscribe_listener(move |event| {
+                let payload = &event["payload"];
+                observed.lock().unwrap().push(payload.clone());
+                let result = if payload["method"] == ROUTED_TOOL_LIST_METHOD {
+                    json!([{"name":"same-public","providerIdentifier":"same-provider","toolName":"same-raw",
+                        "origin":origin.clone()}])
+                } else {
+                    assert_eq!(payload["method"], ROUTED_TOOL_EXECUTE_METHOD);
+                    reply.clone()
+                };
+                weak.upgrade().unwrap().resolve(&json!({
+                    "requestId":payload["requestId"],"ok":true,"result":result,
+                })).unwrap();
+            });
+            (CoordinatorRoutedToolBridge {
+                relay,
+                transcript_runtime: Arc::clone(&fixture.runtime),
+                telemetry_logs: fixture.telemetry.logs.clone(),
+                agent_id: "origin-agent".into(),
+                mcp_review: review,
+            }, requests, listener)
+        };
+        let (entered_tx, entered_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let release_rx = Mutex::new(release_rx);
+        let review: super::RoutedMcpAutoReviewCallback = Arc::new(move |_, _, _| {
+            entered_tx.send(()).unwrap();
+            release_rx.lock().unwrap().recv_timeout(Duration::from_secs(5)).unwrap();
+            Ok(None)
+        });
+        let (a, a_requests, a_listener) = make(routed_mcp_origin_value(), Some(review));
+        let old = a.list_tools().unwrap().remove(0);
+        let pending_bridge = a.clone();
+        let pending_tool = old.clone();
+        let pending = std::thread::spawn(move || {
+            pending_bridge.call_tool(&pending_tool, json!({"value":"original"}), "held-review")
+        });
+        entered_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+        a.relay.cancel_all("the original Host relay retired during review");
+        let mut successor_origin = routed_mcp_origin_value();
+        successor_origin["coordinatorSourceId"] = json!("935a2d37-2287-426c-8951-7d5172ad03d2");
+        successor_origin["mcpAttemptId"] = json!("d8aa6dfd-15b1-49cc-a9ec-17282b1939b9");
+        let (b, b_requests, b_listener) = make(successor_origin.clone(), None);
+        let fresh = b.list_mcp_meta_tools().unwrap().remove(0).tool;
+        release_tx.send(()).unwrap();
+        assert!(matches!(pending.join().unwrap(), Err(ProviderSessionError::Tool(_))));
+        assert_eq!(a_requests.lock().unwrap().len(), 1, "retirement after review entry permits no execute publication");
+        assert!(matches!(b.call_tool(&old, json!({}), "foreign-origin"), Err(ProviderSessionError::Tool(_))));
+        let mut unbound = fresh.clone();
+        unbound.origin = None;
+        assert!(matches!(b.call_tool(&unbound, json!({}), "missing-origin"), Err(ProviderSessionError::Tool(_))));
+        assert_eq!(b_requests.lock().unwrap().len(), 1, "neither old nor absent custody may borrow B");
+        assert_eq!(b.call_tool(&fresh, json!({"value":"current"}), "fresh-origin").unwrap(), returned);
+        let requests = b_requests.lock().unwrap();
+        assert_eq!(requests.len(), 2);
+        assert_eq!(requests[1]["args"], json!({
+            "providerIdentifier":"same-provider","name":"same-public","toolName":"same-raw",
+            "origin":successor_origin,"args":{"value":"current"},"toolCallId":"fresh-origin","agentId":"origin-agent",
+        }));
+        assert_eq!(a.relay.pending_count(), 0);
+        assert_eq!(b.relay.pending_count(), 0);
+        drop(requests);
+        drop(a_listener);
+        drop(b_listener);
+        drop(a);
+        drop(b);
+        fixture.close();
+    }
 
     #[derive(Default)]
     struct TerminalRecordingSpan {

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 
 import { createCoordinatorControlExecutors } from "./coordinator-executors.js";
+import { createCoordinatorControlServer } from "./coordinator-control-server.js";
+import type { CoordinatorControlSourceContext } from "../../shared/rpc/coordinator-port.js";
 
 const EXPECTED_CONTROL_METHODS = [
   "resolveGatewayConnection",
@@ -40,7 +42,20 @@ const EXPECTED_CONTROL_METHODS = [
   "reportProcessCrash",
 ] as const;
 
-function makeDependencies(calls: string[]) {
+function nativeSource(t: TestContext): CoordinatorControlSourceContext {
+  let captured: CoordinatorControlSourceContext | undefined;
+  const server = createCoordinatorControlServer({
+    post() {}, executors: { capture: (_args, source) => { captured = source; } },
+    onEvent: {}, onProblem: (detail) => assert.fail(detail),
+  });
+  t.after(() => server.dispose());
+  server.handleMessage({ kind: "lifecycle", phase: "hello", protocolVersion: 1 });
+  server.handleMessage({ kind: "request", requestId: "capture", method: "capture", args: null });
+  assert.ok(captured);
+  return captured;
+}
+
+function makeDependencies(calls: string[], sources: CoordinatorControlSourceContext[] = []) {
   return {
     connector: {
       async connect() {
@@ -84,12 +99,14 @@ function makeDependencies(calls: string[]) {
       calls.push("crash");
     },
     getRpcTraceWindowTraceparent: () => "00-trace-span-01",
-    async listRoutedMcpTools() {
+    async listRoutedMcpTools(source: CoordinatorControlSourceContext) {
       calls.push("mcp-list");
+      sources.push(source);
       return [{ name: "tool" }];
     },
-    async executeRoutedMcpTool(request: unknown) {
+    async executeRoutedMcpTool(request: unknown, source: CoordinatorControlSourceContext) {
       calls.push("mcp-call");
+      sources.push(source);
       return { request };
     },
     async listHostMcpServers() {
@@ -161,18 +178,23 @@ test("control executor exposes the frozen Grok platform command surface", () => 
   assert.deepEqual(Object.keys(executors), EXPECTED_CONTROL_METHODS);
 });
 
-test("control executor routes gateway, MCP, WebAuthn, and telemetry without absorbing Host behavior", async () => {
+test("control executor routes gateway, MCP, WebAuthn, and telemetry without absorbing Host behavior", async (t) => {
   const calls: string[] = [];
-  const executors = createCoordinatorControlExecutors(makeDependencies(calls));
+  const sources: CoordinatorControlSourceContext[] = [];
+  const source = nativeSource(t);
+  const executors = createCoordinatorControlExecutors(makeDependencies(calls, sources));
 
   assert.deepEqual(await executors.resolveGatewayConnection(), {
     baseUrl: "https://127.0.0.1:43123",
   });
   assert.deepEqual(await executors.mintLocalExecDaemonCredential(), { token: "secret" });
-  assert.deepEqual(await executors.listRoutedMcpTools(), [{ name: "tool" }]);
-  assert.deepEqual(await executors.executeRoutedMcpTool({ id: 7 }), {
+  assert.deepEqual(await executors.listRoutedMcpTools(undefined, source), [{ name: "tool" }]);
+  assert.deepEqual(await executors.executeRoutedMcpTool({ id: 7 }, source), {
     request: { id: 7 },
   });
+  assert.deepEqual(sources, [source, source], "both routed executors preserve the concrete native context");
+  assert.equal(sources[0], source);
+  assert.equal(sources[1], source);
   assert.deepEqual(await executors.listHostMcpServers(), { servers: [{ id: "7" }] });
   assert.deepEqual(await executors.listHostMcpCatalog({ forceRefresh: true }), [{ id: "plugin-7" }]);
   assert.deepEqual(await executors.listHostEffectiveMcpPlugins(), [{ pluginId: "7" }]);
@@ -250,7 +272,8 @@ test("control executor routes gateway, MCP, WebAuthn, and telemetry without abso
   ]);
 });
 
-test("MCP control methods fail closed when routing is not configured", async () => {
+test("MCP control methods fail closed when routing is not configured", async (t) => {
+  const source = nativeSource(t);
   const calls: string[] = [];
   const deps = makeDependencies(calls);
   const executors = createCoordinatorControlExecutors({
@@ -262,9 +285,9 @@ test("MCP control methods fail closed when routing is not configured", async () 
     onDnsDiagnostic: deps.onDnsDiagnostic,
     onProcessCrash: deps.onProcessCrash,
   });
-  await assert.rejects(executors.listRoutedMcpTools(), /Desktop MCP routing is unavailable/);
+  await assert.rejects(executors.listRoutedMcpTools(undefined, source), /Desktop MCP routing is unavailable/);
   await assert.rejects(
-    executors.executeRoutedMcpTool({}),
+    executors.executeRoutedMcpTool({}, source),
     /Desktop MCP routing is unavailable/,
   );
   await assert.rejects(executors.listHostMcpServers(), /Desktop MCP lifecycle routing is unavailable/);

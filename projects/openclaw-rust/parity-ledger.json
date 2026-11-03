@@ -23715,7 +23715,13 @@
         "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
         "source/shared/node/mcp/mcp-manager.ts",
         "source/electron-main/mcp/mcp-runtime.contract.test.ts",
-        "source/electron-main/mcp/mcp-runtime.ts"
+        "source/electron-main/mcp/mcp-runtime.ts",
+        "source/electron-main/coordinator/production-provider.ts",
+        "source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts",
+        "source/shared/node/cursor-backend/backend-mcp-origin.contract.test.ts",
+        "source/host/src/runner/coordinator_tool_relay.rs",
+        "source/host/tests/production_turn_input_projection_contract.rs",
+        "source/host/tests/mcp_state_executor_contract.rs"
       ],
       "existing_owner_candidates": [
         {

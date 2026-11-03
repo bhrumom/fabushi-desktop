@@ -23,6 +23,7 @@ struct FakeBridge;
 impl RoutedToolBridge for FakeBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "github_search".into(),
             provider_identifier: "github".into(),
             tool_name: "search".into(),
@@ -592,6 +593,7 @@ mod received_catalog {
 
     fn tool(name: &str, provider: &str, raw: &str) -> RoutedToolDefinition {
         RoutedToolDefinition {
+            origin: None,
             name: name.into(),
             provider_identifier: provider.into(),
             tool_name: raw.into(),

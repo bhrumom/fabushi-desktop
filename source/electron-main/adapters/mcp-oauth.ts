@@ -1,4 +1,11 @@
 import type { ConnectorAuthReport } from "../../shared/observability/connector-auth-telemetry.js";
+import { parseMcpRoutedOrigin } from "../../shared/rpc/coordinator-port.js";
+import {
+  generatedMcpResultFactory,
+  MCP_ORIGIN_RETIRED,
+  McpOriginRetiredError,
+  type McpDispatchAssertion,
+} from "../../shared/node/mcp/mcp-result-factory.js";
 import { createMcpRuntime } from "../mcp/mcp-runtime.js";
 import { registerMcpDesktopIpc, type McpDesktopDeps } from "../mcp/mcp-desktop.js";
 import type { DesktopMcpManagerFacade } from "../mcp/desktop-mcp-manager.js";
@@ -343,14 +350,62 @@ export function createProductionMcpOAuthAdapter(
         async resetMcpManager() {
           await runtime.resetMcpManager();
         },
-        async listRoutedTools() {
+        async listRoutedTools(source) {
           if (disposed) throw new Error("Electron production MCP adapter is disposed.");
-          return await (await runtime.ensureMcpManager()).listRoutedTools();
+          source.assertCurrent();
+          const coordinatorSourceId = source.sourceId;
+          const attempt = runtime.captureMcpAttempt();
+          const assertCurrent = () => { source.assertCurrent(); attempt.assertCurrent(); };
+          const manager = await attempt.promise;
+          assertCurrent();
+          const catalog = await manager.listRoutedTools();
+          assertCurrent();
+          // Preserve malformed received catalogs for the existing Rust typed
+          // refusal. A local map exception must not turn them into unavailable.
+          if (!Array.isArray(catalog)) return catalog;
+          const origin = {
+            version: 1 as const,
+            coordinatorSourceId,
+            mcpAttemptId: attempt.id,
+          };
+          const rows = catalog.map((row: unknown) => typeof row === "object" && row != null && !Array.isArray(row)
+            ? { ...row, origin }
+            : row);
+          assertCurrent();
+          return rows;
         },
-        async executeRoutedTool(request) {
-          if (disposed) throw new Error("Electron production MCP adapter is disposed.");
+        async executeRoutedTool(request, source) {
           if (typeof request !== "object" || request == null) throw new TypeError("Routed MCP execution requires a request.");
-          return await (await runtime.ensureMcpManager()).executeRoutedTool(request as Parameters<DesktopMcpManagerFacade["executeRoutedTool"]>[0]);
+          let manager: DesktopMcpManagerFacade;
+          let assertDispatchCurrent: McpDispatchAssertion;
+          try {
+            if (disposed) throw new McpOriginRetiredError();
+            source.assertCurrent();
+            const origin = parseMcpRoutedOrigin(Reflect.get(request, "origin"));
+            if (origin == null || origin.coordinatorSourceId !== source.sourceId) {
+              throw new McpOriginRetiredError();
+            }
+            const attempt = runtime.requireMcpAttempt(origin.mcpAttemptId);
+            assertDispatchCurrent = () => {
+              source.assertCurrent();
+              attempt.assertCurrent();
+              return undefined;
+            };
+            assertDispatchCurrent();
+            manager = await attempt.promise;
+            assertDispatchCurrent();
+          } catch (error) {
+            if (error instanceof McpOriginRetiredError) {
+              return generatedMcpResultFactory.rejected(MCP_ORIGIN_RETIRED);
+            }
+            throw error;
+          }
+          // The facade owns admission from here. Never reclassify an entered
+          // execution's late result or uncertain failure using currentness.
+          return await manager.executeRoutedTool(
+            request as Parameters<DesktopMcpManagerFacade["executeRoutedTool"]>[0],
+            assertDispatchCurrent,
+          );
         },
         async listHostMcpServers() {
           if (disposed) throw new Error("Electron production MCP adapter is disposed.");

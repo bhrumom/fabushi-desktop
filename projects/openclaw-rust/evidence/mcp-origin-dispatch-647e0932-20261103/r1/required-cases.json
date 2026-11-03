@@ -1,0 +1,70 @@
+{
+  "contract": "MCP-ORIGIN-DISPATCH-v1",
+  "execution": "not-run; authored exact-name requirements only",
+  "app": [
+    "tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch",
+    "tests::received_mcp_catalog_preserves_accepted_wire_values_and_order",
+    "tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate",
+    "tests::routed_mcp_origin_survives_review_and_refuses_replacement_relay"
+  ],
+  "canonical": [
+    "canonical_mcp_state_preserves_origin_in_process_and_never_serializes_relay_authority"
+  ],
+  "projection": [
+    "live_mcp_projection_preserves_first_seen_grouping_and_complete_descriptors",
+    "frozen_mcp_projection_keeps_exact_vectors_without_live_discovery"
+  ],
+  "nativeAccount": [
+    "OD-T2 production Coordinator refuses departed account and serialized origin replay before manager B",
+    "OD-T2 same-account child restart retires its source while retaining the current MCP Attempt",
+    "OD-T2/3 held production account catalog cannot publish its origin after departure"
+  ],
+  "nativeControl": [
+    "OD-01 concrete control source retires before callbacks on dispose",
+    "OD-01 concrete control source retires before callbacks on port-close",
+    "OD-01 concrete control source retires before callbacks on shutdown",
+    "OD-01 concrete control source retires before callbacks on protocol-breach"
+  ],
+  "nativeAttempt": [
+    "OD-02 captured Attempt is reserved once and stale lookup never constructs a replacement",
+    "OD-02/03 held factory cannot publish origin after source retirement",
+    "OD-02/03 held factory cannot publish origin after attempt retirement",
+    "OD-02/03 held catalog cannot publish origin after source retirement",
+    "OD-02/03 held catalog cannot publish origin after attempt retirement",
+    "OD-02/05 stale and malformed origins cannot construct or borrow manager B",
+    "OD-02 execute rechecks original source after the manager await",
+    "OD-02 execute rechecks original attempt after the manager await",
+    "OD-03 native origin stamping preserves malformed received catalogs and permissive row values",
+    "OD-05/07 native adapter preserves admitted late success after source and Attempt retirement",
+    "OD-05/07 native adapter preserves admitted late server-error after source and Attempt retirement",
+    "OD-05/07 native adapter preserves admitted late failure after source and Attempt retirement",
+    "OD-05/07 native adapter preserves admitted late typed-failure after source and Attempt retirement"
+  ],
+  "transport": [
+    "MCP origin: current generated transport preserves public/raw names, nested args and disabled checks",
+    "MCP origin: held privacy retires before real Connect next and does not consume first-call diagnostics",
+    "MCP origin: held token or machine ID cannot pass a retired source to next",
+    "MCP origin: final assertion follows the request-ID observer and survives Connect deadline replacement",
+    "MCP origin: concurrent guarded requests retain separate sources and reverse-order completion",
+    "MCP origin: matching text and typed exceptions outside the final assertion are not known refusals",
+    "MCP origin: entered late success, server failure and uncertain transport settlement retain custody",
+    "MCP origin: guarded refusal does not attach its assertion to shared listing, auth or unguarded execution",
+    "MCP origin: default desktop facade forwards the assertion through its real HTTP client factory"
+  ],
+  "existingNative": [
+    "MCP results retain their discriminants through native ports and the shipping Rust carrier",
+    "control executor routes gateway, MCP, WebAuthn, and telemetry without absorbing Host behavior"
+  ],
+  "compile": {
+    "host": "cargo check --locked --manifest-path source/host/Cargo.toml --tests",
+    "app": "Existing shipping cargo check + actual App test-harness compilation",
+    "native": "Existing shipping esbuild plus selected complete bundled Node targets; not whole-graph strict TypeScript typecheck"
+  },
+  "limits": [
+    "source native/Attempt ownership is platform-resource admission, not migrated Rust permission authority",
+    "final HTTP uses actual Connect on controlled or owned loopback transports, not external provider acceptance",
+    "unknown entered result custody cannot be reclassified by currentness",
+    "known fc App fixture and background wake oracle recovery must be integrated before new Actions campaign",
+    "global G01-G12/AC01-AC24 and eight flags remain open/false"
+  ]
+}

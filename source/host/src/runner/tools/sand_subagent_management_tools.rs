@@ -184,6 +184,7 @@ impl SubagentManagementToolBridge {
 fn management_tool_definitions() -> [RoutedToolDefinition; 3] {
     [
         RoutedToolDefinition {
+            origin: None,
             name: CHECK_SUBAGENT_TOOL_NAME.into(),
             provider_identifier: "fabushi-runner".into(),
             tool_name: CHECK_SUBAGENT_TOOL_NAME.into(),
@@ -197,6 +198,7 @@ fn management_tool_definitions() -> [RoutedToolDefinition; 3] {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: MESSAGE_SUBAGENT_TOOL_NAME.into(),
             provider_identifier: "fabushi-runner".into(),
             tool_name: MESSAGE_SUBAGENT_TOOL_NAME.into(),
@@ -212,6 +214,7 @@ fn management_tool_definitions() -> [RoutedToolDefinition; 3] {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: STOP_SUBAGENT_TOOL_NAME.into(),
             provider_identifier: "fabushi-runner".into(),
             tool_name: STOP_SUBAGENT_TOOL_NAME.into(),

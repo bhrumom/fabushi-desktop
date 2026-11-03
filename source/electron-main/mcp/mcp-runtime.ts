@@ -1,4 +1,16 @@
+import { randomUUID } from "node:crypto";
+
 import type { ConnectorAuthReport } from "../../shared/observability/connector-auth-telemetry.js";
+import {
+  McpOriginRetiredError,
+  type McpDispatchAssertion,
+} from "../../shared/node/mcp/mcp-result-factory.js";
+
+export interface McpRuntimeAttempt<TManager> {
+  readonly id: string;
+  readonly promise: Promise<TManager>;
+  readonly assertCurrent: McpDispatchAssertion;
+}
 
 type McpManagerOptions = {
   readonly settingsStore: unknown;
@@ -58,8 +70,7 @@ export function createMcpRuntime<
     setAuthCompletionObserver(listener: (completion: unknown) => void): void;
   },
 >(deps: McpRuntimeDependencies<TManager>) {
-  type Attempt = {
-    readonly promise: Promise<TManager>;
+  type Attempt = McpRuntimeAttempt<TManager> & {
     manager?: TManager;
     cleanup?: Promise<void>;
   };
@@ -157,16 +168,21 @@ export function createMcpRuntime<
     return manager;
   }
 
-  function ensureMcpManager(): Promise<TManager> {
-    if (disposed) return Promise.reject(new Error("MCP runtime is disposed."));
-    if (current != null) return current.promise;
+  function captureMcpAttempt(): McpRuntimeAttempt<TManager> {
+    if (disposed) throw new Error("MCP runtime is disposed.");
+    if (current != null) return current;
     let resolve!: (manager: TManager) => void;
     let reject!: (error: unknown) => void;
     const attempt: Attempt = {
+      id: randomUUID(),
       promise: new Promise<TManager>((onResolve, onReject) => {
         resolve = onResolve;
         reject = onReject;
       }),
+      assertCurrent: () => {
+        if (!isCurrent(attempt)) throw new McpOriginRetiredError();
+        return undefined;
+      },
     };
     current = attempt;
     // Defer invocation so even a synchronous factory reentry shares the
@@ -188,7 +204,25 @@ export function createMcpRuntime<
         reject(error);
       }
     });
-    return attempt.promise;
+    return attempt;
+  }
+
+  function requireMcpAttempt(expectedAttemptId: string): McpRuntimeAttempt<TManager> {
+    // Execution may only borrow the exact listing's attempt. In particular,
+    // absence must never call capture/ensure and construct a replacement.
+    if (disposed || current == null || current.id !== expectedAttemptId) {
+      throw new McpOriginRetiredError();
+    }
+    current.assertCurrent();
+    return current;
+  }
+
+  function ensureMcpManager(): Promise<TManager> {
+    try {
+      return captureMcpAttempt().promise;
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   function resetMcpManager(): Promise<void> {
@@ -200,6 +234,8 @@ export function createMcpRuntime<
   }
 
   return {
+    captureMcpAttempt,
+    requireMcpAttempt,
     ensureMcpManager,
     resetMcpManager,
     dispose: (): Promise<void> => {

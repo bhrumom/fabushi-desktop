@@ -863,6 +863,7 @@ impl TurnAgentComposition {
             .into_iter()
             .flat_map(|server| server.tools)
             .map(|tool| RoutedToolDefinition {
+                origin: tool.origin,
                 name: tool.name,
                 provider_identifier: tool.provider_identifier,
                 tool_name: tool.tool_name,
@@ -905,6 +906,7 @@ impl TurnAgentComposition {
             .into_iter()
             .flat_map(|server| server.tools)
             .map(|tool| RoutedToolDefinition {
+                origin: tool.origin,
                 name: tool.name,
                 provider_identifier: tool.provider_identifier,
                 tool_name: tool.tool_name,

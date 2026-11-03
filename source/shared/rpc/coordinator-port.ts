@@ -2,6 +2,39 @@ export const COORDINATOR_PROTOCOL_VERSION = 1;
 export const COORDINATOR_UNKNOWN_METHOD = "unknown-method";
 export const COORDINATOR_CANCELLED = "cancelled";
 
+/** Internal routed-tool custody, never a model argument or account grant. */
+export interface McpRoutedOrigin {
+  readonly version: 1;
+  readonly coordinatorSourceId: string;
+  readonly mcpAttemptId: string;
+}
+
+/** Owned by one concrete native control server, outside serialized arguments. */
+export interface CoordinatorControlSourceContext {
+  readonly sourceId: string;
+  readonly assertCurrent: () => undefined;
+}
+
+export type CoordinatorControlExecutor = (
+  args: unknown,
+  source: CoordinatorControlSourceContext,
+) => unknown | Promise<unknown>;
+
+export function parseMcpRoutedOrigin(value: unknown): McpRoutedOrigin | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const origin = value as Record<string, unknown>;
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+  if (origin.version !== 1 || typeof origin.coordinatorSourceId !== "string" ||
+      typeof origin.mcpAttemptId !== "string" ||
+      origin.coordinatorSourceId.length !== 36 || origin.mcpAttemptId.length !== 36 ||
+      !uuid.test(origin.coordinatorSourceId) || !uuid.test(origin.mcpAttemptId)) return null;
+  return {
+    version: 1,
+    coordinatorSourceId: origin.coordinatorSourceId,
+    mcpAttemptId: origin.mcpAttemptId,
+  };
+}
+
 export type CoordinatorFailure = { code: string; message: string; transportKind?: string };
 export type CoordinatorReplyOutcome = { status: "ok"; value: unknown } | { status: "failed"; failure: CoordinatorFailure };
 export type CoordinatorFrame =

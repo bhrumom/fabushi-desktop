@@ -1366,6 +1366,7 @@ jobs:
               tests::background_terminal_preserves_failure_waiting_and_stale_generation \
               tests::background_terminal_disconnect_preserves_existing_error_and_release \
               tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate \
+              tests::routed_mcp_origin_survives_review_and_refuses_replacement_relay \
               tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch \
               tests::received_mcp_catalog_preserves_accepted_wire_values_and_order \
               tests::channel_host_lane_tests::generated_send_message_fidelity::generated_send_message_app_sink_preserves_live_sql_and_canonical_bytes \
@@ -4288,6 +4289,8 @@ jobs:
               required += [
                   "tests::received_mcp_catalog_rejects_whole_malformed_response_before_dispatch",
                   "tests::received_mcp_catalog_preserves_accepted_wire_values_and_order",
+                  "tests::coordinator_tool_bridge_preserves_downstream_unknown_and_review_gate",
+                  "tests::routed_mcp_origin_survives_review_and_refuses_replacement_relay",
               ]
               required += ["tests::device_pairing_revocation_tests::" + name for name in [
                   "revocation_shipping_node_projection_removes_stored_remote_and_preserves_local_after_reopen",
@@ -4879,7 +4882,9 @@ jobs:
             desktop/.tmp-grok-electron/ocrm-plugin/host-plugin-skills-loader.contract.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/loader.contract.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/coordinator-control-server.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/coordinator-executors.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/mcp-runtime.contract.test.cjs \
+            desktop/.tmp-grok-electron/ocrm-plugin/backend-mcp-origin.contract.test.cjs \
             desktop/.tmp-grok-electron/ocrm-plugin/main-edge-model.contract.test.cjs \
             2>&1 | tee .evidence/ocrm-plugin-edge.tap
       - name: Record exact-subject Plugin Skills edge evidence
@@ -4918,6 +4923,32 @@ jobs:
               for name in materialization_cases
           }
           assert all(count == 1 for count in materialization_occurrences.values()), "Missing or duplicate successful materialization control"
+          mcp_origin_cases = [
+              "MCP origin: current generated transport preserves public/raw names, nested args and disabled checks",
+              "MCP origin: held privacy retires before real Connect next and does not consume first-call diagnostics",
+              "MCP origin: held token or machine ID cannot pass a retired source to next",
+              "MCP origin: final assertion follows the request-ID observer and survives Connect deadline replacement",
+              "MCP origin: concurrent guarded requests retain separate sources and reverse-order completion",
+              "MCP origin: matching text and typed exceptions outside the final assertion are not known refusals",
+              "MCP origin: entered late success, server failure and uncertain transport settlement retain custody",
+              "MCP origin: guarded refusal does not attach its assertion to shared listing, auth or unguarded execution",
+              "MCP origin: default desktop facade forwards the assertion through its real HTTP client factory",
+              "control executor routes gateway, MCP, WebAuthn, and telemetry without absorbing Host behavior",
+              "OD-02 captured Attempt is reserved once and stale lookup never constructs a replacement",
+              "OD-02/05 stale and malformed origins cannot construct or borrow manager B",
+              "OD-03 native origin stamping preserves malformed received catalogs and permissive row values",
+          ]
+          mcp_origin_cases += ["OD-01 concrete control source retires before callbacks on " + retirement
+              for retirement in ("dispose", "port-close", "shutdown", "protocol-breach")]
+          mcp_origin_cases += ["OD-02/03 held " + boundary + " cannot publish origin after " + retirement + " retirement"
+              for boundary in ("factory", "catalog") for retirement in ("source", "attempt")]
+          mcp_origin_cases += ["OD-02 execute rechecks original " + retirement + " after the manager await"
+              for retirement in ("source", "attempt")]
+          mcp_origin_cases += ["OD-05/07 native adapter preserves admitted late " + outcome + " after source and Attempt retirement"
+              for outcome in ("success", "server-error", "failure", "typed-failure")]
+          mcp_origin_occurrences = {name: len(re.findall(r"(?m)^ok [0-9]+ - " + re.escape(name) + r"$", tap))
+              for name in mcp_origin_cases}
+          assert all(count == 1 for count in mcp_origin_occurrences.values()), "Missing or duplicate successful MCP origin control"
           counts = {}
           for label in ("tests", "pass", "fail", "cancelled", "skipped", "todo"):
               matches = re.findall(r"(?m)^# " + label + r" ([0-9]+)$", tap)
@@ -4943,6 +4974,21 @@ jobs:
                       "source/electron-main/adapters/mcp-oauth.ts",
                       "source/electron-main/mcp/mcp-desktop.ts",
                       "source/electron-main/mcp/mcp-runtime.contract.test.ts",
+                      "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+                      "source/electron-main/mcp/mcp-runtime.ts",
+                      "source/electron-main/mcp/desktop-mcp-manager.ts",
+                      "source/electron-main/coordinator/coordinator-control-server.ts",
+                      "source/electron-main/coordinator/coordinator-control-server.contract.test.ts",
+                      "source/electron-main/coordinator/coordinator-executors.ts",
+                      "source/electron-main/coordinator/coordinator-executors.test.ts",
+                      "source/shared/rpc/coordinator-port.ts",
+                      "source/shared/node/mcp/mcp-result-factory.ts",
+                      "source/shared/node/mcp/tools-discovery.ts",
+                      "source/shared/node/cursor-backend/backend-mcp-exec.ts",
+                      "source/shared/node/cursor-backend/backend-mcp-origin.contract.test.ts",
+                      "source/shared/node/cursor-backend/cursor-inference.ts",
+                      "source/packages/proto/generated/agent/v1/mcp_exec_pb.ts",
+                      "desktop/package.json", "desktop/package-lock.json",
                       "source/shared/rpc/coordinator-main.ts",
                       "projects/openclaw-rust/docs/specs/plugin-skills-snapshot-admission.md",
                       "projects/openclaw-rust/docs/specs/plugin-materialization-attempt-custody.md",
@@ -4963,7 +5009,7 @@ jobs:
               "desktop_mcp_intent_contract": "OCRM-MCP-DESKTOP-INTENT-v1",
               "desktop_mcp_intent_result": "passed",
               "desktop_mcp_intent_scope": "Actual registered IPC, production adapter and lazy Coordinator port under controlled remote I/O: one uninstall request, retained arguments and display result, confirmation before settings, no fallback/retry or extra refresh after false/error/settings failure or replacement leg. Rust confirmation/admission and native ingress require separately bound evidence; this renderer receipt asserts no native-job result. Live accounts and process-loss revocation remain open.",
-              "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test", "mcp-runtime.contract.test"],
+              "node_contract_targets": ["host-plugin-skills-loader.contract.test", "loader.contract.test", "mcp-runtime.contract.test", "coordinator-executors.test", "backend-mcp-origin.contract.test"],
               "node_contract_result": "passed",
               "materialization_attempt_custody_contract": "OCRM-PLUGIN-MATERIALIZE-CUSTODY-v1",
               "materialization_attempt_custody_result": "passed",
@@ -4985,6 +5031,11 @@ jobs:
               "mcp_account_retirement_result": "passed",
               "mcp_account_retirement_scope": "Real runtime reset, manager publication, captured-account projection, persistent settings and discovery denial under held I/O. Late first-load success/unavailable, established cache, held backend list, reentrant disposal and replacement-manager positives are local lifecycle evidence; live accounts, remote work cancellation and full Rust permission migration remain open.",
               "mcp_runtime_construction_contract": "MCP-RUNTIME-CONSTRUCTION-v1",
+              "mcp_origin_dispatch_contract": "MCP-ORIGIN-DISPATCH-v1",
+              "mcp_origin_dispatch_result": "passed-scoped",
+              "mcp_origin_dispatch_required_tests": mcp_origin_cases,
+              "mcp_origin_dispatch_positive_occurrences": mcp_origin_occurrences,
+              "mcp_origin_dispatch_scope": "Actual native control-server source and MCP Attempt lifecycle, production MCP adapter, real default facade/discovery/generated client and Connect final handoff. Held construction/catalog/credential/privacy boundaries, callback ordering, concurrent request isolation, typed-only pre-effect refusal, exact public/raw names, disabled sibling policy and unchanged entered late settlement are required. Final HTTP uses an owned loopback server; other external effects are controlled. Exact account composition is separately required in the MAB receipt, and Rust AutoReview/relay/projection and canonical-wire controls in Host/App receipts. Real accounts/services, full Rust permission migration, official/Box final boundaries and complete acceptance remain open.",
               "mcp_runtime_construction_result": "passed",
               "mcp_runtime_construction_scope": "Actual runtime construction, reset, shutdown and callback/token ports under controlled causal factory, auth and cleanup boundaries. Concurrent callers share the current attempt; retired results cannot publish, callback or obtain replacement credentials, and cleanup retains exact-attempt ownership. Factory-internal side effects before settlement, already-returned facades, separate official OAuth changes, real accounts and full Rust permission migration remain open.",
               "runner_mcp_carrier_scope": "Actual generated/backend MCP result producers, control server, native MessageChannel clone and shipping carrier JSON I/O. A bounded local echo peer is not the Rust Coordinator binary, real Electron utilityProcess or external MCP service acceptance.",
@@ -5185,12 +5236,24 @@ jobs:
               values = re.findall(r'(?m)^# ' + label + r' ([0-9]+)$', tap)
               counts[label] = int(values[0]) if len(values) == 1 else None
           positives = re.findall(r'(?m)^ok [0-9]+ - (.+)$', tap)
+          mcp_origin_account_cases = [
+              'OD-T2 production Coordinator refuses departed account and serialized origin replay before manager B',
+              'OD-T2 same-account child restart retires its source while retaining the current MCP Attempt',
+              'OD-T2/3 held production account catalog cannot publish its origin after departure',
+          ]
+          required += mcp_origin_account_cases
           missing = [name for name in required if positives.count(name) != 1]
           input_paths = [
               '.github/workflows/rust-desktop-runtime.yml',
               'desktop/scripts/build-electron-runtime.mjs', 'desktop/package.json', 'desktop/package-lock.json',
               'projects/openclaw-rust/upstream.lock.json',
               'projects/openclaw-rust/docs/specs/attachment-native-transport-binding.md',
+              'projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md',
+              'source/electron-main/adapters/mcp-oauth.ts',
+              'source/electron-main/mcp/mcp-runtime.ts',
+              'source/electron-main/mcp/desktop-mcp-manager.ts',
+              'source/electron-main/coordinator/coordinator-executors.ts',
+              'source/shared/node/mcp/mcp-result-factory.ts',
               'source/electron-main/coordinator/coordinator-account-runtime.ts',
               'source/electron-main/coordinator/coordinator-account-runtime.contract.test.ts',
               'source/electron-main/coordinator/coordinator-main-legs.ts',
@@ -5237,6 +5300,9 @@ jobs:
               'job': 'renderer', 'runner_os': os.environ['RUNNER_OS'], 'command': command,
               'build_outcome': os.environ['MAB_BUILD_OUTCOME'], 'test_step_outcome': os.environ['MAB_TEST_OUTCOME'],
               'exits': exits, 'tap_counts': counts, 'required_positive_names': required,
+              'mcp_origin_contract': 'MCP-ORIGIN-DISPATCH-v1',
+              'mcp_origin_required_tests': mcp_origin_account_cases,
+              'mcp_origin_scope': 'Actual production Coordinator/account owner, control server/executors and MCP adapter; captured native source precedes manager lookup. Stale account and serialized-origin replay cannot construct or invoke replacement B; fresh B succeeds. Same-account child restart changes source identity, and held old catalog cannot publish. Native process/ports and facade effects are controlled here; actual final HTTP handoff has its own required plugin-edge receipt.',
               'capture_wrapper': 'capture_mab shared by the production command and both explicit bash -e failure controls',
               'production_inherited_errexit': production_inherited_errexit, 'capture_controls': capture_controls,
               'observed_positive_names': positives, 'missing_or_nonunique_positive_results': missing,

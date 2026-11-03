@@ -239,6 +239,7 @@ impl CommunicateInteractionSink for RecordingCommunicateSink {
 
 fn routed_tool(name: &str) -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: name.into(),
         provider_identifier: "fabushi-runner".into(),
         tool_name: name.into(),

@@ -46,6 +46,7 @@ impl ActionAuditSink for CaptureSink {
 
 fn tool() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: "github_search".into(),
         provider_identifier: "github".into(),
         tool_name: "search".into(),

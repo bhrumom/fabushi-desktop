@@ -18,6 +18,7 @@ use serde_json::{Value, json};
 
 fn tool(name: &str, provider: &str) -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: name.into(),
         provider_identifier: provider.into(),
         tool_name: name.into(),
@@ -111,6 +112,7 @@ fn read_and_mcp_projection_keep_frozen_fail_closed_and_struct_semantics() {
     );
 
     let mcp = RoutedToolDefinition {
+        origin: None,
         name: "github.get_issue".into(),
         provider_identifier: "github".into(),
         tool_name: "get_issue".into(),

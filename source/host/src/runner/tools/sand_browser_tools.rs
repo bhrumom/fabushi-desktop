@@ -968,6 +968,7 @@ fn browser_tool_definition(spec: &BrowserToolSpec) -> RoutedToolDefinition {
     properties.entry("frameUrl").or_insert_with(|| json!({"type":"string","minLength":1,"maxLength":2048}));
     properties.insert("filePath".into(), json!({"type":"string","minLength":1,"maxLength":4096}));
     RoutedToolDefinition {
+        origin: None,
         name: spec.name.into(),
         provider_identifier: "fabushi-runner".into(),
         tool_name: spec.name.into(),

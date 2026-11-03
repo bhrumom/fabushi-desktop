@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { CoordinatorControlSourceContext } from "../../shared/rpc/coordinator-port.js";
 
 import {
   clearLocalExecDaemonDiscoveryIfMatches,
@@ -112,8 +113,8 @@ export interface CoordinatorControlExecutorDependencies {
   readonly onDnsDiagnostic: (report: unknown) => void;
   readonly onProcessCrash: (report: unknown) => void;
   readonly getRpcTraceWindowTraceparent?: () => string | undefined;
-  readonly listRoutedMcpTools?: () => Promise<unknown>;
-  readonly executeRoutedMcpTool?: (request: unknown) => Promise<unknown>;
+  readonly listRoutedMcpTools?: (source: CoordinatorControlSourceContext) => Promise<unknown>;
+  readonly executeRoutedMcpTool?: (request: unknown, source: CoordinatorControlSourceContext) => Promise<unknown>;
   readonly listHostMcpServers?: () => Promise<unknown>;
   readonly listHostMcpCatalog?: (options: { readonly forceRefresh?: boolean }) => Promise<unknown>;
   readonly listHostEffectiveMcpPlugins?: () => Promise<unknown>;
@@ -477,13 +478,13 @@ export function createCoordinatorControlExecutors(
 
   return {
     resolveGatewayConnection: () => connector.connect(),
-    listRoutedMcpTools: async () => {
+    listRoutedMcpTools: async (_args: unknown, source: CoordinatorControlSourceContext) => {
       if (dependencies.listRoutedMcpTools == null) throw new Error("Desktop MCP routing is unavailable.");
-      return await dependencies.listRoutedMcpTools();
+      return await dependencies.listRoutedMcpTools(source);
     },
-    executeRoutedMcpTool: async (request: unknown) => {
+    executeRoutedMcpTool: async (request: unknown, source: CoordinatorControlSourceContext) => {
       if (dependencies.executeRoutedMcpTool == null) throw new Error("Desktop MCP routing is unavailable.");
-      return await dependencies.executeRoutedMcpTool(request);
+      return await dependencies.executeRoutedMcpTool(request, source);
     },
     listHostMcpServers: async () => {
       if (dependencies.listHostMcpServers == null) throw new Error("Desktop MCP lifecycle routing is unavailable.");

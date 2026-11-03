@@ -183,6 +183,58 @@ pub fn provider_token_usage_from_openrouter_event(
     })
 }
 
+/// Native source identity carried only by the internal Coordinator contract.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RoutedMcpOrigin {
+    version: u8,
+    coordinator_source_id: String,
+    mcp_attempt_id: String,
+}
+
+impl RoutedMcpOrigin {
+    pub fn from_wire(value: &Value) -> Option<Self> {
+        let object = value.as_object()?;
+        if object.get("version")?.as_u64()? != 1 { return None; }
+        let canonical_uuid = |field: &str| -> Option<String> {
+            let text = object.get(field)?.as_str()?;
+            if text.len() != 36 { return None; }
+            let parsed = Uuid::parse_str(text).ok()?;
+            (parsed.hyphenated().to_string() == text).then(|| text.to_owned())
+        };
+        Some(Self {
+            version: 1,
+            coordinator_source_id: canonical_uuid("coordinatorSourceId")?,
+            mcp_attempt_id: canonical_uuid("mcpAttemptId")?,
+        })
+    }
+}
+
+/// Sealed to the existing Host relay; never reconstructed from model or wire data.
+#[derive(Clone, PartialEq, Eq)]
+pub struct RoutedMcpOriginBinding {
+    origin: RoutedMcpOrigin,
+    relay_incarnation: Uuid,
+}
+
+impl std::fmt::Debug for RoutedMcpOriginBinding {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.debug_struct("RoutedMcpOriginBinding").finish_non_exhaustive()
+    }
+}
+
+impl RoutedMcpOriginBinding {
+    pub(crate) fn bind(origin: RoutedMcpOrigin, relay_incarnation: Uuid) -> Self {
+        Self { origin, relay_incarnation }
+    }
+
+    pub(crate) fn belongs_to(&self, relay_incarnation: Uuid) -> bool {
+        self.relay_incarnation == relay_incarnation
+    }
+
+    pub fn origin(&self) -> &RoutedMcpOrigin { &self.origin }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct RoutedToolDefinition {
     pub name: String,
@@ -190,6 +242,7 @@ pub struct RoutedToolDefinition {
     pub tool_name: String,
     pub description: Option<String>,
     pub input_schema: Value,
+    pub origin: Option<RoutedMcpOriginBinding>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -276,6 +329,7 @@ pub enum McpCatalogReason {
     NameMustBeString,
     ProviderIdentifierMustBeString,
     ToolNameMustBeString,
+    OriginInvalid,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]

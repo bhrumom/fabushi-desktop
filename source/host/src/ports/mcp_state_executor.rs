@@ -1,7 +1,7 @@
 use prost::Message;
 use serde_json::Value;
 
-use crate::extensions::inference::provider_session::RoutedToolDefinition;
+use crate::extensions::inference::provider_session::{RoutedMcpOriginBinding, RoutedToolDefinition};
 
 /// Canonical agent.v1 McpStateExecArgs wire contract recovered from the
 /// generated Grok protobuf TypeScript. Keep field numbers aligned with
@@ -102,6 +102,8 @@ pub struct McpStateToolDefinition {
     pub tool_name: String,
     pub description: Option<String>,
     pub input_schema: Value,
+    /// In-process custody only; deliberately absent from the canonical protobuf.
+    pub origin: Option<RoutedMcpOriginBinding>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -138,6 +140,7 @@ pub fn execute_mcp_state(
             .position(|server| server.server_identifier == tool.provider_identifier);
 
         let mapped = McpStateToolDefinition {
+            origin: tool.origin,
             name: tool.name,
             provider_identifier: tool.provider_identifier.clone(),
             tool_name: tool.tool_name,
@@ -258,6 +261,7 @@ pub fn decode_canonical_mcp_state_result(
                     .unwrap_or(Value::Null),
             };
             tools.push(McpStateToolDefinition {
+                origin: None,
                 name: tool.name,
                 provider_identifier: tool.provider_identifier,
                 tool_name: tool.tool_name,

@@ -1,5 +1,6 @@
 import {
   McpError,
+  McpRejected,
   McpResult,
   McpSuccess,
   McpTextContent,
@@ -10,6 +11,18 @@ import type {
   McpResultFactory,
   McpResultLike,
 } from "./mcp-image-assets.js";
+
+export const MCP_ORIGIN_RETIRED = "MCP_ORIGIN_RETIRED";
+
+/** Only native owner assertions create this known pre-dispatch refusal. */
+export class McpOriginRetiredError extends Error {
+  constructor() {
+    super(MCP_ORIGIN_RETIRED);
+    this.name = "McpOriginRetiredError";
+  }
+}
+
+export type McpDispatchAssertion = () => undefined;
 
 /** Exact constructor projection used by the shipped shared MCP runtime. */
 export const generatedMcpResultFactory = {
@@ -49,6 +62,13 @@ export const generatedMcpResultFactory = {
       },
     });
   },
+
+  rejected(reason: string): McpResult {
+    return new McpResult({
+      result: { case: "rejected", value: new McpRejected({ reason }) },
+    });
+  },
 } satisfies McpResultFactory & {
   error(message: string): McpResult;
+  rejected(reason: string): McpResult;
 };

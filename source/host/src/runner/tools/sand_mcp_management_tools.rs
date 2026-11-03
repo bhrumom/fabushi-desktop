@@ -1076,6 +1076,7 @@ fn management_tool_definitions(multi_account: bool) -> Vec<RoutedToolDefinition>
 
 fn definition(name: &str, description: &str, input_schema: Value) -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: name.into(),
         provider_identifier: "fabushi-runner".into(),
         tool_name: name.into(),

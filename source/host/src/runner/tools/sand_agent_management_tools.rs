@@ -25,6 +25,7 @@ pub struct AgentManagementToolBridge{delegate:Arc<dyn RoutedToolBridge>,sink:Arc
 impl AgentManagementToolBridge{pub fn new(delegate:Arc<dyn RoutedToolBridge>,sink:Arc<dyn AgentManagementSink>)->Self{Self{delegate,sink}}}
 
 fn send_to_agent_definition()->RoutedToolDefinition{RoutedToolDefinition{
+    origin:None,
     name:SAND_SEND_TO_AGENT_TOOL_NAME.into(),provider_identifier:"fabushi-runner".into(),tool_name:SAND_SEND_TO_AGENT_TOOL_NAME.into(),
     description:Some("Send a fire-and-forget asynchronous message to another agent or a group by id. Use priority=true only for a 1:1 STOP/supersede instruction; group posts ignore priority. Replies arrive later on a fresh turn.".into()),
     input_schema:json!({"type":"object","required":["target_id","message"],"additionalProperties":false,"properties":{
@@ -33,11 +34,13 @@ fn send_to_agent_definition()->RoutedToolDefinition{RoutedToolDefinition{
         "priority":{"type":"boolean"}}}),
 }}
 fn create_agent_definition()->RoutedToolDefinition{RoutedToolDefinition{
+    origin:None,
     name:SAND_CREATE_AGENT_TOOL_NAME.into(),provider_identifier:"fabushi-runner".into(),tool_name:SAND_CREATE_AGENT_TOOL_NAME.into(),
     description:Some("Create a new teammate agent with a name and optional persona/description. Returns its id so it can be messaged with SendToAgent.".into()),
     input_schema:json!({"type":"object","required":["name"],"additionalProperties":false,"properties":{"name":{"type":"string","minLength":1},"description":{"type":"string"}}}),
 }}
 fn update_agent_definition()->RoutedToolDefinition{RoutedToolDefinition{
+    origin:None,
     name:SAND_UPDATE_AGENT_TOOL_NAME.into(),provider_identifier:"fabushi-runner".into(),tool_name:SAND_UPDATE_AGENT_TOOL_NAME.into(),
     description:Some("Edit another agent's name and/or description. Omitted fields remain unchanged.".into()),
     input_schema:json!({"type":"object","required":["agent_id"],"additionalProperties":false,"properties":{"agent_id":{"type":"string","minLength":1},"name":{"type":"string"},"description":{"type":"string"}}}),

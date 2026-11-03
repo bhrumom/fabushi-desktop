@@ -12,6 +12,7 @@ impl SandMcpToolProvider for Provider {
     fn get_tools(&self) -> Result<Vec<RoutedToolDefinition>, String> {
         Ok(vec![
             RoutedToolDefinition {
+                origin: None,
                 name: "calendar.create".into(),
                 provider_identifier: "calendar".into(),
                 tool_name: "create".into(),
@@ -19,6 +20,7 @@ impl SandMcpToolProvider for Provider {
                 input_schema: json!({"type":"object"}),
             },
             RoutedToolDefinition {
+                origin: None,
                 name: "calendar.list".into(),
                 provider_identifier: "calendar".into(),
                 tool_name: "list".into(),
@@ -26,6 +28,7 @@ impl SandMcpToolProvider for Provider {
                 input_schema: json!({}),
             },
             RoutedToolDefinition {
+                origin: None,
                 name: "mail.send".into(),
                 provider_identifier: "mail".into(),
                 tool_name: "send".into(),

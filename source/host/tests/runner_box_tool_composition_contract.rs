@@ -18,6 +18,7 @@ struct Upstream {
 impl RoutedToolBridge for Upstream {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: if self.collide { "Shell" } else { "SearchPlugins" }.into(),
             provider_identifier: "host".into(),
             tool_name: "search".into(),

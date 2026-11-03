@@ -649,6 +649,7 @@ fn parse_computer_action(
 pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
     vec![
         RoutedToolDefinition {
+            origin: None,
             name: "Computer".into(),
             provider_identifier: "fabushi-runner".into(),
             tool_name: "Computer".into(),
@@ -675,6 +676,7 @@ pub fn computer_tool_definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: "Screenshot".into(),
             provider_identifier: "fabushi-runner".into(),
             tool_name: "Screenshot".into(),

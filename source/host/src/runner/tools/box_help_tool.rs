@@ -56,6 +56,7 @@ pub fn connector_card_emission_to_message(connector: &str, server_id: &str, vari
 
 pub fn box_help_tool_definition() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: SAND_REQUEST_BOX_HELP_TOOL_NAME.to_string(),
         provider_identifier: "fabushi-runner".to_string(),
         tool_name: SAND_REQUEST_BOX_HELP_TOOL_NAME.to_string(),

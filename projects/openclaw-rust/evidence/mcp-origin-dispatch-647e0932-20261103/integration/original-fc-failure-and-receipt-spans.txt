@@ -1,0 +1,123 @@
+# Original background-wakes failure
+# job-125740667771.original.log lines 24592-24609
+24592: 2026-11-03T05:19:58.8753895Z test shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths ... FAILED
+24593: 2026-11-03T05:19:58.8754266Z 
+24594: 2026-11-03T05:19:58.8754351Z failures:
+24595: 2026-11-03T05:19:58.8754464Z 
+24596: 2026-11-03T05:19:58.8754737Z ---- shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths stdout ----
+24597: 2026-11-03T05:19:58.8755107Z 
+24598: 2026-11-03T05:19:58.8755592Z thread 'shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths' (6062) panicked at tests/background_wakes_production_contract.rs:2930:5:
+24599: 2026-11-03T05:19:58.8756369Z assertion failed: SHIPPING_HOST.contains("for cleanup_error in custody.rollback()")
+24600: 2026-11-03T05:19:58.8757111Z note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+24601: 2026-11-03T05:19:58.8757389Z 
+24602: 2026-11-03T05:19:58.8757392Z 
+24603: 2026-11-03T05:19:58.8757479Z failures:
+24604: 2026-11-03T05:19:58.8757825Z     shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths
+24605: 2026-11-03T05:19:58.8758151Z 
+24606: 2026-11-03T05:19:58.8758407Z test result: FAILED. 47 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 12.90s
+24607: 2026-11-03T05:19:58.8758752Z 
+24608: 2026-11-03T05:19:58.8759105Z error: test failed, to rerun pass `--test background_wakes_production_contract`
+24609: 2026-11-03T05:19:58.8759838Z      Running tests/channel_gateway_authorization_contract.rs (source/host/target/debug/deps/channel_gateway_authorization_contract-39cda244100e76e7)
+
+# Original portable integration command and exit
+# job-125740667771.original.log lines 64396-64443
+64396: 2026-11-03T05:27:58.2886192Z       "case": "integration",
+64397: 2026-11-03T05:27:58.2886276Z       "command": [
+64398: 2026-11-03T05:27:58.2886359Z         "cargo",
+64399: 2026-11-03T05:27:58.2886432Z         "test",
+64400: 2026-11-03T05:27:58.2886594Z         "--locked",
+64401: 2026-11-03T05:27:58.2886694Z         "--manifest-path",
+64402: 2026-11-03T05:27:58.2886790Z         "source/host/Cargo.toml",
+64403: 2026-11-03T05:27:58.2886884Z         "--no-fail-fast",
+64404: 2026-11-03T05:27:58.2886968Z         "--test",
+64405: 2026-11-03T05:27:58.2887074Z         "durable_recovery_stores_contract",
+64406: 2026-11-03T05:27:58.2887162Z         "--test",
+64407: 2026-11-03T05:27:58.2887273Z         "pending_wake_rearm_contract",
+64408: 2026-11-03T05:27:58.2887354Z         "--test",
+64409: 2026-11-03T05:27:58.2887455Z         "transcript_manager_contract",
+64410: 2026-11-03T05:27:58.2887541Z         "--test",
+64411: 2026-11-03T05:27:58.2887666Z         "memory_gateway_authorization_contract",
+64412: 2026-11-03T05:27:58.2887741Z         "--test",
+64413: 2026-11-03T05:27:58.2887867Z         "channel_gateway_authorization_contract",
+64414: 2026-11-03T05:27:58.2887950Z         "--test",
+64415: 2026-11-03T05:27:58.2888095Z         "cloud_agent_pending_wake_rearm_production_contract",
+64416: 2026-11-03T05:27:58.2888177Z         "--test",
+64417: 2026-11-03T05:27:58.2888285Z         "connector_secret_store_contract",
+64418: 2026-11-03T05:27:58.2888372Z         "--test",
+64419: 2026-11-03T05:27:58.2888470Z         "session_gateway_contract",
+64420: 2026-11-03T05:27:58.2888552Z         "--test",
+64421: 2026-11-03T05:27:58.2888659Z         "widget_responses_full_contract",
+64422: 2026-11-03T05:27:58.2888736Z         "--test",
+64423: 2026-11-03T05:27:58.2888914Z         "agent_content_search_contract",
+64424: 2026-11-03T05:27:58.2889002Z         "--test",
+64425: 2026-11-03T05:27:58.2889094Z         "roster_search_contract",
+64426: 2026-11-03T05:27:58.2889176Z         "--test",
+64427: 2026-11-03T05:27:58.2889287Z         "palette_message_gateway_contract",
+64428: 2026-11-03T05:27:58.2889369Z         "--test",
+64429: 2026-11-03T05:27:58.2889461Z         "memory_service_contract",
+64430: 2026-11-03T05:27:58.2889547Z         "--test",
+64431: 2026-11-03T05:27:58.2889648Z         "turn_memory_contract",
+64432: 2026-11-03T05:27:58.2889722Z         "--test",
+64433: 2026-11-03T05:27:58.2889831Z         "memory_synthesis_store_contract",
+64434: 2026-11-03T05:27:58.2889913Z         "--test",
+64435: 2026-11-03T05:27:58.2890016Z         "memory_synthesis_service_contract",
+64436: 2026-11-03T05:27:58.2890098Z         "--test",
+64437: 2026-11-03T05:27:58.2890222Z         "background_wakes_production_contract",
+64438: 2026-11-03T05:27:58.2890308Z         "--",
+64439: 2026-11-03T05:27:58.2890395Z         "--test-threads=1"
+64440: 2026-11-03T05:27:58.2890481Z       ],
+64441: 2026-11-03T05:27:58.2890609Z       "cargo_exit": 101,
+64442: 2026-11-03T05:27:58.2890696Z       "capture_exit": 0,
+64443: 2026-11-03T05:27:58.2890797Z       "execution_error": null,
+
+# Original portable integration raw-member digest and rejection
+# job-125740667771.original.log lines 64849-64852
+64849: 2026-11-03T05:27:58.2965187Z       "complete_summaries": null,
+64850: 2026-11-03T05:27:58.2965283Z       "oracle_accepted": false,
+64851: 2026-11-03T05:27:58.2965382Z       "log": "integration.log",
+64852: 2026-11-03T05:27:58.2965656Z       "log_sha256": "b4c853603bc9676993ebca8c57e143bed45d1cc3683371cd7aba7e583156a8b7"
+
+# Original App compiler failure
+# job-125740667771.original.log lines 70478-70486
+70478: 2026-11-03T05:30:22.5778444Z error[E0609]: no field `duplicate` on type `PersistedSendContext`
+70479: 2026-11-03T05:30:22.5778910Z    --> src/tests/media_settlement_unknown_tests.rs:805:68
+70480: 2026-11-03T05:30:22.5779205Z     |
+70481: 2026-11-03T05:30:22.5779537Z 805 |     assert!(accepted.context.accepted_durably && !accepted.context.duplicate);
+70482: 2026-11-03T05:30:22.5780004Z     |                                                                    ^^^^^^^^^ unknown field
+70483: 2026-11-03T05:30:22.5780313Z     |
+70484: 2026-11-03T05:30:22.5780827Z     = note: available fields are: `echo_entry_id`, `user_message_id`, `recent_user_messages`, `accepted_echoes`, `needs_roster_refresh` ... and 2 others
+70485: 2026-11-03T05:30:22.5781304Z 
+70486: 2026-11-03T05:30:22.5781623Z warning: unused import: `mahayana_host_runtime::extensions::telemetry::analytics_service::TelemetryService`
+
+# Original App command, absent positives, rejection and raw-member digest
+# job-125740667771.original.log lines 70832-70861
+70832: 2026-11-03T05:30:22.5933323Z       "case": "app",
+70833: 2026-11-03T05:30:22.5933549Z       "command": [
+70834: 2026-11-03T05:30:22.5933842Z         "cargo",
+70835: 2026-11-03T05:30:22.5934041Z         "test",
+70836: 2026-11-03T05:30:22.5934245Z         "--locked",
+70837: 2026-11-03T05:30:22.5934452Z         "--target-dir",
+70838: 2026-11-03T05:30:22.5934687Z         "source/host/target",
+70839: 2026-11-03T05:30:22.5934936Z         "--manifest-path",
+70840: 2026-11-03T05:30:22.5935194Z         "source/host/app/Cargo.toml",
+70841: 2026-11-03T05:30:22.5935448Z         "--bin",
+70842: 2026-11-03T05:30:22.5935673Z         "mahayana-app-host",
+70843: 2026-11-03T05:30:22.5935942Z         "tests::link_preview_gateway_tests::"
+70844: 2026-11-03T05:30:22.5936214Z       ],
+70845: 2026-11-03T05:30:22.5936402Z       "cargo_exit": 101,
+70846: 2026-11-03T05:30:22.5936784Z       "capture_exit": 0,
+70847: 2026-11-03T05:30:22.5937014Z       "execution_error": null,
+70848: 2026-11-03T05:30:22.5937275Z       "required_positive_names": [
+70849: 2026-11-03T05:30:22.5937739Z         "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+70850: 2026-11-03T05:30:22.5938442Z         "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+70851: 2026-11-03T05:30:22.5939182Z         "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+70852: 2026-11-03T05:30:22.5939656Z       ],
+70853: 2026-11-03T05:30:22.5939864Z       "observed_passed_test_names": [],
+70854: 2026-11-03T05:30:22.5940177Z       "missing_or_nonunique_positive_results": [
+70855: 2026-11-03T05:30:22.5940666Z         "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+70856: 2026-11-03T05:30:22.5941351Z         "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+70857: 2026-11-03T05:30:22.5942048Z         "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+70858: 2026-11-03T05:30:22.5942509Z       ],
+70859: 2026-11-03T05:30:22.5942716Z       "oracle_accepted": false,
+70860: 2026-11-03T05:30:22.5942978Z       "log": "app.log",
+70861: 2026-11-03T05:30:22.5943346Z       "log_sha256": "c265d5f46491b731b3335823853bcce900fd23b655f0b07bf03ac0b0701eedbc"

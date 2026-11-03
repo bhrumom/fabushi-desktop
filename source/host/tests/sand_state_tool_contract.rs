@@ -20,6 +20,7 @@ struct DelegateBridge;
 impl RoutedToolBridge for DelegateBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![RoutedToolDefinition {
+            origin: None,
             name: "delegate_tool".into(),
             provider_identifier: "delegate".into(),
             tool_name: "delegate_tool".into(),

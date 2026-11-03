@@ -88,6 +88,7 @@ impl ExternalMachineToolBridge {
 fn definitions() -> Vec<RoutedToolDefinition> {
     vec![
         RoutedToolDefinition {
+            origin: None,
             name: SAND_EXTERNAL_SHELL_TOOL_NAME.into(),
             provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
             tool_name: SAND_EXTERNAL_SHELL_TOOL_NAME.into(),
@@ -98,6 +99,7 @@ fn definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: SAND_EXTERNAL_READ_TOOL_NAME.into(),
             provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
             tool_name: SAND_EXTERNAL_READ_TOOL_NAME.into(),
@@ -111,6 +113,7 @@ fn definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: EXTERNAL_SHELL_STATUS_TOOL_NAME.into(),
             provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
             tool_name: EXTERNAL_SHELL_STATUS_TOOL_NAME.into(),
@@ -121,6 +124,7 @@ fn definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: EXTERNAL_SHELL_HISTORY_TOOL_NAME.into(),
             provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
             tool_name: EXTERNAL_SHELL_HISTORY_TOOL_NAME.into(),
@@ -128,6 +132,7 @@ fn definitions() -> Vec<RoutedToolDefinition> {
             input_schema: json!({"type":"object","additionalProperties":false}),
         },
         RoutedToolDefinition {
+            origin: None,
             name: EXTERNAL_SHELL_CANCEL_TOOL_NAME.into(),
             provider_identifier: EXTERNAL_MACHINE_TOOL_PROVIDER.into(),
             tool_name: EXTERNAL_SHELL_CANCEL_TOOL_NAME.into(),

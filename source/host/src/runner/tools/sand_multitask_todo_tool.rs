@@ -149,6 +149,7 @@ impl RoutedToolBridge for SandMultitaskTodoToolBridge {
 
 pub fn multitask_todo_definition() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: SAND_MULTITASK_TODO_TOOL_NAME.into(),
         provider_identifier: "fabushi-runner".into(),
         tool_name: SAND_MULTITASK_TODO_TOOL_NAME.into(),

@@ -1,0 +1,46 @@
+{
+  "contract": "MCP-ORIGIN-DISPATCH-v1",
+  "schemaRevision": 1,
+  "base": "14faff5d9605c99df1494303f1aa0ce31bcfd420",
+  "U": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "members": [
+    {
+      "path": "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+      "blob": "1a5edb91bc4a943a1b7d73ffadcb52a1c9df0d59",
+      "bytes": 47065,
+      "sha256": "a87b03d7001bbfebd2c874d1cdad802281e9b508b77cc7c229a6cb157a8d3fb3"
+    },
+    {
+      "path": "source/shared/rpc/coordinator-port.ts",
+      "blob": "154b9c0f2e356288fc84bd9226a542fd492d20ee",
+      "bytes": 8110,
+      "sha256": "7ef8569e8970d4e8fdc3b1bf149a5b4e0a22cdd47bf84c269aa18ff41cc0f15e"
+    },
+    {
+      "path": "source/shared/node/mcp/mcp-result-factory.ts",
+      "blob": "503e2960484f5fd52b6b449de9c95941764be877",
+      "bytes": 1982,
+      "sha256": "dc837c0a4b44b61eff7ff62d9333a2051a09febffaee90650ab4d49e21dd030a"
+    },
+    {
+      "path": "source/electron-main/main-production-services.ts",
+      "blob": "5729119ba67f1ffadc21abac2d5b87f062943ebf",
+      "bytes": 69551,
+      "sha256": "9f55d88dffcedc8324eebea561b3d03e9d7a9ef1afa12ce4826cd4615ea48aa2"
+    },
+    {
+      "path": "source/host/src/extensions/inference/provider_session.rs",
+      "blob": "5cba4171ca0ea2806c1f5b715ca366581196c841",
+      "bytes": 171004,
+      "sha256": "e1efcc11e46796f33576aac961d9015a1cd4772e1c2df7b07a79aba66dd10f10"
+    },
+    {
+      "path": "source/host/src/runner/coordinator_tool_relay.rs",
+      "blob": "64f0548dd1c93c6813039aaa5dce6b2ab3b8f0d1",
+      "bytes": 18956,
+      "sha256": "534a9c5c125991106cccd7d4bb5695d1424757aa73daf29ccd6ee4e40ac36131"
+    }
+  ],
+  "scope": "Root serialized shared definitions before native/transport implementation. Production integration and review pending.",
+  "validation": "not-run"
+}

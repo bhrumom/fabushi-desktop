@@ -72,6 +72,7 @@ impl RoutedToolBridge for McpStateBridge {
     fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
         Ok(vec![
             RoutedToolDefinition {
+                origin: None,
                 name: "github_search".into(),
                 provider_identifier: "github".into(),
                 tool_name: "search".into(),
@@ -79,6 +80,7 @@ impl RoutedToolBridge for McpStateBridge {
                 input_schema: json!({"type":"object","properties":{"q":{"type":"string"}}}),
             },
             RoutedToolDefinition {
+                origin: None,
                 name: "linear_get".into(),
                 provider_identifier: "linear".into(),
                 tool_name: "get".into(),
@@ -86,6 +88,7 @@ impl RoutedToolBridge for McpStateBridge {
                 input_schema: json!({"type":"object","properties":{"id":{"type":"string"}}}),
             },
             RoutedToolDefinition {
+                origin: None,
                 name: "github_issue".into(),
                 provider_identifier: "github".into(),
                 tool_name: "issue".into(),

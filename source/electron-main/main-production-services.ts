@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { CoordinatorControlSourceContext } from "../shared/rpc/coordinator-port.js";
 import { join } from "node:path";
 import type { ApplicationMenuElectronPort, ApplicationMenuItem } from "./application-menu.js";
 import { createCoordinatorMainLegs, type CapturedCoordinatorMainSession } from "./coordinator/coordinator-main-legs.js";
@@ -302,8 +303,8 @@ export interface ProductionMcpService extends ProductionDisposable {
   openExternalUrl(value: unknown): Promise<void>;
   refreshHostMcp(completion?: unknown): Promise<void>;
   resetMcpManager(): Promise<void>;
-  listRoutedTools(): Promise<unknown>;
-  executeRoutedTool(request: unknown): Promise<unknown>;
+  listRoutedTools(source: CoordinatorControlSourceContext): Promise<unknown>;
+  executeRoutedTool(request: unknown, source: CoordinatorControlSourceContext): Promise<unknown>;
   listHostMcpServers(): Promise<unknown>;
   listHostMcpCatalog(options?: { readonly forceRefresh?: boolean }): Promise<unknown>;
   listHostEffectiveMcpPlugins(): Promise<unknown>;

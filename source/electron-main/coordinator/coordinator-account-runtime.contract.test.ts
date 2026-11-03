@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test, { type TestContext } from "node:test";
+import { pathToFileURL } from "node:url";
+import { MessageChannel, type MessagePort } from "node:worker_threads";
 
 import {
   createCoordinatorAccountRuntime,
@@ -9,6 +14,21 @@ import {
   type CoordinatorAuthStatus,
 } from "./coordinator-account-runtime.js";
 import type { CoordinatorRuntime } from "./coordinator-runtime.js";
+import { createProductionCoordinatorAdapter } from "./production-provider.js";
+import { createCoordinatorMainLegs } from "./coordinator-main-legs.js";
+import type { CoordinatorChildProcess, CoordinatorMessageChannel, CoordinatorMessagePort } from "./coordinator-launcher.js";
+import { createProductionMcpOAuthAdapter } from "../adapters/mcp-oauth.js";
+import { createEgressConnectionObserver } from "../box/remote-connector-egress.js";
+import type { DesktopMcpManagerFacade } from "../mcp/desktop-mcp-manager.js";
+import type { ProductionCoordinatorService, ProductionMcpService, ProductionServiceContext } from "../main-production-services.js";
+import { McpResult, McpSuccess } from "../../packages/proto/generated/agent/v1/mcp_exec_pb.js";
+import {
+  parseMcpRoutedOrigin,
+  type CoordinatorControlSourceContext,
+  type CoordinatorFrame,
+  type CoordinatorReplyOutcome,
+} from "../../shared/rpc/coordinator-port.js";
+import { MCP_ORIGIN_RETIRED, McpOriginRetiredError } from "../../shared/node/mcp/mcp-result-factory.js";
 
 interface Status extends CoordinatorAuthStatus {
   readonly kind: "logged-in" | "logged-out";
@@ -653,4 +673,330 @@ test("MAB account disposal during authorization prevents later account effects",
     assert.equal(h.events.includes("revoke-refused"), false);
     assert.equal(h.owner.captureCurrentBinding(), null);
   }
+});
+
+// The origin integration controls the Electron child ABI and manager resource
+// ports. Production owns account binding, runtime/launcher, control dispatch,
+// source creation, Attempt capture and generated result classification. Native
+// MessageChannels retain the real structured-clone boundary.
+class OriginNativePort implements CoordinatorMessagePort {
+  constructor(private readonly port: MessagePort) {}
+  postMessage(value: unknown): void { this.port.postMessage(value); }
+  on(event: "message", listener: (event: { readonly data: unknown }) => void): void;
+  on(event: "close", listener: () => void): void;
+  on(event: "message" | "close", listener: ((event: { readonly data: unknown }) => void) | (() => void)): void {
+    if (event === "message") this.port.on(event, (data: unknown) => (listener as (event: { data: unknown }) => void)({ data }));
+    else this.port.on(event, listener);
+  }
+  start(): void { this.port.start(); }
+  close(): void { this.port.close(); }
+}
+
+class OriginChild implements CoordinatorChildProcess {
+  readonly ready = Promise.withResolvers<void>();
+  readonly killed = Promise.withResolvers<void>();
+  private readonly exits: Array<(code: number | null) => void> = [];
+  private readonly replies = new Map<string, { resolve(value: CoordinatorReplyOutcome): void; reject(error: unknown): void }>();
+  private control!: CoordinatorMessagePort;
+  private sequence = 0;
+  private exited = false;
+
+  postMessage(_value: unknown, ports: CoordinatorMessagePort[]): void {
+    assert.equal(ports.length, 3);
+    this.control = ports[0]!;
+    this.control.on("message", ({ data }) => {
+      const frame = data as CoordinatorFrame;
+      if (frame.kind === "lifecycle" && frame.phase === "ready") this.ready.resolve();
+      if (frame.kind === "reply") {
+        const waiter = this.replies.get(frame.requestId);
+        this.replies.delete(frame.requestId);
+        waiter?.resolve(frame.outcome);
+      }
+    });
+    this.control.on("close", () => {
+      for (const waiter of this.replies.values()) waiter.reject(new Error("original control reply is unavailable"));
+      this.replies.clear();
+    });
+    this.control.start();
+    this.control.postMessage({ kind: "lifecycle", phase: "hello", protocolVersion: 1 });
+    const main = ports[2]!;
+    main.on("message", ({ data }) => {
+      const frame = data as CoordinatorFrame;
+      if (frame.kind === "lifecycle" && frame.phase === "hello") {
+        main.postMessage({ kind: "lifecycle", phase: "ready", protocolVersion: 1 });
+      }
+    });
+    main.start();
+  }
+  on(_event: "exit", listener: (code: number | null) => void): void { this.exits.push(listener); }
+  kill(): void { this.killed.resolve(); }
+  exit(): void {
+    if (this.exited) return;
+    this.exited = true;
+    for (const listener of this.exits) listener(0);
+  }
+  request(method: string, args: unknown): Promise<CoordinatorReplyOutcome> {
+    const requestId = `origin-${++this.sequence}`;
+    const reply = new Promise<CoordinatorReplyOutcome>((resolve, reject) => this.replies.set(requestId, { resolve, reject }));
+    this.control.postMessage({ kind: "request", requestId, method, args });
+    return reply;
+  }
+  async call(method: string, args: unknown = {}): Promise<unknown> {
+    const reply = await this.request(method, args);
+    assert.equal(reply.status, "ok");
+    if (reply.status !== "ok") throw new Error(reply.failure.message);
+    return reply.value;
+  }
+}
+
+function originBarrier() {
+  const entered = Promise.withResolvers<void>();
+  const released = Promise.withResolvers<void>();
+  return { entered: entered.promise, release: () => released.resolve(), hold: async () => { entered.resolve(); await released.promise; } };
+}
+
+async function originProductionFixture(t: TestContext) {
+  const root = await mkdtemp(join(tmpdir(), "mcp-origin-account-"));
+  const artifact = join(root, "dist", "node-agent-coordinator", "main.cjs");
+  await mkdir(join(root, "dist", "node-agent-coordinator"), { recursive: true });
+  await writeFile(artifact, "// Controlled native child ABI; this file is never executed.\n");
+  const channels: CoordinatorMessageChannel[] = [];
+  const children: OriginChild[] = [];
+  const sources: CoordinatorControlSourceContext[] = [];
+  const executed: Array<{ manager: number; request: unknown }> = [];
+  const problems: string[] = [];
+  const calls = { factories: 0, requireMcp: 0, managerDisposals: 0 };
+  const controls: { transition?: ReturnType<typeof originBarrier>; list?: ReturnType<typeof originBarrier> } = {};
+  const heldLists = new Set<ReturnType<typeof originBarrier>>();
+  const tool = { providerIdentifier: "origin-provider", name: "public-tool", toolName: "raw-tool", inputSchema: null };
+  const unexpected = (): never => { throw new Error("unexpected external operation in origin fixture"); };
+  const legs = createCoordinatorMainLegs({ onProblem: (detail) => problems.push(detail) });
+  let status: Status = loggedOut;
+  let coordinator!: ProductionCoordinatorService;
+  let mcp!: ProductionMcpService;
+  const context = {
+    machineId: "origin-machine",
+    native: { app: { isPackaged: false } },
+    resources: { metadata: { version: "origin-contract" } },
+    coordinatorLegs: legs,
+    connectorEgress: createEgressConnectionObserver(),
+    requireAccount: () => ({ getStatus: async () => status, subscribe: () => () => {} }),
+    requireMcp: () => {
+      calls.requireMcp += 1;
+      return {
+        ...mcp,
+        listRoutedTools(source: CoordinatorControlSourceContext) {
+          sources.push(source);
+          return mcp.listRoutedTools(source);
+        },
+      };
+    },
+  } as unknown as ProductionServiceContext;
+  mcp = await createProductionMcpOAuthAdapter({
+    resolveRuntimeDeps: () => ({
+      createManager: async () => {
+        const manager = ++calls.factories;
+        return {
+          dispose() { calls.managerDisposals += 1; },
+          setAuthCompletionObserver() {},
+          async listRoutedTools() {
+            const held = controls.list;
+            controls.list = undefined;
+            if (held != null) {
+              heldLists.add(held);
+              try { await held.hold(); } finally { heldLists.delete(held); }
+            }
+            return [tool];
+          },
+          async executeRoutedTool(request, assertDispatchCurrent) {
+            assert.ok(assertDispatchCurrent);
+            assertDispatchCurrent();
+            executed.push({ manager, request });
+            return new McpResult({ result: { case: "success", value: new McpSuccess() } });
+          },
+        } as DesktopMcpManagerFacade;
+      },
+      settingsStore: {}, pushBoxSecrets: async () => {},
+      ensureCursorAuthService: async () => ({ getValidAccessToken: async () => "origin-token" }),
+      getMachineId: () => "origin-machine",
+      loadBoxMcpServers: async () => ({}), listBoxMcpServers: async () => [],
+      listBoxMcpToolsRaw: async () => "00", executeBoxMcpToolRaw: async () => "00",
+      reportConnectorAuth() {}, reportMcpDiscoveryFailed() {}, reportDiagnostic() {},
+      cleanupLegacyAuth: async () => {}, sandRootDir: () => root,
+      reportFailure() {}, broadcast() {}, refreshHostMcp() {},
+    }),
+    resolveDesktopDeps: unexpected,
+  }).create(context);
+  const adapter = createProductionCoordinatorAdapter<Status>({
+    electronMainModuleUrl: pathToFileURL(join(root, "dist", "electron-main", "main.cjs")).href,
+    utilityProcess: { fork(path) { assert.equal(path, artifact); const child = new OriginChild(); children.push(child); return child; } },
+    MessageChannelMain: class implements CoordinatorMessageChannel {
+      readonly port1: CoordinatorMessagePort;
+      readonly port2: CoordinatorMessagePort;
+      constructor() {
+        const channel = new MessageChannel();
+        this.port1 = new OriginNativePort(channel.port1);
+        this.port2 = new OriginNativePort(channel.port2);
+        channels.push(this);
+      }
+    },
+    net: { isOnline: () => false }, powerMonitor: { on() {} },
+    createWebAuthnPromptWindow: unexpected,
+    localExecNative: { spawnLocalExecDaemon: unexpected, terminateProcess: unexpected, isProcessAlive: unexpected, readProcessIdentity: unexpected },
+    createGatewayConnector: () => ({ connect: unexpected, issueLocalExecDaemonCredential: unexpected }),
+    getDataDir: () => root,
+    account: {
+      authorizeAccount: async () => true,
+      revokeRefusedAccount: async () => ({ kind: "completed", status: loggedOut }),
+      async prepareAccountTransition() { await controls.transition?.hold(); await mcp.resetMcpManager(); },
+      resetAccountState() {}, deliverStatus(next) { status = next; },
+    },
+    resync: {
+      getMcpCustomInstructionsAccountScope: () => null,
+      getMcpCustomInstructionsByServerId: () => ({}), getMcpDisabledToolsByServerId: () => ({}),
+      setMcpCustomInstructionsByServerId() {}, setMcpDisabledToolsByServerId() {},
+      detectTimeZone: () => "UTC", getUserTimeZoneOverride: () => null,
+      getComputerUseModel: () => null, getAutoReviewInstructions: () => null,
+      getLocalToolPermission: () => null, getWebauthnProxyEnabled: () => false,
+      getFeatureFlagOverrides: () => ({}), pushBoxSecrets: async () => {},
+      onHostSettingsTransportConnected() {}, onHostSettingsTransportDown() {},
+    },
+    events: { onAgentsEvent() {}, onAgentsRosterSeed() {}, onCoordinatorLaunched() {} },
+    telemetry: {
+      getUploader: () => null, isQuitting: () => false, isRebuildInFlight: () => false,
+      reportHandoff() {}, recordSendStage() {}, recordGatewayCommandSpan() {}, reportProcessCrash() {},
+      getRpcTraceWindowTraceparent: () => undefined, flushNow() {},
+    },
+    reportProblem: (area, detail) => problems.push(`${area}: ${detail}`),
+    reportFailure: (area, leg) => problems.push(`${area}: ${leg}`),
+  });
+  coordinator = adapter.create(context);
+  const runtime = coordinator.getAccountRuntime!() as CoordinatorAccountRuntime<Status>;
+  t.after(async () => {
+    controls.transition?.release(); controls.list?.release();
+    for (const held of heldLists) held.release();
+    const disposal = Promise.resolve(coordinator.dispose());
+    for (const child of children) child.exit();
+    try { await disposal; await mcp.dispose(); }
+    finally {
+      legs.dispose();
+      for (const channel of channels) { channel.port1.close(); channel.port2.close(); }
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+  return {
+    runtime, mcp, children, sources, executed, calls, controls, tool, problems,
+    async start() {
+      await coordinator.start(loggedIn("origin-A"));
+      await children[0]!.ready.promise;
+      return children[0]!;
+    },
+  };
+}
+
+function requireOriginRow(value: unknown) {
+  assert.ok(Array.isArray(value));
+  assert.equal(value.length, 1);
+  const row = value[0] as Record<string, unknown>;
+  const origin = parseMcpRoutedOrigin(row.origin);
+  assert.ok(origin);
+  return { ...row, origin };
+}
+
+function assertWireOriginRetired(value: unknown): void {
+  assert.deepEqual(value, { result: { case: "rejected", value: { reason: MCP_ORIGIN_RETIRED } } });
+}
+
+test("OD-T2 production Coordinator refuses departed account and serialized origin replay before manager B", options, async (t) => {
+  const f = await originProductionFixture(t);
+  const childA = await f.start();
+  const rowA = requireOriginRow(await childA.call("listRoutedMcpTools"));
+  const requestA = { ...rowA, args: { retained: true }, toolCallId: "origin-call", agentId: "origin-agent" };
+  const sourceA = f.sources[0]!;
+  const preparation = originBarrier();
+  f.controls.transition = preparation;
+  const resolutions = f.calls.requireMcp;
+  f.runtime.observe(loggedIn("origin-B"));
+  assert.throws(sourceA.assertCurrent, McpOriginRetiredError);
+  await preparation.entered;
+  assertWireOriginRetired(await childA.call("executeRoutedMcpTool", requestA));
+  assert.equal(f.calls.requireMcp, resolutions, "the old account cannot resolve a replacement MCP service");
+  assert.equal(f.calls.factories, 1);
+  assert.deepEqual(f.executed, []);
+  preparation.release();
+  await childA.killed.promise;
+  childA.exit();
+  await f.runtime.whenIdle();
+  const childB = f.children[1]!;
+  await childB.ready.promise;
+  assertWireOriginRetired(await childB.call("executeRoutedMcpTool", JSON.parse(JSON.stringify(requestA))));
+  assert.equal(f.calls.factories, 1, "serialized A origin cannot construct manager B on the new native source");
+  assert.deepEqual(f.executed, []);
+  const rowB = requireOriginRow(await childB.call("listRoutedMcpTools"));
+  assert.notEqual(rowB.origin.coordinatorSourceId, rowA.origin.coordinatorSourceId);
+  assert.notEqual(rowB.origin.mcpAttemptId, rowA.origin.mcpAttemptId);
+  const requestB = { ...requestA, ...rowB };
+  assert.deepEqual(await childB.call("executeRoutedMcpTool", requestB), { result: { case: "success", value: { content: [], isError: false } } });
+  assert.deepEqual(f.executed, [{ manager: 2, request: requestB }]);
+  assert.equal(f.calls.factories, 2);
+  assert.throws(sourceA.assertCurrent, McpOriginRetiredError);
+  assert.deepEqual(f.problems, []);
+});
+
+test("OD-T2 same-account child restart retires its source while retaining the current MCP Attempt", options, async (t) => {
+  const f = await originProductionFixture(t);
+  const childA = await f.start();
+  const rowA = requireOriginRow(await childA.call("listRoutedMcpTools"));
+  const sourceA = f.sources[0]!;
+  const account = requireBinding(f.runtime);
+  const requestA = { ...rowA, args: { retained: true }, toolCallId: "restart-call", agentId: "restart-agent" };
+  const restart = f.runtime.restart();
+  account.assertCurrent();
+  assert.throws(sourceA.assertCurrent, McpOriginRetiredError);
+  await childA.killed.promise;
+  childA.exit();
+  await restart;
+  const childB = f.children[1]!;
+  await childB.ready.promise;
+  assert.equal(requireBinding(f.runtime).runtimeIdentity, account.runtimeIdentity);
+  assertWireOriginRetired(await childB.call("executeRoutedMcpTool", structuredClone(requestA)));
+  assert.equal(f.calls.factories, 1);
+  assert.equal(f.calls.managerDisposals, 0);
+  assert.deepEqual(f.executed, []);
+  const rowB = requireOriginRow(await childB.call("listRoutedMcpTools"));
+  assert.notEqual(rowB.origin.coordinatorSourceId, rowA.origin.coordinatorSourceId);
+  assert.equal(rowB.origin.mcpAttemptId, rowA.origin.mcpAttemptId);
+  const requestB = { ...requestA, ...rowB };
+  await childB.call("executeRoutedMcpTool", requestB);
+  assert.deepEqual(f.executed, [{ manager: 1, request: requestB }]);
+  assert.throws(sourceA.assertCurrent, McpOriginRetiredError);
+  assert.deepEqual(f.problems, []);
+});
+
+test("OD-T2/3 held production account catalog cannot publish its origin after departure", options, async (t) => {
+  const f = await originProductionFixture(t);
+  const childA = await f.start();
+  const listing = originBarrier();
+  const preparation = originBarrier();
+  f.controls.list = listing;
+  f.controls.transition = preparation;
+  t.after(() => listing.release());
+  const pending = childA.request("listRoutedMcpTools", {});
+  await listing.entered;
+  f.runtime.observe(loggedIn("origin-B"));
+  await preparation.entered;
+  listing.release();
+  assert.deepEqual(await pending, { status: "failed", failure: { code: "main-execution-failure", message: MCP_ORIGIN_RETIRED } });
+  assert.equal(f.calls.factories, 1);
+  assert.deepEqual(f.executed, []);
+  preparation.release();
+  await childA.killed.promise;
+  childA.exit();
+  await f.runtime.whenIdle();
+  const childB = f.children[1]!;
+  await childB.ready.promise;
+  const rowB = requireOriginRow(await childB.call("listRoutedMcpTools"));
+  assert.equal(rowB.origin.coordinatorSourceId, f.sources.at(-1)!.sourceId);
+  assert.equal(f.calls.factories, 2);
+  assert.deepEqual(f.problems, []);
 });

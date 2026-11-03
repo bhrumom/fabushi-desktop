@@ -19,10 +19,12 @@ import {
 import {
   createDashboardSandBackendMcpExec,
   type DashboardMcpExecClient,
+  type DashboardMcpExecClientOptions,
 } from "../../shared/node/cursor-backend/backend-mcp-exec.js";
 import { pinMcpDiagnosticsReporter } from "../../shared/node/mcp/mcp-diagnostics.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
+import type { McpDispatchAssertion } from "../../shared/node/mcp/mcp-result-factory.js";
 import { OfficialMcpService, type OfficialMcpPorts } from "./official-mcp-service.js";
 import { officialMcpCatalogPlugins } from "../../shared/node/mcp/fabushi-official-catalog.js";
 import { marketplacePluginToView } from "../../shared/node/mcp/mcp-marketplace.js";
@@ -52,7 +54,7 @@ export interface DesktopMcpManagerFacade {
     readonly args: unknown;
     readonly toolCallId: string;
     readonly agentId?: string;
-  }): Promise<unknown>;
+  }, assertDispatchCurrent?: McpDispatchAssertion): Promise<unknown>;
   toggleMcpToolDisabled(request: unknown): Promise<unknown>;
   setAuthCompletionObserver(observer: (completion: unknown) => void): void;
   noteAuthCompletedElsewhere(serverId: string, accountKey: string): unknown;
@@ -81,10 +83,11 @@ function generatedAccountClient(credentials: Pick<AccountMcpDependencies, "getAc
   }) as unknown as AccountMcpClient;
 }
 
-function generatedBackendClient(credentials: Pick<AccountMcpDependencies, "getAccessToken" | "getMachineId">): DashboardMcpExecClient {
+function generatedBackendClient(credentials: DashboardMcpExecClientOptions): DashboardMcpExecClient {
   return createSandCursorBackendClient(DashboardService, {
     getAccessToken: async (options) => await credentials.getAccessToken({ backendUrl: options?.backendUrl }),
     getMachineId: credentials.getMachineId,
+    beforeDispatch: credentials.beforeDispatch,
   }) as unknown as DashboardMcpExecClient;
 }
 
@@ -257,7 +260,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
       ...await legacy(async () => routedToolsSnapshot.length > 0 ? routedToolsSnapshot : await warmRoutedTools(), []),
       ...(await official?.routedTools() ?? []),
     ],
-    executeRoutedTool: (request) => official?.owns(request.providerIdentifier)
+    executeRoutedTool: (request, assertDispatchCurrent) => official?.owns(request.providerIdentifier)
       ? official.execute(request.providerIdentifier, request.toolName, request.args)
       : discovery.executeTool(
       undefined,
@@ -269,6 +272,7 @@ export async function createSandDesktopMcpManager(options: DesktopMcpManagerOpti
         toolCallId: request.toolCallId,
       },
       request.agentId == null ? undefined : { agentId: request.agentId },
+      assertDispatchCurrent,
     ),
     toggleMcpToolDisabled: (request) => {
       const input = record(request);

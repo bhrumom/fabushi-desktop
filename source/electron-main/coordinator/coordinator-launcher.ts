@@ -1,4 +1,5 @@
 import { createCoordinatorControlServer } from "./coordinator-control-server.js";
+import type { CoordinatorControlExecutor } from "../../shared/rpc/coordinator-port.js";
 
 export const COORDINATOR_SERVICE_NAME = "sand-node-agent-coordinator";
 
@@ -47,7 +48,7 @@ export interface LaunchCoordinatorDependencies {
   ) => CoordinatorChildProcess;
   readonly artifactPath: string;
   readonly createChannel: () => CoordinatorMessageChannel;
-  readonly executors: Record<string, ((args: unknown) => unknown | Promise<unknown>) | undefined>;
+  readonly executors: Record<string, CoordinatorControlExecutor | undefined>;
   readonly onEvent: Record<string, (payload: unknown) => void>;
   readonly onProblem: (problem: string) => void;
   readonly processConfig: unknown;

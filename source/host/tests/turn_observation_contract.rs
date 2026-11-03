@@ -39,6 +39,7 @@ impl RoutedToolBridge for Delegate {
 
 fn tool(name: &str) -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: name.into(),
         provider_identifier: "test".into(),
         tool_name: name.into(),

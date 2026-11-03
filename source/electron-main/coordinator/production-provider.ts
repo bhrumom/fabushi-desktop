@@ -1,6 +1,16 @@
 import { statSync } from "node:fs";
 
 import type {
+  CoordinatorControlExecutor,
+  CoordinatorControlSourceContext,
+} from "../../shared/rpc/coordinator-port.js";
+import {
+  generatedMcpResultFactory,
+  MCP_ORIGIN_RETIRED,
+  McpOriginRetiredError,
+} from "../../shared/node/mcp/mcp-result-factory.js";
+
+import type {
   ProductionCoordinatorService,
   ProductionDisposable,
   ProductionServiceContext,
@@ -415,46 +425,90 @@ export function createProductionCoordinatorAdapter<
         reportFailure: (step, error) =>
           ports.reportFailure("coordinator-resync", step, error),
       });
-      const executors = createCoordinatorControlExecutors({
-        connector,
-        webauthnPrompt: prompt,
-        recordSendStage: ports.telemetry.recordSendStage,
-        recordGatewayCommandSpan: ports.telemetry.recordGatewayCommandSpan,
-        onReachability: telemetry.reportBoxReachability,
-        onDnsDiagnostic: telemetry.reportBoxDnsDiagnostic,
-        onProcessCrash: ports.telemetry.reportProcessCrash,
-        getRpcTraceWindowTraceparent: ports.telemetry.getRpcTraceWindowTraceparent,
-        listRoutedMcpTools: () => context.requireMcp().listRoutedTools(),
-        executeRoutedMcpTool: (request) => context.requireMcp().executeRoutedTool(request),
-        listHostMcpServers: () => context.requireMcp().listHostMcpServers(),
-        listHostMcpCatalog: (options) => context.requireMcp().listHostMcpCatalog(options),
-        listHostEffectiveMcpPlugins: () => context.requireMcp().listHostEffectiveMcpPlugins(),
-        loadHostPluginSkills: () => context.requireMcp().loadHostPluginSkills(),
-        installHostMcpPlugin: (request) => context.requireMcp().installHostMcpPlugin(request),
-        uninstallHostMcpPlugin: (pluginId) => context.requireMcp().uninstallHostMcpPlugin(pluginId),
-        addHostMcpServer: (request) => context.requireMcp().addHostMcpServer(request),
-        removeHostMcpServer: (serverId) => context.requireMcp().removeHostMcpServer(serverId),
-        restartHostMcpServers: () => context.requireMcp().restartHostMcpServers(),
-        setHostMcpInstructions: (request) => context.requireMcp().setHostMcpInstructions(request),
-        authenticateHostMcpServer: (request) => context.requireMcp().authenticateHostMcpServer(request),
-        logoutHostMcpAccount: (request) => context.requireMcp().logoutHostMcpAccount(request),
-        removeHostMcpAccount: (request) => context.requireMcp().removeHostMcpAccount(request),
-        renameHostMcpAccount: (request) => context.requireMcp().renameHostMcpAccount(request),
-        noteHostMcpAuthCompleted: (request) => context.requireMcp().noteHostMcpAuthCompleted(request),
-        native: ports.localExecNative,
-      });
+      let accountRuntime: ReturnType<typeof createCoordinatorAccountRuntime<Status>>;
       // The native owners remain authoritative. This join only relates each
       // exact returned runtime to the MainData port that it actually adopted.
       const runtimeMainData = new WeakMap<object, () => CoordinatorMainPortOwnership | undefined>();
       const createRuntime = (): CoordinatorRuntime => {
         let ownedMainData: CoordinatorMainPortOwnership | undefined;
+        let ownedRuntime: CoordinatorRuntime | undefined;
+        const captureMcpSource = (
+          source: CoordinatorControlSourceContext,
+        ): CoordinatorControlSourceContext => {
+          source.assertCurrent();
+          const binding = accountRuntime?.captureCurrentBinding();
+          if (disposed || binding == null || ownedRuntime == null || binding.runtimeIdentity !== ownedRuntime) {
+            throw new McpOriginRetiredError();
+          }
+          const captured: CoordinatorControlSourceContext = {
+            sourceId: source.sourceId,
+            assertCurrent: () => {
+              if (disposed) throw new McpOriginRetiredError();
+              source.assertCurrent();
+              // This is the exact captured account owner's currentness check,
+              // before dispatch. It never reacquires a replacement binding.
+              try {
+                binding.assertCurrent();
+              } catch {
+                throw new McpOriginRetiredError();
+              }
+              return undefined;
+            },
+          };
+          captured.assertCurrent();
+          return captured;
+        };
+        const executors = createCoordinatorControlExecutors({
+          connector,
+          webauthnPrompt: prompt,
+          recordSendStage: ports.telemetry.recordSendStage,
+          recordGatewayCommandSpan: ports.telemetry.recordGatewayCommandSpan,
+          onReachability: telemetry.reportBoxReachability,
+          onDnsDiagnostic: telemetry.reportBoxDnsDiagnostic,
+          onProcessCrash: ports.telemetry.reportProcessCrash,
+          getRpcTraceWindowTraceparent: ports.telemetry.getRpcTraceWindowTraceparent,
+          listRoutedMcpTools: async (source) => {
+            const captured = captureMcpSource(source);
+            return await context.requireMcp().listRoutedTools(captured);
+          },
+          executeRoutedMcpTool: async (request, source) => {
+            let captured: CoordinatorControlSourceContext;
+            try {
+              captured = captureMcpSource(source);
+            } catch (error) {
+              if (error instanceof McpOriginRetiredError) {
+                return generatedMcpResultFactory.rejected(MCP_ORIGIN_RETIRED);
+              }
+              throw error;
+            }
+            // Only the capture above proves non-dispatch. Once the service owns
+            // the call, preserve its late result or uncertain failure unchanged.
+            return await context.requireMcp().executeRoutedTool(request, captured);
+          },
+          listHostMcpServers: () => context.requireMcp().listHostMcpServers(),
+          listHostMcpCatalog: (options) => context.requireMcp().listHostMcpCatalog(options),
+          listHostEffectiveMcpPlugins: () => context.requireMcp().listHostEffectiveMcpPlugins(),
+          loadHostPluginSkills: () => context.requireMcp().loadHostPluginSkills(),
+          installHostMcpPlugin: (request) => context.requireMcp().installHostMcpPlugin(request),
+          uninstallHostMcpPlugin: (pluginId) => context.requireMcp().uninstallHostMcpPlugin(pluginId),
+          addHostMcpServer: (request) => context.requireMcp().addHostMcpServer(request),
+          removeHostMcpServer: (serverId) => context.requireMcp().removeHostMcpServer(serverId),
+          restartHostMcpServers: () => context.requireMcp().restartHostMcpServers(),
+          setHostMcpInstructions: (request) => context.requireMcp().setHostMcpInstructions(request),
+          authenticateHostMcpServer: (request) => context.requireMcp().authenticateHostMcpServer(request),
+          logoutHostMcpAccount: (request) => context.requireMcp().logoutHostMcpAccount(request),
+          removeHostMcpAccount: (request) => context.requireMcp().removeHostMcpAccount(request),
+          renameHostMcpAccount: (request) => context.requireMcp().renameHostMcpAccount(request),
+          noteHostMcpAuthCompleted: (request) => context.requireMcp().noteHostMcpAuthCompleted(request),
+          native: ports.localExecNative,
+        });
         const runtime = createCoordinatorRuntime({
           fork: (path, options) =>
             ports.utilityProcess.fork(path, [], { serviceName: options.serviceName }),
           createChannel: () => new ports.MessageChannelMain(),
           executors: executors as unknown as Record<
             string,
-            ((args: unknown) => unknown | Promise<unknown>) | undefined
+            CoordinatorControlExecutor | undefined
           >,
           onEvent: {
             "agents-event": ports.events.onAgentsEvent,
@@ -505,7 +559,7 @@ export function createProductionCoordinatorAdapter<
           },
           artifactPath,
         });
-        const ownedRuntime: CoordinatorRuntime = {
+        ownedRuntime = {
           requestRendererPort: (sink) => runtime.requestRendererPort(sink),
           revokeRendererPortRequest: () => runtime.revokeRendererPortRequest(),
           restart: () => runtime.restart(),
@@ -526,7 +580,7 @@ export function createProductionCoordinatorAdapter<
         return ownedRuntime;
       };
 
-      const accountRuntime = createCoordinatorAccountRuntime<Status>({
+      accountRuntime = createCoordinatorAccountRuntime<Status>({
         createRuntime,
         authorizeAccount: async (slot, transition) => {
           const authorized = await ports.account.authorizeAccount(slot, transition, context);

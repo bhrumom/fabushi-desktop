@@ -234,6 +234,7 @@ fn now_ms() -> u64 {
 
 pub fn send_message_tool_definition() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: SAND_SEND_MESSAGE_TOOL_NAME.to_string(),
         provider_identifier: "fabushi-runner".to_string(),
         tool_name: SAND_SEND_MESSAGE_TOOL_NAME.to_string(),

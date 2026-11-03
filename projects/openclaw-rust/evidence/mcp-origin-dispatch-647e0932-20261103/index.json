@@ -1,0 +1,114 @@
+{
+  "taskId": "647e0932-bea4-4113-9a61-65ae3db58955",
+  "round": 1,
+  "contract": "MCP-ORIGIN-DISPATCH-v1",
+  "fixedU": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "fixedUTree": "90c8aab39972da11cfad220361781d49e1bc6700",
+  "reviewBase": "4e80e161c6cc539f4c120d64f91421619a57def1",
+  "reviewTree": "474e8c79e8f01dbd1ba0da32fdef08ee51312c49",
+  "publicationParent": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "subject": "The next published source commit; exactH is observed from Actions and the remote readback, not self-declared inside this carrier.",
+  "carrierMembers": [
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r1/manifest.json",
+      "blob": "3d96da91cfa143a436fea6f6bb4b936574b701d2",
+      "bytes": 39345,
+      "sha256": "5a51e4a9c5dd5750e6177ee8923368ae521bf071af090c4e3c39e1aa320ed3fd"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r1/complete.patch",
+      "blob": "0ed7f46c4b0b8b9435866bcf563a79c537d4c84c",
+      "bytes": 245016,
+      "sha256": "6c8e25f105e0f73ec98873568f216a95414148c86213e5309bdca89b6c5d7ce7"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r1/changed-paths.txt",
+      "blob": "4cda5788fd6552d71e74e4bdb6dbb1700cebfc5d",
+      "bytes": 4104,
+      "sha256": "7653497a7f7e88a598b90389791d42150958e7bf36b5e2fcf0bb7800784f1131"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r1/required-cases.json",
+      "blob": "29cd5f22ebe786169a68175dfbe652217f3406c5",
+      "bytes": 4521,
+      "sha256": "3cbfa80dba9ec2ea7adb0d15ada46a761f22397b29bd0ba6daf746881f0892dd"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r1/security-review.md",
+      "blob": "74933e22d9475de5330ec618a6b0d42126a3da9f",
+      "bytes": 25693,
+      "sha256": "0b5ddf76cc9bfaf2a13eba63c95d3a9b611c7b07cd30e886f56aeea671944a11"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/r1/structure-review.md",
+      "blob": "4a5eafe1f0966058f14943c242058d1c011703de",
+      "bytes": 22744,
+      "sha256": "1ce5ef70b2a66132f1baf1c8e1aa1ed7118c864ca01d05fbf395bc46bd7026df"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/shared-contract-v1.json",
+      "blob": "b585fad3064534ff5f968da58e4b4b2bb15129b0",
+      "bytes": 1812,
+      "sha256": "a712d76024ec07ee785ed94c8e60aea24264c51cee914f22c660a51229d4d7ce"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/root-decisions.json",
+      "blob": "3b40d23f39774801b77b84581fc5d4db5bc2a94d",
+      "bytes": 5955,
+      "sha256": "31bf1c67eac65c67168b80e83105a0ec093c676e5f92d82937cac4057a82a44b"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/implementation/native.md",
+      "blob": "834d03a8243f5cd872b572c8d1cc3eb33f7aca97",
+      "bytes": 8814,
+      "sha256": "470f6dffd69b3c4cc28f82d7e63f8383e739ac1245b7a500d8c4c871c6bfb704"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/implementation/transport.md",
+      "blob": "10bd438e46af09121ecdb30f00c50e0d405b0161",
+      "bytes": 12685,
+      "sha256": "9aa792f2f0db3bc215f6e9618c25d8cb96a44e420d00b664acee4a462e9d899e"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/implementation/canonical-boundary.md",
+      "blob": "f9f1ee358efd1b235d5d7454e0f435004cfa8aec",
+      "bytes": 13691,
+      "sha256": "f5e3b891cbd10dccfc7f8cbfb791333b618058e48e4fc8a73b4cae31b7fbe82f"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/preparation/transport-contract.md",
+      "blob": "259a2d5eb287c1997634eb5311b34ff3a71684dd",
+      "bytes": 22923,
+      "sha256": "2ba1c832f8e7216bb1465dc308cafb3e2b87cf2896296004d119fcd9e8808699"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/preparation/transport-readfacts.json",
+      "blob": "2a4f73b053c8302d1a45cbd3ab5d7d5e9817a67a",
+      "bytes": 11810,
+      "sha256": "da00e1b7fae905378883e716e04bea870dc1c8d78e7d25dec8c82700e49b45d8"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/integration/r6-adoption.json",
+      "blob": "e6133bdcd258c3a71f0a5810cbc6f7efebb4537e",
+      "bytes": 12004,
+      "sha256": "b95a8c1459fe938d97a6f0a85c44179fa399bf4ae6612c22b2bb90d9c66ecdcf"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/integration/original-fc-assessment.md",
+      "blob": "8976c711522276ed0dbbc43d6417b011741947b8",
+      "bytes": 21724,
+      "sha256": "b70b8a0353f1315164576492502a1e87995f172a4d06adde1395514886460914"
+    },
+    {
+      "path": "projects/openclaw-rust/evidence/mcp-origin-dispatch-647e0932-20261103/integration/original-fc-failure-and-receipt-spans.txt",
+      "blob": "ab37e7ed0e9b7ed33d7c0ae462c7a50d0b899679",
+      "bytes": 8901,
+      "sha256": "4b6e466d5c2bf89afba47e216be4d54732784a1b8b080e3b367f2f05939ecf90"
+    }
+  ],
+  "reviewedSourceMemberManifest": "r1/manifest.json",
+  "execution": "No executable result in this carrier. Source reviews are not runtime acceptance.",
+  "historicalEvidence": "OriginalHfc receipts remainHfc; historical preparation facts remain their original base/depth, including not-yet-implemented statements at preparation time.",
+  "unitVerified": false,
+  "globalAcceptance": false
+}

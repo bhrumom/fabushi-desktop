@@ -124,6 +124,7 @@ export interface SandInferenceOptions {
   readonly authMode?: "anonymous";
   readonly lineage?: RequestLineage;
   readonly onRequestId?: (requestId: string) => void;
+  readonly beforeDispatch?: () => undefined;
   readonly resolveGhostModeHeader?: (options: PrivacyLookupOptions) => Promise<"true" | "false">;
   readonly fetchPrivacyMode?: PrivacyModeFetcher;
   readonly randomUUID?: () => string;
@@ -147,6 +148,7 @@ export function createSandInferenceInterceptor(options: SandInferenceOptions): I
     for (const [name, value] of Object.entries(lineageHeaders(options.lineage))) request.header.set(name, value);
     if ((options.env ?? process.env).CURSOR_AGENT_CLI_LOCAL_MODE === "true") request.header.set("local-cli-mode", "true");
     options.onRequestId?.(requestId);
+    options.beforeDispatch?.();
     return await next(request);
   };
 }

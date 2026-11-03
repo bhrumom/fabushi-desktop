@@ -1,4 +1,5 @@
 use crate::gateway_server::GatewayEventHub;
+use crate::extensions::inference::provider_session::{RoutedMcpOrigin, RoutedMcpOriginBinding};
 use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::{
@@ -81,6 +82,33 @@ pub struct CoordinatorToolRelay {
 }
 
 impl CoordinatorToolRelay {
+    pub fn bind_tool_origin(
+        &self,
+        origin: RoutedMcpOrigin,
+    ) -> Result<RoutedMcpOriginBinding, CoordinatorToolRelayError> {
+        if self.closed.load(Ordering::Acquire) {
+            return Err(CoordinatorToolRelayError::Closed("Mahayana Host is shutting down".into()));
+        }
+        Ok(RoutedMcpOriginBinding::bind(origin, self.incarnation))
+    }
+
+    pub fn validate_tool_origin(
+        &self,
+        binding: Option<&RoutedMcpOriginBinding>,
+    ) -> Result<(), CoordinatorToolExecutionError> {
+        if self.closed.load(Ordering::Acquire) {
+            return Err(CoordinatorToolExecutionError::before_publication(
+                CoordinatorToolRelayError::Closed("Mahayana Host is shutting down".into()),
+            ));
+        }
+        if !binding.is_some_and(|binding| binding.belongs_to(self.incarnation)) {
+            return Err(CoordinatorToolExecutionError::before_publication(
+                CoordinatorToolRelayError::Protocol("routed MCP origin is not bound to this relay".into()),
+            ));
+        }
+        Ok(())
+    }
+
     pub fn new(events: GatewayEventHub) -> Self {
         Self::with_timeout(events, DEFAULT_ROUTED_TOOL_REQUEST_TIMEOUT)
     }

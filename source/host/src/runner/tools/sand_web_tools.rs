@@ -97,6 +97,7 @@ impl RoutedToolBridge for SandWebToolBridge {
 fn web_tool_definitions() -> Vec<RoutedToolDefinition> {
     vec![
         RoutedToolDefinition {
+            origin: None,
             name: WEB_SEARCH_TOOL_NAME.into(),
             provider_identifier: WEB_TOOL_PROVIDER.into(),
             tool_name: WEB_SEARCH_TOOL_NAME.into(),
@@ -120,6 +121,7 @@ fn web_tool_definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: WEB_FETCH_TOOL_NAME.into(),
             provider_identifier: WEB_TOOL_PROVIDER.into(),
             tool_name: WEB_FETCH_TOOL_NAME.into(),

@@ -142,6 +142,9 @@ inputs = [
     "source/host/tests/agent_to_agent_messaging_contract.rs",
     "source/host/tests/background_wakes_production_contract.rs",
     "projects/openclaw-rust/docs/specs/mcp-account-listing-retirement.md",
+    "source/host/src/runner/coordinator_tool_relay.rs",
+    "source/host/src/ports/mcp_state_executor.rs",
+    "source/host/tests/mcp_state_executor_contract.rs",
     "source/host/src/extensions/inference/provider_session.rs",
     "projects/openclaw-rust/docs/specs/codex-model-identity.md",
     "projects/openclaw-rust/docs/specs/codex-request-workspace-binding.md",
@@ -833,6 +836,9 @@ cases = [
         "live_mcp_projection_preserves_first_seen_grouping_and_complete_descriptors",
         "frozen_mcp_projection_keeps_exact_vectors_without_live_discovery",
     ]),
+    ("mcp-origin-canonical-boundary", base + ["--test", "mcp_state_executor_contract", "--", "--test-threads=1"], [
+        "canonical_mcp_state_preserves_origin_in_process_and_never_serializes_relay_authority",
+    ]),
     ("received-catalog-toolset", base + ["--test", "turn_toolset_contract", "--", "--test-threads=1"], [
         "dynamic_turn_toolset_propagates_catalog_refusal_through_native_wrapper",
         "dynamic_turn_toolset_keeps_ordinary_discovery_failure_fallback",
@@ -1076,6 +1082,31 @@ receipt = {
     "executions": [], "result": "failed-or-incomplete",
     "scope": "MER-v1 requires an acknowledged episode record before summary work; real archived Session refusal retains pending and memory bytes across reopen, and owner restore admits ordinary recovery. Extraction remains before admission; this control is not a Host/UI archive race or a later lifecycle fence. MEC-v1 retains actual Session pending input and memory bytes on controlled summary execution errors, including cancellation results, across reopen and later ordinary-turn recovery; successful empty/whitespace/NONE replies preserve existing durable settlement. Existing bound-memory consumers require account-refusal input retention and successful same-context token rotation with fixture-owned HTTP and credentials. These controlled model results do not establish live provider or cancellation timing acceptance. Linux actual store, rearm, manager, checked-lock and BackgroundWakes live-custody controls, plus paired-device SSE permission. DJL-v1 adds strict direct-socket public join admission before optional authentication, FIFO reservation/settlement, bounded generation-owned state, real HTTP callback/error/restart/lost-response controls and retained public join/TLS regressions; trusted-proxy/configurable policy and real devices remain open. DJC-v1 executes file-backed join read/write/controlled commit refusal, durable malformed-row consumption, post-commit expiry, two-connection single-use, reopen/repair and actual Gateway HTTP refusal/recovery controls; complete setup schema/issuer UI and unknown COMMIT/crash acceptance remain open. MGS-v1 covers actual Memory dispatch, inside/outside stores, unchanged bytes/notifications, valid-after-refusal and projection/order/bound/mutation controls. RSU-v1 covers actual Session gateway persisted-transcript Unicode fallback/reopen, character/byte windows, ordering/limits and ready-index controls. MWR-v1 covers Store append read admission and actual production synthesis target/Session gate/service Failed settlement, temporal-byte preservation, Invalid/Stale controls and repair; controlled proposals do not establish real provider compatibility. MEA-v1 exercises the completed-turn consumer through actual ProductionEpisodeProgress: read/write append refusal preserves pending input across reopen and interleaved admission; repair and duplicate acknowledgements retain normal settlement. The existing Automation command requires the composed Runner Memory consumer. MGA-v1 covers actual HTTP with real issued/revoked pairing credentials, before-owner permission refusals, native/header compatibility, no ambient fallback for invalid credentials, unchanged denied state and admitted mutation/reopen. CGWA-v1 requires the same controls for native channel credential writes through real Session secret/metadata owners, preserving unrelated Agent/platform bytes and acknowledged reopen state. Real provider registration, two-file crash atomicity and complete channel lifecycle remain open. CCWA-v1 requires checked credential write admission and raw-byte preservation through real Store, Session, Gateway, Widget and Manager consumers; refusal emits a redacted real tray without acknowledgement or resume, and explicit repair reuses the same request. CMI-v1 requires the saved Codex model in actual serialized requests through production Runner retries, owned checkpoints, nudges, turn memory and summary, with raw/persisted refusal and cancellation before effects; only the final transport is controlled and real account/service and process-loss recovery remain open. PMS-v1 requires persisted/reopened actual Session search replies and exports only the asserted returned JSON for the same-H desktop consumer. Session claim evidence covers exact private settlement, real inbound post-COMMIT listener replacement, duplicate/refusal/compatibility controls and actual unknown-COMMIT/refused-rollback custody; final-write claim admission and durable correlation recovery remain open. DPR-v1 covers the existing file-backed pairing owner: all three mutation transactions refuse corrupt/exhausted revision state while retaining target rows, prior tokens and surfaces, with repeat/reopen/known-counter repair, absent/legacy decimal and final-increment controls. It retains all existing pairing contract controls without claiming HTTP/device compatibility or unknown-commit recovery. DVR-v1 retains complete owner26, HTTP8 and its original14 retained-stream cases for bound atomic whole-row removal, caller policy and redaction, exact proof retirement on every existing stream wake, real bridge provider cleanup and response admission, real quiet-heartbeat and native/MCP controls. DRT-v1 adds selected-role retirement through the same owner, explicit native/paired ceilings, fresh-marker rejection and six selected-role retained cases; whole-target counts and exact positive names remain mandatory. Original source-review/authority and actual App helper results remain separate; physical teardown, APNs and the upstream remove wire alias remain open. DTR-v1 executes the complete wire-rotation owner44 and HTTP14 targets plus all27 retained cases, preserving all previous names and assertions. It covers resulting-grant caps and explicit repair, exact identity-bound delivery, supported metadata, checked single-commit revision, current-proof races, node-only surfaces, response-loss/no-replay and successor controls. The large distinct-scope read-only HTTP request reaches the bound owner, is refused without durable mutation and preserves ordinary authorized rotation after reopen; shared canonicalization uses order-preserving set membership. Freshly issued literal scopes stay literal across adjacent management consumers; selected primary-only role materialization, decisive approval reads, rollback, reopen and later role withdrawal are required. External credential caches, issuer-generation policy, upstream WebSocket/node-surface compatibility and real devices remain open. DPA-v1 adds actual file-backed owner and real HTTP delegate controls for sealed current credential admission, target and caller scope ceilings, identity-derived token delivery, invalid-bearer refusal, stale credential races and exactly one concurrent self replacement; the shipping App override is compiled/source-reviewed, not a full-App transport or physical-device acceptance. MCP controls use actual preparation/projection/toolset, sequential HTTP refresh, owned Unix CLI attempts and retry custody; channel controls use the real splitter/Host/router with a controlled transport, including ambiguous effect refusal without replay. These do not establish real provider compatibility. Cloud-agent checks and BackgroundWakes wiring mutations remain source-wiring supplements. Controlled runtime-port outcomes do not execute the shipping app/provider/quiescence branches. Arbitrary write transactions, external filesystem races, symlink, cross-account, full HTTP/UI, macOS/Windows, indexed-backend/provider equivalence, unknown-effect and package acceptance remain open.",
 }
+# RoutedToolDefinition is shared by built-ins and integration fixtures. Compile
+# the complete Host test graph once; this is a compile gate, not test evidence.
+constructor_command = ["cargo", "check", "--locked", "--manifest-path", "source/host/Cargo.toml", "--tests"]
+constructor_log = root / "mcp-origin-constructor-check.log"
+constructor_check = {"command": constructor_command, "cargo_exit": None, "capture_exit": 0,
+    "log": constructor_log.name, "result": "failed-or-incomplete", "execution_error": None}
+receipt["mcp_origin_constructor_compile"] = constructor_check
+(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+constructor_raw = b""
+try:
+    with constructor_log.open("wb") as output:
+        constructor_check["cargo_exit"] = subprocess.run(constructor_command,
+            stdout=output, stderr=subprocess.STDOUT, check=False).returncode
+    constructor_raw = constructor_log.read_bytes()
+except OSError as error:
+    constructor_check["capture_exit"] = 1
+    constructor_check["execution_error"] = str(error)
+constructor_check["log_sha256"] = hashlib.sha256(constructor_raw).hexdigest()
+constructor_passed = constructor_check["cargo_exit"] == 0 and constructor_check["capture_exit"] == 0
+constructor_check["result"] = "compiled" if constructor_passed else "failed-or-incomplete"
+(root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+print(constructor_raw.decode("utf-8", errors="replace"), flush=True)
+print(json.dumps({"mcp_origin_constructor_compile": constructor_check}), flush=True)
+if not constructor_passed:
+    raise SystemExit(constructor_check["cargo_exit"] or constructor_check["capture_exit"] or 1)
 for label, command, required in cases:
     receipt["active_case"] = label
     (root / "receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -1111,6 +1142,9 @@ for label, command, required in cases:
         accepted = (accepted and len(counts) == 3
             and all(count[2] == 0 for count in counts)
             and sum(count[0] for count in counts) == len(passed))
+    if label == "mcp-origin-canonical-boundary":
+        accepted = (accepted and len(counts) == 1 and counts[0][2] == 0
+            and counts[0][0] == len(passed) and len(passed) >= len(required))
     receipt["executions"].append({
         "case": label, "command": command, "cargo_exit": cargo_exit, "capture_exit": capture_exit,
         "execution_error": execution_error, "required_positive_names": required,

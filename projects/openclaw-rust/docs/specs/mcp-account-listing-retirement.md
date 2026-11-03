@@ -275,12 +275,13 @@ This is not a new registration, policy, account, permission, or runtime owner.
 
 - RC-01: both actual App list decoders reject the entire response only when
   its top level is not an array or any row lacks a string `name`,
-  `providerIdentifier`, or `toolName`. Introduce internal
+  `providerIdentifier`, or `toolName`, or violates the versioned internal
+  origin contract added by `MCP-ORIGIN-DISPATCH-v1` below. Introduce internal
   `ProviderSessionError::McpCatalog(McpCatalogRefusal)` in the existing error
   owner. The copyable refusal contains only a `McpCatalogKind` (`Tools` or
   `MetaTools`), optional zero-based `row`, and `McpCatalogReason`
   (`ExpectedArray`, `NameMustBeString`, `ProviderIdentifierMustBeString`,
-  `ToolNameMustBeString`). Never include the invalid value, descriptor,
+  `ToolNameMustBeString`, `OriginInvalid`). Never include the invalid value, descriptor,
   account identity or payload in this error.
 - RC-02: retain every currently accepted value: empty arrays, blank required
   strings, public/raw name differences, duplicate rows and order, arbitrary
@@ -570,3 +571,124 @@ and run the existing affected build/contract selection only in Actions at its
 exact published H. Scoped G01/G02 authority, external services and full OCRM
 acceptance remain open. Rollback changes no persisted format and restores these
 late-admission risks; it cannot retract already admitted work.
+
+## Original routed execution source — `MCP-ORIGIN-DISPATCH-v1`
+
+Specified before implementation on `14faff5d9605c99df1494303f1aa0ce31bcfd420`;
+fixed U remains `1440bb1771372334bea23d7642bb52deb7db1845`. The actual
+Coordinator catalog currently loses its producer incarnation in the Rust
+descriptor and canonical in-process projection. After AutoReview, native
+execution calls `ensureMcpManager()` and can borrow a replacement. The legacy
+HTTP interceptor then awaits credentials, machine ID and privacy headers before
+its transport handoff. Close this one execution loop through existing owners.
+
+### Producer, custody and contract
+
+- **OD-01 / native producer:** each concrete Coordinator control server owns a
+  fresh opaque UUID source ID and a synchronous assertion on its own settlement
+  state. Pass that native context separately from parsed request arguments;
+  serialized fields cannot create it. Bind the routed executors to the exact
+  account-runtime object that created them, and require its existing current
+  binding and lifetime. A same-account child relaunch gets a new source ID.
+- **OD-02 / manager attempt:** add a fresh opaque UUID ID to each existing MCP
+  runtime Attempt when it is reserved. Listing captures that Attempt before an
+  await and checks the original source/account/Attempt before publishing rows.
+  Execute requires the expected still-current Attempt before waiting for its
+  manager and again after the wait. A missing or retired Attempt must not
+  construct, await or select a replacement. Reset retires before cleanup.
+- **OD-03 / internal wire:** production routed rows and execution requests
+  carry `origin: { version: 1, coordinatorSourceId, mcpAttemptId }` outside tool
+  arguments. Both IDs are canonical lower-case hyphenated UUID strings,
+  validated as a bounded whole object;
+  unknown extra fields do not become authority. Missing/malformed/wrong-version
+  origin rejects the entire received catalog with fixed `OriginInvalid` through
+  the existing permanent `McpCatalogRefusal`. Preserve all RC-02 public-field,
+  duplicate, ordering and schema compatibility. This internal contract is
+  deployed with its producer/consumer in one candidate; no origin fallback is
+  permitted for an old production catalog.
+- **OD-04 / Rust custody:** retain origin in `RoutedToolDefinition` and bind it
+  to the existing Host relay's private incarnation. The relay alone creates
+  that local binding; a wire UUID is not a Host lease. Carry the same binding
+  through canonical in-process MCP grouping, both turn snapshots and dynamic
+  toolset reconstruction. Provider schemas, model payloads, canonical protobuf
+  and persistent transcripts must not expose or serialize the local binding.
+  Built-in tool definitions and decoded external protobuf have no Coordinator
+  binding; the actual Coordinator bridge refuses such a definition before
+  execution. Do not recover metadata by an ambiguous tool-name lookup.
+- **OD-05 / review and dispatch:** the actual Rust bridge retains the original
+  descriptor across AutoReview and checks its relay binding after review,
+  before execution publication. Native intake compares its serialized source
+  ID to the independently supplied source context, then validates the exact
+  originating account and Attempt. It forwards one request-local synchronous
+  assertion through the facade, legacy discovery and backend execution helper.
+  No global current-request callback, re-listing, fresh-origin substitution,
+  second permission registry or additional runtime owner.
+- **OD-06 / final HTTP admission:** in the actual Connect interceptor, execute
+  the captured assertion after every credential/machine/privacy await and after
+  the request-ID observer, immediately before `next(request)` in the same
+  continuation. The callback type must exclude Promise-returning functions
+  (for example `() => undefined`); do not accept an ignored asynchronous check.
+  Use a request-scoped execution client/transport when a callback is supplied;
+  existing unguarded listing/auth clients retain their behavior. Preserve exact
+  provider identifier, public and raw tool names, arguments, call ID and Agent
+  ID. Existing legacy disabled-tool checks remain in force.
+- **OD-07 / result custody:** only an owner-created typed pre-dispatch
+  retirement may return the generated `rejected` arm with fixed
+  `MCP_ORIGIN_RETIRED`. The backend helper may keep a request-local witness set
+  only when its own final callback observes that typed refusal; this preserves
+  classification if Connect wraps the error. Never inspect an arbitrary error
+  message or recheck currentness in catch to infer no effect. Once `next` has
+  been entered, preserve the actual late success, server-declared failure or
+  uncertain transport error; no post-effect rejection, rollback fiction or
+  retry. Lost reply or closed control port retains the existing Rust unknown
+  custody even when native work independently stopped before transport.
+
+### Implementation and required causal checks
+
+The existing shared Coordinator RPC definitions own the internal DTO; the
+existing shared MCP result factory owns the typed bounded refusal and generated
+result constructor. Rust inference/relay/App/port/turn owners carry and validate
+custody. Native control-server/account-runtime/MCP Attempt owners guard their
+existing objects; the facade/discovery/HTTP adapter only passes that context to
+its final resource handoff. No persisted format, dependency, Agent loop,
+session store, scheduler, marketplace or permission truth is added.
+
+- **OD-T1:** actual Rust relay/EventHub and both App decoders retain origin;
+  malformed catalogs fail with redacted typed reasons. Hold actual AutoReview,
+  retire/replace the source, then prove zero execute publication for a foreign
+  local binding and success for a fresh binding. Actual canonical grouping and
+  both turn projection paths preserve per-row identity, including duplicates.
+- **OD-T2:** actual production Coordinator adapter, control server/executors
+  and MCP adapter refuse an old source's request after account replacement and
+  refuse replay of its serialized origin on the new source. Manager-B factory
+  and HTTP counters stay zero for stale execution; a fresh-B catalog/call works.
+  Also relaunch a child within one account lifetime and prove source retirement.
+- **OD-T3:** held factory/list/credential completions followed by reset cannot
+  publish an origin or enter transport. A stale execute never creates a new
+  Attempt. Preserve all existing runtime construction, official lifetime and
+  Box-boundary checks.
+- **OD-T4:** exercise the real generated backend client and interceptor with a
+  held privacy await after credential acquisition. Retire the source or Attempt,
+  release the await, and require zero actual transport `next` calls plus the
+  definitive rejected result. Current control reaches `next` once with exact
+  request fields. An arbitrary same-message exception is never a known refusal.
+- **OD-T5:** latch actual `next` entry, retire/reset, and deliver late success,
+  server error and transport failure. Require one call, unchanged settlement
+  classification, no automatic retry and no fresh-source access. Retain disabled
+  raw-name denial/enabled sibling positives and all previously accepted RC data.
+
+Freeze the complete source, composition, constructor/projection adaptations and
+oracles; obtain fresh independent security/lifetime and structure/performance
+reviews. Extend the existing MCP bundle's exact input members and named-positive
+receipts, and run affected Rust/App and complete native contract targets only
+in GitHub Actions on published H. Test compilation, source binding, actual
+resource-boundary execution and real external compatibility remain distinct.
+No source-only approval or synthetic transport proves real account acceptance.
+
+This loop covers original-source custody for legacy HTTP execution. Official
+and Box behavior remains preserved; their full final resource boundaries,
+same-manager registration changes, Native credential/session epoch capture and
+canonical Rust permission migration remain required follow-up responsibilities.
+There is no waiver of OCRM G01–G12 or AC01–AC24. No database upgrade is needed;
+rollback restores the stale-source risk and requires matching producer and
+consumer versions. It cannot retract a previously entered external effect.

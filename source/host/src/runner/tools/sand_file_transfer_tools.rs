@@ -254,6 +254,7 @@ impl SandFileTransferToolBridge {
 pub fn file_transfer_tool_definitions() -> Vec<RoutedToolDefinition> {
     vec![
         RoutedToolDefinition {
+            origin: None,
             name: COPY_TO_BOX_TOOL_NAME.into(),
             provider_identifier: FILE_TRANSFER_TOOL_PROVIDER.into(),
             tool_name: COPY_TO_BOX_TOOL_NAME.into(),
@@ -273,6 +274,7 @@ pub fn file_transfer_tool_definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: COPY_FROM_BOX_TOOL_NAME.into(),
             provider_identifier: FILE_TRANSFER_TOOL_PROVIDER.into(),
             tool_name: COPY_FROM_BOX_TOOL_NAME.into(),

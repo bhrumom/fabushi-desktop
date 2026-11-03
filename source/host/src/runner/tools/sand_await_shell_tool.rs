@@ -228,6 +228,7 @@ impl RoutedToolBridge for SandAwaitShellToolBridge {
 
 fn definition(name: &str, description: &str) -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: name.into(),
         provider_identifier: AWAIT_PROVIDER.into(),
         tool_name: name.into(),

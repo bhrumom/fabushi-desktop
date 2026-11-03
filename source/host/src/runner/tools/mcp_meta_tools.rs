@@ -425,6 +425,7 @@ fn required_meta_argument<'a>(
 pub(crate) fn mcp_meta_tool_definitions() -> Vec<RoutedToolDefinition> {
     vec![
         RoutedToolDefinition {
+            origin: None,
             name: GET_MCP_TOOLS_TOOL_NAME.into(),
             provider_identifier: MCP_META_TOOL_PROVIDER.into(),
             tool_name: GET_MCP_TOOLS_TOOL_NAME.into(),
@@ -442,6 +443,7 @@ pub(crate) fn mcp_meta_tool_definitions() -> Vec<RoutedToolDefinition> {
             }),
         },
         RoutedToolDefinition {
+            origin: None,
             name: CALL_MCP_TOOL_NAME.into(),
             provider_identifier: MCP_META_TOOL_PROVIDER.into(),
             tool_name: CALL_MCP_TOOL_NAME.into(),

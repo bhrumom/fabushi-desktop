@@ -89,6 +89,7 @@ mod tests {
                     error_message: Some("healthy detail".into()),
                     tools: vec![
                         crate::ports::mcp_state_executor::McpStateToolDefinition {
+                            origin: None,
                             name: "search".into(),
                             provider_identifier: "calendar".into(),
                             tool_name: "search".into(),
@@ -96,6 +97,7 @@ mod tests {
                             input_schema: serde_json::json!({"type":"object"}),
                         },
                         crate::ports::mcp_state_executor::McpStateToolDefinition {
+                            origin: None,
                             name: "create".into(),
                             provider_identifier: "calendar".into(),
                             tool_name: "create".into(),

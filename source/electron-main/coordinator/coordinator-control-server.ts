@@ -1,8 +1,13 @@
+import { randomUUID } from "node:crypto";
+
 import {
   COORDINATOR_PROTOCOL_VERSION,
   parseCoordinatorFrame,
   type CoordinatorFrame,
+  type CoordinatorControlExecutor,
+  type CoordinatorControlSourceContext,
 } from "../../shared/rpc/coordinator-port.js";
+import { McpOriginRetiredError } from "../../shared/node/mcp/mcp-result-factory.js";
 
 export const COORDINATOR_CONTROL_EVENT_FAMILIES = [
   "transport-connected",
@@ -24,10 +29,7 @@ function createDeferred<T>(): {
 
 export function createCoordinatorControlServer(options: {
   readonly post: (frame: CoordinatorFrame) => void;
-  readonly executors: Record<
-    string,
-    ((args: unknown) => unknown | Promise<unknown>) | undefined
-  >;
+  readonly executors: Record<string, CoordinatorControlExecutor | undefined>;
   readonly onEvent: Record<string, (payload: unknown) => void>;
   readonly onProblem: (detail: string) => void;
   readonly reportFailure?: (leg: string, error: unknown) => void;
@@ -35,6 +37,13 @@ export function createCoordinatorControlServer(options: {
   let helloObserved = false;
   let settlement: any = null;
   const { promise: settled, resolve } = createDeferred<any>();
+  const source: CoordinatorControlSourceContext = {
+    sourceId: randomUUID(),
+    assertCurrent: () => {
+      if (settlement != null) throw new McpOriginRetiredError();
+      return undefined;
+    },
+  };
 
   const reportFailure = (leg: string, error: unknown) => {
     try {
@@ -59,8 +68,10 @@ export function createCoordinatorControlServer(options: {
   };
 
   const breach = (detail: string) => {
-    reportProblem(detail);
     if (settlement != null) return;
+    // Retire before external diagnostics or posting can reenter this server.
+    finish({ outcome: "protocol-breach", detail });
+    reportProblem(detail);
     try {
       options.post({
         kind: "lifecycle",
@@ -71,7 +82,6 @@ export function createCoordinatorControlServer(options: {
     } catch (error) {
       reportFailure("breach-post", error);
     }
-    finish({ outcome: "protocol-breach", detail });
   };
 
   const dispatch = (requestId: string, method: string, args: unknown) => {
@@ -87,7 +97,7 @@ export function createCoordinatorControlServer(options: {
         };
       }
       try {
-        return { status: "ok" as const, value: (await executor(args)) ?? null };
+        return { status: "ok" as const, value: (await executor(args, source)) ?? null };
       } catch (error) {
         return {
           status: "failed" as const,
@@ -179,6 +189,7 @@ export function createCoordinatorControlServer(options: {
     handlePortClosed: () => finish({ outcome: "clean", reason: "port-closed" }),
     dispose() {
       if (settlement != null) return;
+      finish({ outcome: "clean", reason: "disposed" });
       try {
         options.post({
           kind: "lifecycle",
@@ -189,7 +200,6 @@ export function createCoordinatorControlServer(options: {
       } catch (error) {
         reportFailure("dispose-post", error);
       }
-      finish({ outcome: "clean", reason: "disposed" });
     },
     settled,
   };

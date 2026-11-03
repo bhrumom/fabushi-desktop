@@ -255,6 +255,7 @@ impl SandGenerateImageToolBridge {
 
 fn generate_image_tool_definition() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: GENERATE_IMAGE_TOOL_NAME.into(),
         provider_identifier: GENERATE_IMAGE_TOOL_PROVIDER.into(),
         tool_name: GENERATE_IMAGE_TOOL_NAME.into(),

@@ -284,6 +284,7 @@ impl RoutedToolBridge for SandStateToolBridge {
 
 fn update_state_definition() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: SAND_UPDATE_STATE_TOOL_NAME.into(),
         provider_identifier: "fabushi-runner".into(),
         tool_name: SAND_UPDATE_STATE_TOOL_NAME.into(),

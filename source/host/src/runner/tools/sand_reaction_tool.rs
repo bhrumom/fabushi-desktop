@@ -71,6 +71,7 @@ impl ReactionToolBridge {
 
 pub fn reaction_tool_definition() -> RoutedToolDefinition {
     RoutedToolDefinition {
+        origin: None,
         name: SAND_REACT_TO_MESSAGE_TOOL_NAME.to_string(),
         provider_identifier: "fabushi-runner".to_string(),
         tool_name: SAND_REACT_TO_MESSAGE_TOOL_NAME.to_string(),
