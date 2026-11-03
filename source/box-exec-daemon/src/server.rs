@@ -4,7 +4,7 @@ use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, ExitStatus, Stdio};
-use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant};
@@ -646,9 +646,14 @@ enum ProcessFailure {
     Unknown(ShellExecutionUnknown),
 }
 
+// A registration outlives both its direct child PID and any observed reap.
+// Allocated once per invocation; no live or retired identity is reused.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+struct ForegroundId(u64);
+
 #[derive(Clone)]
 enum ForegroundProcess {
-    // Existing streamed/background-handoff ownership remains unchanged.
+    // The request owns the Child and consumes the runtime stopping flag.
     Stream,
     // The same registry retains a Child if bounded cleanup cannot observe reap.
     Capture(Arc<Mutex<CapturedChild>>),
@@ -782,7 +787,13 @@ pub struct BoxExecRuntime {
     pub workspace_root: PathBuf,
     pub terminals_directory: PathBuf,
     environment: Mutex<HashMap<String, String>>,
-    foreground_pids: Mutex<HashMap<u32, ForegroundProcess>>,
+    // PID is observational process data; it never selects registration or signals.
+    foreground_processes: Mutex<HashMap<ForegroundId, (u32, ForegroundProcess)>>,
+    next_foreground_id: AtomicU64,
+    #[cfg(test)]
+    foreground_pid_alias: Mutex<Option<u32>>,
+    #[cfg(test)]
+    capture_observation_gate: Mutex<Option<mpsc::Receiver<()>>>,
     #[cfg(test)]
     capture_probe: Mutex<Option<Arc<CaptureProbe>>>,
     background: Arc<Mutex<HashMap<u32, BackgroundProcess>>>,
@@ -800,7 +811,12 @@ impl BoxExecRuntime {
             workspace_root,
             terminals_directory,
             environment: Mutex::new(environment),
-            foreground_pids: Mutex::new(HashMap::new()),
+            foreground_processes: Mutex::new(HashMap::new()),
+            next_foreground_id: AtomicU64::new(1),
+            #[cfg(test)]
+            foreground_pid_alias: Mutex::new(None),
+            #[cfg(test)]
+            capture_observation_gate: Mutex::new(None),
             #[cfg(test)]
             capture_probe: Mutex::new(None),
             background: Arc::new(Mutex::new(HashMap::new())),
@@ -1120,12 +1136,22 @@ impl BoxExecRuntime {
 
         let started_at = Utc::now();
         let started = Instant::now();
-        let mut child = Some(self.spawn_shell(&args.command, &cwd)?);
+        let (registration_id, mut child) = {
+            let mut processes = self.foreground_processes.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if self.stopping.load(Ordering::Acquire) {
+                return Err("box exec daemon is stopping".into());
+            }
+            let registration_id = self.allocate_foreground_id()?;
+            let child = self.spawn_shell(&args.command, &cwd)?;
+            processes.insert(registration_id, self.foreground_registration(
+                child.id(), ForegroundProcess::Stream,
+            ));
+            (registration_id, Some(child))
+        };
+        // Only this request owns/reaps this Child. Registry PID data is never
+        // signal authority, including when a test presents a reused number.
         let pid = child.as_ref().expect("stream child").id();
-        self.foreground_pids
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .insert(pid, ForegroundProcess::Stream);
         let stdout = child
             .as_mut()
             .expect("stream child")
@@ -1142,7 +1168,7 @@ impl BoxExecRuntime {
         fs::create_dir_all(&self.terminals_directory).map_err(|error| error.to_string())?;
         let stream_spool_path = self
             .terminals_directory
-            .join(format!(".shell-stream-{pid}.tmp"));
+            .join(format!(".shell-stream-{}.tmp", registration_id.0));
         let stream_spool_writer = Arc::new(Mutex::new(
             OpenOptions::new()
                 .create(true)
@@ -1240,6 +1266,7 @@ impl BoxExecRuntime {
                     child.take().expect("stream child"),
                     args,
                     pid,
+                    registration_id,
                     started,
                     started_at,
                     stdout_worker.take().expect("stdout worker"),
@@ -1331,10 +1358,20 @@ impl BoxExecRuntime {
                 stream_error = Some(error);
             }
         }
-        self.foreground_pids
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .remove(&pid);
+        let status = match status {
+            Some(status) => Ok(status),
+            None => child
+                .as_mut()
+                .expect("stream child")
+                .wait()
+                .map_err(|error| error.to_string()),
+        };
+        if status.is_ok() {
+            self.foreground_processes
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .remove(&registration_id);
+        }
 
         drop(stream_spool_writer);
         let _ = fs::remove_file(&stream_spool_path);
@@ -1342,14 +1379,7 @@ impl BoxExecRuntime {
         if let Some(error) = stream_error {
             return Err(error);
         }
-        let status = match status {
-            Some(status) => status,
-            None => child
-                .as_mut()
-                .expect("stream child")
-                .wait()
-                .map_err(|error| error.to_string())?,
-        };
+        let status = status?;
         emit(client_message(
             id,
             exec_id,
@@ -1373,6 +1403,7 @@ impl BoxExecRuntime {
         mut child: Child,
         args: &ShellArgs,
         pid: u32,
+        registration_id: ForegroundId,
         started: Instant,
         started_at: chrono::DateTime<Utc>,
         stdout_worker: JoinHandle<()>,
@@ -1383,13 +1414,15 @@ impl BoxExecRuntime {
         let shell_id = self.next_shell_id.fetch_add(1, Ordering::Relaxed);
         if shell_id == 0 {
             kill_process_group(pid);
-            let _ = child.wait();
+            let reaped = child.wait().is_ok();
             let _ = stdout_worker.join();
             let _ = stderr_worker.join();
-            self.foreground_pids
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .remove(&pid);
+            if reaped {
+                self.foreground_processes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .remove(&registration_id);
+            }
             let _ = fs::remove_file(&stream_spool_path);
             return Err("background shell id space exhausted".into());
         }
@@ -1398,13 +1431,15 @@ impl BoxExecRuntime {
             Some(stdin) => stdin,
             None => {
                 kill_process_group(pid);
-                let _ = child.wait();
+                let reaped = child.wait().is_ok();
                 let _ = stdout_worker.join();
                 let _ = stderr_worker.join();
-                self.foreground_pids
-                    .lock()
-                    .unwrap_or_else(|poisoned| poisoned.into_inner())
-                    .remove(&pid);
+                if reaped {
+                    self.foreground_processes
+                        .lock()
+                        .unwrap_or_else(|poisoned| poisoned.into_inner())
+                        .remove(&registration_id);
+                }
                 let _ = fs::remove_file(&stream_spool_path);
                 return Err("shell stream stdin was unavailable during background handoff".into());
             }
@@ -1449,13 +1484,15 @@ impl BoxExecRuntime {
 
         if let Err(error) = setup {
             kill_process_group(pid);
-            let _ = child.wait();
+            let reaped = child.wait().is_ok();
             let _ = stdout_worker.join();
             let _ = stderr_worker.join();
-            self.foreground_pids
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .remove(&pid);
+            if reaped {
+                self.foreground_processes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .remove(&registration_id);
+            }
             let _ = fs::remove_file(&stream_spool_path);
             let _ = fs::remove_file(&terminal_path);
             return Err(error);
@@ -1463,12 +1500,17 @@ impl BoxExecRuntime {
         let _ = fs::remove_file(&stream_spool_path);
 
         let inserted = {
-            let mut processes = self
-                .background
-                .lock()
+            // Stop's foreground snapshot and this transfer share admission.
+            // Either stop sees the foreground invocation, or its later
+            // background snapshot sees the admitted handoff.
+            let mut foreground = self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            if processes.contains_key(&shell_id) {
-                false
+            let mut processes = self.background.lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            if self.stopping.load(Ordering::Acquire) {
+                Err("box exec daemon is stopping".to_string())
+            } else if processes.contains_key(&shell_id) {
+                Err(format!("background shell id {shell_id} is already registered"))
             } else {
                 processes.insert(
                     shell_id,
@@ -1478,25 +1520,24 @@ impl BoxExecRuntime {
                         pid,
                     },
                 );
-                true
+                foreground.remove(&registration_id);
+                Ok(())
             }
         };
-        if !inserted {
+        if let Err(error) = inserted {
             kill_process_group(pid);
-            let _ = child.wait();
+            let reaped = child.wait().is_ok();
             let _ = stdout_worker.join();
             let _ = stderr_worker.join();
-            self.foreground_pids
-                .lock()
-                .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .remove(&pid);
+            if reaped {
+                self.foreground_processes
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .remove(&registration_id);
+            }
             let _ = fs::remove_file(&terminal_path);
-            return Err(format!("background shell id {shell_id} is already registered"));
+            return Err(error);
         }
-        self.foreground_pids
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .remove(&pid);
 
         let processes = Arc::clone(&self.background);
         let footer_writer = Arc::clone(&stream_spool_writer);
@@ -1794,17 +1835,19 @@ impl BoxExecRuntime {
 
     pub fn stop(&self) -> Result<(), String> {
         self.stopping.store(true, Ordering::Release);
-        let foreground = self.foreground_pids
+        let foreground = self.foreground_processes
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .iter().map(|(pid, process)| (*pid, process.clone())).collect::<Vec<_>>();
+            .iter().map(|(id, (_, process))| (*id, process.clone())).collect::<Vec<_>>();
         let mut unresolved = false;
-        for (pid, process) in foreground {
+        for (registration_id, process) in foreground {
             match process {
-                ForegroundProcess::Stream => kill_process_group(pid),
+                // The stream request observes stopping and signals its own
+                // unreaped Child. A snapshot's PID may already be recycled.
+                ForegroundProcess::Stream => {},
                 ForegroundProcess::Capture(owner) => {
                     unresolved |= cleanup_captured_child(&owner).is_err();
-                    self.remove_completed_capture(pid, &owner);
+                    self.remove_completed_capture(registration_id, &owner);
                 }
             }
         }
@@ -1818,13 +1861,13 @@ impl BoxExecRuntime {
         for pid in background {
             kill_process_group(pid);
         }
-        // The request still owns its capture workers. Reaping alone is not
-        // permission to report that the request has finished cleanup.
+        // Requests still own their workers, including streamed output. Reaping
+        // alone is not permission to report that cleanup has finished.
         let deadline = Instant::now() + FOREGROUND_CLEANUP_LIMIT;
         loop {
-            let pending = self.foreground_pids.lock()
+            let pending = !self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
-                .values().any(|process| matches!(process, ForegroundProcess::Capture(_)));
+                .is_empty();
             if !pending {
                 return if unresolved {
                     Err("foreground child cleanup was not fully observed".into())
@@ -1839,18 +1882,41 @@ impl BoxExecRuntime {
         }
     }
 
-    fn remove_completed_capture(&self, pid: u32, owner: &Arc<Mutex<CapturedChild>>) {
+    fn allocate_foreground_id(&self) -> Result<ForegroundId, String> {
+        self.next_foreground_id.fetch_update(Ordering::Relaxed, Ordering::Relaxed,
+            |next| next.checked_add(1))
+            .map(ForegroundId)
+            .map_err(|_| "foreground invocation id space exhausted".to_string())
+    }
+
+    fn foreground_registration(
+        &self,
+        pid: u32,
+        process: ForegroundProcess,
+    ) -> (u32, ForegroundProcess) {
+        #[cfg(test)]
+        let pid = self.foreground_pid_alias.lock().expect("foreground PID alias")
+            .unwrap_or(pid);
+        (pid, process)
+    }
+
+    fn remove_completed_capture(
+        &self,
+        registration_id: ForegroundId,
+        owner: &Arc<Mutex<CapturedChild>>,
+    ) {
         let completed = {
             let state = owner.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
             state.status.is_some() && state.capture_complete
         };
         if completed {
-            let mut processes = self.foreground_pids.lock()
+            let mut processes = self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
-            if matches!(processes.get(&pid), Some(ForegroundProcess::Capture(current))
+            if matches!(processes.get(&registration_id),
+                Some((_, ForegroundProcess::Capture(current)))
                 if Arc::ptr_eq(current, owner))
             {
-                processes.remove(&pid);
+                processes.remove(&registration_id);
             }
         }
     }
@@ -1886,14 +1952,18 @@ impl BoxExecRuntime {
         timeout_ms: Option<u64>,
         abort: &AtomicBool,
     ) -> Result<ProcessOutcome, ProcessFailure> {
-        let (pid, owner) = {
+        #[cfg(test)]
+        let capture_observation_gate = self.capture_observation_gate.lock()
+            .expect("capture observation gate").take();
+        let (registration_id, owner) = {
             // Admission and stop's snapshot share the existing registry mutex.
             // Stop cannot report clean between a successful spawn and insertion.
-            let mut processes = self.foreground_pids.lock()
+            let mut processes = self.foreground_processes.lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner());
             if self.stopping.load(Ordering::Acquire) {
                 return Err(ProcessFailure::Spawn("box exec daemon is stopping".into()));
             }
+            let registration_id = self.allocate_foreground_id().map_err(ProcessFailure::Spawn)?;
             let child = self.spawn_shell(command, cwd).map_err(ProcessFailure::Spawn)?;
             let pid = child.id();
             let owner = Arc::new(Mutex::new(CapturedChild {
@@ -1901,15 +1971,17 @@ impl BoxExecRuntime {
                 #[cfg(test)]
                 signals_sent: 0,
             }));
-            processes.insert(pid, ForegroundProcess::Capture(Arc::clone(&owner)));
-            (pid, owner)
+            processes.insert(registration_id, self.foreground_registration(
+                pid, ForegroundProcess::Capture(Arc::clone(&owner)),
+            ));
+            (registration_id, owner)
         };
         let control = CaptureControl {
             cancelled: Arc::new(AtomicBool::new(false)),
             #[cfg(test)]
             probe: self.capture_probe.lock().expect("capture probe").clone(),
             #[cfg(test)]
-            pid,
+            pid: owner.lock().expect("capture child PID").child.id(),
         };
         let mut stdout_worker = CaptureWorker::new();
         let mut stderr_worker = CaptureWorker::new();
@@ -1927,6 +1999,15 @@ impl BoxExecRuntime {
             prepare_capture_pipe(&stderr)?;
             stdout_worker.worker = Some(spawn_capture_worker(stdout, control.clone(), "stdout")?);
             stderr_worker.worker = Some(spawn_capture_worker(stderr, control.clone(), "stderr")?);
+            #[cfg(test)]
+            {
+                // Hold the actual request before observing/joining either
+                // worker while the test observes this owned Child's real reap.
+                if let Some(gate) = capture_observation_gate {
+                    gate.recv_timeout(Duration::from_secs(15))
+                        .map_err(|_| ShellExecutionUnknown::new("test capture gate not released"))?;
+                }
+            }
             let mut timed_out = false;
             let mut termination_started = None;
             let mut sent_kill = false;
@@ -2007,7 +2088,7 @@ impl BoxExecRuntime {
             state.capture_complete = true;
             state.cleanup_unknown |= cleanup.is_err();
         }
-        self.remove_completed_capture(pid, &owner);
+        self.remove_completed_capture(registration_id, &owner);
         match result {
             Err(mut error) => {
                 error.cleanup_unresolved = owner.lock()
@@ -2884,7 +2965,7 @@ mod tests {
             }
         }
         handle.stop().expect("owned probe graceful stop");
-        let remaining = handle.runtime.foreground_pids.lock().expect("foreground registry").len();
+        let remaining = handle.runtime.foreground_processes.lock().expect("foreground registry").len();
         assert_eq!(remaining, 0, "probe retained unresolved foreground ownership");
         publish_capture_probe_json(&root.join("stopped.json"), &serde_json::json!({
             "pid": pid, "clean": true, "foregroundCount": remaining,
@@ -2964,7 +3045,7 @@ mod tests {
                 assert_eq!(record["prefix"], "SC_CAPTURE_PREFIX");
                 assert!(record["bytesObserved"].as_u64().unwrap() >= 17);
                 assert_eq!(fs::read_to_string(runtime.workspace_root.join("effect-count")).unwrap(), "effect\n");
-                assert!(runtime.foreground_pids.lock().unwrap().is_empty(), "{mode}");
+                assert!(runtime.foreground_processes.lock().unwrap().is_empty(), "{mode}");
                 runtime.stop().expect("no unresolved capture owner");
             }
         }
@@ -2996,7 +3077,7 @@ mod tests {
         assert!(matches!(runtime.shell(&refused).expect("known pre-spawn refusal").result,
             Some(shell_result::Result::SpawnError(_))));
         assert!(!runtime.workspace_root.join("refused-effect").exists());
-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
     }
 
     #[test]
@@ -3008,7 +3089,7 @@ mod tests {
         assert!(matches!(runtime.shell(&timed).expect("timeout observed").result,
             Some(shell_result::Result::Timeout(_))));
         assert!(started.elapsed() < Duration::from_secs(5));
-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
 
         let abort = AtomicBool::new(true);
         let started = Instant::now();
@@ -3018,7 +3099,7 @@ mod tests {
         assert!(matches!(result.result,
             Some(shell_result::Result::Failure(ShellFailure { aborted: true, .. }))));
         assert!(started.elapsed() < Duration::from_secs(5));
-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
     }
 
     #[test]
@@ -3034,7 +3115,7 @@ mod tests {
             assert!(Instant::now() < deadline, "real child did not start");
             thread::sleep(FOREGROUND_POLL_INTERVAL);
         }
-        let owner = runtime.foreground_pids.lock().unwrap().values().find_map(|process| {
+        let owner = runtime.foreground_processes.lock().unwrap().values().find_map(|(_, process)| {
             match process {
                 ForegroundProcess::Capture(owner) => Some(Arc::clone(owner)),
                 ForegroundProcess::Stream => None,
@@ -3052,7 +3133,7 @@ mod tests {
         assert_eq!(state.signals_sent, signals, "never signal a reaped PID");
         drop(state);
         runtime.stop().expect("repeated stop is observation");
-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
         assert!(matches!(runtime.shell(&foreground_args(
             "printf forbidden > after-stop",
         )).expect("stopped owner refuses before spawn").result,
@@ -3082,12 +3163,331 @@ mod tests {
         let error = result.expect_err("explicit timeout cannot certify missing EOF");
         assert_eq!(error.phase, "capture cancelled before EOF");
         assert!(started.elapsed() < Duration::from_secs(2));
-        assert!(runtime.foreground_pids.lock().unwrap().is_empty());
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
         // Let the deliberately bounded fixture descendant end before deleting
         // its workspace; its PID is never used as cleanup authority.
         while started.elapsed() < Duration::from_millis(3_100) {
             thread::sleep(FOREGROUND_POLL_INTERVAL);
         }
+    }
+
+
+    // A private gate pauses the real run_process caller before it observes its
+    // real capture workers. Tests observe the same owned Child's actual reap.
+    // Neither Child.id nor signal authority is changed by the PID alias seam.
+    struct RetainedCaptureFixture {
+        registration_id: ForegroundId,
+        owner: Arc<Mutex<CapturedChild>>,
+        release: mpsc::Sender<()>,
+        worker: Option<JoinHandle<Result<ShellResult, ShellExecutionUnknown>>>,
+    }
+
+    impl RetainedCaptureFixture {
+        fn new(runtime: &Arc<BoxExecRuntime>) -> Self {
+            let previous = runtime.foreground_processes.lock().unwrap()
+                .keys().copied().collect::<Vec<_>>();
+            let (release, gate) = mpsc::channel();
+            *runtime.capture_observation_gate.lock().unwrap() = Some(gate);
+            let worker_runtime = Arc::clone(runtime);
+            let worker = thread::spawn(move || worker_runtime.shell(&foreground_args(
+                "printf capture-stdout; printf capture-stderr >&2",
+            )));
+            let deadline = Instant::now() + Duration::from_secs(3);
+            let (registration_id, owner) = loop {
+                let entry = runtime.foreground_processes.lock().unwrap().iter()
+                    .find_map(|(id, (_, process))| match process {
+                        ForegroundProcess::Capture(owner) if !previous.contains(id) =>
+                            Some((*id, Arc::clone(owner))),
+                        _ => None,
+                    });
+                if let Some(entry) = entry { break entry; }
+                assert!(Instant::now() < deadline, "real capture invocation not registered");
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            };
+            loop {
+                if owner.lock().unwrap().poll().expect("actual fixture child wait").is_some() {
+                    break;
+                }
+                assert!(Instant::now() < deadline, "fixture child did not exit");
+                thread::sleep(FOREGROUND_POLL_INTERVAL);
+            }
+            assert!(!owner.lock().unwrap().capture_complete);
+            assert!(!worker.is_finished(), "real caller has not observed its workers");
+            Self { registration_id, owner, release, worker: Some(worker) }
+        }
+
+        fn complete(&mut self, runtime: &BoxExecRuntime) {
+            self.release.send(()).expect("release actual capture caller");
+            let result = self.worker.take().unwrap().join().expect("capture caller joined")
+                .expect("real pipes and reap completely observed");
+            let (stdout, stderr) = match result.result {
+                Some(shell_result::Result::Success(result)) => (result.stdout, result.stderr),
+                Some(shell_result::Result::Failure(result)) => {
+                    assert!(result.aborted, "stop preserves the observed abort shape");
+                    (result.stdout, result.stderr)
+                }
+                _ => panic!("complete fixture capture retains its actual text"),
+            };
+            assert_eq!(stdout, "capture-stdout");
+            assert_eq!(stderr, "capture-stderr");
+            let state = self.owner.lock().unwrap();
+            assert!(state.status.is_some(), "actual child reap remains observed");
+            assert!(state.capture_complete, "actual request observed both capture workers");
+            assert_eq!(state.signals_sent, 0, "reaped fixture must never be signaled");
+            drop(state);
+            assert!(!runtime.foreground_processes.lock().unwrap()
+                .contains_key(&self.registration_id), "actual completion removed its identity");
+        }
+    }
+
+    #[test]
+    fn foreground_capture_reused_pid_retains_each_invocation_until_observed() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let mut older = RetainedCaptureFixture::new(&runtime);
+        let old_pid = older.owner.lock().unwrap().child.id();
+        *runtime.foreground_pid_alias.lock().unwrap() = Some(old_pid);
+        let mut successor = RetainedCaptureFixture::new(&runtime);
+        assert_ne!(older.registration_id, successor.registration_id);
+        {
+            let processes = runtime.foreground_processes.lock().unwrap();
+            assert_eq!(processes.len(), 2, "reused PID cannot replace unfinished capture");
+            assert_eq!(processes.get(&older.registration_id).unwrap().0, old_pid);
+            assert_eq!(processes.get(&successor.registration_id).unwrap().0, old_pid);
+        }
+        let started = Instant::now();
+        assert!(runtime.stop().is_err(), "unobserved readers prevent clean stop");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        assert_eq!(runtime.foreground_processes.lock().unwrap().len(), 2);
+        older.complete(&runtime);
+        // Neither a repeated older completion nor a mismatched owner may erase
+        // the newer invocation whose observational PID is the same.
+        runtime.remove_completed_capture(older.registration_id, &older.owner);
+        runtime.remove_completed_capture(successor.registration_id, &older.owner);
+        {
+            let processes = runtime.foreground_processes.lock().unwrap();
+            assert_eq!(processes.len(), 1);
+            assert!(processes.contains_key(&successor.registration_id));
+        }
+        let started = Instant::now();
+        assert!(runtime.stop().is_err(), "the successor still has unobserved readers");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        successor.complete(&runtime);
+        runtime.stop().expect("both actual reaps and both pairs of readers observed");
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        for owner in [&older.owner, &successor.owner] {
+            let mut state = owner.lock().unwrap();
+            state.signal(true).expect("late signal is an observed-reap no-op");
+            assert_eq!(state.signals_sent, 0);
+        }
+    }
+
+    #[test]
+    fn foreground_capture_identity_exhaustion_refuses_before_capture_or_stream_spawn() {
+        let (_root, runtime) = runtime();
+        runtime.next_foreground_id.store(u64::MAX - 1, Ordering::Relaxed);
+        let accepted = runtime.shell(&foreground_args("printf accepted > accepted-effect"))
+            .expect("last available invocation");
+        assert!(matches!(accepted.result, Some(shell_result::Result::Success(_))));
+        assert_eq!(fs::read_to_string(runtime.workspace_root.join("accepted-effect")).unwrap(),
+            "accepted");
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        for mini in [false, true] {
+            let output = runtime.execute(foreground_request(
+                foreground_args("printf forbidden > exhausted-effect"), mini,
+            ));
+            assert_eq!(output.len(), 2);
+            let Some(exec_stream_element::Element::ExecClientMessage(message)) =
+                &output[0].element else { panic!("known pre-spawn refusal"); };
+            let result = match &message.message {
+                Some(exec_client_message::Message::ShellResult(result)) |
+                Some(exec_client_message::Message::MiniSweAgentBashResult(result)) => result,
+                _ => panic!("foreground refusal retains its dispatch result"),
+            };
+            assert!(matches!(&result.result,
+                Some(shell_result::Result::SpawnError(error))
+                    if error.error == "foreground invocation id space exhausted"));
+        }
+        let mut events = Vec::new();
+        let result = runtime.shell_stream_live(
+            74, "exhaustion", &foreground_args("printf forbidden > exhausted-stream-effect"),
+            &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
+        );
+        assert_eq!(result.unwrap_err(), "foreground invocation id space exhausted");
+        assert_eq!(events.len(), 1, "only the existing stream Start precedes refusal");
+        assert!(matches!(&events[0].element,
+            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                    event: Some(shell_stream::Event::Start(_)),
+                })), ..
+            }))));
+        assert!(!runtime.workspace_root.join("exhausted-effect").exists());
+        assert!(!runtime.workspace_root.join("exhausted-stream-effect").exists());
+        assert_eq!(runtime.next_foreground_id.load(Ordering::Relaxed), u64::MAX);
+        assert!(runtime.allocate_foreground_id().is_err(), "exhaustion never wraps");
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        runtime.stop().expect("no child entered execution after exhaustion");
+    }
+
+    #[test]
+    fn foreground_capture_stream_stop_preserves_identity_and_never_signals_alias() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let mut older = RetainedCaptureFixture::new(&runtime);
+        let old_pid = older.owner.lock().unwrap().child.id();
+        *runtime.foreground_pid_alias.lock().unwrap() = Some(old_pid);
+        let (ready_tx, ready_rx) = mpsc::channel();
+        let (release_tx, release_rx) = mpsc::channel();
+        let worker_runtime = Arc::clone(&runtime);
+        let worker = thread::spawn(move || {
+            let mut args = foreground_args(
+                "trap 'printf stopped > stream-stopped; exit 0' TERM; \
+                 printf stream-prefix; while :; do sleep 1; done",
+            );
+            args.timeout = 1_000;
+            args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
+            let mut held = false;
+            let mut events = Vec::new();
+            worker_runtime.shell_stream_live(
+                75, "identity-stop", &args, &AtomicBool::new(false), &mut |event| {
+                    if !held && matches!(&event.element,
+                        Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                            message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                                event: Some(shell_stream::Event::Stdout(_)),
+                            })), ..
+                        })))
+                    {
+                        held = true;
+                        ready_tx.send(()).map_err(|error| error.to_string())?;
+                        release_rx.recv_timeout(Duration::from_secs(10))
+                            .map_err(|error| error.to_string())?;
+                    }
+                    events.push(event);
+                    Ok(())
+                },
+            )?;
+            Ok::<_, String>(events)
+        });
+        ready_rx.recv_timeout(Duration::from_secs(3)).expect("live stream emitted prefix");
+        let stream_id = {
+            let processes = runtime.foreground_processes.lock().unwrap();
+            assert_eq!(processes.len(), 2, "stream insertion retains older capture");
+            processes.iter().find_map(|(id, (pid, process))| {
+                if matches!(process, ForegroundProcess::Stream) {
+                    assert_eq!(*pid, old_pid);
+                    Some(*id)
+                } else { None }
+            }).expect("stream invocation registered")
+        };
+        older.complete(&runtime);
+        runtime.remove_completed_capture(older.registration_id, &older.owner);
+        assert!(runtime.foreground_processes.lock().unwrap().contains_key(&stream_id));
+
+        // An observational PID alias must not authorize signaling any other
+        // live Child. This owned sentinel is deliberately outside the registry.
+        struct Sentinel(Arc<Mutex<CapturedChild>>);
+        impl Drop for Sentinel {
+            fn drop(&mut self) { let _ = cleanup_captured_child(&self.0); }
+        }
+        let sentinel = Sentinel(Arc::new(Mutex::new(CapturedChild {
+            child: runtime.spawn_shell("sleep 30", &runtime.workspace_root).unwrap(),
+            status: None, cleanup_unknown: false, capture_complete: true, signals_sent: 0,
+        })));
+        let sentinel_pid = {
+            let mut state = sentinel.0.lock().unwrap();
+            assert!(state.poll().unwrap().is_none());
+            state.child.id()
+        };
+        runtime.foreground_processes.lock().unwrap().get_mut(&stream_id).unwrap().0 = sentinel_pid;
+        let started = Instant::now();
+        assert!(runtime.stop().is_err(), "blocked stream completion is unresolved");
+        assert!(started.elapsed() < Duration::from_secs(4));
+        {
+            let mut state = sentinel.0.lock().unwrap();
+            assert!(state.poll().unwrap().is_none(), "stop must not signal the PID alias");
+            assert_eq!(state.signals_sent, 0);
+        }
+        assert!(runtime.background.lock().unwrap().is_empty(), "stop forbids timed handoff");
+        release_tx.send(()).expect("release actual stream request owner");
+        let events = worker.join().expect("stream request joined").expect("stream stop observed");
+        assert!(events.iter().any(|event| matches!(&event.element,
+            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                    event: Some(shell_stream::Event::Exit(_)),
+                })), ..
+            })))));
+        assert!(!events.iter().any(|event| matches!(&event.element,
+            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                    event: Some(shell_stream::Event::Backgrounded(_)),
+                })), ..
+            })))));
+        assert_eq!(fs::read_to_string(runtime.workspace_root.join("stream-stopped")).unwrap(),
+            "stopped", "actual stream Child handled termination before exit");
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        assert_eq!(older.owner.lock().unwrap().signals_sent, 0);
+        cleanup_captured_child(&sentinel.0).expect("sentinel cleanup uses its actual Child");
+        {
+            let mut state = sentinel.0.lock().unwrap();
+            assert!(state.poll().unwrap().is_some());
+            assert!(state.signals_sent > 0);
+            let signals = state.signals_sent;
+            state.signal(true).unwrap();
+            assert_eq!(state.signals_sent, signals, "no signal after sentinel reap");
+        }
+        runtime.stop().expect("stream reap and workers observed");
+        let mut events = Vec::new();
+        let refused = runtime.shell_stream_live(
+            76, "stopped", &foreground_args("printf forbidden > stream-after-stop"),
+            &AtomicBool::new(false), &mut |event| { events.push(event); Ok(()) },
+        );
+        assert_eq!(refused.unwrap_err(), "box exec daemon is stopping");
+        assert!(!runtime.workspace_root.join("stream-after-stop").exists());
+    }
+
+    #[test]
+    fn foreground_capture_stream_handoff_retains_reused_pid_capture() {
+        let (_root, runtime) = runtime();
+        let runtime = Arc::new(runtime);
+        let mut older = RetainedCaptureFixture::new(&runtime);
+        let old_pid = older.owner.lock().unwrap().child.id();
+        *runtime.foreground_pid_alias.lock().unwrap() = Some(old_pid);
+        let mut args = foreground_args("printf handoff-prefix; sleep 1; printf handoff-tail");
+        args.timeout = 20;
+        args.timeout_behavior = TIMEOUT_BEHAVIOR_BACKGROUND;
+        let mut events = Vec::new();
+        runtime.shell_stream_live(
+            77, "identity-handoff", &args, &AtomicBool::new(false),
+            &mut |event| { events.push(event); Ok(()) },
+        ).expect("actual timed handoff");
+        let backgrounded = events.iter().find_map(|event| match &event.element {
+            Some(exec_stream_element::Element::ExecClientMessage(ExecClientMessage {
+                message: Some(exec_client_message::Message::ShellStream(ShellStream {
+                    event: Some(shell_stream::Event::Backgrounded(backgrounded)),
+                })), ..
+            })) => Some(backgrounded),
+            _ => None,
+        }).expect("timed stream retained the same real child");
+        {
+            let processes = runtime.foreground_processes.lock().unwrap();
+            assert_eq!(processes.len(), 1, "handoff removes only its own invocation");
+            assert!(processes.contains_key(&older.registration_id));
+            assert_eq!(processes.get(&older.registration_id).unwrap().0, old_pid);
+        }
+        let terminal = runtime.terminals_directory.join(format!("{}.txt", backgrounded.shell_id));
+        older.complete(&runtime);
+        assert!(runtime.foreground_processes.lock().unwrap().is_empty());
+        let deadline = Instant::now() + Duration::from_secs(4);
+        while runtime.background.lock().unwrap().contains_key(&backgrounded.shell_id) {
+            assert!(Instant::now() < deadline, "bounded background fixture did not settle");
+            thread::sleep(FOREGROUND_POLL_INTERVAL);
+        }
+        let output = fs::read_to_string(terminal).expect("actual handoff output");
+        assert!(output.contains("handoff-prefix"));
+        assert!(output.contains("handoff-tail"));
+        assert!(output.contains("exit_code: 0"));
+        assert_eq!(older.owner.lock().unwrap().signals_sent, 0);
+        runtime.stop().expect("completed handoff and capture");
     }
 
     #[test]
@@ -3490,11 +3890,14 @@ mod tests {
             thread::sleep(Duration::from_millis(10));
         };
         let owner = {
-            let processes = handle.runtime.foreground_pids.lock().expect("foreground owner");
-            match processes.get(&pid) {
-                Some(ForegroundProcess::Capture(owner)) => Arc::clone(owner),
-                _ => panic!("published PID must belong to the actual foreground capture"),
-            }
+            let processes = handle.runtime.foreground_processes.lock().expect("foreground owner");
+            processes.values().find_map(|(registered_pid, process)| {
+                match process {
+                    ForegroundProcess::Capture(owner) if *registered_pid == pid =>
+                        Some(Arc::clone(owner)),
+                    _ => None,
+                }
+            }).expect("published PID must belong to the actual foreground capture")
         };
         {
             let mut child = owner.lock().expect("owned child");

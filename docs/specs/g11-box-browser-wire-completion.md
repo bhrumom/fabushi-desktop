@@ -473,3 +473,17 @@ or an admitted background handoff, serialize affected spawn/handoff against
 stop admission, and refuse bounded clean stop while a required foreground
 registration is unresolved. This is the same unique registry and existing
 request owner; no extra process table, public cancellation field or retry.
+
+SC02-R2 exceptional stream ownership: once stream spawn succeeds, every early
+return or unwind must retain the actual Child and all started reader handles.
+A setup/wait failure cannot leave only an inert marker after dropping those
+resources. The request must perform bounded cleanup or transfer real cleanup
+custody into its exact invocation in the same registry, where stop can observe
+later completion. Keep unobserved worker handles owned, and remove registration
+only after actual reap plus required worker observation. Normal completion or
+background handoff relinquishes custody only after its admitted transition.
+Use real setup-error fixtures and actual entered worker/child controls; an
+injected wait/unwind boundary is labeled controlled, not an OS failure replay.
+No second registry, runtime, protocol field or generic background controller is
+introduced. The separate existing background raw-PID stop window remains open
+for a following existing-owner batch and blocks full Box/shipping acceptance.

@@ -99,6 +99,45 @@
       "repair": "Use existing actual request/Child custody and runtime stopping state, with exact invocation registration/removal/handoff and bounded truthful stop. Serialize affected admission/handoff with stop. No new registry, protocol or retry; no general stream-capture rewrite.",
       "rationale": "Root deeply inspected the four actual source boundaries after author identified the adjacent risk. This decision is saved before the stream signaling correction is applied.",
       "execution": "not-run"
+    },
+    {
+      "id": "SC-PRE-R2-STREAM-EARLY-RETURN",
+      "classification": "IMPLEMENTATION",
+      "priority": "P2",
+      "decision": "FIX",
+      "source_candidate_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
+      "base_source_blob": "c586ea57bec0bd0513a5f21f4532b98c08fbaf7b",
+      "anchors": [
+        "source/box-exec-daemon/src/server.rs:1139-1187",
+        "source/box-exec-daemon/src/server.rs:shell_stream_live try_wait early error",
+        "source/box-exec-daemon/src/server.rs:1836-1882"
+      ],
+      "failure": "After successful stream spawn, setup or wait error can return while dropping the request's Child and started worker handles, leaving only a Stream marker. Removing cached-PID signaling correctly removes unsafe authority but exposes unrecoverable stop for this actual exceptional path.",
+      "rationale": "Root and source author independently confirmed actual early exits. This affected cleanup edge must be fixed before the R2 candidate is frozen, not deferred as background scope.",
+      "repair": "Retain actual stream Child and all started worker handles across every early return/unwind in the existing foreground invocation owner. On error transfer them into recoverable custody in the same registry, perform bounded owned-child cleanup, and let stop observe eventual worker completion. Normal completion/handoff may relinquish request custody only after observed completion or exact admitted transfer. Do not detach an unobserved worker or signal a cached PID; no second registry/runtime.",
+      "oracles": "Actual post-spawn setup failure after controlled real child admission/effect; early wait or unwind boundary after actual stream workers start; stop remains non-clean while cleanup remains owned and later recovers through actual retained child/workers. Preserve all prior identity, stream/handoff, foreground producer/Host consumer and disconnect assertions.",
+      "execution": "not-run",
+      "state": "FIX recorded before source correction"
+    }
+  ],
+  "retained_follow_on": [
+    {
+      "id": "SC-BG-OWNED-STOP-FOLLOWON",
+      "sourceSubject": "152467880098cd87581ca279be4d2bc872a7620b",
+      "sourceBlob": "c586ea57bec0bd0513a5f21f4532b98c08fbaf7b",
+      "classification": "IMPLEMENTATION",
+      "risk": "High; cleanup may target a reused background PID after actual Child reap",
+      "anchors": [
+        "source/box-exec-daemon/src/server.rs:1507-1535",
+        "source/box-exec-daemon/src/server.rs:1602-1617",
+        "source/box-exec-daemon/src/server.rs:1811-1820"
+      ],
+      "sourceReading": "Root direct full function-region reads and independent source author's confirmation; no executable proof or observed foreign process signal.",
+      "next": "Implement existing background Child/stop custody as the next complete owner batch; do not create a second process registry, raw-PID kill authority or replay policy.",
+      "acceptance": "Open; no background process-owner or shipping acceptance",
+      "decision": "DEFER",
+      "rationale": "Separate existing background Child controller and background completion are outside this foreground capture/registration correction. Scope remains required for full Box/full-migration acceptance; no background or shipping acceptance is granted. This is not a waiver or a claim that stop is globally complete.",
+      "disposition": "Next existing background owner production batch; retained acceptance blocker, not waived."
     }
   ]
 }

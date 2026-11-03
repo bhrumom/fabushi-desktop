@@ -66,7 +66,7 @@
   ],
   "required_behaviors": {
     "SC01": "Pre-spawn refusal retains known SpawnError. Successful spawn followed by missing pipe, setup, worker creation, read, wait or join failure yields typed execution uncertainty without partial/empty substitution; Interrupted read is retried.",
-    "SC02": "Retain Child and both capture workers in existing ownership chain through terminal cleanup. Signal only while owned unreaped child is observed; bounded cleanup retains unresolved child in the same registry and stop cannot claim clean completion. No second process registry. Registration identity must outlive reusable PID and be carried through every capture/stream insertion, completion and handoff. No registration may overwrite another incomplete invocation; identity exhaustion must refuse before spawn.",
+    "SC02": "Retain Child and both capture workers in existing ownership chain through terminal cleanup. Signal only while owned unreaped child is observed; bounded cleanup retains unresolved child in the same registry and stop cannot claim clean completion. No second process registry. Registration identity must outlive reusable PID and be carried through every capture/stream insertion, completion and handoff. No registration may overwrite another incomplete invocation; identity exhaustion must refuse before spawn. Exceptional streamed returns/unwinds retain actual Child and started worker handles in that same invocation; bounded cleanup and later stop observation must not be replaced by an inert marker or detached handles.",
     "SC03": "Both foreground dispatch variants emit existing matching Throw/StreamClose with bounded static phase diagnostics, no command/output payload and no new protobuf fields.",
     "SC04": "Complete success/nonzero/timeout/abort and existing lossy UTF-8 display remain; no independent EOF deadline for a still-authorized request. Cancellation/stop/explicit timeout bounds incomplete drain.",
     "SC05": "Actual Host/ForeverBox/Runner consumer receives ToolOutcomeUnknown, sticky DownstreamOutcomeUnknown, refusal of further tools/checkpoint/replay and one provider attempt; counted external effect remains one.",
@@ -231,6 +231,7 @@
     "rollback": "Atomic existing-owner source batch rollback subject to preserved unknown-custody and no-replay constraints; no authority downgrade."
   },
   "open_work": [
+    "Separate existing background child controller: reap precedes reader/footer completion while stop still snapshots raw background PID; no full background/Box stop acceptance from this foreground batch.",
     "Full generated origin/raw-byte provenance grant, existing Session/AgentDb persistence, marker-aware send/media consumer and prune/restart chain",
     "Raw capture byte caps and attempt-to-socket cancellation proof",
     "Descendant-process closure and arbitrary hostile process/filesystem changes",
@@ -257,6 +258,12 @@
       "decisions": "projects/openclaw-rust/evidence/box-shell-capture-647e0932-20261103/review-r1/decisions.json",
       "requirement": "Stop cannot signal a cached stream PID after concurrent reap; actual Child owner consumes existing stopping state, exact registration/handoff remains tracked, and unresolved foreground completion refuses bounded clean stop.",
       "execution": "not-run"
+    },
+    {
+      "id": "SC-PRE-R2-STREAM-EARLY-RETURN",
+      "decision": "FIX",
+      "source_candidate_blob": "c1649fb9588acd69a2791d989c7d8d6e2b6fed67",
+      "state": "Recorded before source correction; exact owned resources must survive exceptional stream returns."
     }
   ]
 }
