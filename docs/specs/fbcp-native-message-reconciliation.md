@@ -3023,3 +3023,15 @@ arbitrary-old change discovery, definitive reaction-intent cancellation or
 active backend readiness. Forward dialog/reply tombstone policy belongs to
 that subsequent explicit canonical contract. Full source/legal, platform,
 service, Bot, quality and independent ACCEPT remain required.
+
+
+## NMR-CONVERSATION-IDENTITY-01 — Canonical Human pair admission
+
+The existing Session/Transcript `ProductionSessionWorkers` and `SandAgentDb` remain the only desktop Human conversation and message owners. The canonical conversation ID is derived from the sorted, length-prefixed UTF-8 participant pair by `human_direct_conversation_id`. A readable metadata row is not sufficient authority if its participant pair no longer hashes to the requested conversation ID.
+
+- **NMR-CONVERSATION-IDENTITY-01a:** The shared Human metadata admission path requires Human kind, exact persisted/requested conversation ID, exactly two distinct nonempty unpadded participant strings, and equality between the canonical pair-derived ID and the requested ID. The check applies to cached and freshly opened owners before they are returned to ordinary consumers. Reversed participant order remains valid; title changes do not affect identity.
+- **NMR-CONVERSATION-IDENTITY-01b:** A participant-pair mismatch is a policy/identity refusal. Do not rewrite metadata, move directories, adopt transcript rows, mutate forward journals, or delete data. Existing private retained-forward journal recovery remains separate and cannot grant ordinary message/resource authority.
+- **NMR-CONVERSATION-IDENTITY-01c:** After the original pair is restored, the existing owner can be reopened and normal Session/Transcript behavior resumes. Keep Agent storage defaults and all public commands/events unchanged.
+- **NMR-AC-CONVERSATION-IDENTITY-01:** Extend the existing `shipping_human_retry_rejects_invalid_identity_and_payload_without_http_or_mutation` case with a rebound-peer negative that retains the local account participant but changes the peer. Assert that `open_human_conversation_db_owner` rejects the owner. Preserve the existing retry denial, complete durable-row checks, and zero-HTTP oracle. Execute through the existing `native-message-reconciliation` Actions job at exact H; no local or htch-runtime execution.
+
+This is a bounded canonical-ID guard, not an interprocess identity lease or filesystem-ABA guarantee. It does not authorize automatic metadata repair or migration of historical data. Full source/legal closure, deployed-service, signed-platform, UI/accessibility, Bot, soak, upgrade/rollback and independent ACCEPT remain open.
