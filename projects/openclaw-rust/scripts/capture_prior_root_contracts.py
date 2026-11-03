@@ -284,7 +284,20 @@ try:
     for executable, expected in ((current_binary, current_sha), (historical_binary, historical_sha), (retained_app, app_sha)):
         if file_digest(executable) != expected:
             raise RuntimeError("executed retained binary changed")
-    RECEIPT["consumer_inventory_sha256"] = file_digest(consume / "inventory.json")
+    consumer_inventory_sha = file_digest(consume / "inventory.json")
+    # The artifact uploader excludes dotfiles from directory payloads. Keep
+    # this closed, inventoried subtree complete without widening that upload.
+    consumer_archive = ROOT / "current-consumer.tar.gz"
+    with tarfile.open(consumer_archive, "x:gz") as tar:
+        tar.add(consume, arcname="current-consumer", recursive=True)
+    if file_digest(consume / "inventory.json") != consumer_inventory_sha:
+        raise RuntimeError("current consumer inventory changed during archive capture")
+    RECEIPT["consumer_inventory_sha256"] = consumer_inventory_sha
+    RECEIPT["consumer_payload"] = {
+        "directory": consume.name, "inventory_sha256": consumer_inventory_sha,
+        "archive": consumer_archive.name, "archive_sha256": file_digest(consumer_archive),
+        "archive_bytes": consumer_archive.stat().st_size,
+    }
     RECEIPT["result"] = "passed"
 except Exception:
     RECEIPT["error"] = traceback.format_exc()

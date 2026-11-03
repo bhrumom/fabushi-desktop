@@ -4,6 +4,7 @@ type McpManagerOptions = {
   readonly settingsStore: unknown;
   readonly onAccountScopeApplied: () => void;
   readonly getAccessToken: (args: { backendUrl: string }) => Promise<string | null>;
+  readonly onAuthChanged: (completion: unknown) => void;
   readonly getMachineId: () => string | Promise<string>;
   readonly loadBoxMcpServers: (configJson: string) => Promise<unknown>;
   readonly listBoxMcpServers: (
@@ -48,7 +49,7 @@ type McpRuntimeDependencies<TManager> = {
     error: unknown,
   ) => void;
   readonly broadcast: (channel: string, completion: unknown) => void;
-  readonly refreshHostMcp: (completion: unknown) => void;
+  readonly refreshHostMcp: (completion?: unknown) => void;
 };
 
 export function createMcpRuntime<
@@ -69,6 +70,12 @@ export function createMcpRuntime<
   const isCurrent = (attempt: Attempt): boolean => !disposed && current === attempt;
   function requireCurrent(attempt: Attempt): void {
     if (!isCurrent(attempt)) throw new Error("MCP manager construction is retired.");
+  }
+
+  function forwardAuthCompletion(attempt: Attempt, completion: unknown, refreshArgs: [] | [unknown]): void {
+    if (!isCurrent(attempt)) return;
+    deps.broadcast("sand:mcp-auth-event", completion);
+    if (isCurrent(attempt)) deps.refreshHostMcp(...refreshArgs);
   }
 
   function disposeAttempt(attempt: Attempt | undefined): Promise<void> {
@@ -104,6 +111,7 @@ export function createMcpRuntime<
         requireCurrent(attempt);
         return token;
       },
+      onAuthChanged: (completion) => forwardAuthCompletion(attempt, completion, []),
       getMachineId: deps.getMachineId,
       loadBoxMcpServers: async (configJson) => {
         requireCurrent(attempt);
@@ -143,9 +151,7 @@ export function createMcpRuntime<
       );
     requireCurrent(attempt);
     manager.setAuthCompletionObserver((completion) => {
-      if (!isCurrent(attempt)) return;
-      deps.broadcast("sand:mcp-auth-event", completion);
-      if (isCurrent(attempt)) deps.refreshHostMcp(completion);
+      forwardAuthCompletion(attempt, completion, [completion]);
     });
     requireCurrent(attempt);
     return manager;

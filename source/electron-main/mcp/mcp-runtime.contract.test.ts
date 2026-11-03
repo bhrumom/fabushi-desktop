@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import test from "node:test";
+import { join, relative } from "node:path";
+import test, { type TestContext } from "node:test";
 
 import {
   McpResult,
@@ -20,10 +20,12 @@ import { accountCacheScope } from "../../shared/node/cursor-token.js";
 import { SandMcpManager } from "../../shared/node/mcp/mcp-manager.js";
 import { createMcpToolsDiscovery } from "../../shared/node/mcp/tools-discovery.js";
 import { SandSettingsStore } from "../../shared/node/settings/sand-settings-store.js";
-import { createProductionMcpOAuthAdapter, createProductionMcpOAuthRootPortProvider } from "../adapters/mcp-oauth.js";
+import { createProductionMcpOAuthAdapter, createProductionMcpOAuthPorts, createProductionMcpOAuthRootPortProvider } from "../adapters/mcp-oauth.js";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import type { DesktopMcpManagerFacade } from "./desktop-mcp-manager.js";
 import { createMcpRuntime } from "./mcp-runtime.js";
+import { OfficialMcpService } from "./official-mcp-service.js";
+import { SandUserSecretsStore } from "../secrets/user-secrets-store.js";
 
 test("shipping MCP runtime forwards discovery failure through the dedicated callback", async () => {
   let managerOptions: any;
@@ -1736,3 +1738,559 @@ test("PS-DESKTOP-06 replacement Coordinator leg cannot replay an admitted uninst
     await fixture.dispose();
   }
 });
+
+const OFFICIAL_ID = "fabushi-official-github";
+const OFFICIAL_ORIGIN = "https://api.ombhrum.com";
+const OFFICIAL_CHANGED = { status: "changed", provider: "fabushi-official" };
+type OfficialAuthIo = {
+  getValidAccessToken(args: { backendUrl: string }): Promise<string | null>;
+  peekAccessToken(): Promise<string | null>;
+};
+type OfficialBrokerCall = { path: string; authorization: string | null; body: unknown };
+
+// One event-loop turn drains the finite promise continuations released by an
+// owned I/O gate. Poll timers are invoked explicitly below; no elapsed delay
+// decides whether a production callback has completed.
+const drainOfficialContinuations = () => new Promise<void>(resolve => setImmediate(resolve));
+
+function officialProductionFixture(t: TestContext) {
+  const root = mkdtempSync(join(tmpdir(), "fabushi-official-lifetime-"));
+  const previousRoot = process.env.SAND_DATA_ROOT;
+  const previousBackend = process.env.FABUSHI_API_BASE_URL;
+  process.env.SAND_DATA_ROOT = root;
+  // The real factory warms legacy discovery. Refuse its credential I/O before
+  // Connect-node can use a socket; official OAuth keeps its pinned origin.
+  process.env.FABUSHI_API_BASE_URL = "https://fabushi-ci-isolated-auth.bhrumom.workers.dev";
+  const polls = new Map<object, () => void>();
+  const pollHandles = new WeakSet<object>();
+  let cleanupAdapter: { dispose(): Promise<void> | void } | undefined;
+  let cleaned = false;
+  const dispose = async () => {
+    if (cleaned) return;
+    cleaned = true;
+    try {
+      await cleanupAdapter?.dispose();
+      await drainOfficialContinuations();
+      assert.equal(polls.size, 0, "production disposal must clear its owned poll timer");
+    } finally {
+      t.mock.restoreAll();
+      if (previousRoot === undefined) delete process.env.SAND_DATA_ROOT;
+      else process.env.SAND_DATA_ROOT = previousRoot;
+      if (previousBackend === undefined) delete process.env.FABUSHI_API_BASE_URL;
+      else process.env.FABUSHI_API_BASE_URL = previousBackend;
+      rmSync(root, { recursive: true, force: true });
+    }
+  };
+  t.after(dispose);
+  const vault = new Map<string, string>();
+  const writes: Array<{ path: string; value: string }> = [];
+  const broker: OfficialBrokerCall[] = [];
+  const broadcasts: Array<{ channel: string; value: unknown }> = [];
+  const refreshes: unknown[][] = [];
+  const tokenRequests: string[] = [];
+  const calls = { authService: 0, peek: 0 };
+  let subject = "official-lifetime-a";
+  const token = () => "header." + Buffer.from(JSON.stringify({ sub: subject })).toString("base64url") + ".signature";
+  let sequence = 0;
+  const controls: {
+    nextService?: () => Promise<OfficialAuthIo>;
+    nextToken?: () => Promise<string | null>;
+    nextPeek?: () => Promise<string | null>;
+    nextRead?: () => void;
+    nextWrite?: (write: { path: string; value: string }) => Promise<void>;
+    broker?: (call: OfficialBrokerCall) => Promise<Response> | Response | undefined;
+    broadcast?: () => void;
+  } = {};
+  const auth: OfficialAuthIo = {
+    getValidAccessToken: async ({ backendUrl }) => {
+      if (backendUrl !== OFFICIAL_ORIGIN) throw new Error("Controlled legacy credential refusal");
+      tokenRequests.push(backendUrl);
+      const next = controls.nextToken;
+      controls.nextToken = undefined;
+      return next == null ? token() : await next();
+    },
+    peekAccessToken: async () => {
+      calls.peek += 1;
+      const next = controls.nextPeek;
+      controls.nextPeek = undefined;
+      return next == null ? token() : await next();
+    },
+  };
+  const storePath = (store: SandUserSecretsStore): string => {
+    // Observe only the native I/O destination. The real vault constructs the
+    // scope-specific store; the fixture must not replace that selection.
+    const path: unknown = Reflect.get(store, "storePath");
+    assert.equal(typeof path, "string");
+    assert.match(relative(join(root, "official-mcp"), path as string), /^[a-f0-9]{64}\.json$/);
+    return path as string;
+  };
+  t.mock.method(SandUserSecretsStore.prototype, "reveal", async function (this: SandUserSecretsStore, key: string) {
+    assert.equal(key, "OFFICIAL_MCP_INSTALLS");
+    const value = vault.get(storePath(this)) ?? null;
+    const next = controls.nextRead;
+    controls.nextRead = undefined;
+    next?.();
+    return value;
+  });
+  t.mock.method(SandUserSecretsStore.prototype, "upsert", async function (this: SandUserSecretsStore, entries: Readonly<Record<string, string>>) {
+    assert.deepEqual(Object.keys(entries), ["OFFICIAL_MCP_INSTALLS"]);
+    const write = { path: storePath(this), value: entries.OFFICIAL_MCP_INSTALLS! };
+    writes.push(write);
+    const next = controls.nextWrite;
+    controls.nextWrite = undefined;
+    if (next != null) await next(write);
+    vault.set(write.path, write.value);
+  });
+  const json = (value: unknown) => new Response(JSON.stringify(value), { headers: { "Content-Type": "application/json" } });
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    const url = new URL(typeof input === "string" || input instanceof URL ? String(input) : input.url);
+    assert.ok(init, "official network calls retain explicit request options");
+    if (url.origin === OFFICIAL_ORIGIN) {
+      assert.equal(init.method, "POST");
+      assert.equal(init.redirect, "error");
+      const call = { path: url.pathname, authorization: new Headers(init.headers).get("Authorization"),
+        body: JSON.parse(String(init.body)) as unknown };
+      broker.push(call);
+      const controlled = controls.broker?.(call);
+      if (controlled !== undefined) return await controlled;
+      if (call.path === "/api/mcp/oauth/start") {
+        const attemptId = "official-attempt-" + ++sequence;
+        return json({ attemptId, authorizationUrl: OFFICIAL_ORIGIN + "/api/mcp/oauth/authorize?ticket=" + attemptId });
+      }
+      if (/\/api\/mcp\/oauth\/attempts\/[^/]+$/.test(call.path)) {
+        return json({ status: "ready", credential: { token: "fixture-provider-access",
+          refreshToken: "fixture-provider-refresh", connectionId: "fixture-connection", expiresAt: Date.now() + 3_600_000 } });
+      }
+      assert.match(call.path, /\/(?:ack|cancel|revoke)$/);
+      return json({});
+    }
+    assert.equal(url.href, "https://api.githubcopilot.com/mcp/", "unexpected provider network I/O");
+    const payload = JSON.parse(String(init.body));
+    if (payload.method === "notifications/initialized") return new Response(null, { status: 202 });
+    if (payload.method === "initialize") return json({ jsonrpc: "2.0", id: payload.id, result: { protocolVersion: "2025-03-26" } });
+    assert.equal(payload.method, "tools/list");
+    return json({ jsonrpc: "2.0", id: payload.id, result: { tools: [] } });
+  });
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  t.mock.method(globalThis, "setTimeout", ((callback: (...args: any[]) => void, ms?: number, ...args: any[]) => {
+    if (ms !== 2_000) return originalSetTimeout(callback, ms, ...args);
+    const handle = { unref() { return handle; } };
+    pollHandles.add(handle);
+    polls.set(handle, () => callback(...args));
+    return handle as unknown as ReturnType<typeof setTimeout>;
+  }) as typeof setTimeout);
+  t.mock.method(globalThis, "clearTimeout", ((handle: Parameters<typeof clearTimeout>[0]) => {
+    if (typeof handle === "object" && handle != null && pollHandles.has(handle)) {
+      polls.delete(handle);
+      return;
+    }
+    originalClearTimeout(handle);
+  }) as typeof clearTimeout);
+
+  const context = {
+    machineId: "official-lifetime-machine",
+    settings: { settingsStore: new SandSettingsStore(join(root, "settings.json")) },
+    requireAccount: () => ({
+      getAuthService: async () => {
+        calls.authService += 1;
+        const next = controls.nextService;
+        controls.nextService = undefined;
+        return next == null ? auth : await next();
+      },
+    }),
+    requireExperiments: () => ({ checkFeatureGate: () => false }),
+    coordinatorLegs: { legs: {} },
+    secretsStores: { pushBoxSecrets: { push: async () => {} } },
+    readTelemetry: () => undefined,
+    broadcast: (channel: string, value: unknown) => {
+      broadcasts.push({ channel, value });
+      controls.broadcast?.();
+    },
+    mcpHost: {
+      refreshMcp: async (...args: unknown[]) => { refreshes.push(args); },
+      syncHostSettings: async () => ({}),
+    },
+    native: { shell: { openExternal: async () => {} } },
+  } as unknown as ProductionServiceContext;
+  // No resolver or manager replacement: exercise the actual default production
+  // factory, runtime, facade, official service, OAuth adapter and vault mapping.
+  const ports = createProductionMcpOAuthPorts();
+  const adapter = createProductionMcpOAuthAdapter(ports).create(context);
+  cleanupAdapter = adapter;
+  const runPoll = () => {
+    assert.equal(polls.size, 1, "one actual official authorization poll must be scheduled");
+    const [handle, callback] = polls.entries().next().value!;
+    polls.delete(handle);
+    callback();
+  };
+  return {
+    adapter, auth, controls, calls, broker, broadcasts, refreshes, tokenRequests, writes, vault, runPoll, dispose, json,
+    token, switchAccount: () => { subject = "official-lifetime-b"; },
+    fallbackRefresh: (...args: [] | [unknown]) => ports.resolveRuntimeDeps(context).refreshHostMcp(...args),
+    install: (values?: Record<string, string>) => adapter.installHostMcpPlugin({ entryId: OFFICIAL_ID, ...(values == null ? {} : { values }) }),
+    authenticate: () => adapter.authenticateHostMcpServer({ serverId: OFFICIAL_ID, accountKey: "default", forceReauth: true }),
+    async ready() { await adapter.installHostMcpPlugin({ entryId: OFFICIAL_ID }); await drainOfficialContinuations(); },
+  };
+}
+
+for (const boundary of ["service", "token"] as const) {
+  test("MO-05 default official credential bridge refuses reset across the " + boundary + " await", { timeout: 10_000 }, async t => {
+    const fixture = officialProductionFixture(t);
+    const entered = deferred<void>();
+    const service = deferred<OfficialAuthIo>();
+    const token = deferred<string | null>();
+    let operation: Promise<unknown> | undefined;
+    try {
+      await fixture.ready();
+      if (boundary === "service") {
+        // The real authentication snapshot finishes its vault read before the
+        // broker asks for an auth service. Arm that actual I/O edge, not a
+        // guessed number of microtasks or scope reads.
+        fixture.controls.nextRead = () => {
+          fixture.controls.nextService = () => { entered.resolve(); return service.promise; };
+        };
+      } else {
+        fixture.controls.nextToken = () => { entered.resolve(); return token.promise; };
+      }
+      operation = fixture.authenticate();
+      void operation.catch(() => {});
+      await entered.promise;
+      await fixture.adapter.resetMcpManager();
+      fixture.switchAccount();
+      await fixture.ready();
+      service.resolve(fixture.auth);
+      token.resolve(fixture.token());
+      await assert.rejects(operation, /construction is retired/);
+      assert.equal(fixture.tokenRequests.length, boundary === "service" ? 0 : 1);
+      assert.deepEqual(fixture.broker, [], "retired token acquisition cannot start an official broker request");
+      await fixture.authenticate();
+      assert.equal(fixture.tokenRequests.at(-1), OFFICIAL_ORIGIN);
+      assert.equal(fixture.broker.length, 1);
+      assert.equal(fixture.broker[0]!.path, "/api/mcp/oauth/start");
+      assert.equal(fixture.broker[0]!.authorization, "Bearer " + fixture.token());
+    } finally {
+      service.resolve(fixture.auth);
+      token.resolve(fixture.token());
+      await Promise.allSettled(operation == null ? [] : [operation]);
+      await fixture.dispose();
+    }
+  });
+}
+
+for (const retirement of ["reset", "dispose"] as const) {
+  test("MO-05 real official disposal cannot obtain credentials for cancel after " + retirement, { timeout: 10_000 }, async t => {
+    const fixture = officialProductionFixture(t);
+    try {
+      await fixture.ready();
+      await fixture.authenticate();
+      const before = { services: fixture.calls.authService, tokens: fixture.tokenRequests.length, broker: fixture.broker.length };
+      if (retirement === "reset") await fixture.adapter.resetMcpManager();
+      else await fixture.adapter.dispose();
+      await drainOfficialContinuations();
+      assert.deepEqual({ services: fixture.calls.authService, tokens: fixture.tokenRequests.length, broker: fixture.broker.length }, before);
+      assert.deepEqual(fixture.broadcasts, []);
+      assert.deepEqual(fixture.refreshes, []);
+      if (retirement === "reset") {
+        await fixture.ready();
+        await fixture.authenticate();
+        assert.equal(fixture.broker.at(-1)!.path, "/api/mcp/oauth/start");
+      } else {
+        await assert.rejects(fixture.authenticate(), /disposed/);
+      }
+    } finally {
+      await fixture.dispose();
+    }
+  });
+}
+
+test("MO-05 default official bridge retains current credential errors and unauthenticated message", { timeout: 10_000 }, async t => {
+  const fixture = officialProductionFixture(t);
+  try {
+    await fixture.ready();
+    const failure = new Error("Controlled official credential failure");
+    fixture.controls.nextToken = async () => { throw failure; };
+    await assert.rejects(fixture.authenticate(), error => error === failure);
+    fixture.controls.nextToken = async () => null;
+    await assert.rejects(fixture.authenticate(), /请先登录 Fabushi/);
+    assert.deepEqual(fixture.broker, []);
+    await fixture.authenticate();
+    assert.equal(fixture.broker[0]!.authorization, "Bearer " + fixture.token());
+  } finally {
+    await fixture.dispose();
+  }
+});
+
+for (const result of ["failure", "ready"] as const) {
+  test("MO-06 actual official poll " + result + " after reset cannot notify the replacement", { timeout: 10_000 }, async t => {
+    const fixture = officialProductionFixture(t);
+    const entered = deferred<void>();
+    const response = deferred<Response>();
+    try {
+      await fixture.ready();
+      await fixture.authenticate();
+      fixture.controls.broker = call => {
+        if (/\/attempts\/[^/]+$/.test(call.path)) { entered.resolve(); return response.promise; }
+      };
+      fixture.runPoll();
+      await entered.promise;
+      await fixture.adapter.resetMcpManager();
+      await fixture.ready();
+      const before = [...fixture.vault.entries()];
+      if (result === "failure") response.reject(new Error("Controlled held poll failure"));
+      else response.resolve(fixture.json({ status: "ready", credential: {
+        token: "stale-provider", connectionId: "stale-connection",
+      } }));
+      await drainOfficialContinuations();
+      assert.deepEqual(fixture.broadcasts, []);
+      assert.deepEqual(fixture.refreshes, []);
+      assert.deepEqual([...fixture.vault.entries()], before);
+      assert.equal(fixture.broker.filter(call => /\/(?:cancel|ack)$/.test(call.path)).length, 0);
+    } finally {
+      response.resolve(fixture.json({ status: "failed" }));
+      await drainOfficialContinuations();
+      await fixture.dispose();
+    }
+  });
+}
+
+test("MO-06 actual official acknowledgment after reset keeps its admitted outcome without notifying B", { timeout: 10_000 }, async t => {
+  const fixture = officialProductionFixture(t);
+  const entered = deferred<void>();
+  const response = deferred<Response>();
+  try {
+    await fixture.ready();
+    await fixture.authenticate();
+    fixture.controls.broker = call => {
+      if (call.path.endsWith("/ack")) { entered.resolve(); return response.promise; }
+    };
+    fixture.runPoll();
+    await entered.promise;
+    assert.equal(JSON.parse([...fixture.vault.values()][0]!)[OFFICIAL_ID].connectionId, "fixture-connection",
+      "the real service persists credentials before acknowledging");
+    await fixture.adapter.resetMcpManager();
+    await fixture.ready();
+    const before = [...fixture.vault.entries()];
+    response.resolve(fixture.json({}));
+    await drainOfficialContinuations();
+    assert.deepEqual([...fixture.vault.entries()], before);
+    assert.deepEqual(fixture.broadcasts, []);
+    assert.deepEqual(fixture.refreshes, []);
+    assert.equal(fixture.broker.filter(call => call.path.endsWith("/ack")).length, 1, "admitted ack is not replayed");
+    assert.equal(fixture.broker.filter(call => call.path.endsWith("/cancel")).length, 0);
+  } finally {
+    response.resolve(fixture.json({}));
+    await drainOfficialContinuations();
+    await fixture.dispose();
+  }
+});
+
+for (const result of ["success", "failure"] as const) {
+  test("MO-06 actual official disconnect cleanup " + result + " after reset cannot notify B", { timeout: 10_000 }, async t => {
+    const fixture = officialProductionFixture(t);
+    const entered = deferred<void>();
+    const response = deferred<Response>();
+    let operation: Promise<unknown> | undefined;
+    try {
+      await fixture.ready();
+      await fixture.authenticate();
+      fixture.runPoll();
+      await drainOfficialContinuations();
+      assert.deepEqual(fixture.broadcasts, [{ channel: "sand:mcp-auth-event", value: OFFICIAL_CHANGED }]);
+      assert.deepEqual(fixture.refreshes, [[]]);
+      fixture.controls.broker = call => {
+        if (call.path.endsWith("/revoke")) { entered.resolve(); return response.promise; }
+      };
+      operation = fixture.adapter.logoutHostMcpAccount({ serverId: OFFICIAL_ID, accountKey: "default" });
+      void operation.catch(() => {});
+      await entered.promise;
+      assert.equal(JSON.parse([...fixture.vault.values()][0]!)[OFFICIAL_ID].token, undefined,
+        "local credential removal precedes remote revocation");
+      await fixture.adapter.resetMcpManager();
+      await fixture.ready();
+      if (result === "success") response.resolve(fixture.json({}));
+      else response.reject(new Error("Controlled admitted revoke failure"));
+      await assert.rejects(operation, result === "success" ? /disposed/ : /本机授权/);
+      assert.equal(fixture.broadcasts.length, 1);
+      assert.deepEqual(fixture.refreshes, [[]]);
+      assert.equal(fixture.broker.filter(call => call.path.endsWith("/revoke")).length, 1);
+    } finally {
+      response.resolve(fixture.json({}));
+      await Promise.allSettled(operation == null ? [] : [operation]);
+      await fixture.dispose();
+    }
+  });
+}
+
+test("MO-06 default official completion preserves zero-argument refresh and rechecks broadcast reset", { timeout: 10_000 }, async t => {
+  const fixture = officialProductionFixture(t);
+  let reset: Promise<void> | undefined;
+  try {
+    await fixture.ready();
+    // The default root overrides this fallback, so qualify its argument shape
+    // as well as the actual root callback below.
+    fixture.fallbackRefresh();
+    const legacy = { status: "legacy-completion" };
+    fixture.fallbackRefresh(legacy);
+    fixture.fallbackRefresh(undefined);
+    assert.deepEqual(fixture.refreshes, [[], [legacy], [undefined]]);
+    fixture.refreshes.length = 0;
+    fixture.controls.broadcast = () => { reset = fixture.adapter.resetMcpManager(); };
+    await fixture.authenticate();
+    fixture.runPoll();
+    await drainOfficialContinuations();
+    assert.ok(reset);
+    await reset;
+    assert.deepEqual(fixture.broadcasts, [{ channel: "sand:mcp-auth-event", value: OFFICIAL_CHANGED }]);
+    assert.deepEqual(fixture.refreshes, [], "broadcast retirement prevents the subsequent Host refresh");
+    fixture.controls.broadcast = undefined;
+    await fixture.ready();
+    await fixture.authenticate();
+    fixture.runPoll();
+    await drainOfficialContinuations();
+    assert.deepEqual(fixture.broadcasts, [
+      { channel: "sand:mcp-auth-event", value: OFFICIAL_CHANGED },
+      { channel: "sand:mcp-auth-event", value: OFFICIAL_CHANGED },
+    ]);
+    assert.deepEqual(fixture.refreshes, [[]], "the current official path invokes refresh with zero arguments");
+  } finally {
+    await reset;
+    await fixture.dispose();
+  }
+});
+
+test("MO-07 default official mutation cannot write after its final scope await is retired", { timeout: 10_000 }, async t => {
+  const fixture = officialProductionFixture(t);
+  const entered = deferred<void>();
+  const scope = deferred<string | null>();
+  let operation: Promise<unknown> | undefined;
+  try {
+    await fixture.ready();
+    fixture.controls.nextRead = () => {
+      fixture.controls.nextPeek = () => { entered.resolve(); return scope.promise; };
+    };
+    operation = fixture.install({ ACCESS_TOKEN: "stale-provider" });
+    void operation.catch(() => {});
+    await entered.promise;
+    const before = fixture.writes.length;
+    await fixture.adapter.resetMcpManager();
+    await fixture.install({ ACCESS_TOKEN: "replacement-provider" });
+    assert.equal(fixture.writes.length, before + 1, "current B still commits once");
+    const committed = [...fixture.vault.entries()];
+    scope.resolve(fixture.token());
+    await assert.rejects(operation, /disposed/);
+    assert.equal(fixture.writes.length, before + 1, "A never enters the write port");
+    assert.deepEqual([...fixture.vault.entries()], committed, "B's exact same-account bytes survive");
+  } finally {
+    scope.resolve(fixture.token());
+    await Promise.allSettled(operation == null ? [] : [operation]);
+    await fixture.dispose();
+  }
+});
+
+test("MO-07 official pre-write admission refuses retirement after the final scope check fulfills", { timeout: 10_000 }, async () => {
+  const accountScope = "a".repeat(64);
+  const finalScope = deferred<string>();
+  const entered = deferred<void>();
+  const retirementObserved = deferred<void>();
+  let holdFinalScope = false;
+  let stored = "{}";
+  const oldWrites: string[] = [];
+  const replacementWrites: string[] = [];
+  const unexpectedFetch = async (): Promise<Response> => { throw new Error("Unexpected official network I/O"); };
+  const old = new OfficialMcpService({
+    getScope: (): Promise<string> => {
+      if (!holdFinalScope) return Promise.resolve(accountScope);
+      holdFinalScope = false;
+      // Register before returning the native promise to scope()'s await. On
+      // release, this reaction queues retirement behind the scope continuation
+      // but ahead of the mutation continuation that scope then makes runnable.
+      void finalScope.promise.then(() => queueMicrotask(() => {
+        old.dispose();
+        retirementObserved.resolve();
+      }));
+      entered.resolve();
+      return finalScope.promise;
+    },
+    read: async scope => {
+      assert.equal(scope, accountScope);
+      holdFinalScope = true;
+      return stored;
+    },
+    write: async (scope, value) => {
+      assert.equal(scope, accountScope);
+      oldWrites.push(value);
+      stored = value;
+    },
+    fetch: unexpectedFetch,
+  });
+  const replacement = new OfficialMcpService({
+    getScope: () => Promise.resolve(accountScope),
+    read: async scope => { assert.equal(scope, accountScope); return stored; },
+    write: async (scope, value) => {
+      assert.equal(scope, accountScope);
+      replacementWrites.push(value);
+      stored = value;
+    },
+    fetch: unexpectedFetch,
+  });
+  let operation: Promise<void> | undefined;
+  try {
+    operation = old.install(OFFICIAL_ID, { ACCESS_TOKEN: "stale-provider" });
+    void operation.catch(() => {});
+    await entered.promise;
+    await replacement.install(OFFICIAL_ID, { ACCESS_TOKEN: "replacement-provider" });
+    assert.equal(replacementWrites.length, 1, "the current same-account service writes once");
+    assert.equal(JSON.parse(stored)[OFFICIAL_ID].token, "replacement-provider");
+    const committed = stored;
+    finalScope.resolve(accountScope);
+    await retirementObserved.promise;
+    await assert.rejects(operation, /disposed/);
+    assert.deepEqual(oldWrites, [], "the retired mutation never enters its write port");
+    assert.equal(stored, committed, "the replacement's exact stored bytes survive");
+  } finally {
+    finalScope.resolve(accountScope);
+    await Promise.allSettled(operation == null ? [] : [operation]);
+    old.dispose();
+    replacement.dispose();
+  }
+});
+
+for (const result of ["success", "failure"] as const) {
+  test("MO-07 default official already-admitted write retains its " + result + " after reset", { timeout: 10_000 }, async t => {
+    const fixture = officialProductionFixture(t);
+    const entered = deferred<void>();
+    const write = deferred<void>();
+    const failure = new Error("Controlled admitted vault failure");
+    let operation: Promise<unknown> | undefined;
+    try {
+      await fixture.ready();
+      const before = [...fixture.vault.entries()];
+      fixture.controls.nextWrite = async () => { entered.resolve(); await write.promise; };
+      operation = fixture.install({ ACCESS_TOKEN: "admitted-provider" });
+      void operation.catch(() => {});
+      await entered.promise;
+      const admittedWrites = fixture.writes.length;
+      await fixture.adapter.resetMcpManager();
+      if (result === "success") {
+        write.resolve();
+        // The real facade performs a later servers() read; that read may refuse
+        // retirement even though its previously admitted write completed.
+        await assert.rejects(operation, /disposed/);
+        assert.equal(JSON.parse([...fixture.vault.values()][0]!)[OFFICIAL_ID].token, "admitted-provider");
+        await fixture.ready();
+        assert.equal(JSON.parse([...fixture.vault.values()][0]!)[OFFICIAL_ID].token, "admitted-provider");
+        assert.equal(fixture.writes.length, admittedWrites + 1);
+      } else {
+        write.reject(failure);
+        await assert.rejects(operation, error => error === failure);
+        assert.deepEqual([...fixture.vault.entries()], before);
+        assert.equal(fixture.writes.length, admittedWrites);
+      }
+    } finally {
+      write.resolve();
+      await Promise.allSettled(operation == null ? [] : [operation]);
+      await fixture.dispose();
+    }
+  });
+}

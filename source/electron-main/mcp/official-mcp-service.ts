@@ -29,9 +29,13 @@ export class OfficialMcpService {
   private refreshing = new Map<string, Promise<void>>();
   constructor(private readonly ports: OfficialMcpPorts) {}
   owns(id: string): boolean { return officialMcpEntry(id) !== undefined; }
-  private async scope(): Promise<string> {
+  private requireActive(): void {
     if (this.disposed) throw new Error("Official MCP service is disposed.");
+  }
+  private async scope(): Promise<string> {
+    this.requireActive();
     const scope = await this.ports.getScope();
+    this.requireActive();
     if (!/^[a-f0-9]{64}$/.test(scope)) throw new Error("Sign in to Fabushi before connecting a service.");
     return scope;
   }
@@ -63,6 +67,9 @@ export class OfficialMcpService {
       if (expected && state[expected.entry.id]?.revision !== expected.install.revision) throw new Error("Connector changed.");
       change(state);
       if (await this.scope() !== scope) throw new Error("Fabushi account changed.");
+      // Scope resolution itself awaits account I/O. Admit a new write only
+      // while this service is still live; an entered write keeps its outcome.
+      this.requireActive();
       await this.ports.write(scope, JSON.stringify(state));
     });
     this.mutation = task.catch(() => {});

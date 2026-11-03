@@ -103,3 +103,30 @@ the actual frozen UserMessage `conversation_state_blob_id` field 10 in
 blob `a966e88220c8314a67273d0ff29c960e365b77a5`. Reuse the existing fixed-U loop
 source authority and literal read facts; no new complete-source or full-read
 credit is created by this target repair.
+
+## Original artifact completeness correction — PRID-CAPTURE-01
+
+Independent inspection of H `0c7da50fcf457184f38d6a61b73f8e32810cff49`,
+run `41574595343`, original final artifact `13204320664` found that the scoped
+upload's default hidden-file exclusion omits four inventoried
+`agents/.call-sessions.db` copies from directory payloads. Both historical
+copies remain in the original `historical-fixtures.tar.gz`; the two current
+`state-after` copies have no archive. This is an evidence-capture defect. Keep
+the original command, source/binary and runtime positives, and record that the
+current-consumer raw-byte inventory cannot be fully rechecked at that H.
+
+Before declaring the capture complete, the existing capture script must also
+archive the already closed, inventoried `current-consumer` subtree as
+`current-consumer.tar.gz`. Bind its directory, unchanged inventory digest,
+archive digest and byte size outside the archive in `consumer_payload`; retain
+the existing `consumer_inventory_sha256` field for existing readers. Archive
+creation or inventory drift must leave the receipt non-passing. Preserve the
+historical archive and all existing source, binary, command, credential-exclusion
+and no-replay checks. Do not widen the whole upload's hidden-file policy or
+archive unrelated temporary roots.
+
+The next exact-H Actions capture must retain this ordinary archive file in the
+existing artifact. Independently compare its exact member set, file sizes and
+hashes to the original consumer inventory, including both hidden databases.
+Original H evidence remains immutable; the correction grants no retroactive
+completeness, extra product-test count, real-provider or global acceptance.

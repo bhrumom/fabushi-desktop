@@ -249,15 +249,11 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
           return accountCacheScope(token);
         }), oauth: createOfficialMcpOAuthPorts({
           getAccessToken: async backendUrl => {
-            const auth = await context.requireAccount().getAuthService();
-            const token = await auth.getValidAccessToken({ backendUrl });
+            const token = await options.getAccessToken({ backendUrl });
             if (!token) throw new Error("请先登录 Fabushi。");
             return token;
           },
-          changed: () => {
-            context.broadcast("sand:mcp-auth-event", { status: "changed", provider: "fabushi-official" });
-            void context.mcpHost.refreshMcp();
-          },
+          changed: () => options.onAuthChanged({ status: "changed", provider: "fabushi-official" }),
         }) },
         getAccessToken: async (request) => {
           const token = await options.getAccessToken(request);
@@ -280,7 +276,7 @@ export function createProductionMcpOAuthPorts(): ProductionMcpOAuthPorts {
       sandRootDir: getSandRootDir,
       reportFailure: (subsystem, leg, error) => reportDesktopEdgeFailure(subsystem, leg, error),
       broadcast: context.broadcast,
-      refreshHostMcp: (completion) => { void context.mcpHost.refreshMcp(completion); },
+      refreshHostMcp: (...args: [completion?: unknown]) => { void context.mcpHost.refreshMcp(...args); },
     }),
     resolveDesktopDeps: (context) => ({
       shell: { openExternal: async (url) => await context.native.shell.openExternal(url) },

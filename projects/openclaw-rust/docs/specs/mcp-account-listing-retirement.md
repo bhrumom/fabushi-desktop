@@ -469,3 +469,104 @@ gate and all original assertions. Recover the failed builder command and the
 unreached App/Automation/dependent receipt checks on the new frozen H through
 the existing scoped workflow; no runtime trait implementation, fallback, oracle
 deletion or local execution is authorized by this fixture correction.
+
+## Official MCP bridge retirement — `MCP-OFFICIAL-LIFETIME-v1`
+
+Implementation source base: `0c7da50fcf457184f38d6a61b73f8e32810cff49`.
+The independently assessed four source paths are unchanged from the assessment
+base `78aa967cc9400bb5c207441b2a78dbf7021d596c`; incoming plugin/media changes
+through `8e5cee76ebbe6e748dc6a8dc87d73142bf04109b` do not overlap them.
+Fixed U and all earlier MC/MR/MB/MD contracts remain unchanged.
+
+The actual default production factory supplies official OAuth with a raw
+account-service/token getter and a direct broadcast/Host-refresh callback.
+Both bypass the runtime's existing current-attempt fence. An entered poll,
+acknowledgment or disconnect cleanup can complete after reset and notify the
+replacement. Separately, `OfficialMcpService.scope()` checks disposal only
+before its awaited scope lookup; a final held lookup can resume an old
+mutation and newly invoke the shared same-account vault write after disposal.
+The source supports stale same-account image overwrite, not a demonstrated
+remote cross-account authorization bypass. These are three admission edges
+of one existing official-service resource lifetime, not new OAuth policy.
+
+- MO-01: route the default official OAuth credential getter through the existing
+  factory option `getAccessToken({ backendUrl })`. Preserve its entry,
+  post-auth-service and post-token current-attempt checks, original backend,
+  current success/error and official unauthenticated message. An old getter
+  cannot newly obtain or return a replacement account's credential. Disposal's
+  best-effort OAuth cancel uses that same retired getter; do not retain a token
+  or retry through the replacement merely to make cleanup succeed.
+- MO-02: add one generic factory callback `onAuthChanged(completion)` to the
+  existing runtime options, using the same private forwarding helper as the
+  existing auth observer. Check the exact attempt before broadcast and again
+  afterward before refresh, including synchronous broadcast-triggered reset.
+  Preserve the official `{ status: "changed", provider: "fabushi-official" }`
+  event and its refresh with no completion argument. The legacy observer still
+  forwards its completion to refresh. Both paths use the existing attempt;
+  introduce no second epoch, callback registry or account authority.
+- MO-03: reuse the official service's existing irreversible disposed latch.
+  Check it after the awaited scope lookup and immediately before invoking the
+  vault write, with no await between that final check and invocation. A scope
+  continuation or queued old mutation that resumes after disposal must reject
+  without a new write, even when a fresh service uses the same account hash.
+  Preserve the existing per-service mutation queue, scope equality, expected
+  revision, state schema, native vault and current operation behavior.
+- MO-04: work already admitted at an underlying network/write port retains its
+  actual outcome and original ownership. Do not replay, roll back, synthesize
+  cancellation or claim local disposal undid a durable write/remote effect.
+  A facade may still refuse its later read after the admitted write completes;
+  do not promise that every old facade call succeeds. The credential getter's
+  fence is not a new final HTTP-admission gate after it has returned a token,
+  nor proof that the remote broker processed cancellation or expires an attempt.
+- MO-05: extend the already-selected `mcp-runtime.contract.test.ts` using the
+  actual default `createProductionMcpOAuthPorts` factory, runtime, desktop
+  facade and official service. Control auth/network/vault I/O only. Hold both
+  auth awaits across actual reset/replacement; prove no new old token call or
+  broker dispatch at the respective boundary, preserve current backend/token
+  positives and cover cancellation initiated by real disposal. Test-authored
+  guarded callbacks alone cannot prove the default production wiring.
+- MO-06: exercise actual official poll failure and ready/acknowledgment,
+  disconnect cleanup and current callback producers with controlled promises
+  and an owned timer control. Old completions after reset must produce zero
+  new broadcasts/refreshes; current completions retain exact payload/argument
+  shape. A broadcast that synchronously resets permits that one broadcast and
+  suppresses its later refresh; a fresh replacement remains usable. No sleep
+  or fixture retry decides ordering, and all global/prototype I/O controls are
+  restored in finally without affecting unrelated tests.
+- MO-07: hold the final scope lookup before a real old-service mutation writes,
+  dispose/reset, let replacement B commit its same-account image, then release
+  A and require zero A writes and exact unchanged B bytes. Include a current
+  successful write and a separately already-invoked held write to distinguish
+  refusal from admitted outcome. Additionally qualify the last pre-write check
+  independently: a real service with controlled scope I/O must retire after its
+  scope check has completed but before the mutation continuation invokes write.
+  Register the I/O completion notification before the awaited scope consumer,
+  then use that notification to queue retirement between the two continuations;
+  do not replace the production guard or guess elapsed delays. Require zero old
+  writes, unchanged stored bytes and a current replacement write positive.
+  Retain the default-composition cases and all prior MC/MR/MB/MD and official
+  controls; no credential or payload is added to diagnostics.
+
+Allowed product paths are `source/electron-main/mcp/mcp-runtime.ts`,
+`source/electron-main/adapters/mcp-oauth.ts`,
+`source/electron-main/mcp/official-mcp-service.ts` (lifetime checks only), and
+the existing runtime contract test. Root serializes this spec and any narrow
+existing OCRM evidence references. The complete runtime contract target is
+already in the active plugin/Skills bundle and renderer Actions lane; no new
+workflow, dependency, persistence migration or wire schema is required.
+
+This preserves Fabushi's existing official connector behavior through its thin
+resource/credential bridge. Rust policy, registration, permissions, execution
+and state ownership are not replaced or duplicated. The existing official
+service still contains policy awaiting the full Rust migration; this bounded
+repair does not accept that remaining work or real provider/account behavior.
+Reuse only the precise fixed-U closing-before-drain source references above.
+The assessment separately reads the actual account transition, production
+composition, OAuth, facade, vault and native store consumers; it is not new
+upstream coverage or a full-read claim on unrelated modules.
+
+Freeze the complete five-path candidate, obtain both independent source lenses
+and run the existing affected build/contract selection only in Actions at its
+exact published H. Scoped G01/G02 authority, external services and full OCRM
+acceptance remain open. Rollback changes no persisted format and restores these
+late-admission risks; it cannot retract already admitted work.
