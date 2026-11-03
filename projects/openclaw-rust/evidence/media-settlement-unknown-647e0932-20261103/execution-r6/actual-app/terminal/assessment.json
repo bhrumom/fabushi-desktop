@@ -1,0 +1,532 @@
+{
+  "schema_version": 1,
+  "subject_commit": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+  "subject_tree": "077065fdeeb9aa17213a4f6d2dece8cba168fbf5",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "runtime_run_id": 41586608776,
+  "run_attempt": 1,
+  "job_id": 125753467838,
+  "job_conclusion": "success",
+  "evidence_scope": "Terminal Linux actual-App, portable dependency and link-preview observations only. Historical pending observations remain unchanged. This evidence does not describe the carrier commit as its execution subject.",
+  "acquisition": {
+    "job_id": 125753467838,
+    "subject_commit": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "run_id": 41586608776,
+    "run_attempt": 1,
+    "characters": 5987670,
+    "utf8_bytes": 5987684,
+    "lf": 82433,
+    "sha256": "388cd773fdc3364fa830bcdde61c11654e2a373068438c4c7d8faaee1d83ba2a",
+    "root_independently_fetched_and_hashed": true
+  },
+  "receipt_extraction": {
+    "source": "Full decoded GitHub job log",
+    "transform": "Remove only an optional U+FEFF followed by the leading Actions timestamp and one space from each log line, then preserve the complete printed JSON block with a terminal LF. Original raw log is unchanged.",
+    "blocks": [
+      {
+        "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/terminal/app-printed-receipt.json",
+        "blob": "b7fee8a345a8c654090abecc1e8e988eefc5e66a",
+        "raw_start_line": 74238,
+        "raw_end_line": 79403
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/terminal/portable-printed-receipt.json",
+        "blob": "6f5aa998f60f390a6c359135625ec9bf265837ba",
+        "raw_start_line": 62059,
+        "raw_end_line": 68199
+      },
+      {
+        "path": "projects/openclaw-rust/evidence/media-settlement-unknown-647e0932-20261103/execution-r6/actual-app/terminal/link-preview-printed-receipt.json",
+        "blob": "e269bd7f3ae443cbe0b5ff100d2f9d46e253e6e5",
+        "raw_start_line": 81792,
+        "raw_end_line": 82318
+      }
+    ]
+  },
+  "accounting": {
+    "subject": "8621173a53d1f46f7dc613c1b2e162c3350b94bc",
+    "app_required": 115,
+    "app_observed": 115,
+    "app_unique": 115,
+    "app_commands": 233,
+    "all_command_exit_zero": true,
+    "all_case_passed": true,
+    "app_profile": {
+      "opt_level": "0",
+      "debuginfo": 0,
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": false
+    },
+    "shipping_features": [
+      "default"
+    ],
+    "app_features": [
+      "default",
+      "test-support"
+    ],
+    "app_receipt_input_count": 274,
+    "portable_input_count": 378,
+    "link_input_count": 31,
+    "link_inputs_same": true,
+    "portable_executions": 52,
+    "all_portable_exits_zero": true,
+    "portable_oracle_false_count": 0,
+    "all_portable_required_present": true,
+    "actual_app_media_names": [
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_lost_commit_ack_retains_rows_bytes_and_same_id_fence",
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_denied_rollback_retains_until_first_open_recovery",
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_collecting_cache_multi_image_and_terminal_identity",
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_busy_entry_refuses_promptly_and_bridge_preserves_winner",
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_poisoned_entry_and_sealed_unwind_retain_for_recovery",
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_generated_runner_lost_ack_retains_unknown_custody",
+      "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_legacy_owned_refusal_retains_without_inventing_receipt"
+    ],
+    "all8_media_raw_positive": true,
+    "startup_count": 7,
+    "startup_result": "passed",
+    "link_actual_app": [
+      {
+        "observed": [
+          "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply",
+          "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+          "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane"
+        ],
+        "required": [
+          "tests::link_preview_gateway_tests::link_preview_gateway_cached_native_call_bypasses_closed_host_lane",
+          "tests::link_preview_gateway_tests::link_preview_gateway_native_errors_and_private_cache_preserve_contract",
+          "tests::link_preview_gateway_tests::link_preview_gateway_other_methods_preserve_host_lane_request_and_reply"
+        ],
+        "cargo_exit": 0,
+        "capture_exit": 0,
+        "oracle_accepted": true
+      }
+    ]
+  },
+  "media_raw_positive_observations": [
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
+      "hits": [
+        {
+          "line": 73232,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_known_receipt_refusal_rolls_back_only_owned_media",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_lost_commit_ack_retains_rows_bytes_and_same_id_fence",
+      "hits": [
+        {
+          "line": 73250,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_lost_commit_ack_retains_rows_bytes_and_same_id_fence ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_lost_commit_ack_retains_rows_bytes_and_same_id_fence",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_denied_rollback_retains_until_first_open_recovery",
+      "hits": [
+        {
+          "line": 73269,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_denied_rollback_retains_until_first_open_recovery ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_denied_rollback_retains_until_first_open_recovery",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_collecting_cache_multi_image_and_terminal_identity",
+      "hits": [
+        {
+          "line": 73288,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_collecting_cache_multi_image_and_terminal_identity ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_collecting_cache_multi_image_and_terminal_identity",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_busy_entry_refuses_promptly_and_bridge_preserves_winner",
+      "hits": [
+        {
+          "line": 73306,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_busy_entry_refuses_promptly_and_bridge_preserves_winner ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_busy_entry_refuses_promptly_and_bridge_preserves_winner",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_poisoned_entry_and_sealed_unwind_retain_for_recovery",
+      "hits": [
+        {
+          "line": 73322,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_poisoned_entry_and_sealed_unwind_retain_for_recovery ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_poisoned_entry_and_sealed_unwind_retain_for_recovery",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_generated_runner_lost_ack_retains_unknown_custody",
+      "hits": [
+        {
+          "line": 73350,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_generated_runner_lost_ack_retains_unknown_custody ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_generated_runner_lost_ack_retains_unknown_custody",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_legacy_owned_refusal_retains_without_inventing_receipt",
+      "hits": [
+        {
+          "line": 73366,
+          "text": "test tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_legacy_owned_refusal_retains_without_inventing_receipt ... ok"
+        }
+      ],
+      "case": {
+        "name": "tests::channel_host_lane_tests::media_settlement_unknown::media_settlement_app_legacy_owned_refusal_retains_without_inventing_receipt",
+        "result": "passed",
+        "outer_and_owned_child_summaries": [
+          [
+            "ok",
+            "1",
+            "0",
+            "0"
+          ]
+        ]
+      }
+    }
+  ],
+  "background_dependency": {
+    "raw_start_line": 24542,
+    "raw_end_line": 24594,
+    "summary": "test result: ok. 48 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 23.74s",
+    "positive_names": [
+      "channel_failure_close_during_a_gate_revokes_all_phases_and_late_tickets_without_reopening",
+      "channel_failure_entered_and_retained_heads_refuse_all_replay_and_phase_confusion",
+      "channel_failure_idle_handoff_closed_owner_does_not_claim_late_work",
+      "channel_failure_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once",
+      "channel_failure_idle_handoff_idle_wins_admits_one_successor_and_claims_batch_once",
+      "channel_failure_idle_handoff_preserves_other_agents_and_wake_families",
+      "channel_failure_idle_handoff_treats_stored_empty_batch_as_idle",
+      "channel_failure_launch_error_and_delayed_callbacks_cannot_clear_a_successor",
+      "channel_failure_live_enqueue_before_idle_uses_current_drain_and_claims_ordered_head_once",
+      "channel_failure_live_head_preserves_filtered_order_ahead_of_tail_until_definite_finish",
+      "channel_failure_live_idle_before_enqueue_admits_one_successor_without_late_release",
+      "channel_failure_live_take_requires_revival_and_releases_stored_empty_input",
+      "channel_failure_queue_is_agent_scoped_and_revival_fenced",
+      "channel_failure_readiness_on_either_side_of_pause_retries_latest_filtered_head_once",
+      "channel_failure_retained_head_does_not_block_other_agents_or_wake_families",
+      "channel_failure_targeted_readiness_preserves_other_tickets_paused_heads_and_raw_tails",
+      "channel_failure_wiring_oracle_rejects_cleanup_after_idle_return",
+      "channel_failure_wiring_oracle_rejects_raw_take_and_bypassed_token_admission",
+      "channel_failure_wiring_oracle_requires_captured_generation_and_shipping_observer",
+      "channel_failure_wiring_oracle_requires_checked_completion_before_finish",
+      "channel_outbound_projection_matches_frozen_text_attachment_and_widget_fences",
+      "delivery_failure_humanization_and_hidden_revival_prompt_match_frozen_contract",
+      "host_channel_delivery_defaults_fail_closed_and_allows_one_explicit_provider_port",
+      "inbound_append_bound_redrive_precedes_raw_tail_and_rejects_delayed_original_worker",
+      "inbound_append_committed_head_grants_one_handoff_permission_and_one_finish_before_next_batch",
+      "inbound_append_displayed_dm_redrive_keeps_empty_preparation_and_grants_zero_row_commit_once",
+      "inbound_append_enqueue_before_idle_retains_current_worker_and_claims_ordered_head_once",
+      "inbound_append_idle_before_enqueue_admits_one_successor_with_ordered_head",
+      "inbound_append_not_written_retry_keeps_original_preparation_ahead_of_tail_and_fences_old_worker",
+      "inbound_append_old_worker_cannot_update_or_clear_replacement_owner_with_same_agent_and_payload",
+      "inbound_append_pause_and_binding_without_entries_survive_later_wake",
+      "inbound_append_redrive_refuses_missing_preparation_or_binding_and_retains_original_head",
+      "inbound_append_requires_revival_and_releases_stored_empty_input_without_a_claim",
+      "inbound_append_unknown_agent_does_not_block_other_agents_or_change_other_wake_families",
+      "inbound_append_unknown_is_sticky_with_no_pending_input_later_arrivals_and_late_commit_ack",
+      "inbound_close_permanently_revokes_all_states_and_late_tickets_without_reopening",
+      "inbound_idle_handoff_enqueue_wins_retains_current_worker_and_claims_batch_once",
+      "inbound_idle_handoff_idle_wins_admits_one_successor_and_claims_batch_once",
+      "inbound_idle_handoff_preserves_other_agents_and_wake_families",
+      "inbound_idle_handoff_treats_stored_empty_batch_as_idle",
+      "inbound_image_projection_preserves_all_frozen_image_payloads",
+      "inbound_image_wiring_oracle_accepts_slice_calls_and_rejects_missing_or_wrong_inputs",
+      "inbound_launch_failure_preserves_preparation_and_delayed_release_cannot_clear_successor",
+      "inbound_readiness_cannot_steal_committed_drain_or_generation_bound_displayed_redrive",
+      "inbound_readiness_on_either_side_of_pause_reacquires_the_same_head_once",
+      "inbound_readiness_rollback_retry_uses_the_latest_binding_and_prepared_entries",
+      "inbound_unknown_discards_active_readiness_and_blocks_signals_and_new_tail_only_for_its_agent",
+      "shipping_send_message_reaches_host_owned_delivery_failure_broadcast_and_context_paths"
+    ],
+    "positive_count": 48,
+    "unique_count": 48
+  },
+  "source_inputs": {
+    "preparation_blob": "22a22db91ad3696025251f7d2f7ae01e233a9878",
+    "bound_distinct_paths": 15,
+    "all_selected_paths_match_at_least_one_applicable_receipt": true,
+    "comparison": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "git_blob": "25e80da72d20d4dbfed8ab6f2a50a3eff62b53af",
+        "sha256": "68f0f49cc3d6d5f1c96156a4a96e862555accdcc6fe015a36ed5195f2e524803",
+        "app": true,
+        "portable": true,
+        "link_before": true,
+        "link_after": true,
+        "app_present": true,
+        "portable_present": true,
+        "link_present": true
+      },
+      {
+        "path": "projects/openclaw-rust/scripts/capture_portable_contracts.py",
+        "git_blob": "f5f3d5624568cb553441b8ca0c0f63aff76ebeae",
+        "sha256": "e101cf22f5dbda30f2a024010bff64e13d0ed4bee7b6dbac89afee4c629d8b2e",
+        "app": false,
+        "portable": true,
+        "link_before": false,
+        "link_after": false,
+        "app_present": false,
+        "portable_present": true,
+        "link_present": false
+      },
+      {
+        "path": "source/host/tests/background_wakes_production_contract.rs",
+        "git_blob": "1c38f0bfde3e23cb0d227d1c4dfb4bd5b4d0b713",
+        "sha256": "281cfdaa4b4c28a89dab0474340775c43d17b0b3b01808c9842c26f4a1460529",
+        "app": false,
+        "portable": true,
+        "link_before": false,
+        "link_after": false,
+        "app_present": false,
+        "portable_present": true,
+        "link_present": false
+      },
+      {
+        "path": "projects/openclaw-rust/upstream.lock.json",
+        "git_blob": "6305f97397e3eea8120fca9a2dd578520a58bf1b",
+        "sha256": "11a1f23e182088ad2954fcaf8c54db2c2c3e0fa484536efee45c01559a284849",
+        "app": false,
+        "portable": false,
+        "link_before": true,
+        "link_after": true,
+        "app_present": false,
+        "portable_present": false,
+        "link_present": true
+      },
+      {
+        "path": "source/host/Cargo.toml",
+        "git_blob": "e42cc9f56cc98337a49622ae9117ebd9823ef820",
+        "sha256": "a6d32331fcb2c0b765ccd562a2b119ae2fb5190fa57039e42ab97bcba1681ddb",
+        "app": true,
+        "portable": true,
+        "link_before": true,
+        "link_after": true,
+        "app_present": true,
+        "portable_present": true,
+        "link_present": true
+      },
+      {
+        "path": "source/host/Cargo.lock",
+        "git_blob": "9895ce7752768b1c8d3fe107ef95e513457ca518",
+        "sha256": "96b7c7e3faa9faf3aa54b800dccb17ae7a0ecebf59ca7e2e1a948b9ae0545eaf",
+        "app": true,
+        "portable": true,
+        "link_before": true,
+        "link_after": true,
+        "app_present": true,
+        "portable_present": true,
+        "link_present": true
+      },
+      {
+        "path": "source/host/src/lib.rs",
+        "git_blob": "ff0f4daa22e6782c972b04b61361d77f838114e0",
+        "sha256": "5634ab8eaafe9f88a75a855c74ef1d98def6050314aaf2ec966e283f202e8798",
+        "app": true,
+        "portable": false,
+        "link_before": false,
+        "link_after": false,
+        "app_present": true,
+        "portable_present": false,
+        "link_present": false
+      },
+      {
+        "path": "source/host/app/Cargo.toml",
+        "git_blob": "a2c58167a82657194b79aaf3e1e0d55577b2221c",
+        "sha256": "3c16c8f1be109308612041e0543a935ea4b7748ed33279e061a44ba975e7846b",
+        "app": true,
+        "portable": false,
+        "link_before": true,
+        "link_after": true,
+        "app_present": true,
+        "portable_present": false,
+        "link_present": true
+      },
+      {
+        "path": "source/host/app/Cargo.lock",
+        "git_blob": "5f929af729ac7b537e054283c5977cc269be38ad",
+        "sha256": "249cb821f3f0dbce4c89da9889fa7c3d65d6eeb596c3ba0f06c205e50ae54a38",
+        "app": true,
+        "portable": false,
+        "link_before": true,
+        "link_after": true,
+        "app_present": true,
+        "portable_present": false,
+        "link_present": true
+      },
+      {
+        "path": "source/host/app/src/main.rs",
+        "git_blob": "ab3cd46cfb869db19d12f2e1ee77a7c18e7b52df",
+        "sha256": "0ca4e2e81b459ac57c1a9aab9b31b54ef2d421d7131970519aa4f58faaa0011f",
+        "app": true,
+        "portable": true,
+        "link_before": true,
+        "link_after": true,
+        "app_present": true,
+        "portable_present": true,
+        "link_present": true
+      },
+      {
+        "path": "source/host/app/src/tests/media_settlement_unknown_tests.rs",
+        "git_blob": "fc1f056a318fee390e0c8e67cdda361d94f0c3a5",
+        "sha256": "92f462fc7c7763b909daabd805bc0f33161f156e842234ae2ea83ea8070fd0e3",
+        "app": true,
+        "portable": true,
+        "link_before": false,
+        "link_after": false,
+        "app_present": true,
+        "portable_present": true,
+        "link_present": false
+      },
+      {
+        "path": "source/host/app/src/tests/local_media_file_url_tests.rs",
+        "git_blob": "57a0a3393f1bb9560eb036687688656b1f3fe6c8",
+        "sha256": "a310f803114b6e3274ea6b8256a09ee2b5f590ef614508f22f8b8947e4126944",
+        "app": true,
+        "portable": false,
+        "link_before": false,
+        "link_after": false,
+        "app_present": true,
+        "portable_present": false,
+        "link_present": false
+      },
+      {
+        "path": "source/host/app/src/tests/channel_host_lane_tests.rs",
+        "git_blob": "f6139af6bde9829f7e9147e6a2028ec77680bf42",
+        "sha256": "616866391e288b5bc61436f2452cf9717c65fd380ea6d0b60d6d49ad43c18c50",
+        "app": true,
+        "portable": true,
+        "link_before": false,
+        "link_after": false,
+        "app_present": true,
+        "portable_present": true,
+        "link_present": false
+      },
+      {
+        "path": "source/host/app/src/tests/cron_job_identity_tests.rs",
+        "git_blob": "646d24ab3d27dede7bfcb4f5fe421585694c390b",
+        "sha256": "c558935618aec10eb6baaf1cb2acdfbb8974f253b07cf808b8bd9df78d30dabb",
+        "app": true,
+        "portable": false,
+        "link_before": false,
+        "link_after": false,
+        "app_present": true,
+        "portable_present": false,
+        "link_present": false
+      },
+      {
+        "path": "source/host/app/src/tests/link_preview_gateway_tests.rs",
+        "git_blob": "553f0675015cee1d3a7beebd054d69f787536882",
+        "sha256": "21e566af4a7c8b8550eaffbc8f0f24d85e82f27029755d03c9fa35d8e2e9a16a",
+        "app": false,
+        "portable": false,
+        "link_before": true,
+        "link_after": true,
+        "app_present": false,
+        "portable_present": false,
+        "link_present": true
+      }
+    ],
+    "limits": "Receipt counts are 274 App,378 portable,31 link-preview inputs. The independent Git-blob/SHA-256 cross-check here covers the selected15 causal paths; it is not a new independent re-audit of every listed input."
+  },
+  "compiler_observation_limit": "Printed receipt reports ordinary Host dependency features[default] and App-test Host dependency features[default,test-support]. Full successful Cargo JSON stdout artifacts were not separately read here; no packaged-binary or release-profile claim.",
+  "original_sqlite_artifact_zip_downloaded": false,
+  "raw_log_cloud_part_manifest": "pending collector handoff; this document does not claim branch preservation of the full raw log yet",
+  "global_acceptance": false,
+  "unit_status_promotion": false,
+  "remaining": [
+    "macOS native job125753467847 was queued at the last API observation",
+    "Real ecosystem/UI/timing/device/platform/package/performance/soak/final acceptance remain open",
+    "This old-H evidence does not verify the later BXR production change"
+  ]
+}

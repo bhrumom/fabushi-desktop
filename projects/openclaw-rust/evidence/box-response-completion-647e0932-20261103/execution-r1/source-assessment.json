@@ -1,0 +1,37 @@
+{
+  "subject_commit": "14e637798b7c76c8530f9a3710051461f793924f",
+  "subject_tree": "adf36943502425c4a18e9dd04b359efdb5ef6c8f",
+  "upstream_commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "source_run_id": 41597864548,
+  "run_attempt": 1,
+  "job_id": 125789360123,
+  "job_conclusion": "success",
+  "raw_log_sha256": "194c3a52fadc3e2892611727ac771d4732418084b09b3f60e2dfd5054b20e8e2",
+  "raw_log_utf8_bytes": 31530,
+  "source_review_tests": 33,
+  "source_materialization_tests": 21,
+  "structural_negative_controls": 4,
+  "structural_scope": "G01 tracked source identity and G02 accounting negatives only; complete recursive source, semantic implementation and final acceptance remain open.",
+  "artifact": {
+    "id": 13213665108,
+    "name": "ocrm-p0-authority-14e637798b7c76c8530f9a3710051461f793924f",
+    "size_in_bytes": 4951968,
+    "url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13213665108",
+    "archive_download_url": "https://api.github.com/repos/bhrumom/fabushi-desktop/actions/artifacts/13213665108/zip",
+    "expired": false,
+    "created_at": "2026-11-03T07:42:16Z",
+    "expires_at": "2026-12-03T07:42:15Z",
+    "updated_at": "2026-11-03T07:42:16Z",
+    "digest": "sha256:e2f55d994adcbbfb0aaf933478f96602601e37281c6fcfec706e38d443108457",
+    "workflow_run": {
+      "id": 41597864548,
+      "repository_id": 1375312893,
+      "head_repository_id": 1375312893,
+      "head_branch": "codex/openclaw-rust-fusion-chat-20261101-writer",
+      "head_sha": "14e637798b7c76c8530f9a3710051461f793924f"
+    }
+  },
+  "original_artifact_zip_downloaded": false,
+  "all8_global_flags_unchanged_false": true,
+  "runtime_acceptance": false
+}
