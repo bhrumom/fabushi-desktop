@@ -138,15 +138,15 @@ impl OriginalTurnAppFixture {
         let registry = TranscriptRunnerRegistry::default();
         let cancellation = registry.register_routed_provider(&agent_id, ORIGINAL_STREAM).unwrap();
         let blobs = Arc::new(sessions.create_agent_blob_store(&agent_id).unwrap());
-        let prior = session.agent_store.checkpoint_snapshot_checked().unwrap()
-            .map(|snapshot| snapshot.checkpoint_bytes).unwrap_or_default();
+        let prior_snapshot = session.agent_store.checkpoint_snapshot_checked().unwrap();
+        let prior = prior_snapshot.as_ref().map(|snapshot| snapshot.checkpoint_bytes.as_slice()).unwrap_or_default();
         let provider = ProductionTranscriptMirrorProvider::new(
             root.join("transcripts"), GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection),
         );
-        let mirror = Arc::new(provider.route_for_session(Arc::clone(&blobs), &prior, Arc::new(|| Ok(true))).unwrap());
+        let mirror = Arc::new(provider.route_for_session(Arc::clone(&blobs), prior, Arc::new(|| Ok(true))).unwrap());
         assert_eq!(mirror.route(&agent_id).unwrap(), TranscriptMirrorRoute::Journal);
         let sink = Arc::new(ProductionAgentStateCheckpointSink::new(
-            agent_id, Arc::clone(&session.agent_store), blobs, mirror, prior, true,
+            agent_id, Arc::clone(&session.agent_store), blobs, mirror, prior_snapshot, true,
         ).unwrap());
         sink.checkpoint_text_turn(
             &[ProviderMessage { role: "user".into(), content: ORIGINAL_PROMPT.into() }],

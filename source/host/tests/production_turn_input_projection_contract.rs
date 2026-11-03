@@ -7,6 +7,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
+use mahayana_host_runtime::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
 use mahayana_host_runtime::runner::production_agent_checkpoint::AgentStateCheckpointSink;
 use mahayana_host_runtime::runner::production_turn_input_projection::{
     ProductionTurnInputProjection, create_production_turn_agent_input_projection,
@@ -202,11 +203,13 @@ impl RoutedProviderCheckpointStore for MemoryProviderCheckpointStore {
 }
 
 struct SnapshotCheckpointSink {
-    base: Mutex<Vec<u8>>,
+    base: Mutex<Option<ProductionAgentCheckpointSnapshot>>,
 }
 
 impl AgentStateCheckpointSink for SnapshotCheckpointSink {
-    fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
+    fn checked_base_snapshot(
+        &self,
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, ProviderSessionError> {
         Ok(self.base.lock().expect("base state lock").clone())
     }
 }
@@ -245,7 +248,10 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
     ];
     let checkpoint_sink: Arc<dyn AgentStateCheckpointSink> = Arc::new(
         SnapshotCheckpointSink {
-            base: Mutex::new(vec![1, 2, 3, 4]),
+            base: Mutex::new(Some(ProductionAgentCheckpointSnapshot {
+                root_blob_id: vec![11; 32],
+                checkpoint_bytes: vec![1, 2, 3, 4],
+            })),
         },
     );
     let mut output = Vec::<String>::new();
@@ -272,7 +278,10 @@ fn production_turn_agent_projection_freezes_action_mcp_ack_and_base_state() {
     assert_eq!(projected.action.prompt_action, turn_input.prompt_action);
     assert_eq!(projected.mcp_tools.len(), 1);
     assert_eq!(projected.mcp_tools[0].name, "mcp__demo");
-    assert_eq!(projected.base_state_bytes, vec![1, 2, 3, 4]);
+    assert_eq!(projected.expected_base, Some(ProductionAgentCheckpointSnapshot {
+        root_blob_id: vec![11; 32],
+        checkpoint_bytes: vec![1, 2, 3, 4],
+    }));
     assert_eq!(projected.ack_token.as_deref(), Some("ack-1"));
     assert_eq!(list_calls.load(Ordering::SeqCst), 1);
     assert!(!projected.cancel_this_run.is_cancelled());
@@ -343,7 +352,10 @@ fn production_turn_agent_projection_degrades_failed_mcp_discovery_to_empty_snaps
     let provider_messages = lifecycle_messages.clone();
     let checkpoint_sink: Arc<dyn AgentStateCheckpointSink> = Arc::new(
         SnapshotCheckpointSink {
-            base: Mutex::new(vec![9, 8, 7]),
+            base: Mutex::new(Some(ProductionAgentCheckpointSnapshot {
+                root_blob_id: vec![12; 32],
+                checkpoint_bytes: vec![9, 8, 7],
+            })),
         },
     );
     let turn_input = ProductionTurnInputProjection {
@@ -368,7 +380,10 @@ fn production_turn_agent_projection_degrades_failed_mcp_discovery_to_empty_snaps
     assert!(projected.mcp_tools.is_empty());
     assert_eq!(projected.action.lifecycle_messages, lifecycle_messages);
     assert_eq!(projected.action.provider_messages, provider_messages);
-    assert_eq!(projected.base_state_bytes, vec![9, 8, 7]);
+    assert_eq!(projected.expected_base, Some(ProductionAgentCheckpointSnapshot {
+        root_blob_id: vec![12; 32],
+        checkpoint_bytes: vec![9, 8, 7],
+    }));
     assert_eq!(projected.ack_token.as_deref(), Some("ack-fallback"));
     assert!(!projected.cancel_this_run.is_cancelled());
 }
@@ -431,6 +446,75 @@ fn catalog_projection_composition(bridge: Arc<dyn RoutedToolBridge>) -> TurnAgen
         RoutedProviderCancellation::default(),
         Arc::new(MemoryProviderCheckpointStore),
     )
+}
+
+#[test]
+fn production_turn_agent_projection_keeps_root_presence_and_identity_frozen() {
+    let messages = vec![ProviderMessage {
+        role: "user".into(),
+        content: "capture the canonical base".into(),
+    }];
+    let turn_input = create_production_turn_input_projection(
+        &serde_json::json!({}), "snapshot-presence", &messages,
+    ).expect("turn input");
+    for snapshot in [
+        None,
+        Some(ProductionAgentCheckpointSnapshot {
+            root_blob_id: vec![21; 32], checkpoint_bytes: Vec::new(),
+        }),
+        Some(ProductionAgentCheckpointSnapshot {
+            root_blob_id: vec![22; 32], checkpoint_bytes: Vec::new(),
+        }),
+    ] {
+        let composition = catalog_projection_composition(Arc::new(
+            CatalogProjectionBridge::default(),
+        ));
+        let concrete_sink = Arc::new(SnapshotCheckpointSink {
+            base: Mutex::new(snapshot.clone()),
+        });
+        let checkpoint_sink: Arc<dyn AgentStateCheckpointSink> = concrete_sink.clone();
+        let mut emit_update = |_delta: &str, _accumulated: &str| {};
+        let projected = create_production_turn_agent_input_projection(
+            &composition, Some(&checkpoint_sink), &messages, &messages,
+            &turn_input, &mut emit_update,
+        ).expect("explicit checked snapshot");
+        *concrete_sink.base.lock().expect("controlled snapshot") = Some(
+            ProductionAgentCheckpointSnapshot {
+                root_blob_id: vec![23; 32], checkpoint_bytes: vec![1, 2],
+            },
+        );
+        assert_eq!(projected.expected_base, snapshot);
+    }
+}
+
+#[test]
+fn production_turn_agent_projection_refuses_unsupported_snapshot_capability() {
+    struct UnsupportedCheckpointSink;
+    impl AgentStateCheckpointSink for UnsupportedCheckpointSink {}
+
+    let checkpoint_sink: Arc<dyn AgentStateCheckpointSink> = Arc::new(
+        UnsupportedCheckpointSink,
+    );
+    assert!(matches!(checkpoint_sink.base_state_bytes(), Err(ProviderSessionError::Protocol(_))));
+    let composition = catalog_projection_composition(Arc::new(
+        CatalogProjectionBridge::default(),
+    ));
+    let messages = vec![ProviderMessage {
+        role: "user".into(), content: "do not infer an absent root".into(),
+    }];
+    let turn_input = create_production_turn_input_projection(
+        &serde_json::json!({}), "unsupported-snapshot", &messages,
+    ).expect("turn input");
+    let mut emit_update = |_delta: &str, _accumulated: &str| {};
+    let result = create_production_turn_agent_input_projection(
+        &composition, Some(&checkpoint_sink), &messages, &messages,
+        &turn_input, &mut emit_update,
+    );
+    assert!(matches!(result, Err(ProviderSessionError::Protocol(_))));
+    let transient = create_production_turn_agent_input_projection(
+        &composition, None, &messages, &messages, &turn_input, &mut emit_update,
+    ).expect("explicit transient turn remains supported");
+    assert_eq!(transient.expected_base, None);
 }
 
 fn permissive_catalog() -> Vec<RoutedMcpMetaToolDefinition> {

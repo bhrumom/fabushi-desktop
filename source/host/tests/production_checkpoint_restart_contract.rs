@@ -7,6 +7,8 @@
 //! process and all of its Session owners have closed.
 //! GTH-v1 cases retain known completed tool history after an actual generated
 //! failure, then open it in fresh Host processes without a completion grant.
+//! CRA-v1 cases bind actual checked root identity from admission through commit,
+//! including controlled competing writes and recovery in fresh Host processes.
 
 use std::collections::BTreeMap;
 use std::fs::{self, File};
@@ -20,10 +22,14 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use mahayana_host_runtime::extensions::inference::provider_session::{
-    ProviderMessage, ProviderSessionError, RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
+    McpCatalogKind, McpCatalogReason, McpCatalogRefusal, ProviderMessage, ProviderSessionError,
+    RoutedProvider, RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use mahayana_host_runtime::extensions::local_tool_permission::local_tool_permission_controller::SandLocalToolPermissionController;
 use mahayana_host_runtime::extensions::session::production::ProductionSessionWorkers;
+use mahayana_host_runtime::extensions::session::production_agent_store::{
+    ProductionAgentCheckpointSnapshot, ProductionAgentMetadataKey, ProductionAgentStore,
+};
 use mahayana_host_runtime::extensions::session::agent_db::{
     CompactionCommit, CompactionCommitOutcome, OriginalTurnReceiptCommit, OriginalTurnReference,
 };
@@ -53,12 +59,13 @@ use mahayana_host_runtime::runner::coordinator_tool_relay::{
     CoordinatorToolRelay, ROUTED_TOOL_EXECUTE_METHOD, RUNNER_TOOL_REQUEST_EVENT_CHANNEL,
 };
 use mahayana_host_runtime::runner::production_agent_checkpoint::{
+    AgentStateCheckpointSink, CommittedOriginalTurnObservation, TextTurnCheckpointArtifacts,
     original_turn_result_digest, persist_completed_original_turn,
     prove_completed_original_turn, reconcile_completed_original_turn,
 };
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
-    ProductionTurnAgentStaticConfig,
+    ProductionTurnAgentOwner, ProductionTurnAgentStaticConfig,
 };
 use mahayana_host_runtime::runner::routed_provider_runtime::{
     ProductionRoutedProviderCheckpointStore, RoutedProviderCancellation, RoutedToolBridge,
@@ -174,6 +181,8 @@ struct Fixture {
     original_marker: Option<UpgradeResumeMarker>,
     original_compaction: bool,
     generated_scenario: Option<GeneratedHistoryScenario>,
+    canonical_scenario: Option<CanonicalRootScenario>,
+    canonical_turns: Option<Vec<CanonicalExpectedTurn>>,
 }
 
 impl Fixture {
@@ -225,12 +234,14 @@ impl Fixture {
                     recent_message_text: Some(USER_TEXT.into()),
                     ..TurnRunOptions::default()
                 };
+                let expected_base = sink.checked_base_snapshot().expect("capture actual fixture base once");
                 let checkpoint = sink.stage_text_turn(
+                    &expected_base,
                     &[ProviderMessage { role: "user".into(), content: USER_TEXT.into() }],
                     &options,
                     ASSISTANT_TEXT,
                 ).expect("stage through the actual Runner checkpoint helper");
-                sink.persist_staged_text_turn(&options, &checkpoint)
+                sink.persist_staged_text_turn(&expected_base, &options, &checkpoint)
                     .expect("commit canonical root, confirmation and transcript mirror");
                 assert!(checkpoint.state_bytes.starts_with(PRIOR_STATE));
                 expected.root_blob_id = Sha256::digest(&checkpoint.state_bytes).to_vec();
@@ -260,6 +271,7 @@ impl Fixture {
             root, agent_id, expected, original: None, original_invocations: 1,
             original_marker: None, original_compaction: false,
             generated_scenario: None,
+            canonical_scenario: None, canonical_turns: None,
         }
     }
 
@@ -328,6 +340,8 @@ impl Fixture {
             original_marker: self.original_marker.clone(),
             original_compaction: self.original_compaction,
             generated_scenario: self.generated_scenario,
+            canonical_scenario: self.canonical_scenario,
+            canonical_turns: self.canonical_turns.clone(),
         };
         fs::write(&request_path, serde_json::to_vec(&request).expect("serialize child request"))
             .expect("write private child request");
@@ -497,6 +511,8 @@ enum ReopenExpectation {
     OriginalMarkerCorruptAck,
     ProduceGeneratedFailure,
     GeneratedHistoryReady,
+    ProduceCanonicalRoot,
+    CanonicalRootReady,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -535,6 +551,60 @@ impl GeneratedHistoryScenario {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum CanonicalBase { Absent, Empty, Legacy }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum CanonicalDrift { AbsentToEmpty, EmptyToAbsent, SameBytesOtherRoot, SameRootOtherBytes }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum CanonicalEarlyError { Build, Prompt, Catalog, Projection, Preflight }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+enum CanonicalRootScenario {
+    Valid(CanonicalBase),
+    PreProjection(CanonicalDrift),
+    PostProjection,
+    StrictRead(Fault),
+    MissingDirectTurn,
+    RetiredOwners,
+    SameSinkBeforeStage,
+    SameSinkAfterStage,
+    Early(CanonicalEarlyError),
+    JournalAfterCommit,
+}
+
+impl CanonicalRootScenario {
+    fn request_count(self) -> usize {
+        match self {
+            Self::Valid(_) | Self::SameSinkBeforeStage | Self::SameSinkAfterStage
+                | Self::Early(_) | Self::JournalAfterCommit => 2,
+            _ => 0,
+        }
+    }
+
+    fn initial_state(self) -> InitialState {
+        match self {
+            Self::Valid(CanonicalBase::Absent) | Self::PreProjection(CanonicalDrift::AbsentToEmpty) => InitialState::NoCheckpoint,
+            Self::StrictRead(_) | Self::MissingDirectTurn => InitialState::UserCheckpoint,
+            _ => InitialState::EmptyCheckpoint,
+        }
+    }
+
+    fn uses_legacy_root(self) -> bool {
+        matches!(self, Self::Valid(CanonicalBase::Legacy)
+            | Self::PreProjection(CanonicalDrift::SameBytesOtherRoot | CanonicalDrift::SameRootOtherBytes))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct CanonicalExpectedTurn {
+    message_id: String,
+    user_text: String,
+    request_id: String,
+    assistant_text: String,
+}
+
 #[derive(Serialize, Deserialize)]
 struct ChildRequest {
     token: String,
@@ -549,6 +619,10 @@ struct ChildRequest {
     original_compaction: bool,
     #[serde(default)]
     generated_scenario: Option<GeneratedHistoryScenario>,
+    #[serde(default)]
+    canonical_scenario: Option<CanonicalRootScenario>,
+    #[serde(default)]
+    canonical_turns: Option<Vec<CanonicalExpectedTurn>>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -564,6 +638,8 @@ struct ChildReceipt {
     parent_pid: u32,
     expectation: ReopenExpectation,
     produced: Option<ProducedOriginal>,
+    #[serde(default)]
+    canonical_turns: Option<Vec<CanonicalExpectedTurn>>,
 }
 
 struct OwnedChild {
@@ -716,7 +792,7 @@ fn durable_state_for(root: &Path, agent_id: &str) -> DurableState {
     DurableState { kv, transcript, blobs, mirror: mirror_files(&root.join("transcripts")) }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 enum Fault {
     MissingRootBlob,
     MalformedRootBlob,
@@ -881,11 +957,15 @@ fn original_wire_request(
 
 impl OriginalTurnWireServer {
     fn new(root: &Path, invocations: usize, empty_final: bool) -> Self {
-        Self::with_generated_scenario(root, invocations, empty_final, None)
+        Self::with_generated_scenario(root, invocations, empty_final, None, None)
     }
 
     fn generated(root: &Path, scenario: GeneratedHistoryScenario) -> Self {
-        Self::with_generated_scenario(root, 1, false, Some(scenario))
+        Self::with_generated_scenario(root, 1, false, Some(scenario), None)
+    }
+
+    fn canonical(root: &Path, scenario: CanonicalRootScenario) -> Self {
+        Self::with_generated_scenario(root, 1, false, None, Some(scenario))
     }
 
     fn with_generated_scenario(
@@ -893,6 +973,7 @@ impl OriginalTurnWireServer {
         invocations: usize,
         empty_final: bool,
         generated_scenario: Option<GeneratedHistoryScenario>,
+        canonical_scenario: Option<CanonicalRootScenario>,
     ) -> Self {
         let listener = TcpListener::bind("127.0.0.1:0").expect("private original turn Responses listener");
         listener.set_nonblocking(true).expect("bounded original turn accept");
@@ -934,7 +1015,15 @@ impl OriginalTurnWireServer {
                 let request = original_wire_request(&mut stream, ordinal, &worker_stages)?;
                 captured.lock().map_err(|_| "request capture poisoned")?.push(request);
                 original_wire_stage(&worker_stages, ordinal, "request-parsed");
-                let events = if let Some(scenario) = generated_scenario {
+                let events = if let Some(scenario) = canonical_scenario {
+                    if ordinal >= scenario.request_count() {
+                        return Err(format!("unexpected canonical-root provider request {ordinal}"));
+                    }
+                    vec![
+                        json!({"type":"response.output_text.delta", "delta":canonical_reply(ordinal)}),
+                        json!({"type":"response.completed", "response":{"id":format!("canonical-root-{ordinal}"), "output":[]}}),
+                    ]
+                } else if let Some(scenario) = generated_scenario {
                     generated_history_wire_events(scenario, ordinal)?
                 } else if ordinal == 0 {
                     vec![json!({"type":"response.completed", "response":{
@@ -1892,6 +1981,7 @@ fn production_checkpoint_restart_child() {
     assert!(request.fixture_root.is_absolute());
     original_process_stage(&request.token, "owners-opening");
     let owners = OpenOwners::new(&request.fixture_root);
+    let mut canonical_turns = None;
     let produced = match request.expectation {
         ReopenExpectation::Ready => { assert_ready(&request, &owners.sessions); None }
         ReopenExpectation::Refuse => { assert_refused(&request, &owners.sessions); None }
@@ -1899,6 +1989,14 @@ fn production_checkpoint_restart_child() {
         ReopenExpectation::ProduceGeneratedFailure => Some(produce_generated_failure(&request, &owners.sessions)),
         ReopenExpectation::GeneratedHistoryReady => {
             assert_generated_history_reopen(&request, &owners.sessions); None
+        }
+        ReopenExpectation::ProduceCanonicalRoot => {
+            let (produced, turns) = produce_canonical_root(&request, &owners.sessions);
+            canonical_turns = Some(turns);
+            Some(produced)
+        }
+        ReopenExpectation::CanonicalRootReady => {
+            assert_canonical_root_reopen(&request, &owners.sessions); None
         }
         ReopenExpectation::OriginalReady | ReopenExpectation::OriginalAbsent | ReopenExpectation::OriginalRefuse => {
             assert_original_reopen(&request, &owners.sessions); None
@@ -1917,6 +2015,7 @@ fn production_checkpoint_restart_child() {
         parent_pid: request.parent_pid,
         expectation: request.expectation,
         produced,
+        canonical_turns,
     };
     fs::write(request_path.parent().expect("private run directory").join("completed.json"),
         serde_json::to_vec(&receipt).expect("serialize completion receipt"))
@@ -2517,4 +2616,938 @@ fn generated_failure_history_successful_control_preserves_original_completion() 
         assert_eq!(fs::read(fixture.root.join("original-effect.txt")).unwrap(), effect_before);
         assert_eq!(fs::read(&marker_path).unwrap(), marker_before);
     }
+}
+
+fn canonical_reply(ordinal: usize) -> String {
+    format!("canonical admission completed response {ordinal}")
+}
+
+#[derive(Clone, Default)]
+struct CanonicalRunCounters {
+    effects: Arc<AtomicUsize>,
+    retries: Arc<AtomicUsize>,
+    retry_reports: Arc<AtomicUsize>,
+    successes: Arc<AtomicUsize>,
+    discoveries: Arc<AtomicUsize>,
+    catalog_refused: Arc<AtomicBool>,
+}
+
+struct CanonicalRootBridge {
+    root: PathBuf,
+    counters: CanonicalRunCounters,
+}
+
+impl RoutedToolBridge for CanonicalRootBridge {
+    fn list_tools(&self) -> Result<Vec<RoutedToolDefinition>, ProviderSessionError> {
+        self.counters.discoveries.fetch_add(1, Ordering::AcqRel);
+        if self.counters.catalog_refused.load(Ordering::Acquire) {
+            // The App's JSON parser has separate controls. This typed discovery
+            // boundary tests the actual Runner's precedence and error custody.
+            return Err(ProviderSessionError::McpCatalog(McpCatalogRefusal {
+                kind: McpCatalogKind::MetaTools, row: Some(0), reason: McpCatalogReason::NameMustBeString,
+            }));
+        }
+        Ok(vec![RoutedToolDefinition {
+            name: "b".into(), provider_identifier: "canonical-root-contract".into(),
+            tool_name: "b".into(), description: None, input_schema: json!({"type":"object"}),
+        }])
+    }
+
+    fn call_tool(&self, _tool: &RoutedToolDefinition, _args: Value, call_id: &str) -> Result<Value, ProviderSessionError> {
+        let ordinal = self.counters.effects.fetch_add(1, Ordering::AcqRel);
+        let mut file = fs::OpenOptions::new().write(true).create_new(true)
+            .open(self.root.join("canonical-effects").join(format!("{ordinal}.txt")))
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+        file.write_all(call_id.as_bytes()).and_then(|()| file.sync_all())
+            .map_err(|error| ProviderSessionError::Tool(error.to_string()))?;
+        Ok(json!({"receipt":"committed", "callId":call_id}))
+    }
+}
+
+fn canonical_build_bindings(agent_id: &str, invalid_model: bool) -> ProductionTurnAgentBuildBindings {
+    ProductionTurnAgentBuildBindings::new(
+        ProductionTurnAgentStaticConfig {
+            model_id: if invalid_model { String::new() } else { ORIGINAL_MODEL.into() },
+            agent_token_limit: SAND_AGENT_TOKEN_LIMIT, conversation_id: agent_id.into(),
+            is_box_scoped_subagent: false, is_subagent_runner: false, is_shared_room_runner: false,
+            sand_send_message_delivery_owed: false, transcripts_folder_available: true,
+        },
+        Arc::new(|| None), Arc::new(|_, _, _| panic!("bounded canonical admission must not summarize")),
+    )
+}
+
+fn canonical_runner(
+    root: &Path,
+    agent_id: &str,
+    sink: Arc<dyn AgentStateCheckpointSink>,
+    cancellation: RoutedProviderCancellation,
+    counters: &CanonicalRunCounters,
+) -> ProductionTurnAgentOwner {
+    let retries = Arc::clone(&counters.retries);
+    let retry_reports = Arc::clone(&counters.retry_reports);
+    let successes = Arc::clone(&counters.successes);
+    let turn = TurnAgentComposition::new(
+        RoutedProvider::Fabushi,
+        Arc::new(CanonicalRootBridge { root: root.to_path_buf(), counters: counters.clone() }),
+        RunnerRequestContextSnapshot {
+            context: HostRequestContext {
+                os_version: "canonical-root-contract".into(), shell: None, time_zone: Some("UTC".into()),
+                transcripts_folder: root.join("transcripts").to_string_lossy().into_owned(), user_full_name: None,
+            }, rules: None,
+        },
+        cancellation,
+        Arc::new(ProductionRoutedProviderCheckpointStore::new(root, agent_id, ORIGINAL_STREAM)),
+    ).with_fabushi_model(ORIGINAL_MODEL)
+        .with_retry_sink(Arc::new(move |_| { retries.fetch_add(1, Ordering::AcqRel); }))
+        .with_retry_report_sink(Arc::new(move |_| { retry_reports.fetch_add(1, Ordering::AcqRel); }));
+    // Use the same production owner assembly as create_production_runner.
+    // These cases deliberately retain that owner across explicit binding
+    // changes; the facade/factory path remains covered by the GTH/ORT cases.
+    ProductionTurnAgentOwner::new(turn)
+        .with_build_bindings(canonical_build_bindings(agent_id, false))
+        .with_lifecycle_bindings(
+            ProductionTurnAgentLifecycleBindings::new(agent_id, ORIGINAL_STREAM)
+                .with_profile_announcement_commit(Some(Arc::new(move || { successes.fetch_add(1, Ordering::AcqRel); }))),
+        )
+        .with_upgrade_quiesce_signal(Arc::new(AtomicBool::new(false)))
+        .with_agent_state_checkpoint_sink(sink)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CanonicalObserverBoundary { Checked(usize), Staged }
+
+struct CanonicalRootObserver {
+    delegate: Arc<dyn AgentStateCheckpointSink>,
+    generation: usize,
+    epoch: AtomicUsize,
+    boundary: CanonicalObserverBoundary,
+    checked: AtomicUsize,
+    staged: AtomicUsize,
+    persisted: AtomicUsize,
+    fired: AtomicUsize,
+    captured: Mutex<Option<Option<ProductionAgentCheckpointSnapshot>>>,
+    action: Mutex<Option<Box<dyn FnOnce() + Send>>>,
+}
+
+impl CanonicalRootObserver {
+    fn new(
+        delegate: Arc<dyn AgentStateCheckpointSink>,
+        generation: usize,
+        boundary: CanonicalObserverBoundary,
+        action: impl FnOnce() + Send + 'static,
+    ) -> Self {
+        Self {
+            delegate, generation, epoch: AtomicUsize::new(generation), boundary,
+            checked: AtomicUsize::new(0), staged: AtomicUsize::new(0), persisted: AtomicUsize::new(0),
+            fired: AtomicUsize::new(0), captured: Mutex::new(None), action: Mutex::new(Some(Box::new(action))),
+        }
+    }
+
+    fn fire(&self) {
+        assert_eq!(self.epoch.load(Ordering::Acquire), self.generation);
+        assert_eq!(self.fired.fetch_add(1, Ordering::AcqRel), 0, "one owned boundary injection only");
+        let action = self.action.lock().expect("owned boundary action").take().expect("unused boundary action");
+        // The real getter/stager has returned and released its locks. Preserve
+        // that genuine result while the actual competing owner runs.
+        action();
+    }
+
+    fn assert_captured(&self, expected: &Option<ProductionAgentCheckpointSnapshot>) {
+        let captured = self.captured.lock().expect("captured real checked result");
+        assert_eq!(captured.as_ref(), Some(expected), "the invocation must pass its original complete checked snapshot");
+    }
+
+    fn after_stage(&self, result: &Result<TextTurnCheckpointArtifacts, ProviderSessionError>) {
+        self.staged.fetch_add(1, Ordering::AcqRel);
+        if result.is_ok() && self.boundary == CanonicalObserverBoundary::Staged { self.fire(); }
+    }
+
+    fn finish(&self, actual_generation: u64, checked: usize, staged: usize, persisted: usize) {
+        assert_eq!(actual_generation, self.generation as u64);
+        assert_eq!(self.checked.load(Ordering::Acquire), checked);
+        assert_eq!(self.staged.load(Ordering::Acquire), staged);
+        assert_eq!(self.persisted.load(Ordering::Acquire), persisted);
+        assert_eq!(self.fired.load(Ordering::Acquire), 1);
+        assert!(self.action.lock().expect("consumed owned boundary action").is_none());
+        assert_eq!(self.epoch.compare_exchange(self.generation, self.generation + 1, Ordering::AcqRel, Ordering::Acquire),
+            Ok(self.generation), "retire this exact observer generation");
+    }
+}
+
+impl AgentStateCheckpointSink for CanonicalRootObserver {
+    fn invalidate_original_turn_completion(&self) { self.delegate.invalidate_original_turn_completion(); }
+
+    fn committed_original_turn_observations(&self) -> Result<Vec<CommittedOriginalTurnObservation>, ProviderSessionError> {
+        self.delegate.committed_original_turn_observations()
+    }
+
+    fn checked_base_snapshot(&self) -> Result<Option<ProductionAgentCheckpointSnapshot>, ProviderSessionError> {
+        let ordinal = self.checked.fetch_add(1, Ordering::AcqRel) + 1;
+        let genuine = self.delegate.checked_base_snapshot()?;
+        if ordinal == 1 { *self.captured.lock().expect("capture actual projection read") = Some(genuine.clone()); }
+        if self.boundary == CanonicalObserverBoundary::Checked(ordinal) { self.fire(); }
+        Ok(genuine)
+    }
+
+    fn read_state_blob(&self, id: &[u8]) -> Result<Option<Vec<u8>>, ProviderSessionError> {
+        self.delegate.read_state_blob(id)
+    }
+
+    fn stage_text_turn(&self, expected: &Option<ProductionAgentCheckpointSnapshot>, messages: &[ProviderMessage],
+        options: &TurnRunOptions, text: &str) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError>
+    {
+        self.assert_captured(expected);
+        let result = self.delegate.stage_text_turn(expected, messages, options, text);
+        self.after_stage(&result);
+        result
+    }
+
+    fn stage_generated_turn(&self, expected: &Option<ProductionAgentCheckpointSnapshot>, messages: &[ProviderMessage],
+        options: &TurnRunOptions, steps: &[Vec<u8>], text: &str) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError>
+    {
+        self.assert_captured(expected);
+        let result = self.delegate.stage_generated_turn(expected, messages, options, steps, text);
+        self.after_stage(&result);
+        result
+    }
+
+    fn persist_staged_text_turn(&self, expected: &Option<ProductionAgentCheckpointSnapshot>, options: &TurnRunOptions,
+        checkpoint: &TextTurnCheckpointArtifacts) -> Result<(), ProviderSessionError>
+    {
+        self.assert_captured(expected);
+        self.persisted.fetch_add(1, Ordering::AcqRel);
+        self.delegate.persist_staged_text_turn(expected, options, checkpoint)
+    }
+}
+
+fn canonical_expected_turn(options: &TurnRunOptions, text: &str) -> CanonicalExpectedTurn {
+    CanonicalExpectedTurn {
+        message_id: options.message_id.as_ref().or(options.inference_request_id.as_ref())
+            .expect("actual invocation user identity").clone(),
+        user_text: options.recent_message_text.clone().expect("actual invocation user text"),
+        request_id: options.inference_request_id.clone().expect("actual invocation request identity"),
+        assistant_text: text.into(),
+    }
+}
+
+fn canonical_checkpoint_view(
+    root: &Path,
+    agent_id: &str,
+    sessions: &Arc<ProductionSessionWorkers>,
+    expected_turns: &[CanonicalExpectedTurn],
+    check_journal: bool,
+) -> ExpectedCheckpoint {
+    let store = sessions.open_agent_store_owner(agent_id).expect("actual canonical checkpoint reader");
+    let snapshot = store.checkpoint_snapshot_checked().expect("actual strict canonical snapshot");
+    let state_bytes = snapshot.as_ref().map(|snapshot| snapshot.checkpoint_bytes.clone());
+    let fields = decode_conversation_state_recovery_fields(state_bytes.as_deref().unwrap_or_default())
+        .expect("checked canonical state protobuf");
+    assert_eq!(fields.turns.len(), expected_turns.len(), "only explicitly committed invocations survive");
+    let mut critical_blobs = snapshot.as_ref().map(|snapshot|
+        vec![(snapshot.root_blob_id.clone(), snapshot.checkpoint_bytes.clone())]).unwrap_or_default();
+    let codec = GeneratedTranscriptOccurrenceCodec::new(CanonicalGeneratedToolJsonProjection);
+    let mut journal = Vec::new();
+    for (id, expected) in fields.turns.iter().zip(expected_turns) {
+        let turn = store.get_blob(id).expect("canonical turn read").expect("canonical turn exists");
+        let Some(ConversationTurnStructureFields::Agent { user_message, steps, request_id }) =
+            decode_conversation_turn_structure_fields(&turn).expect("canonical Agent turn")
+        else { panic!("these real generated controls must retain Agent turns"); };
+        assert_eq!(request_id.as_deref(), Some(expected.request_id.as_str()));
+        assert_eq!(steps.len(), 1, "no failed invocation or tool step may be fabricated");
+        let user_bytes = store.get_blob(&user_message).expect("canonical user read").expect("canonical user exists");
+        let user = decode_user_message_identity_fields(&user_bytes).expect("canonical accepted user identity");
+        assert_eq!(user.message_id, expected.message_id);
+        assert_eq!(user.text, expected.user_text);
+        let step = store.get_blob(&steps[0]).expect("canonical Assistant read").expect("canonical Assistant exists");
+        assert_eq!(codec.decode_step(&step).expect("canonical generated Assistant projection"),
+            DecodedTranscriptStep::Assistant { text: expected.assistant_text.clone() });
+        critical_blobs.push((id.clone(), turn));
+        critical_blobs.push((user_message, user_bytes));
+        critical_blobs.push((steps[0].clone(), step));
+        journal.push(json!({"role":"user", "message":{"content":[{"type":"text", "text":expected.user_text}]}}));
+        journal.push(json!({"role":"assistant", "message":{"content":[{"type":"text", "text":expected.assistant_text}]}}));
+    }
+    if check_journal {
+        let path = root.join("transcripts").join(agent_id).join(format!("{agent_id}.jsonl"));
+        let text = fs::read_to_string(path).expect("actual canonical Journal");
+        let actual = text.lines().map(|line| serde_json::from_str::<Value>(line)
+            .expect("actual canonical Journal occurrence")).collect::<Vec<_>>();
+        assert_eq!(actual, journal, "exact user/Assistant order without refused or replayed work");
+    }
+    ExpectedCheckpoint {
+        root_blob_id: snapshot.map(|snapshot| snapshot.root_blob_id).unwrap_or_default(),
+        state_bytes, last_user_message_id: expected_turns.last().map(|turn| turn.message_id.clone()),
+        compaction_epoch: fields.self_summary_count, critical_blobs,
+    }
+}
+
+fn mutate_canonical_root(
+    root: &Path,
+    agent_id: &str,
+    sessions: &Arc<ProductionSessionWorkers>,
+    store: &ProductionAgentStore,
+    drift: CanonicalDrift,
+) {
+    let previous = store.checkpoint_snapshot_checked().expect("capture actual competing write base");
+    match drift {
+        CanonicalDrift::AbsentToEmpty => {
+            assert!(previous.is_none());
+            store.handle_checkpoint_bytes_blocking(&[]).expect("real present-empty competitor");
+        }
+        CanonicalDrift::EmptyToAbsent => {
+            let previous = previous.as_ref().expect("real present-empty base");
+            assert!(previous.checkpoint_bytes.is_empty());
+            assert!(sessions.open_agent_db_owner(agent_id).expect("real root metadata owner")
+                .compare_and_set_latest_root_blob_id(&previous.root_blob_id, &[])
+                .expect("explicit competing absent binding"));
+        }
+        CanonicalDrift::SameBytesOtherRoot => {
+            let previous = previous.as_ref().expect("real fixed root base");
+            let next_root = b"other-legacy-root";
+            sessions.create_agent_blob_store(agent_id).expect("real competing blob owner")
+                .set_blob_blocking(next_root, &previous.checkpoint_bytes).expect("same bytes under another valid ID");
+            assert!(sessions.open_agent_db_owner(agent_id).expect("real metadata owner")
+                .compare_and_set_latest_root_blob_id(&previous.root_blob_id, next_root)
+                .expect("real competing root binding"));
+        }
+        CanonicalDrift::SameRootOtherBytes => {
+            let previous = previous.as_ref().expect("real fixed root base");
+            assert_eq!(previous.root_blob_id, LEGACY_FIXED_ROOT_ID);
+            assert_ne!(previous.checkpoint_bytes, PRIOR_STATE);
+            sessions.create_agent_blob_store(agent_id).expect("real competing blob owner")
+                .set_blob_blocking(&previous.root_blob_id, PRIOR_STATE).expect("different valid bytes under the same fixed ID");
+        }
+    }
+    store.reset_from_db_checked().expect("explicit checked store reload, never an implicit sink rebind");
+    let next = store.checkpoint_snapshot_checked().expect("real competing snapshot is admissible");
+    assert_ne!(next, previous);
+    assert!(root.join("agents").join(agent_id).is_dir());
+}
+
+fn restore_canonical_snapshot(
+    sessions: &Arc<ProductionSessionWorkers>,
+    agent_id: &str,
+    store: &ProductionAgentStore,
+    original: &Option<ProductionAgentCheckpointSnapshot>,
+) {
+    let current = store.checkpoint_snapshot_checked().expect("read the explicit competing root before repair");
+    let next_id = original.as_ref().map(|snapshot| snapshot.root_blob_id.as_slice()).unwrap_or_default();
+    if let Some(snapshot) = original {
+        sessions.create_agent_blob_store(agent_id).expect("existing repair blob owner")
+            .set_blob_blocking(&snapshot.root_blob_id, &snapshot.checkpoint_bytes)
+            .expect("restore only captured original checkpoint bytes");
+    }
+    assert!(sessions.open_agent_db_owner(agent_id).expect("existing repair metadata owner")
+        .compare_and_set_latest_root_blob_id(
+            current.as_ref().map(|snapshot| snapshot.root_blob_id.as_slice()).unwrap_or_default(), next_id,
+        ).expect("explicitly restore the captured root binding"));
+    store.reset_from_db_checked().expect("explicit checked repair reload");
+    assert_eq!(&store.checkpoint_snapshot_checked().expect("strict repaired snapshot"), original);
+}
+
+enum CanonicalFaultRepair { Metadata(String), Blob(Vec<u8>, Vec<u8>) }
+
+fn inject_live_canonical_read_fault(
+    root: &Path,
+    agent_id: &str,
+    store: &ProductionAgentStore,
+    scenario: CanonicalRootScenario,
+) -> CanonicalFaultRepair {
+    let snapshot = store.checkpoint_snapshot_checked().expect("healthy strict fixture snapshot")
+        .expect("strict fault fixture has a real prior checkpoint");
+    let directory = root.join("agents").join(agent_id);
+    if matches!(scenario, CanonicalRootScenario::StrictRead(Fault::MissingRootBlob | Fault::MalformedRootBlob)
+        | CanonicalRootScenario::MissingDirectTurn)
+    {
+        let id = if scenario == CanonicalRootScenario::MissingDirectTurn {
+            decode_conversation_state_recovery_fields(&snapshot.checkpoint_bytes).expect("actual direct references")
+                .turns.into_iter().next().expect("actual existing direct turn reference")
+        } else { snapshot.root_blob_id };
+        let bytes = store.get_blob(&id).expect("capture owned fault target").expect("owned target exists");
+        let db = open_existing(&directory.join(CONVERSATION_BLOBS_FILENAME), false);
+        let changed = if scenario == CanonicalRootScenario::StrictRead(Fault::MalformedRootBlob) {
+            db.execute("UPDATE blobs SET data=?2 WHERE id=?1", params![hex(&id), vec![0_u8]])
+        } else { db.execute("DELETE FROM blobs WHERE id=?1", params![hex(&id)]) }
+            .expect("inject the exact owned live blob fault");
+        assert_eq!(changed, 1);
+        return CanonicalFaultRepair::Blob(id, bytes);
+    }
+    let CanonicalRootScenario::StrictRead(fault) = scenario else { panic!("expected a typed strict read fault"); };
+    let db = open_existing(&directory.join(STORE_FILENAME), false);
+    let original: String = db.query_row("SELECT value FROM kv WHERE key='metadata'", [], |row| row.get(0))
+        .expect("capture exact owned metadata image");
+    let changed = match fault {
+        Fault::MissingMetadata => db.execute("DELETE FROM kv WHERE key='metadata'", []),
+        Fault::MalformedMetadata => db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", params![hex(b"{")]),
+        Fault::MissingRootField | Fault::NonStringRootField => {
+            let bytes = original.as_bytes().chunks_exact(2).map(|pair|
+                u8::from_str_radix(std::str::from_utf8(pair).expect("actual metadata hex"), 16).expect("actual metadata byte"))
+                .collect::<Vec<_>>();
+            let mut value: Value = serde_json::from_slice(&bytes).expect("actual metadata JSON");
+            if fault == Fault::MissingRootField { value.as_object_mut().unwrap().remove("latestRootBlobId"); }
+            else { value["latestRootBlobId"] = json!(42); }
+            db.execute("UPDATE kv SET value=?1 WHERE key='metadata'", params![hex(&serde_json::to_vec(&value).unwrap())])
+        }
+        _ => unreachable!(),
+    }.expect("inject only the owned live metadata fault");
+    assert_eq!(changed, 1);
+    CanonicalFaultRepair::Metadata(original)
+}
+
+fn repair_live_canonical_read_fault(root: &Path, agent_id: &str, sessions: &Arc<ProductionSessionWorkers>, repair: CanonicalFaultRepair) {
+    match repair {
+        CanonicalFaultRepair::Metadata(raw) => {
+            assert_eq!(open_existing(&root.join("agents").join(agent_id).join(STORE_FILENAME), false).execute(
+                "INSERT INTO kv(key,value) VALUES('metadata',?1) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                params![raw],
+            ).expect("restore the exact captured metadata image"), 1);
+        }
+        CanonicalFaultRepair::Blob(id, bytes) => {
+            sessions.create_agent_blob_store(agent_id).expect("existing explicit repair blob owner")
+                .set_blob_blocking(&id, &bytes).expect("restore the exact captured blob image");
+        }
+    }
+}
+
+fn assert_canonical_custody(runner: &ProductionTurnAgentOwner) {
+    let finished = runner.last_finished().expect("actual generated shell outcome");
+    assert_eq!(finished.owner.request_id, ORIGINAL_STREAM);
+    assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::Known {
+        run_generation: finished.owner.generation,
+        snapshot: ToolEffectCustodySnapshot {
+            started_revision: 0, checkpoint_revision: 0, pending_effects: 0, unknown_result: None,
+        },
+    }));
+}
+
+fn assert_canonical_success(
+    runner: &mut ProductionTurnAgentOwner,
+    root: &Path,
+    messages: &[ProviderMessage],
+    options: TurnRunOptions,
+    ordinal: usize,
+) {
+    let mut deltas = Vec::new();
+    let result = runner.run_routed_provider_with_options(root, messages, options, &mut |delta, _| deltas.push(delta.to_string()))
+        .expect("actual explicit generated invocation succeeds");
+    assert_eq!(result, canonical_reply(ordinal));
+    assert_eq!(deltas, vec![canonical_reply(ordinal)]);
+    assert_eq!(runner.last_finished().unwrap().outcome, TerminalOutcome::Completed);
+    assert_canonical_custody(runner);
+}
+
+fn canonical_run_error(
+    runner: &mut ProductionTurnAgentOwner,
+    root: &Path,
+    messages: &[ProviderMessage],
+    options: TurnRunOptions,
+    expected_delta: Option<String>,
+) -> ProviderSessionError {
+    let mut deltas = Vec::new();
+    let error = runner.run_routed_provider_with_options(root, messages, options, &mut |delta, _| deltas.push(delta.to_string()))
+        .expect_err("the actual canonical admission/publication refusal must remain an error");
+    assert_eq!(deltas, expected_delta.into_iter().collect::<Vec<_>>());
+    error
+}
+
+fn assert_canonical_failed_shell(runner: &ProductionTurnAgentOwner, error: &ProviderSessionError) {
+    let finished = runner.last_finished().expect("actual refused shell terminal");
+    assert_eq!(finished.owner.request_id, ORIGINAL_STREAM);
+    assert_eq!(finished.outcome, TerminalOutcome::Failed {
+        retryable: matches!(error, ProviderSessionError::Transport(_)), message: error.to_string(),
+    });
+}
+
+fn run_canonical_competitor(
+    cancellation: RoutedProviderCancellation,
+    run: impl FnOnce() -> DurableState + Send + 'static,
+) -> DurableState {
+    // This helper runs only inside the private, PID-bound harness child. A
+    // separate thread avoids nesting the generated stream's LocalPool executor.
+    let worker = thread::spawn(run);
+    let deadline = Instant::now() + Duration::from_secs(15);
+    while !worker.is_finished() && Instant::now() < deadline { thread::sleep(Duration::from_millis(2)); }
+    if !worker.is_finished() {
+        cancellation.cancel("owned canonical competitor exceeded its deadline");
+        let cleanup_deadline = Instant::now() + Duration::from_secs(5);
+        while !worker.is_finished() && Instant::now() < cleanup_deadline { thread::sleep(Duration::from_millis(2)); }
+        if worker.is_finished() {
+            let outcome = worker.join();
+            panic!("owned canonical competitor exceeded its deadline; joined outcome={outcome:?}");
+        }
+        // Do not detach an unresolved writer or enter an unbounded join. The
+        // existing parent captures the failing child and reaps this exact PID.
+        eprintln!("owned canonical competitor did not stop after cancellation; aborting only the private harness child");
+        std::process::abort();
+    }
+    worker.join().expect("the exact owned competing invocation thread completed")
+}
+
+fn produce_canonical_root(
+    request: &ChildRequest,
+    sessions: &Arc<ProductionSessionWorkers>,
+) -> (ProducedOriginal, Vec<CanonicalExpectedTurn>) {
+    let scenario = request.canonical_scenario.expect("typed canonical-root process scenario");
+    let root = &request.fixture_root;
+    original_process_stage(&request.token, &format!("canonical-{scenario:?}-admission"));
+    let runtime = ProductionTranscriptRuntime::new(Some(root));
+    let args = json!({
+        "agentId":request.agent_id, "streamId":ORIGINAL_STREAM, "prompt":USER_TEXT,
+        "sessionKey":format!("agent:{}:main", request.agent_id), "clientNonce":"canonical-root-user-nonce",
+    });
+    let accepted = runtime.accept_routed_send(&args, |accepted| {
+        persist_accepted_send_prompt_context(sessions, &args, accepted)
+            .map_err(|error| ProductionSendError::Internal(format!("{error:?}")))
+    }).expect("actual canonical-root routed admission");
+    assert!(!accepted.duplicate);
+    let control = runtime.capture_routed_turn_start(&request.agent_id, ORIGINAL_STREAM).expect("actual admitted lease control");
+    let cancellation = control.cancellation();
+    let admission = sessions.read_session_work_admission(&request.agent_id).expect("actual Session admission").expect("main Session");
+    let original = runtime.bind_original_turn_model(&request.agent_id, ORIGINAL_STREAM, &admission, ORIGINAL_MODEL)
+        .expect("bind admitted original model").expect("ordinary original user");
+    assert_eq!(accepted.context.user_message_id.as_deref(), Some(original.user_message_id.as_str()));
+    let host = composition(root, sessions);
+    let sink: Arc<dyn AgentStateCheckpointSink> = host.compose_production_checkpoint_sink(
+        sessions, root, &request.agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
+    ).expect("actual canonical-root sink composition").expect("main canonical sink");
+    let store = sessions.open_agent_store_owner(&request.agent_id).expect("actual canonical root owner");
+    let initial = sink.checked_base_snapshot().expect("actual initially admissible complete snapshot");
+    assert_eq!(initial, store.checkpoint_snapshot_checked().expect("independent actual checked root read"));
+    assert!(sink.committed_original_turn_observations().expect("initial completion log").is_empty());
+    fs::create_dir(root.join("canonical-effects")).expect("owned canonical effect directory");
+    let counters = CanonicalRunCounters::default();
+    let mut runner = canonical_runner(root, &request.agent_id, Arc::clone(&sink), cancellation.clone(), &counters);
+    let messages = vec![ProviderMessage { role: "user".into(), content: USER_TEXT.into() }];
+    let options = TurnRunOptions {
+        inference_request_id: Some(ORIGINAL_STREAM.into()), message_id: Some(original.user_message_id.clone()),
+        recent_message_text: Some(USER_TEXT.into()), turn_started_at_ms: Some(1), ..TurnRunOptions::default()
+    };
+    let nudge = shape_reply_nudge_turn_input(&messages, &messages, &options);
+    let mut expected_turns = if matches!(scenario, CanonicalRootScenario::StrictRead(_) | CanonicalRootScenario::MissingDirectTurn) {
+        vec![CanonicalExpectedTurn {
+            message_id: USER_ID.into(), user_text: USER_TEXT.into(), request_id: "checkpoint-restart-request".into(),
+            assistant_text: ASSISTANT_TEXT.into(),
+        }]
+    } else { Vec::new() };
+
+    match scenario {
+        CanonicalRootScenario::Valid(_) => {
+            let mut custody = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+            assert_canonical_success(&mut runner, root, &messages, options.clone(), 0);
+            custody.record(runner.last_tool_effect_custody());
+            let first = sink.checked_base_snapshot().expect("own commit advances retained complete snapshot");
+            assert_ne!(first, initial);
+            assert_eq!(first, store.checkpoint_snapshot_checked().unwrap());
+            assert_eq!(sink.committed_original_turn_observations().unwrap().len(), 1);
+            expected_turns.push(canonical_expected_turn(&options, &canonical_reply(0)));
+            assert_canonical_success(&mut runner, root, &nudge.provider_messages, nudge.options.clone(), 1);
+            custody.record(runner.last_tool_effect_custody());
+            let second = sink.checked_base_snapshot().expect("second explicit own commit advances retained snapshot");
+            assert_ne!(second, first);
+            assert_eq!(second, store.checkpoint_snapshot_checked().unwrap());
+            let observations = sink.committed_original_turn_observations().expect("valid repeated completion observations");
+            assert_eq!(observations.len(), 2);
+            prove_completed_original_turn(&original, project_turn_terminal(false, false, true, 0, false),
+                original_turn_result_digest(&canonical_reply(1)), 0, false, &custody, &observations)
+                .expect("real repeated successful invocations remain eligible");
+            expected_turns.push(canonical_expected_turn(&nudge.options, &canonical_reply(1)));
+        }
+        CanonicalRootScenario::PreProjection(drift) => {
+            mutate_canonical_root(root, &request.agent_id, sessions, &store, drift);
+            let competing = durable_state_for(root, &request.agent_id);
+            let error = canonical_run_error(&mut runner, root, &messages, options.clone(), None);
+            assert!(matches!(&error, ProviderSessionError::Protocol(message) if message.contains("checkpoint root changed")));
+            assert_canonical_failed_shell(&runner, &error);
+            assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::NotStarted));
+            assert!(sink.checked_base_snapshot().is_err(), "the old sink never adopts the explicitly reloaded competitor");
+            assert_eq!(durable_state_for(root, &request.agent_id), competing);
+        }
+        CanonicalRootScenario::PostProjection => {
+            let competing = Arc::new(Mutex::new(None));
+            let observed = Arc::clone(&competing);
+            let competitor = Arc::clone(&store);
+            let effect_root = root.clone();
+            let effect_agent = request.agent_id.clone();
+            let observer = Arc::new(CanonicalRootObserver::new(Arc::clone(&sink), 1, CanonicalObserverBoundary::Checked(1), move || {
+                competitor.handle_checkpoint_bytes_blocking(PRIOR_STATE).expect("real post-projection competing root");
+                *observed.lock().unwrap() = Some(durable_state_for(&effect_root, &effect_agent));
+            }));
+            runner = runner.with_agent_state_checkpoint_sink(observer.clone());
+            let error = canonical_run_error(&mut runner, root, &messages, options.clone(), None);
+            assert!(matches!(&error, ProviderSessionError::Protocol(message) if message.contains("checkpoint root changed")));
+            assert_canonical_failed_shell(&runner, &error);
+            assert_canonical_custody(&runner);
+            observer.finish(runner.last_finished().unwrap().owner.generation, 2, 0, 0);
+            assert_eq!(durable_state_for(root, &request.agent_id), competing.lock().unwrap().take().unwrap());
+        }
+        CanonicalRootScenario::StrictRead(_) | CanonicalRootScenario::MissingDirectTurn => {
+            let healthy = durable_state_for(root, &request.agent_id);
+            let repair = inject_live_canonical_read_fault(root, &request.agent_id, &store, scenario);
+            let damaged = durable_state_for(root, &request.agent_id);
+            assert_ne!(damaged, healthy);
+            let error = canonical_run_error(&mut runner, root, &messages, options.clone(), None);
+            assert!(matches!(&error, ProviderSessionError::Protocol(message) if message.contains("checkpoint prior state is unavailable")));
+            assert_canonical_failed_shell(&runner, &error);
+            assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::NotStarted));
+            assert!(sink.checked_base_snapshot().is_err());
+            assert_eq!(durable_state_for(root, &request.agent_id), damaged, "strict refusal cannot repair damaged authority");
+            repair_live_canonical_read_fault(root, &request.agent_id, sessions, repair);
+            assert_eq!(durable_state_for(root, &request.agent_id), healthy, "only explicit exact repair restores fixture bytes");
+            assert_eq!(sink.checked_base_snapshot().expect("original still-current root after exact repair"), initial);
+        }
+        CanonicalRootScenario::RetiredOwners => {
+            sessions.prepare_existing_agent(&request.agent_id).expect("finish ordinary outline maintenance before retirement")
+                .expect("existing admitted Session before retirement");
+            let before = durable_state_for(root, &request.agent_id);
+            assert!(sessions.retire_agent_owners(&request.agent_id, true).expect("complete actual per-agent retirement"));
+            assert_eq!(sessions.active_agent_store_owner_count(), 0);
+            assert_eq!(sessions.active_agent_db_owner_count(), 0);
+            assert_eq!(sessions.active_worker_count(), 0);
+            let error = canonical_run_error(&mut runner, root, &messages, options.clone(), None);
+            assert!(matches!(&error, ProviderSessionError::Protocol(message) if message.contains("checkpoint prior state is unavailable")));
+            assert_canonical_failed_shell(&runner, &error);
+            assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::NotStarted));
+            assert!(sink.checked_base_snapshot().is_err());
+            assert_eq!(sessions.active_agent_store_owner_count(), 0, "refusal cannot reopen retired owners");
+            assert_eq!(sessions.active_agent_db_owner_count(), 0);
+            assert_eq!(sessions.active_worker_count(), 0);
+            assert_eq!(durable_state_for(root, &request.agent_id), before);
+        }
+        CanonicalRootScenario::SameSinkBeforeStage | CanonicalRootScenario::SameSinkAfterStage => {
+            let after_stage = scenario == CanonicalRootScenario::SameSinkAfterStage;
+            let competing = Arc::new(Mutex::new(None));
+            let observed = Arc::clone(&competing);
+            let shared = Arc::clone(&sink);
+            let effect_root = root.clone();
+            let effect_agent = request.agent_id.clone();
+            let effect_messages = messages.clone();
+            let effect_options = options.clone();
+            let effect_cancellation = cancellation.clone();
+            let effect_counters = counters.clone();
+            let competitor_ordinal = usize::from(after_stage);
+            let observer = Arc::new(CanonicalRootObserver::new(Arc::clone(&sink), 1,
+                if after_stage { CanonicalObserverBoundary::Staged } else { CanonicalObserverBoundary::Checked(2) }, move || {
+                    let state = run_canonical_competitor(effect_cancellation.clone(), move || {
+                        let mut competitor = canonical_runner(&effect_root, &effect_agent, Arc::clone(&shared), effect_cancellation, &effect_counters);
+                        assert_canonical_success(&mut competitor, &effect_root, &effect_messages, effect_options, competitor_ordinal);
+                        assert_eq!(shared.committed_original_turn_observations().expect("B's genuine successful commit").len(), 1);
+                        durable_state_for(&effect_root, &effect_agent)
+                    });
+                    *observed.lock().unwrap() = Some(state);
+                }));
+            runner = runner.with_agent_state_checkpoint_sink(observer.clone());
+            let error = canonical_run_error(&mut runner, root, &messages, options.clone(), Some(canonical_reply(1 - competitor_ordinal)));
+            assert!(matches!(&error, ProviderSessionError::Protocol(message)
+                if message.contains("captured") || message.contains("root changed")));
+            assert_eq!(error.to_string().starts_with("generated Agent stream persistence failed:"), after_stage);
+            assert_canonical_failed_shell(&runner, &error);
+            assert_canonical_custody(&runner);
+            observer.finish(runner.last_finished().unwrap().owner.generation, 2, 1, usize::from(after_stage));
+            assert_eq!(durable_state_for(root, &request.agent_id), competing.lock().unwrap().take().unwrap(),
+                "A cannot append on B's root or mutate B's confirmation/Journal/blob bytes");
+            expected_turns.push(canonical_expected_turn(&options, &canonical_reply(competitor_ordinal)));
+        }
+        CanonicalRootScenario::Early(kind) => {
+            assert_canonical_success(&mut runner, root, &messages, options.clone(), 0);
+            let mut custody = ToolEffectCustodyReport::new(ORIGINAL_STREAM);
+            custody.record(runner.last_tool_effect_custody());
+            let observations = sink.committed_original_turn_observations().expect("actual prior successful authority");
+            assert_eq!(observations.len(), 1);
+            prove_completed_original_turn(&original, project_turn_terminal(false, false, true, 0, false),
+                original_turn_result_digest(&canonical_reply(0)), 0, false, &custody, &observations)
+                .expect("real prior success qualifies before early refusal");
+            expected_turns.push(canonical_expected_turn(&options, &canonical_reply(0)));
+            let prior = sink.checked_base_snapshot().expect("capture prior successful expectation");
+            let prior_generation = runner.last_finished().unwrap().owner.generation;
+            let competing = Arc::new(Mutex::new(None));
+            let mut observer = None;
+            match kind {
+                CanonicalEarlyError::Build => { runner = runner.with_build_bindings(canonical_build_bindings(&request.agent_id, true)); }
+                CanonicalEarlyError::Prompt => {}
+                CanonicalEarlyError::Catalog | CanonicalEarlyError::Projection => {
+                    store.handle_checkpoint_bytes_blocking(PRIOR_STATE).expect("actual competing root before early projection");
+                    counters.catalog_refused.store(kind == CanonicalEarlyError::Catalog, Ordering::Release);
+                }
+                CanonicalEarlyError::Preflight => {
+                    let observed = Arc::clone(&competing);
+                    let competitor = Arc::clone(&store);
+                    let effect_root = root.clone();
+                    let effect_agent = request.agent_id.clone();
+                    let boundary = Arc::new(CanonicalRootObserver::new(Arc::clone(&sink), (prior_generation + 1) as usize,
+                        CanonicalObserverBoundary::Checked(1), move || {
+                            competitor.handle_checkpoint_bytes_blocking(PRIOR_STATE).expect("actual early preflight competitor");
+                            *observed.lock().unwrap() = Some(durable_state_for(&effect_root, &effect_agent));
+                        }));
+                    runner = runner.with_agent_state_checkpoint_sink(boundary.clone());
+                    observer = Some(boundary);
+                }
+            }
+            let before = durable_state_for(root, &request.agent_id);
+            let error = canonical_run_error(&mut runner, root,
+                if kind == CanonicalEarlyError::Prompt { &[] } else { &messages }, nudge.options.clone(), None);
+            match kind {
+                CanonicalEarlyError::Build => assert!(matches!(&error, ProviderSessionError::Configuration(message)
+                    if message == "production turn model id is empty")),
+                CanonicalEarlyError::Prompt => assert!(matches!(&error, ProviderSessionError::Configuration(message)
+                    if message == "Runner production turn requires a non-empty user prompt.")),
+                CanonicalEarlyError::Catalog => assert!(matches!(&error, ProviderSessionError::McpCatalog(refusal)
+                    if *refusal == (McpCatalogRefusal { kind: McpCatalogKind::MetaTools, row: Some(0), reason: McpCatalogReason::NameMustBeString }))),
+                _ => assert!(matches!(&error, ProviderSessionError::Protocol(message) if message.contains("checkpoint root changed"))),
+            }
+            if matches!(kind, CanonicalEarlyError::Build | CanonicalEarlyError::Prompt) {
+                assert_eq!(runner.last_finished().unwrap().owner.generation, prior_generation,
+                    "pre-shell refusal preserves the historical finished invocation; it does not invent a new terminal");
+                assert_eq!(runner.last_finished().unwrap().outcome, TerminalOutcome::Completed);
+            } else { assert_canonical_failed_shell(&runner, &error); }
+            if let Some(observer) = observer.as_ref() {
+                assert_canonical_custody(&runner);
+                observer.finish(runner.last_finished().unwrap().owner.generation, 2, 0, 0);
+                assert_eq!(durable_state_for(root, &request.agent_id), competing.lock().unwrap().take().unwrap());
+            } else {
+                assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::NotStarted));
+                assert_eq!(durable_state_for(root, &request.agent_id), before);
+            }
+            assert!(sink.committed_original_turn_observations().is_err(), "early errors must revoke genuine prior observations");
+            counters.catalog_refused.store(false, Ordering::Release);
+            if kind == CanonicalEarlyError::Build { runner = runner.with_build_bindings(canonical_build_bindings(&request.agent_id, false)); }
+            if matches!(kind, CanonicalEarlyError::Catalog | CanonicalEarlyError::Projection | CanonicalEarlyError::Preflight) {
+                restore_canonical_snapshot(sessions, &request.agent_id, &store, &prior);
+            }
+            assert_eq!(sink.checked_base_snapshot().expect("only exact explicit repair restores currentness"), prior);
+            assert!(sink.committed_original_turn_observations().is_err());
+            assert_canonical_success(&mut runner, root, &nudge.provider_messages, nudge.options.clone(), 1);
+            assert!(sink.committed_original_turn_observations().is_err(), "later actual success cannot revive completion authority");
+            expected_turns.push(canonical_expected_turn(&nudge.options, &canonical_reply(1)));
+        }
+        CanonicalRootScenario::JournalAfterCommit => {
+            assert_canonical_success(&mut runner, root, &messages, options.clone(), 0);
+            assert_eq!(sink.committed_original_turn_observations().expect("actual prior Journal observation").len(), 1);
+            expected_turns.push(canonical_expected_turn(&options, &canonical_reply(0)));
+            let prior = sink.checked_base_snapshot().expect("complete pre-fault expectation");
+            let directory = root.join("transcripts").join(&request.agent_id);
+            let journal_path = directory.join(format!("{}.jsonl", request.agent_id));
+            let journal_before = fs::read(&journal_path).expect("exact pre-fault Journal bytes");
+            let wal_path = directory.join(format!("{}.journal-pending.json", request.agent_id));
+            assert!(!wal_path.exists());
+            let captured = Arc::new(Mutex::new(None));
+            let saved = Arc::clone(&captured);
+            let calls = Arc::new(AtomicUsize::new(0));
+            let notifications = Arc::clone(&calls);
+            let fault_path = wal_path.clone();
+            let subscription = store.subscribe_to_metadata(ProductionAgentMetadataKey::LatestRootBlobId, Arc::new(move |_| {
+                assert_eq!(notifications.fetch_add(1, Ordering::AcqRel), 0, "one exact after-COMMIT WAL fault");
+                let bytes = fs::read(&fault_path).expect("actual WAL was prepared before canonical COMMIT");
+                assert!(!bytes.is_empty());
+                *saved.lock().unwrap() = Some(bytes);
+                fs::remove_file(&fault_path).expect("remove only the owned prepared WAL after canonical COMMIT");
+            }));
+            let error = canonical_run_error(&mut runner, root, &nudge.provider_messages, nudge.options.clone(), Some(canonical_reply(1)));
+            drop(subscription);
+            assert_eq!(calls.load(Ordering::Acquire), 1);
+            assert!(matches!(&error, ProviderSessionError::Protocol(message)
+                if message.starts_with("generated Agent stream persistence failed:")
+                    && message.contains("transcript mirror commit failed after durable checkpoint")
+                    && message.contains("prepared transcript WAL is missing at commit")));
+            assert_canonical_failed_shell(&runner, &error);
+            assert_canonical_custody(&runner);
+            let durable = store.checkpoint_snapshot_checked().expect("actual post-COMMIT canonical root");
+            assert_ne!(durable, prior, "Journal refusal is not canonical rollback");
+            assert_eq!(fs::read(&journal_path).unwrap(), journal_before);
+            assert!(!wal_path.exists());
+            assert!(sink.checked_base_snapshot().is_err(), "the failed sink retains its old expectation");
+            assert!(sink.committed_original_turn_observations().is_err());
+            let wal = captured.lock().unwrap().take().expect("captured exact prepared WAL bytes");
+            let mut restored = fs::OpenOptions::new().write(true).create_new(true).open(&wal_path)
+                .expect("restore only the explicitly removed owned WAL");
+            restored.write_all(&wal).and_then(|()| restored.sync_all()).expect("durably restore captured WAL bytes");
+            drop(restored);
+            assert_eq!(fs::read(&wal_path).unwrap(), wal);
+            let before = durable_state_for(root, &request.agent_id);
+            let refusal = canonical_run_error(&mut runner, root, &nudge.provider_messages, nudge.options.clone(), None);
+            assert!(matches!(&refusal, ProviderSessionError::Protocol(message) if message.contains("checkpoint root changed")));
+            assert_canonical_failed_shell(&runner, &refusal);
+            assert_eq!(runner.last_tool_effect_custody(), Some(&ToolEffectCustodyObservation::NotStarted));
+            assert_eq!(durable_state_for(root, &request.agent_id), before,
+                "the stale sink cannot recover the WAL, rebind, or dispatch another model request");
+            expected_turns.push(canonical_expected_turn(&nudge.options, &canonical_reply(1)));
+        }
+    }
+    assert!(!cancellation.is_cancelled());
+    assert_eq!(counters.effects.load(Ordering::Acquire), 0);
+    assert_eq!(counters.retries.load(Ordering::Acquire), 0);
+    assert_eq!(counters.retry_reports.load(Ordering::Acquire), 0);
+    assert_eq!(counters.successes.load(Ordering::Acquire), usize::from(scenario.request_count() != 0));
+    assert!(mirror_files(&root.join("canonical-effects")).is_empty());
+    assert!(mirror_files(&root.join("runner-provider-checkpoints")).is_empty(), "no fabricated provider tool checkpoint");
+    if !matches!(scenario, CanonicalRootScenario::Valid(_)) {
+        assert!(sink.committed_original_turn_observations().is_err(), "every actual failed owner must remain ineligible");
+    }
+    let db = open_existing(&root.join("agents").join(&request.agent_id).join(STORE_FILENAME), true);
+    let terminal_count: i64 = db.query_row("SELECT COUNT(*) FROM kv WHERE key=?1", params![ORIGINAL_TERMINAL_KEY], |row| row.get(0)).unwrap();
+    assert_eq!(terminal_count, 0);
+    let user_raw: String = db.query_row("SELECT entry FROM transcript_entries WHERE id=?1", params![original.user_message_id], |row| row.get(0)).unwrap();
+    let user: Value = serde_json::from_str(&user_raw).unwrap();
+    assert_eq!(user.get("confirmed").and_then(Value::as_bool),
+        expected_turns.iter().any(|turn| turn.message_id == original.user_message_id).then_some(true));
+    drop(db);
+    let checkpoint = if scenario == CanonicalRootScenario::RetiredOwners {
+        request.expected.clone()
+    } else {
+        sessions.prepare_existing_agent(&request.agent_id).expect("complete existing outline maintenance before closure").expect("existing Session");
+        canonical_checkpoint_view(root, &request.agent_id, sessions, &expected_turns, scenario != CanonicalRootScenario::JournalAfterCommit)
+    };
+    assert!(runtime.quiesce_for_upgrade().expect("actual canonical-root original marker").quiescing);
+    let markers = runtime.upgrade_resume_store().unwrap().list_pending_checked().expect("actual pending original marker");
+    assert_eq!(markers.len(), 1);
+    assert_eq!(markers[0].original_work.as_ref(), Some(&original));
+    assert!(runtime.settle_routed_turn_control(&control, 10).expect("retire the exact admitted lease").is_some());
+    drop((runner, sink, host, store, runtime));
+    (ProducedOriginal { original, checkpoint }, expected_turns)
+}
+
+fn assert_canonical_root_reopen(request: &ChildRequest, sessions: &Arc<ProductionSessionWorkers>) {
+    let original = request.original.as_ref().expect("actual canonical producer original reference");
+    let expected_turns = request.canonical_turns.as_ref().expect("actual producer's explicitly committed invocation expectations");
+    let prepared = sessions.prepare_existing_agent(&request.agent_id)
+        .expect("fresh real Session opens intact canonical root").expect("existing Session");
+    assert_eq!(prepared.persisted_root_blob_id, request.expected.root_blob_id);
+    let host = composition(&request.fixture_root, sessions);
+    // In the post-durable Journal case this new owner performs the existing
+    // pending-WAL recovery. Parent checks that first recovery separately from
+    // every subsequent read-only consumer.
+    let sink = host.compose_production_checkpoint_sink(
+        sessions, &request.fixture_root, &request.agent_id, false, Arc::new(|_| {}), Arc::new(|| Ok(true)),
+    ).expect("fresh actual canonical sink and Journal recovery").expect("main canonical sink");
+    let snapshot = sink.checked_base_snapshot().expect("fresh checked complete root identity");
+    assert_eq!(snapshot.as_ref().map(|snapshot| &snapshot.root_blob_id),
+        request.expected.state_bytes.as_ref().map(|_| &request.expected.root_blob_id));
+    assert_eq!(snapshot.as_ref().map(|snapshot| &snapshot.checkpoint_bytes), request.expected.state_bytes.as_ref());
+    assert_eq!(canonical_checkpoint_view(&request.fixture_root, &request.agent_id, sessions, expected_turns, true), request.expected);
+    let watermark = host.confirmed_user_turn_watermark(sessions, &request.agent_id).expect("fresh canonical watermark");
+    assert_eq!(watermark.has_user_turn, !expected_turns.is_empty());
+    assert_eq!(watermark.last_user_message_id, request.expected.last_user_message_id);
+    assert_eq!(host.prompt_compaction_epoch(sessions, &request.agent_id).expect("fresh canonical compaction epoch"),
+        request.expected.compaction_epoch);
+    assert!(sink.committed_original_turn_observations().expect("new sink has no invocation receipts").is_empty());
+    assert!(reconcile_completed_original_turn(sessions, original).expect("strict fresh original completion lookup").is_none());
+    let markers = SandUpgradeResumeStore::new(&request.fixture_root).list_pending_checked().expect("fresh checked original marker");
+    assert_eq!(markers, vec![request.original_marker.clone().expect("actual canonical producer marker")]);
+    assert_eq!(markers[0].original_work.as_ref(), Some(original));
+    assert!(!request.fixture_root.join("original-turn-credential.json").exists());
+    assert!(mirror_files(&request.fixture_root.join("canonical-effects")).is_empty());
+    assert!(mirror_files(&request.fixture_root.join("runner-provider-checkpoints")).is_empty());
+}
+
+fn assert_canonical_root_processes(label: &str, scenario: CanonicalRootScenario) {
+    let mut fixture = Fixture::new(label, scenario.initial_state());
+    if scenario.uses_legacy_root() { fixture.rebind_to_legacy_fixed_root(); }
+    fixture.canonical_scenario = Some(scenario);
+    let mut server = OriginalTurnWireServer::canonical(&fixture.root, scenario);
+    let child = fixture.run_child("produce-canonical-root", ReopenExpectation::ProduceCanonicalRoot, Some(&server));
+    let server_result = server.finish();
+    eprintln!("canonical root scenario={scenario:?} producer_pid={} outcome={server_result:?} {}",
+        child.child_pid, server.diagnostics());
+    assert!(server_result.is_ok() && child.result.as_ref().is_ok_and(|status| status.success()),
+        "canonical root producer failed: child={:?}; Responses worker={server_result:?}\n{}", child.result, child.logs);
+    let receipt = child.assert_completed();
+    let requests = server.requests.lock().expect("actual canonical provider request capture");
+    assert_eq!(requests.len(), scenario.request_count(), "only explicitly admitted invocations may contact the model");
+    assert!(requests.iter().all(|request| request["model"] == ORIGINAL_MODEL));
+    drop(requests);
+    fs::remove_file(&server.credential).expect("remove producer credential before all fresh canonical consumers");
+    let produced = receipt.produced.expect("actual canonical producer checkpoint and identity");
+    fixture.original = Some(produced.original);
+    fixture.expected = produced.checkpoint;
+    fixture.canonical_turns = Some(receipt.canonical_turns.expect("producer committed-turn expectations"));
+    let markers = SandUpgradeResumeStore::new(&fixture.root).list_pending_checked().expect("actual pending canonical marker");
+    assert_eq!(markers.len(), 1);
+    assert_eq!(markers[0].original_work, fixture.original);
+    fixture.original_marker = Some(markers[0].clone());
+    let marker_path = SandUpgradeResumeStore::new(&fixture.root).file_path().to_path_buf();
+    let marker_before = fs::read(&marker_path).unwrap();
+    let terminal_count: i64 = open_existing(&fixture.db_path(), true).query_row(
+        "SELECT COUNT(*) FROM kv WHERE key=?1", params![ORIGINAL_TERMINAL_KEY], |row| row.get(0),
+    ).expect("no original terminal receipt was fabricated");
+    assert_eq!(terminal_count, 0);
+    let wal_path = fixture.root.join("transcripts").join(&fixture.agent_id)
+        .join(format!("{}.journal-pending.json", fixture.agent_id));
+    assert_eq!(wal_path.exists(), scenario == CanonicalRootScenario::JournalAfterCommit);
+    let mut before = durable_state(&fixture);
+    for attempt in 1..=2 {
+        let receipt = fixture.reopen(&format!("canonical-fresh-consumer-{attempt}"), ReopenExpectation::CanonicalRootReady)
+            .assert_completed();
+        assert!(receipt.produced.is_none());
+        assert!(receipt.canonical_turns.is_none());
+        let after = durable_state(&fixture);
+        if scenario == CanonicalRootScenario::JournalAfterCommit && attempt == 1 {
+            assert_eq!(after.kv, before.kv, "Journal recovery cannot rewrite canonical metadata or completion authority");
+            assert_eq!(after.transcript, before.transcript);
+            assert_eq!(after.blobs, before.blobs);
+            assert_ne!(after.mirror, before.mirror, "the first fresh owner actually consumes the restored prepared WAL");
+        } else {
+            assert_eq!(after, before, "subsequent consumers cannot normalize, duplicate or replay canonical history");
+        }
+        assert!(!wal_path.exists());
+        assert_eq!(fs::read(&marker_path).unwrap(), marker_before, "no canonical read acknowledges the original marker");
+        assert!(mirror_files(&fixture.root.join("canonical-effects")).is_empty());
+        assert!(mirror_files(&fixture.root.join("runner-provider-checkpoints")).is_empty());
+        before = after;
+    }
+}
+
+#[test]
+fn canonical_root_admission_valid_roots_advance_across_explicit_invocations() {
+    for base in [CanonicalBase::Absent, CanonicalBase::Empty, CanonicalBase::Legacy] {
+        assert_canonical_root_processes("canonical-valid", CanonicalRootScenario::Valid(base));
+    }
+}
+
+#[test]
+fn canonical_root_admission_pre_projection_drift_prevents_provider_execution() {
+    for drift in [CanonicalDrift::AbsentToEmpty, CanonicalDrift::EmptyToAbsent,
+        CanonicalDrift::SameBytesOtherRoot, CanonicalDrift::SameRootOtherBytes]
+    {
+        assert_canonical_root_processes("canonical-pre-projection", CanonicalRootScenario::PreProjection(drift));
+    }
+}
+
+#[test]
+fn canonical_root_admission_post_projection_drift_prevents_provider_execution() {
+    assert_canonical_root_processes("canonical-post-projection", CanonicalRootScenario::PostProjection);
+}
+
+#[test]
+fn canonical_root_admission_strict_read_failures_preserve_durable_state() {
+    for fault in [Fault::MissingRootBlob, Fault::MalformedRootBlob, Fault::MissingMetadata,
+        Fault::MalformedMetadata, Fault::MissingRootField, Fault::NonStringRootField]
+    {
+        assert_canonical_root_processes("canonical-strict-read", CanonicalRootScenario::StrictRead(fault));
+    }
+    assert_canonical_root_processes("canonical-direct-reference", CanonicalRootScenario::MissingDirectTurn);
+}
+
+#[test]
+fn canonical_root_admission_completed_owner_retirement_prevents_provider_execution() {
+    assert_canonical_root_processes("canonical-retired", CanonicalRootScenario::RetiredOwners);
+}
+
+#[test]
+fn canonical_root_admission_same_sink_staging_and_persistence_keep_captured_base() {
+    for scenario in [CanonicalRootScenario::SameSinkBeforeStage, CanonicalRootScenario::SameSinkAfterStage] {
+        assert_canonical_root_processes("canonical-same-sink", scenario);
+    }
+}
+
+#[test]
+fn canonical_root_admission_early_errors_permanently_revoke_prior_completion() {
+    for kind in [CanonicalEarlyError::Build, CanonicalEarlyError::Prompt, CanonicalEarlyError::Catalog,
+        CanonicalEarlyError::Projection, CanonicalEarlyError::Preflight]
+    {
+        assert_canonical_root_processes("canonical-early-error", CanonicalRootScenario::Early(kind));
+    }
+}
+
+#[test]
+fn canonical_root_admission_post_durable_journal_failure_refuses_stale_sink() {
+    assert_canonical_root_processes("canonical-journal-after-commit", CanonicalRootScenario::JournalAfterCommit);
 }

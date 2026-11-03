@@ -8,6 +8,7 @@ use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError,
 };
 use crate::extensions::session::typed_replay::TypedReplayEntry;
+use crate::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
 use crate::transcript_mirror::conversation_state_binary::{
     ConversationStateRecoveryFields, decode_conversation_state_recovery_fields,
 };
@@ -39,7 +40,7 @@ pub struct GeneratedAgentTurnContext<'a> {
     pub typed_replay: Option<&'a [TypedReplayEntry]>,
     pub prompt_action: &'a PromptCollectorTurnAction,
     pub options: &'a TurnRunOptions,
-    pub base_state_bytes: &'a [u8],
+    pub expected_base: &'a Option<ProductionAgentCheckpointSnapshot>,
     pub ack_token: Option<&'a str>,
 }
 
@@ -299,6 +300,7 @@ impl ProductionGeneratedAgentStreamSource {
             Some(checkpoint_sink) => Some(
                 checkpoint_sink
                     .stage_generated_turn(
+                        context.expected_base,
                         context.lifecycle_messages,
                         context.options,
                         &generated_tool_steps,
@@ -339,10 +341,10 @@ impl<'ctx>
         Box::pin(async move {
             let result = async {
                 if let Some(checkpoint_sink) = self.checkpoint_sink.as_ref() {
-                    let live_base_state = checkpoint_sink
-                        .base_state_bytes()
+                    let live_base_snapshot = checkpoint_sink
+                        .checked_base_snapshot()
                         .map_err(GeneratedAgentTurnStreamError::Provider)?;
-                    if live_base_state != context.base_state_bytes {
+                    if &live_base_snapshot != context.expected_base {
                         return Err(GeneratedAgentTurnStreamError::Provider(
                             ProviderSessionError::Protocol(
                                 "Runner Agent base state changed after turn input projection".into(),
@@ -351,7 +353,9 @@ impl<'ctx>
                     }
                     validate_canonical_state_blob_references(
                         checkpoint_sink.as_ref(),
-                        &live_base_state,
+                        live_base_snapshot.as_ref()
+                            .map(|snapshot| snapshot.checkpoint_bytes.as_slice())
+                            .unwrap_or_default(),
                     )?;
                 }
                 let mut forward_delta = |delta: &str, accumulated: &str| {
@@ -457,7 +461,7 @@ impl ProductionGeneratedAgentPersistence {
             checkpoint.checkpoint.as_ref(),
         ) {
             (Some(checkpoint_sink), Some(staged)) => checkpoint_sink
-                .persist_staged_text_turn(context.options, staged)
+                .persist_staged_text_turn(context.expected_base, context.options, staged)
                 .map_err(|error| error.to_string()),
             (None, None) => Ok(()),
             (Some(_), None) => Err(
@@ -582,7 +586,7 @@ pub(crate) fn run_production_generated_agent_stream_with_custody(
         action,
         mcp_tools,
         mcp_meta_tools,
-        base_state_bytes,
+        expected_base,
         ack_token,
         cancel_this_run,
         emit_update,
@@ -624,7 +628,7 @@ pub(crate) fn run_production_generated_agent_stream_with_custody(
         typed_replay: action.typed_replay.as_deref(),
         prompt_action: &action.prompt_action,
         options: &options,
-        base_state_bytes: &base_state_bytes,
+        expected_base: &expected_base,
         ack_token: ack_token.as_deref(),
     };
     let mut output = LiveDeltaSink {

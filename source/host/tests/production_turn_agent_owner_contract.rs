@@ -11,6 +11,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
+use mahayana_host_runtime::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
 use mahayana_host_runtime::runner::production_agent_checkpoint::AgentStateCheckpointSink;
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
@@ -67,12 +68,19 @@ impl RoutedProviderCheckpointStore for MemoryCheckpointStore {
 
 struct RefusingProjectionCheckpointSink {
     reads: AtomicUsize,
+    invalidations: AtomicUsize,
 }
 
 impl AgentStateCheckpointSink for RefusingProjectionCheckpointSink {
-    fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
+    fn checked_base_snapshot(
+        &self,
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, ProviderSessionError> {
         self.reads.fetch_add(1, AtomicOrdering::SeqCst);
         Err(ProviderSessionError::Protocol("projection state unavailable".into()))
+    }
+
+    fn invalidate_original_turn_completion(&self) {
+        self.invalidations.fetch_add(1, AtomicOrdering::SeqCst);
     }
 }
 
@@ -259,6 +267,7 @@ fn production_owner_retains_not_started_when_input_preparation_refuses() {
     let previous_generation = owner.last_finished().expect("prior settlement").owner.generation;
     let checkpoint_sink = Arc::new(RefusingProjectionCheckpointSink {
         reads: AtomicUsize::new(0),
+        invalidations: AtomicUsize::new(0),
     });
     owner = owner.with_agent_state_checkpoint_sink(checkpoint_sink.clone());
     let mut emitted = false;
@@ -273,6 +282,7 @@ fn production_owner_retains_not_started_when_input_preparation_refuses() {
     ));
     assert!(!emitted);
     assert_eq!(checkpoint_sink.reads.load(AtomicOrdering::SeqCst), 1);
+    assert_eq!(checkpoint_sink.invalidations.load(AtomicOrdering::SeqCst), 1);
     assert_eq!(
         owner.last_tool_effect_custody(),
         Some(&ToolEffectCustodyObservation::NotStarted),

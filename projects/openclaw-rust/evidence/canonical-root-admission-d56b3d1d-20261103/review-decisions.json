@@ -1,0 +1,218 @@
+{
+  "contract": "OCRM-CANONICAL-ROOT-ADMISSION-v1",
+  "task_id": "d56b3d1d-6125-4f6f-a8d8-e7e36728a1ba",
+  "round": 2,
+  "kind": "review-runner-arbitration; not source authority or runtime evidence",
+  "fixed_upstream": "1440bb1771372334bea23d7642bb52deb7db1845",
+  "review_base": "cb62ae7c22a8264c49e90443e41cb6ad3c9b9a5d",
+  "starting_head": "a2f7ac9f6ede2e4c4561f9b82f85de7e074c7323",
+  "r1": {
+    "snapshot_commit": "4f6f5d1e9aaa1d0312c5e8574ea39811065262e9",
+    "snapshot_tree": "353dc17e1e2a9a9213bcd8a10d0b5e183b833a78",
+    "full_diff_bytes": 153550,
+    "full_diff_sha256": "0addca9ec339bdd28ae8bf9f66e831b7a9afb4043125388982771c5d1e1378b4",
+    "general": {
+      "agent": "cra_general_r1",
+      "fork_turns": "none",
+      "model": "configured model retained",
+      "requested_effort": "xhigh",
+      "adapter": "spawn_agent accepted explicit reasoning_effort=xhigh; worker has no independent runtime introspection",
+      "verdict": "request_changes",
+      "findings": [
+        "CRA-R1-01",
+        "CRA-R1-02"
+      ],
+      "full_report_read_by_integrator": true
+    },
+    "structure_reuse_performance": {
+      "agent": "cra_structure_r1",
+      "fork_turns": "none",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "adapter": "spawn_agent accepted explicit model=gpt-6.1-sol and reasoning_effort=xhigh; worker has no independent runtime introspection",
+      "verdict": "request_changes",
+      "findings": [
+        "CRA-R1-01",
+        "CRA-R1-02"
+      ],
+      "full_report_read_by_integrator": true
+    },
+    "blindness": "Fresh workers read immutable source; neither read peer reports, mutable worktree or prior arbitration; no local execution",
+    "decisions_recorded_before_fixes": "**CRA-R1-01 — FIX / IMPL_BUG**, recorded before the fix: independent GENERAL\nsource review of snapshot `4f6f5d1e9aaa1d0312c5e8574ea39811065262e9`\n(base `cb62ae7c22a8264c49e90443e41cb6ad3c9b9a5d`) found that two production\nmodules and three contract tests imported `ProductionAgentCheckpointSnapshot`\nthrough `extensions::session::production`, where it is only a private import.\nRoot re-read that binding and the public declaration in\n`production_agent_store`. Change those five imports to the declaring module;\ndo not expose a new re-export or alter any assertion. This is a source-proven\ncompile defect, not an executed compiler result. Preserve R1 and require fresh\nblind focused review of the fix and affected callers before publication.\n\n**CRA-R1-02 — FIX / TEST_FLAW**, recorded before the fix: the same frozen\nreview found that the new `canonical_runner` harness declares the production\nowner but returns the shipping factory's `SandAgentRunner` facade. The facade\nhas no consuming binding mutators used by the early-error scenarios. Root\ntraced both constructors and the facade's direct run forwarding. Construct the\nactual `ProductionTurnAgentOwner` using its existing build/lifecycle/quiesce/\ncheckpoint bindings, identically to the factory's owner assembly. This keeps\nthe same owner across prior-success, rebind and refusal checks without adding\na production test hook or replacing provider execution. Existing GTH/ORT and\nbridge tests retain the actual facade/factory coverage. Preserve every CRA\nscenario and assertion; the new CRA process claims concern the actual owner\nand generated runtime, not an additional factory-path assertion."
+  },
+  "adjudication_clarification": "CRA-R1-02 accepts the concrete type mismatch and fixes the test instrument. Use the existing production owner API; no new facade accessor is justified solely for testing. The facade methods directly forward these invocations to that owner. Preserve all eight CRA scenarios and all existing GTH/ORT/factory assertions. CRA claims the actual owner/generated runtime, not an extra factory assertion.",
+  "execution": "not-run; source review cannot establish compile or behavioral acceptance",
+  "global_acceptance": "unchanged; all eight flags remain false; fixed U and full final gates retained",
+  "r2": {
+    "snapshot_commit": "0602eb45750bcd418fa62aec331ae8618b0b11f3",
+    "snapshot_tree": "c2b797ba8fe4773280e3321bc4ec296d50e7b0f0",
+    "full_product_diff": {
+      "path": "/tmp/canonical-root-admission-r2-full.diff",
+      "bytes": 154149,
+      "sha256": "315d7651e585ea09e57f584bac8c78bd5bddcdcbcf66e75f6b0258bc66d711a0"
+    },
+    "focused_fix_diff": {
+      "path": "/tmp/canonical-root-admission-r2-fix.diff",
+      "bytes": 7575,
+      "sha256": "3e66cf3cbe57b6eee81abdd9b4ddd12279dd9232ec0e5d96d75104b6472f3d95"
+    },
+    "scope": "Complete 15 product/config/test/spec paths; root-only arbitration excluded from blind review",
+    "general": {
+      "agent": "cra_general_r2",
+      "fork_turns": "none",
+      "model": "configured retained",
+      "requested_effort": "xhigh",
+      "adapter": "spawn_agent accepted explicit reasoning_effort=xhigh; worker reported configured GPT-6 Astra Pro, no independent applied-effort introspection",
+      "verdict": "no_findings",
+      "full_report_read_by_integrator": true
+    },
+    "structure_reuse_performance": {
+      "agent": "cra_structure_r2",
+      "fork_turns": "none",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "adapter": "spawn_agent accepted explicit model=gpt-6.1-sol and reasoning_effort=xhigh; worker has no independent backend introspection",
+      "verdict": "no_findings",
+      "full_report_read_by_integrator": true
+    },
+    "blindness": "Fresh workers read complete product/fix diffs and immutable affected callers; neither read arbitration, peers, prior decisions, mutable tree or runner arbitration",
+    "adjudication": "Both full reports converge with no source-proven remaining defect. This is not compilation or behavioral acceptance; exact-H Actions required."
+  },
+  "integration_carry": {
+    "from_base": "cb62ae7c22a8264c49e90443e41cb6ad3c9b9a5d",
+    "to_base": "fc4ce17977cde16e10d471287389ca24a5fd78d6",
+    "incoming_product_commit": "859e085f490e17acb8520c3fd0f328b717c3c0e7",
+    "overlapping_paths": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "base_blob": "974a53b821a8c0cec338162cf3064c9dbbda926b",
+        "latest_blob": "1bde061806575523f7405fb879a4437ecd2a2777"
+      },
+      {
+        "path": "source/host/tests/runner_production_bridge_contract.rs",
+        "base_blob": "c33dcc1fc7f690d2981c97dfe7863d78c2c4da5a",
+        "latest_blob": "ff19b85626b11fecc253ce7ae4800f2952f345ba"
+      }
+    ],
+    "decision_before_merge": "Preserve all incoming CWB product, tests, source/accounting and media evidence. Three-way merge only shared workflow and runner bridge contract; retain both CRA and CWB named oracles, bindings and fields. Re-freeze complete scope and perform fresh focused integration review before publication. No acceptance is inferred from the incoming commit.",
+    "resolution": "Two workflow overlap hunks retain the union of CRA/CWB additional-contract identities and exact-count labels; retain the incoming CWB scope. runner_production_bridge_contract merges six codex_request_binding=None fields without changing CRA assertions. The other 13 product paths remain the R2 bytes. Incoming factory/routed-provider/composition changes were read by root; full focused integration review remains pending."
+  },
+  "r3": {
+    "snapshot_commit": "8efe40a2c71a8e53e289bec28331b14397fa5ced",
+    "snapshot_tree": "70c69dbfb40b701f93e37ed51da3bab38891aed0",
+    "integration_parent": "fc4ce17977cde16e10d471287389ca24a5fd78d6",
+    "full_product_diff": {
+      "path": "/tmp/canonical-root-admission-r3-full.diff",
+      "bytes": 178387,
+      "sha256": "24e6a9ad99dca5a01ece04045fc233076fceaf6637ea293a5781aa71d6bdacf1"
+    },
+    "focused_integration_delta": {
+      "path": "/tmp/canonical-root-admission-r3-fix.diff",
+      "bytes": 29299,
+      "sha256": "5d19b1bd28169d7eb43144799cbb9a2e66ac58120f9df3cef65f3131360a949b"
+    },
+    "general": {
+      "agent": "cra_general_r3",
+      "fork_turns": "none",
+      "model": "configured retained",
+      "requested_effort": "xhigh",
+      "adapter": "spawn_agent accepted explicit reasoning_effort=xhigh; no worker backend introspection",
+      "verdict": "no_findings",
+      "full_report_read_by_integrator": true
+    },
+    "structure_reuse_performance": {
+      "agent": "cra_structure_r3",
+      "fork_turns": "none",
+      "requested_model": "gpt-6.1-sol",
+      "requested_effort": "xhigh",
+      "adapter": "spawn_agent accepted explicit model=gpt-6.1-sol and reasoning_effort=xhigh; no worker backend introspection",
+      "verdict": "no_findings",
+      "full_report_read_by_integrator": true
+    },
+    "blindness": "Fresh independent workers read immutable full product/focused diffs and adjacent current CWB/CRA/GTH consumers, not peer/prior reports, mutable worktree or root arbitration",
+    "adjudication": "Both complete reports converge; no source-proven defect remains within declared review scope. Actual current-H compilation and recovery checks remain required."
+  },
+  "publication_carry": {
+    "reviewed_parent": "fc4ce17977cde16e10d471287389ca24a5fd78d6",
+    "publication_parent": "7a89cc44924bf900731febbb7cc0c3779d61c300",
+    "incoming_scope": "Fixed-U read-observation endpoint correction plus Actions materialized source inventory/ledger. No product/config/test/spec review-path base blob changed. Preserve all incoming source history, partial status, false flags and unrelated carriers.",
+    "unchanged_review_path_bases": [
+      {
+        "path": ".github/workflows/rust-desktop-runtime.yml",
+        "base_blob": "1bde061806575523f7405fb879a4437ecd2a2777",
+        "reviewed_blob": "56f877e39887420029aeaa56b1b96648683e97a7"
+      },
+      {
+        "path": "projects/openclaw-rust/docs/specs/provider-bound-model-identity.md",
+        "base_blob": "3bd11a14e9a1088177248ef761ed172de5217b67",
+        "reviewed_blob": "9892382b878d17e8da668230b5207288bc52f23e"
+      },
+      {
+        "path": "source/host/app/src/tests/original_turn_recovery_tests.rs",
+        "base_blob": "1986cc9481875b5733a13e93fc8b56682494363f",
+        "reviewed_blob": "b3e7858f45f3e715e14703d7f244cb912ee2033a"
+      },
+      {
+        "path": "source/host/src/host_runner_composition.rs",
+        "base_blob": "e29ab4d686efd41272c9a8fcbf38e00fe4b326b1",
+        "reviewed_blob": "b75c24202ef15600a21e25180947a1432f44061c"
+      },
+      {
+        "path": "source/host/src/runner/generated_agent_turn_stream.rs",
+        "base_blob": "03eed8a08062347a8262cc09f072b99644e3be81",
+        "reviewed_blob": "3f125c44bf7d9f251ae2f2d6cbc665b99c031184"
+      },
+      {
+        "path": "source/host/src/runner/production_agent_checkpoint.rs",
+        "base_blob": "8e26fb6ce8e0e6608d6929b59c6305bc5f3c7392",
+        "reviewed_blob": "a966e88220c8314a67273d0ff29c960e365b77a5"
+      },
+      {
+        "path": "source/host/src/runner/production_turn_agent_owner.rs",
+        "base_blob": "917718da79090ce1d2e50bcddb1793f4af6e44ea",
+        "reviewed_blob": "6e52b116611257ff3a4bcd18eb81cce66bf2097f"
+      },
+      {
+        "path": "source/host/src/runner/production_turn_input_projection.rs",
+        "base_blob": "a1fe755a2bebcbe33ef303551defaab6c711658b",
+        "reviewed_blob": "2fcb6903c421ccaa14793ae4b1d8ba80466823fb"
+      },
+      {
+        "path": "source/host/tests/canonical_checkpoint_recovery_contract.rs",
+        "base_blob": "7f35e30e71a773e7349524be8785296839bb3b80",
+        "reviewed_blob": "ac99e16783d6deb1acbfe6cea38bd6a297fa855b"
+      },
+      {
+        "path": "source/host/tests/production_agent_checkpoint_contract.rs",
+        "base_blob": "84b6a9279478b9f381d50e346f486ef4feba3647",
+        "reviewed_blob": "1509c56b71531be38f5a317fb356136e073c6128"
+      },
+      {
+        "path": "source/host/tests/production_agent_store_recovery_contract.rs",
+        "base_blob": "a28531c0f1367798ebfbba6c562fd5e1811d333a",
+        "reviewed_blob": "beefff87222548c9fdec56ea8545adc55443e50c"
+      },
+      {
+        "path": "source/host/tests/production_checkpoint_restart_contract.rs",
+        "base_blob": "4ffbad30a1cf7ecfa7cd65bfeb29cbcb7bd376bf",
+        "reviewed_blob": "daf863746c835f177cea243deb0a7106aa049c50"
+      },
+      {
+        "path": "source/host/tests/production_turn_agent_owner_contract.rs",
+        "base_blob": "bbd7af9427c454b7ce0507cabaf4042f5cf1c490",
+        "reviewed_blob": "64ecdf2ced22d4593d501c22d5e2c4929dbacef6"
+      },
+      {
+        "path": "source/host/tests/production_turn_input_projection_contract.rs",
+        "base_blob": "61ff7d9be3d2402bf0c97888c04eddc60c4e78bf",
+        "reviewed_blob": "989588aeb493c0042fc4292feece973403d7c85c"
+      },
+      {
+        "path": "source/host/tests/runner_production_bridge_contract.rs",
+        "base_blob": "ff19b85626b11fecc253ce7ae4800f2952f345ba",
+        "reviewed_blob": "db7a8daf73930b529fcd728617518486ee4203c5"
+      }
+    ],
+    "runtime_claim": "None for this carried candidate; source review is not executable acceptance."
+  }
+}

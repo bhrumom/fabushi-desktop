@@ -6,6 +6,7 @@ use crate::extensions::inference::provider_session::{
     ProviderMessage, ProviderSessionError, RoutedMcpMetaToolDefinition, RoutedToolDefinition,
 };
 use crate::extensions::session::typed_replay::TypedReplayEntry;
+use crate::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
 
 use super::conversation_state::RecentUserMessage;
 use super::production_agent_checkpoint::AgentStateCheckpointSink;
@@ -36,7 +37,7 @@ pub struct ProductionTurnAgentInputProjection<'a> {
     pub action: ProductionTurnActionProjection,
     pub mcp_tools: Vec<RoutedToolDefinition>,
     pub mcp_meta_tools: Vec<RoutedMcpMetaToolDefinition>,
-    pub base_state_bytes: Vec<u8>,
+    pub expected_base: Option<ProductionAgentCheckpointSnapshot>,
     pub ack_token: Option<String>,
     pub cancel_this_run: RoutedProviderCancellation,
     pub emit_update: &'a mut dyn FnMut(&str, &str),
@@ -58,9 +59,9 @@ pub fn create_production_turn_agent_input_projection<'a>(
         // A received malformed catalog is a separate, permanent admission failure.
         Err(_) => Default::default(),
     };
-    let base_state_bytes = match checkpoint_sink {
-        Some(sink) => sink.base_state_bytes()?,
-        None => Vec::new(),
+    let expected_base = match checkpoint_sink {
+        Some(sink) => sink.checked_base_snapshot()?,
+        None => None,
     };
     Ok(ProductionTurnAgentInputProjection {
         action: ProductionTurnActionProjection {
@@ -71,7 +72,7 @@ pub fn create_production_turn_agent_input_projection<'a>(
         },
         mcp_tools,
         mcp_meta_tools,
-        base_state_bytes,
+        expected_base,
         ack_token: turn_input.ack_token.clone(),
         cancel_this_run: composition.cancellation(),
         emit_update,

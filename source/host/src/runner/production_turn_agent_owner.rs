@@ -490,6 +490,32 @@ impl ProductionTurnAgentOwner {
         on_text_delta: &mut dyn FnMut(&str, &str),
     ) -> Result<String, ProviderSessionError> {
         self.last_tool_effect_custody = Some(ToolEffectCustodyObservation::NotStarted);
+        let result = self.run_projected_turn_input(
+            data_dir,
+            lifecycle_messages,
+            provider_messages,
+            turn_input,
+            on_text_delta,
+        );
+        if result.is_err() {
+            // Build, prompt and projection can refuse before the generated
+            // lifecycle starts. They must revoke this same sink's preceding
+            // completion observations just like later execution failures do.
+            if let Some(checkpoint_sink) = self.agent_state_checkpoint_sink.as_ref() {
+                checkpoint_sink.invalidate_original_turn_completion();
+            }
+        }
+        result
+    }
+
+    fn run_projected_turn_input(
+        &mut self,
+        data_dir: &Path,
+        lifecycle_messages: &[ProviderMessage],
+        provider_messages: &[ProviderMessage],
+        turn_input: ProductionTurnInputProjection,
+        on_text_delta: &mut dyn FnMut(&str, &str),
+    ) -> Result<String, ProviderSessionError> {
         self.validate_build_input()?;
         let turn_max_steps = self
             .build_input

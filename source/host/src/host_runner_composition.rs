@@ -328,8 +328,9 @@ impl HostRunnerComposition {
         }
         let agent_store = sessions.open_agent_store_owner(agent_id)?;
         let blob_store = Arc::new(sessions.create_agent_blob_store(agent_id)?);
-        let prior_state_bytes = agent_store.checkpoint_snapshot_checked()?
-            .map(|snapshot| snapshot.checkpoint_bytes)
+        let prior_snapshot = agent_store.checkpoint_snapshot_checked()?;
+        let prior_state_bytes = prior_snapshot.as_ref()
+            .map(|snapshot| snapshot.checkpoint_bytes.as_slice())
             .unwrap_or_default();
         let transcripts_dir = data_dir.join("transcripts");
         let transcript_provider = {
@@ -353,7 +354,7 @@ impl HostRunnerComposition {
         };
         let transcript_mirror = Arc::new(transcript_provider.route_for_session(
             Arc::clone(&blob_store),
-            &prior_state_bytes,
+            prior_state_bytes,
             is_journal_enabled,
         )?);
         let sink = ProductionAgentStateCheckpointSink::new(
@@ -361,7 +362,7 @@ impl HostRunnerComposition {
             agent_store,
             blob_store,
             transcript_mirror,
-            prior_state_bytes,
+            prior_snapshot,
             true,
         )?;
         Ok(Some(Arc::new(sink)))

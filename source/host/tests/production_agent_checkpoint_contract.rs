@@ -150,7 +150,8 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
             "confirmed": false
         }))
         .expect("durable user echo");
-    let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let prior_snapshot = session.agent_store.checkpoint_snapshot_checked().expect("checked prior snapshot");
+    let prior = prior_snapshot.as_ref().map(|snapshot| snapshot.checkpoint_bytes.clone()).unwrap_or_default();
     let provider = ProductionTranscriptMirrorProvider::new(
         &transcripts_dir,
         GeneratedTranscriptOccurrenceCodec::new(
@@ -171,7 +172,7 @@ fn production_sink_commits_real_agent_wire_through_mirror_and_agent_store() {
         Arc::clone(&session.agent_store),
         Arc::clone(&blob_store),
         mirror,
-        prior,
+        prior_snapshot,
         true,
     )
     .expect("sink");
@@ -254,7 +255,8 @@ fn missing_confirmed_message_aborts_root_advance() {
             .create_agent_blob_store(&session.record.id)
             .expect("blob store"),
     );
-    let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let prior_snapshot = session.agent_store.checkpoint_snapshot_checked().expect("checked prior snapshot");
+    let prior = prior_snapshot.as_ref().map(|snapshot| snapshot.checkpoint_bytes.clone()).unwrap_or_default();
     let prior_root = session.agent_store.latest_root_blob_id();
     let provider = ProductionTranscriptMirrorProvider::new(
         &transcripts_dir,
@@ -276,7 +278,7 @@ fn missing_confirmed_message_aborts_root_advance() {
         Arc::clone(&session.agent_store),
         blob_store,
         mirror,
-        prior,
+        prior_snapshot,
         true,
     )
     .expect("sink");
@@ -417,7 +419,8 @@ fn production_sink_can_stage_generated_state_before_outer_stream_final_persist()
             .create_agent_blob_store(&session.record.id)
             .expect("blob store"),
     );
-    let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let prior_snapshot = session.agent_store.checkpoint_snapshot_checked().expect("checked prior snapshot");
+    let prior = prior_snapshot.as_ref().map(|snapshot| snapshot.checkpoint_bytes.clone()).unwrap_or_default();
     let provider = ProductionTranscriptMirrorProvider::new(
         &transcripts_dir,
         GeneratedTranscriptOccurrenceCodec::new(
@@ -438,7 +441,7 @@ fn production_sink_can_stage_generated_state_before_outer_stream_final_persist()
         Arc::clone(&session.agent_store),
         blob_store,
         mirror,
-        prior.clone(),
+        prior_snapshot,
         true,
     )
     .expect("sink");
@@ -448,8 +451,9 @@ fn production_sink_can_stage_generated_state_before_outer_stream_final_persist()
         recent_message_text: Some("stage me".into()),
         ..TurnRunOptions::default()
     };
+    let expected_base = sink.checked_base_snapshot().expect("captured staging base");
     let staged = sink
-        .stage_text_turn(&[ProviderMessage {
+        .stage_text_turn(&expected_base, &[ProviderMessage {
             role: "user".into(),
             content: "stage me".into(),
         }], &options, "assistant staged")
@@ -457,13 +461,51 @@ fn production_sink_can_stage_generated_state_before_outer_stream_final_persist()
     assert_eq!(session.agent_store.latest_checkpoint_bytes().unwrap_or_default(), prior);
     assert_ne!(staged.state_bytes, prior);
 
-    sink.persist_staged_text_turn(&options, &staged)
+    sink.persist_staged_text_turn(&expected_base, &options, &staged)
         .expect("persist staged generated state");
     assert_eq!(
         session.agent_store.latest_checkpoint_bytes().expect("final state"),
         staged.state_bytes
     );
 
+    sessions.shutdown();
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn production_sink_rejects_stale_snapshot_before_mirror_recovery() {
+    let root = temp_root("constructor-admission");
+    let sessions = ProductionSessionWorkers::with_agents_root(root.join("agents"), 500);
+    let session = sessions.materialize_session_with_active(None, "user", None, None)
+        .expect("actual initialized session");
+    let expected_base = session.agent_store.checkpoint_snapshot_checked().expect("captured absence");
+    assert!(expected_base.is_none());
+    let blobs = Arc::new(sessions.create_agent_blob_store(&session.record.id).expect("actual blob owner"));
+    let transcripts = root.join("transcripts");
+    let provider = ProductionTranscriptMirrorProvider::new(
+        &transcripts, GeneratedTranscriptOccurrenceCodec::new(RejectGeneratedToolJsonProjection),
+    );
+    let route_read = Arc::new(AtomicBool::new(false));
+    let observed_route_read = Arc::clone(&route_read);
+    let mirror = Arc::new(provider.route_for_session(
+        blobs.clone(), &[], Arc::new(move || {
+            observed_route_read.store(true, Ordering::Release);
+            Ok(true)
+        }),
+    ).expect("prepare the existing route without recovery"));
+    session.agent_store.handle_checkpoint_bytes_blocking(&[]).expect("publish a real present-empty root");
+    let current = session.agent_store.checkpoint_snapshot_checked().expect("checked competing root");
+    assert!(current.as_ref().is_some_and(|snapshot| snapshot.checkpoint_bytes.is_empty()));
+    assert!(!transcripts.join(&session.record.id).exists());
+
+    let result = ProductionAgentStateCheckpointSink::new(
+        session.record.id.clone(), Arc::clone(&session.agent_store), blobs,
+        mirror, expected_base, true,
+    );
+    assert!(matches!(result, Err(error) if error.contains("root changed before sink composition")));
+    assert!(!route_read.load(Ordering::Acquire), "stale construction must refuse before mirror route selection or recovery");
+    assert!(!transcripts.join(&session.record.id).exists(), "refusal cannot claim or recover a Journal");
+    assert_eq!(session.agent_store.checkpoint_snapshot_checked().expect("unchanged competing root"), current);
     sessions.shutdown();
     let _ = fs::remove_dir_all(root);
 }
@@ -493,7 +535,8 @@ fn production_sink_can_checkpoint_inside_existing_localpool_executor() {
             .create_agent_blob_store(&session.record.id)
             .expect("blob store"),
     );
-    let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+    let prior_snapshot = session.agent_store.checkpoint_snapshot_checked().expect("checked prior snapshot");
+    let prior = prior_snapshot.as_ref().map(|snapshot| snapshot.checkpoint_bytes.clone()).unwrap_or_default();
     let provider = ProductionTranscriptMirrorProvider::new(
         &transcripts_dir,
         GeneratedTranscriptOccurrenceCodec::new(
@@ -514,7 +557,7 @@ fn production_sink_can_checkpoint_inside_existing_localpool_executor() {
         Arc::clone(&session.agent_store),
         blob_store,
         mirror,
-        prior,
+        prior_snapshot,
         true,
     )
     .expect("sink");
@@ -607,7 +650,8 @@ impl OriginalObservationFixture {
             "content":"hello checkpoint", "confirmed":false
         })).expect("actual durable user row");
         let blobs = Arc::new(sessions.create_agent_blob_store(&agent_id).expect("actual canonical blob owner"));
-        let prior = session.agent_store.latest_checkpoint_bytes().unwrap_or_default();
+        let prior_snapshot = session.agent_store.checkpoint_snapshot_checked().expect("checked prior snapshot");
+        let prior = prior_snapshot.as_ref().map(|snapshot| snapshot.checkpoint_bytes.clone()).unwrap_or_default();
         let transcripts = root.join("transcripts");
         let pending_root = transcripts.clone();
         let fault_injected = Arc::new(AtomicBool::new(false));
@@ -641,7 +685,7 @@ impl OriginalObservationFixture {
         ).expect("actual selected mirror route"));
         let sink = ProductionAgentStateCheckpointSink::new(
             agent_id.clone(), Arc::clone(&session.agent_store), Arc::clone(&blobs),
-            mirror, prior, persistence_enabled,
+            mirror, prior_snapshot, persistence_enabled,
         ).expect("actual production checkpoint sink");
         Self { root, agent_id, sessions, store: Arc::clone(&session.agent_store), blobs, sink, fault_injected }
     }
@@ -673,14 +717,18 @@ fn original_turn_observations_are_object_safe_unavailable_by_default_and_absent_
     let unsupported = FailingAgentCheckpointSink { calls: Mutex::new(0) };
     let sink: &dyn AgentStateCheckpointSink = &unsupported;
     assert!(sink.committed_original_turn_observations().is_err(), "a legacy sink cannot mint sealed evidence");
+    assert!(matches!(sink.checked_base_snapshot(), Err(ProviderSessionError::Protocol(_))),
+        "a legacy sink cannot establish an absent canonical root");
+    assert!(sink.base_state_bytes().is_err(), "byte convenience cannot bypass checked authority");
     let fixture = OriginalObservationFixture::new("original-stage-boundary", true, true, OriginalJournalFault::None);
     let before = fixture.store.latest_root_blob_id();
+    let expected_base = fixture.sink.checked_base_snapshot().expect("captured staging base");
     let checkpoint = fixture.sink.stage_text_turn(
-        &user_messages(), &OriginalObservationFixture::options(true), "actual committed response",
+        &expected_base, &user_messages(), &OriginalObservationFixture::options(true), "actual committed response",
     ).expect("stage actual generated checkpoint");
     assert!(fixture.sink.committed_original_turn_observations().unwrap().is_empty());
     assert_eq!(fixture.store.latest_root_blob_id(), before, "staging is not durable evidence");
-    fixture.sink.persist_staged_text_turn(&OriginalObservationFixture::options(true), &checkpoint)
+    fixture.sink.persist_staged_text_turn(&expected_base, &OriginalObservationFixture::options(true), &checkpoint)
         .expect("canonical, user confirmation and Journal COMMIT");
     let first = fixture.sink.committed_original_turn_observations().unwrap();
     assert_eq!(first.len(), 1);
@@ -688,6 +736,38 @@ fn original_turn_observations_are_object_safe_unavailable_by_default_and_absent_
         .expect("second actual commit");
     assert_eq!(first.len(), 1, "a previously returned immutable observation snapshot cannot be rewritten");
     assert_eq!(fixture.sink.committed_original_turn_observations().unwrap().len(), 2);
+}
+
+#[test]
+fn production_sink_keeps_invocation_snapshot_binding_after_own_success() {
+    let fixture = OriginalObservationFixture::new("captured-invocation", true, true, OriginalJournalFault::None);
+    let expected_base = fixture.sink.checked_base_snapshot().expect("first invocation captured base");
+    let options = OriginalObservationFixture::options(true);
+    let staged = fixture.sink.stage_text_turn(
+        &expected_base, &user_messages(), &options, "older staged invocation",
+    ).expect("stage against the captured root");
+    fixture.sink.checkpoint_text_turn(&user_messages(), &options, "another successful invocation")
+        .expect("the same sink publishes a real successor");
+    let successor = fixture.store.checkpoint_snapshot_checked().expect("checked successor");
+    assert_ne!(successor, expected_base);
+    assert_eq!(fixture.sink.checked_base_snapshot().expect("sink advances from its own commit"), successor);
+    let journal_path = fixture.root.join("transcripts").join(&fixture.agent_id)
+        .join(format!("{}.jsonl", fixture.agent_id));
+    let journal_before = fs::read(&journal_path).expect("successful Journal bytes");
+    let db = fixture.sessions.open_agent_db_owner(&fixture.agent_id).expect("actual DB owner");
+    let user_before = db.get_transcript_entry_by_id("observation-user").expect("confirmed user before refusal");
+
+    assert!(fixture.sink.stage_text_turn(&expected_base, &user_messages(), &options, "must not rebase").is_err());
+    assert!(fixture.sink.persist_staged_text_turn(&expected_base, &options, &staged).is_err());
+    assert_eq!(fixture.store.checkpoint_snapshot_checked().expect("successor remains current"), successor);
+    assert_eq!(fixture.blobs.get_blob_blocking(&staged.turn_id).expect("rejected turn is unpublished"), None);
+    assert_eq!(db.get_transcript_entry_by_id("observation-user").expect("confirmed user after refusal"), user_before);
+    assert_eq!(fs::read(&journal_path).expect("Journal after refusal"), journal_before);
+
+    fixture.sink.checkpoint_text_turn(
+        &user_messages(), &OriginalObservationFixture::options(false), "explicit subsequent invocation",
+    ).expect("later work captures the sink's own current successor");
+    assert_ne!(fixture.sink.checked_base_snapshot().expect("second successful publication"), successor);
 }
 
 #[test]
@@ -724,8 +804,9 @@ fn original_turn_skip_and_legacy_success_or_swallowed_write_failure_never_expose
             if blocked { "original-legacy-failure" } else { "original-legacy-success" }, true, false, OriginalJournalFault::None,
         );
         assert!(fixture.sink.committed_original_turn_observations().is_err(), "Legacy is unavailable immediately after route selection");
+        let expected_base = fixture.sink.checked_base_snapshot().expect("captured legacy staging base");
         let mut checkpoint = fixture.sink.stage_text_turn(
-            &user_messages(), &OriginalObservationFixture::options(true), "generated response omitted by Legacy",
+            &expected_base, &user_messages(), &OriginalObservationFixture::options(true), "generated response omitted by Legacy",
         ).unwrap();
         // Exercise the actual Legacy full-write branch with a real root-prompt
         // JSON blob. This is negative route evidence, never a generated positive
@@ -740,7 +821,7 @@ fn original_turn_skip_and_legacy_success_or_swallowed_write_failure_never_expose
             fs::create_dir_all(directory.parent().unwrap()).unwrap();
             fs::write(&directory, b"owned Legacy filesystem obstruction").unwrap();
         }
-        fixture.sink.persist_staged_text_turn(&OriginalObservationFixture::options(true), &checkpoint)
+        fixture.sink.persist_staged_text_turn(&expected_base, &OriginalObservationFixture::options(true), &checkpoint)
             .expect("Legacy's observational write result preserves existing canonical checkpoint behavior");
         assert!(!fixture.store.latest_root_blob_id().is_empty());
         assert!(fixture.sink.committed_original_turn_observations().is_err());
@@ -768,6 +849,13 @@ fn original_turn_journal_commit_failure_after_durable_root_and_confirmation_cann
     assert_eq!(fixture.sessions.open_agent_db_owner(&fixture.agent_id).unwrap()
         .get_transcript_entry_by_id("observation-user").unwrap().unwrap()["confirmed"], true);
     assert!(fixture.sink.committed_original_turn_observations().is_err(), "root-only success is not a committed original-turn observation");
+    let committed = fixture.store.checkpoint_snapshot_checked().expect("durable root remains readable");
+    assert!(fixture.sink.checked_base_snapshot().is_err(), "the failed sink retains its original expectation");
+    assert!(fixture.sink.checkpoint_text_turn(
+        &user_messages(), &OriginalObservationFixture::options(false), "must not adopt the unmirrored root",
+    ).is_err());
+    assert_eq!(fixture.store.checkpoint_snapshot_checked().expect("no silent rebase after Journal refusal"), committed);
+    assert!(fixture.sink.committed_original_turn_observations().is_err(), "a later refusal cannot revive completion authority");
 }
 
 #[test]

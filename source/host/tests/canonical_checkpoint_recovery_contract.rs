@@ -418,13 +418,14 @@ fn already_composed_shipping_sink_rechecks_before_staging_and_before_persisting(
     let messages = [ProviderMessage { role: "user".into(), content: "pending".into() }];
     let options = TurnRunOptions { message_id: Some("sink-user".into()),
         inference_request_id: Some("sink-request".into()), ..TurnRunOptions::default() };
-    let staged = sink.stage_text_turn(&messages, &options, "must not commit").expect("stage while canonical root is valid");
+    let expected_base = sink.checked_base_snapshot().expect("capture valid canonical base");
+    let staged = sink.stage_text_turn(&expected_base, &messages, &options, "must not commit").expect("stage while canonical root is valid");
     let mut metadata = fixture.metadata();
     metadata.as_object_mut().expect("object").remove("latestRootBlobId");
     fixture.replace_metadata(&metadata);
     let before = durable_state(&fixture);
-    assert!(sink.stage_text_turn(&messages, &options, "must not stage").is_err());
-    assert!(sink.persist_staged_text_turn(&options, &staged).is_err());
+    assert!(sink.stage_text_turn(&expected_base, &messages, &options, "must not stage").is_err());
+    assert!(sink.persist_staged_text_turn(&expected_base, &options, &staged).is_err());
     assert_eq!(durable_state(&fixture), before, "neither comparison may publish a blob, confirm the user, advance a root or journal a checkpoint");
     drop((sink, host, owner, db));
     fixture.finish(workers);

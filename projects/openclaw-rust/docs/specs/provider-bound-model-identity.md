@@ -1351,3 +1351,112 @@ completion observations must stay unavailable, and no completion receipt or
 marker acknowledgement may be produced. GENERAL uses the configured model at
 xhigh; the independent structure/reuse/performance lens uses gpt-6.1-sol at
 xhigh. Authored tests and static review do not establish execution acceptance.
+
+## Canonical root admission — OCRM-CANONICAL-ROOT-ADMISSION-v1
+
+Implementation base is `a2f7ac9f6ede2e4c4561f9b82f85de7e074c7323`.
+Fixed U and all existing completion/acceptance gates remain unchanged. This
+batch completes the existing Runner/AgentStore admission binding; it adds no
+store, lease, permission authority, replay engine or automatic recovery.
+
+**CRA-DEFECT-01 — FIX / IMPL_BUG**, before implementation: the production
+sink retains only cached checkpoint bytes. Projection reads that cache and the
+generated preflight reads it again, so neither read establishes current durable
+authority before model execution. Byte equality also collapses an absent root
+and a present empty root, or two legacy root IDs with identical bytes. Staging
+and persistence read a later live root but compare only its bytes; a concurrent
+successful user of the same sink can advance its cache after another invocation
+has passed preflight. Bind the original invocation's complete optional snapshot
+at every boundary instead of silently adopting that later root.
+
+**CRA-DEFECT-02 — FIX / IMPL_BUG**, before implementation: early build,
+prompt and projection refusals return outside the generated lifecycle guard.
+After a prior successful invocation they can leave that same sink's completion
+observations available. Every returned shipping-owner error must permanently
+invalidate those observations while preserving the original typed error and
+the existing terminal/custody/cancellation behavior.
+
+### Shared internal contract
+
+Reuse `Option<ProductionAgentCheckpointSnapshot>` exactly, including the actual
+`root_blob_id` and `checkpoint_bytes`. `None` is established absence;
+`Some` with empty bytes is a distinct valid checkpoint. Never invent a root ID
+by hashing bytes and never default an unsupported readiness reader to absence.
+
+The existing `AgentStateCheckpointSink` gains `checked_base_snapshot()` with an
+unsupported-capability Protocol error by default. Its byte convenience reader
+derives from this checked result. `stage_text_turn`, `stage_generated_turn` and
+`persist_staged_text_turn` receive `expected_base: &Option<Snapshot>` as their
+first argument after `self`; their remaining arguments are unchanged.
+`checkpoint_text_turn` keeps its signature and captures the checked snapshot
+once for both stage and persist. `TextTurnCheckpointArtifacts` stays unchanged.
+Existing test sinks explicitly implement the checked capability where required;
+their controlled values do not become production authority.
+
+`HostRunnerComposition` retains its checked optional snapshot, borrows its bytes
+for the existing transcript route and passes the complete value to the sink
+constructor. The constructor checks equality with a fresh checked store read
+before mirror recovery. The sink retains one mutex-protected optional snapshot.
+Its checked getter compares that complete value with the existing AgentStore
+checked read and returns only on equality; mismatch/read failure never reloads
+the store, reopens an owner or changes the retained expectation.
+
+`ProductionTurnAgentInputProjection.expected_base` owns that value and
+`GeneratedAgentTurnContext.expected_base` borrows it. The generated preflight
+checks equality again before `TurnAgentComposition::run`; staging and outer
+persistence pass this same captured expectation. Under the existing sink lock,
+stage/persist require captured == retained == checked-live. Persist also checks
+the artifact's prior bytes and passes the captured expectation to the existing
+`handle_checkpoint_bytes_if_current_blocking` writer. After the existing
+successful canonical and mirror boundary, advance the retained snapshot using
+only that writer's returned root and this invocation's committed bytes.
+
+The complete returned-error boundary of
+`ProductionTurnAgentOwner::run_routed_provider_with_projected_turn_input`,
+including build validation, invalidates its same sink on Err. Keep GTH's earlier
+pre-publication and outer persistence guards. No invalidation can restore a
+previously unavailable observation log, replace the original error, retry the
+provider/tool, mint a completion receipt or acknowledge an upgrade marker.
+
+### Required behavior and Actions oracle
+
+| ID | Existing-owner requirement |
+| --- | --- |
+| CRA-01 | A valid captured absent, present-empty or legacy root admits the actual Runner; successful own publication advances the same sink for the next explicit invocation. |
+| CRA-02 | Competing roots before projection or between projection and generated preflight refuse before model HTTP/tool effects; no provider checkpoint, retry or extra canonical/confirmation/Journal mutation follows. |
+| CRA-03 | Absent/present-empty, same bytes under another valid root ID, and changed bytes under the same fixed ID remain distinct after an explicit checked store reload. The old sink does not rebind. |
+| CRA-04 | Existing strict metadata/root/direct-reference read failures and completed owner retirement refuse through the actual checked store. Mere registry eviction is not full retirement. |
+| CRA-05 | When another invocation advances the same sink after preflight, the first invocation cannot stage or persist on the successor root. Its captured expectation remains binding through the guarded write. |
+| CRA-06 | Build, projection and preflight errors revoke prior successful observations permanently. An explicit repair may allow later valid work only against the original still-current expectation; it cannot revive completion authority. |
+| CRA-07 | A post-durable Journal error retains the old expectation, so that same sink refuses later work before provider execution. Preserve the GTH pre-root blob-write refusal/repair positive, whose expected root never changed. |
+| CRA-08 | Preserve typed MCP catalog refusal precedence, model/account identity, custody accounting, cancellation, all GTH9 controls and original-turn successful/rejection controls. |
+
+Use the existing real Session/AgentStore/Journal, generated Runner and controlled
+Responses process harness, with actual durable mutations and fresh consumers.
+Require zero observed model requests/effects for admission refusals, exact
+durable byte/confirmation preservation, and actual successful controls. Extend
+the current projection/owner/bridge contracts for propagation and precedence.
+Run affected compile, named contracts and process controls only in GitHub
+Actions at the frozen exact H; inspect command/capture, counts and raw receipts.
+
+The guarantee is checked admission immediately before model/tool execution and
+a bound guarded commit afterward, not a lock held across provider execution.
+Existing MCP catalog preparation precedes the snapshot read. Keep CKR's bounded
+root/direct-reference policy; this does not add recursive graph validation or
+new hash restrictions on legacy IDs. The generated UserMessage field 10 still
+uses the hash of nonempty prior bytes and does not preserve a present-empty or
+legacy fixed prior-root reference. That wire-provenance limitation, complete
+ordinary-history replay, real providers/platforms and final acceptance remain
+open; this internal admission binding does not waive them or upgrade a flag.
+
+No persisted schema or checkpoint byte format changes in this batch. A strict
+refusal exposes a stale or unreadable base without repairing, reopening or
+rebasing it. Existing explicit Session recovery and a fresh composition remain
+the way to acquire a current owner; preserve pending WAL and unknown-effect
+custody through that transition. Rollback must retain those existing durable
+formats and cannot treat a rejected invocation as completed or replay its tools.
+
+
+Review-runner arbitration and source-review provenance are retained in
+`projects/openclaw-rust/evidence/canonical-root-admission-d56b3d1d-20261103/review-decisions.json`.
+They are separate from the product contract and runtime execution evidence.

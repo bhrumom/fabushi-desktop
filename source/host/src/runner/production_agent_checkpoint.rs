@@ -15,7 +15,7 @@ use crate::extensions::session::production::{
     OriginalTurnTerminalView, ProductionSessionWorkers,
 };
 use crate::extensions::session::production_agent_store::{
-    ProductionAgentStore, ProductionWorkerBlobStore,
+    ProductionAgentCheckpointSnapshot, ProductionAgentStore, ProductionWorkerBlobStore,
 };
 use crate::extensions::transcript::turn_runtime::{
     MAX_REPLY_NUDGES, TurnTerminalKind, TurnTerminalProjection, project_turn_terminal,
@@ -94,8 +94,18 @@ pub trait AgentStateCheckpointSink: Send + Sync {
         Err(original_turn_error("committed checkpoint observations are unavailable"))
     }
 
+    fn checked_base_snapshot(
+        &self,
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, ProviderSessionError> {
+        Err(ProviderSessionError::Protocol(
+            "Agent checkpoint sink does not support checked canonical state snapshots".into(),
+        ))
+    }
+
     fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
-        Ok(Vec::new())
+        Ok(self.checked_base_snapshot()?
+            .map(|snapshot| snapshot.checkpoint_bytes)
+            .unwrap_or_default())
     }
 
     fn read_state_blob(
@@ -109,6 +119,7 @@ pub trait AgentStateCheckpointSink: Send + Sync {
 
     fn stage_text_turn(
         &self,
+        _expected_base: &Option<ProductionAgentCheckpointSnapshot>,
         _messages: &[ProviderMessage],
         _options: &TurnRunOptions,
         _assistant_content: &str,
@@ -120,13 +131,14 @@ pub trait AgentStateCheckpointSink: Send + Sync {
 
     fn stage_generated_turn(
         &self,
+        expected_base: &Option<ProductionAgentCheckpointSnapshot>,
         messages: &[ProviderMessage],
         options: &TurnRunOptions,
         generated_step_bytes: &[Vec<u8>],
         assistant_content: &str,
     ) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError> {
         if generated_step_bytes.is_empty() {
-            return self.stage_text_turn(messages, options, assistant_content);
+            return self.stage_text_turn(expected_base, messages, options, assistant_content);
         }
         Err(ProviderSessionError::Protocol(
             "Agent checkpoint sink does not support generated tool steps".into(),
@@ -135,6 +147,7 @@ pub trait AgentStateCheckpointSink: Send + Sync {
 
     fn persist_staged_text_turn(
         &self,
+        _expected_base: &Option<ProductionAgentCheckpointSnapshot>,
         _options: &TurnRunOptions,
         _checkpoint: &TextTurnCheckpointArtifacts,
     ) -> Result<(), ProviderSessionError> {
@@ -149,8 +162,9 @@ pub trait AgentStateCheckpointSink: Send + Sync {
         options: &TurnRunOptions,
         assistant_content: &str,
     ) -> Result<(), ProviderSessionError> {
-        let checkpoint = self.stage_text_turn(messages, options, assistant_content)?;
-        self.persist_staged_text_turn(options, &checkpoint)
+        let expected_base = self.checked_base_snapshot()?;
+        let checkpoint = self.stage_text_turn(&expected_base, messages, options, assistant_content)?;
+        self.persist_staged_text_turn(&expected_base, options, &checkpoint)
     }
 }
 
@@ -282,7 +296,7 @@ pub struct ProductionAgentStateCheckpointSink {
     blob_store: Arc<ProductionWorkerBlobStore>,
     transcript_mirror: Arc<ProductionRoutedTranscriptMirror>,
     transcript_persistence_enabled: bool,
-    prior_state_bytes: Mutex<Vec<u8>>,
+    prior_checkpoint: Mutex<Option<ProductionAgentCheckpointSnapshot>>,
     token_details_persistence: Mutex<TokenDetailsPersistenceTracker>,
     // None is permanent ineligibility, including skip mode, overflow, or an
     // unsupported committed shape. Observation failure never retries a turn.
@@ -295,15 +309,20 @@ impl ProductionAgentStateCheckpointSink {
         agent_store: Arc<ProductionAgentStore>,
         blob_store: Arc<ProductionWorkerBlobStore>,
         transcript_mirror: Arc<ProductionRoutedTranscriptMirror>,
-        prior_state_bytes: Vec<u8>,
+        prior_checkpoint: Option<ProductionAgentCheckpointSnapshot>,
         transcript_persistence_enabled: bool,
     ) -> Result<Self, String> {
         let agent_id = agent_id.into();
-        let prior = ProductionTranscriptCheckpoint::from_state_bytes(&prior_state_bytes)?;
+        if agent_store.checkpoint_snapshot_checked()? != prior_checkpoint {
+            return Err("Runner Agent checkpoint root changed before sink composition".into());
+        }
+        let prior_state_bytes = prior_checkpoint.as_ref()
+            .map(|snapshot| snapshot.checkpoint_bytes.as_slice()).unwrap_or_default();
+        let prior = ProductionTranscriptCheckpoint::from_state_bytes(prior_state_bytes)?;
         let observed_summary_archive_count = if prior_state_bytes.is_empty() {
             0
         } else {
-            decode_conversation_state_recovery_fields(&prior_state_bytes)
+            decode_conversation_state_recovery_fields(prior_state_bytes)
                 .map_err(|error| format!(
                     "Runner Agent could not decode base ConversationStateStructure for turn settlement: {error}"
                 ))?
@@ -320,7 +339,7 @@ impl ProductionAgentStateCheckpointSink {
             blob_store,
             transcript_mirror,
             transcript_persistence_enabled,
-            prior_state_bytes: Mutex::new(prior_state_bytes),
+            prior_checkpoint: Mutex::new(prior_checkpoint),
             token_details_persistence: Mutex::new(TokenDetailsPersistenceTracker::new(
                 observed_summary_archive_count,
             )),
@@ -342,6 +361,24 @@ impl ProductionAgentStateCheckpointSink {
                     "Runner Agent checkpoint blob write failed: {error}"
                 ))
             })
+    }
+
+    // Callers retain the sink's prior-checkpoint lock through this read and
+    // their stage/commit boundary. Store validation owns durable currentness.
+    fn require_current_base(
+        &self,
+        expected_base: &Option<ProductionAgentCheckpointSnapshot>,
+    ) -> Result<(), ProviderSessionError> {
+        let live = self.agent_store.checkpoint_snapshot_checked()
+            .map_err(|error| ProviderSessionError::Protocol(format!(
+                "Runner Agent checkpoint prior state is unavailable: {error}"
+            )))?;
+        if &live != expected_base {
+            return Err(ProviderSessionError::Protocol(
+                "Runner Agent checkpoint root changed while this turn was active".into(),
+            ));
+        }
+        Ok(())
     }
 
     fn record_original_turn_commit(
@@ -412,15 +449,18 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
             .ok_or_else(|| original_turn_error("committed checkpoint observations are unavailable"))
     }
 
-    fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
-        self.prior_state_bytes
+    fn checked_base_snapshot(
+        &self,
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, ProviderSessionError> {
+        let prior = self.prior_checkpoint
             .lock()
-            .map(|prior| prior.clone())
             .map_err(|_| {
                 ProviderSessionError::Protocol(
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
-            })
+            })?;
+        self.require_current_base(&prior)?;
+        Ok(prior.clone())
     }
 
     fn read_state_blob(
@@ -436,15 +476,17 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
 
     fn stage_text_turn(
         &self,
+        expected_base: &Option<ProductionAgentCheckpointSnapshot>,
         messages: &[ProviderMessage],
         options: &TurnRunOptions,
         assistant_content: &str,
     ) -> Result<TextTurnCheckpointArtifacts, ProviderSessionError> {
-        self.stage_generated_turn(messages, options, &[], assistant_content)
+        self.stage_generated_turn(expected_base, messages, options, &[], assistant_content)
     }
 
     fn stage_generated_turn(
         &self,
+        expected_base: &Option<ProductionAgentCheckpointSnapshot>,
         messages: &[ProviderMessage],
         options: &TurnRunOptions,
         generated_step_bytes: &[Vec<u8>],
@@ -479,28 +521,25 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                 )
             })?;
 
-        let mut prior = self
-            .prior_state_bytes
+        let prior = self
+            .prior_checkpoint
             .lock()
             .map_err(|_| {
                 ProviderSessionError::Protocol(
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
             })?;
-        let live_prior = self.agent_store.checkpoint_snapshot_checked()
-            .map_err(|error| ProviderSessionError::Protocol(format!(
-                "Runner Agent checkpoint prior state is unavailable: {error}"
-            )))?
-            .map(|snapshot| snapshot.checkpoint_bytes)
-            .unwrap_or_default();
-        if live_prior != *prior {
+        if expected_base != &*prior {
             return Err(ProviderSessionError::Protocol(
                 "Runner Agent checkpoint root changed while this turn was active".into(),
             ));
         }
+        self.require_current_base(expected_base)?;
+        let prior_state_bytes = expected_base.as_ref()
+            .map(|snapshot| snapshot.checkpoint_bytes.as_slice()).unwrap_or_default();
 
         let mut artifacts = build_generated_turn_checkpoint_with_rich_text(
-            &prior,
+            prior_state_bytes,
             user_text,
             options.recent_message_rich_text.as_deref(),
             message_id,
@@ -529,31 +568,29 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
 
     fn persist_staged_text_turn(
         &self,
+        expected_base: &Option<ProductionAgentCheckpointSnapshot>,
         options: &TurnRunOptions,
         artifacts: &TextTurnCheckpointArtifacts,
     ) -> Result<(), ProviderSessionError> {
         let mut prior = self
-            .prior_state_bytes
+            .prior_checkpoint
             .lock()
             .map_err(|_| {
                 ProviderSessionError::Protocol(
                     "Runner Agent checkpoint prior state is poisoned".into(),
                 )
             })?;
-        let live_prior = self.agent_store.checkpoint_snapshot_checked()
-            .map_err(|error| ProviderSessionError::Protocol(format!(
-                "Runner Agent checkpoint prior state is unavailable: {error}"
-            )))?;
-        let live_prior_bytes = live_prior.as_ref()
+        let prior_state_bytes = expected_base.as_ref()
             .map(|snapshot| snapshot.checkpoint_bytes.as_slice()).unwrap_or_default();
-        if live_prior_bytes != prior.as_slice() || artifacts.prior_state_bytes != *prior {
+        if expected_base != &*prior || artifacts.prior_state_bytes.as_slice() != prior_state_bytes {
             return Err(ProviderSessionError::Protocol(
                 "Runner Agent checkpoint root changed while this turn was active".into(),
             ));
         }
+        self.require_current_base(expected_base)?;
         // Preserve the actual reference, including Some(empty state) and legacy
         // fixed root IDs. Hashing the prior bytes would lose that identity.
-        let prior_root_blob_id = live_prior.as_ref().map(|snapshot| snapshot.root_blob_id.clone());
+        let prior_root_blob_id = expected_base.as_ref().map(|snapshot| snapshot.root_blob_id.clone());
 
         self.persist_blob(
             &artifacts.user_message_id,
@@ -597,7 +634,7 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
         // Another writer between our read and mirror prepare must not silently
         // change the prior root that this observation will attest.
         let durable = self.agent_store.handle_checkpoint_bytes_if_current_blocking(
-            &live_prior, &checkpoint.state_bytes, confirmed_message_id,
+            expected_base, &checkpoint.state_bytes, confirmed_message_id,
         );
 
         let root = match durable {
@@ -634,7 +671,10 @@ impl AgentStateCheckpointSink for ProductionAgentStateCheckpointSink {
                     ))
                 })?;
         }
-        *prior = artifacts.state_bytes.clone();
+        *prior = Some(ProductionAgentCheckpointSnapshot {
+            root_blob_id: root.clone(),
+            checkpoint_bytes: checkpoint.state_bytes.clone(),
+        });
         if mirror_prepared && matches!(
             self.transcript_mirror.route(&self.agent_id), Ok(TranscriptMirrorRoute::Journal)
         ) {

@@ -503,6 +503,20 @@ jobs:
               "source/host/tests/turn_toolset_await_mcp_contract.rs",
               "source/host/tests/fabushi_responses_credential_context_contract.rs",
               "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+              "source/host/src/runner/production_turn_agent_owner.rs",
+              "source/host/tests/production_agent_checkpoint_contract.rs",
+              "source/host/tests/canonical_checkpoint_recovery_contract.rs",
+              "source/host/tests/production_agent_store_recovery_contract.rs",
+              "source/host/tests/production_turn_agent_owner_contract.rs",
+              "source/host/app/src/tests/original_turn_recovery_tests.rs",
+              "source/host/tests/transcript_mirror_production_provider_contract.rs",
+              "source/host/src/extensions/session/production_agent_store.rs",
+              "source/host/src/extensions/session/agent_db.rs",
+              "source/host/src/runner/sand_agent_runner.rs",
+              "source/host/src/transcript_mirror/production_provider.rs",
+              "source/host/src/transcript_mirror/transcript_mirror.rs",
+              "source/host/src/transcript_mirror/transcript_journal_codec.rs",
+              "source/host/src/transcript_mirror/transcript_mirror_router.rs",
           ]
           lock = json.loads(Path("projects/openclaw-rust/upstream.lock.json").read_text())
           receipt = {
@@ -1752,6 +1766,14 @@ jobs:
                   "generated_failure_history_later_failure_invalidates_prior_completion",
                   "generated_failure_history_final_persistence_refusal_stays_ineligible_after_repair",
                   "generated_failure_history_successful_control_preserves_original_completion",
+                  "canonical_root_admission_valid_roots_advance_across_explicit_invocations",
+                  "canonical_root_admission_pre_projection_drift_prevents_provider_execution",
+                  "canonical_root_admission_post_projection_drift_prevents_provider_execution",
+                  "canonical_root_admission_strict_read_failures_preserve_durable_state",
+                  "canonical_root_admission_completed_owner_retirement_prevents_provider_execution",
+                  "canonical_root_admission_same_sink_staging_and_persistence_keep_captured_base",
+                  "canonical_root_admission_early_errors_permanently_revoke_prior_completion",
+                  "canonical_root_admission_post_durable_journal_failure_refuses_stale_sink",
               ],
               "lib-runner_routed_provider_runtime_checkpoint_publication_tests": [
                   "runner::routed_provider_runtime::checkpoint_publication_tests::production_checkpoint_round_trip_preserves_payload_and_hashed_isolation",
@@ -1791,8 +1813,9 @@ jobs:
           receipt = {key: subject[key] for key in (
               "subject_commit", "subject_tree", "upstream", "run_id", "run_attempt", "runner_os", "inputs_sha256")}
           receipt.update({"contract": "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "executions": executions,
-              "additional_contracts": ["OCRM-GENERATED-HISTORY-v1"],
+              "additional_contracts": ["OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1"],
               "generated_history_scope": "Actual generated Runner retains ordered known successful tool observations and the accepted user through the existing canonical root/Journal transaction after provider failure or cancellation. Owned fresh processes observe history without provider/tool replay or completion/marker authority. Real provider-store refusal retains unaccepted effect custody; unknown/no-effect/root-drift controls, original typed error preservation, prior-completion invalidation and ordinary success remain required. Controlled Responses do not prove real provider compatibility, unknown/pending history, complete typed replay/UI, original-turn restart or packaged-platform acceptance.",
+              "canonical_root_admission_scope": "Actual checked optional canonical snapshots bind Host composition, Runner projection, preflight, staging and guarded publication. Required process controls distinguish absent/present-empty and legacy-root identities, strict read/retirement refusals, same-sink successor drift, early-error permanent completion revocation, and post-durable Journal failure with fresh-owner recovery. Controlled Responses are not real provider compatibility. No lock spans provider execution; MCP catalog preparation precedes admission; recursive graph validation, prior-root wire provenance, original-turn restart, complete typed replay and package acceptance remain open.",
               "result": "passed" if accepted else "failed",
               "scope": "Actual provider checkpoint writer and shell-adapter custody: private owned staging, no-clobber publication, directory-entry barriers and retry after failed creation, exact preserved payloads, controlled final-barrier refusal, and no replay of a completed file effect after real store refusal or explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance."})
           (root / "provider-checkpoint-publication.receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
@@ -3569,6 +3592,21 @@ jobs:
               "source/host/tests/turn_toolset_await_mcp_contract.rs",
               "source/host/tests/fabushi_responses_credential_context_contract.rs",
               "source/host/tests/fabushi_responses_credential_context_contract/automatic_attempt_binding.rs",
+              "source/host/src/host_runner_composition.rs",
+              "source/host/src/runner/production_turn_agent_owner.rs",
+              "source/host/tests/production_agent_checkpoint_contract.rs",
+              "source/host/tests/canonical_checkpoint_recovery_contract.rs",
+              "source/host/tests/production_agent_store_recovery_contract.rs",
+              "source/host/tests/production_turn_agent_owner_contract.rs",
+              "source/host/app/src/tests/original_turn_recovery_tests.rs",
+              "source/host/tests/host_runner_composition_production_wiring_contract.rs",
+              "source/host/tests/transcript_mirror_production_provider_contract.rs",
+              "source/host/src/extensions/session/production_agent_store.rs",
+              "source/host/src/runner/sand_agent_runner.rs",
+              "source/host/src/transcript_mirror/production_provider.rs",
+              "source/host/src/transcript_mirror/transcript_mirror.rs",
+              "source/host/src/transcript_mirror/transcript_journal_codec.rs",
+              "source/host/src/transcript_mirror/transcript_mirror_router.rs",
           ]
           base = ["cargo", "test", "--locked", "--manifest-path", "source/host/Cargo.toml"]
           integration = base + ["--no-fail-fast"]
@@ -3938,6 +3976,8 @@ jobs:
                   "production_runner_catalog_refusal_stops_before_execution_and_ordinary_failure_continues_preparation",
               ]),
               ("received-catalog-projection", base + ["--test", "production_turn_input_projection_contract", "--", "--test-threads=1"], [
+                  "production_turn_agent_projection_keeps_root_presence_and_identity_frozen",
+                  "production_turn_agent_projection_refuses_unsupported_snapshot_capability",
                   "production_turn_agent_projection_preserves_typed_catalog_refusal",
                   "composition_and_live_toolset_projection_preserve_typed_catalog_refusal",
                   "live_mcp_projection_preserves_first_seen_grouping_and_complete_descriptors",
@@ -4060,12 +4100,37 @@ jobs:
                   "generated_failure_history_final_persistence_refusal_stays_ineligible_after_repair",
                   "generated_failure_history_successful_control_preserves_original_completion",
               ]),
+              ("canonical-root-admission", base + ["--test", "production_checkpoint_restart_contract", "canonical_root_admission_", "--", "--test-threads=1"], [
+                  "canonical_root_admission_valid_roots_advance_across_explicit_invocations",
+                  "canonical_root_admission_pre_projection_drift_prevents_provider_execution",
+                  "canonical_root_admission_post_projection_drift_prevents_provider_execution",
+                  "canonical_root_admission_strict_read_failures_preserve_durable_state",
+                  "canonical_root_admission_completed_owner_retirement_prevents_provider_execution",
+                  "canonical_root_admission_same_sink_staging_and_persistence_keep_captured_base",
+                  "canonical_root_admission_early_errors_permanently_revoke_prior_completion",
+                  "canonical_root_admission_post_durable_journal_failure_refuses_stale_sink",
+              ]),
+              ("canonical-root-admission-contracts", base + ["--no-fail-fast", "--test", "production_turn_agent_owner_contract", "--test", "production_agent_checkpoint_contract", "--test", "production_agent_store_recovery_contract", "--test", "canonical_checkpoint_recovery_contract", "--test", "host_runner_composition_production_wiring_contract", "--test", "transcript_mirror_production_provider_contract", "--", "--test-threads=1"], [
+                  "production_owner_retains_not_started_when_input_preparation_refuses",
+                  "production_sink_rejects_stale_snapshot_before_mirror_recovery",
+                  "production_sink_keeps_invocation_snapshot_binding_after_own_success",
+                  "original_turn_observations_are_object_safe_unavailable_by_default_and_absent_until_real_commit",
+                  "original_turn_journal_commit_failure_after_durable_root_and_confirmation_cannot_mint_observation",
+                  "original_turn_prior_snapshot_is_checked_under_the_actual_store_mutation_guard",
+                  "composed_sink_refuses_durable_root_corruption_before_child_blobs_or_mirror_preparation",
+                  "already_composed_shipping_sink_rechecks_before_staging_and_before_persisting",
+                  "fresh_actual_owners_distinguish_no_root_from_persisted_empty_protobuf",
+                  "legacy_fixed_roots_and_direct_references_remain_readable_and_same_id_drift_refuses_reentry",
+                  "host_runner_composition_owns_transcript_checkpoint_wiring",
+                  "shipping_runner_binds_generated_checkpoint_codec_into_file_transcript_mirror",
+              ]),
           ]
           receipt = {
               "contract": "CWR-v1-portable/MGS-v1/MGA-v1/RSU-v1/MWR-v1/PMS-v1-Rust-producer", "subject_commit": head,
-              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "CWB-v1"],
+              "additional_contracts": ["SCP-CLAIM-v1", "DPR-v1", "PRC-v1-registry", "DPA-v1", "DVR-v1", "DJC-v1", "DJL-v1", "CFL-CHECKED-v1-source-wiring", "MCP-RECEIVED-CATALOG-v1", "OCRM-CHANNEL-TRANSPORT-CHUNK-v1", "MEA-v1", "MEC-v1", "MER-v1", "CGWA-v1", "CCWA-v1", "OCRM-PLUGIN-UNINSTALL-RECOVERY-v1", "OCRM-PROVIDER-CHECKPOINT-WRITE-v1", "CMI-v1", "SNI-v1", "OCRM-GENERATED-HISTORY-v1", "OCRM-CANONICAL-ROOT-ADMISSION-v1", "CWB-v1"],
               "codex_workspace_binding_scope": "Actual private credential loading, per-turn source/workspace continuity, same-workspace rotation, recreated retry/checkpoint refusal, one-401 refresh before persistence and bound/fresh Memory consumers through real HTTP with owned redirected destinations. Real service, external-writer settlement and process-restart acceptance remain open.",
               "generated_history_scope": "Actual generated Runner retains ordered known successful tool observations and the accepted user through the existing canonical root/Journal transaction after provider failure or cancellation. Owned fresh processes observe history without provider/tool replay or completion/marker authority. Real provider-store refusal retains unaccepted effect custody; unknown/no-effect/root-drift controls, original typed error preservation, prior-completion invalidation and ordinary success remain required. Controlled Responses do not prove real provider compatibility, unknown/pending history, complete typed replay/UI, original-turn restart or packaged-platform acceptance.",
+              "canonical_root_admission_scope": "Actual checked optional canonical snapshots bind Host composition, Runner projection, preflight, staging and guarded publication. Required process controls distinguish absent/present-empty and legacy-root identities, strict read/retirement refusals, same-sink successor drift, early-error permanent completion revocation, and post-durable Journal failure with fresh-owner recovery. Controlled Responses are not real provider compatibility. No lock spans provider execution; MCP catalog preparation precedes admission; recursive graph validation, prior-root wire provenance, original-turn restart, complete typed replay and package acceptance remain open.",
               "plugin_uninstall_recovery_scope": "Durable pre-dispatch tickets and exact settlements in the existing MCP/Skills owner, pending and confirmed refusal in actual Session/prompt consumers, strict image/marker recovery, cache-before-release barriers, and same-root Host handoff. Owned producer process exits and fresh consumer processes use controlled backend I/O. Pending outcomes are never replayed or cleared by ordinary sync. Account/backend incarnation, remote receipt/quiescence reconciliation, real ecosystem, hardware power-loss and packaged-platform acceptance remain open.",
               "checkpoint_publication_scope": "Actual provider checkpoint writer: private owned staging, exact payload preservation, no-clobber final publication, directory-entry barriers including retry after a failed creation barrier, and retained visible payload after a controlled final barrier failure. Actual shell adapter retains a completed file effect as uncheckpointed after real store refusal and explicit repair. No original-turn restart eligibility, claim or execution, hardware power-loss or packaged-platform acceptance.",
               "session_namespace_scope": "SNI-v1 runs the complete existing path, Agent lifecycle and Agent Session targets. Real Session/Human stores cover reserved Agent path refusal before locks, markers and caches; whole-batch lifecycle and Gateway preflight before all hooks; distinct typed Agent/Human cache owners in both opening orders; Agent close/retire/delete, unchanged Human bytes and reopen; and retained valid deletion/admission controls. Colon-bearing filesystem controls run on Unix. This is not every filesystem alias, external parent replacement, Windows or packaged acceptance, Human attachment admission, membership revocation or a new permission owner.",
@@ -4099,13 +4164,17 @@ jobs:
               missing = [name for name in required if passed.count(name) != 1]
               counts = [tuple(map(int, count)) for count in re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text)]
               accepted = cargo_exit == 0 and capture_exit == 0 and not missing and bool(counts) and all(count[0] > 0 and count[1] == 0 for count in counts)
-              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "codex-workspace-binding", "codex-workspace-http"):
+              if label in ("device-pairing", "device-pairing-join", "device-pairing-rotation-authority", "device-pairing-rotation-gateway", "device-join-limit-state", "device-join-ingress-http", "device-join-legacy-http", "device-join-tls", "memory-account-binding", "codex-model-identity", "generated-failure-history", "canonical-root-admission", "codex-workspace-binding", "codex-workspace-http"):
                   accepted = accepted and counts == [(len(required), 0, 0)]
               complete_counts = None
               if label in ("device-pairing-revocation-authority", "device-pairing-revocation-gateway", "device-pairing-retained-stream"):
                   complete_counts = [tuple(map(int, count)) for count in re.findall(
                       r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out;", text)]
                   accepted = accepted and counts == [(len(required), 0, 0)] and complete_counts == [(len(required), 0, 0, 0, 0)]
+              if label == "canonical-root-admission-contracts":
+                  accepted = (accepted and len(counts) == 6
+                      and all(count[2] == 0 for count in counts)
+                      and sum(count[0] for count in counts) == len(passed))
               if label == "session-owner-namespace":
                   accepted = (accepted and len(counts) == 3
                       and all(count[2] == 0 for count in counts)

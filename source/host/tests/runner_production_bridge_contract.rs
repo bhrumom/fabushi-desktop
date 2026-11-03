@@ -10,6 +10,7 @@ use mahayana_host_runtime::extensions::inference::provider_session::{
     RoutedProviderCheckpoint, RoutedToolDefinition,
 };
 use mahayana_host_runtime::host_request_context::HostRequestContext;
+use mahayana_host_runtime::extensions::session::production_agent_store::ProductionAgentCheckpointSnapshot;
 use mahayana_host_runtime::runner::production_turn_agent_owner::{
     ProductionTurnAgentBuildBindings, ProductionTurnAgentLifecycleBindings,
     ProductionTurnAgentStaticConfig, ProductionTurnPrivacyModeResolver,
@@ -610,7 +611,9 @@ struct PreparationStateTripwire {
 }
 
 impl AgentStateCheckpointSink for PreparationStateTripwire {
-    fn base_state_bytes(&self) -> Result<Vec<u8>, ProviderSessionError> {
+    fn checked_base_snapshot(
+        &self,
+    ) -> Result<Option<ProductionAgentCheckpointSnapshot>, ProviderSessionError> {
         self.reads.fetch_add(1, Ordering::SeqCst);
         Err(ProviderSessionError::Protocol(PREPARATION_STATE_CONTROL.into()))
     }

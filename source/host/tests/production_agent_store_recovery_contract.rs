@@ -139,7 +139,8 @@ fn composed_sink_refuses_durable_root_corruption_before_child_blobs_or_mirror_pr
             recent_message_text: Some("preserve this pending request".into()),
             ..TurnRunOptions::default()
         };
-        let staged = sink.stage_text_turn(&messages, &options, "recovered assistant answer")
+        let expected_base = sink.checked_base_snapshot().expect("capture valid canonical base");
+        let staged = sink.stage_text_turn(&expected_base, &messages, &options, "recovered assistant answer")
             .expect("stage while base is valid");
         let valid_metadata = session.db.read_kv("metadata").expect("metadata read").expect("metadata");
         let mut damaged = session.db.read_metadata().expect("metadata object");
@@ -171,8 +172,8 @@ fn composed_sink_refuses_durable_root_corruption_before_child_blobs_or_mirror_pr
             assert_eq!(blob_store.get_blob_blocking(id).expect("unpublished staged blob"), None);
         }
 
-        assert!(sink.stage_text_turn(&messages, &options, "must refuse new staging").is_err(), "{case}");
-        let error = sink.persist_staged_text_turn(&options, &staged)
+        assert!(sink.stage_text_turn(&expected_base, &messages, &options, "must refuse new staging").is_err(), "{case}");
+        let error = sink.persist_staged_text_turn(&expected_base, &options, &staged)
             .err().expect("damaged or drifted durable root refuses publication");
         assert!(error.to_string().contains("production AgentStore"), "{case}: {error}");
         for id in &staged_ids {
@@ -183,7 +184,7 @@ fn composed_sink_refuses_durable_root_corruption_before_child_blobs_or_mirror_pr
         assert_eq!(session.agent_store.latest_checkpoint_bytes_checked().expect("retained empty snapshot"), None);
 
         rewrite_raw_metadata(&session.record.db_path, Some(&valid_metadata));
-        sink.persist_staged_text_turn(&options, &staged).expect("explicit repair permits original staged commit");
+        sink.persist_staged_text_turn(&expected_base, &options, &staged).expect("explicit repair permits original staged commit");
         assert_eq!(session.agent_store.latest_checkpoint_bytes_checked().expect("committed state"), Some(staged.state_bytes.clone()));
         assert_eq!(session.db.get_transcript_entry_by_id("staged-user").expect("confirmed entry")
             .and_then(|entry| entry.get("confirmed").and_then(Value::as_bool)), Some(true));
