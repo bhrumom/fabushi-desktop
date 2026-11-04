@@ -59,3 +59,21 @@ export function isForwardToggleShortcut(input: {
   return (input.key === "Enter" && !input.ctrlKey && !input.metaKey)
     || input.key === " ";
 }
+
+export interface ForwardRecipientCandidate {
+  readonly id: string;
+  readonly name: string;
+}
+
+export function intersectForwardRecipientResults<T extends ForwardRecipientCandidate>(
+  results: readonly (readonly T[])[],
+): readonly T[] {
+  if (results.length === 0 || results.some((result) => result.length === 0)) return [];
+  const allowed = results.slice(1).map((result) => new Set(result.map((recipient) => recipient.id)));
+  const seen = new Set<string>();
+  return results[0]!.filter((recipient) => {
+    if (typeof recipient.id !== "string" || recipient.id.trim().length === 0 || seen.has(recipient.id)) return false;
+    seen.add(recipient.id);
+    return allowed.every((ids) => ids.has(recipient.id));
+  });
+}

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
+import { ForwardMessageDialog, type ForwardDraftSource, type ForwardIntentSnapshot, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
 import { createCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
 import { createRuntimeThemeInstaller, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
@@ -66,7 +66,7 @@ function controlled<T>(kind: RequestKind, args: unknown): Promise<T> {
     pending.set(id, { resolve: (value) => resolve(value as T), reject });
   });
 }
-const searchRecipients = (input: { sourceConversationId: string; sourceEntryId: string; query: string; limit: number }) =>
+const searchRecipients = (input: { sourceConversationId: string; sourceEntryIds: readonly string[]; query: string; limit: number }) =>
   controlled<readonly ForwardRecipient[]>("search", input);
 const forwardMessage = async (input: {
   sourceConversationId: string;
@@ -93,6 +93,7 @@ type Controls = {
   readonly reopen: () => void;
   readonly close: () => void;
   readonly replaceSource: (messageId: string) => void;
+  readonly addSource: (messageId: string) => void;
   readonly refreshMessage: () => void;
   readonly refreshCredential: () => void;
 };
@@ -107,14 +108,23 @@ function Fixture() {
   const [messageId, setMessageId] = useState("message-1");
   const [messageRefresh, setMessageRefresh] = useState(0);
   const [credentialRefresh, setCredentialRefresh] = useState(0);
+  const [snapshot, setSnapshot] = useState<ForwardIntentSnapshot | null>(null);
+  const [sources, setSources] = useState<readonly ForwardDraftSource[]>(() => [{
+    message: { id: "message-1", kind: "message", role: "user", author: "You", text: "Forward this message message-1", timestampMs: 1 },
+    clientNonce: "fixture-forward-initial",
+  }]);
   const accountRef = useRef<string | null>(account);
+  const nonce = () => `fixture-forward:${Date.now()}:${Math.random().toString(16).slice(2)}`;
   useForwardAccountScopeUnmountFence(scope);
   const isCurrent = useCallback((value: number) =>
     value === scope.current && accountRef.current != null, []);
   const message = useMemo<TranscriptMessage>(() => ({
     id: messageId, kind: "message", role: "user", author: "You",
-    text: "Forward this message", timestampMs: 1 + messageRefresh,
+    text: `Forward this message ${messageId}`, timestampMs: 1 + messageRefresh,
   }), [messageId, messageRefresh]);
+  const currentSources = sources.map((source) => source.message.id === messageId
+    ? { ...source, message }
+    : source);
   controls = {
     generation,
     scope,
@@ -123,11 +133,31 @@ function Fixture() {
       scope.current += 1;
       setGeneration(scope.current);
       setAccount(nextAccount);
+      setSnapshot(null);
+      setSources((current) => current.map((source) => ({ ...source, clientNonce: nonce() })));
       setOpen(false);
     },
     reopen: () => { if (accountRef.current != null) setOpen(true); },
     close: () => setOpen(false),
-    replaceSource: (nextId) => setMessageId(nextId),
+    replaceSource: (nextId) => {
+      const nextMessage: TranscriptMessage = {
+        id: nextId, kind: "message", role: "user", author: "You",
+        text: `Forward this message ${nextId}`, timestampMs: Date.now(),
+      };
+      setMessageId(nextId);
+      setSnapshot(null);
+      setSources([{ message: nextMessage, clientNonce: nonce() }]);
+    },
+    addSource: (nextId) => {
+      const nextMessage: TranscriptMessage = {
+        id: nextId, kind: "message", role: "user", author: "You",
+        text: `Forward this message ${nextId}`, timestampMs: Date.now(),
+      };
+      setSources((current) => current.some((source) => source.message.id === nextId)
+        ? current
+        : [...current, { message: nextMessage, clientNonce: nonce() }]);
+      setOpen(true);
+    },
     refreshMessage: () => setMessageRefresh((value) => value + 1),
     refreshCredential: () => setCredentialRefresh((value) => value + 1),
   };
@@ -135,10 +165,24 @@ function Fixture() {
     <ForwardMessageDialog
       accountScopeGeneration={generation}
       forwardMessage={forwardMessage}
+      initialSnapshot={snapshot}
       isAccountScopeCurrent={isCurrent}
-      message={message}
-      onClose={() => { events.push({ kind: "closed", account }); setOpen(false); }}
+      messages={currentSources}
+      onAddMore={() => setOpen(false)}
+      onClose={() => {
+        events.push({ kind: "closed", account });
+        setOpen(false);
+        if (snapshot == null) setSources((current) => current.map((source) => ({ ...source, clientNonce: nonce() })));
+      }}
+      onComplete={() => { setSnapshot(null); setSources([]); setOpen(false); }}
+      onDiscard={() => { setSnapshot(null); setSources([]); setOpen(false); }}
+      onRemoveSource={(sourceEntryId) => {
+        setSources((current) => current.filter((source) => source.message.id !== sourceEntryId));
+        setSnapshot(null);
+        if (currentSources.length <= 1) setOpen(false);
+      }}
       onSettled={(settlement, scopedGeneration) => events.push({ kind: "settled", account, generation: scopedGeneration, settlement })}
+      onSnapshot={setSnapshot}
       open={open}
       searchRecipients={searchRecipients}
       sourceConversationId="human:source"
@@ -176,6 +220,7 @@ Object.assign(window, {
     reopen: () => controls?.reopen(),
     close: () => controls?.close(),
     replaceSource: (id: string) => controls?.replaceSource(id),
+    addSource: (id: string) => controls?.addSource(id),
     refreshMessage: () => controls?.refreshMessage(),
     refreshCredential: () => controls?.refreshCredential(),
     setTheme: (mode: "light" | "dark") => themeInstaller.update(mode),

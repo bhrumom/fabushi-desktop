@@ -5,6 +5,7 @@ import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
 import { createWriteStream } from "node:fs";
+import { intersectForwardRecipientResults } from "./forward-recipient-navigation.ts";
 const root = process.cwd();
 const desktop = resolve(root, "desktop");
 const require = createRequire(resolve(desktop, "package.json"));
@@ -142,7 +143,7 @@ test("replaced source discards old search", async (t) => {
   const f = await fixture(t); const old = await f.request("search"); await f.call("replaceSource", "message-2");
   await f.call("resolve", old.id, [{ id: "old", name: "OLD_SECRET" }]);
   const replacement = await f.request("search", 2);
-  assert.equal(replacement.args.sourceEntryId, "message-2");
+  assert.deepEqual(replacement.args.sourceEntryIds, ["message-2"]);
   assert.equal(await f.page.getByText("OLD_SECRET").count(), 0);
 });
 test("unmount synchronously invalidates root generation", async (t) => {
@@ -412,4 +413,64 @@ test("closing after the actual Coordinator frame preserves admitted work without
   assert.equal(await f.page.getByRole("dialog", { name: "Forward message" }).count(), 1);
   assert.equal((await f.call("requests")).filter((item) => item.kind === "forward").length, 1);
   assert.equal((await f.call("pending")).includes(request.id), false);
+});
+ 
+test("multi-source forwarding intersects recipients, preserves source order, and retries only failed pairs", async (t) => {
+  const f = await fixture(t);
+  const staleSearch = await f.request("search");
+  await f.call("addSource", "message-2");
+  const search = await f.request("search", 2);
+  assert.deepEqual(search.args.sourceEntryIds, ["message-1", "message-2"]);
+  await f.call("resolve", staleSearch.id, [{ id: "old", name: "OLD_SECRET" }]);
+  await f.call("resolve", search.id, [{ id: "human:b", name: "human:b" }]);
+  await f.page.getByRole("option", { name: "human:b" }).waitFor();
+  await f.select();
+  await f.submit();
+  const first = await f.request("forward");
+  assert.equal(first.args.sourceEntryId, "message-1");
+  await f.call("resolve", first.id, [{ conversationId: "human:b", status: "sent" }]);
+  const second = await f.request("forward", 2);
+  assert.equal(second.args.sourceEntryId, "message-2");
+  assert.notEqual(second.args.clientNonce, first.args.clientNonce);
+  await f.call("resolve", second.id, [{ conversationId: "human:b", status: "failed", error: "temporary delivery failure" }]);
+  await f.page.getByRole("alert").waitFor();
+  assert.equal(await f.page.getByText("1 selected", { exact: true }).count(), 1);
+  await f.submit();
+  const retry = await f.request("forward", 3);
+  assert.equal(retry.args.sourceEntryId, "message-2");
+  assert.equal(retry.args.clientNonce, second.args.clientNonce);
+  assert.deepEqual(retry.args.destinationConversationIds, ["human:b"]);
+  await f.call("resolve", retry.id, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((event) => event.kind === "closed"));
+  assert.equal((await f.call("requests")).filter((request) => request.kind === "forward").length, 3);
+});
+
+test("removing a source message updates the draft and recipient search scope", async (t) => {
+  const f = await fixture(t);
+  const staleSearch = await f.request("search");
+  await f.call("addSource", "message-2");
+  await f.request("search", 2);
+  await f.page.getByRole("button", { name: "Remove message message-1", exact: true }).click();
+  const search = await f.request("search", 3);
+  assert.deepEqual(search.args.sourceEntryIds, ["message-2"]);
+  await f.call("resolve", staleSearch.id, [{ id: "old", name: "OLD_SECRET" }]);
+  await f.call("resolve", search.id, [{ id: "human:b", name: "human:b" }]);
+  await f.select();
+  await f.submit();
+  const sent = await f.request("forward");
+  assert.equal(sent.args.sourceEntryId, "message-2");
+  await f.call("resolve", sent.id, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((event) => event.kind === "closed"));
+});
+
+test("recipient result intersection fails closed on any source denial and removes duplicate identities", () => {
+  assert.deepEqual(intersectForwardRecipientResults([]), []);
+  assert.deepEqual(intersectForwardRecipientResults([
+    [{ id: "human:a", name: "Alpha" }, { id: "human:b", name: "Beta" }, { id: "human:b", name: "Duplicate Beta" }],
+    [{ id: "human:b", name: "Beta from source two" }, { id: "human:c", name: "Gamma" }],
+  ]), [{ id: "human:b", name: "Beta" }]);
+  assert.deepEqual(intersectForwardRecipientResults([
+    [{ id: "human:a", name: "Alpha" }],
+    [],
+  ]), []);
 });

@@ -805,8 +805,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ForwardMessageDialog.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# tests 23' artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# pass 23' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# tests 26' artifacts/native-message-ui/forward-dialog.log
+          grep -Fx '# pass 26' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log

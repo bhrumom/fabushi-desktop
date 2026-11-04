@@ -102,7 +102,8 @@ import { WorkspaceIndicator } from "../recovered/features/window-chrome/workspac
 import { applyRootShellTheme, applyRootShellZoomFactor, shouldRefreshRootShellOnFocus, WINDOW_CHROME_METRICS } from "../recovered/features/window-chrome/model";
 import { createRuntimeThemeInstaller, RUNTIME_THEME_CLASS, type ThemeDocument } from "../recovered/features/runtime-theme-token-installer";
 import { CommandPalette } from "./CommandPalette";
-import { ForwardMessageDialog, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
+import { ForwardMessageDialog, type ForwardDraftSource, type ForwardIntentSnapshot, type ForwardRecipient, type ForwardSettlement } from "./ForwardMessageDialog";
+import { intersectForwardRecipientResults } from "./forward-recipient-navigation";
 import { settleForwardProjection } from "./forward-settlement";
 import { useForwardAccountScopeUnmountFence } from "./forward-account-scope";
 import { AgentDeleteConfirmation, type AgentDeleteTarget } from "./AgentDeleteConfirmation";
@@ -645,6 +646,14 @@ export interface ProductionRendererProps {
   coordinatorPort: CoordinatorPortBridge;
 }
 
+
+function createForwardDraftClientNonce(): string {
+  const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `forward:${suffix}`;
+}
+
 export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRendererProps) {
   const [client] = useState(() => createCoordinatorClient(coordinatorPort));
   const [groupMembersRoot] = useState(() => createGroupMembersRootScope(client));
@@ -917,7 +926,13 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [pluginQuery, setPluginQuery] = useState("");
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [newAgentDialogOpen, setNewAgentDialogOpen] = useState(false);
-  const [forwardTarget, setForwardTarget] = useState<{ sourceConversationId: string; message: TranscriptMessage; accountScopeGeneration: number } | null>(null);
+  const [forwardDraft, setForwardDraft] = useState<{
+    sourceConversationId: string;
+    sources: readonly ForwardDraftSource[];
+    accountScopeGeneration: number;
+    snapshot: ForwardIntentSnapshot | null;
+  } | null>(null);
+  const [forwardDialogOpen, setForwardDialogOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState("New chat");
   const [newAgentDescription, setNewAgentDescription] = useState("");
   const [newAgentAvatarShape, setNewAgentAvatarShape] = useState<(typeof AVATAR_SHAPES)[number]>("wedge");
@@ -1093,16 +1108,27 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const searchForwardRecipients = useCallback(async (input: {
     sourceConversationId: string;
-    sourceEntryId: string;
+    sourceEntryIds: readonly string[];
     query: string;
     limit: number;
   }): Promise<readonly ForwardRecipient[]> => {
     if (client == null) throw new Error("coordinator is unavailable for recipient search");
-    const raw = await client.call("searchHumanRecipients", input);
-    return projectHumanConversations(raw).map((conversation) => ({
-      id: conversation.id,
-      name: conversation.name,
+    if (input.sourceEntryIds.length === 0 || new Set(input.sourceEntryIds).size !== input.sourceEntryIds.length) {
+      throw new Error("forward recipient search requires unique source messages");
+    }
+    const results = await Promise.all(input.sourceEntryIds.map(async (sourceEntryId) => {
+      const raw = await client.call("searchHumanRecipients", {
+        sourceConversationId: input.sourceConversationId,
+        sourceEntryId,
+        query: input.query,
+        limit: input.limit,
+      });
+      return projectHumanConversations(raw).map((conversation) => ({
+        id: conversation.id,
+        name: conversation.name,
+      }));
     }));
+    return intersectForwardRecipientResults(results);
   }, [client]);
 
   const forwardHumanMessage = useCallback(async (input: {
@@ -3373,7 +3399,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         composerSubmissionQueue.reset();
         initialTranscriptRequestRef.current = null;
         setBusy(false);
-        setForwardTarget(null);
+        setForwardDraft(null); setForwardDialogOpen(false);
         localToolPermissionScopeGate.reset();
         groupMembersRoot.reset();
         sharedRoomProvider?.reset();
@@ -3412,7 +3438,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       }
       accountIdentityRef.current = identity;
       if (status.kind !== "logged-in") {
-        setForwardTarget(null);
+        setForwardDraft(null); setForwardDialogOpen(false);
         localToolPermissionScopeGate.reset();
         selectionStore.reset();
         acknowledgementController.reset();
@@ -4279,6 +4305,15 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             </>}
           />}
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
+          {activeIsHuman && forwardDraft?.sourceConversationId === activeAgent.id
+            ? <div style={{ alignItems: "center", display: "flex", gap: 8, justifyContent: "flex-end", padding: "6px 12px" }}>
+                <span style={{ color: "var(--fabushi-text-secondary, var(--cursor-text-secondary))", fontSize: 12 }}>
+                  {forwardDraft.sources.length} message(s) in forwarding draft
+                </span>
+                <SandButton onClick={() => setForwardDialogOpen(true)} size="sm" variant="secondary">Review forward draft</SandButton>
+                <SandButton onClick={() => { setForwardDraft(null); setForwardDialogOpen(false); }} size="sm" variant="secondary">Discard draft</SandButton>
+              </div>
+            : null}
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
@@ -4295,9 +4330,25 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                 onOpenReply={(targetId) => replyThreadController.navigate(targetId)}
                 onForward={activeIsHuman ? (entry) => {
                   const accountScopeGeneration = renderedAccountScopeGeneration;
-                  if (isForwardAccountScopeCurrent(accountScopeGeneration)) {
-                    setForwardTarget({ sourceConversationId: activeAgent.id, message: entry, accountScopeGeneration });
+                  if (!isForwardAccountScopeCurrent(accountScopeGeneration)) return;
+                  if (forwardDraft != null
+                    && (forwardDraft.sourceConversationId !== activeAgent.id
+                      || forwardDraft.accountScopeGeneration !== accountScopeGeneration)) {
+                    setNotice("Finish or discard the existing forwarding draft before selecting messages from another conversation.");
+                    return;
                   }
+                  if (forwardDraft?.snapshot != null) {
+                    setNotice("This forwarding intent is locked after sending begins. Retry or discard it before starting another draft.");
+                    return;
+                  }
+                  setForwardDraft((current) => {
+                    if (current != null && current.sources.some((source) => source.message.id === entry.id)) return current;
+                    const source: ForwardDraftSource = { message: entry, clientNonce: createForwardDraftClientNonce() };
+                    return current == null
+                      ? { sourceConversationId: activeAgent.id, accountScopeGeneration, sources: [source], snapshot: null }
+                      : { ...current, sources: [...current.sources, source] };
+                  });
+                  setForwardDialogOpen(true);
                 } : undefined}
                 onReply={(entry) => { replyThreadController.selectReply(entry.id); }}
                 onStartThread={activeIsHuman ? undefined : (entry) => { replyThreadController.navigate(entry.id); }}
@@ -4327,15 +4378,32 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       </div>
 
       <ForwardMessageDialog
-        accountScopeGeneration={forwardTarget?.accountScopeGeneration ?? accountScopeGenerationRef.current}
+        accountScopeGeneration={forwardDraft?.accountScopeGeneration ?? accountScopeGenerationRef.current}
         forwardMessage={forwardHumanMessage}
+        initialSnapshot={forwardDraft?.snapshot ?? null}
         isAccountScopeCurrent={isForwardAccountScopeCurrent}
-        message={forwardTarget?.message ?? null}
-        onClose={() => setForwardTarget((current) => current === forwardTarget ? null : current)}
+        messages={forwardDraft?.sources ?? []}
+        onAddMore={() => setForwardDialogOpen(false)}
+        onClose={() => {
+          setForwardDialogOpen(false);
+          setForwardDraft((current) => current == null || current.snapshot != null
+            ? current
+            : { ...current, sources: current.sources.map((source) => ({ ...source, clientNonce: createForwardDraftClientNonce() })) });
+        }}
+        onComplete={() => { setForwardDraft(null); setForwardDialogOpen(false); }}
+        onDiscard={() => { setForwardDraft(null); setForwardDialogOpen(false); }}
+        onRemoveSource={(sourceEntryId) => {
+          setForwardDraft((current) => {
+            if (current == null || current.snapshot != null) return current;
+            const sources = current.sources.filter((source) => source.message.id !== sourceEntryId);
+            return sources.length === 0 ? null : { ...current, sources };
+          });
+        }}
         onSettled={settleForward}
-        open={forwardTarget != null && isForwardAccountScopeCurrent(forwardTarget.accountScopeGeneration)}
+        onSnapshot={(snapshot) => setForwardDraft((current) => current == null ? current : { ...current, snapshot })}
+        open={forwardDialogOpen && forwardDraft != null && isForwardAccountScopeCurrent(forwardDraft.accountScopeGeneration)}
         searchRecipients={searchForwardRecipients}
-        sourceConversationId={forwardTarget?.sourceConversationId ?? null}
+        sourceConversationId={forwardDraft?.sourceConversationId ?? null}
       />
 
       <OverlayDialog

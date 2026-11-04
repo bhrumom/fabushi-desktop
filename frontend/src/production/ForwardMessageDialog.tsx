@@ -20,16 +20,34 @@ export interface ForwardSettlement {
   readonly error?: string;
 }
 
+export interface ForwardDraftSource {
+  readonly message: TranscriptMessage;
+  readonly clientNonce: string;
+}
+
+export interface ForwardIntentSnapshot {
+  readonly destinationConversationIds: readonly string[];
+  readonly dropSenderNames: boolean;
+  readonly dropCaptions: boolean;
+  readonly failedBySource: Readonly<Record<string, readonly string[]>>;
+}
+
 export interface ForwardMessageDialogProps {
   readonly open: boolean;
   readonly accountScopeGeneration: number;
   readonly isAccountScopeCurrent: (generation: number) => boolean;
-  readonly message: TranscriptMessage | null;
+  readonly messages: readonly ForwardDraftSource[];
+  readonly initialSnapshot?: ForwardIntentSnapshot | null;
   readonly sourceConversationId: string | null;
   readonly onClose: () => void;
+  readonly onAddMore?: () => void;
+  readonly onDiscard?: () => void;
+  readonly onComplete?: () => void;
+  readonly onRemoveSource?: (sourceEntryId: string) => void;
+  readonly onSnapshot?: (snapshot: ForwardIntentSnapshot) => void;
   readonly searchRecipients: (input: {
     sourceConversationId: string;
-    sourceEntryId: string;
+    sourceEntryIds: readonly string[];
     query: string;
     limit: number;
   }) => Promise<readonly ForwardRecipient[]>;
@@ -47,30 +65,25 @@ export interface ForwardMessageDialogProps {
 interface ForwardDialogLifetime {
   readonly accountScopeGeneration: number;
   readonly sourceConversationId: string;
-  readonly sourceEntryId: string;
-  readonly requestId: string;
 }
-
-type ForwardRequest = Parameters<ForwardMessageDialogProps["forwardMessage"]>[0];
 
 // Match the existing Session request bound before freezing a retry intent.
 // The Host still rechecks the bound and each destination's authorization.
 const MAX_FORWARD_DESTINATIONS = 32;
 
-function createForwardRequestId(sourceConversationId: string, sourceEntryId: string): string {
-  const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  return `forward:${sourceConversationId}:${sourceEntryId}:${suffix}`;
-}
-
 export function ForwardMessageDialog({
   open,
   accountScopeGeneration,
   isAccountScopeCurrent,
-  message,
+  messages,
+  initialSnapshot = null,
   sourceConversationId,
   onClose,
+  onAddMore,
+  onDiscard,
+  onComplete,
+  onRemoveSource,
+  onSnapshot,
   searchRecipients,
   forwardMessage,
   onSettled,
@@ -80,7 +93,9 @@ export function ForwardMessageDialog({
   const searchGenerationRef = useRef(0);
   const lifetimeRef = useRef<ForwardDialogLifetime | null>(null);
   const submittingLifetimeRef = useRef<ForwardDialogLifetime | null>(null);
-  const snapshotRef = useRef<ForwardRequest | null>(null);
+  const snapshotRef = useRef<ForwardIntentSnapshot | null>(null);
+  const initialSnapshotRef = useRef<ForwardIntentSnapshot | null>(initialSnapshot);
+  initialSnapshotRef.current = initialSnapshot;
   const selectedRef = useRef<ReadonlySet<string>>(new Set());
   const [query, setQuery] = useState("");
   const [recipients, setRecipients] = useState<readonly ForwardRecipient[]>([]);
@@ -94,9 +109,15 @@ export function ForwardMessageDialog({
   const [failure, setFailure] = useState<string | null>(null);
   const [activeRecipientIndex, setActiveRecipientIndex] = useState(0);
 
-  const sourceEntryId = message?.id ?? null;
-  const scopeKey = open && sourceEntryId != null && sourceConversationId != null
-    ? JSON.stringify([accountScopeGeneration, sourceConversationId, sourceEntryId])
+  const sourceEntryIds = messages.map((source) => source.message.id);
+  const sourceEntryIdsRef = useRef(sourceEntryIds);
+  sourceEntryIdsRef.current = sourceEntryIds;
+  const sourceEntryIdsKey = sourceEntryIds.join("\u0000");
+  const sourceIdsValid = sourceEntryIds.length > 0
+    && new Set(sourceEntryIds).size === sourceEntryIds.length
+    && messages.every((source) => source.clientNonce.length > 0 && source.clientNonce.length <= 200);
+  const scopeKey = open && sourceIdsValid && sourceConversationId != null
+    ? JSON.stringify([accountScopeGeneration, sourceConversationId, sourceEntryIds])
     : null;
 
   const isCurrent = (lifetime: ForwardDialogLifetime): boolean =>
@@ -129,20 +150,26 @@ export function ForwardMessageDialog({
     setSearchFailure(null);
     setFailure(null);
     setActiveRecipientIndex(0);
-    if (scopeKey == null || sourceEntryId == null || sourceConversationId == null) return;
+    if (scopeKey == null || sourceConversationId == null) return;
     const lifetime: ForwardDialogLifetime = {
       accountScopeGeneration,
       sourceConversationId,
-      sourceEntryId,
-      requestId: createForwardRequestId(sourceConversationId, sourceEntryId),
     };
     lifetimeRef.current = lifetime;
+    const initial = initialSnapshotRef.current;
+    if (initial != null) {
+      snapshotRef.current = initial;
+      setDropSenderNames(initial.dropSenderNames);
+      setDropCaptions(initial.dropCaptions);
+      updateSelected(new Set(Object.values(initial.failedBySource).flat()));
+      setSnapshotLocked(true);
+    }
     return () => {
       if (lifetimeRef.current === lifetime) lifetimeRef.current = null;
       if (submittingLifetimeRef.current === lifetime) submittingLifetimeRef.current = null;
       searchGenerationRef.current += 1;
     };
-  }, [accountScopeGeneration, scopeKey, sourceConversationId, sourceEntryId]);
+  }, [accountScopeGeneration, scopeKey, sourceConversationId]);
 
   useEffect(() => {
     const lifetime = lifetimeRef.current;
@@ -154,7 +181,7 @@ export function ForwardMessageDialog({
       setSearching(true);
       void searchRecipients({
         sourceConversationId: lifetime.sourceConversationId,
-        sourceEntryId: lifetime.sourceEntryId,
+        sourceEntryIds: sourceEntryIdsRef.current,
         query,
         limit: 50,
       })
@@ -177,7 +204,7 @@ export function ForwardMessageDialog({
       window.clearTimeout(timer);
       if (generation === searchGenerationRef.current) searchGenerationRef.current += 1;
     };
-  }, [query, scopeKey, searchRecipients]);
+  }, [query, scopeKey, searchRecipients, sourceEntryIdsKey]);
 
   const focusActiveRecipient = (index: number) => {
     const lifetime = lifetimeRef.current;
@@ -232,58 +259,89 @@ export function ForwardMessageDialog({
       || !isCurrent(lifetime)
       || submittingLifetimeRef.current === lifetime
       || selectedRef.current.size === 0
+      || !sourceIdsValid
     ) return;
     if (selectedRef.current.size > MAX_FORWARD_DESTINATIONS) {
       setFailure(`Select up to ${MAX_FORWARD_DESTINATIONS} conversations before forwarding.`);
       return;
     }
-    // One accepted nonce identifies one immutable intent. The Host's durable
-    // journal allows retries to narrow to unconfirmed destinations, never to
-    // broaden the original set or change its normalized privacy options.
-    const snapshot = snapshotRef.current ?? {
-      sourceConversationId: lifetime.sourceConversationId,
-      sourceEntryId: lifetime.sourceEntryId,
+    const snapshot: ForwardIntentSnapshot = snapshotRef.current ?? {
       destinationConversationIds: [...selectedRef.current],
-      clientNonce: lifetime.requestId,
       dropSenderNames: dropSenderNames || dropCaptions,
       dropCaptions,
+      failedBySource: Object.fromEntries(messages.map((source) => [
+        source.message.id,
+        [...selectedRef.current],
+      ])),
     };
     snapshotRef.current = snapshot;
-    const destinationConversationIds = snapshot.destinationConversationIds
-      .filter((id) => selectedRef.current.has(id));
-    // React may batch two submit events before repainting `submitting`.
     submittingLifetimeRef.current = lifetime;
     setSnapshotLocked(true);
     setSubmitting(true);
     setFailure(null);
     try {
-      const settlement = await forwardMessage({
-        ...snapshot,
-        destinationConversationIds,
-      }, () => isCurrent(lifetime));
+      const failedBySource: Record<string, readonly string[]> = {};
+      const blockedDestinations = new Set<string>();
+      let firstFailure: string | null = null;
+      // Keep source selection order for each destination; later messages wait
+      // behind an earlier failure and are retried after it settles.
+      for (const source of messages) {
+        if (!isCurrent(lifetime)) return;
+        const requested = snapshot.failedBySource[source.message.id] ?? snapshot.destinationConversationIds;
+        const blocked = requested.filter((id) => blockedDestinations.has(id));
+        const attempt = requested.filter((id) => !blockedDestinations.has(id));
+        const failed = new Set<string>(blocked);
+        if (attempt.length > 0) {
+          try {
+            const settlement = await forwardMessage({
+              sourceConversationId: lifetime.sourceConversationId,
+              sourceEntryId: source.message.id,
+              destinationConversationIds: attempt,
+              clientNonce: source.clientNonce,
+              dropSenderNames: snapshot.dropSenderNames,
+              dropCaptions: snapshot.dropCaptions,
+            }, () => isCurrent(lifetime));
+            if (!isCurrent(lifetime)) return;
+            const unexpected = settlement.some((item) => !attempt.includes(item.conversationId));
+            for (const conversationId of attempt) {
+              const results = settlement.filter((item) => item.conversationId === conversationId);
+              if (unexpected || results.length !== 1 || results[0]?.status !== "sent") {
+                failed.add(conversationId);
+                if (firstFailure == null) firstFailure = results[0]?.error ?? "Delivery was not confirmed.";
+              }
+            }
+          } catch (error) {
+            if (!isCurrent(lifetime)) return;
+            for (const conversationId of attempt) failed.add(conversationId);
+            if (firstFailure == null) firstFailure = error instanceof Error ? error.message : String(error);
+          }
+        }
+        const remaining = [...failed];
+        failedBySource[source.message.id] = remaining;
+        for (const conversationId of remaining) blockedDestinations.add(conversationId);
+      }
       if (!isCurrent(lifetime)) return;
-      const hasUnexpectedSettlement = settlement.some((item) => !destinationConversationIds.includes(item.conversationId));
-      const completed = destinationConversationIds.map((conversationId): ForwardSettlement => {
-        const results = settlement.filter((item) => item.conversationId === conversationId);
-        return !hasUnexpectedSettlement && results.length === 1 && results[0] != null
-          ? results[0]
-          : { conversationId, status: "failed", error: "Delivery was not confirmed. Retry keeps your forwarding choices." };
-      });
-      const failed = completed.filter((item) => item.status !== "sent");
-      updateSelected(new Set(failed.map((item) => item.conversationId)));
-      onSettled?.(completed, lifetime.accountScopeGeneration);
+      const nextSnapshot: ForwardIntentSnapshot = { ...snapshot, failedBySource };
+      snapshotRef.current = nextSnapshot;
+      onSnapshot?.(nextSnapshot);
+      const failedDestinations = new Set(Object.values(failedBySource).flat());
+      updateSelected(failedDestinations);
+      const aggregate = snapshot.destinationConversationIds.map((conversationId): ForwardSettlement => ({
+        conversationId,
+        status: failedDestinations.has(conversationId) ? "failed" : "sent",
+        ...(failedDestinations.has(conversationId)
+          ? { error: "One or more selected messages still need attention." }
+          : {}),
+      }));
+      onSettled?.(aggregate, lifetime.accountScopeGeneration);
       if (!isCurrent(lifetime)) return;
-      if (failed.length === 0) {
+      if (failedDestinations.size === 0) {
+        onComplete?.();
         closeLifetime(lifetime);
         return;
       }
-      setFailure(
-        failed.length === 1
-          ? (failed[0]?.error ?? "One destination could not be forwarded.")
-          : `${failed.length} destinations could not be forwarded. Retry sends only to these destinations.`,
-      );
-    } catch (error) {
-      if (isCurrent(lifetime)) setFailure(error instanceof Error ? error.message : String(error));
+      const failedCount = Object.values(failedBySource).reduce((count, ids) => count + ids.length, 0);
+      setFailure(firstFailure ?? `${failedCount} message deliveries still need attention. Retry sends only the unconfirmed message/destination pairs.`);
     } finally {
       if (isCurrent(lifetime) && submittingLifetimeRef.current === lifetime) {
         submittingLifetimeRef.current = null;
@@ -305,6 +363,15 @@ export function ForwardMessageDialog({
     // remains durable and may settle after this dialog has gone away.
     if (lifetime != null) closeLifetime(lifetime);
   };
+  const addMore = () => {
+    if (snapshotRef.current != null || submitting) return;
+    close();
+    onAddMore?.();
+  };
+  const discard = () => {
+    onDiscard?.();
+    close();
+  };
 
   return <OverlayDialog
     className="fabushi-forward-dialog"
@@ -315,10 +382,26 @@ export function ForwardMessageDialog({
   >
     <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <header>
-        <h2>Forward message</h2>
-        <p>Select one or more conversations. Send eligibility is checked before results are exposed and again at send time.</p>
+        <h2>Forward ${messages.length === 1 ? "message" : "messages"}</h2>
+        <p>Select one or more conversations. Every source message is checked independently; only recipients eligible for all selected messages are shown.</p>
       </header>
       <div className="fabushi-forward-dialog__body">
+        <section aria-label="Messages to forward" style={{ display: "grid", gap: 6 }}>
+          {messages.map((source) => <div key={source.message.id} style={{ alignItems: "center", display: "flex", gap: 8, minWidth: 0 }}>
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {source.message.text.trim().length > 0
+                ? source.message.text.trim()
+                : `${source.message.attachments?.length ?? 0} attachment(s)`}
+            </span>
+            <SandButton
+              aria-label={`Remove message ${source.message.id}`}
+              disabled={snapshotLocked || submitting}
+              onClick={() => onRemoveSource?.(source.message.id)}
+              size="sm"
+              variant="secondary"
+            >Remove</SandButton>
+          </div>)}
+        </section>
         <label className="fabushi-forward-dialog__search">
           <span>Recipients</span>
           <input
@@ -403,9 +486,10 @@ export function ForwardMessageDialog({
       </div>
       <footer>
         <span aria-live="polite">{selected.size === 0 ? "No recipients selected" : `${selected.size} selected`}</span>
-        <SandButton onClick={close} size="sm" variant="secondary">{snapshotLocked ? "Close" : "Cancel"}</SandButton>
-        <SandButton disabled={selected.size === 0} pending={submitting} size="sm" type="submit">
-          {submitting ? "Forwarding…" : "Forward"}
+        {onAddMore != null && !snapshotLocked ? <SandButton onClick={addMore} size="sm" variant="secondary">Add another message</SandButton> : null}
+        <SandButton onClick={snapshotLocked ? close : discard} size="sm" variant="secondary">{snapshotLocked ? "Close" : "Cancel"}</SandButton>
+        <SandButton disabled={selected.size === 0 || messages.length === 0} pending={submitting} size="sm" type="submit">
+          {submitting ? "Forwarding…" : snapshotLocked ? "Retry" : "Forward"}
         </SandButton>
       </footer>
     </form>
