@@ -4,6 +4,7 @@ on:
     branches: [checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1, checkpoint/tdrp-forward-privacy-task20bf-r1]
     paths:
       - 'source/host/src/extensions/session/**'
+      - 'native/mahayana-messaging/**'
       - 'source/host/src/transcript_mirror/conversation_state_binary.rs'
       - 'source/host/tests/session_gateway_contract.rs'
       - 'source/host/Cargo.lock'
@@ -73,6 +74,7 @@ on:
       - '.github/scripts/resolve-package-acceptance-scope*.mjs'
   pull_request:
     paths:
+      - 'native/mahayana-messaging/**'
       - 'source/host/src/extensions/auth/**'
       - 'source/host/src/extensions/automations/**'
       - 'source/host/src/extensions/cross_user_sharing/xuser_sharing_environment.rs'
@@ -1138,4 +1140,41 @@ jobs:
         with:
           name: windows-update-publisher-${{ github.sha }}
           path: artifacts/windows-update-publisher
+          if-no-files-found: error
+  native-messaging-core-contracts:
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || inputs.message_batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
+      - name: Bind exact native messaging source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+          mkdir -p artifacts/native-messaging-core
+          git rev-parse HEAD > artifacts/native-messaging-core/target-sha.txt
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/mahayana-messaging -> target
+      - name: Execute native messaging state and protocol unit contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path native/mahayana-messaging/Cargo.toml --lib -- --nocapture 2>&1 | tee artifacts/native-messaging-core/unit.log
+      - name: Execute authenticated service protocol contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path native/mahayana-messaging/Cargo.toml --test service_contract -- --nocapture 2>&1 | tee artifacts/native-messaging-core/service-contract.log
+      - name: Preserve native messaging core evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-messaging-core-${{ github.sha }}
+          path: artifacts/native-messaging-core
           if-no-files-found: error

@@ -5,8 +5,8 @@ use crate::community::{
     CommunityAuditEntry, CommunityMember, CommunityState, ForumTopicState, InviteLink, JoinRequest,
 };
 use crate::conversation::{
-    Conversation, ConversationDestination, ConversationDraft, ConversationFolder, ConversationId,
-    NotificationSettings, TopicDraft,
+    Conversation, ConversationChildRuntimeState, ConversationDestination, ConversationDraft,
+    ConversationFolder, ConversationId, NotificationSettings, TopicDraft,
 };
 use crate::message::{
     ClientMessageId, ForwardPrivacy, Message, MessageContent, MessageId, PendingPresenceSend,
@@ -386,7 +386,7 @@ pub enum ServerEvent {
         #[serde(default)]
         pending_presence_sends: Vec<PendingPresenceSend>,
         #[serde(default)]
-        conversation_children: Vec<crate::conversation::ConversationChildRuntimeState>,
+        conversation_children: Vec<ConversationChildRuntimeState>,
         invoices: Vec<Invoice>,
         orders: Vec<PaymentOrder>,
         stories: Vec<Story>,
@@ -428,6 +428,50 @@ pub enum ServerEvent {
     },
     TopicDraftChanged {
         draft: TopicDraft,
+    },
+    ConversationChildReadChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_id: MessageId,
+    },
+    ConversationChildDraftChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        text: String,
+        reply_to_message_id: Option<String>,
+        updated_at_ms: i64,
+    },
+    ConversationChildWindowReplaced {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        message_ids: Vec<String>,
+        skipped_before: Option<u32>,
+        skipped_after: Option<u32>,
+        full_count: Option<u32>,
+    },
+    ConversationChildPinnedChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        pinned: bool,
+    },
+    ConversationChildActiveChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        active: bool,
+    },
+    ConversationChildMarkedUnreadChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        marked_unread: bool,
+    },
+    ConversationChildNoPaidMessagesChanged {
+        destination: ConversationDestination,
+        actor_id: ActorId,
+        no_paid_messages: bool,
+    },
+    ConversationChildDestroyed {
+        destination: ConversationDestination,
+        actor_id: ActorId,
     },
     FolderChanged {
         folder: ConversationFolder,

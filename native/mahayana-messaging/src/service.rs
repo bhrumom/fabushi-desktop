@@ -2536,14 +2536,34 @@ impl<S: MessagingStateStore> MessagingService<S> {
                 message_id,
             },
             Event::TopicDraftChanged { draft } => ServerEvent::TopicDraftChanged { draft },
-            Event::ConversationChildReadChanged { .. }
-            | Event::ConversationChildDraftChanged { .. }
-            | Event::ConversationChildWindowReplaced { .. }
-            | Event::ConversationChildPinnedChanged { .. }
-            | Event::ConversationChildActiveChanged { .. }
-            | Event::ConversationChildMarkedUnreadChanged { .. }
-            | Event::ConversationChildNoPaidMessagesChanged { .. }
-            | Event::ConversationChildDestroyed { .. } => return None,
+            Event::ConversationChildReadChanged { destination, actor_id, message_id } => {
+                ServerEvent::ConversationChildReadChanged { destination, actor_id, message_id }
+            }
+            Event::ConversationChildDraftChanged {
+                destination, actor_id, text, reply_to_message_id, updated_at_ms,
+            } => ServerEvent::ConversationChildDraftChanged {
+                destination, actor_id, text, reply_to_message_id, updated_at_ms,
+            },
+            Event::ConversationChildWindowReplaced {
+                destination, actor_id, message_ids, skipped_before, skipped_after, full_count,
+            } => ServerEvent::ConversationChildWindowReplaced {
+                destination, actor_id, message_ids, skipped_before, skipped_after, full_count,
+            },
+            Event::ConversationChildPinnedChanged { destination, actor_id, pinned } => {
+                ServerEvent::ConversationChildPinnedChanged { destination, actor_id, pinned }
+            }
+            Event::ConversationChildActiveChanged { destination, actor_id, active } => {
+                ServerEvent::ConversationChildActiveChanged { destination, actor_id, active }
+            }
+            Event::ConversationChildMarkedUnreadChanged { destination, actor_id, marked_unread } => {
+                ServerEvent::ConversationChildMarkedUnreadChanged { destination, actor_id, marked_unread }
+            }
+            Event::ConversationChildNoPaidMessagesChanged { destination, actor_id, no_paid_messages } => {
+                ServerEvent::ConversationChildNoPaidMessagesChanged { destination, actor_id, no_paid_messages }
+            }
+            Event::ConversationChildDestroyed { destination, actor_id } => {
+                ServerEvent::ConversationChildDestroyed { destination, actor_id }
+            }
             Event::InvoiceCreated { invoice } => ServerEvent::InvoiceChanged { invoice },
             Event::OrderUpserted { order } => ServerEvent::OrderChanged { order },
             Event::WalletChanged { .. } => return None,
