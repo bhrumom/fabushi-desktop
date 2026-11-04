@@ -171,7 +171,7 @@ accepted 状态门的行为证据必须包含现有 authority entrypoint 的子�
 
 1. 只经 `ClientCommand → MessagingService → MessagingEngine` 到达的责任，对桌面是 **domain-only**：状态 `mapped`，`notes` 前缀 `[FMEP-STATE-02 domain-only wiring gap]`，直到被 `ProductionSessionWorkers`/Transcript 真实调用。
 2. 被桌面生产路径直接调用的纯函数/类型（如 `recipient_search_authorized`、`ForwardPrivacy`、`ConversationPermissions`、`query_matches_fields`）计入接线。
-3. **待决 ADR（P0）：** 移动端（`execute_messaging_sync`，`_messaging/snapshot.json`）与桌面端（Session SQLite + journals）当前是同一消息语义的两个写入者。必须由 ADR 选定唯一权威语义 owner，另一端降为适配层，并给出数据/ID/版本迁移方案。ADR 落定前，新的 Telegram 派生消息能力不得只实现在 `MessagingService` 中。
+3. **ADR（2026-11-04 已决，见 `docs/adr/FBCP-ADR-004-single-message-owner.md`）：** 移动端（`execute_messaging_sync`，`_messaging/snapshot.json`）与桌面端（Session SQLite + journals）当前是同一消息语义的两个写入者。必须由 ADR 选定唯一权威语义 owner，另一端降为适配层，并给出数据/ID/版本迁移方案。ADR 落定前，新的 Telegram 派生消息能力不得只实现在 `MessagingService` 中。
 
 ### FMEP-REPORT-01 — STATUS 格式
 

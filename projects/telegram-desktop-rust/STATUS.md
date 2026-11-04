@@ -29,7 +29,7 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 | # | 阻塞项 | 解除条件 | 责任人 |
 | --- | --- | --- | --- |
 | 1 | 后端 PR137（canonical revisions/tombstones、afterId=0 分页）仍为 draft/未合并；Worker/D1 部署未核验 | PR137 合并到后端 main，部署后用 Actions 核验 Worker 身份与 afterId=0 授权分页 | 待指定（后端） |
-| 2 | 同一消息语义有两个写入者：桌面 Session/Transcript（SQLite + journals）与移动端 FeatureHost `MessagingService`（`_messaging/snapshot.json`） | ADR 选定唯一权威语义 owner，另一端降为适配层，并附 ID/版本/数据迁移方案（FMEP-STATE-02） | 待指定（架构） |
+| 2 | 同一消息语义有两个写入者：桌面 Session/Transcript 与移动端 `MessagingService` | **已决**：[FBCP-ADR-004](../../docs/adr/FBCP-ADR-004-single-message-owner.md)（Session 为唯一状态 owner，`fabushi_messaging_core` 为纯领域策略库）。剩余：提取纯函数并接入 Session、移动端 snapshot 导入 | 迁移线 |
 | 3 | 旧 Telegram 栈退出 E2–E4 未完成 | E2 重映射 legacy-only 行并删除 `mahayana-telegram`；E3 旧数据迁移/弃用规范；E4 移除 `providers/telegram-*` 与专属 CI（FMEP-EXIT-01） | 待指定 |
 | 4 | Round8 修复（UI 209 用例、reconciliation 125 用例、owner 40、actualMac 2+2）尚未在包含修复的 H 上执行 | 在包含修复的 H 上跑 Actions 并全部通过 | 迁移线 |
 | 5 | 来源闭合：unknown/unread 未统计；source_reviews 只有 6/16 complete | 按 FMEP-SOURCE-01 完成身份对照和必需深读 | 迁移线 |
