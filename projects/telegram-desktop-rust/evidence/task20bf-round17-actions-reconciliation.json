@@ -489,5 +489,66 @@
     "local_builds_or_tests_run": false,
     "local_worktree_dirty_state": "not observable through GitHub remote API",
     "acceptance_scope": "bounded GitHub Actions only; live service, signed installers, packaged UI/visual/a11y, security/performance/soak, upgrade/rollback, full Bot regression and independent ACCEPT remain open"
+  },
+  "evidence_commit_validation": {
+    "evidence_commit": "62b9d2e3bda44308a53dbd1366326c232f43e5c7",
+    "source_review_run": {
+      "run_id": 41765023178,
+      "head_sha": "62b9d2e3bda44308a53dbd1366326c232f43e5c7",
+      "contract_job_id": 126361254953,
+      "candidate_job_id": 126361343855,
+      "conclusion": "success",
+      "node_tests": {
+        "passed": 171,
+        "failed": 0
+      },
+      "python_schema_tests": {
+        "passed": 37,
+        "failed": 0
+      },
+      "ledger_schema": {
+        "valid": true,
+        "errors": 0,
+        "source_accepted": false
+      },
+      "fixed_source_candidate": {
+        "status": "unaccepted-candidate-consistent",
+        "source_entries_total": 16381,
+        "responsibility_rows": 184,
+        "source_reviews": 6,
+        "completed_source_reviews": 2,
+        "pending_source_reviews": 4,
+        "unresolved_ref_observations": 76,
+        "unknown": null,
+        "unread": null,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false
+      },
+      "artifacts": [
+        {
+          "id": 13292595696,
+          "name": "tdrp-source-review-contract",
+          "sha256": "fa8b242fdaa619f5b2dac23a06874d6369471feaae080649d2c75d6e2087d216",
+          "target_sha": "62b9d2e3bda44308a53dbd1366326c232f43e5c7",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13292540638,
+          "name": "tdrp-source-candidate",
+          "sha256": "de6639f7fbaad41a0cc8cab177c1a11f8da21f4f1ce45c93ebc3ef6ca147a21a",
+          "target_sha": "62b9d2e3bda44308a53dbd1366326c232f43e5c7",
+          "downloaded_and_checksum_verified": true
+        }
+      ]
+    },
+    "rust_runtime_run": {
+      "run_id": 41765023122,
+      "head_sha": "62b9d2e3bda44308a53dbd1366326c232f43e5c7",
+      "renderer_job_id": 126361254415,
+      "conclusion": "success",
+      "renderer_bundle_boundary": "45 emitted text assets"
+    }
   }
 }

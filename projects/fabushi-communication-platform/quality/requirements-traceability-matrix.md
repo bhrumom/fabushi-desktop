@@ -1,6 +1,13 @@
+# Requirements Traceability Matrix
+
+Status: active / normative schema  
+Matrix ID: FQT-RTM-001  
+Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
+Updated: 2026-11-04
+
 ## task20bf round17 — exact-H forwarding CI reconciliation
 
-Fixed upstream remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Branch head at inspection was `ad015021b01c723305546d862675ced83e27bb7c`; PR #189 remains open/draft. The remote branch had advanced from the requested `c38e268` by two commits: `b969b7c` changes only the forward-settlement test declaration (removing a literal `\\n` prefix), and `ad015021` changes only `parity-ledger.json`.
+Fixed upstream remains `telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4`. Validation source head was `ad015021b01c723305546d862675ced83e27bb7c`; the ledger/evidence commit `62b9d2e3bda44308a53dbd1366326c232f43e5c7` was then pushed, and its exact-H source-review/renderer workflows also passed. PR #189 remains open/draft. The remote branch had advanced from the requested `c38e268` by two commits: `b969b7c` changes only the forward-settlement test declaration (removing a literal `\\n` prefix), and `ad015021` changes only `parity-ledger.json`.
 
 `41757851720` is bound to `c38e268`: native-message-ui failed at `forward-settlement.contract.test.ts:160` with `ERR_INVALID_TYPESCRIPT_SYNTAX: Expected unicode escape`; the exact offending line began `\\ntest(`. The renderer build in that job passed. Native-message-reconciliation passed Human73, forward journal13, forward HTTP1, sharebox1 and transcript recovery3. Shipping compile passed Protocol122, TCP9, Proxy4, native credential1 and package resource copy4; AppHost SHA256 `64061e9c...dbc96`, 160,462,688 bytes, 0755. `41757851849` renderer job passed.
 
@@ -10,12 +17,6 @@ At current head `ad015021`, source-review contract `41758742225` passed Node171/
 
 FMEP-SOURCE-01 remains open: the four exact pending source identities are `history_view_forward_panel.h/.cpp` and `share_message_phrase_factory.h/.cpp`. Current Fabushi composition is still the single-message `ForwardMessageDialog` → Coordinator → Session `HumanForwardBatch` → SandAgentDb path; recipient projection exposes only id/name and settlement only generic notices. Multi-source draft/lifetime behavior and self/Saved Messages/premium phrase/navigation semantics are not claimed implemented. All source/product/independent acceptance flags remain false.
 
-# Requirements Traceability Matrix
-
-Status: active / normative schema  
-Matrix ID: FQT-RTM-001  
-Parent: FBCP-001 Revision 8 / TDRP-001 Revision 10 / FMEP-001 Revision 2  
-Updated: 2026-11-04
 ## Round 18 — native CLI composition and installer members
 
 Production changes are frozen at `1b0e674b3e39292ae715a3eb50435d83e2cb8577`; ledger binding
