@@ -1,7 +1,7 @@
 use crate::actor::{Actor, ActorId, ActorKind, Participant, ParticipantRole, Presence, PresenceStatus};
 use crate::bot::{BotExecution, BotInvocation, BotProfile, BotRegistry};
 use crate::community::{
-    AdminRights, CommunityAuditAction, CommunityAuditEntry, CommunityError, CommunityMember,
+    AdminRights, CommunityError, CommunityMember,
     CommunityState, ForumTopicState, InviteLink, JoinRequest, MemberStatus,
 };
 use crate::conversation::{
@@ -10,19 +10,14 @@ use crate::conversation::{
     ConversationKind, ConversationMessagePosition, NotificationSettings, TopicDraft,
 };
 use crate::message::{
-    resolve_send_menu_details_from_inputs, ClientMessageId, DeliveryState,
-    DestinationSendMenuInput, ForwardPrivacy, Message, MessageContent, MessageId,
-    PendingPresenceSend, PresenceSendTrigger, ReactionSummary, SendMenuDetails,
+    ClientMessageId, DeliveryState, ForwardPrivacy, Message, MessageContent, MessageId,
+    PendingPresenceSend, PresenceSendTrigger, ReactionSummary,
 };
 use crate::miniapp::{
     authorize_miniapp_request, MiniAppAction, MiniAppDenial, MiniAppGrant, MiniAppManifest,
     MiniAppPermission, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
-use crate::payment::{
-    resolve_paid_restriction_from_capabilities, CustomerInfo, Invoice, Money,
-    PaidSendApprovalConsumer, PaidSendPlan, PaidSendRestrictionState, PaidSendValidationError,
-    PaymentOrder, PaymentStatus,
-};
+use crate::payment::{CustomerInfo, Invoice, Money, PaymentOrder, PaymentStatus};
 use crate::privacy::{PrivacyKey, PrivacySettings};
 use crate::search::{
     authorize_destination, DestinationAuthorizationDenial, RecipientAuthorizationInput,
@@ -33,6 +28,10 @@ use crate::wallet::{LedgerEntry, WalletAccountId, WalletError, WalletLedger};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
+
+pub use crate::engine_tdrp_dialogs::*;
+pub use crate::engine_tdrp_media_stories::*;
+pub use crate::engine_tdrp_moderation::*;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(
@@ -604,7 +603,7 @@ pub struct MessagingState {
 }
 
 impl MessagingState {
-    fn child_state_mut(
+    pub fn child_state_mut(
         &mut self,
         destination: ConversationDestination,
         actor_id: ActorId,
@@ -617,66 +616,6 @@ impl MessagingState {
         let state = ConversationChildRuntimeState::new(destination, actor_id)?;
         self.conversation_child_states.push(state);
         self.conversation_child_states.last_mut()
-    }
-
-    pub fn migrate_legacy_topic_child_states(&mut self) {
-        let legacy_reads = self
-            .topic_read_cursors
-            .iter()
-            .flat_map(|(conversation_id, by_actor)| {
-                let messages = self.messages.get(conversation_id);
-                by_actor.iter().flat_map(move |(actor_id, by_topic)| {
-                    by_topic.iter().filter_map(move |(topic_id, message_id)| {
-                        let message = messages?.get(message_id)?;
-                        Some((
-                            ConversationDestination::topic(
-                                conversation_id.clone(),
-                                format!("topic:{topic_id}"),
-                            ),
-                            actor_id.clone(),
-                            ConversationMessagePosition::new(
-                                message.created_at_ms,
-                                message.id.0.clone(),
-                            ),
-                        ))
-                    })
-                })
-            })
-            .collect::<Vec<_>>();
-        for (destination, actor_id, position) in legacy_reads {
-            if let Some(child) = self.child_state_mut(destination, actor_id) {
-                let _ = child.advance_inbox_read_till(position, None);
-            }
-        }
-
-        let legacy_drafts = self
-            .topic_drafts
-            .iter()
-            .flat_map(|(conversation_id, by_actor)| {
-                by_actor.iter().flat_map(move |(actor_id, by_topic)| {
-                    by_topic.iter().map(move |(topic_id, draft)| {
-                        (
-                            ConversationDestination::topic(
-                                conversation_id.clone(),
-                                format!("topic:{topic_id}"),
-                            ),
-                            actor_id.clone(),
-                            draft.clone(),
-                        )
-                    })
-                })
-            })
-            .collect::<Vec<_>>();
-        for (destination, actor_id, draft) in legacy_drafts {
-            if let Some(child) = self.child_state_mut(destination, actor_id) {
-                if child.draft_text.trim().is_empty()
-                    && child.draft_reply_to_message_id.is_none()
-                    && (!draft.text.trim().is_empty() || draft.reply_to_message_id.is_some())
-                {
-                    child.set_draft(draft.text, draft.reply_to_message_id, draft.updated_at_ms);
-                }
-            }
-        }
     }
 }
 
@@ -817,130 +756,11 @@ pub enum EngineError {
 
 #[derive(Debug, Clone, Default)]
 pub struct MessagingEngine {
-    state: MessagingState,
-}
-
-#[derive(Debug, Clone, Copy)]
-enum CommunityAdminAction {
-    ChangeInfo,
-    InviteMembers,
-    BanMembers,
-    ManageTopics,
-    AddAdmins,
-}
-
-fn is_community_owner(community: &CommunityState, actor_id: &ActorId) -> bool {
-    community
-        .members
-        .get(actor_id)
-        .is_some_and(|member| matches!(member.status, MemberStatus::Owner))
-}
-
-fn require_community_admin(
-    community: &CommunityState,
-    actor_id: &ActorId,
-    action: CommunityAdminAction,
-) -> Result<(), EngineError> {
-    let allowed = community.members.get(actor_id).is_some_and(|member| {
-        if matches!(member.status, MemberStatus::Owner) {
-            return true;
-        }
-        if !matches!(member.status, MemberStatus::Administrator) {
-            return false;
-        }
-        match action {
-            CommunityAdminAction::ChangeInfo => member.admin_rights.change_info,
-            CommunityAdminAction::InviteMembers => member.admin_rights.invite_members,
-            CommunityAdminAction::BanMembers => member.admin_rights.ban_members,
-            CommunityAdminAction::ManageTopics => member.admin_rights.manage_topics,
-            CommunityAdminAction::AddAdmins => member.admin_rights.add_admins,
-        }
-    });
-    if allowed {
-        Ok(())
-    } else {
-        Err(EngineError::CommunityPermissionDenied)
-    }
+    pub(crate) state: MessagingState,
 }
 
 pub(crate) fn topic_id_from_root(root: &MessageId) -> Option<&str> {
     root.0.strip_prefix("topic:").filter(|id| !id.is_empty())
-}
-
-fn community_has_access(community: &CommunityState, actor_id: &ActorId) -> bool {
-    community
-        .members
-        .get(actor_id)
-        .is_some_and(|member| !matches!(member.status, MemberStatus::Left | MemberStatus::Banned))
-        || community.is_subscriber(actor_id)
-}
-
-fn destination_message_conversation_id(
-    destination: &ConversationDestination,
-) -> &ConversationId {
-    match destination.child.as_ref() {
-        Some(ConversationChildIdentity::Conversation { conversation_id }) => conversation_id,
-        _ => &destination.conversation_id,
-    }
-}
-
-fn is_self_saved_messages(conversation: &Conversation, actor_id: &ActorId) -> bool {
-    matches!(conversation.kind, ConversationKind::SavedMessages)
-        && (conversation.owner_id.as_ref() == Some(actor_id)
-            || conversation.participants.iter().any(|participant| {
-                &participant.actor_id == actor_id
-                    && matches!(participant.role, ParticipantRole::Owner)
-            }))
-}
-
-fn append_community_audit(
-    community: &mut CommunityState,
-    actor_id: &ActorId,
-    action: CommunityAuditAction,
-    target_actor_id: Option<ActorId>,
-    target_id: Option<String>,
-    reason: Option<String>,
-    created_at_ms: i64,
-) {
-    let id = format!(
-        "audit:{}:{}:{}:{}",
-        actor_id.0,
-        created_at_ms,
-        community.admin_log.len(),
-        target_id.as_deref().unwrap_or("community")
-    );
-    community.append_audit(CommunityAuditEntry {
-        id,
-        actor_id: actor_id.clone(),
-        action,
-        target_actor_id,
-        target_id,
-        reason,
-        created_at_ms,
-    });
-}
-
-pub fn message_content_uses_media(content: &MessageContent) -> bool {
-    matches!(
-        content,
-        MessageContent::Photo { .. }
-            | MessageContent::Video { .. }
-            | MessageContent::Animation { .. }
-            | MessageContent::Audio { .. }
-            | MessageContent::Voice { .. }
-            | MessageContent::VideoNote { .. }
-            | MessageContent::Document { .. }
-            | MessageContent::Sticker { .. }
-    )
-}
-
-pub fn message_content_uses_other(content: &MessageContent) -> bool {
-    matches!(
-        content,
-        MessageContent::Sticker { .. }
-            | MessageContent::Animation { .. }
-            | MessageContent::Dice { .. }
-    )
 }
 
 fn wallet_account_id(actor_id: &ActorId) -> WalletAccountId {
@@ -959,22 +779,6 @@ fn ensure_wallet_account(
     wallet.create_account(account_id.clone(), owner_id.clone(), now_ms)
 }
 
-fn participant_for_community_member(member: &CommunityMember) -> Option<Participant> {
-    let role = match member.status {
-        MemberStatus::Owner => ParticipantRole::Owner,
-        MemberStatus::Administrator => ParticipantRole::Admin,
-        MemberStatus::Member => ParticipantRole::Member,
-        MemberStatus::Restricted => ParticipantRole::Restricted,
-        MemberStatus::Left | MemberStatus::Banned => return None,
-    };
-    Some(Participant {
-        actor_id: member.actor_id.clone(),
-        role,
-        joined_at_ms: member.joined_at_ms,
-        muted_until_ms: member.restrictions.until_ms,
-    })
-}
-
 impl MessagingEngine {
     pub fn new() -> Self {
         Self::default()
@@ -988,330 +792,6 @@ impl MessagingEngine {
     }
     pub fn into_state(self) -> MessagingState {
         self.state
-    }
-
-    /// Resolves the canonical `SavedSublist` participant for a message stored in a
-    /// `SavedMessages` parent conversation (`TDRP-R9-SHARE-THREAD-DESTINATION-001` / `SB-02`):
-    /// - Messages forwarded with preserved origin (`forward_origin.is_some()`) belong to
-    ///   the root origin message's `sender_id` (walked up to 8 hops).
-    /// - Direct self-notes or messages forwarded with `drop_sender_names: true`
-    ///   (`forward_origin.is_none()`) belong to `message.sender_id` (the self sublist).
-    pub fn saved_sublist_participant_for_message(
-        &self,
-        parent_conversation_id: &ConversationId,
-        message_id: &MessageId,
-    ) -> Option<ActorId> {
-        let conversation = self.state.conversations.get(parent_conversation_id)?;
-        if !matches!(conversation.kind, ConversationKind::SavedMessages) {
-            return None;
-        }
-        let message = self
-            .state
-            .messages
-            .get(parent_conversation_id)?
-            .get(message_id)?;
-        if message.deleted {
-            return None;
-        }
-        let Some(mut origin) = message.forward_origin.as_deref() else {
-            return Some(message.sender_id.clone());
-        };
-        let mut resolved_sender: Option<ActorId> = None;
-        for _ in 0..8 {
-            let source_msg = self
-                .state
-                .messages
-                .iter()
-                .find_map(|(conv_id, msgs)| {
-                    let msg_raw = origin
-                        .strip_prefix(conv_id.0.as_str())?
-                        .strip_prefix(':')?;
-                    msgs.get(&MessageId(msg_raw.to_string()))
-                });
-            let Some(source_msg) = source_msg else {
-                break;
-            };
-            resolved_sender = Some(source_msg.sender_id.clone());
-            match source_msg.forward_origin.as_deref() {
-                Some(next_origin) if !next_origin.is_empty() && next_origin != origin => {
-                    origin = next_origin;
-                }
-                _ => break,
-            }
-        }
-        resolved_sender
-    }
-
-    pub fn story_visibility_flags(&self, owner_id: &ActorId, viewer_id: &ActorId) -> (bool, bool) {
-        let Some(owner) = self.state.actors.get(owner_id) else {
-            return (false, false);
-        };
-        let contact_cap = format!("contact:{}", viewer_id.0);
-        let close_friend_cap = format!("close_friend:{}", viewer_id.0);
-        let is_close_friend = owner
-            .capabilities
-            .iter()
-            .any(|cap| cap == &close_friend_cap);
-        let is_contact = is_close_friend
-            || owner
-                .capabilities
-                .iter()
-                .any(|cap| cap == &contact_cap);
-        (is_contact, is_close_friend)
-    }
-
-    pub fn can_schedule_when_online(
-        &self,
-        sender_id: &ActorId,
-        conversation_id: &ConversationId,
-    ) -> Option<ActorId> {
-        let sender = self.state.actors.get(sender_id)?;
-        let conversation = self.state.conversations.get(conversation_id)?;
-        if !matches!(conversation.kind, ConversationKind::Direct) {
-            return None;
-        }
-        let sender_is_participant = conversation
-            .participants
-            .iter()
-            .any(|participant| &participant.actor_id == sender_id)
-            || conversation.owner_id.as_ref() == Some(sender_id);
-        if !sender_is_participant || !conversation.permissions.can_send_messages {
-            return None;
-        }
-        let mut peer_ids = conversation
-            .participants
-            .iter()
-            .map(|participant| &participant.actor_id)
-            .chain(conversation.owner_id.iter())
-            .filter(|actor_id| *actor_id != sender_id)
-            .collect::<BTreeSet<_>>();
-        if peer_ids.len() != 1 {
-            return None;
-        }
-        let target_actor_id = peer_ids.pop_first()?;
-        let target = self.state.actors.get(target_actor_id)?;
-        if target.kind != ActorKind::Human || target.presence.status == PresenceStatus::Online {
-            return None;
-        }
-        if target.id.0.starts_with("service:")
-            || target.capabilities.iter().any(|cap| {
-                matches!(
-                    cap.as_str(),
-                    "service_notifications"
-                        | "notifications_service"
-                        | "paid_messages_required"
-                        | "stars_per_message_required"
-                )
-            })
-        {
-            return None;
-        }
-        if let Some(target_privacy) = self.state.privacy.get(target_actor_id) {
-            let target_considers_sender_contact = target
-                .capabilities
-                .iter()
-                .any(|cap| cap == &format!("contact:{}", sender_id.0));
-            let sender_considers_target_contact = sender
-                .capabilities
-                .iter()
-                .any(|cap| cap == &format!("contact:{}", target_actor_id.0));
-            if !target_privacy.can_receive_message_from(
-                sender_id,
-                target_considers_sender_contact,
-                target_considers_sender_contact && sender_considers_target_contact,
-            ) {
-                return None;
-            }
-            if let Some(last_seen_rule) = target_privacy.rules.get(&PrivacyKey::LastSeen) {
-                if !last_seen_rule.allows(sender_id, target_considers_sender_contact) {
-                    return None;
-                }
-            }
-        }
-        Some(target_actor_id.clone())
-    }
-
-    pub fn resolve_send_menu_details(
-        &self,
-        sender_id: &ActorId,
-        destination_conversation_ids: &[ConversationId],
-    ) -> SendMenuDetails {
-        let destinations = destination_conversation_ids
-            .iter()
-            .cloned()
-            .map(|conversation_id| ConversationDestination {
-                conversation_id,
-                child: None,
-            })
-            .collect::<Vec<_>>();
-        self.resolve_destination_send_menu_details(sender_id, &destinations)
-    }
-
-    pub fn resolve_destination_send_menu_details(
-        &self,
-        sender_id: &ActorId,
-        destinations: &[ConversationDestination],
-    ) -> SendMenuDetails {
-        let sender_valid = self.state.actors.contains_key(sender_id);
-        let inputs = destinations
-            .iter()
-            .map(|destination| {
-                let effective_conversation_id = destination_message_conversation_id(destination);
-                let Some(conversation) = self.state.conversations.get(effective_conversation_id)
-                else {
-                    return DestinationSendMenuInput::default();
-                };
-                let sender_is_participant = conversation
-                    .participants
-                    .iter()
-                    .any(|participant| &participant.actor_id == sender_id)
-                    || conversation.owner_id.as_ref() == Some(sender_id);
-                let child_exempts_paid = self
-                    .state
-                    .conversation_child_states
-                    .iter()
-                    .find(|child| &child.destination == destination && &child.actor_id == sender_id)
-                    .is_some_and(|child| child.no_paid_messages);
-                let requires_paid_messages = if child_exempts_paid {
-                    false
-                } else {
-                    let saved_sublist_requires_paid = match &destination.child {
-                        Some(ConversationChildIdentity::SavedSublist { participant_id }) => self
-                            .state
-                            .actors
-                            .get(participant_id)
-                            .is_some_and(|actor| {
-                                actor.capabilities.iter().any(|cap| {
-                                    matches!(
-                                        cap.as_str(),
-                                        "paid_messages_required" | "stars_per_message_required"
-                                    )
-                                })
-                            }),
-                        _ => false,
-                    };
-                    let peer_requires_paid = conversation
-                        .participants
-                        .iter()
-                        .map(|participant| &participant.actor_id)
-                        .chain(conversation.owner_id.iter())
-                        .filter(|actor_id| *actor_id != sender_id)
-                        .any(|actor_id| {
-                            self.state.actors.get(actor_id).is_some_and(|actor| {
-                                actor.capabilities.iter().any(|cap| {
-                                    matches!(
-                                        cap.as_str(),
-                                        "paid_messages_required" | "stars_per_message_required"
-                                    )
-                                })
-                            })
-                        });
-                    saved_sublist_requires_paid || peer_requires_paid
-                };
-                DestinationSendMenuInput {
-                    conversation_exists: true,
-                    is_secret: matches!(conversation.kind, ConversationKind::Secret),
-                    can_send_messages: conversation.permissions.can_send_messages,
-                    sender_is_participant,
-                    requires_paid_messages,
-                    is_self_saved_messages: destination.child.is_none()
-                        && is_self_saved_messages(conversation, sender_id),
-                    can_schedule_when_online: destination.child.is_none()
-                        && self
-                            .can_schedule_when_online(sender_id, effective_conversation_id)
-                            .is_some(),
-                }
-            })
-            .collect::<Vec<_>>();
-        resolve_send_menu_details_from_inputs(sender_valid, &inputs)
-    }
-
-    pub fn resolve_destination_paid_restriction(
-        &self,
-        sender_id: &ActorId,
-        destination: &ConversationDestination,
-        ignore_paid_restrictions: bool,
-    ) -> PaidSendRestrictionState {
-        let effective_conversation_id = destination_message_conversation_id(destination);
-        let Some(conversation) = self.state.conversations.get(effective_conversation_id) else {
-            return resolve_paid_restriction_from_capabilities(
-                false,
-                std::iter::empty(),
-                ignore_paid_restrictions,
-                false,
-            );
-        };
-        let mut candidate_actors: BTreeSet<&ActorId> = conversation
-            .participants
-            .iter()
-            .map(|participant| &participant.actor_id)
-            .chain(conversation.owner_id.iter())
-            .filter(|actor_id| *actor_id != sender_id)
-            .collect();
-        if let Some(ConversationChildIdentity::SavedSublist { participant_id }) =
-            &destination.child
-        {
-            if participant_id != sender_id {
-                candidate_actors.insert(participant_id);
-            }
-        }
-        let child_exempts_paid = self
-            .state
-            .conversation_child_states
-            .iter()
-            .find(|child| &child.destination == destination && &child.actor_id == sender_id)
-            .is_some_and(|child| child.no_paid_messages);
-        let capability_sets = candidate_actors.into_iter().map(|actor_id| {
-            self.state
-                .actors
-                .get(actor_id)
-                .map(|actor| actor.capabilities.as_slice())
-        });
-        resolve_paid_restriction_from_capabilities(
-            true,
-            capability_sets,
-            ignore_paid_restrictions,
-            child_exempts_paid,
-        )
-    }
-
-    pub fn compute_paid_send_plan(
-        &self,
-        sender_id: &ActorId,
-        destinations: &[ConversationDestination],
-        outgoing_message_count: u32,
-        ignore_paid_restrictions: bool,
-    ) -> Result<PaidSendPlan, PaidSendValidationError> {
-        let resolved = destinations
-            .iter()
-            .map(|destination| {
-                (
-                    destination.clone(),
-                    self.resolve_destination_paid_restriction(
-                        sender_id,
-                        destination,
-                        ignore_paid_restrictions,
-                    ),
-                )
-            })
-            .collect();
-        PaidSendPlan::from_resolved(resolved, outgoing_message_count)
-    }
-
-    pub fn revalidate_and_consume_paid_send(
-        &self,
-        sender_id: &ActorId,
-        destination: &ConversationDestination,
-        message_count: u32,
-        ignore_paid_restrictions: bool,
-        consumer: &mut PaidSendApprovalConsumer,
-    ) -> Result<i64, PaidSendValidationError> {
-        let live_restriction = self.resolve_destination_paid_restriction(
-            sender_id,
-            destination,
-            ignore_paid_restrictions,
-        );
-        consumer.consume_for_destination(destination, live_restriction, message_count)
     }
 
     pub fn execute(&mut self, command: Command) -> Result<Vec<Event>, EngineError> {
@@ -1621,68 +1101,13 @@ impl MessagingEngine {
             Command::CancelPresenceTriggeredSend {
                 actor_id,
                 client_message_id,
-            } => {
-                self.require_actor(&actor_id)?;
-                let Some(existing) = self.state.pending_presence_sends.get(&client_message_id)
-                else {
-                    return Ok(Vec::new());
-                };
-                if existing.sender_id != actor_id {
-                    return Err(EngineError::InvalidPresenceTriggeredSend);
-                }
-                Ok(vec![Event::PresenceTriggeredSendRemoved {
-                    client_message_id,
-                }])
-            }
+            } => self.decide_cancel_presence_triggered_send(actor_id, client_message_id),
             Command::FailPresenceTriggeredSend {
                 client_message_id,
                 failed_at_ms,
-            } => {
-                let Some(pending) = self
-                    .state
-                    .pending_presence_sends
-                    .get(&client_message_id)
-                    .cloned()
-                else {
-                    return Ok(Vec::new());
-                };
-                let message = Message {
-                    id: pending.local_message_id.clone(),
-                    conversation_id: pending.conversation_id.clone(),
-                    sender_id: pending.sender_id.clone(),
-                    content: pending.content,
-                    reply_to_message_id: pending.reply_to_message_id,
-                    thread_root_message_id: pending.thread_root_message_id,
-                    forward_origin: None,
-                    reply_markup: None,
-                    reactions: Vec::new(),
-                    delivery_state: DeliveryState::Failed {
-                        code: "presence_trigger_policy_rejected".into(),
-                        retryable: false,
-                    },
-                    created_at_ms: failed_at_ms,
-                    edited_at_ms: None,
-                    scheduled_at_ms: None,
-                    silent: pending.silent,
-                    protected_content: pending.protected_content,
-                    pinned: false,
-                    deleted: false,
-                };
-                Ok(vec![
-                    Event::MessageQueued { message },
-                    Event::PresenceTriggeredSendRemoved { client_message_id },
-                ])
-            }
+            } => self.decide_fail_presence_triggered_send(client_message_id, failed_at_ms),
             Command::RemovePresenceTriggeredSend { client_message_id } => {
-                if self
-                    .state
-                    .pending_presence_sends
-                    .contains_key(&client_message_id)
-                {
-                    Ok(vec![Event::PresenceTriggeredSendRemoved { client_message_id }])
-                } else {
-                    Ok(Vec::new())
-                }
+                self.decide_remove_presence_triggered_send(client_message_id)
             }
             Command::QueueMessage {
                 conversation_id,
@@ -2999,558 +2424,72 @@ impl MessagingEngine {
                     wallet.credit(request_id, &account_id, amount, reference, settled_at_ms)?;
                 Ok(vec![Event::WalletChanged { wallet, entry }])
             }
-            Command::PublishStory { actor_id, story } => {
-                self.require_actor(&actor_id)?;
-                if story.owner_id != actor_id
-                    || story.id.0.trim().is_empty()
-                    || story.media.id.trim().is_empty()
-                    || story.expires_at_ms <= story.created_at_ms
-                {
-                    return Err(EngineError::InvalidStory);
-                }
-                Ok(vec![Event::StoryChanged { story }])
-            }
-            Command::DeleteStory { actor_id, story_id } => {
-                let story = self
-                    .state
-                    .stories
-                    .get(&story_id)
-                    .ok_or_else(|| EngineError::StoryNotFound(story_id.clone()))?;
-                if story.owner_id != actor_id {
-                    return Err(EngineError::StoryPermissionDenied(story_id));
-                }
-                Ok(vec![Event::StoryDeleted { story_id }])
-            }
+            Command::PublishStory { actor_id, story } => self.decide_publish_story(actor_id, story),
+            Command::DeleteStory { actor_id, story_id } => self.decide_delete_story(actor_id, story_id),
             Command::ViewStory {
                 actor_id,
                 story_id,
                 viewed_at_ms,
-            } => {
-                self.require_actor(&actor_id)?;
-                let mut story = self
-                    .state
-                    .stories
-                    .get(&story_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::StoryNotFound(story_id.clone()))?;
-                let (is_contact, is_close_friend) =
-                    self.story_visibility_flags(&story.owner_id, &actor_id);
-                if !story.is_visible_to(&actor_id, is_contact, is_close_friend) {
-                    return Err(EngineError::StoryPermissionDenied(story_id));
-                }
-                story.record_view(actor_id, viewed_at_ms)?;
-                Ok(vec![Event::StoryChanged { story }])
-            }
+            } => self.decide_view_story(actor_id, story_id, viewed_at_ms),
             Command::ReactStory {
                 actor_id,
                 story_id,
                 reaction,
-            } => {
-                let mut story = self
-                    .state
-                    .stories
-                    .get(&story_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::StoryNotFound(story_id.clone()))?;
-                let (is_contact, is_close_friend) =
-                    self.story_visibility_flags(&story.owner_id, &actor_id);
-                if !story.is_visible_to(&actor_id, is_contact, is_close_friend) {
-                    return Err(EngineError::StoryPermissionDenied(story_id));
-                }
-                story.react(&actor_id, reaction)?;
-                Ok(vec![Event::StoryChanged { story }])
-            }
+            } => self.decide_react_story(actor_id, story_id, reaction),
             Command::UpdateCommunity {
                 actor_id,
-                mut community,
-            } => {
-                let conversation = self.require_conversation(&community.conversation_id)?;
-                if !matches!(
-                    conversation.kind,
-                    crate::conversation::ConversationKind::Group
-                        | crate::conversation::ConversationKind::Channel
-                ) {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                if let Some(existing) = self.state.communities.get(&community.conversation_id) {
-                    require_community_admin(existing, &actor_id, CommunityAdminAction::ChangeInfo)?;
-                } else if conversation.owner_id.as_ref() != Some(&actor_id)
-                    && !conversation.participants.iter().any(|participant| {
-                        participant.actor_id == actor_id
-                            && matches!(participant.role, crate::actor::ParticipantRole::Owner)
-                    })
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                if let Some(existing) = self.state.communities.get(&community.conversation_id) {
-                    // Membership, moderation, invites, topics and policy are server-owned.
-                    // Only the community metadata above is client-editable through this command.
-                    community.members = existing.members.clone();
-                    community.invite_links = existing.invite_links.clone();
-                    community.pending_join_requests = existing.pending_join_requests.clone();
-                    community.topics = existing.topics.clone();
-                    community.banned_words = existing.banned_words.clone();
-                    community.slow_mode_seconds = existing.slow_mode_seconds;
-                    community.subscribers = existing.subscribers.clone();
-                    community.admin_log = existing.admin_log.clone();
-                } else {
-                    // Only the conversation owner may create the first community state.
-                    // Seed that owner as the sole owner so a non-owner cannot squat the state.
-                    community.subscribers.clear();
-                    community.admin_log.clear();
-                    let requested_members = std::mem::take(&mut community.members);
-                    community.invite_links.clear();
-                    community.pending_join_requests.clear();
-                    community.topics.clear();
-                    community.banned_words.clear();
-                    community.members = conversation
-                        .participants
-                        .iter()
-                        .map(|participant| {
-                            let requested = requested_members.get(&participant.actor_id);
-                            let (status, admin_rights) = match participant.role {
-                                ParticipantRole::Owner => (
-                                    MemberStatus::Owner,
-                                    AdminRights {
-                                        change_info: true,
-                                        post_messages: true,
-                                        edit_messages: true,
-                                        delete_messages: true,
-                                        ban_members: true,
-                                        invite_members: true,
-                                        pin_messages: true,
-                                        manage_topics: true,
-                                        manage_calls: true,
-                                        add_admins: true,
-                                        remain_anonymous: true,
-                                    },
-                                ),
-                                ParticipantRole::Admin => (
-                                    MemberStatus::Administrator,
-                                    requested
-                                        .map(|member| member.admin_rights.clone())
-                                        .unwrap_or_default(),
-                                ),
-                                ParticipantRole::Restricted => (
-                                    MemberStatus::Restricted,
-                                    requested
-                                        .map(|member| member.admin_rights.clone())
-                                        .unwrap_or_default(),
-                                ),
-                                ParticipantRole::Member => {
-                                    (MemberStatus::Member, AdminRights::default())
-                                }
-                            };
-                            (
-                                participant.actor_id.clone(),
-                                CommunityMember {
-                                    actor_id: participant.actor_id.clone(),
-                                    status,
-                                    admin_title: requested
-                                        .and_then(|member| member.admin_title.clone()),
-                                    admin_rights,
-                                    restrictions: requested
-                                        .map(|member| member.restrictions.clone())
-                                        .unwrap_or_default(),
-                                    joined_at_ms: participant.joined_at_ms,
-                                    invited_by: requested
-                                        .and_then(|member| member.invited_by.clone()),
-                                },
-                            )
-                        })
-                        .collect();
-                }
-                Ok(vec![Event::CommunityChanged { community }])
-            }
+                community,
+            } => self.decide_update_community(actor_id, community),
             Command::SubscribeChannel {
                 actor_id,
                 conversation_id,
                 subscribed_at_ms,
-            } => {
-                self.require_actor(&actor_id)?;
-                let conversation = self.require_conversation(&conversation_id)?;
-                if !matches!(conversation.kind, ConversationKind::Channel) {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                if !community
-                    .public_username
-                    .as_deref()
-                    .is_some_and(|username| !username.trim().is_empty())
-                    && !community.is_subscriber(&actor_id)
-                    && !community.members.contains_key(&actor_id)
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let was_subscriber = community.is_subscriber(&actor_id);
-                community.subscribe_channel(actor_id.clone(), subscribed_at_ms)?;
-                if !was_subscriber {
-                    append_community_audit(
-                        &mut community,
-                        &actor_id,
-                        CommunityAuditAction::SubscriptionAdded,
-                        Some(actor_id.clone()),
-                        None,
-                        None,
-                        subscribed_at_ms,
-                    );
-                }
-                Ok(vec![Event::CommunityChanged { community }])
-            }
+            } => self.decide_subscribe_channel(actor_id, conversation_id, subscribed_at_ms),
             Command::UnsubscribeChannel {
                 actor_id,
                 conversation_id,
                 unsubscribed_at_ms,
-            } => {
-                self.require_actor(&actor_id)?;
-                let conversation = self.require_conversation(&conversation_id)?;
-                if !matches!(conversation.kind, ConversationKind::Channel) {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                if conversation.owner_id.as_ref() == Some(&actor_id) {
-                    return Err(EngineError::Community(
-                        CommunityError::OwnerCannotUnsubscribe,
-                    ));
-                }
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                let was_subscriber = community.is_subscriber(&actor_id);
-                community.unsubscribe_channel(&actor_id)?;
-                if was_subscriber {
-                    append_community_audit(
-                        &mut community,
-                        &actor_id,
-                        CommunityAuditAction::SubscriptionRemoved,
-                        Some(actor_id.clone()),
-                        None,
-                        None,
-                        unsubscribed_at_ms,
-                    );
-                }
-                Ok(vec![Event::CommunityChanged { community }])
-            }
+            } => self.decide_unsubscribe_channel(actor_id, conversation_id, unsubscribed_at_ms),
             Command::SetCommunitySlowMode {
                 actor_id,
                 conversation_id,
                 seconds,
                 changed_at_ms,
-            } => {
-                let conversation = self.require_conversation(&conversation_id)?;
-                if !matches!(
-                    conversation.kind,
-                    ConversationKind::Group | ConversationKind::Channel
-                ) {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                if seconds.is_some_and(|seconds| seconds > 86_400) {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                require_community_admin(&community, &actor_id, CommunityAdminAction::ChangeInfo)?;
-                community.slow_mode_seconds = seconds;
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::SlowModeChanged,
-                    None,
-                    Some("slowMode".into()),
-                    None,
-                    changed_at_ms,
-                );
-                Ok(vec![Event::CommunityChanged { community }])
-            }
+            } => self.decide_set_community_slow_mode(actor_id, conversation_id, seconds, changed_at_ms),
             Command::ModerateCommunityMember {
                 actor_id,
                 conversation_id,
                 member,
                 reason,
                 decided_at_ms,
-            } => {
-                self.require_actor(&member.actor_id)?;
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                require_community_admin(&community, &actor_id, CommunityAdminAction::BanMembers)?;
-                if member.actor_id == actor_id
-                    || community
-                        .members
-                        .get(&member.actor_id)
-                        .is_some_and(|existing| matches!(existing.status, MemberStatus::Owner))
-                    || matches!(member.status, MemberStatus::Owner)
-                    || matches!(member.status, MemberStatus::Administrator)
-                    || community
-                        .members
-                        .get(&member.actor_id)
-                        .is_some_and(|existing| {
-                            matches!(existing.status, MemberStatus::Administrator)
-                        })
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let target_actor_id = member.actor_id.clone();
-                let target_id = format!("member:{}", target_actor_id.0);
-                community.upsert_member(member.clone());
-                if matches!(member.status, MemberStatus::Left | MemberStatus::Banned) {
-                    community.subscribers.remove(&target_actor_id);
-                }
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::MemberChanged,
-                    Some(target_actor_id),
-                    Some(target_id),
-                    reason,
-                    decided_at_ms,
-                );
-                let participant_event = self
-                    .state
-                    .conversations
-                    .get(&conversation_id)
-                    .is_some_and(|conversation| {
-                        matches!(
-                            conversation.kind,
-                            ConversationKind::Group | ConversationKind::Channel
-                        )
-                    })
-                    .then(|| {
-                        community
-                            .members
-                            .get(&member.actor_id)
-                            .and_then(participant_for_community_member)
-                            .map(|participant| Event::ConversationParticipantUpserted {
-                                conversation_id: conversation_id.clone(),
-                                participant,
-                            })
-                            .unwrap_or_else(|| Event::ConversationParticipantRemoved {
-                                conversation_id: conversation_id.clone(),
-                                actor_id: member.actor_id.clone(),
-                            })
-                    });
-                let mut events = vec![Event::CommunityChanged { community }];
-                if let Some(event) = participant_event {
-                    events.push(event);
-                }
-                Ok(events)
-            }
+            } => self.decide_moderate_community_member(
+                actor_id,
+                conversation_id,
+                member,
+                reason,
+                decided_at_ms,
+            ),
             Command::SetCommunityMember {
                 actor_id,
                 conversation_id,
                 member,
-            } => {
-                self.require_actor(&member.actor_id)?;
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                let caller_is_owner = is_community_owner(&community, &actor_id);
-                let target_is_owner = community
-                    .members
-                    .get(&member.actor_id)
-                    .is_some_and(|existing| matches!(existing.status, MemberStatus::Owner));
-                let target_is_administrator = community
-                    .members
-                    .get(&member.actor_id)
-                    .is_some_and(|existing| matches!(existing.status, MemberStatus::Administrator));
-                if (target_is_owner || matches!(member.status, MemberStatus::Owner))
-                    && !caller_is_owner
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let action = if target_is_owner || target_is_administrator {
-                    CommunityAdminAction::AddAdmins
-                } else {
-                    match member.status {
-                        MemberStatus::Owner | MemberStatus::Administrator => {
-                            CommunityAdminAction::AddAdmins
-                        }
-                        MemberStatus::Restricted | MemberStatus::Left | MemberStatus::Banned => {
-                            CommunityAdminAction::BanMembers
-                        }
-                        MemberStatus::Member => CommunityAdminAction::InviteMembers,
-                    }
-                };
-                require_community_admin(&community, &actor_id, action)?;
-                let target_actor_id = member.actor_id.clone();
-                let joined_at_ms = member.joined_at_ms;
-                community.upsert_member(member);
-                if matches!(
-                    community
-                        .members
-                        .get(&target_actor_id)
-                        .map(|member| member.status),
-                    Some(MemberStatus::Left | MemberStatus::Banned)
-                ) {
-                    community.subscribers.remove(&target_actor_id);
-                }
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::MemberChanged,
-                    Some(target_actor_id.clone()),
-                    Some(format!("member:{}", target_actor_id.0)),
-                    None,
-                    joined_at_ms,
-                );
-                let participant_event = self
-                    .state
-                    .conversations
-                    .get(&conversation_id)
-                    .is_some_and(|conversation| {
-                        matches!(
-                            conversation.kind,
-                            ConversationKind::Group | ConversationKind::Channel
-                        )
-                    })
-                    .then(|| {
-                        community
-                            .members
-                            .get(&target_actor_id)
-                            .and_then(participant_for_community_member)
-                            .map(|participant| Event::ConversationParticipantUpserted {
-                                conversation_id: conversation_id.clone(),
-                                participant,
-                            })
-                            .unwrap_or_else(|| Event::ConversationParticipantRemoved {
-                                conversation_id: conversation_id.clone(),
-                                actor_id: target_actor_id.clone(),
-                            })
-                    });
-                let mut events = vec![Event::CommunityChanged { community }];
-                if let Some(event) = participant_event {
-                    events.push(event);
-                }
-                Ok(events)
-            }
+            } => self.decide_set_community_member(actor_id, conversation_id, member),
             Command::CreateInviteLink { actor_id, invite } => {
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&invite.conversation_id)
-                    .cloned()
-                    .ok_or_else(|| {
-                        EngineError::CommunityNotFound(invite.conversation_id.clone())
-                    })?;
-                require_community_admin(
-                    &community,
-                    &actor_id,
-                    CommunityAdminAction::InviteMembers,
-                )?;
-                if invite.creator_id != actor_id
-                    || invite.id.trim().is_empty()
-                    || invite.token.trim().is_empty()
-                    || invite.revoked
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let created_at_ms = invite.created_at_ms;
-                let invite_id = invite.id.clone();
-                community.invite_links.insert(invite_id.clone(), invite);
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::InviteCreated,
-                    None,
-                    Some(format!("invite:{}", invite_id)),
-                    None,
-                    created_at_ms,
-                );
-                Ok(vec![Event::CommunityChanged { community }])
+                self.decide_create_invite_link(actor_id, invite)
             }
             Command::RevokeInviteLink {
                 actor_id,
                 conversation_id,
                 invite_id,
                 revoked_at_ms,
-            } => {
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                require_community_admin(
-                    &community,
-                    &actor_id,
-                    CommunityAdminAction::InviteMembers,
-                )?;
-                community.revoke_invite(&invite_id)?;
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::InviteRevoked,
-                    None,
-                    Some(format!("invite:{invite_id}")),
-                    None,
-                    revoked_at_ms,
-                );
-                Ok(vec![Event::CommunityChanged { community }])
-            }
+            } => self.decide_revoke_invite_link(
+                actor_id,
+                conversation_id,
+                invite_id,
+                revoked_at_ms,
+            ),
             Command::RequestCommunityJoin { actor_id, request } => {
-                if request.actor_id != actor_id {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                self.require_actor(&actor_id)?;
-                let conversation = self.require_conversation(&request.conversation_id)?;
-                if !matches!(
-                    conversation.kind,
-                    ConversationKind::Group | ConversationKind::Channel
-                ) {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let requested_actor_id = request.actor_id.clone();
-                let requested_at_ms = request.requested_at_ms;
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&request.conversation_id)
-                    .cloned()
-                    .ok_or_else(|| {
-                        EngineError::CommunityNotFound(request.conversation_id.clone())
-                    })?;
-                if community
-                    .members
-                    .get(&actor_id)
-                    .is_some_and(|member| matches!(member.status, MemberStatus::Banned))
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                if community
-                    .public_username
-                    .as_deref()
-                    .is_none_or(|username| username.trim().is_empty())
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                community.request_join(request);
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::MemberChanged,
-                    Some(requested_actor_id),
-                    Some("join-request".into()),
-                    None,
-                    requested_at_ms,
-                );
-                Ok(vec![Event::CommunityChanged { community }])
+                self.decide_request_community_join(actor_id, request)
             }
             Command::RespondCommunityJoin {
                 actor_id,
@@ -3558,125 +2497,21 @@ impl MessagingEngine {
                 requester_id,
                 approved,
                 decided_at_ms,
-            } => {
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                require_community_admin(
-                    &community,
-                    &actor_id,
-                    CommunityAdminAction::InviteMembers,
-                )?;
-                if approved {
-                    community.approve_join(&requester_id, &actor_id, decided_at_ms)?;
-                    append_community_audit(
-                        &mut community,
-                        &actor_id,
-                        CommunityAuditAction::JoinApproved,
-                        Some(requester_id.clone()),
-                        None,
-                        None,
-                        decided_at_ms,
-                    );
-                } else {
-                    community
-                        .pending_join_requests
-                        .remove(&requester_id)
-                        .ok_or_else(|| CommunityError::JoinRequestNotFound(requester_id.clone()))?;
-                    append_community_audit(
-                        &mut community,
-                        &actor_id,
-                        CommunityAuditAction::JoinRejected,
-                        Some(requester_id.clone()),
-                        None,
-                        None,
-                        decided_at_ms,
-                    );
-                }
-                let participant_event = if approved
-                    && self
-                        .state
-                        .conversations
-                        .get(&conversation_id)
-                        .is_some_and(|conversation| {
-                            matches!(
-                                conversation.kind,
-                                ConversationKind::Group | ConversationKind::Channel
-                            )
-                        }) {
-                    community
-                        .members
-                        .get(&requester_id)
-                        .and_then(participant_for_community_member)
-                        .map(|participant| Event::ConversationParticipantUpserted {
-                            conversation_id: conversation_id.clone(),
-                            participant,
-                        })
-                } else {
-                    None
-                };
-                let mut events = vec![Event::CommunityChanged { community }];
-                if let Some(event) = participant_event {
-                    events.push(event);
-                }
-                Ok(events)
-            }
+            } => self.decide_respond_community_join(
+                actor_id,
+                conversation_id,
+                requester_id,
+                approved,
+                decided_at_ms,
+            ),
             Command::UpsertForumTopic { actor_id, topic } => {
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&topic.conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(topic.conversation_id.clone()))?;
-                require_community_admin(&community, &actor_id, CommunityAdminAction::ManageTopics)?;
-                if topic.id.trim().is_empty()
-                    || topic.title.trim().is_empty()
-                    || topic.title.trim().len() > 128
-                    || topic.conversation_id != community.conversation_id
-                {
-                    return Err(EngineError::CommunityPermissionDenied);
-                }
-                let topic_id = topic.id.clone();
-                let created_at_ms = topic.created_at_ms;
-                community.topics.insert(topic_id.clone(), topic);
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::TopicUpserted,
-                    None,
-                    Some(format!("topic:{}", topic_id)),
-                    None,
-                    created_at_ms,
-                );
-                Ok(vec![Event::CommunityChanged { community }])
+                self.decide_upsert_forum_topic(actor_id, topic)
             }
             Command::DeleteForumTopic {
                 actor_id,
                 conversation_id,
                 topic_id,
-            } => {
-                let mut community = self
-                    .state
-                    .communities
-                    .get(&conversation_id)
-                    .cloned()
-                    .ok_or_else(|| EngineError::CommunityNotFound(conversation_id.clone()))?;
-                require_community_admin(&community, &actor_id, CommunityAdminAction::ManageTopics)?;
-                community.topics.remove(&topic_id);
-                append_community_audit(
-                    &mut community,
-                    &actor_id,
-                    CommunityAuditAction::TopicDeleted,
-                    None,
-                    Some(format!("topic:{}", topic_id)),
-                    None,
-                    0,
-                );
-                Ok(vec![Event::CommunityChanged { community }])
-            }
+            } => self.decide_delete_forum_topic(actor_id, conversation_id, topic_id),
             Command::RegisterBot { actor_id, profile } => {
                 let actor = self.require_actor(&actor_id)?;
                 if profile.actor_id != actor_id
@@ -4551,19 +3386,19 @@ impl MessagingEngine {
         self.execute(Command::UpsertOrder { order })
     }
 
-    fn require_actor(&self, id: &ActorId) -> Result<&Actor, EngineError> {
+    pub(crate) fn require_actor(&self, id: &ActorId) -> Result<&Actor, EngineError> {
         self.state
             .actors
             .get(id)
             .ok_or_else(|| EngineError::ActorNotFound(id.clone()))
     }
-    fn require_conversation(&self, id: &ConversationId) -> Result<&Conversation, EngineError> {
+    pub(crate) fn require_conversation(&self, id: &ConversationId) -> Result<&Conversation, EngineError> {
         self.state
             .conversations
             .get(id)
             .ok_or_else(|| EngineError::ConversationNotFound(id.clone()))
     }
-    fn require_message(
+    pub(crate) fn require_message(
         &self,
         conversation_id: &ConversationId,
         message_id: &MessageId,

@@ -2348,3 +2348,343 @@ fn agent_inbound_failure_gateway_report_preserves_host_owned_error_context() {
     assert_eq!(args["errorCode"], "INFERENCE_PROVIDER_FAILED");
     assert_eq!(args["message"], "provider exploded");
 }
+
+#[test]
+fn tdrp_folders_filters_lifecycle_and_matching() {
+    use mahayana_node_agent_coordinator::tdrp::folders_filters::{FolderFilterRule, FolderFilterState};
+
+    let mut state = FolderFilterState::new();
+    let folder = state
+        .create_folder(
+            "Work".to_string(),
+            Some("💼".to_string()),
+            FolderFilterRule {
+                include_groups: true,
+                include_channels: true,
+                exclude_muted: true,
+                ..Default::default()
+            },
+            vec!["chat_vip".to_string()],
+            vec!["chat_spam".to_string()],
+        )
+        .expect("create folder");
+
+    assert_eq!(folder.title, "Work");
+    assert_eq!(state.list_folders().len(), 1);
+
+    // Matching tests
+    assert!(state.matches_chat(&folder.id, "chat_vip", false, false, false, false, true, false, false));
+    assert!(!state.matches_chat(&folder.id, "chat_spam", false, true, false, false, false, false, false));
+    assert!(state.matches_chat(&folder.id, "group_1", false, true, false, false, false, false, false));
+    assert!(!state.matches_chat(&folder.id, "group_2", false, true, false, false, true, false, false));
+
+    // Pin chat
+    let pinned = state.pin_chat(&folder.id, "group_pinned".to_string(), true).expect("pin chat");
+    assert!(pinned.pinned_chat_ids.contains(&"group_pinned".to_string()));
+
+    // Delete folder
+    assert!(state.delete_folder(&folder.id).expect("delete folder"));
+    assert_eq!(state.list_folders().len(), 0);
+}
+
+#[test]
+fn tdrp_forum_topics_lifecycle_pin_close_hide() {
+    use mahayana_node_agent_coordinator::tdrp::forum_topics::ForumTopicsState;
+
+    let mut state = ForumTopicsState::new();
+    let topic = state
+        .create_topic("community_1".to_string(), "General Discussions".to_string(), Some("💬".to_string()), 0x6FB9F0, 1000)
+        .expect("create topic");
+
+    assert_eq!(topic.topic_id, 1);
+    assert!(!topic.is_pinned);
+
+    let pinned = state.toggle_pin("community_1", topic.topic_id, true).expect("pin topic");
+    assert!(pinned.is_pinned);
+
+    let closed = state.toggle_close("community_1", topic.topic_id, true).expect("close topic");
+    assert!(closed.is_closed);
+
+    let hidden = state.toggle_hide("community_1", topic.topic_id, true).expect("hide topic");
+    assert!(hidden.is_hidden);
+
+    let unread = state.update_unread("community_1", topic.topic_id, 5, Some(999)).expect("update unread");
+    assert_eq!(unread.unread_count, 5);
+    assert_eq!(unread.top_message_id, Some(999));
+
+    assert!(state.delete_topic("community_1", topic.topic_id).expect("delete topic"));
+    assert!(state.list_topics("community_1").is_empty());
+}
+
+#[test]
+fn tdrp_polls_and_todo_checklists_lifecycle() {
+    use mahayana_node_agent_coordinator::tdrp::polls_todo::{PollKind, PollsTodoState};
+
+    let mut state = PollsTodoState::new();
+    let poll = state
+        .create_poll(
+            "What is your favorite stack?".to_string(),
+            vec!["Rust".to_string(), "TypeScript".to_string(), "Python".to_string()],
+            PollKind::Regular { multiple_answers: false },
+            1000,
+        )
+        .expect("create poll");
+
+    let voted = state.vote_poll(&poll.poll_id, "user_1".to_string(), vec![0]).expect("vote");
+    assert_eq!(voted.total_voters, 1);
+    assert_eq!(voted.options[0].voter_count, 1);
+
+    let retracted = state.retract_vote(&poll.poll_id, "user_1").expect("retract");
+    assert_eq!(retracted.total_voters, 0);
+    assert_eq!(retracted.options[0].voter_count, 0);
+
+    // Todo lists
+    let list = state.create_todo_list("conv_1".to_string(), "Sprint Checklist".to_string()).expect("create list");
+    let item = state.add_todo_item(&list.list_id, "Decompose engine".to_string(), Some("alice".to_string()), None, 1000).expect("add item");
+    assert!(!item.completed);
+
+    let toggled = state.toggle_todo_item(&list.list_id, &item.item_id, true).expect("toggle item");
+    assert!(toggled.completed);
+
+    assert!(state.delete_todo_item(&list.list_id, &item.item_id).expect("delete item"));
+}
+
+#[test]
+fn tdrp_stories_gifts_and_stars_balance_transfer() {
+    use mahayana_node_agent_coordinator::tdrp::stories_gifts_stars::{StoriesGiftsStarsState, StoryPrivacy};
+
+    let mut state = StoriesGiftsStarsState::new();
+    let story = state
+        .post_story("user_alice".to_string(), "https://cdn.example.com/story.mp4".to_string(), Some("Sunset!".to_string()), StoryPrivacy::Public, 86400, 1000)
+        .expect("post story");
+
+    let viewed = state.view_story(&story.story_id, "user_bob".to_string(), 1050).expect("view story");
+    assert_eq!(viewed.views_count, 1);
+
+    let reacted = state.react_story(&story.story_id, "user_bob".to_string(), "🔥".to_string()).expect("react story");
+    assert_eq!(reacted.reactions.get("user_bob").map(String::as_str), Some("🔥"));
+
+    // Stars balance & transfer
+    state.purchase_stars("user_alice", 500, "Purchase 500 stars".to_string(), 1000);
+    assert_eq!(state.get_star_balance("user_alice"), 500);
+
+    let (alice_bal, bob_bal) = state.transfer_stars("user_alice", "user_bob", 200, "For tips".to_string(), 1010).expect("transfer");
+    assert_eq!(alice_bal, 300);
+    assert_eq!(bob_bal, 200);
+
+    // Send Gift
+    let gift = state.send_gift("user_alice", "user_bob", "Star Trophy".to_string(), 50, Some("Great job!".to_string()), false, 1020).expect("send gift");
+    assert_eq!(gift.stars_price, 50);
+    assert_eq!(state.get_star_balance("user_alice"), 250);
+    assert_eq!(state.list_received_gifts("user_bob").len(), 1);
+}
+
+#[test]
+fn tdrp_chat_admin_moderation_rights_ban_restrictions_audit() {
+    use mahayana_node_agent_coordinator::tdrp::chat_admin_moderation::{ChatAdminModerationState, ChatAdminRights, RestrictedPermissions};
+
+    let mut state = ChatAdminModerationState::new();
+    let rights = state.set_admin_rights(
+        "supergroup_1",
+        "owner_id",
+        "admin_bob",
+        ChatAdminRights {
+            delete_messages: true,
+            ban_users: true,
+            manage_topics: true,
+            ..Default::default()
+        },
+        1000,
+    ).expect("set rights");
+    assert!(rights.ban_users);
+
+    // Ban member
+    let banned = state.ban_member("supergroup_1", "admin_bob", "bad_actor", Some(3600), Some("Spamming".to_string()), 1000).expect("ban member");
+    assert_eq!(banned.user_id, "bad_actor");
+    assert!(state.is_banned("supergroup_1", "bad_actor", 1010));
+
+    // Restrict member
+    let restricted = state.restrict_member(
+        "supergroup_1",
+        "admin_bob",
+        "spammer_2",
+        RestrictedPermissions {
+            send_messages: true,
+            send_media: false,
+            ..Default::default()
+        },
+        Some(1800),
+        1000,
+    ).expect("restrict member");
+    assert!(!restricted.send_media);
+
+    // Unban
+    assert!(state.unban_member("supergroup_1", "admin_bob", "bad_actor", 1020).expect("unban"));
+    assert!(!state.is_banned("supergroup_1", "bad_actor", 1030));
+
+    // Audit log
+    let log = state.get_audit_log("supergroup_1", 10);
+    assert!(log.len() >= 3);
+}
+
+#[test]
+fn tdrp_calls_and_group_calls_lifecycle_signaling() {
+    use mahayana_node_agent_coordinator::tdrp::calls_group_calls::{CallState, CallsGroupCallsState};
+
+    let mut state = CallsGroupCallsState::new();
+    let call = state.create_call("alice".to_string(), "bob".to_string(), true, 1000).expect("create call");
+    assert_eq!(call.state, CallState::Dialing);
+
+    let accepted = state.accept_call(&call.call_id, "bob", 1010).expect("accept call");
+    assert!(matches!(accepted.state, CallState::Active { .. }));
+
+    assert!(state.send_signaling(&call.call_id, "{\"sdp\":\"offer\"}".to_string()).expect("signaling"));
+
+    let ended = state.end_call(&call.call_id, "user_hangup".to_string(), 1050).expect("end call");
+    assert!(matches!(ended.state, CallState::Ended { duration_ms: 40, .. }));
+
+    // Group call
+    let gc = state.create_group_call("chat_general".to_string(), "Daily Standup".to_string(), 1000).expect("create gc");
+    let p = state.join_group_call(&gc.group_call_id, "alice".to_string(), 1001, 1005).expect("join gc");
+    assert!(p.is_muted);
+
+    let unmuted = state.toggle_mute_group_call(&gc.group_call_id, "alice", false).expect("unmute");
+    assert!(!unmuted.is_muted);
+
+    let hand = state.raise_hand_group_call(&gc.group_call_id, "alice", true).expect("raise hand");
+    assert!(hand.is_hand_raised);
+
+    assert!(state.leave_group_call(&gc.group_call_id, "alice").expect("leave gc"));
+}
+
+#[test]
+fn tdrp_settings_cloud_password_and_passkeys_auth() {
+    use mahayana_node_agent_coordinator::tdrp::settings_cloud_passkeys::{PrivacyRuleValue, PrivacySettings, SettingsCloudPasskeysState};
+
+    let mut state = SettingsCloudPasskeysState::new();
+    let mut priv_set = PrivacySettings::default();
+    priv_set.phone_number = PrivacyRuleValue::ContactsOnly;
+    priv_set.last_seen = PrivacyRuleValue::DisallowAll;
+    state.update_privacy("user_alice", priv_set);
+
+    let fetched = state.get_privacy("user_alice");
+    assert_eq!(fetched.phone_number, PrivacyRuleValue::ContactsOnly);
+    assert_eq!(fetched.last_seen, PrivacyRuleValue::DisallowAll);
+
+    // 2FA Cloud Password
+    state.set_cloud_password("user_alice", "hash123".to_string(), "salt456".to_string(), Some("hint".to_string()), None).expect("set 2fa");
+    assert!(state.verify_cloud_password("user_alice", "hash123").expect("verify 2fa"));
+    assert!(state.verify_cloud_password("user_alice", "wrong_hash").is_err());
+
+    // Passkeys
+    let chal = state.create_auth_challenge("user_alice", 1000);
+    let reg = state.register_passkey("user_alice", "cred_1".to_string(), "pubkey_base64".to_string(), &chal, 1010).expect("register passkey");
+    assert_eq!(reg.credential_id, "cred_1");
+
+    let chal_login = state.create_auth_challenge("user_alice", 1020);
+    assert!(state.verify_passkey("user_alice", "cred_1", &chal_login, "sig_valid").expect("verify passkey"));
+}
+
+#[test]
+fn tdrp_export_payments_and_inline_bots_lifecycle() {
+    use mahayana_node_agent_coordinator::tdrp::export_payments_bots::{ExportFormat, ExportPaymentsBotsState, ExportStatus, InlineQueryResult};
+
+    let mut state = ExportPaymentsBotsState::new();
+    let job = state.start_chat_export("user_alice".to_string(), "chat_123".to_string(), ExportFormat::Json, 1000).expect("start export");
+    assert!(matches!(job.status, ExportStatus::Queued));
+
+    let updated = state.update_export_progress(&job.job_id, ExportStatus::Completed { download_url: "https://dl.example.com/export.json".to_string(), total_bytes: 4096 }).expect("update progress");
+    assert!(matches!(updated.status, ExportStatus::Completed { .. }));
+
+    // Payments
+    let invoice = state.create_invoice("Premium Subscription".to_string(), "1 Year access".to_string(), "USD".to_string(), 4999, 1000).expect("create invoice");
+    assert_eq!(invoice.total_amount_cents, 4999);
+    assert!(!invoice.is_paid);
+
+    let settled = state.settle_payment(&invoice.invoice_id, "charge_stripe_123".to_string()).expect("settle payment");
+    assert!(settled.is_paid);
+    assert_eq!(settled.provider_payment_charge_id.as_deref(), Some("charge_stripe_123"));
+
+    // Inline Bots
+    state.register_inline_results("bot_calc", vec![
+        InlineQueryResult {
+            id: "res_1".to_string(),
+            title: "Calculate 2+2".to_string(),
+            description: Some("Result: 4".to_string()),
+            result_type: "article".to_string(),
+            send_message_text: "4".to_string(),
+        }
+    ]);
+    let query_res = state.query_inline_bot("bot_calc", "2+2");
+    assert_eq!(query_res.len(), 1);
+    assert_eq!(query_res[0].title, "Calculate 2+2");
+}
+
+#[test]
+fn tdrp_coordinator_route_dispatch_all_slices() {
+    use mahayana_node_agent_coordinator::tdrp::TdrpCoordinatorState;
+
+    let mut state = TdrpCoordinatorState::new();
+
+    // 1. Folders route
+    let res = state.dispatch("folders.create", &json!({
+        "title": "Crypto",
+        "filterRule": { "include_channels": true }
+    })).expect("handled").expect("ok");
+    assert!(res["folder"]["id"].as_str().is_some());
+
+    // 2. Topics route (with feature. prefix)
+    let res = state.dispatch("feature.topics.create", &json!({
+        "communityId": "comm_alpha",
+        "title": "Tech Talk"
+    })).expect("handled").expect("ok");
+    assert_eq!(res["topic"]["title"], "Tech Talk");
+
+    // 3. Polls route
+    let res = state.dispatch("polls.create", &json!({
+        "question": "Release today?",
+        "options": ["Yes", "Tomorrow"]
+    })).expect("handled").expect("ok");
+    assert_eq!(res["poll"]["question"], "Release today?");
+
+    // 4. Stories & Stars route
+    let res = state.dispatch("stars.purchase", &json!({
+        "userId": "user_dev",
+        "amount": 100
+    })).expect("handled").expect("ok");
+    assert_eq!(res["balance"], 100);
+
+    // 5. Admin Moderation route
+    let res = state.dispatch("admin.setRights", &json!({
+        "chatId": "chat_mod",
+        "actorId": "admin_1",
+        "targetId": "mod_1",
+        "rights": { "delete_messages": true }
+    })).expect("handled").expect("ok");
+    assert!(res["rights"]["delete_messages"].as_bool().unwrap());
+
+    // 6. Calls route
+    let res = state.dispatch("calls.create", &json!({
+        "callerId": "alice",
+        "calleeId": "bob",
+        "isVideo": true
+    })).expect("handled").expect("ok");
+    assert!(res["call"]["id"].as_str().is_some() || res["call"]["call_id"].as_str().is_some());
+
+    // 7. Settings route
+    let res = state.dispatch("settings.getPrivacy", &json!({
+        "userId": "alice"
+    })).expect("handled").expect("ok");
+    assert!(res["privacy"].is_object());
+
+    // 8. Export route
+    let res = state.dispatch("export.startChatExport", &json!({
+        "userId": "alice",
+        "chatId": "chat_history",
+        "format": "json"
+    })).expect("handled").expect("ok");
+    assert!(res["exportJob"]["job_id"].as_str().is_some());
+
+    // Unhandled route returns None
+    assert!(state.dispatch("unknown.method", &json!({})).is_none());
+}
