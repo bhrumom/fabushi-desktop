@@ -139,6 +139,7 @@ struct CoordinatorState {
     consecutive_crashes: AtomicU64,
     gateway_events_live: AtomicBool,
     trace_window_refresh_inflight: AtomicBool,
+    tdrp_state: Mutex<mahayana_node_agent_coordinator::tdrp::TdrpCoordinatorState>,
 }
 
 impl CoordinatorState {
@@ -2823,6 +2824,27 @@ fn execute_actions(
                     );
                     continue;
                 }
+                if let Ok(mut tdrp) = state.tdrp_state.lock() {
+                    if let Some(outcome) = tdrp.dispatch(&method, &args) {
+                        match outcome {
+                            Ok(val) => {
+                                state.complete_request(
+                                    channel,
+                                    &request_id,
+                                    ReplyOutcome::Ok { value: val },
+                                );
+                            }
+                            Err(failure) => {
+                                state.complete_request(
+                                    channel,
+                                    &request_id,
+                                    ReplyOutcome::Failed { failure },
+                                );
+                            }
+                        }
+                        continue;
+                    }
+                }
                 if dispatch_inference_if_handled(
                     state,
                     channel,
@@ -2941,6 +2963,7 @@ fn main() {
         consecutive_crashes: AtomicU64::new(0),
         gateway_events_live: AtomicBool::new(false),
         trace_window_refresh_inflight: AtomicBool::new(false),
+        tdrp_state: Mutex::new(mahayana_node_agent_coordinator::tdrp::TdrpCoordinatorState::default()),
     });
 
     start_oauth_expiry_loop(Arc::clone(&state));
