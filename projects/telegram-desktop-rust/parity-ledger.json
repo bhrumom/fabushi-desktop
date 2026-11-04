@@ -54622,6 +54622,236 @@
       "license_and_provenance": "Primary product source is telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/core/update_checker.cpp@73eee14f179d769854237640b246858959808736. Exact additional identities and actual selected deep-read ranges are in the partial audit in projects/telegram-desktop-rust/evidence/round21-update-source-authority.json. Prior mac_packaged.yml@6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc was read fully as tooling context; its floating build acquisitions remain open. No whole-file or full-updater review, legal closure, Telegram endpoint/key authorization or formal Fabushi release acceptance is asserted. All earlier recovered-source and Windows provenance remains.",
       "reviewer": null,
       "notes": "This is a bounded local product safety responsibility under the existing updater owner, not an assertion of full upstream macOS workflow mapping, actual update service readiness or entire UPDATE-INSTALL-ROLLBACK parity. Actions execution and independent acceptance remain open. Round22: Existing Windows updater formerly default-trusted historical Anysphere names. Current code commit 5d271ff0c03d8f01368ca44026d14cd7519ad6bd removes that default, requires approved exact subject and certificate DER SHA-256, valid embedded signature and unchanged bytes before a one-use launch, preserving markers/recovery. Formal publisher identity absent. 28 controlled / 11 native Windows contracts and a well-formed unequal AppHost digest negative authored only; new-H Actions required. Historical exact8f run41476964752 attempt2 success is scoped to its unchanged earlier code. See projects/telegram-desktop-rust/evidence/round22-windows-publisher-authority.json.\nRound21 source/evidence reconciliation: primary mapping now names the actual partial core discovery logic; macOS packaging remains contextual provenance. Fixed-U selected ranges were deeply read, without claiming the full source file/updater complete. Exact73cc/run41514576570 supplies actual EUS16/publisher28/native-Windows11 and Electron/renderer build evidence. Earlier authored/pending statements remain dated history; target_commit now binds the executed Electron component, not a complete migration or later checkpoint execution. Existing six source_reviews (two complete, four pending), other183 responsibility rows, counters, source candidate, locks and acceptance states are unchanged. Current Rust recovery changes after73cc require their own exact-H evidence. This source-map correction is not another product feature. Official feed/publisher authorization, package provenance, signed install/upgrade/rollback, full source/legal closure and independent ACCEPT remain open. See resumption in the same receipt.\nRound23 preserves the original Windows hook-timeout evidence and later actual native11 success under their exact SHAs. The spec's obsolete CurrentUser-only description is corrected to the current reviewed three-store fixture. No production identity, certificate approval, real package installation, deployment or independent ACCEPT is supplied.\nRound22 resumption: preserve every later updater/source, Social, forward, reply, resource and packaging change. The two fixed-U updater source records added here are product/high/deep-required/pending selected-section reviews, not complete reads; all prior source_reviews remain unchanged. Historical exact59f run41508537631 is terminal success, with actual publisher28/native11 and the real AppHost well-formed unequal64hex negative. This append does not supersede the later73cc target/evidence already in this row or qualify newer message/package heads. Formal publisher approval, real signed installation/upgrade/rollback, complete source/legal and independent ACCEPT stay blocked. Full audit at the same round22 receipt."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/inline_bots/bot_attach_web_view.cpp",
+      "source_blob_sha": "unresolved-pending-upstream-inventory",
+      "source_kind": "source",
+      "module_id": "tdesktop.inline_bots",
+      "responsibility_id": "TDRP-S5-MINIAPP-CONVERSATION-BRIDGE-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-MINIAPP-CONVERSATION-BRIDGE"
+      ],
+      "dependency_ids": [
+        "MiniAppSession",
+        "MiniAppGrant",
+        "MiniAppRequest",
+        "ProductionSessionWorkers"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/miniapp-conversation-bridge-read.md",
+      "behavior_contract": "A Bot WebApp / Mini App launched from chat action carries verified conversation launch context in the main process; the guest preload exposes read-only launch context and tool invocations (conversation.sendMessage, conversation.sendData). Host validates permissions via pure authorize_miniapp_request and appends to canonical ProductionSessionWorkers message state with deterministic CAS nonce miniapp:{sessionId}:{requestId}.",
+      "state_machine": "InlineButtonAction::MiniApp -> verified launchContext { conversationId, startParameter } -> preload fabushi.getLaunchContext() -> MiniAppToolRouter (conversation.sendMessage / conversation.sendData) -> Host gateway miniAppPostToConversation -> pure authorize_miniapp_request -> ProductionSessionWorkers::post_miniapp_message -> SandAgentDb SQLite.",
+      "side_effects": [
+        "Appends human/miniapp message into SandAgentDb SQLite transcript/outbox",
+        "Does not create a second WebView container or message store"
+      ],
+      "failure_cases": [
+        "Renderer attempts to forge or override conversationId",
+        "Request without SendMessage permission is accepted",
+        "Expired session or grant is accepted",
+        "Duplicate request with differing content escapes idempotency check"
+      ],
+      "ui_disposition": "Mini App runs in canonical miniapp-window with strict CSP loopback; no secondary WebView container is created.",
+      "non_ui_responsibilities": [
+        "Strict launch context isolation in Electron main",
+        "Renderer conversation injection fencing",
+        "Pure domain permission and expiry authorization",
+        "Deterministic CAS nonce generation and idempotent replay in ProductionSessionWorkers"
+      ],
+      "platform_delta": "Telegram lib_webview and custom IPC protocol replaced by sandboxed Electron miniapp-window, typed tool bridge, and pure Rust authorization.",
+      "existing_owner_candidates": [
+        "source/electron-main/mcp/miniapp-window.ts",
+        "source/electron-main/mcp/miniapp-tools.ts",
+        "source/electron-preload/preload-miniapp-tools.ts",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "native/mahayana-messaging/src/miniapp.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "existing_owner": "ProductionSessionWorkers for message state; miniapp-window for container; fabushi_messaging_core for pure authorization",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/electron-main/mcp/miniapp-tools.ts",
+        "source/electron-main/mcp/miniapp-window.ts",
+        "source/electron-preload/preload-miniapp-tools.ts",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "native/mahayana-messaging/src/miniapp.rs",
+        "native/mahayana-messaging/src/engine.rs"
+      ],
+      "fabushi_target_symbols": [
+        "authorize_miniapp_request",
+        "post_miniapp_message",
+        "miniAppPostToConversation",
+        "MiniAppLaunchContext",
+        "conversation.sendMessage",
+        "conversation.sendData"
+      ],
+      "target_language": "TypeScript / Rust",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "MiniAppToolRouter.invoke('conversation.sendMessage') -> Host gateway miniAppPostToConversation -> authorize_miniapp_request -> append_human_message_with_context",
+        "MiniAppToolRouter.invoke('conversation.sendData') -> Host gateway miniAppPostToConversation -> authorize_miniapp_request -> append_human_message_with_context"
+      ],
+      "state_owner": "Desktop message state owned exclusively by ProductionSessionWorkers (source/host/src/extensions/session/production.rs)",
+      "lifecycle_owner": "MiniApp window lifecycle owned by miniapp-window.ts; session grant authorization owned by fabushi_messaging_core",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "mapped",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Upstream blob SHA for Telegram/SourceFiles/inline_bots/bot_attach_web_view.cpp is not present in local inventory/dossiers (requires Actions artifact 13118749668); status held at mapped without fabricated blob SHA.",
+        "Transcript inline button action rendering is not yet wired in frontend transcript projection."
+      ],
+      "production_entrypoints": [
+        "InlineButtonAction::MiniApp -> miniapp-window launch -> preload fabushi.invoke -> MiniAppToolRouter -> gateway miniAppPostToConversation -> ProductionSessionWorkers::post_miniapp_message -> SandAgentDb"
+      ],
+      "production_evidence": [],
+      "test_evidence": [
+        "native/mahayana-messaging cargo test (60 passed)",
+        "host session_gateway_contract cargo test (98 passed)",
+        "source/electron-main/mcp/miniapp-tools.contract.test.ts (19 passed)"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-S5-MINIAPP-CONVERSATION-BRIDGE-001"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-MINIAPP-BRIDGE-NO-SECOND-CONTAINER-001",
+        "INV-TDRP-MINIAPP-BRIDGE-SINGLE-MESSAGE-OWNER-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is held pending remote inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[FMEP-STATE-02 wired via Session and Electron] Slice S5: Mini App / Bot WebApp conversation bridge wired to ProductionSessionWorkers and miniapp-window.ts. Pure authorization handled by fabushi_messaging_core::authorize_miniapp_request. Status held at mapped pending exact upstream blob binding and transcript inline button UI wiring."
     }
   ],
   "rebaseline_candidate": {

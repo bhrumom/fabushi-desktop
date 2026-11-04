@@ -326,3 +326,24 @@ Current authority disposition for the requested six domains:
 - **CLI / Gateway (`mahayana-gateway`):** fixed macOS unfair-mutex starvation in `source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs` (`event_pump`) by polling `runtime.receive(0)` under `pump_runtime.lock()`, dropping the mutex guard immediately, and sleeping `Duration::from_millis(10)` outside the lock when `Ok(None)` is returned (`!pump_shutdown.load(Ordering::Acquire)`).
 
 No new owner is created. No legacy database, user data, Telegram FFI, provider registration or user resource was removed. The unresolved identity/resource/permission/search questions are explicit follow-up requirements, not assumed closed.
+
+### 2026-11-04 Mini App / Bot WebApp conversation bridge (slice S5)
+
+Authority and boundary for Telegram Mini App / Bot WebApp desktop integration:
+
+| Layer | Canonical owner / implementation | Boundary and authority |
+| --- | --- | --- |
+| Mini App Container | `source/electron-main/mcp/miniapp-window.ts` | Sole desktop container. Strict CSP (`fabushi-miniapp:` scheme, offline loopback proxy, no navigation/WebRTC leak). No second WebView container. |
+| Launch Context | `source/electron-main/mcp/miniapp-window.ts` (`VerifiedMiniAppLaunch.launchContext`) | Main process only; bound to verified launch from chat `InlineButtonAction::MiniApp`. Preload exposes read-only `getLaunchContext()`. Renderer cannot forge context or accountScope. |
+| Tool Invocation Bridge | `source/electron-main/mcp/miniapp-tools.ts` (`conversation.sendData`, `conversation.sendMessage`) | Tools route from isolated preload via `MINIAPP_TOOL_CHANNEL` to `MiniAppToolRouter`, validating account scope, window origin, and rate limits before handing to Host gateway. |
+| Pure Policy Authority | `fabushi_messaging_core::authorize_miniapp_request` (`native/mahayana-messaging/src/miniapp.rs`) | Pure deterministic domain policy: checks session expiry, grant validity/expiry, permission matrix, and conversation binding. No storage, IO, or clock ownership. |
+| Message Persistence Owner | `ProductionSessionWorkers` (`source/host/src/extensions/session/production.rs`) | Single message state owner on desktop. Messages write to SandAgentDb SQLite, outbox, and remote sync via `append_human_message_with_context`. Nonce `miniapp:{sessionId}:{requestId}` enforces CAS idempotency. |
+
+Calling Chain:
+1. Message UI (`InlineButtonAction::MiniApp { mini_app_id, start_parameter }`) triggers desktop launch with `conversation_id + start_parameter`.
+2. Main process creates sandboxed `miniapp-window` with immutable `launchContext { conversationId, startParameter }`.
+3. Preload exposes read-only `getLaunchContext()` and `fabushi.invoke(...)`.
+4. Mini App calls `conversation.sendMessage` / `conversation.sendData`.
+5. `MiniAppToolRouter` validates scope and dispatches to Host gateway method `miniAppPostToConversation`.
+6. Host evaluates `fabushi_messaging_core::authorize_miniapp_request(session, grant, request, now_ms)`.
+7. On authorization, Host delegates to `ProductionSessionWorkers::append_human_message_with_context` with deterministic nonce `miniapp:{sessionId}:{requestId}` into SandAgentDb SQLite.

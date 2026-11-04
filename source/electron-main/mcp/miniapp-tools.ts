@@ -19,9 +19,15 @@ export const MINIAPP_CAPABILITY = Object.freeze({
   UPDATE: "update",
   DIAGNOSTICS: "diagnostics",
   COMPAT: "compat",
+  CONVERSATION: "conversation",
 } as const);
 
 export type MiniAppCapability = typeof MINIAPP_CAPABILITY[keyof typeof MINIAPP_CAPABILITY];
+
+export interface MiniAppLaunchContext {
+  readonly conversationId?: string;
+  readonly startParameter?: string;
+}
 
 export interface MiniAppToolScope {
   readonly appId: string;
@@ -29,6 +35,7 @@ export interface MiniAppToolScope {
   readonly packageDigest: string;
   readonly accountScope: string;
   readonly accountGeneration: number;
+  readonly launchContext?: MiniAppLaunchContext;
 }
 
 export interface MiniAppToolError { readonly code: string; readonly message: string }
@@ -77,6 +84,19 @@ export interface MiniAppToolBackend {
   update(action: "check" | "stage"): Promise<unknown>;
   diagnostics?(action: "selfTest" | "doctor" | "status"): Promise<unknown>;
   compat?(action: "packetInspect" | "countryLookup" | "linkExercise" | "linkRecover", args: Record<string, unknown>): Promise<unknown>;
+  conversation?(
+    action: "sendData" | "sendMessage",
+    args: {
+      readonly conversationId: string;
+      readonly text?: string;
+      readonly data?: string;
+      readonly startParameter?: string;
+      readonly clientNonce?: string;
+      readonly requestId?: string;
+      readonly appId: string;
+      readonly accountScope: string;
+    },
+  ): Promise<unknown>;
   /** Fences and cancels native work when account/window ownership changes. */
   cancelAll?(): void;
 }
@@ -122,10 +142,63 @@ function asRecord(args: unknown): Record<string, unknown> {
   return args as Record<string, unknown>;
 }
 
-type Handler = (args: Record<string, unknown>) => Promise<MiniAppToolResult>;
+type Handler = (args: Record<string, unknown>, scope: MiniAppToolScope) => Promise<MiniAppToolResult>;
 
 function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: MiniAppCapability; mutating: boolean; run: Handler }> {
   const entries: Array<[string, MiniAppCapability, boolean, Handler]> = [
+    ["launch.getContext", MINIAPP_CAPABILITY.OFFLINE, false, async (_args, scope) => ({
+      ok: true,
+      data: scope.launchContext
+        ? {
+            conversationId: scope.launchContext.conversationId,
+            startParameter: scope.launchContext.startParameter,
+          }
+        : {},
+    })],
+    ["conversation.sendMessage", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const conversationId = scope.launchContext?.conversationId;
+      if (!conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawText = args.text;
+      if (typeof rawText !== "string" || !rawText.trim()) throw new TypeError("INVALID_TEXT");
+      const text = rawText.trim();
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("sendMessage", {
+        conversationId,
+        text,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.sendData", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const conversationId = scope.launchContext?.conversationId;
+      if (!conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      if (typeof args.data !== "string") throw new TypeError("INVALID_DATA");
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("sendData", {
+        conversationId,
+        data: args.data,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
     ["offline.capabilities", MINIAPP_CAPABILITY.OFFLINE, false, async () => {
       const announced = await backend.capabilities();
       return { ok: true, data: { contract: MINIAPP_TOOL_CONTRACT, platform: announced.platform, capabilities: announced.capabilities, targetPools: announced.targetPools } };
@@ -240,7 +313,7 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
       }
       const handler = handlers.get(tool);
       if (!handler) return fail("UNKNOWN_TOOL", "该工具未在契约中声明");
-      const ownedControl = tool === "transfer.status" || tool === "transfer.cancel";
+      const ownedControl = tool === "transfer.status" || tool === "transfer.cancel" || tool === "launch.getContext";
       if (!ownedControl && !throttle(scope.accountScope)) return fail("RATE_LIMITED", "调用过于频繁，请稍后重试");
       // Discovery is a policy boundary, not a UI hint. Re-check the native
       // announcement on every invocation so a renderer cannot call a hidden
@@ -269,7 +342,7 @@ export function createMiniAppToolRouter(options: MiniAppToolRouterOptions): Mini
       }
       try {
         if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
-        const result = await handler.run(args);
+        const result = await handler.run(args, scope);
         if (!isCurrent()) return fail("STALE_SCOPE", "小程序窗口或账号已变化");
         return result;
       } catch (error) {

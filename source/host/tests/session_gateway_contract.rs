@@ -10799,3 +10799,214 @@ fn shipping_human_history_coverage_incomplete_signal_is_exposed_until_sync_reach
     drop(runtime);
     let _ = fs::remove_dir_all(root);
 }
+
+#[test]
+fn miniapp_post_to_conversation_contract_enforces_pure_authorization_idempotency_and_conversation_binding() {
+    let root = temp_root("miniapp-conversation-contract");
+    let agents = root.join("agents");
+    let memory = Arc::new(mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(agents.clone()));
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+        &agents,
+        500,
+        Some("human-local".into()),
+        Arc::new(|| None),
+        memory,
+    ));
+
+    let created = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-peer",
+            "title": "MiniApp Test Conversation"
+        }),
+    );
+    let conversation_id = created["id"].as_str().expect("conversation id").to_string();
+
+    // 1. Happy path: Mini App sends message
+    let first = dispatch(
+        &runtime,
+        "miniAppPostToConversation",
+        json!({
+            "sessionId": "sess-miniapp-1",
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "text": "Hello from MiniApp",
+            "requestId": "req-1",
+            "nowMs": 1000
+        }),
+    );
+    assert_eq!(first["content"], "Hello from MiniApp");
+    assert_eq!(first["clientNonce"], "miniapp:sess-miniapp-1:req-1");
+    assert_eq!(first["authorId"], "human-local");
+
+    // 2. Idempotent replay: exact same call returns identical entry without duplicate
+    let replay = dispatch(
+        &runtime,
+        "miniAppPostToConversation",
+        json!({
+            "sessionId": "sess-miniapp-1",
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "text": "Hello from MiniApp",
+            "requestId": "req-1",
+            "nowMs": 1000
+        }),
+    );
+    assert_eq!(replay["id"], first["id"]);
+    assert_eq!(replay["clientNonce"], "miniapp:sess-miniapp-1:req-1");
+
+    // 3. Conflict on same nonce with different content fails closed
+    let conflict = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "sessionId": "sess-miniapp-1",
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "text": "Conflicting content with same nonce",
+            "requestId": "req-1",
+            "nowMs": 1000
+        }),
+    )
+    .expect("handled call")
+    .expect_err("conflicting content on same clientNonce must fail closed");
+    assert!(matches!(conflict, SessionGatewayError::BadRequest(_)));
+
+    // 4. SendData action writes data to conversation
+    let data_entry = dispatch(
+        &runtime,
+        "miniAppPostToConversation",
+        json!({
+            "sessionId": "sess-miniapp-1",
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "data": "{\"sku\": \"book_42\", \"quantity\": 2}",
+            "requestId": "req-2",
+            "nowMs": 1200
+        }),
+    );
+    assert_eq!(data_entry["content"], "{\"sku\": \"book_42\", \"quantity\": 2}");
+    assert_eq!(data_entry["clientNonce"], "miniapp:sess-miniapp-1:req-2");
+
+    // 5. Permission denied: missing SendMessage permission in grant
+    let denied = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "session": {
+                "id": "sess-denied-1",
+                "miniAppId": "org.fabushi.shop",
+                "actorId": "human-local",
+                "conversationId": conversation_id,
+                "startParameter": null,
+                "grantedPermissions": ["theme"],
+                "openedAtMs": 1000,
+                "expiresAtMs": 5000
+            },
+            "grant": {
+                "miniAppId": "org.fabushi.shop",
+                "actorId": "human-local",
+                "permissions": ["theme"],
+                "grantedAtMs": 1000,
+                "expiresAtMs": null
+            },
+            "request": {
+                "type": "sendMessage",
+                "text": "Unauthorized message"
+            },
+            "requestId": "req-denied",
+            "nowMs": 2000
+        }),
+    )
+    .expect("handled call")
+    .expect_err("must deny request without SendMessage permission");
+    assert!(matches!(denied, SessionGatewayError::BadRequest(ref msg) if msg.contains("PermissionDenied")));
+
+    // 6. Expired session denied
+    let expired = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "session": {
+                "id": "sess-expired-1",
+                "miniAppId": "org.fabushi.shop",
+                "actorId": "human-local",
+                "conversationId": conversation_id,
+                "startParameter": null,
+                "grantedPermissions": ["sendMessage"],
+                "openedAtMs": 1000,
+                "expiresAtMs": 2000
+            },
+            "request": {
+                "type": "sendMessage",
+                "text": "Expired session message"
+            },
+            "requestId": "req-expired",
+            "nowMs": 3000
+        }),
+    )
+    .expect("handled call")
+    .expect_err("must deny expired session");
+    assert!(matches!(expired, SessionGatewayError::BadRequest(ref msg) if msg.contains("SessionExpired")));
+
+    // 7. Missing conversation binding denied
+    let no_conv = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "session": {
+                "id": "sess-noconv-1",
+                "miniAppId": "org.fabushi.shop",
+                "actorId": "human-local",
+                "conversationId": null,
+                "startParameter": null,
+                "grantedPermissions": ["sendMessage"],
+                "openedAtMs": 1000,
+                "expiresAtMs": 5000
+            },
+            "request": {
+                "type": "sendMessage",
+                "text": "Unbound message"
+            },
+            "requestId": "req-noconv",
+            "nowMs": 2000
+        }),
+    )
+    .expect("handled call")
+    .expect_err("must deny session without conversation binding");
+    assert!(matches!(no_conv, SessionGatewayError::BadRequest(ref msg) if msg.contains("MissingConversationBinding")));
+
+    // 8. Cross-conversation mismatch denied
+    let conv_mismatch = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "session": {
+                "id": "sess-mismatch-1",
+                "miniAppId": "org.fabushi.shop",
+                "actorId": "human-local",
+                "conversationId": conversation_id,
+                "startParameter": null,
+                "grantedPermissions": ["sendMessage"],
+                "openedAtMs": 1000,
+                "expiresAtMs": 5000
+            },
+            "conversationId": "spoofed-conversation-id",
+            "request": {
+                "type": "sendMessage",
+                "text": "Cross-conversation injection"
+            },
+            "requestId": "req-mismatch",
+            "nowMs": 2000
+        }),
+    )
+    .expect("handled call")
+    .expect_err("must deny cross-conversation mismatch");
+    assert!(matches!(conv_mismatch, SessionGatewayError::BadRequest(_)));
+
+    runtime.shutdown();
+    drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}

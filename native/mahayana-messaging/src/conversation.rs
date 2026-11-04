@@ -10,6 +10,10 @@ impl ConversationId {
         Self(value.into())
     }
 
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
     pub fn is_valid(&self) -> bool {
         let value = self.0.trim();
         !value.is_empty() && value.len() <= 200

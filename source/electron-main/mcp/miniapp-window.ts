@@ -21,6 +21,11 @@ export interface VerifiedMiniAppResource {
   readonly mime: string;
 }
 
+export interface MiniAppLaunchContext {
+  readonly conversationId?: string;
+  readonly startParameter?: string;
+}
+
 /** Constructed only from the existing Rust Host's freshly reverified launch result. */
 export interface VerifiedMiniAppLaunch {
   readonly appId: string;
@@ -32,6 +37,7 @@ export interface VerifiedMiniAppLaunch {
   /** Monotonic generation supplied by the existing native account owner. */
   readonly accountGeneration: number;
   readonly resources: ReadonlyMap<string, VerifiedMiniAppResource>;
+  readonly launchContext?: MiniAppLaunchContext;
 }
 
 export interface MiniAppWindow {
@@ -287,6 +293,7 @@ export function createMiniAppWindowFactory(ports: MiniAppWindowFactoryPorts): Mi
       const toolScope: MiniAppToolScope = {
         appId: launch.appId, version: launch.version, packageDigest: launch.packageDigest,
         accountScope: launch.accountScope, accountGeneration: launch.accountGeneration,
+        ...(launch.launchContext ? { launchContext: Object.freeze({ ...launch.launchContext }) } : {}),
       };
       const handler = makeResourceHandler(origin, launch.entrypoint, resources);
       let protocolRegistered = false;

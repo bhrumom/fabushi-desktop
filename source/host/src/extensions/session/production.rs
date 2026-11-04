@@ -4490,7 +4490,7 @@ impl ProductionSessionWorkers {
         )
     }
 
-    fn append_human_message_with_context(
+    pub fn append_human_message_with_context(
         &self,
         conversation_id: &str,
         text: &str,
@@ -4505,6 +4505,62 @@ impl ProductionSessionWorkers {
         self.append_human_message_from_intent(
             conversation_id, text, client_nonce, composed_at_ms, reply_to_id, attachments,
             forward_context, held_conversation_guard, false, queued_offline,
+        )
+    }
+
+    pub fn post_miniapp_message(
+        &self,
+        session: &fabushi_messaging_core::MiniAppSession,
+        grant: &fabushi_messaging_core::MiniAppGrant,
+        request: &fabushi_messaging_core::MiniAppRequest,
+        request_id: &str,
+        now_ms: i64,
+    ) -> Result<serde_json::Value, String> {
+        let action = fabushi_messaging_core::authorize_miniapp_request(session, grant, request, now_ms)
+            .map_err(|denial| format!("MiniApp authorization denied: {denial:?}"))?;
+
+        let (conversation_id, content) = match action {
+            fabushi_messaging_core::MiniAppAction::SendMessage { conversation_id, text } => {
+                (conversation_id, text)
+            }
+            fabushi_messaging_core::MiniAppAction::SendData { conversation_id, data } => {
+                (conversation_id, data)
+            }
+            _ => return Err("MiniApp action does not post to a conversation".to_string()),
+        };
+
+        let request_id = request_id.trim();
+        if request_id.is_empty() {
+            return Err("miniAppPostToConversation requires non-empty requestId".to_string());
+        }
+        let client_nonce = format!("miniapp:{}:{}", session.id, request_id);
+        if client_nonce.len() > 200 {
+            return Err("MiniApp clientNonce exceeds 200 UTF-8 bytes".to_string());
+        }
+
+        let action_name = match request {
+            fabushi_messaging_core::MiniAppRequest::SendMessage { .. } => "sendMessage",
+            fabushi_messaging_core::MiniAppRequest::SendData { .. } => "sendData",
+            _ => "unknown",
+        };
+        let forward_context = serde_json::json!({
+            "miniApp": {
+                "appId": session.mini_app_id,
+                "sessionId": session.id,
+                "action": action_name,
+            }
+        });
+
+        self.append_human_message_with_context(
+            conversation_id.as_str(),
+            &content,
+            &client_nonce,
+            Some(now_ms as f64),
+            None,
+            &[],
+            Some(&forward_context),
+            None,
+            false,
         )
     }
 
