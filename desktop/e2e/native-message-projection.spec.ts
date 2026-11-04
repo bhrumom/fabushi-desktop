@@ -537,6 +537,7 @@ test("NMR-UI-01d Host canonical reply rekey preserves preview, remote identity, 
 
   const localParentId = await page.evaluate(() => window.nativeMessageFixture.stageReplyParent());
   const source = messageRow(page, localParentId);
+  await expect(source).toBeVisible();
   await source.locator(".sand-message-action-anchor").hover();
   await source.getByRole("button", { name: "Reply to your message", exact: true }).click();
 
@@ -566,6 +567,8 @@ test("NMR-UI-01d Host canonical reply rekey preserves preview, remote identity, 
   expect(request?.args.replyToId).toBe(canonicalParentId);
   expect(request?.args.text).toBe("Reply draft survives Host canonical rekey");
 
+  const publishedId = await page.evaluate(() => window.nativeMessageFixture.publishSend());
+  expect(publishedId).toBe("human-server-message:100");
   await page.evaluate(() => window.nativeMessageFixture.settleSend());
   await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().unsettledSends)).toBe(0);
   const settled = await page.evaluate(() => window.nativeMessageFixture.readRow("human:a", "human-server-message:100"));

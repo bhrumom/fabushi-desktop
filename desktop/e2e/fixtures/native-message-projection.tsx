@@ -274,25 +274,20 @@ const fixture = {
   stageReplyParent() {
     const id = 'human:a';
     const transcript = rows.get(id) ?? [];
-    const index = transcript.findIndex((entry) => entry.id === 'm1');
-    if (index < 0) throw new Error('Missing fixture reply parent');
-    const before = clone(transcript[index]);
     const nonce = 'nmr-ui-01d-parent';
-    const after: Row = {
-      ...before,
-      id: `human-message:${nonce}`,
+    const existing = transcript.find((entry) => entry.clientNonce === nonce);
+    if (existing != null) return existing.id;
+    const entry = row(`human-message:${nonce}`, 'Old first message', {
       authorKind: 'human',
       authorId: account.kind === 'logged-in' ? account.authId ?? '' : '',
       clientNonce: nonce,
-      delivery: 'pending',
-    };
-    delete after.remoteMessageId;
-    delete after.remoteCreatedAt;
-    transcript[index] = after;
+      delivery: 'sent',
+    });
+    transcript.push(entry);
     rows.set(id, transcript);
     persistRows();
-    emit({ type: 'updated', agentId: id, before, entry: clone(after) });
-    return after.id;
+    emit({ type: 'appended', agentId: id, entry: clone(entry) });
+    return entry.id;
   },
   settleReplyParent() {
     const id = 'human:a';
@@ -364,15 +359,6 @@ const fixture = {
   settleSend(index = 0) {
     const pending = sends[index];
     if (pending == null) throw new Error('No pending send');
-    const id = String(pending.request.args.conversationId);
-    const entry = clone(pending.value as Row);
-    const transcript = rows.get(id) ?? [];
-    if (!transcript.some((candidate) => candidate.id === entry.id)) {
-      transcript.splice(sendPositions.get(pending.request.requestId) ?? transcript.length, 0, entry);
-    }
-    rows.set(id, transcript);
-    persistRows();
-    emit({ type: 'updated', agentId: id, before: { id: `pending-${pending.request.args.clientNonce}` }, entry });
     reply(pending);
   },
   holdSendRosterRefresh() { holdNextSendRoster = true; },
