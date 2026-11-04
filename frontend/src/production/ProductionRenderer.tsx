@@ -148,6 +148,8 @@ import { CoordinatorCallError, createCoordinatorClient, type ProductionCoordinat
 import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
+import { FabushiAgentSessionToolbar } from "./FabushiAgentSessionToolbar";
+import { FabushiAgentRuntimeDetailSections, type RuntimeDetailSectionId } from "./FabushiAgentRuntimeDetailSections";
 import { SignOutDialog } from "../recovered/features/account/session/sign-out";
 import { FeedbackDialog, type FeedbackCode } from "../recovered/features/feedback/overlay/view";
 import { UpdateRequired } from "../recovered/features/update/required/view";
@@ -903,6 +905,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [groupInfoPaneOpen, setGroupInfoPaneOpen] = useState(false);
   const [manageSharedRoomId, setManageSharedRoomId] = useState<string | null>(null);
   const [channelsInfoPaneOpen, setChannelsInfoPaneOpen] = useState(false);
+  const [runtimeDetailPaneOpen, setRuntimeDetailPaneOpen] = useState(false);
+  const [activeRuntimeSection, setActiveRuntimeSection] = useState<RuntimeDetailSectionId>("runtime");
   const [conversationOutlineAgentId, setConversationOutlineAgentId] = useState<string | null>(null);
   const [asyncTasksAgentId, setAsyncTasksAgentId] = useState<string | null>(null);
   const [paletteMessageTarget, setPaletteMessageTarget] = useState<Pick<CommandPaletteMessage, "agentId" | "entryId"> | null>(null);
@@ -4139,7 +4143,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
                   setNotice(error instanceof Error ? error.message : String(error));
                 });
               }} size="sm" variant="secondary">Stop</SandButton> : null}
-              {activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
+              {activeAgent.isGroup || bridge == null || agentChannelsController == null ? null : <SandButton aria-controls="sand-conversation-details" aria-expanded={channelsInfoPaneOpen} aria-label="Channels" data-info-row="channels" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setRuntimeDetailPaneOpen(false); setChannelsInfoPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="chat-bubbles" size="sm" />Channels</SandButton>}
+              {activeAgent.isGroup || bridge == null ? null : <SandButton aria-controls="sand-agent-runtime-details" aria-expanded={runtimeDetailPaneOpen} aria-label="Runtime details" data-testid="fabushi-runtime-details-trigger" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen(false); setRuntimeDetailPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="sliders" size="sm" />运行时</SandButton>}
             </>}
           />}
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
@@ -4152,6 +4157,21 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             pinnedBanner={pinnedBanner}
             onClickPin={(pinId) => transcriptHandleRef.current?.scrollToEntryWithoutHighlight(pinId)}
           />
+          {!activeIsHuman ? (
+            <FabushiAgentSessionToolbar
+              agentId={activeAgent.id}
+              agentName={activeAgent.name}
+              onOpenRuntimeDetails={(section) => {
+                setGroupInfoPaneOpen(false);
+                setAgentSettingsOpen(false);
+                setRoutinesInfoPaneOpen(false);
+                setComputerInfoOpen(false);
+                setChannelsInfoPaneOpen(false);
+                setActiveRuntimeSection(section);
+                setRuntimeDetailPaneOpen(true);
+              }}
+            />
+          ) : null}
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
@@ -4353,6 +4373,16 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         <RootInfoPaneHeader onClose={() => setChannelsInfoPaneOpen(false)}><h2>Channels</h2></RootInfoPaneHeader>
         {mountAgentInfoChannels({ agentId: activeAgent.id, labelledBy: "sand-conversation-heading", controller: agentChannelsController })}
       </aside>}
+      {bridge == null || activeAgent == null || activeAgent.isGroup || !runtimeDetailPaneOpen ? null : <aside
+        aria-label="Agent runtime details"
+        className="sand-info-pane"
+        data-open="true"
+        data-testid="fabushi-agent-runtime-details"
+        id="sand-agent-runtime-details"
+      >
+        <RootInfoPaneHeader onClose={() => setRuntimeDetailPaneOpen(false)}><h2>运行时详情</h2></RootInfoPaneHeader>
+        <FabushiAgentRuntimeDetailSections agentId={activeAgent.id} initialSection={activeRuntimeSection} onClose={() => setRuntimeDetailPaneOpen(false)} />
+      </aside>}
       {sharedRoomDialogOpen && sharedRoomProvider != null && sharedRoomContext != null ? <SharedRoomDialog
         accountGeneration={sharedRoomContext.accountGeneration}
         agentId={sharedRoomContext.agentId}
@@ -4362,7 +4392,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         provider={sharedRoomProvider}
         roomId={sharedRoomContext.roomId}
       /> : null}
-      {bridge == null || activeAgent == null || activeAgent.isGroup || routinesInfoPaneOpen || agentSettingsOpen || channelsInfoPaneOpen ? null : <ComputerInfoPane bridge={bridge} experience={computer} isOpen={computerInfoOpen} onClose={() => setComputerInfoOpen(false)} subjectLabel={activeAgent.name} teachRecording={teachRecordingComposition.preview} />}
+      {bridge == null || activeAgent == null || activeAgent.isGroup || routinesInfoPaneOpen || agentSettingsOpen || channelsInfoPaneOpen || runtimeDetailPaneOpen ? null : <ComputerInfoPane bridge={bridge} experience={computer} isOpen={computerInfoOpen} onClose={() => setComputerInfoOpen(false)} subjectLabel={activeAgent.name} teachRecording={teachRecordingComposition.preview} />}
       {activeAgent == null || activeAgent.isGroup || !(computer.isOpen || computerInfoOpen && computerViewerRetained) ? null : <ComputerFullscreen
         bridge={bridge}
         experience={computer}
