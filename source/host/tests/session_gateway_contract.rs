@@ -6632,7 +6632,7 @@ fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_t
     row25["timestampMs"] = json!(2000.0);
     physical.push(row25);
     assert_eq!(owner.append_transcript_entries(&physical).expect("physical rows"), physical.len());
-    let first = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery { before_seq:None, before_cursor:None, limit:2 })
+    let first = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery { before_seq:None, before_cursor:None, limit:2, topic_id:None })
         .expect("newest human tail");
     assert_eq!(first.entries.iter().map(|row| row["id"].as_str().unwrap()).collect::<Vec<_>>(),
         vec!["human-message:pending-tail", "human-server-message:200"]);
@@ -6645,13 +6645,13 @@ fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_t
         physical.push(row);
     }
     let second = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:first.next_before_seq,before_cursor:Some(cursor.clone()),limit:3
+        before_seq:first.next_before_seq,before_cursor:Some(cursor.clone()),limit:3,topic_id:None
     }).expect("older relative to the immutable pending anchor");
     assert_eq!(second.entries.iter().map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["20","25","30"],
         "late inserts belong to the next snapshot, not the in-progress stable traversal");
     assert_eq!(second.next_before_seq, Some(3));
     let third = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:second.next_before_seq,before_cursor:second.next_before_cursor.clone(),limit:3
+        before_seq:second.next_before_seq,before_cursor:second.next_before_cursor.clone(),limit:3,topic_id:None
     }).expect("oldest relative to ID 20");
     assert_eq!(third.entries.iter().map(|row| row["remoteMessageId"].as_str().unwrap()).collect::<Vec<_>>(), vec!["10"]);
     assert_eq!(third.next_before_seq, None);
@@ -6668,16 +6668,16 @@ fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_t
         "human-server-message:30","human-message:pending-tail","human-server-message:200"
     ]);
     assert!(runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:Some(9999),before_cursor:Some(cursor.clone()),limit:2
+        before_seq:Some(9999),before_cursor:Some(cursor.clone()),limit:2,topic_id:None
     }).is_err(), "a mismatched physical anchor cannot reinterpret the token");
     assert!(runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:None,before_cursor:Some("not-a-history-token".into()),limit:2
+        before_seq:None,before_cursor:Some("not-a-history-token".into()),limit:2,topic_id:None
     }).is_err(), "malformed cursor fails closed");
     let original_participants = owner.get_metadata("participantIds").expect("original participants")
         .expect("Human participants exist");
     assert!(owner.set_metadata("participantIds", json!(["1", "9"])).expect("changed conversation scope"));
     let wrong_scope = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3,topic_id:None
     });
     assert!(owner.set_metadata("participantIds", original_participants).expect("restore exact scope"));
     assert!(wrong_scope.is_err(), "a token cannot be reinterpreted for changed participants");
@@ -6703,12 +6703,12 @@ fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_t
         let corrupt_raw = corrupt_snapshot.to_string();
         assert!(owner.write_kv(&snapshot_key, &corrupt_raw).expect("persist corrupt unread index"));
         assert!(runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-            before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+            before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3,topic_id:None
         }).is_err(), "{label}: corrupt unread identities must not silently repeat or disappear");
         assert_eq!(owner.read_kv(&snapshot_key).expect("corrupt index is retained"), Some(corrupt_raw), "{label}");
         assert!(owner.write_kv(&snapshot_key, &snapshot_raw).expect("restore original snapshot"));
         let restored = runtime.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-            before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+            before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3,topic_id:None
         }).expect("restored index resumes the same page");
         assert_eq!(restored.entries, second.entries, "{label}: recovery preserves every unread row exactly once");
         assert_eq!(restored.next_before_seq, second.next_before_seq, "{label}");
@@ -6717,14 +6717,14 @@ fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_t
     runtime.shutdown();
     assert!(owner.get_human_transcript_entries().is_err(), "closed Human storage is not an empty history");
     assert!(owner.get_human_transcript_tail(HumanTranscriptPageQuery {
-        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3,topic_id:None
     }).is_err(), "closed Human storage cannot fabricate a terminal page");
     drop(owner);
     drop(runtime);
     let restarted = human_message_fixture_runtime(&root, "http://127.0.0.1:1");
     assert_eq!(restarted.read_human_conversation_transcript(&id).expect("reopened order"), all);
     let repeated = restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3
+        before_seq:Some(5),before_cursor:Some(cursor.clone()),limit:3,topic_id:None
     }).expect("replay exact persisted snapshot after restart");
     assert_eq!(repeated.entries, second.entries);
     let owner = restarted.open_human_conversation_db_owner(&id).expect("snapshot cache owner");
@@ -6734,11 +6734,11 @@ fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_t
         row["timestampMs"] = json!(6000.0 + index as f64);
         assert!(owner.append_transcript_entry(&row).expect("new stable set"));
         newest = Some(restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-            before_seq:None,before_cursor:None,limit:2
+            before_seq:None,before_cursor:None,limit:2,topic_id:None
         }).expect("new snapshot"));
     }
     assert!(restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:Some(5),before_cursor:Some(cursor),limit:3
+        before_seq:Some(5),before_cursor:Some(cursor),limit:3,topic_id:None
     }).is_err(), "the bounded cache rejects an expired token instead of silently restarting");
     let registry: serde_json::Value = serde_json::from_str(
         &owner.read_kv("humanTranscriptSnapshots:v1").expect("bounded registry")
@@ -6748,7 +6748,7 @@ fn shipping_human_tail_keeps_physical_anchors_stable_during_backfill_and_equal_t
     assert!(owner.read_kv(&snapshot_key).expect("evicted original index").is_none());
     let newest = newest.expect("latest snapshot");
     assert!(!restarted.read_human_conversation_transcript_tail(&id, HumanTranscriptPageQuery {
-        before_seq:newest.next_before_seq,before_cursor:newest.next_before_cursor,limit:2
+        before_seq:newest.next_before_seq,before_cursor:newest.next_before_cursor,limit:2,topic_id:None
     }).expect("most recent token survives eviction").entries.is_empty());
     restarted.shutdown();
     let _ = fs::remove_dir_all(root);
@@ -6824,6 +6824,70 @@ fn shipping_human_snapshot_cursor_survives_pending_settlement_and_authoritative_
     assert_eq!(requests.len(), 2);
     assert!(requests[0].starts_with("POST /api/social/messages "));
     assert!(requests[1].starts_with("GET /api/social/messages?contactId=2&limit=200&afterId=0 "));
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn shipping_human_get_conversation_transcript_tail_topic_support() {
+    let root = temp_root("transcript-tail-topic-support");
+    let runtime = human_message_fixture_runtime(&root, "http://127.0.0.1:1");
+    let id = runtime.create_human_conversation("2", "Peer").expect("conversation")["id"]
+        .as_str().expect("id").to_owned();
+    let owner = runtime.open_human_conversation_db_owner(&id).expect("owner");
+
+    let mut msg_main = fixture_saved_human_message(1, "2", "main message");
+    msg_main["timestampMs"] = json!(1000.0);
+    assert!(owner.append_transcript_entry(&msg_main).expect("append main"));
+
+    let mut msg_topic = fixture_saved_human_message(2, "2", "topic message");
+    msg_topic["timestampMs"] = json!(2000.0);
+    msg_topic["topicId"] = json!("topic-abc");
+    assert!(owner.append_transcript_entry(&msg_topic).expect("append topic"));
+
+    // Tail without topicId -> returns only msg_main
+    let main_tail = dispatch(&runtime, "getHumanConversationTranscriptTail", json!({
+        "conversationId": id,
+        "limit": 10
+    }));
+    let main_entries = main_tail["entries"].as_array().expect("main entries");
+    assert_eq!(main_entries.len(), 1);
+    assert_eq!(main_entries[0]["remoteMessageId"], "1");
+
+    // Tail with topicId -> returns only msg_topic
+    let topic_tail = dispatch(&runtime, "getHumanConversationTranscriptTail", json!({
+        "conversationId": id,
+        "topicId": "topic-abc",
+        "limit": 10
+    }));
+    let topic_entries = topic_tail["entries"].as_array().expect("topic entries");
+    assert_eq!(topic_entries.len(), 1);
+    assert_eq!(topic_entries[0]["remoteMessageId"], "2");
+
+    // Tail with empty topicId -> rejected with bad request
+    let err_empty = dispatch_production_session_gateway_call(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        &json!({
+            "conversationId": id,
+            "topicId": "",
+            "limit": 10
+        }),
+    ).expect("handled");
+    assert!(err_empty.is_err(), "empty topicId must be rejected");
+
+    // Tail with whitespace topicId -> rejected with bad request
+    let err_ws = dispatch_production_session_gateway_call(
+        &runtime,
+        "getHumanConversationTranscriptTail",
+        &json!({
+            "conversationId": id,
+            "topicId": "   ",
+            "limit": 10
+        }),
+    ).expect("handled");
+    assert!(err_ws.is_err(), "whitespace topicId must be rejected");
+
+    runtime.shutdown();
     let _ = fs::remove_dir_all(root);
 }
 

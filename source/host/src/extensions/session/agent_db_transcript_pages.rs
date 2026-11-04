@@ -41,6 +41,8 @@ WITH human_ordered AS (
       ELSE 9007199254740992
     END AS remote_id
   FROM transcript_entries
+  WHERE (?1 IS NULL AND json_extract(entry, '$.topicId') IS NULL)
+     OR (json_extract(entry, '$.topicId') = ?1)
 )
 "#;
 
@@ -62,6 +64,7 @@ pub struct HumanTranscriptPageQuery {
     pub before_seq: Option<i64>,
     pub before_cursor: Option<String>,
     pub limit: i64,
+    pub topic_id: Option<String>,
 }
 
 impl From<TranscriptWindowQuery> for HumanTranscriptPageQuery {
@@ -70,6 +73,7 @@ impl From<TranscriptWindowQuery> for HumanTranscriptPageQuery {
             before_seq: query.before_seq,
             before_cursor: None,
             limit: query.limit,
+            topic_id: None,
         }
     }
 }
@@ -234,16 +238,24 @@ pub fn read_transcript_tail(
     Ok(page(rows, limit))
 }
 
-pub fn read_human_transcript_entries(
+pub fn read_human_transcript_entries_for_topic(
     db: &Connection,
+    topic_id: Option<&str>,
 ) -> Result<Vec<Value>, rusqlite::Error> {
+    if let Some(tid) = topic_id {
+        if tid.trim().is_empty() {
+            return Err(human_cursor_error(
+                "Human transcript cursor topicId must not be empty",
+            ));
+        }
+    }
     let sql = format!(
         "{HUMAN_TRANSCRIPT_ORDER_CTE}
          SELECT entry FROM human_ordered
          ORDER BY timestamp_ms ASC, remote_id ASC, seq ASC"
     );
     let mut statement = db.prepare(&sql)?;
-    let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+    let rows = statement.query_map(params![topic_id], |row| row.get::<_, String>(0))?;
     let mut entries = Vec::new();
     for row in rows {
         if let Some(entry) = parse_transcript_entry(&row?) {
@@ -253,12 +265,26 @@ pub fn read_human_transcript_entries(
     Ok(entries)
 }
 
+pub fn read_human_transcript_entries(
+    db: &Connection,
+) -> Result<Vec<Value>, rusqlite::Error> {
+    read_human_transcript_entries_for_topic(db, None)
+}
+
 pub fn read_human_transcript_tail(
     db: &Connection,
     query: &HumanTranscriptPageQuery,
     metadata: &Value,
 ) -> Result<(HumanTranscriptPage, bool), rusqlite::Error> {
-    let scope = human_snapshot_scope(metadata)?;
+    if let Some(tid) = query.topic_id.as_deref() {
+        if tid.trim().is_empty() {
+            return Err(human_cursor_error(
+                "Human transcript cursor topicId must not be empty",
+            ));
+        }
+    }
+    let scope = conversation_snapshot_scope(metadata, query.topic_id.as_deref())?;
+    let registry_key = conversation_snapshot_registry_key(metadata, query.topic_id.as_deref());
     let cursor = query.before_cursor.as_deref().map(parse_human_cursor).transpose()?;
     if let Some(cursor) = cursor.as_ref() {
         if query.before_seq.is_some_and(|seq| seq != cursor.anchor_seq) {
@@ -271,7 +297,7 @@ pub fn read_human_transcript_tail(
     // One SQLite transaction also keeps eviction/validation/page selection atomic.
     db.execute_batch(if cursor.is_some() { "BEGIN" } else { "BEGIN IMMEDIATE" })?;
     let result = (|| {
-        let mut registry = read_human_snapshot_registry(db, &scope)?;
+        let mut registry = read_human_snapshot_registry(db, &registry_key, &scope)?;
         let (snapshot_id, position, anchor_seq, changed) = if let Some(cursor) = cursor {
             if !registry.snapshots.contains(&cursor.snapshot_id) {
                 return Err(human_cursor_error("Human transcript cursor is unknown or expired"));
@@ -283,8 +309,12 @@ pub fn read_human_transcript_tail(
             // the remaining rows. New callers continue with beforeCursor.
             if let Some(before_seq) = query.before_seq {
                 let exists: bool = db.query_row(
-                    "SELECT EXISTS(SELECT 1 FROM transcript_entries WHERE seq = ?1)",
-                    params![before_seq],
+                    "SELECT EXISTS(
+                       SELECT 1 FROM transcript_entries
+                       WHERE seq = ?1
+                         AND ((?2 IS NULL AND json_extract(entry, '$.topicId') IS NULL) OR (json_extract(entry, '$.topicId') = ?2))
+                     )",
+                    params![before_seq, query.topic_id.as_deref()],
                     |row| row.get(0),
                 )?;
                 if !exists {
@@ -296,17 +326,21 @@ pub fn read_human_transcript_tail(
             let sql = format!(
                 "{HUMAN_TRANSCRIPT_ORDER_CTE}
                  INSERT INTO kv (key, value)
-                 SELECT ?1, json_object('version', 1, 'scope', ?2,
+                 SELECT ?2, json_object('version', 1, 'scope', ?3,
                                         'seqs', json_group_array(seq))
                  FROM (
                    SELECT seq FROM human_ordered
-                   WHERE ?3 IS NULL OR (timestamp_ms, remote_id, seq) < (
-                     SELECT timestamp_ms, remote_id, seq FROM human_ordered WHERE seq = ?3
+                   WHERE ?4 IS NULL OR (timestamp_ms, remote_id, seq) < (
+                     SELECT timestamp_ms, remote_id, seq FROM human_ordered WHERE seq = ?4
                    )
                    ORDER BY timestamp_ms DESC, remote_id DESC, seq DESC
                  )"
             );
-            if db.execute(&sql, params![snapshot_key, scope, query.before_seq])? != 1 {
+            if db.execute(
+                &sql,
+                params![query.topic_id.as_deref(), snapshot_key, scope, query.before_seq],
+            )? != 1
+            {
                 return Err(human_cursor_error("Human transcript cursor index was not persisted"));
             }
             registry.snapshots.push(snapshot_id.clone());
@@ -316,7 +350,7 @@ pub fn read_human_transcript_tail(
             }
             let raw = serde_json::to_string(&registry)
                 .map_err(|_| human_cursor_error("Human transcript cursor registry could not be encoded"))?;
-            if db.execute(SET_KV_SQL, params![HUMAN_SNAPSHOT_REGISTRY_KEY, raw])? != 1 {
+            if db.execute(SET_KV_SQL, params![registry_key, raw])? != 1 {
                 return Err(human_cursor_error("Human transcript cursor registry was not persisted"));
             }
             (snapshot_id, -1, None, true)
@@ -355,22 +389,92 @@ fn empty_human_page() -> HumanTranscriptPage {
     }
 }
 
-fn human_snapshot_scope(metadata: &Value) -> Result<String, rusqlite::Error> {
-    let conversation_id = metadata.get("conversationId").and_then(Value::as_str)
+pub fn conversation_snapshot_scope(
+    metadata: &Value,
+    topic_id: Option<&str>,
+) -> Result<String, rusqlite::Error> {
+    if let Some(tid) = topic_id {
+        if tid.trim().is_empty() {
+            return Err(human_cursor_error(
+                "Human transcript cursor topicId must not be empty",
+            ));
+        }
+    }
+    let conversation_id = metadata
+        .get("conversationId")
+        .and_then(Value::as_str)
         .filter(|id| !id.trim().is_empty())
         .ok_or_else(|| human_cursor_error("Human transcript cursor requires conversation metadata"))?;
-    let participants = metadata.get("participantIds").and_then(Value::as_array)
-        .filter(|ids| ids.len() == 2)
-        .ok_or_else(|| human_cursor_error("Human transcript cursor requires a direct participant pair"))?;
-    let local = participants[0].as_str().filter(|id| !id.trim().is_empty());
-    let peer = participants[1].as_str().filter(|id| !id.trim().is_empty());
-    if metadata.get("conversationKind").and_then(Value::as_str) != Some("human")
-        || local.is_none() || peer.is_none() || local == peer
-    {
-        return Err(human_cursor_error("Human transcript cursor has invalid conversation scope"));
+    let kind = metadata.get("conversationKind").and_then(Value::as_str);
+
+    match kind {
+        Some("human") | Some("direct") => {
+            let participants = metadata
+                .get("participantIds")
+                .and_then(Value::as_array)
+                .filter(|ids| ids.len() == 2)
+                .ok_or_else(|| {
+                    human_cursor_error("Human transcript cursor requires a direct participant pair")
+                })?;
+            let local = participants[0].as_str().filter(|id| !id.trim().is_empty());
+            let peer = participants[1].as_str().filter(|id| !id.trim().is_empty());
+            if local.is_none() || peer.is_none() || local == peer {
+                return Err(human_cursor_error(
+                    "Human transcript cursor has invalid conversation scope",
+                ));
+            }
+            let local = local.unwrap();
+            let peer = peer.unwrap();
+            if topic_id.is_none() && kind == Some("human") {
+                serde_json::to_string(&(conversation_id, local, peer))
+                    .map_err(|_| human_cursor_error("Human transcript cursor scope could not be encoded"))
+            } else {
+                serde_json::to_string(&("direct", conversation_id, local, peer, topic_id))
+                    .map_err(|_| human_cursor_error("Human transcript cursor scope could not be encoded"))
+            }
+        }
+        Some("group") => {
+            let local = metadata
+                .get("localHumanId")
+                .and_then(Value::as_str)
+                .filter(|id| !id.trim().is_empty())
+                .or_else(|| {
+                    metadata
+                        .get("participantIds")
+                        .and_then(Value::as_array)
+                        .and_then(|ids| ids.first())
+                        .and_then(Value::as_str)
+                        .filter(|id| !id.trim().is_empty())
+                })
+                .ok_or_else(|| {
+                    human_cursor_error("Human transcript cursor has invalid conversation scope")
+                })?;
+            serde_json::to_string(&("group", conversation_id, local, topic_id))
+                .map_err(|_| human_cursor_error("Human transcript cursor scope could not be encoded"))
+        }
+        Some("channel") => {
+            serde_json::to_string(&("channel", conversation_id, topic_id))
+                .map_err(|_| human_cursor_error("Human transcript cursor scope could not be encoded"))
+        }
+        _ => Err(human_cursor_error(
+            "Human transcript cursor has invalid conversation scope",
+        )),
     }
-    serde_json::to_string(&(conversation_id, local, peer))
-        .map_err(|_| human_cursor_error("Human transcript cursor scope could not be encoded"))
+}
+
+pub fn human_snapshot_scope(metadata: &Value) -> Result<String, rusqlite::Error> {
+    conversation_snapshot_scope(metadata, None)
+}
+
+fn conversation_snapshot_registry_key(metadata: &Value, topic_id: Option<&str>) -> String {
+    let kind = metadata.get("conversationKind").and_then(Value::as_str);
+    if topic_id.is_none() && kind == Some("human") {
+        HUMAN_SNAPSHOT_REGISTRY_KEY.to_string()
+    } else if let Some(tid) = topic_id {
+        format!("{HUMAN_SNAPSHOT_REGISTRY_KEY}:topic:{tid}")
+    } else {
+        format!("{HUMAN_SNAPSHOT_REGISTRY_KEY}:main")
+    }
 }
 
 fn valid_human_snapshot_id(id: &str) -> bool {
@@ -397,9 +501,10 @@ fn parse_human_cursor(raw: &str) -> Result<HumanSnapshotCursor, rusqlite::Error>
 
 fn read_human_snapshot_registry(
     db: &Connection,
+    registry_key: &str,
     scope: &str,
 ) -> Result<HumanSnapshotRegistry, rusqlite::Error> {
-    let raw = db.query_row(GET_KV_SQL, params![HUMAN_SNAPSHOT_REGISTRY_KEY], |row| {
+    let raw = db.query_row(GET_KV_SQL, params![registry_key], |row| {
         row.get::<_, String>(0)
     }).optional()?;
     let Some(raw) = raw else {

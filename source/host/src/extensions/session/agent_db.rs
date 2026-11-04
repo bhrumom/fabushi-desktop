@@ -37,7 +37,7 @@ use super::agent_db_serde::{
 use super::agent_db_transcript_pages::{
     HumanTranscriptPage, HumanTranscriptPageQuery,
     TranscriptPage, TranscriptPageQuery, TranscriptWindow, TranscriptWindowQuery,
-    read_human_transcript_entries, read_human_transcript_tail,
+    read_human_transcript_entries, read_human_transcript_entries_for_topic, read_human_transcript_tail,
     read_transcript_page, read_transcript_tail, read_transcript_window,
 };
 
@@ -1560,6 +1560,23 @@ impl SandAgentDb {
             return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
         };
         Ok(read_human_transcript_entries(db)?)
+    }
+
+    pub fn get_human_transcript_entries_for_topic(
+        &self,
+        topic_id: Option<&str>,
+    ) -> Result<Vec<serde_json::Value>, AgentDbProjectionError> {
+        if self.is_closed() {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        }
+        let guard = self
+            .connection
+            .lock()
+            .map_err(|_| AgentDbProjectionError::OwnerPoisoned)?;
+        let Some(db) = guard.as_ref() else {
+            return Err(AgentDbProjectionError::HumanTranscriptUnavailable);
+        };
+        Ok(read_human_transcript_entries_for_topic(db, topic_id)?)
     }
 
     pub fn get_transcript_page(

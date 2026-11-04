@@ -5957,13 +5957,21 @@ impl ProductionSessionWorkers {
         &self,
         conversation_id: &str,
     ) -> Result<Vec<serde_json::Value>, String> {
+        self.read_human_conversation_transcript_for_topic(conversation_id, None)
+    }
+
+    pub fn read_human_conversation_transcript_for_topic(
+        &self,
+        conversation_id: &str,
+        topic_id: Option<&str>,
+    ) -> Result<Vec<serde_json::Value>, String> {
         let owner = self.open_human_conversation_db_owner(conversation_id)?;
         let metadata = owner.read_metadata().map_err(|error| error.to_string())?;
         if !self.metadata_has_local_human(&metadata)? {
             return Err("local Human identity is not a conversation participant".into());
         }
         owner
-            .get_human_transcript_entries()
+            .get_human_transcript_entries_for_topic(topic_id)
             .map_err(|error| error.to_string())
     }
 
