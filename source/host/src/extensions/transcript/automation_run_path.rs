@@ -79,6 +79,16 @@ pub struct CronSessionSweepThrottle {
     last_run_ms_by_owner: HashMap<String, u64>,
 }
 
+/// Sweeps and prunes expired cron run sessions according to the retention policy and throttle boundary.
+pub fn sweep_cron_run_sessions(
+    runtime: &super::automation_runtime::AutomationRuntime,
+    agent_id: &str,
+    retention_value: Option<&Value>,
+    now_ms: f64,
+) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+    runtime.list_expired_cron_session_candidates(agent_id, retention_value, now_ms)
+}
+
 impl CronSessionSweepThrottle {
     pub fn admit(&mut self, owner_scope: &str, now_ms: u64) -> bool {
         let owner_scope = owner_scope.trim();
@@ -362,6 +372,16 @@ pub struct AutomationRunPath {
 }
 
 impl AutomationRunPath {
+    pub fn sweep_cron_run_sessions(
+        &self,
+        runtime: &super::automation_runtime::AutomationRuntime,
+        agent_id: &str,
+        retention_value: Option<&Value>,
+        now_ms: f64,
+    ) -> Result<Vec<crate::extensions::session::agent_db::CronSessionRunRecord>, String> {
+        sweep_cron_run_sessions(runtime, agent_id, retention_value, now_ms)
+    }
+
     pub fn set_run_reporter(&self, reporter: Option<AutomationRunReporter>) {
         *self
             .run_reporter

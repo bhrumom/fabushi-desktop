@@ -827,6 +827,15 @@ fn merge_scoped_memory_records(
     merged
 }
 
+/// Merges semantic/BM25/FTS hybrid memory records with deduplication and ranking.
+pub fn merge_hybrid_results(
+    records: Vec<ScopedMemoryRecord>,
+    limit: usize,
+    rank_by_recall: bool,
+) -> Vec<ScopedMemoryRecord> {
+    merge_scoped_memory_records(records, limit, rank_by_recall)
+}
+
 #[derive(Clone)]
 pub struct UserMemoryStore {
     sand_root: PathBuf,

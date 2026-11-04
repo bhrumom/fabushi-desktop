@@ -7,3 +7,5 @@ pub mod memory_synthesis_service;
 pub mod root_memory_provenance;
 pub mod dreaming_service;
 pub mod event_store_service;
+
+pub use self::memory_service::merge_hybrid_results;

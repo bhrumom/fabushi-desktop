@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::background_work::{derive_background_subagent_title, format_steer_prompt};
@@ -56,6 +57,7 @@ pub struct ComputerUseUsageSnapshot {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SubagentStatus {
+    Pending,
     Running,
     Done,
     Error,
@@ -68,6 +70,39 @@ pub struct SubagentRecord {
     pub title: String,
     pub started_at_ms: u64,
     pub status: SubagentStatus,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SubagentRunRecord {
+    pub run_id: String,
+    pub child_session_key: String,
+    pub controller_session_key: String,
+    pub requester_session_key: String,
+    pub subagent_type: String,
+    pub title: String,
+    pub created_at_ms: u64,
+    pub status: String,
+}
+
+impl From<SubagentRecord> for SubagentRunRecord {
+    fn from(rec: SubagentRecord) -> Self {
+        Self {
+            run_id: uuid::Uuid::new_v4().to_string(),
+            child_session_key: String::new(),
+            controller_session_key: String::new(),
+            requester_session_key: String::new(),
+            subagent_type: rec.subagent_type,
+            title: rec.title,
+            created_at_ms: rec.started_at_ms,
+            status: match rec.status {
+                SubagentStatus::Pending => "pending".into(),
+                SubagentStatus::Running => "running".into(),
+                SubagentStatus::Done => "done".into(),
+                SubagentStatus::Error => "error".into(),
+                SubagentStatus::Aborted => "aborted".into(),
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
