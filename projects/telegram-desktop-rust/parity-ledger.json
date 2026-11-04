@@ -51644,7 +51644,7 @@
     "nested_gitlinks_discovered": 4,
     "nested_gitlinks_resolved": 4,
     "nested_gitlinks_blocked": 0,
-    "source_responsibility_rows": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Six source review records comprise two complete option contracts and four pending draft/feedback mappings; global review counts remain undetermined and acceptance is false.",
+    "source_responsibility_rows": "184 current canonical responsibility rows; exact source tuples are checked against the fixed-U 16,381-identity Git inventory. Six exact source review records are complete with deep-read evidence and existing responsibility mappings; this records source review only, not product implementation or acceptance.",
     "unknown": null,
     "unread": null,
     "omitted_known": 0,
