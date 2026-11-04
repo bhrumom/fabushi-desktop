@@ -28,10 +28,10 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 
 | # | 阻塞项 | 解除条件 | 责任人 |
 | --- | --- | --- | --- |
-| 1 | 后端 PR137（canonical revisions/tombstones、afterId=0 分页）仍为 draft/未合并；Worker/D1 部署未核验 | PR137 合并到后端 main，部署后用 Actions 核验 Worker 身份与 afterId=0 授权分页 | 待指定（后端） |
+| 1 | 后端 PR137 已审查、补修复并合并（后端 main `4e0878d1`，`human-messaging-contracts` 通过）；**尚未部署** | 经显式批准后按顺序执行：先对生产 D1 跑一次 `20261031_human_message_mutations.sql`（不可重跑），再 dispatch `production-worker-delivery`，然后做真实服务 afterId=0 多页/拒绝负例检查 | 需用户批准部署 |
 | 2 | 同一消息语义有两个写入者：桌面 Session/Transcript 与移动端 `MessagingService` | **已决**：[FBCP-ADR-004](../../docs/adr/FBCP-ADR-004-single-message-owner.md)（Session 为唯一状态 owner，`fabushi_messaging_core` 为纯领域策略库）。剩余：提取纯函数并接入 Session、移动端 snapshot 导入 | 迁移线 |
 | 3 | 旧 Telegram 栈退出：E1、E2 已完成，E3 规范已定 | E4：重映射指向 `providers/telegram-*` 的账本行后，删除除 storage/core 外的 provider crate 与专属 CI；storage/core 待 E3 退役版本后删除 | 迁移线 |
-| 4 | Round8 修复（UI 209 用例、reconciliation 125 用例、owner 40、actualMac 2+2）尚未在包含修复的 H 上执行 | 在包含修复的 H 上跑 Actions 并全部通过 | 迁移线 |
+| 4 | ~~Round8 修复待在包含修复的 H 上执行~~ **已解决**：run 41743964197 @ `5682bec43` 全部必需 job 成功（UI 13+23 passed，0 failed/skipped/retries）。证据：`telegram-desktop-rust/evidence/round8-requalification-20261104.json` | 之后的 H 仍需各自的 Actions 结果 | — |
 | 5 | 来源闭合：unknown/unread 未统计；source_reviews 只有 6/16 complete | 按 FMEP-SOURCE-01 完成身份对照和必需深读 | 迁移线 |
 
 ## 当前批次 — FMEP-001 r3 迁移纠偏（2026-11-04）
