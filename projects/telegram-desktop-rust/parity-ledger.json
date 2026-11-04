@@ -1105,7 +1105,6 @@
         "forward_human_message_with_comment",
         "forwardHumanMessage",
         "composeShareComment",
-        "ProductionSessionWorkers::compose_share_comment",
         "ForwardMessageDialog",
         "commentText"
       ],
@@ -1147,7 +1146,7 @@
         "path:native/mahayana-messaging/src/engine.rs#compute_paid_send_plan",
         "path:native/mahayana-messaging/src/message.rs#compose_share_comment",
         "path:source/host/src/extensions/session/production.rs#forward_human_message_with_comment",
-        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::compose_share_comment",
+        "path:source/host/src/extensions/session/production.rs#compose_share_comment",
         "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
         "path:source/host/src/extensions/session/gateway.rs#composeShareComment",
         "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog"

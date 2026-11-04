@@ -828,8 +828,8 @@ jobs:
           set -euo pipefail
           ./desktop/node_modules/.bin/esbuild frontend/src/production/transcript-projection.contract.test.ts --bundle --platform=node --target=node24 --format=esm --outfile=artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript-bundle.log
           node --test --test-reporter=tap artifacts/native-message-ui/transcript-contract.test.mjs 2>&1 | tee artifacts/native-message-ui/transcript.log
-          grep -Fx '# tests 45' artifacts/native-message-ui/transcript.log
-          grep -Fx '# pass 45' artifacts/native-message-ui/transcript.log
+          grep -Fx '# tests 47' artifacts/native-message-ui/transcript.log
+          grep -Fx '# pass 47' artifacts/native-message-ui/transcript.log
           grep -Fx 'ok 45 - NMR-UI-ENTRY-REFRESH-01 live forward target reconciliation preserves eligible updates and retires cleared or non-actionable sources' artifacts/native-message-ui/transcript.log
           grep -Fx '# fail 0' artifacts/native-message-ui/transcript.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/transcript.log
