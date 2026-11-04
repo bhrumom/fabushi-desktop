@@ -10,14 +10,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const inventoryPath = '/Users/bhrum/Documents/ChatGPT/.tdrp-artifacts/13118749668/x/upstream-recursive-inventory.json';
 
-// Pure generic third-party submodules (24 repos)
+// Pure generic third-party submodules with verified license (23 repos)
 const GENERIC_SUBMODULES = new Set([
   'ericniebler/range-v3', 'hunspell/hunspell', 'hime-ime/hime', 'flatpak/xdg-desktop-portal',
   'KDE/kcoreaddons', 'KDE/kimageformats', 'hamonikr/nimf', 'desktop-app/MicroTeX',
   'Yubico/libfido2', 'fcitx/fcitx5-qt', 'lz4/lz4', 'PJK/libcbor', 'desktop-app/cmark-gfm',
   'tzcnt/TooManyCooks', 'gitlab.com/mnauw/cppgir', 'desktop-app/cmake_helpers', 'Cyan4973/xxHash',
-  'google/cld3', 'nayuki/QR-Code-generator', 'Microsoft/GSL', 'martinmoene/expected-lite',
+  'google/cld3', 'Microsoft/GSL', 'martinmoene/expected-lite',
   'TartanLlama/expected', 'tsyrogit/zxcvbn-c', 'nnen/doxygen-theme',
+]);
+
+// Generic third-party submodules pending license verification (1 repo)
+const PENDING_GENERIC_SUBMODULES = new Set([
+  'nayuki/QR-Code-generator',
 ]);
 
 // Telegram proprietary submodules (15 repos)
@@ -30,6 +35,7 @@ const PROPRIETARY_SUBMODULES = new Set([
 
 function makeValidReview(source, overrides = {}) {
   const isProprietary = PROPRIETARY_SUBMODULES.has(source.repository);
+  const isPendingGeneric = PENDING_GENERIC_SUBMODULES.has(source.repository);
   const isHighRisk = ['desktop-app/lib_storage', 'TelegramMessenger/tgcalls', 'desktop-app/lib_tl'].includes(source.repository);
   const isMediumRiskComplete = ['Yubico/libfido2', 'PJK/libcbor'].includes(source.repository);
 
@@ -43,6 +49,11 @@ function makeValidReview(source, overrides = {}) {
     risk = isHighRisk ? 'high' : 'medium';
     review_depth = 'deep';
     rationale = `Telegram proprietary submodule ${source.repository}; product semantics to be evaluated in deep review.`;
+  } else if (isPendingGeneric) {
+    status = 'pending';
+    risk = 'low';
+    review_depth = 'contract';
+    rationale = `Submodule ${source.repository} has no standalone LICENSE in inventory, license type pending verification; not built, linked, or distributed by Fabushi.`;
   } else if (isMediumRiskComplete) {
     risk = 'medium';
   }
@@ -102,7 +113,7 @@ test('positive: generic third-party submodules pass validateSourceReviews cleanl
   assert.equal(result.reviewed, inventory.length);
 });
 
-test('positive: real 8,156 generic third-party submodule entries pass validateSourceReviews cleanly', async () => {
+test('positive: real 8,104 generic third-party submodule entries pass validateSourceReviews cleanly', async () => {
   let inventoryData;
   try {
     const raw = await fs.readFile(inventoryPath, 'utf-8');
@@ -112,14 +123,14 @@ test('positive: real 8,156 generic third-party submodule entries pass validateSo
   }
 
   const genericEntries = inventoryData.entries.filter(e => GENERIC_SUBMODULES.has(e.repository));
-  assert.equal(genericEntries.length, 8156);
+  assert.equal(genericEntries.length, 8104);
 
   const reviews = genericEntries.map(source => makeValidReview(source));
   const rows = [];
 
   const result = validateSourceReviews(genericEntries, reviews, rows);
-  assert.equal(result.source_identities, 8156);
-  assert.equal(result.reviewed, 8156);
+  assert.equal(result.source_identities, 8104);
+  assert.equal(result.reviewed, 8104);
 });
 
 test('positive: pending records pass cleanly in candidate mode (allowPending=true) with correct counts', () => {
@@ -145,7 +156,7 @@ test('positive: pending records pass cleanly in candidate mode (allowPending=tru
   );
 });
 
-test('positive: all 9,486 submodule entries pass candidate mode (allowPending=true) with 8,156 reviewed and 9,486 recorded', async () => {
+test('positive: all 9,486 submodule entries pass candidate mode (allowPending=true) with 8,104 reviewed and 9,486 recorded', async () => {
   let inventoryData;
   try {
     const raw = await fs.readFile(inventoryPath, 'utf-8');
@@ -160,9 +171,9 @@ test('positive: all 9,486 submodule entries pass candidate mode (allowPending=tr
   const candidateResult = validateSourceReviewRecords(submoduleEntries, reviews, [], true);
   assert.equal(candidateResult.source_identities, 9486);
   assert.equal(candidateResult.recorded, 9486);
-  assert.equal(candidateResult.reviewed, 8156);
+  assert.equal(candidateResult.reviewed, 8104);
 
-  // Accepted mode rejects because 1,330 are pending
+  // Accepted mode rejects because 1,382 are pending
   assert.throws(
     () => validateSourceReviews(submoduleEntries, reviews, []),
     /incomplete or duplicate review evidence/

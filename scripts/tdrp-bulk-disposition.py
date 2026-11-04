@@ -89,6 +89,14 @@ MEDIUM_RISK_PENDING = {
     ),
 }
 
+# Low-risk submodules with missing license in inventory (status: pending, risk: low, review_depth: contract)
+LOW_RISK_PENDING = {
+    "nayuki/QR-Code-generator": (
+        "通用二维码生成算法库，代码树未包含独立 LICENSE/COPYING 文件，许可证类型待核；"
+        "Fabushi 不构建、不链接、不分发此代码，标记为 pending。"
+    ),
+}
+
 # Generic third-party submodules with medium risk (security/crypto/auth, status: complete, risk: medium, review_depth: contract)
 MEDIUM_RISK_COMPLETE = {
     "Yubico/libfido2",
@@ -132,7 +140,7 @@ SUBMODULE_LICENSES: dict[str, str] = {
     "Cyan4973/xxHash": "BSD-2-Clause (LICENSE) / GPL-2.0",
     "google/cld3": "Apache-2.0 (LICENSE)",
     "desktop-app/codegen": "unknown (无独立 LICENSE 文件)",
-    "nayuki/QR-Code-generator": "MIT (Readme.markdown 声明)",
+    "nayuki/QR-Code-generator": "unknown (无独立 LICENSE 文件，类型待核)",
     "desktop-app/lib_crl": "Telegram GPL-3.0 (代码仓无独立 LICENSE)",
     "Microsoft/GSL": "MIT (LICENSE)",
     "martinmoene/expected-lite": "BSL-1.0 (LICENSE.txt)",
@@ -164,6 +172,8 @@ def get_submodule_metadata(repo: str) -> tuple[str, str, str, str]:
         return "pending", "high", "deep", HIGH_RISK_PENDING[repo]
     if repo in MEDIUM_RISK_PENDING:
         return "pending", "medium", "deep", MEDIUM_RISK_PENDING[repo]
+    if repo in LOW_RISK_PENDING:
+        return "pending", "low", "contract", LOW_RISK_PENDING[repo]
     if repo in MEDIUM_RISK_COMPLETE:
         rationale = VERIFIED_REPLACEMENTS.get(repo, GENERIC_THIRD_PARTY_FALLBACK)
         return "complete", "medium", "contract", rationale

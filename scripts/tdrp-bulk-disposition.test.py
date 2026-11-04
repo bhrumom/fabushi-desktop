@@ -31,6 +31,7 @@ generate_bulk_disposition = _mod.generate_bulk_disposition
 sanitize_row_id = _mod.sanitize_row_id
 HIGH_RISK_PENDING = _mod.HIGH_RISK_PENDING
 MEDIUM_RISK_PENDING = _mod.MEDIUM_RISK_PENDING
+LOW_RISK_PENDING = _mod.LOW_RISK_PENDING
 MEDIUM_RISK_COMPLETE = _mod.MEDIUM_RISK_COMPLETE
 VERIFIED_REPLACEMENTS = _mod.VERIFIED_REPLACEMENTS
 
@@ -62,8 +63,8 @@ class TestBulkDispositionGenerator(unittest.TestCase):
 
         complete_count = sum(1 for r in reviews if r["status"] == "complete")
         pending_count = sum(1 for r in reviews if r["status"] == "pending")
-        self.assertEqual(complete_count, 8156)
-        self.assertEqual(pending_count, 1330)
+        self.assertEqual(complete_count, 8104)
+        self.assertEqual(pending_count, 1382)
 
         for r in reviews:
             self.assertNotEqual(r["repository"], "telegramdesktop/tdesktop")
@@ -102,16 +103,32 @@ class TestBulkDispositionGenerator(unittest.TestCase):
         total_proprietary_repos = len(HIGH_RISK_PENDING) + len(MEDIUM_RISK_PENDING)
         self.assertEqual(total_proprietary_repos, 15)
 
+    def test_low_risk_pending_license_submodules(self):
+        reviews = generate_bulk_disposition(self.entries, scheme="empty")
+        reviews_by_repo = defaultdict(list)
+        for r in reviews:
+            reviews_by_repo[r["repository"]].append(r)
+
+        # Low risk pending submodules (license verification pending)
+        for repo in LOW_RISK_PENDING:
+            items = reviews_by_repo[repo]
+            self.assertTrue(items, f"Submodule {repo} not found")
+            for item in items:
+                self.assertEqual(item["status"], "pending", f"{repo} must be pending")
+                self.assertEqual(item["risk"], "low", f"{repo} must be low risk")
+                self.assertEqual(item["review_depth"], "contract", f"{repo} must be contract review")
+                self.assertNotEqual(item["status"], "complete", f"{repo} cannot be complete")
+
     def test_generic_third_party_are_complete_contract(self):
         reviews = generate_bulk_disposition(self.entries, scheme="empty")
         reviews_by_repo = defaultdict(list)
         for r in reviews:
             reviews_by_repo[r["repository"]].append(r)
 
-        # Generic third party libraries (all 22 low-risk)
-        all_proprietary = set(HIGH_RISK_PENDING) | set(MEDIUM_RISK_PENDING)
-        generic_repos = {r["repository"] for r in reviews if r["repository"] not in all_proprietary}
-        self.assertEqual(len(generic_repos), 24)
+        # Generic third party libraries with verified licenses (23 repos)
+        all_pending = set(HIGH_RISK_PENDING) | set(MEDIUM_RISK_PENDING) | set(LOW_RISK_PENDING)
+        generic_repos = {r["repository"] for r in reviews if r["repository"] not in all_pending}
+        self.assertEqual(len(generic_repos), 23)
 
         for repo in generic_repos:
             items = reviews_by_repo[repo]
