@@ -2,6 +2,7 @@ use crate::actor::ActorId;
 use crate::conversation::ConversationId;
 use crate::secret_chat::EncryptedSecretMessage;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
@@ -55,6 +56,7 @@ pub enum TextEntityKind {
 #[serde(rename_all = "camelCase")]
 pub struct FormattedText {
     pub text: String,
+    #[serde(default)]
     pub entities: Vec<TextEntity>,
 }
 
@@ -104,6 +106,68 @@ impl FormattedText {
             .retain(|entity| !matches!(entity.kind, TextEntityKind::CustomEmoji(_)));
         before.saturating_sub(self.entities.len())
     }
+}
+
+/// Composes a share link with an optional formatted comment by safely prepending the
+/// link prefix while preserving UTF-16 entity offsets.
+///
+/// Fails atomically with `Err(TextEntityOffsetOverflow)` if shifting any entity's
+/// offset would overflow `u32`.
+pub fn compose_share_comment(
+    link: &str,
+    mut comment: FormattedText,
+) -> Result<FormattedText, TextEntityOffsetOverflow> {
+    if link.is_empty() {
+        return Ok(comment);
+    }
+    let prefix = if comment.text.is_empty() {
+        link.to_string()
+    } else if link.ends_with('\n') {
+        link.to_string()
+    } else {
+        format!("{link}\n")
+    };
+    comment.prepend_plain_text(&prefix)?;
+    Ok(comment)
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum FormattedTextValidationError {
+    #[error("text entity offset or length overflow")]
+    OffsetOverflow,
+    #[error("text entity span ({offset}..{end}) exceeds text UTF-16 code units length ({text_utf16_len})")]
+    SpanOutOfBounds {
+        offset: u32,
+        end: u32,
+        text_utf16_len: usize,
+    },
+    #[error("empty text cannot have formatting entities")]
+    EmptyTextWithEntities,
+}
+
+/// Validates that a FormattedText has consistent coordinates:
+/// - Entity offsets and lengths do not overflow u32
+/// - Entity spans (offset + length) do not exceed the UTF-16 code unit count of the text
+/// - Empty text cannot have formatting entities
+pub fn validate_formatted_text(formatted: &FormattedText) -> Result<(), FormattedTextValidationError> {
+    let text_utf16_len = formatted.text.encode_utf16().count();
+    if formatted.text.is_empty() && !formatted.entities.is_empty() {
+        return Err(FormattedTextValidationError::EmptyTextWithEntities);
+    }
+    for entity in &formatted.entities {
+        let end = entity
+            .offset_utf16
+            .checked_add(entity.length_utf16)
+            .ok_or(FormattedTextValidationError::OffsetOverflow)?;
+        if (end as usize) > text_utf16_len {
+            return Err(FormattedTextValidationError::SpanOutOfBounds {
+                offset: entity.offset_utf16,
+                end,
+                text_utf16_len,
+            });
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

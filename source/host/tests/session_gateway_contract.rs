@@ -5278,6 +5278,189 @@ fn shipping_human_forward_idempotent_replay_rejects_changed_scope_and_expanded_d
 }
 
 #[test]
+fn shipping_human_forward_formatted_comment_shifts_link_entities_and_fences_conflicts() {
+    let root = temp_root("forward-comment-link");
+    let server = ForwardHttpFixture::start(false);
+    let mut args = prepare_forward_process(&root, &server.url);
+    let runtime = human_message_fixture_runtime(&root, &server.url);
+
+    // 1. Positive case: forward with formatted comment dispatches comment message first, then forward message
+    args["clientNonce"] = json!("fwd-nonce-with-comment-1");
+    args["comment"] = json!({
+        "text": "Check this out!",
+        "entities": [
+            {
+                "offsetUtf16": 6,
+                "lengthUtf16": 4,
+                "kind": { "type": "bold" }
+            }
+        ]
+    });
+
+    let first = forward_gateway_result(&runtime, &args).expect("forward with formatted comment");
+    assert_eq!(first["destinations"][0]["status"], "sent");
+    assert_eq!(first["destinations"][1]["status"], "sent");
+
+    // Two destinations receive 2 messages each (comment + forward) = 4 HTTP posts total
+    assert_eq!(server.post_count(), 4, "2 destinations x (1 comment + 1 forward) must dispatch 4 HTTP posts");
+
+    // Inspect destination 0 transcript: comment message arrived first, then forwarded message
+    let dest_0 = args["destinationConversationIds"][0].as_str().unwrap();
+    let dest_0_entries = runtime.read_human_conversation_transcript(dest_0).expect("dest 0 transcript");
+    assert_eq!(dest_0_entries.len(), 2, "destination must receive both comment and forwarded message");
+    assert_eq!(dest_0_entries[0]["content"], "Check this out!", "first message must be the user comment");
+    assert_eq!(dest_0_entries[0]["delivery"], "sent");
+    assert!(dest_0_entries[0]["clientNonce"].as_str().unwrap().ends_with(":comment"));
+    assert_eq!(dest_0_entries[1]["content"], "immutable forwarded snapshot", "second message must be the forwarded source content");
+    assert_eq!(dest_0_entries[1]["delivery"], "sent");
+
+    // Inspect disk metadata for the persisted batch context
+    let metadata = read_forward_metadata_from_disk(&root, args["sourceConversationId"].as_str().unwrap());
+    let batches = metadata["humanForwardBatches"].as_array().expect("batches array");
+    let batch = batches.iter().find(|b| b["requestId"] == args["clientNonce"]).expect("batch found");
+    let stored_comment = &batch["context"]["comment"];
+    assert_eq!(stored_comment["text"], "Check this out!");
+    assert_eq!(stored_comment["entities"][0]["offsetUtf16"], 6);
+    assert_eq!(stored_comment["entities"][0]["lengthUtf16"], 4);
+    assert_eq!(stored_comment["entities"][0]["kind"]["type"], "bold");
+    assert_eq!(batch["destinations"][0]["commentCompleted"], true);
+    assert_eq!(batch["destinations"][0]["completed"], true);
+
+    // 2. Idempotent replay with identical comment succeeds without sending duplicate HTTP posts
+    let posts_before_replay = server.post_count();
+    let replay = forward_gateway_result(&runtime, &args).expect("idempotent replay with same comment");
+    assert_eq!(replay, first);
+    assert_eq!(server.post_count(), posts_before_replay, "replay must not send duplicate HTTP posts");
+    let dest_0_replayed = runtime.read_human_conversation_transcript(dest_0).expect("dest 0 transcript after replay");
+    assert_eq!(dest_0_replayed.len(), 2, "replay must not duplicate transcript messages");
+
+    // 3. Nonce conflict negative case: same nonce with different comment is rejected
+    let mut conflicting_args = args.clone();
+    conflicting_args["comment"] = json!({
+        "text": "Different comment text",
+        "entities": []
+    });
+    let err = forward_gateway_result(&runtime, &conflicting_args).expect_err("same nonce with different comment rejected");
+    assert!(
+        format!("{err:?}").contains("already identifies a different comment"),
+        "error was: {err:?}"
+    );
+
+    // Also verify same nonce with NO comment is rejected
+    let mut no_comment_args = args.clone();
+    no_comment_args.as_object_mut().unwrap().remove("comment");
+    let err_no_comment = forward_gateway_result(&runtime, &no_comment_args).expect_err("same nonce without comment rejected");
+    assert!(
+        format!("{err_no_comment:?}").contains("already identifies a different comment"),
+        "error was: {err_no_comment:?}"
+    );
+
+    // 4. Entity validation negative cases: out-of-bounds, overflow, empty text with entities are rejected before storage or POST
+    let pre_posts = server.post_count();
+    let mut invalid_span_args = args.clone();
+    invalid_span_args["clientNonce"] = json!("fwd-nonce-invalid-span");
+    invalid_span_args["comment"] = json!({
+        "text": "hi",
+        "entities": [
+            {
+                "offsetUtf16": 1,
+                "lengthUtf16": 5,
+                "kind": { "type": "bold" }
+            }
+        ]
+    });
+    let err_span = forward_gateway_result(&runtime, &invalid_span_args).expect_err("out of bounds entity span must fail");
+    assert!(format!("{err_span:?}").contains("exceeds text UTF-16 code units length"), "error was: {err_span:?}");
+
+    let mut overflow_args = args.clone();
+    overflow_args["clientNonce"] = json!("fwd-nonce-overflow-atomic");
+    overflow_args["comment"] = json!({
+        "text": "overflow comment",
+        "entities": [
+            {
+                "offsetUtf16": u32::MAX - 2,
+                "lengthUtf16": 5,
+                "kind": { "type": "bold" }
+            }
+        ]
+    });
+    let err_overflow = forward_gateway_result(&runtime, &overflow_args).expect_err("overflow entity offset must fail");
+    assert!(format!("{err_overflow:?}").contains("overflow"), "error was: {err_overflow:?}");
+
+    let mut empty_entities_args = args.clone();
+    empty_entities_args["clientNonce"] = json!("fwd-nonce-empty-entities");
+    empty_entities_args["comment"] = json!({
+        "text": "",
+        "entities": [
+            {
+                "offsetUtf16": 0,
+                "lengthUtf16": 0,
+                "kind": { "type": "bold" }
+            }
+        ]
+    });
+    let err_empty = forward_gateway_result(&runtime, &empty_entities_args).expect_err("empty text with entities must fail");
+    assert!(format!("{err_empty:?}").contains("empty text cannot have formatting entities"), "error was: {err_empty:?}");
+    assert_eq!(server.post_count(), pre_posts, "validation failures must not dispatch HTTP post");
+
+    // 5. Legacy batch compatibility: forward without comment replays without comment, rejects comment injection
+    let mut legacy_args = args.clone();
+    legacy_args["clientNonce"] = json!("fwd-nonce-legacy-batch");
+    legacy_args.as_object_mut().unwrap().remove("comment");
+    let legacy_first = forward_gateway_result(&runtime, &legacy_args).expect("legacy forward without comment");
+    assert_eq!(legacy_first["destinations"][0]["status"], "sent");
+
+    // Idempotent replay of legacy batch without comment succeeds
+    let legacy_replay = forward_gateway_result(&runtime, &legacy_args).expect("replay legacy forward without comment");
+    assert_eq!(legacy_replay, legacy_first);
+
+    // Replay of legacy batch attempting to inject a comment is rejected
+    let mut inject_comment_args = legacy_args.clone();
+    inject_comment_args["comment"] = json!({ "text": "injected comment", "entities": [] });
+    let err_injected = forward_gateway_result(&runtime, &inject_comment_args).expect_err("legacy batch rejects injected comment");
+    assert!(
+        format!("{err_injected:?}").contains("already identifies a different comment"),
+        "error was: {err_injected:?}"
+    );
+
+    // 6. Direct Session compose_share_comment verification (pure function exposed on ProductionSessionWorkers)
+    let comment_for_session = fabushi_messaging_core::FormattedText {
+        text: "direct comment".into(),
+        entities: vec![fabushi_messaging_core::TextEntity {
+            offset_utf16: 7,
+            length_utf16: 7,
+            kind: fabushi_messaging_core::TextEntityKind::Italic,
+        }],
+    };
+    let link = "https://canonical.example/link";
+    let shifted = runtime.compose_share_comment(link, comment_for_session).unwrap();
+    let expected_prefix = format!("{link}\n");
+    let shift = u32::try_from(expected_prefix.encode_utf16().count()).unwrap();
+    assert_eq!(shifted.text, format!("{expected_prefix}direct comment"));
+    assert_eq!(shifted.entities[0].offset_utf16, 7 + shift);
+
+    // 7. Crash recovery: comment sent and recorded on disk -> replay does not duplicate comment POSTs
+    let mut resume_args = args.clone();
+    resume_args["clientNonce"] = json!("fwd-nonce-comment-crash-resume");
+    resume_args["comment"] = json!({ "text": "crash recovery comment", "entities": [] });
+    let pre_posts = server.post_count();
+    let res = forward_gateway_result(&runtime, &resume_args).expect("first dispatch of crash-resume forward");
+    assert_eq!(res["destinations"][0]["status"], "sent");
+    let dest_entries = runtime.read_human_conversation_transcript(dest_0).expect("dest entries");
+    let initial_count = dest_entries.len();
+    assert_eq!(server.post_count(), pre_posts + 4);
+
+    let res2 = forward_gateway_result(&runtime, &resume_args).expect("replay after recovery");
+    assert_eq!(res2, res);
+    assert_eq!(server.post_count(), pre_posts + 4, "recovery replay must not send additional comment or forward posts");
+    let dest_entries_after = runtime.read_human_conversation_transcript(dest_0).expect("dest entries after");
+    assert_eq!(dest_entries_after.len(), initial_count);
+
+    runtime.shutdown(); drop(runtime);
+    server.finish(); fs::remove_dir_all(root).expect("remove comment-link fixture");
+}
+
+#[test]
 fn shipping_human_forward_restart_rechecks_source_permissions_and_credential_scope() {
     let root = temp_root("forward-permission-recovery");
     let mut server = ForwardHttpFixture::start(true);

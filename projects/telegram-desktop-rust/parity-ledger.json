@@ -1085,7 +1085,10 @@
         "native/mahayana-messaging/src/message.rs",
         "native/mahayana-messaging/src/payment.rs",
         "native/mahayana-messaging/src/story.rs",
-        "native/mahayana-messaging/src/engine.rs"
+        "native/mahayana-messaging/src/engine.rs",
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/gateway.rs",
+        "frontend/src/production/ForwardMessageDialog.tsx"
       ],
       "fabushi_target_symbols": [
         "prepend_plain_text",
@@ -1096,7 +1099,13 @@
         "PaidSendApprovalConsumer",
         "compute_paid_send_plan",
         "revalidate_and_consume_paid_send",
-        "resolve_paid_restriction_from_capabilities"
+        "resolve_paid_restriction_from_capabilities",
+        "compose_share_comment",
+        "validate_formatted_text",
+        "forward_human_message_with_comment",
+        "forwardHumanMessage",
+        "ForwardMessageDialog",
+        "commentText"
       ],
       "target_language": "Rust",
       "language_rationale": "Formatted message content and entity coordinate semantics are canonical non-UI message-domain responsibilities already owned by Rust.",
@@ -1123,7 +1132,8 @@
       ],
       "production_entrypoints": [
         "Canonical share/composer formatting -> FormattedText::prepend_plain_text -> existing SendMessage/Message lifecycle",
-        "StoryShareContext::compose_link_with_comment + revalidate_source + outgoing_message_count -> MessagingEngine::compute_paid_send_plan -> PaidSendApprovalConsumer::consume_for_destination"
+        "StoryShareContext::compose_link_with_comment + revalidate_source + outgoing_message_count -> MessagingEngine::compute_paid_send_plan -> PaidSendApprovalConsumer::consume_for_destination",
+        "ForwardMessageDialog comment input -> gateway forwardHumanMessage -> ProductionSessionWorkers::forward_human_message_with_comment -> compose_share_comment -> forward batch journal"
       ],
       "production_evidence": [
         "commit:cf60178cab2142e75e9b0f5b7d24145b0b997b15",
@@ -1131,12 +1141,20 @@
         "path:native/mahayana-messaging/src/story.rs#StoryShareContext",
         "path:native/mahayana-messaging/src/payment.rs#PaidSendPlan",
         "path:native/mahayana-messaging/src/payment.rs#PaidSendApprovalConsumer",
-        "path:native/mahayana-messaging/src/engine.rs#compute_paid_send_plan"
+        "path:native/mahayana-messaging/src/engine.rs#compute_paid_send_plan",
+        "path:native/mahayana-messaging/src/message.rs#compose_share_comment",
+        "path:source/host/src/extensions/session/production.rs#forward_human_message_with_comment",
+        "path:source/host/src/extensions/session/gateway.rs#forwardHumanMessage",
+        "path:frontend/src/production/ForwardMessageDialog.tsx#ForwardMessageDialog"
       ],
       "test_evidence": [
         "native/mahayana-messaging/tests/messaging_contract.rs#formatted_text_prefix_shifts_entities_by_utf16_units_atomically",
+        "native/mahayana-messaging/tests/messaging_contract.rs#compose_share_comment_shifts_entities_atomically_across_link_prefixes",
+        "native/mahayana-messaging/tests/messaging_contract.rs#validate_formatted_text_enforces_bounds_and_overflow_safeguards",
         "native/mahayana-messaging/tests/messaging_contract.rs#paid_send_plan_approval_consumption_and_story_share_at_time_revalidation",
-        "native/mahayana-messaging/src/payment.rs#paid_restriction_policy_tests::resolve_paid_restriction_from_capabilities_covers_free_paid_exempt_and_unresolved"
+        "native/mahayana-messaging/src/payment.rs#paid_restriction_policy_tests::resolve_paid_restriction_from_capabilities_covers_free_paid_exempt_and_unresolved",
+        "source/host/tests/session_gateway_contract.rs#shipping_human_forward_formatted_comment_shifts_link_entities_and_fences_conflicts",
+        "frontend/src/production/ForwardMessageDialog.behavior.test.mjs#typing comment transmits formatted comment with forward request and locks on submission"
       ],
       "target_commit": "cf60178cab2142e75e9b0f5b7d24145b0b997b15",
       "workflow_run": null,
@@ -1265,7 +1283,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted ShareBox formatted-comment semantics using the existing Fabushi formatted-message owner. Fixed-U semantic reread on 2026-10-31 binds this row to telegramdesktop/tdesktop@f985723b552b30fe1c17d377d57f44e61a15a8c4:Telegram/SourceFiles/boxes/share_box.cpp#f4787dbb34cdb5fb2af78a69ae7537e91e06395a; the cited source symbols and behavior contract remain supported by that fixed-U blob.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14: previously recorded as implemented, but the only production path is ClientCommand -> MessagingService, which desktop production rejects (ensure_desktop_messaging_owner). Domain implementation retained; mapped until ProductionSessionWorkers/Transcript consumes it or an ADR selects MessagingService as the desktop owner. This row closes only UTF-16-safe link-prefix entity shifting. It does not close the rest of FastShareLink or ShareBox, so global unknown does not decrement. FBCP-ADR-004 (2026-11-04): extracted pure resolve_paid_restriction_from_capabilities in fabushi_messaging_core and kept FormattedText::prepend_plain_text public; stays mapped because desktop Human Session currently forwards settled messages by ID without share-link comment prepending or Stars paid-send UI."
+      "notes": "[FMEP-STATE-02 domain-only wiring gap] FMEP-001 r3 §14 / FMEP-001 r4 §15: pure compose_share_comment and validate_formatted_text implemented in fabushi_messaging_core (message.rs) and wired as ProductionSessionWorkers::compose_share_comment; remains mapped because Fabushi desktop does not yet have an authoritative public message link owner for canonical message deep links without client spoofing or fabricated domains. Forwarding with comment dispatches the comment as a separate pre-message intent per tdesktop ShareBox semantics."
     },
     {
       "source_repository": "telegramdesktop/tdesktop",

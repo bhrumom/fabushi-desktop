@@ -360,15 +360,42 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
         "forwardHumanMessage" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
                 let destination_conversation_ids = required_string_array(args, "destinationConversationIds")?;
+                let comment = match args.get("comment") {
+                    None | Some(Value::Null) => None,
+                    Some(Value::String(text)) => {
+                        let trimmed = text.trim();
+                        if trimmed.is_empty() {
+                            None
+                        } else {
+                            let ft = fabushi_messaging_core::FormattedText::plain(text);
+                            fabushi_messaging_core::validate_formatted_text(&ft)
+                                .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                            Some(ft)
+                        }
+                    }
+                    Some(val @ Value::Object(_)) => {
+                        let parsed: fabushi_messaging_core::FormattedText = serde_json::from_value(val.clone())
+                            .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                        fabushi_messaging_core::validate_formatted_text(&parsed)
+                            .map_err(|err| SessionGatewayError::bad(format!("invalid comment: {err}")))?;
+                        if parsed.text.trim().is_empty() {
+                            None
+                        } else {
+                            Some(parsed)
+                        }
+                    }
+                    Some(_) => return Err(SessionGatewayError::bad("invalid comment: expected object or string")),
+                };
                 required_string(args, "clientNonce").and_then(|client_nonce| {
                     session
-                        .forward_human_message(
+                        .forward_human_message_with_comment(
                             source_conversation_id,
                             source_entry_id,
                             &destination_conversation_ids,
                             client_nonce,
                             optional_bool(args, "dropSenderNames")?.unwrap_or(false),
                             optional_bool(args, "dropCaptions")?.unwrap_or(false),
+                            comment,
                         )
                         .map_err(SessionGatewayError::internal)
                 })

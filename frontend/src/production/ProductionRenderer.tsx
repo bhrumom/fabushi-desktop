@@ -1321,6 +1321,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
+    comment?: { text: string; entities?: readonly unknown[] };
   }, admission?: Parameters<ProductionCoordinatorClient["call"]>[2]): Promise<readonly ForwardSettlement[]> => {
     if (client == null) throw new Error("coordinator is unavailable for forwarding");
     const result = await client.call("forwardHumanMessage", input, admission);

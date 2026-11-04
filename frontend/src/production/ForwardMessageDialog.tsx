@@ -41,6 +41,7 @@ export interface ForwardMessageDialogProps {
     clientNonce: string;
     dropSenderNames: boolean;
     dropCaptions: boolean;
+    comment?: { text: string; entities?: readonly unknown[] };
   }, admission?: CoordinatorCallAdmission) => Promise<readonly ForwardSettlement[]>;
   readonly onSettled?: (
     settlement: readonly ForwardSettlement[],
@@ -104,6 +105,7 @@ export function ForwardMessageDialog({
   const [searchFailure, setSearchFailure] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [activeRecipientIndex, setActiveRecipientIndex] = useState(0);
+  const [commentText, setCommentText] = useState("");
 
   const sourceEntryId = message?.id ?? null;
   const forcePreserveForwardInfo = message?.forcedForwardInfo === true;
@@ -143,6 +145,7 @@ export function ForwardMessageDialog({
     setSearchFailure(null);
     setFailure(null);
     setActiveRecipientIndex(0);
+    setCommentText("");
     if (scopeKey == null || sourceEntryId == null || sourceConversationId == null) return;
     const lifetime: ForwardDialogLifetime = {
       accountScopeGeneration,
@@ -301,6 +304,9 @@ export function ForwardMessageDialog({
     // broaden the original set or change its normalized privacy options.
     let snapshot = snapshotRef.current;
     if (snapshot == null) {
+      const comment = commentText.trim().length > 0
+        ? { text: commentText, entities: [] }
+        : undefined;
       const request: ForwardRequest = {
         sourceConversationId: lifetime.sourceConversationId,
         sourceEntryId: lifetime.sourceEntryId,
@@ -308,6 +314,7 @@ export function ForwardMessageDialog({
         clientNonce: lifetime.requestId,
         dropSenderNames: effectiveDropSenderNames,
         dropCaptions: effectiveDropCaptions,
+        ...(comment ? { comment } : {}),
       };
       const recipientNames = new Map<string, string>();
       for (const id of request.destinationConversationIds) {
@@ -484,6 +491,19 @@ export function ForwardMessageDialog({
             <span>Hide media caption</span>
           </label>
         </fieldset>
+        <label className="fabushi-forward-dialog__comment">
+          <span>Add a comment</span>
+          <input
+            autoComplete="off"
+            disabled={snapshotLocked}
+            onChange={(event) => {
+              if (canEditIntent()) setCommentText(event.currentTarget.value);
+            }}
+            placeholder="Add a comment…"
+            type="text"
+            value={commentText}
+          />
+        </label>
         {failure == null && searchFailure == null ? null : <p className="fabushi-forward-dialog__error" role="alert">{failure ?? searchFailure}</p>}
         {snapshotLocked ? <p>Retry keeps your forwarding choices and skips confirmed recipients. Messages already being sent may still arrive after you close.</p> : null}
       </div>

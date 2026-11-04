@@ -267,6 +267,10 @@ pub(super) struct HumanForwardTarget {
     pub completed: bool,
     #[serde(default)]
     pub error: Option<String>,
+    #[serde(default)]
+    pub comment_nonce: Option<String>,
+    #[serde(default)]
+    pub comment_completed: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -315,6 +319,8 @@ impl HumanForwardBatch {
             client_nonce: forward_destination_nonce(&account_id, &issuer, &request_id, id),
             completed: false,
             error: None,
+            comment_nonce: None,
+            comment_completed: false,
         }).collect();
         Self {
             version: FORWARD_BATCH_VERSION,
@@ -351,6 +357,14 @@ impl HumanForwardBatch {
         {
             return Err("persisted Human forward batch is invalid or has an unsupported version".into());
         }
+        if let Some(comment) = self.context.get("comment") {
+            if !comment.is_object()
+                || comment.get("text").and_then(Value::as_str).is_none()
+                || !comment.get("entities").map(Value::is_array).unwrap_or(true)
+            {
+                return Err("persisted Human forward batch comment is invalid".into());
+            }
+        }
         for target in &self.destinations {
             if target.conversation_id.is_empty()
                 || !seen.insert(target.conversation_id.as_str())
@@ -360,6 +374,12 @@ impl HumanForwardBatch {
                 || (target.completed && target.error.is_some())
             {
                 return Err("persisted Human forward destination is invalid".into());
+            }
+            if let Some(ref c_nonce) = target.comment_nonce {
+                let expected = format!("{}:comment", target.client_nonce);
+                if c_nonce != &expected {
+                    return Err("persisted Human forward destination comment nonce is invalid".into());
+                }
             }
         }
         Ok(())

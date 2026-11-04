@@ -1,5 +1,5 @@
 use crate::actor::ActorId;
-use crate::message::{FormattedText, MediaRef};
+use crate::message::{compose_share_comment, FormattedText, MediaRef};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use thiserror::Error;
@@ -363,12 +363,8 @@ impl StoryShareContext {
     ) -> Option<FormattedText> {
         let url = self.resolved_share_url();
         match comment {
-            Some(existing) if !existing.text.is_empty() => {
-                let mut combined = existing.clone();
-                combined.prepend_plain_text(&format!("{url}\n")).ok()?;
-                Some(combined)
-            }
-            _ => Some(FormattedText::plain(url)),
+            Some(existing) => compose_share_comment(&url, existing.clone()).ok(),
+            None => Some(FormattedText::plain(url)),
         }
     }
 
