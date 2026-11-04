@@ -234,8 +234,16 @@ pub struct ProductionSessionWorkers {
     call_session_store: Option<Arc<CallSessionStore>>,
     call_session_store_error: Option<String>,
     busy_timeout_ms: u64,
+    miniapp_packages: Mutex<BTreeMap<String, MiniAppPackageDescriptor>>,
     miniapp_launch_sessions: Mutex<BTreeMap<String, HostMiniAppLaunchSession>>,
     miniapp_grants: Mutex<BTreeMap<(String, String), fabushi_messaging_core::MiniAppGrant>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MiniAppPackageDescriptor {
+    pub app_id: String,
+    pub version: String,
+    pub package_digest: String,
 }
 
 #[derive(Debug, Clone)]
@@ -259,6 +267,7 @@ pub enum MiniAppPostError {
     NonceTooLong,
     NotParticipant,
     ConversationNotFound(String),
+    AppNotInstalled(String),
     Conflict(String),
     PersistenceFailed(String),
 }
@@ -285,6 +294,7 @@ impl std::fmt::Display for MiniAppPostError {
             Self::NonceTooLong => write!(f, "MiniApp clientNonce exceeds 200 UTF-8 bytes"),
             Self::NotParticipant => write!(f, "Authenticated local human is not a participant in the conversation"),
             Self::ConversationNotFound(id) => write!(f, "Conversation not found: {id}"),
+            Self::AppNotInstalled(id) => write!(f, "MiniApp package is not installed or verified: {id}"),
             Self::Conflict(msg) => write!(f, "MiniApp message conflict: {msg}"),
             Self::PersistenceFailed(err) => write!(f, "MiniApp message persistence failed: {err}"),
         }
@@ -449,6 +459,7 @@ impl ProductionSessionWorkers {
             call_session_store,
             call_session_store_error,
             busy_timeout_ms,
+            miniapp_packages: Mutex::new(BTreeMap::new()),
             miniapp_launch_sessions: Mutex::new(BTreeMap::new()),
             miniapp_grants: Mutex::new(BTreeMap::new()),
         }
@@ -4567,22 +4578,45 @@ impl ProductionSessionWorkers {
         )
     }
 
+    pub fn register_installed_miniapp_package(
+        &self,
+        descriptor: MiniAppPackageDescriptor,
+    ) -> Result<(), String> {
+        let mut packages = self
+            .miniapp_packages
+            .lock()
+            .map_err(|_| "miniapp_packages lock poisoned".to_string())?;
+        packages.insert(descriptor.app_id.clone(), descriptor);
+        Ok(())
+    }
+
     pub fn issue_miniapp_launch_session(
         &self,
         app_id: &str,
         conversation_id: &str,
         start_parameter: Option<&str>,
-        requested_permissions: &[fabushi_messaging_core::MiniAppPermission],
     ) -> Result<serde_json::Value, MiniAppPostError> {
         let app_id = app_id.trim();
         if app_id.is_empty() {
             return Err(MiniAppPostError::InvalidRequestId);
         }
+
+        // 1. Verify installed and verified package in Host
+        {
+            let packages = self
+                .miniapp_packages
+                .lock()
+                .map_err(|_| MiniAppPostError::PersistenceFailed("miniapp_packages lock poisoned".into()))?;
+            if !packages.contains_key(app_id) {
+                return Err(MiniAppPostError::AppNotInstalled(app_id.to_string()));
+            }
+        }
+
         let local_human = self
             .local_human_id()
             .map_err(|e| MiniAppPostError::PersistenceFailed(e))?;
 
-        // 1. Verify participant in conversation
+        // 2. Verify participant in conversation
         let owner = self
             .open_human_conversation_db_owner(conversation_id)
             .map_err(|_| MiniAppPostError::ConversationNotFound(conversation_id.to_string()))?;
@@ -4602,41 +4636,26 @@ impl ProductionSessionWorkers {
             .unwrap_or_default()
             .as_millis()) as i64;
 
-        // 2. Read existing grant or initialize default
-        let grant = {
-            let mut grants = self.miniapp_grants.lock().map_err(|_| {
+        // 3. Read explicit user grant; if none exists, effective permissions are empty
+        let grant_opt = {
+            let grants = self.miniapp_grants.lock().map_err(|_| {
                 MiniAppPostError::PersistenceFailed("miniapp_grants lock poisoned".into())
             })?;
-            grants
-                .entry((app_id.to_string(), local_human.to_string()))
-                .or_insert_with(|| {
-                    let permissions = if requested_permissions.is_empty() {
-                        vec![fabushi_messaging_core::MiniAppPermission::SendMessage]
-                    } else {
-                        requested_permissions.to_vec()
-                    };
-                    fabushi_messaging_core::MiniAppGrant {
-                        mini_app_id: app_id.to_string(),
-                        actor_id: fabushi_messaging_core::ActorId::new(local_human),
-                        permissions,
-                        granted_at_ms: now_ms,
-                        expires_at_ms: None,
-                    }
-                })
-                .clone()
+            grants.get(&(app_id.to_string(), local_human.to_string())).cloned()
         };
 
-        // 3. Issue authoritative launch session
+        let grant = grant_opt.unwrap_or_else(|| fabushi_messaging_core::MiniAppGrant {
+            mini_app_id: app_id.to_string(),
+            actor_id: fabushi_messaging_core::ActorId::new(local_human),
+            permissions: vec![], // Empty permissions if no explicit user grant!
+            granted_at_ms: now_ms,
+            expires_at_ms: None,
+        });
+
+        // 4. Issue authoritative launch session
         let launch_session_id = format!("msess_{}", uuid::Uuid::new_v4().simple());
         let expires_at_ms = now_ms + 86_400_000; // 24h
-        let mut granted_permissions: Vec<_> = requested_permissions
-            .iter()
-            .copied()
-            .filter(|p| grant.permissions.contains(p))
-            .collect();
-        if granted_permissions.is_empty() && grant.permissions.contains(&fabushi_messaging_core::MiniAppPermission::SendMessage) {
-            granted_permissions.push(fabushi_messaging_core::MiniAppPermission::SendMessage);
-        }
+        let granted_permissions = grant.permissions.clone();
 
         let session = fabushi_messaging_core::MiniAppSession {
             id: launch_session_id.clone(),
@@ -4649,7 +4668,7 @@ impl ProductionSessionWorkers {
             expires_at_ms,
         };
 
-        // 4. Save to Host authoritative registry
+        // 5. Save to Host authoritative registry
         let mut sessions = self.miniapp_launch_sessions.lock().map_err(|_| {
             MiniAppPostError::PersistenceFailed("miniapp_launch_sessions lock poisoned".into())
         })?;
@@ -4683,6 +4702,15 @@ impl ProductionSessionWorkers {
         Ok(())
     }
 
+    pub fn clear_miniapp_launch_sessions_for_test(&self) -> Result<(), String> {
+        let mut sessions = self
+            .miniapp_launch_sessions
+            .lock()
+            .map_err(|_| "miniapp_launch_sessions lock poisoned".to_string())?;
+        sessions.clear();
+        Ok(())
+    }
+
     pub fn register_miniapp_launch_session_for_test(
         &self,
         session: fabushi_messaging_core::MiniAppSession,
@@ -4701,7 +4729,6 @@ impl ProductionSessionWorkers {
         launch_session_id: &str,
         request_id: &str,
         request: &fabushi_messaging_core::MiniAppRequest,
-        user_confirmed: bool,
     ) -> Result<serde_json::Value, MiniAppPostError> {
         let launch_session_id = launch_session_id.trim();
         if launch_session_id.is_empty() {
@@ -4754,11 +4781,9 @@ impl ProductionSessionWorkers {
 
         // 4. Policy enforcement on message action
         let (conversation_id, content) = match action {
-            fabushi_messaging_core::MiniAppAction::SendMessage { conversation_id, text } => {
-                if !user_confirmed {
-                    return Err(MiniAppPostError::UserConfirmationRequired);
-                }
-                (conversation_id, text)
+            fabushi_messaging_core::MiniAppAction::SendMessage { .. } => {
+                // Point 1: Without Host-mediated user confirmation UI, SendMessage ALWAYS fails closed
+                return Err(MiniAppPostError::UserConfirmationRequired);
             }
             fabushi_messaging_core::MiniAppAction::SendData { conversation_id, data: _ } => {
                 let owner = self

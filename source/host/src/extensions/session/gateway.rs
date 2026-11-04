@@ -430,15 +430,8 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             let app_id = required_string(args, "appId")?;
             let conversation_id = required_string(args, "conversationId")?;
             let start_parameter = optional_string(args, "startParameter")?;
-            let permissions = match args.get("requestedPermissions") {
-                Some(Value::Array(arr)) => arr
-                    .iter()
-                    .filter_map(|v| serde_json::from_value(v.clone()).ok())
-                    .collect::<Vec<fabushi_messaging_core::MiniAppPermission>>(),
-                _ => vec![fabushi_messaging_core::MiniAppPermission::SendMessage],
-            };
             session
-                .issue_miniapp_launch_session(app_id, conversation_id, start_parameter, &permissions)
+                .issue_miniapp_launch_session(app_id, conversation_id, start_parameter)
                 .map_err(|err| match err {
                     MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
                     _ => SessionGatewayError::bad(err.to_string()),
@@ -448,7 +441,6 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             let launch_session_id = required_string(args, "launchSessionId")
                 .or_else(|_| required_string(args, "sessionId"))?;
             let request_id = required_string(args, "requestId")?;
-            let user_confirmed = optional_bool(args, "userConfirmed")?.unwrap_or(false);
 
             let request: fabushi_messaging_core::MiniAppRequest = if let Some(req_val) = args.get("request") {
                 serde_json::from_value(req_val.clone())
@@ -462,7 +454,7 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             };
 
             session
-                .post_miniapp_message(launch_session_id, request_id, &request, user_confirmed)
+                .post_miniapp_message(launch_session_id, request_id, &request)
                 .map_err(|err| match err {
                     MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
                     _ => SessionGatewayError::bad(err.to_string()),

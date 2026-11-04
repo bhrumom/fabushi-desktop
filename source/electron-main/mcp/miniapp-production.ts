@@ -139,7 +139,6 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
             request: action === "sendMessage"
               ? { type: "sendMessage", text: args.text }
               : { type: "sendData", data: args.data },
-            userConfirmed: args.userConfirmed ?? false,
           });
         },
       };

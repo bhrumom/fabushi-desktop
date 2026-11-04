@@ -97,7 +97,6 @@ export interface MiniAppToolBackend {
       readonly requestId?: string;
       readonly appId: string;
       readonly accountScope: string;
-      readonly userConfirmed?: boolean;
     },
   ): Promise<unknown>;
   /** Fences and cancels native work when account/window ownership changes. */
@@ -172,7 +171,6 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
       const text = rawText.trim();
       const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
       const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
-      const userConfirmed = typeof args.userConfirmed === "boolean" ? args.userConfirmed : false;
       const sent = await backend.conversation("sendMessage", {
         launchSessionId,
         conversationId,
@@ -182,7 +180,6 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
         accountScope: scope.accountScope,
         requestId,
         clientNonce,
-        userConfirmed,
       });
       return { ok: true, data: sent };
     }],

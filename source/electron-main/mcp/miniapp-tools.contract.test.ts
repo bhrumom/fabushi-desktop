@@ -679,6 +679,7 @@ test("conversation.sendMessage routes to backend with main-held conversationId a
     launchContext: { launchSessionId: "msess_99", conversationId: "conv-99", startParameter: "param_1" },
   };
 
+  // MiniApp attempts to send message; guest cannot pass self-confirmation
   const result = await router.invoke(contextualScope, "conversation.sendMessage", { text: "Hello", userConfirmed: true });
   assert.equal(result.ok, true);
   assert.equal(calledAction, "sendMessage");
@@ -686,7 +687,8 @@ test("conversation.sendMessage routes to backend with main-held conversationId a
   assert.equal(calledArgs.conversationId, "conv-99");
   assert.equal(calledArgs.text, "Hello");
   assert.equal(calledArgs.startParameter, "param_1");
-  assert.equal(calledArgs.userConfirmed, true);
+  // userConfirmed must NOT be passed to backend
+  assert.equal((calledArgs as any).userConfirmed, undefined);
 
   // SendData
   const dataResult = await router.invoke(contextualScope, "conversation.sendData", { data: "test-data" });
