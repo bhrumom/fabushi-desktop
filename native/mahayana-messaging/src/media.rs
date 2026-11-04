@@ -242,3 +242,216 @@ pub enum MediaError {
     #[error("media transfer {0:?} is already terminal")]
     TerminalTransfer(TransferId),
 }
+
+pub const MAX_DESKTOP_MEDIA_ATTACHMENT_BYTES: u64 = 32 * 1024 * 1024; // 32 MiB per attachment
+pub const MAX_DESKTOP_MEDIA_BATCH_COUNT: usize = 6;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Error)]
+#[serde(rename_all = "camelCase")]
+pub enum DesktopMediaPreflightError {
+    #[error("too many attachments: {count} exceeds maximum {max}")]
+    TooManyAttachments { count: usize, max: usize },
+    #[error("media attachment file name cannot be empty")]
+    EmptyFileName,
+    #[error("media attachment file name rejected due to path traversal or control characters")]
+    PathTraversalRejected,
+    #[error("media attachment cannot be zero bytes")]
+    ZeroByteAttachment,
+    #[error("media attachment size {size_bytes} bytes exceeds maximum {max_bytes} bytes")]
+    AttachmentTooLarge { size_bytes: u64, max_bytes: u64 },
+}
+
+pub fn validate_desktop_media_attachment_meta(
+    file_name: &str,
+    size_bytes: u64,
+    max_bytes: Option<u64>,
+) -> Result<(), DesktopMediaPreflightError> {
+    let trimmed = file_name.trim();
+    if trimmed.is_empty() {
+        return Err(DesktopMediaPreflightError::EmptyFileName);
+    }
+    if trimmed.contains('/')
+        || trimmed.contains('\\')
+        || trimmed.contains("..")
+        || trimmed.chars().any(|c| c.is_control())
+    {
+        return Err(DesktopMediaPreflightError::PathTraversalRejected);
+    }
+    if size_bytes == 0 {
+        return Err(DesktopMediaPreflightError::ZeroByteAttachment);
+    }
+    let max = max_bytes.unwrap_or(MAX_DESKTOP_MEDIA_ATTACHMENT_BYTES);
+    if size_bytes > max {
+        return Err(DesktopMediaPreflightError::AttachmentTooLarge {
+            size_bytes,
+            max_bytes: max,
+        });
+    }
+    Ok(())
+}
+
+pub fn validate_desktop_media_batch_count(
+    count: usize,
+    max_count: Option<usize>,
+) -> Result<(), DesktopMediaPreflightError> {
+    let max = max_count.unwrap_or(MAX_DESKTOP_MEDIA_BATCH_COUNT);
+    if count > max {
+        return Err(DesktopMediaPreflightError::TooManyAttachments { count, max });
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn crate_root_exports_pure_policy_types_and_functions() {
+        use crate::{
+            validate_desktop_media_attachment_meta, DesktopMediaPreflightError,
+            MAX_DESKTOP_MEDIA_ATTACHMENT_BYTES, MAX_DESKTOP_MEDIA_BATCH_COUNT,
+        };
+        assert_eq!(MAX_DESKTOP_MEDIA_BATCH_COUNT, 6);
+        assert_eq!(MAX_DESKTOP_MEDIA_ATTACHMENT_BYTES, 32 * 1024 * 1024);
+        assert_eq!(
+            validate_desktop_media_attachment_meta("valid.png", 100, None),
+            Ok(())
+        );
+        let _ = DesktopMediaPreflightError::EmptyFileName;
+    }
+
+    #[test]
+    fn validate_desktop_media_attachment_meta_normal_pass() {
+        assert_eq!(
+            validate_desktop_media_attachment_meta("photo.png", 1024, None),
+            Ok(())
+        );
+        assert_eq!(
+            validate_desktop_media_attachment_meta("document.pdf", MAX_DESKTOP_MEDIA_ATTACHMENT_BYTES, None),
+            Ok(())
+        );
+        assert_eq!(
+            validate_desktop_media_attachment_meta("   archive.tar.gz   ", 500, Some(1000)),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn validate_desktop_media_attachment_meta_empty_file_name() {
+        assert_eq!(
+            validate_desktop_media_attachment_meta("", 1024, None),
+            Err(DesktopMediaPreflightError::EmptyFileName)
+        );
+        assert_eq!(
+            validate_desktop_media_attachment_meta("   ", 1024, None),
+            Err(DesktopMediaPreflightError::EmptyFileName)
+        );
+        assert_eq!(
+            validate_desktop_media_attachment_meta("\t\n\r  ", 1024, None),
+            Err(DesktopMediaPreflightError::EmptyFileName)
+        );
+    }
+
+    #[test]
+    fn validate_desktop_media_attachment_meta_path_traversal_and_controls() {
+        let rejected_cases = [
+            "../secret.key",
+            "dir/photo.png",
+            "dir\\photo.png",
+            "..",
+            "something/..",
+            "photo\0.png",
+            "photo\n.png",
+            "photo\r.png",
+            "nested/dir/foo.jpg",
+            "c:\\windows\\system32",
+        ];
+        for case in rejected_cases {
+            assert_eq!(
+                validate_desktop_media_attachment_meta(case, 1024, None),
+                Err(DesktopMediaPreflightError::PathTraversalRejected),
+                "Expected rejection for: {:?}",
+                case
+            );
+        }
+    }
+
+    #[test]
+    fn validate_desktop_media_attachment_meta_zero_byte() {
+        assert_eq!(
+            validate_desktop_media_attachment_meta("empty.png", 0, None),
+            Err(DesktopMediaPreflightError::ZeroByteAttachment)
+        );
+    }
+
+    #[test]
+    fn validate_desktop_media_attachment_meta_attachment_too_large() {
+        let oversized = MAX_DESKTOP_MEDIA_ATTACHMENT_BYTES + 1;
+        assert_eq!(
+            validate_desktop_media_attachment_meta("huge.mov", oversized, None),
+            Err(DesktopMediaPreflightError::AttachmentTooLarge {
+                size_bytes: oversized,
+                max_bytes: MAX_DESKTOP_MEDIA_ATTACHMENT_BYTES,
+            })
+        );
+
+        let custom_max = 5000;
+        assert_eq!(
+            validate_desktop_media_attachment_meta("custom.bin", 5001, Some(custom_max)),
+            Err(DesktopMediaPreflightError::AttachmentTooLarge {
+                size_bytes: 5001,
+                max_bytes: custom_max,
+            })
+        );
+    }
+
+    #[test]
+    fn validate_desktop_media_batch_count_bounds() {
+        assert_eq!(validate_desktop_media_batch_count(0, None), Ok(()));
+        assert_eq!(validate_desktop_media_batch_count(MAX_DESKTOP_MEDIA_BATCH_COUNT, None), Ok(()));
+        assert_eq!(
+            validate_desktop_media_batch_count(MAX_DESKTOP_MEDIA_BATCH_COUNT + 1, None),
+            Err(DesktopMediaPreflightError::TooManyAttachments {
+                count: MAX_DESKTOP_MEDIA_BATCH_COUNT + 1,
+                max: MAX_DESKTOP_MEDIA_BATCH_COUNT,
+            })
+        );
+
+        assert_eq!(
+            validate_desktop_media_batch_count(4, Some(3)),
+            Err(DesktopMediaPreflightError::TooManyAttachments {
+                count: 4,
+                max: 3,
+            })
+        );
+    }
+
+    #[test]
+    fn preflight_error_serde_and_display() {
+        let cases = [
+            DesktopMediaPreflightError::TooManyAttachments { count: 10, max: 6 },
+            DesktopMediaPreflightError::EmptyFileName,
+            DesktopMediaPreflightError::PathTraversalRejected,
+            DesktopMediaPreflightError::ZeroByteAttachment,
+            DesktopMediaPreflightError::AttachmentTooLarge {
+                size_bytes: 1000,
+                max_bytes: 500,
+            },
+        ];
+        for err in &cases {
+            let json = serde_json::to_string(err).unwrap();
+            let deserialized: DesktopMediaPreflightError = serde_json::from_str(&json).unwrap();
+            assert_eq!(&deserialized, err);
+            assert!(!err.to_string().is_empty());
+        }
+
+        let too_large = DesktopMediaPreflightError::AttachmentTooLarge {
+            size_bytes: 1000,
+            max_bytes: 500,
+        };
+        let json = serde_json::to_string(&too_large).unwrap();
+        assert!(json.contains("attachmentTooLarge"));
+        assert!(too_large.to_string().contains("1000"));
+        assert!(too_large.to_string().contains("500"));
+    }
+}
