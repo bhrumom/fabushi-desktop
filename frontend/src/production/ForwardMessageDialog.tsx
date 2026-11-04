@@ -382,7 +382,7 @@ export function ForwardMessageDialog({
   >
     <form onSubmit={(event) => { event.preventDefault(); void submit(); }}>
       <header>
-        <h2>Forward ${messages.length === 1 ? "message" : "messages"}</h2>
+        <h2>Forward {messages.length === 1 ? "message" : "messages"}</h2>
         <p>Select one or more conversations. Every source message is checked independently; only recipients eligible for all selected messages are shown.</p>
       </header>
       <div className="fabushi-forward-dialog__body">

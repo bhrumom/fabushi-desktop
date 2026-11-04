@@ -79,7 +79,7 @@ async function fixture(t) {
   const select = async (recipient = "human:b") => {
     await page.getByRole("option", { name: recipient }).locator('input[type="checkbox"]').check();
   };
-  const submit = async () => page.getByRole("button", { name: "Forward", exact: true }).click();
+  const submit = async () => page.getByRole("button", { name: /^(Forward|Retry)$/ }).click();
   return { page, call, request, settleSearch, select, submit };
 }
 test("current forward closes and settles exactly once", async (t) => {
