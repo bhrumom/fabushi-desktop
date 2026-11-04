@@ -529,3 +529,40 @@ test('NMR-FWD-DRAFT-RECOVERY-001 removing a source narrows recipients and keeps 
     .filter((request) => request.method === 'forwardHumanMessage').length)).toBe(0);
   await milestone(page, info, 'forward-draft-removal-navigation-recovery');
 });
+
+
+test("NMR-UI-01d persisted reply draft restores its target and Host reply identity after conversation navigation", async ({ page }, info) => {
+  await openAlice(page);
+  await loadOlder(page);
+
+  const source = messageRow(page, "m1");
+  await source.locator(".sand-message-action-anchor").hover();
+  await source.getByRole("button", { name: "Reply to your message", exact: true }).click();
+
+  const replyPill = page.locator(".sand-prompt-reply-pill");
+  await expect(replyPill).toContainText("Old first message");
+  const editor = page.locator(".sand-prompt-form [contenteditable='true']");
+  await editor.fill("Reply draft survives conversation navigation");
+  await expect(editor).toHaveText("Reply draft survives conversation navigation");
+
+  await page.getByRole("button", { name: "Bob", exact: true }).click();
+  await expect(messageRow(page, "b1")).toBeVisible();
+  await page.getByRole("button", { name: "Alice", exact: true }).click();
+  await expect(messageRow(page, "m3")).toBeVisible();
+
+  await expect(replyPill).toContainText("Old first message");
+  await expect(editor).toHaveText("Reply draft survives conversation navigation");
+  await page.locator(".sand-prompt-form").evaluate((form) => (form as HTMLFormElement).requestSubmit());
+
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(1);
+  const request = await page.evaluate(() =>
+    window.nativeMessageFixture.requests.filter((item) => item.method === "sendHumanMessage").at(-1) ?? null
+  );
+  expect(request?.args.replyToId).toBe("m1");
+  expect(request?.args.text).toBe("Reply draft survives conversation navigation");
+
+  await page.evaluate(() => window.nativeMessageFixture.settleSend());
+  await expect.poll(() => page.evaluate(() => window.nativeMessageFixture.pending().sends)).toBe(0);
+  await expect(replyPill).toHaveCount(0);
+  await milestone(page, info, "reply-draft-restored-after-conversation-navigation");
+});

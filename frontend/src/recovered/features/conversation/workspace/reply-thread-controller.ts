@@ -36,6 +36,7 @@ export interface ReplyThreadController {
   appendEntries(entries: readonly ConversationTranscriptEntry[]): void;
   resolve(targetId: string): ReplyTargetResolution;
   selectReply(targetId: string): boolean;
+  restoreReplyFromDraft(draft: ComposerDraft): boolean;
   clearReply(): void;
   navigate(targetId: string): ReplyTargetResolution;
   applyReplyToDraft(draft: ComposerDraft): ComposerDraft;
@@ -128,6 +129,14 @@ export function createReplyThreadController(options: ReplyThreadControllerOption
       if (disposed || scope.accountSlot == null || scope.agentId == null || targetId.length === 0) return false;
       const resolution = currentResolution(targetId);
       selection = { ...resolution, scope: cloneScope(scope) };
+      notify();
+      return true;
+    },
+    restoreReplyFromDraft(draft) {
+      if (disposed || selection != null || scope.accountSlot == null || scope.agentId == null) return false;
+      const targetId = draft.replyToId;
+      if (targetId == null || targetId.length === 0) return false;
+      selection = { ...currentResolution(targetId), scope: cloneScope(scope) };
       notify();
       return true;
     },

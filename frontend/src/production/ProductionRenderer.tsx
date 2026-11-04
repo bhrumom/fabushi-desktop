@@ -2330,13 +2330,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     void linkMetadataProvider.setUrls(paletteLinks.map((link) => link.url));
   }, [linkMetadataProvider, paletteLinks]);
   const baseDraft = activeDraftSnapshot.draft ?? activeDraftSnapshot.recovery ?? EMPTY_DRAFT;
+  useEffect(() => {
+    if (baseDraft.replyToId == null || baseDraft.replyToId.length === 0) return;
+    replyThreadController.restoreReplyFromDraft(baseDraft);
+  }, [activeAgentId, baseDraft.replyToId, replyThreadController, transcriptAccountSlot]);
   const draft = replyThreadController.applyReplyToDraft(baseDraft);
   const clearReplyTarget = useCallback(() => {
     replyThreadController.clearReply();
-    if (activeAgentId.length > 0 && activeDraftSnapshot.draft != null) {
-      composerDraftStore.setDraft(activeAgentId, replyThreadController.clearReplyFromDraft(activeDraftSnapshot.draft));
-    }
-  }, [activeAgentId, activeDraftSnapshot.draft, composerDraftStore, replyThreadController]);
+    if (activeAgentId.length === 0 || (activeDraftSnapshot.draft == null && activeDraftSnapshot.recovery == null)) return;
+    composerDraftStore.setDraft(activeAgentId, replyThreadController.clearReplyFromDraft(baseDraft));
+    if (activeDraftSnapshot.recovery != null) composerDraftStore.clearRecovery(activeAgentId);
+  }, [activeAgentId, activeDraftSnapshot.draft, activeDraftSnapshot.recovery, baseDraft, composerDraftStore, replyThreadController]);
   const replyTarget: ComposerReplyTarget | undefined = replySelection == null
     ? undefined
     : { targetId: replySelection.targetId, preview: replySelection.preview };
