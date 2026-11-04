@@ -86,7 +86,7 @@ export interface MiniAppToolBackend {
   diagnostics?(action: "selfTest" | "doctor" | "status"): Promise<unknown>;
   compat?(action: "packetInspect" | "countryLookup" | "linkExercise" | "linkRecover", args: Record<string, unknown>): Promise<unknown>;
   conversation?(
-    action: "sendData" | "sendMessage",
+    action: "sendData" | "sendMessage" | "openInvoice" | "startServiceCall" | "submitServiceCallInput" | "endServiceCall",
     args: {
       readonly launchSessionId: string;
       readonly conversationId: string;
@@ -97,6 +97,10 @@ export interface MiniAppToolBackend {
       readonly requestId?: string;
       readonly appId: string;
       readonly accountScope: string;
+      readonly invoiceId?: string;
+      readonly callId?: string;
+      readonly mode?: "voice" | "text" | "hybrid";
+      readonly input?: Record<string, unknown>;
     },
   ): Promise<unknown>;
   /** Fences and cancels native work when account/window ownership changes. */
@@ -198,6 +202,112 @@ function handlersFor(backend: MiniAppToolBackend): Map<string, { capability: Min
         launchSessionId,
         conversationId,
         data: args.data,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.openInvoice", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawInvoiceId = args.invoiceId;
+      if (typeof rawInvoiceId !== "string" || !rawInvoiceId.trim()) throw new TypeError("INVALID_INVOICE_ID");
+      const invoiceId = rawInvoiceId.trim();
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("openInvoice", {
+        launchSessionId,
+        conversationId,
+        invoiceId,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.startServiceCall", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawCallId = args.callId;
+      if (typeof rawCallId !== "string" || !rawCallId.trim()) throw new TypeError("INVALID_CALL_ID");
+      const callId = rawCallId.trim();
+      const mode = args.mode;
+      if (mode !== "voice" && mode !== "text" && mode !== "hybrid") throw new TypeError("INVALID_MODE");
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("startServiceCall", {
+        launchSessionId,
+        conversationId,
+        callId,
+        mode,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.submitServiceCallInput", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawCallId = args.callId;
+      if (typeof rawCallId !== "string" || !rawCallId.trim()) throw new TypeError("INVALID_CALL_ID");
+      const callId = rawCallId.trim();
+      if (!args.input || typeof args.input !== "object" || Array.isArray(args.input)) throw new TypeError("INVALID_INPUT");
+      const input = args.input as Record<string, unknown>;
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("submitServiceCallInput", {
+        launchSessionId,
+        conversationId,
+        callId,
+        input,
+        startParameter: scope.launchContext?.startParameter,
+        appId: scope.appId,
+        accountScope: scope.accountScope,
+        requestId,
+        clientNonce,
+      });
+      return { ok: true, data: sent };
+    }],
+    ["conversation.endServiceCall", MINIAPP_CAPABILITY.CONVERSATION, true, async (args, scope) => {
+      if (!backend.conversation) return fail("CAPABILITY_UNAVAILABLE", "宿主未提供会话能力");
+      const launchSessionId = scope.launchContext?.launchSessionId;
+      const conversationId = scope.launchContext?.conversationId;
+      if (!launchSessionId || !conversationId) return fail("NO_CONVERSATION_CONTEXT", "小程序未在会话上下文中启动");
+      if (args.conversationId !== undefined && args.conversationId !== conversationId) {
+        return fail("FORBIDDEN_CONVERSATION_INJECTION", "禁止伪造或注入会话ID");
+      }
+      const rawCallId = args.callId;
+      if (typeof rawCallId !== "string" || !rawCallId.trim()) throw new TypeError("INVALID_CALL_ID");
+      const callId = rawCallId.trim();
+      const requestId = typeof args.requestId === "string" && args.requestId ? args.requestId : undefined;
+      const clientNonce = typeof args.clientNonce === "string" && args.clientNonce ? args.clientNonce : undefined;
+      const sent = await backend.conversation("endServiceCall", {
+        launchSessionId,
+        conversationId,
+        callId,
         startParameter: scope.launchContext?.startParameter,
         appId: scope.appId,
         accountScope: scope.accountScope,

@@ -152,12 +152,26 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
         hotspot: async () => ({}),
         update: async () => ({}),
         conversation: async (action, args) => {
+          let request: Record<string, unknown>;
+          if (action === "sendMessage") {
+            request = { type: "sendMessage", text: args.text };
+          } else if (action === "sendData") {
+            request = { type: "sendData", data: args.data };
+          } else if (action === "openInvoice") {
+            request = { type: "openInvoice", invoiceId: args.invoiceId };
+          } else if (action === "startServiceCall") {
+            request = { type: "startServiceCall", callId: args.callId, mode: args.mode };
+          } else if (action === "submitServiceCallInput") {
+            request = { type: "submitServiceCallInput", callId: args.callId, input: args.input };
+          } else if (action === "endServiceCall") {
+            request = { type: "endServiceCall", callId: args.callId };
+          } else {
+            throw new Error(`Unsupported conversation action: ${action}`);
+          }
           return await call("miniAppPostToConversation", {
             launchSessionId: args.launchSessionId,
             requestId: args.requestId,
-            request: action === "sendMessage"
-              ? { type: "sendMessage", text: args.text }
-              : { type: "sendData", data: args.data },
+            request,
           });
         },
       };

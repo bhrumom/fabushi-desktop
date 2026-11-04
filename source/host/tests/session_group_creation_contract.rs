@@ -1,6 +1,9 @@
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use fabushi_messaging_core::{
+    ActorId, ConversationId, MiniAppGrant, MiniAppPermission, MiniAppSession,
+};
 use mahayana_host_runtime::extensions::session::gateway::{
     SessionGatewayError, dispatch_production_session_gateway_call,
 };
@@ -1137,4 +1140,530 @@ fn media_preflight_and_batch_limit_contract() {
             || err_batch.to_string().contains("attachment preflight failed")
             || err_batch.to_string().contains("exceeds maximum")
     );
+}
+
+#[test]
+fn media_cache_scoped_conversation_and_topic_lifecycle_contract() {
+    let root = temp_root("media-cache-contract");
+    let alice = runtime_for_user(&root, "user-alice");
+
+    let direct1 = dispatch_ok(
+        &alice,
+        "createHumanConversation",
+        json!({
+            "peerHumanId": "user-bob",
+            "title": "Alice and Bob"
+        }),
+    );
+    let conv1 = direct1["id"].as_str().expect("conv1 id");
+
+    let direct2 = dispatch_ok(
+        &alice,
+        "createHumanConversation",
+        json!({
+            "peerHumanId": "user-charlie",
+            "title": "Alice and Charlie"
+        }),
+    );
+    let conv2 = direct2["id"].as_str().expect("conv2 id");
+
+    // 1. Cache media entries for conv1 across topicA and topicB
+    let c1 = dispatch_ok(
+        &alice,
+        "cacheConversationMedia",
+        json!({
+            "conversationId": conv1,
+            "topicId": "topic-a",
+            "key": "m1.png",
+            "sizeBytes": 100,
+            "mimeType": "image/png"
+        }),
+    );
+    assert_eq!(c1["cached"], true);
+    assert_eq!(c1["totalBytesForConversation"], 100);
+
+    let c2 = dispatch_ok(
+        &alice,
+        "cacheConversationMedia",
+        json!({
+            "conversationId": conv1,
+            "topicId": "topic-a",
+            "key": "m2.png",
+            "sizeBytes": 200,
+            "mimeType": "image/png"
+        }),
+    );
+    assert_eq!(c2["cached"], true);
+    assert_eq!(c2["totalBytesForConversation"], 300);
+
+    let c3 = dispatch_ok(
+        &alice,
+        "cacheConversationMedia",
+        json!({
+            "conversationId": conv1,
+            "topicId": "topic-b",
+            "key": "m3.png",
+            "sizeBytes": 300,
+            "mimeType": "image/png"
+        }),
+    );
+    assert_eq!(c3["cached"], true);
+    assert_eq!(c3["totalBytesForConversation"], 600);
+
+    // Cache media for conv2 (no topic)
+    let c4 = dispatch_ok(
+        &alice,
+        "cacheConversationMedia",
+        json!({
+            "conversationId": conv2,
+            "key": "m4.png",
+            "sizeBytes": 400,
+            "mimeType": "image/png"
+        }),
+    );
+    assert_eq!(c4["cached"], true);
+    assert_eq!(c4["totalBytesForConversation"], 400);
+
+    // 2. Query stats
+    let stats1 = dispatch_ok(
+        &alice,
+        "getConversationMediaCacheStats",
+        json!({
+            "conversationId": conv1
+        }),
+    );
+    assert_eq!(stats1["totalBytesForConversation"], 600);
+    assert_eq!(stats1["entryCount"], 3);
+
+    let stats2 = dispatch_ok(
+        &alice,
+        "getConversationMediaCacheStats",
+        json!({
+            "conversationId": conv2
+        }),
+    );
+    assert_eq!(stats2["totalBytesForConversation"], 400);
+    assert_eq!(stats2["entryCount"], 1);
+
+    // 3. Clear only topic-a in conv1
+    let clear_topic = dispatch_ok(
+        &alice,
+        "clearConversationMediaCache",
+        json!({
+            "conversationId": conv1,
+            "topicId": "topic-a"
+        }),
+    );
+    assert_eq!(clear_topic["cleared"], true);
+    assert_eq!(clear_topic["clearedCount"], 2);
+    assert_eq!(clear_topic["clearedBytes"], 300);
+    assert_eq!(clear_topic["remainingBytesForConversation"], 300);
+
+    let stats1_after_topic = dispatch_ok(
+        &alice,
+        "getConversationMediaCacheStats",
+        json!({
+            "conversationId": conv1
+        }),
+    );
+    assert_eq!(stats1_after_topic["totalBytesForConversation"], 300);
+    assert_eq!(stats1_after_topic["entryCount"], 1);
+
+    // 4. Clear all media in conv1
+    let clear_conv = dispatch_ok(
+        &alice,
+        "clearConversationMediaCache",
+        json!({
+            "conversationId": conv1
+        }),
+    );
+    assert_eq!(clear_conv["cleared"], true);
+    assert_eq!(clear_conv["clearedCount"], 1);
+    assert_eq!(clear_conv["clearedBytes"], 300);
+    assert_eq!(clear_conv["remainingBytesForConversation"], 0);
+
+    // conv2 should still be completely intact
+    let stats2_after = dispatch_ok(
+        &alice,
+        "getConversationMediaCacheStats",
+        json!({
+            "conversationId": conv2
+        }),
+    );
+    assert_eq!(stats2_after["totalBytesForConversation"], 400);
+    assert_eq!(stats2_after["entryCount"], 1);
+}
+
+#[test]
+fn miniapp_open_invoice_and_service_call_permission_and_lifecycle_contract() {
+    let root = temp_root("miniapp-ext-contract");
+    let alice = runtime_for_user(&root, "user-alice");
+
+    // 1. Create a direct conversation
+    let direct = dispatch_ok(
+        &alice,
+        "createHumanConversation",
+        json!({
+            "peerHumanId": "user-bob",
+            "title": "Alice and Bob"
+        }),
+    );
+    let conv_id = direct["id"].as_str().expect("conv id").to_string();
+
+    let app_id = "org.fabushi.service-suite";
+    let launch_session_id = "launch-sess-001";
+    let now_ms = (SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock")
+        .as_millis()) as i64;
+
+    // Register a base launch session without Payments or ServiceCall permissions
+    let base_session = MiniAppSession {
+        id: launch_session_id.to_string(),
+        mini_app_id: app_id.to_string(),
+        actor_id: ActorId::new("user-alice"),
+        conversation_id: Some(ConversationId::new(conv_id.clone())),
+        start_parameter: Some("test_start".into()),
+        granted_permissions: vec![],
+        opened_at_ms: now_ms,
+        expires_at_ms: now_ms + 3_600_000,
+    };
+    let base_grant = MiniAppGrant {
+        mini_app_id: app_id.to_string(),
+        actor_id: ActorId::new("user-alice"),
+        permissions: vec![],
+        granted_at_ms: now_ms,
+        expires_at_ms: None,
+    };
+    alice
+        .register_miniapp_launch_session_for_test(base_session.clone(), base_grant.clone())
+        .expect("register base launch session");
+
+    // 2. OpenInvoice without Payments permission fails closed
+    let err_invoice_nogrant = dispatch_err(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-inv-1",
+            "request": {
+                "type": "openInvoice",
+                "invoiceId": "inv-9988"
+            }
+        }),
+    );
+    assert!(
+        err_invoice_nogrant.to_string().contains("Payments")
+            || err_invoice_nogrant.to_string().contains("permission denied")
+    );
+
+    // Now grant Payments permission
+    let invoice_session = MiniAppSession {
+        granted_permissions: vec![MiniAppPermission::Payments],
+        ..base_session.clone()
+    };
+    let invoice_grant = MiniAppGrant {
+        permissions: vec![MiniAppPermission::Payments],
+        ..base_grant.clone()
+    };
+    alice
+        .register_miniapp_launch_session_for_test(invoice_session, invoice_grant)
+        .expect("update session with payments");
+
+    let invoice_ok = dispatch_ok(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-inv-1",
+            "request": {
+                "type": "openInvoice",
+                "invoiceId": "inv-9988"
+            }
+        }),
+    );
+    assert_eq!(invoice_ok["conversationId"], conv_id);
+
+    // Verify transcript recorded invoice audit entry
+    let transcript = alice
+        .read_human_conversation_transcript(&conv_id)
+        .expect("read transcript");
+    assert!(
+        transcript
+            .iter()
+            .any(|e| e.get("content").and_then(Value::as_str).is_some_and(|c| c.contains("[MiniApp Invoice Opened] invoice_id=inv-9988")))
+    );
+
+    // 3. StartServiceCall Voice mode:
+    // With only ServiceCall permission (NO Microphone), Voice mode fails closed
+    let call_id = "call-svc-001";
+    let svc_only_session = MiniAppSession {
+        granted_permissions: vec![MiniAppPermission::ServiceCall],
+        ..base_session.clone()
+    };
+    let svc_only_grant = MiniAppGrant {
+        permissions: vec![MiniAppPermission::ServiceCall],
+        ..base_grant.clone()
+    };
+    alice
+        .register_miniapp_launch_session_for_test(svc_only_session, svc_only_grant)
+        .expect("update session with service call only");
+
+    let err_voice_no_mic = dispatch_err(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-call-voice-1",
+            "request": {
+                "type": "startServiceCall",
+                "callId": call_id,
+                "mode": "voice"
+            }
+        }),
+    );
+    assert!(
+        err_voice_no_mic.to_string().contains("Microphone")
+            || err_voice_no_mic.to_string().contains("permission denied")
+    );
+
+    // Hybrid mode also fails closed without Microphone
+    let err_hybrid_no_mic = dispatch_err(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-call-hybrid-1",
+            "request": {
+                "type": "startServiceCall",
+                "callId": call_id,
+                "mode": "hybrid"
+            }
+        }),
+    );
+    assert!(
+        err_hybrid_no_mic.to_string().contains("Microphone")
+            || err_hybrid_no_mic.to_string().contains("permission denied")
+    );
+
+    // Text mode succeeds with ServiceCall permission alone!
+    let text_call_id = "call-svc-text";
+    let start_text_ok = dispatch_ok(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-call-text-1",
+            "request": {
+                "type": "startServiceCall",
+                "callId": text_call_id,
+                "mode": "text"
+            }
+        }),
+    );
+    assert_eq!(start_text_ok["conversationId"], conv_id);
+    let call_session = alice
+        .get_miniapp_service_call(text_call_id)
+        .expect("service call session exists");
+    assert_eq!(
+        call_session.state,
+        fabushi_messaging_core::MiniAppServiceCallState::Active
+    );
+
+    // 4. Voice call with both ServiceCall and Microphone permissions
+    let full_session = MiniAppSession {
+        granted_permissions: vec![
+            MiniAppPermission::ServiceCall,
+            MiniAppPermission::Microphone,
+        ],
+        ..base_session.clone()
+    };
+    let full_grant = MiniAppGrant {
+        permissions: vec![
+            MiniAppPermission::ServiceCall,
+            MiniAppPermission::Microphone,
+        ],
+        ..base_grant.clone()
+    };
+    alice
+        .register_miniapp_launch_session_for_test(full_session, full_grant)
+        .expect("update session with service call and microphone");
+
+    let voice_call_id = "call-svc-voice";
+    let start_voice_ok = dispatch_ok(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-call-voice-ok",
+            "request": {
+                "type": "startServiceCall",
+                "callId": voice_call_id,
+                "mode": "voice"
+            }
+        }),
+    );
+    assert_eq!(start_voice_ok["conversationId"], conv_id);
+    let voice_session = alice
+        .get_miniapp_service_call(voice_call_id)
+        .expect("voice service call session exists");
+    assert_eq!(
+        voice_session.state,
+        fabushi_messaging_core::MiniAppServiceCallState::Active
+    );
+
+    // 5. Submit Service Call inputs:
+    // DTMF input
+    let dtmf_res = dispatch_ok(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-dtmf-1",
+            "request": {
+                "type": "submitServiceCallInput",
+                "callId": voice_call_id,
+                "input": {
+                    "type": "dtmf",
+                    "digits": "1234"
+                }
+            }
+        }),
+    );
+    assert_eq!(dtmf_res["conversationId"], conv_id);
+
+    // SpeechTranscript input requires Microphone permission
+    // Test with service call only (revoke Microphone):
+    alice
+        .register_miniapp_launch_session_for_test(
+            MiniAppSession {
+                granted_permissions: vec![MiniAppPermission::ServiceCall],
+                ..base_session.clone()
+            },
+            MiniAppGrant {
+                permissions: vec![MiniAppPermission::ServiceCall],
+                ..base_grant.clone()
+            },
+        )
+        .expect("revert microphone");
+
+    let speech_no_mic = dispatch_err(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-speech-nomic",
+            "request": {
+                "type": "submitServiceCallInput",
+                "callId": voice_call_id,
+                "input": {
+                    "type": "speechTranscript",
+                    "text": "Hello support",
+                    "isFinal": true
+                }
+            }
+        }),
+    );
+    assert!(
+        speech_no_mic.to_string().contains("Microphone")
+            || speech_no_mic.to_string().contains("permission denied")
+    );
+
+    // Re-grant Microphone permission and submit speech input
+    alice
+        .register_miniapp_launch_session_for_test(
+            MiniAppSession {
+                granted_permissions: vec![
+                    MiniAppPermission::ServiceCall,
+                    MiniAppPermission::Microphone,
+                ],
+                ..base_session.clone()
+            },
+            MiniAppGrant {
+                permissions: vec![
+                    MiniAppPermission::ServiceCall,
+                    MiniAppPermission::Microphone,
+                ],
+                ..base_grant.clone()
+            },
+        )
+        .expect("regrant microphone");
+
+    let speech_ok = dispatch_ok(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-speech-ok",
+            "request": {
+                "type": "submitServiceCallInput",
+                "callId": voice_call_id,
+                "input": {
+                    "type": "speechTranscript",
+                    "text": "Hello support",
+                    "isFinal": true
+                }
+            }
+        }),
+    );
+    assert_eq!(speech_ok["conversationId"], conv_id);
+
+    // Verify call turns in state machine
+    let voice_session_after_turns = alice
+        .get_miniapp_service_call(voice_call_id)
+        .expect("voice session exists");
+    assert_eq!(voice_session_after_turns.turns.len(), 2);
+
+    // 6. EndServiceCall
+    let end_ok = dispatch_ok(
+        &alice,
+        "miniAppPostToConversation",
+        json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-end-call",
+            "request": {
+                "type": "endServiceCall",
+                "callId": voice_call_id
+            }
+        }),
+    );
+    assert_eq!(end_ok["conversationId"], conv_id);
+
+    let ended_session = alice
+        .get_miniapp_service_call(voice_call_id)
+        .expect("voice session exists");
+    assert_eq!(
+        ended_session.state,
+        fabushi_messaging_core::MiniAppServiceCallState::Ended
+    );
+    assert!(ended_session.ended_at_ms.is_some());
+
+    // Verify all audit entries are recorded in the transcript
+    let final_transcript = alice
+        .read_human_conversation_transcript(&conv_id)
+        .expect("read transcript");
+    let has_started = final_transcript.iter().any(|e| {
+        e.get("content")
+            .and_then(Value::as_str)
+            .is_some_and(|c| c.contains("[MiniApp ServiceCall Started]") && c.contains(voice_call_id))
+    });
+    let has_dtmf = final_transcript.iter().any(|e| {
+        e.get("content")
+            .and_then(Value::as_str)
+            .is_some_and(|c| c.contains("[MiniApp ServiceCall DTMF]") && c.contains("1234"))
+    });
+    let has_speech = final_transcript.iter().any(|e| {
+        e.get("content")
+            .and_then(Value::as_str)
+            .is_some_and(|c| c.contains("[MiniApp ServiceCall Speech]") && c.contains("Hello support"))
+    });
+    let has_ended = final_transcript.iter().any(|e| {
+        e.get("content")
+            .and_then(Value::as_str)
+            .is_some_and(|c| c.contains("[MiniApp ServiceCall Ended]") && c.contains(voice_call_id))
+    });
+    assert!(has_started, "transcript must contain ServiceCall Started entry");
+    assert!(has_dtmf, "transcript must contain ServiceCall DTMF entry");
+    assert!(has_speech, "transcript must contain ServiceCall Speech entry");
+    assert!(has_ended, "transcript must contain ServiceCall Ended entry");
 }

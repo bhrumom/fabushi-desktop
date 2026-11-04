@@ -639,6 +639,39 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     _ => SessionGatewayError::bad(err.to_string()),
                 })
         })(),
+        "cacheConversationMedia" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            let key = required_string(args, "key")
+                .or_else(|_| required_string(args, "mediaId"))?;
+            let size_bytes = args
+                .get("sizeBytes")
+                .and_then(|v| v.as_u64().or_else(|| v.as_i64().and_then(|i| u64::try_from(i).ok())))
+                .ok_or_else(|| SessionGatewayError::bad("cacheConversationMedia requires sizeBytes"))?;
+            let mime_type = optional_string(args, "mimeType")?
+                .unwrap_or("application/octet-stream");
+            session
+                .cache_conversation_media(
+                    conversation_id,
+                    topic_id,
+                    key,
+                    size_bytes,
+                    mime_type,
+                )
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "getConversationMediaCacheStats" => required_string(args, "conversationId").and_then(|conversation_id| {
+            session
+                .get_conversation_media_cache_stats(conversation_id)
+                .map_err(SessionGatewayError::internal)
+        }),
+        "clearConversationMediaCache" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .clear_conversation_media_cache(conversation_id, topic_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
         "reactHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
             required_string(args, "entryId").and_then(|entry_id| {
                 // Emoji bytes are reaction identity; validation must not erase

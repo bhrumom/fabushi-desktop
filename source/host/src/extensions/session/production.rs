@@ -237,6 +237,8 @@ pub struct ProductionSessionWorkers {
     mini_app_package_verifier: Mutex<Option<MiniAppPackageVerifier>>,
     miniapp_launch_sessions: Mutex<BTreeMap<String, HostMiniAppLaunchSession>>,
     miniapp_grants: Mutex<BTreeMap<(String, String), fabushi_messaging_core::MiniAppGrant>>,
+    media_cache: Arc<Mutex<fabushi_messaging_core::MediaCache>>,
+    miniapp_service_calls: Arc<Mutex<std::collections::HashMap<String, fabushi_messaging_core::MiniAppServiceCallSession>>>,
 }
 
 pub type MiniAppPackageVerifier = Arc<
@@ -471,6 +473,11 @@ impl ProductionSessionWorkers {
             mini_app_package_verifier: Mutex::new(None),
             miniapp_launch_sessions: Mutex::new(BTreeMap::new()),
             miniapp_grants: Mutex::new(BTreeMap::new()),
+            media_cache: Arc::new(Mutex::new(
+                fabushi_messaging_core::MediaCache::new(64 * 1024 * 1024)
+                    .expect("default media cache budget of 64 MiB must be valid"),
+            )),
+            miniapp_service_calls: Arc::new(Mutex::new(std::collections::HashMap::new())),
         }
     }
 
@@ -6109,6 +6116,148 @@ impl ProductionSessionWorkers {
         Ok(())
     }
 
+    pub fn cache_conversation_media(
+        &self,
+        conversation_id: &str,
+        topic_id: Option<&str>,
+        key: &str,
+        size_bytes: u64,
+        mime_type: &str,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("conversationId is empty".into());
+        }
+        let key = key.trim();
+        if key.is_empty() {
+            return Err("media key is empty".into());
+        }
+        let now_ms = (std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis()) as i64;
+        let media = fabushi_messaging_core::MediaRef {
+            id: key.to_string(),
+            file_name: None,
+            mime_type: if mime_type.trim().is_empty() {
+                None
+            } else {
+                Some(mime_type.to_string())
+            },
+            size_bytes: Some(size_bytes),
+            width: None,
+            height: None,
+            duration_ms: None,
+            thumbnail_id: None,
+            local_path: Some(key.to_string()),
+            remote_url: None,
+            content_hash: None,
+        };
+        let mut cache = self
+            .media_cache
+            .lock()
+            .map_err(|_| "media_cache lock poisoned".to_string())?;
+        let evicted = cache
+            .insert_scoped(
+                media,
+                key,
+                size_bytes,
+                now_ms,
+                false,
+                Some(conversation_id.to_string()),
+                topic_id.map(|t| t.to_string()),
+            )
+            .map_err(|err| err.to_string())?;
+        let conv_bytes = cache.total_bytes_for_conversation(conversation_id);
+        let total_bytes = cache.total_bytes();
+        Ok(serde_json::json!({
+            "cached": true,
+            "key": key,
+            "sizeBytes": size_bytes,
+            "conversationId": conversation_id,
+            "topicId": topic_id,
+            "evictedCount": evicted.len(),
+            "totalBytesForConversation": conv_bytes,
+            "totalBytes": total_bytes,
+            "maxBytes": cache.max_bytes(),
+        }))
+    }
+
+    pub fn get_conversation_media_cache_stats(
+        &self,
+        conversation_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("conversationId is empty".into());
+        }
+        let cache = self
+            .media_cache
+            .lock()
+            .map_err(|_| "media_cache lock poisoned".to_string())?;
+        let conv_bytes = cache.total_bytes_for_conversation(conversation_id);
+        let entry_count = cache
+            .entries()
+            .values()
+            .filter(|e| e.conversation_id.as_deref() == Some(conversation_id))
+            .count();
+        Ok(serde_json::json!({
+            "conversationId": conversation_id,
+            "totalBytes": conv_bytes,
+            "totalBytesForConversation": conv_bytes,
+            "entryCount": entry_count,
+            "cacheTotalBytes": cache.total_bytes(),
+            "cacheMaxBytes": cache.max_bytes(),
+        }))
+    }
+
+    pub fn clear_conversation_media_cache(
+        &self,
+        conversation_id: &str,
+        topic_id: Option<&str>,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("conversationId is empty".into());
+        }
+        let mut cache = self
+            .media_cache
+            .lock()
+            .map_err(|_| "media_cache lock poisoned".to_string())?;
+        let cleared_entries = if let Some(topic) = topic_id {
+            cache.clear_topic(conversation_id, topic, true)
+        } else {
+            cache.clear_conversation(conversation_id, true)
+        };
+        let cleared_bytes = cleared_entries
+            .iter()
+            .fold(0u64, |acc, e| acc.saturating_add(e.size_bytes));
+        let remaining_bytes = cache.total_bytes_for_conversation(conversation_id);
+        Ok(serde_json::json!({
+            "cleared": true,
+            "clearedCount": cleared_entries.len(),
+            "clearedBytes": cleared_bytes,
+            "conversationId": conversation_id,
+            "topicId": topic_id,
+            "remainingBytesForConversation": remaining_bytes,
+            "cacheTotalBytes": cache.total_bytes(),
+        }))
+    }
+
+    pub fn media_cache(&self) -> Arc<Mutex<fabushi_messaging_core::MediaCache>> {
+        Arc::clone(&self.media_cache)
+    }
+
+    pub fn get_miniapp_service_call(
+        &self,
+        call_id: &str,
+    ) -> Option<fabushi_messaging_core::MiniAppServiceCallSession> {
+        self.miniapp_service_calls
+            .lock()
+            .ok()
+            .and_then(|calls| calls.get(call_id).cloned())
+    }
+
     pub fn post_miniapp_message(
         &self,
         launch_session_id: &str,
@@ -6164,16 +6313,20 @@ impl ProductionSessionWorkers {
             }
         })?;
 
-        // 4. Policy enforcement on message action
-        let (conversation_id, content) = match action {
-            fabushi_messaging_core::MiniAppAction::SendMessage { .. } => {
+        // 4. Policy enforcement and state transition
+        let (conversation_id, content) = match request {
+            fabushi_messaging_core::MiniAppRequest::SendMessage { .. } => {
                 // Point 1: Without Host-mediated user confirmation UI, SendMessage ALWAYS fails closed
                 return Err(MiniAppPostError::UserConfirmationRequired);
             }
-            fabushi_messaging_core::MiniAppAction::SendData { conversation_id, data: _ } => {
+            fabushi_messaging_core::MiniAppRequest::SendData { .. } => {
+                let conv_id = match action {
+                    fabushi_messaging_core::MiniAppAction::SendData { conversation_id, .. } => conversation_id,
+                    _ => return Err(MiniAppPostError::PersistenceFailed("unexpected action for SendData".into())),
+                };
                 let owner = self
-                    .open_human_conversation_db_owner(conversation_id.as_str())
-                    .map_err(|_| MiniAppPostError::ConversationNotFound(conversation_id.as_str().to_string()))?;
+                    .open_human_conversation_db_owner(conv_id.as_str())
+                    .map_err(|_| MiniAppPostError::ConversationNotFound(conv_id.as_str().to_string()))?;
                 let metadata = owner
                     .read_metadata()
                     .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
@@ -6184,7 +6337,117 @@ impl ProductionSessionWorkers {
                 if !has_bot_participant {
                     return Err(MiniAppPostError::NoBotRecipient);
                 }
-                (conversation_id, "[MiniApp Data Payload]".to_string())
+                (conv_id, "[MiniApp Data Payload]".to_string())
+            }
+            fabushi_messaging_core::MiniAppRequest::OpenInvoice { invoice_id } => {
+                let conv_id = launch_session
+                    .session
+                    .conversation_id
+                    .clone()
+                    .ok_or(MiniAppPostError::MissingConversationBinding)?;
+                self.open_human_conversation_db_owner(conv_id.as_str())
+                    .map_err(|_| MiniAppPostError::ConversationNotFound(conv_id.as_str().to_string()))?;
+                let content = format!("[MiniApp Invoice Opened] invoice_id={invoice_id}");
+                (conv_id, content)
+            }
+            fabushi_messaging_core::MiniAppRequest::StartServiceCall { call_id, mode } => {
+                let conv_id = launch_session
+                    .session
+                    .conversation_id
+                    .clone()
+                    .ok_or(MiniAppPostError::MissingConversationBinding)?;
+                self.open_human_conversation_db_owner(conv_id.as_str())
+                    .map_err(|_| MiniAppPostError::ConversationNotFound(conv_id.as_str().to_string()))?;
+                {
+                    let mut calls = self.miniapp_service_calls.lock().map_err(|_| {
+                        MiniAppPostError::PersistenceFailed("miniapp_service_calls lock poisoned".into())
+                    })?;
+                    if let Some(existing) = calls.get_mut(&call_id.0) {
+                        if existing.state == fabushi_messaging_core::MiniAppServiceCallState::Connecting
+                            || existing.state == fabushi_messaging_core::MiniAppServiceCallState::Held
+                        {
+                            existing
+                                .activate(now_ms)
+                                .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
+                        }
+                    } else {
+                        let mut call_session = fabushi_messaging_core::MiniAppServiceCallSession::new(
+                            call_id.clone(),
+                            launch_session.session.mini_app_id.clone(),
+                            Some(launch_session.session.id.clone()),
+                            conv_id.clone(),
+                            launch_session.session.actor_id.clone(),
+                            None,
+                            *mode,
+                            Vec::new(),
+                            Vec::new(),
+                            now_ms,
+                        )
+                        .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
+                        call_session
+                            .activate(now_ms)
+                            .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
+                        calls.insert(call_id.0.clone(), call_session);
+                    }
+                }
+                let content = format!("[MiniApp ServiceCall Started] call_id={} mode={:?}", call_id.0, mode);
+                (conv_id, content)
+            }
+            fabushi_messaging_core::MiniAppRequest::SubmitServiceCallInput { call_id, input } => {
+                let conv_id = launch_session
+                    .session
+                    .conversation_id
+                    .clone()
+                    .ok_or(MiniAppPostError::MissingConversationBinding)?;
+                self.open_human_conversation_db_owner(conv_id.as_str())
+                    .map_err(|_| MiniAppPostError::ConversationNotFound(conv_id.as_str().to_string()))?;
+                {
+                    let mut calls = self.miniapp_service_calls.lock().map_err(|_| {
+                        MiniAppPostError::PersistenceFailed("miniapp_service_calls lock poisoned".into())
+                    })?;
+                    let call_session = calls.get_mut(&call_id.0).ok_or_else(|| {
+                        MiniAppPostError::PersistenceFailed(format!("MiniApp service call not found: {}", call_id.0))
+                    })?;
+                    call_session
+                        .submit_input(launch_session.session.actor_id.clone(), input.clone(), now_ms)
+                        .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
+                }
+                let content = match input {
+                    fabushi_messaging_core::MiniAppServiceCallInput::Dtmf { digits } => {
+                        format!("[MiniApp ServiceCall DTMF] call_id={} digits={}", call_id.0, digits)
+                    }
+                    fabushi_messaging_core::MiniAppServiceCallInput::SpeechTranscript { text, is_final, .. } => {
+                        format!("[MiniApp ServiceCall Speech] call_id={} text={} (final={})", call_id.0, text, is_final)
+                    }
+                    fabushi_messaging_core::MiniAppServiceCallInput::ChatText { text } => {
+                        format!("[MiniApp ServiceCall Chat] call_id={} text={}", call_id.0, text)
+                    }
+                };
+                (conv_id, content)
+            }
+            fabushi_messaging_core::MiniAppRequest::EndServiceCall { call_id } => {
+                let conv_id = launch_session
+                    .session
+                    .conversation_id
+                    .clone()
+                    .ok_or(MiniAppPostError::MissingConversationBinding)?;
+                self.open_human_conversation_db_owner(conv_id.as_str())
+                    .map_err(|_| MiniAppPostError::ConversationNotFound(conv_id.as_str().to_string()))?;
+                {
+                    let mut calls = self.miniapp_service_calls.lock().map_err(|_| {
+                        MiniAppPostError::PersistenceFailed("miniapp_service_calls lock poisoned".into())
+                    })?;
+                    let call_session = calls.get_mut(&call_id.0).ok_or_else(|| {
+                        MiniAppPostError::PersistenceFailed(format!("MiniApp service call not found: {}", call_id.0))
+                    })?;
+                    if call_session.state != fabushi_messaging_core::MiniAppServiceCallState::Ended {
+                        call_session
+                            .end(now_ms)
+                            .map_err(|e| MiniAppPostError::PersistenceFailed(e.to_string()))?;
+                    }
+                }
+                let content = format!("[MiniApp ServiceCall Ended] call_id={}", call_id.0);
+                (conv_id, content)
             }
             _ => {
                 return Err(MiniAppPostError::PersistenceFailed(
@@ -6200,24 +6463,34 @@ impl ProductionSessionWorkers {
         }
 
         // 6. Append to conversation: forward_context is None (Point 3)
-        self.append_human_message_with_context(
-            conversation_id.as_str(),
-            &content,
-            &client_nonce,
-            Some(now_ms as f64),
-            None,
-            &[],
-            None, // Point 3: DO NOT use forwardContext for miniapp!
-            None,
-            false,
-        )
-        .map_err(|err| {
-            if err.contains("already identifies different content") {
-                MiniAppPostError::Conflict(err)
-            } else {
-                MiniAppPostError::PersistenceFailed(err)
+        let mut entry = self
+            .append_human_message_with_context(
+                conversation_id.as_str(),
+                &content,
+                &client_nonce,
+                Some(now_ms as f64),
+                None,
+                &[],
+                None, // Point 3: DO NOT use forwardContext for miniapp!
+                None,
+                false,
+            )
+            .map_err(|err| {
+                if err.contains("already identifies different content") {
+                    MiniAppPostError::Conflict(err)
+                } else {
+                    MiniAppPostError::PersistenceFailed(err)
+                }
+            })?;
+        if let Some(object) = entry.as_object_mut() {
+            if !object.contains_key("conversationId") {
+                object.insert(
+                    "conversationId".to_string(),
+                    serde_json::Value::String(conversation_id.as_str().to_string()),
+                );
             }
-        })
+        }
+        Ok(entry)
     }
 
     fn append_human_message_from_intent(
