@@ -20,11 +20,14 @@ pub struct SalvageCounts {
     pub kv: usize,
     pub blobs: usize,
     pub transcript: usize,
+    pub topics: usize,
+    pub members: usize,
+    pub pins: usize,
 }
 
 impl SalvageCounts {
     pub fn total(self) -> usize {
-        self.kv + self.blobs + self.transcript
+        self.kv + self.blobs + self.transcript + self.topics + self.members + self.pins
     }
 }
 
@@ -110,7 +113,12 @@ pub fn init_configured_db(
         );
     }
     db.execute_batch(AGENT_DB_SCHEMA)?;
+    let _ = db.pragma_update(None, "user_version", 2);
     Ok(db)
+}
+
+pub fn ensure_conversation_schema_version(db: &Connection) -> Result<(), rusqlite::Error> {
+    db.pragma_update(None, "user_version", 2)
 }
 
 pub fn is_store_db_healthy(db: &Connection) -> bool {
@@ -280,6 +288,9 @@ pub fn salvage_store_db(source_path: &Path, fresh_db: &Connection) -> SalvageCou
         kv: 0,
         blobs: 0,
         transcript: 0,
+        topics: 0,
+        members: 0,
+        pins: 0,
     };
     let Some(source) = open_sqlite_for_salvage(source_path, None) else {
         return counts;
@@ -328,6 +339,92 @@ pub fn salvage_store_db(source_path: &Path, fresh_db: &Connection) -> SalvageCou
                 .map(|_| ())
         },
     );
+    counts.topics = copy_salvageable_sqlite_rows(
+        &source,
+        "SELECT topic_id, title, icon, creator_id, created_at_ms, pinned, closed, hidden, last_message_id, unread_count FROM conversation_topics",
+        |row| {
+            let topic_id = row.get::<_, String>(0)?;
+            let title = row.get::<_, String>(1)?;
+            let icon = row.get::<_, Option<String>>(2)?;
+            let creator_id = row.get::<_, String>(3)?;
+            let created_at_ms = row.get::<_, i64>(4)?;
+            let pinned = row.get::<_, i64>(5)?;
+            let closed = row.get::<_, i64>(6)?;
+            let hidden = row.get::<_, i64>(7)?;
+            let last_message_id = row.get::<_, Option<String>>(8)?;
+            let unread_count = row.get::<_, i64>(9)?;
+            fresh_db
+                .execute(
+                    "INSERT OR IGNORE INTO conversation_topics (
+                        topic_id, title, icon, creator_id, created_at_ms,
+                        pinned, closed, hidden, last_message_id, unread_count
+                    ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                    params![
+                        topic_id,
+                        title,
+                        icon,
+                        creator_id,
+                        created_at_ms,
+                        pinned,
+                        closed,
+                        hidden,
+                        last_message_id,
+                        unread_count,
+                    ],
+                )
+                .map(|_| ())
+        },
+    );
+    counts.members = copy_salvageable_sqlite_rows(
+        &source,
+        "SELECT actor_id, status, admin_title, admin_rights, restrictions, joined_at_ms, invited_by, updated_at_ms FROM conversation_members",
+        |row| {
+            let actor_id = row.get::<_, String>(0)?;
+            let status = row.get::<_, String>(1)?;
+            let admin_title = row.get::<_, Option<String>>(2)?;
+            let admin_rights = row.get::<_, Option<String>>(3)?;
+            let restrictions = row.get::<_, Option<String>>(4)?;
+            let joined_at_ms = row.get::<_, i64>(5)?;
+            let invited_by = row.get::<_, Option<String>>(6)?;
+            let updated_at_ms = row.get::<_, i64>(7)?;
+            fresh_db
+                .execute(
+                    "INSERT OR IGNORE INTO conversation_members (
+                        actor_id, status, admin_title, admin_rights,
+                        restrictions, joined_at_ms, invited_by, updated_at_ms
+                    ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                    params![
+                        actor_id,
+                        status,
+                        admin_title,
+                        admin_rights,
+                        restrictions,
+                        joined_at_ms,
+                        invited_by,
+                        updated_at_ms,
+                    ],
+                )
+                .map(|_| ())
+        },
+    );
+    counts.pins = copy_salvageable_sqlite_rows(
+        &source,
+        "SELECT child_scope, message_id, pinned_at_ms, pinned_by FROM conversation_pins",
+        |row| {
+            let child_scope = row.get::<_, String>(0)?;
+            let message_id = row.get::<_, String>(1)?;
+            let pinned_at_ms = row.get::<_, i64>(2)?;
+            let pinned_by = row.get::<_, String>(3)?;
+            fresh_db
+                .execute(
+                    "INSERT OR IGNORE INTO conversation_pins (
+                        child_scope, message_id, pinned_at_ms, pinned_by
+                    ) VALUES (?1, ?2, ?3, ?4)",
+                    params![child_scope, message_id, pinned_at_ms, pinned_by],
+                )
+                .map(|_| ())
+        },
+    );
     counts
 }
 
@@ -351,6 +448,9 @@ pub fn recover_corrupt_store_db(
             kv: 0,
             blobs: 0,
             transcript: 0,
+            topics: 0,
+            members: 0,
+            pins: 0,
         });
     let outcome = if salvaged.total() > 0 {
         "recovered"
@@ -376,6 +476,9 @@ pub fn recover_corrupt_store_db(
                 "salvagedTranscript".into(),
                 Value::from(salvaged.transcript as u64),
             ),
+            ("salvagedTopics".into(), Value::from(salvaged.topics as u64)),
+            ("salvagedMembers".into(), Value::from(salvaged.members as u64)),
+            ("salvagedPins".into(), Value::from(salvaged.pins as u64)),
         ],
     );
     if let Some(callback) = options.on_corruption_recovered.as_ref() {

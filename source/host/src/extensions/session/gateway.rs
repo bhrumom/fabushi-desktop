@@ -468,8 +468,13 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
             })
         }),
         "getHumanConversationTranscript" => required_string(args, "conversationId").and_then(|conversation_id| {
+            let topic_id = match args.get("topicId") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(topic)) if !topic.trim().is_empty() => Some(topic.as_str()),
+                Some(_) => return Err(SessionGatewayError::bad("invalid topicId")),
+            };
             session
-                .read_human_conversation_transcript(conversation_id)
+                .read_human_conversation_transcript_for_topic(conversation_id, topic_id)
                 .map(Value::Array)
                 .map_err(SessionGatewayError::internal)
         }),
@@ -479,10 +484,16 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 Some(Value::String(cursor)) if !cursor.is_empty() && cursor.len() <= 256 => Some(cursor.clone()),
                 Some(_) => return Err(SessionGatewayError::bad("invalid beforeCursor")),
             };
+            let topic_id = match args.get("topicId") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(topic)) if !topic.trim().is_empty() => Some(topic.clone()),
+                Some(_) => return Err(SessionGatewayError::bad("invalid topicId")),
+            };
             let query = HumanTranscriptPageQuery {
                 before_seq: optional_i64(args, "beforeSeq"),
                 before_cursor,
                 limit: optional_i64(args, "limit").unwrap_or(200),
+                topic_id,
             };
             session
                 .read_human_conversation_transcript_tail(conversation_id, query)
