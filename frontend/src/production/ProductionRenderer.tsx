@@ -46,7 +46,8 @@ import { createUrlCardProvider } from "../recovered/features/conversation/cards/
 import { createLocalToolPermissionStore } from "../recovered/features/permissions/local-tool/store";
 import { createLocalToolPermissionScopeGate } from "./local-tool-permission-scope";
 import { createTranscriptPaginationController, mergeOlderTranscriptEntries } from "../recovered/features/conversation/workspace/pagination";
-import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, isSettledTranscriptMessage, localTranscriptClientNonce, recordTranscriptReadUpdate, reconcileForwardTargetMessage, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { applyTranscriptReadUpdates, createHumanReactionSettlement, currentTranscriptReadBuffers, isSettledTranscriptMessage, localTranscriptClientNonce, recordTranscriptReadUpdate, reconcileForwardTargetMessage, reconcileTranscriptMutation, mergeAuthoritativeTranscriptMessage, reconcileTranscriptTail, reconcileLateInitialTranscriptPage, reconcileTranscriptRefresh, filterTranscriptEntriesByTopic, type TranscriptReadUpdateBuffer } from "./transcript-projection";
+import { resolveCommunityComposerGuard, resolvePinnedMessageBanner, selectVisibleForumTopics, type ForumTopicItem } from "./topic-workspace-projection";
 import { createRoutinesController } from "../recovered/features/automations/routines/controller";
 import { mountRoutinesInfoPane } from "../recovered/features/automations/routines/view";
 import { createAgentSettingsController, projectAgentSettingsAgent } from "../recovered/features/agent-info/settings/model";
@@ -961,6 +962,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [newAgentAvatarShape, setNewAgentAvatarShape] = useState<(typeof AVATAR_SHAPES)[number]>("wedge");
   const [newAgentAvatarColor, setNewAgentAvatarColor] = useState<(typeof AVATAR_COLORS)[number]["id"]>("cyan");
   const [humanHandoffAgentId, setHumanHandoffAgentId] = useState("");
+  const [activeTopicId, setActiveTopicId] = useState<string | null>(null);
+  const [conversationTopics, setConversationTopics] = useState<readonly ForumTopicItem[]>([]);
+  const [conversationPins, setConversationPins] = useState<readonly string[]>([]);
+  const lastSentAtMsRef = useRef<number | undefined>(undefined);
   const [account, setAccount] = useState<CursorAuthStatus | null>(null);
   const applyAccountStatus = useCallback((status: CursorAuthStatus) => {
     // Browser OAuth can finish and emit logged-in before the initiating login()
@@ -2297,6 +2302,56 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     setHumanHandoffAgentId(availableHandoffAgents[0]?.id ?? "");
   }, [activeIsHuman, availableHandoffAgents, humanHandoffAgentId]);
   const orgChartAgents = useMemo(() => agents.map((agent) => ({ ...agent, isRunning: agent.isRunning === true })), [agents]);
+
+  const rawMetadata = (activeAgent?.raw ?? {}) as Record<string, unknown>;
+  const rawTopics = useMemo((): readonly ForumTopicItem[] => {
+    if (Array.isArray(rawMetadata.topics)) return rawMetadata.topics as ForumTopicItem[];
+    if (Array.isArray(rawMetadata.forumTopics)) return rawMetadata.forumTopics as ForumTopicItem[];
+    return [];
+  }, [rawMetadata.topics, rawMetadata.forumTopics]);
+
+  const rawPins = useMemo((): readonly string[] => {
+    if (Array.isArray(rawMetadata.pins)) return rawMetadata.pins as string[];
+    if (Array.isArray(rawMetadata.pinnedMessageIds)) return rawMetadata.pinnedMessageIds as string[];
+    return [];
+  }, [rawMetadata.pins, rawMetadata.pinnedMessageIds]);
+
+  const canManageTopics = Boolean(
+    rawMetadata.canManageTopics === true
+    || (rawMetadata.permissions as any)?.canManageTopics === true
+    || rawMetadata.memberStatus === "creator"
+    || rawMetadata.memberStatus === "administrator"
+    || rawMetadata.memberStatus === "owner"
+  );
+
+  const effectiveTopics = conversationTopics.length > 0 ? conversationTopics : rawTopics;
+  const visibleTopics = useMemo(() => {
+    return selectVisibleForumTopics(effectiveTopics, canManageTopics);
+  }, [effectiveTopics, canManageTopics]);
+
+  useEffect(() => {
+    setActiveTopicId(null);
+    setConversationTopics([]);
+    setConversationPins([]);
+  }, [activeAgentId]);
+
+  useEffect(() => {
+    if (client == null || activeAgent == null) return;
+    const agentId = activeAgent.id;
+    let cancelled = false;
+    client.call("listConversationTopics", { conversationId: agentId })
+      .then((res) => {
+        if (!cancelled && Array.isArray(res)) setConversationTopics(res as ForumTopicItem[]);
+      })
+      .catch(() => {});
+    client.call("listConversationPins", { conversationId: agentId, ...(activeTopicId ? { topicId: activeTopicId } : {}) })
+      .then((res) => {
+        if (!cancelled && Array.isArray(res)) setConversationPins(res as string[]);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [client, activeAgent?.id, activeTopicId]);
+
   const liveEntries = activeAgent == null ? EMPTY_ENTRIES : entriesByAgent[activeAgent.id] ?? EMPTY_ENTRIES;
   const entries = useMemo(
     () => transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot
@@ -2304,6 +2359,52 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       : liveEntries,
     [activeAgentId, liveEntries, transcriptAccountSlot, transcriptPaginationSnapshot.accountSlot, transcriptPaginationSnapshot.agentId, transcriptPaginationSnapshot.entries]
   );
+
+  const effectivePins = conversationPins.length > 0 ? conversationPins : rawPins;
+  const pinnedBanner = useMemo(() => {
+    return resolvePinnedMessageBanner(effectivePins, entries as any, activeTopicId);
+  }, [effectivePins, entries, activeTopicId]);
+
+  const activeTopic = useMemo(() => {
+    return visibleTopics.find((t) => t.id === activeTopicId) ?? null;
+  }, [visibleTopics, activeTopicId]);
+
+  const composerGuard = useMemo(() => {
+    if (activeAgent == null) {
+      return { canSend: true, bannerKind: "none" as const, remainingCooldownSeconds: 0, message: null };
+    }
+    const convKind = typeof rawMetadata.conversationKind === "string"
+      ? rawMetadata.conversationKind
+      : (activeAgent.isGroup ? "group" : undefined);
+    const memberStatus = typeof rawMetadata.memberStatus === "string" ? rawMetadata.memberStatus : undefined;
+    const canPostMessages = typeof rawMetadata.canPostMessages === "boolean"
+      ? rawMetadata.canPostMessages
+      : (rawMetadata.permissions as any)?.canPostMessages;
+    const canSendMessages = typeof rawMetadata.canSendMessages === "boolean"
+      ? rawMetadata.canSendMessages
+      : (rawMetadata.permissions as any)?.canSendMessages;
+    const slowModeSeconds = typeof rawMetadata.slowModeSeconds === "number"
+      ? rawMetadata.slowModeSeconds
+      : undefined;
+
+    return resolveCommunityComposerGuard({
+      conversationKind: convKind,
+      memberStatus,
+      canPostMessages,
+      canSendMessages,
+      slowModeSeconds,
+      lastSentAtMs: typeof rawMetadata.lastSentAtMs === "number" ? rawMetadata.lastSentAtMs : lastSentAtMsRef.current,
+      activeTopicClosed: activeTopic?.closed === true || rawMetadata.activeTopicClosed === true,
+      canManageTopics,
+    });
+  }, [activeAgent, rawMetadata, activeTopic, canManageTopics]);
+
+  const displayedEntries = useMemo(() => {
+    if (visibleTopics.length > 0) {
+      return filterTranscriptEntriesByTopic(entries, activeTopicId);
+    }
+    return entries;
+  }, [entries, visibleTopics.length, activeTopicId]);
   spreadsheetEntriesRef.current = entries;
   findNavigateHandlerRef.current = (match) => {
     if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
@@ -4368,6 +4469,10 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
 
   const submit = () => {
     if (activeAgent == null || client == null) return;
+    if (!composerGuard.canSend) {
+      if (composerGuard.message) setNotice(composerGuard.message);
+      return;
+    }
     const liveDraftSnapshot = activeDraftSnapshotStore.get();
     const liveBaseDraft = liveDraftSnapshot.draft ?? liveDraftSnapshot.recovery ?? EMPTY_DRAFT;
     const draftScope = { accountSlot: transcriptAccountSlot, agentId: activeAgent.id };
@@ -4380,6 +4485,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     const liveDraft = replyThreadController.applyReplyToDraft(liveBaseDraft, draftScope);
     const clientNonce = makeClientNonce();
     const enteredAt = Date.now();
+    lastSentAtMsRef.current = enteredAt;
     const prompt = liveDraft.prompt.trim();
     const attachments = liveDraft.attachments.map((attachment) => ({ ...attachment }));
     if (prompt.length === 0 && attachments.length === 0) return;
@@ -4413,6 +4519,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     });
     setEntriesByAgent((current) => scope.invalidated || !isTranscriptScopeCurrent(scope) ? current : ({ ...current, [activeAgent.id]: [...(current[activeAgent.id] ?? []), {
       kind: "message", id: `pending-${clientNonce}`, role: "user", author: "You", text: prompt, timestampMs: enteredAt, attachments, delivery: "pending", clientNonce,
+      ...(activeTopicId ? { topicId: activeTopicId } : {}),
       ...(typeof scope.humanAuthorId === "string" ? { authorKind: "human" as const, authorId: scope.humanAuthorId } : {}),
       ...(submission.replyToId == null ? {} : { replyToId: submission.replyToId })
     }] }));
@@ -5127,11 +5234,53 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             </>}
           />}
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
+          {visibleTopics.length > 0 ? (
+            <nav className="sand-forum-topic-switcher" data-testid="forum-topic-switcher" aria-label="Forum topics">
+              <button
+                type="button"
+                className={activeTopicId == null ? "sand-topic-chip active" : "sand-topic-chip"}
+                aria-selected={activeTopicId == null}
+                onClick={() => setActiveTopicId(null)}
+              >
+                General
+              </button>
+              {visibleTopics.map((topic) => (
+                <button
+                  key={topic.id}
+                  type="button"
+                  className={activeTopicId === topic.id ? "sand-topic-chip active" : "sand-topic-chip"}
+                  aria-selected={activeTopicId === topic.id}
+                  onClick={() => setActiveTopicId(topic.id)}
+                >
+                  {topic.title}
+                  {topic.closed ? " (Closed)" : null}
+                </button>
+              ))}
+            </nav>
+          ) : null}
+          {pinnedBanner.count > 0 && pinnedBanner.activePinId != null ? (
+            <div
+              className="sand-conversation-pinned-banner"
+              data-testid="conversation-pinned-banner"
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                if (pinnedBanner.activePinId) {
+                  transcriptHandleRef.current?.scrollToEntryWithoutHighlight(pinnedBanner.activePinId);
+                }
+              }}
+            >
+              <span className="sand-pinned-title">Pinned Message{pinnedBanner.count > 1 ? ` (${pinnedBanner.count})` : ""}</span>
+              {pinnedBanner.previewText ? (
+                <span className="sand-pinned-preview">{pinnedBanner.previewText}</span>
+              ) : null}
+            </div>
+          ) : null}
           {showTranscriptLoadError
             ? <TranscriptLoadErrorSurface onRetry={() => void openAgent(activeAgent.id)} />
             : <ConversationTranscript
-                key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId])}
-                entries={entries}
+                key={JSON.stringify([renderedAccountScopeGeneration, transcriptAccountSlot, activeAgentId, activeTopicId])}
+                entries={displayedEntries}
                 hasOlder={transcriptPaginationSnapshot.cursor.kind === "more"}
                 isLoadingOlder={transcriptPaginationSnapshot.isLoadingOlder}
                 olderLoadFailed={transcriptPaginationSnapshot.agentId === activeAgentId && transcriptPaginationSnapshot.accountSlot === transcriptAccountSlot && transcriptPaginationSnapshot.olderFailure != null}
@@ -5170,7 +5319,17 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           </main>
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
-            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
+            {composerGuard.bannerKind !== "none" ? (
+              <div
+                className="sand-community-composer-guard-banner"
+                data-testid="community-composer-guard-banner"
+                data-banner-kind={composerGuard.bannerKind}
+                role="status"
+              >
+                <span>{composerGuard.message}</span>
+              </div>
+            ) : null}
+            <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>
@@ -5185,6 +5344,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         open={forwardTarget != null && isForwardAccountScopeCurrent(forwardTarget.accountScopeGeneration)}
         searchRecipients={searchForwardRecipients}
         sourceConversationId={forwardTarget?.sourceConversationId ?? null}
+        shareUrl={activeAgent != null ? ((activeAgent.raw as any)?.shareUrl ?? (activeAgent.raw as any)?.inviteLink ?? undefined) : undefined}
       />
 
       <OverlayDialog

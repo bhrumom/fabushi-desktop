@@ -38,7 +38,7 @@ export interface ForwardMessageDialogProps {
     query: string;
     limit: number;
   }) => Promise<readonly ForwardRecipient[]>;
-  readonly forwardMessage: (input: {
+  readonly forwardMessage?: (input: {
     sourceConversationId: string;
     sourceEntryId: string;
     destinationConversationIds: readonly string[];
@@ -47,7 +47,20 @@ export interface ForwardMessageDialogProps {
     dropCaptions: boolean;
     comment?: { text: string; entities?: readonly unknown[] };
     destinationTopics?: Readonly<Record<string, string>>;
+    shareUrl?: string;
   }, admission?: CoordinatorCallAdmission) => Promise<readonly ForwardSettlement[]>;
+  readonly onForward?: (payload: {
+    sourceConversationId: string;
+    sourceEntryId: string;
+    destinationConversationIds: readonly string[];
+    clientNonce: string;
+    dropSenderNames: boolean;
+    dropCaptions: boolean;
+    comment?: { text: string; entities?: readonly unknown[] };
+    destinationTopics?: Readonly<Record<string, string>>;
+    shareUrl?: string;
+  }) => void | Promise<unknown>;
+  readonly shareUrl?: string;
   readonly onSettled?: (
     settlement: readonly ForwardSettlement[],
     accountScopeGeneration: number,
@@ -91,6 +104,8 @@ export function ForwardMessageDialog({
   onClose,
   searchRecipients,
   forwardMessage,
+  onForward,
+  shareUrl,
   onSettled,
 }: ForwardMessageDialogProps) {
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -354,6 +369,9 @@ export function ForwardMessageDialog({
         }
       }
       const hasDestinationTopics = Object.keys(destinationTopics).length > 0;
+      const forwardShareUrl = typeof shareUrl === "string" && shareUrl.trim().length > 0
+        ? shareUrl.trim()
+        : undefined;
       const request: ForwardRequest = {
         sourceConversationId: lifetime.sourceConversationId,
         sourceEntryId: lifetime.sourceEntryId,
@@ -363,6 +381,7 @@ export function ForwardMessageDialog({
         dropCaptions: effectiveDropCaptions,
         ...(comment ? { comment } : {}),
         ...(hasDestinationTopics ? { destinationTopics } : {}),
+        ...(forwardShareUrl ? { shareUrl: forwardShareUrl } : {}),
       };
       const recipientNames = new Map<string, string>();
       for (const id of request.destinationConversationIds) {
@@ -390,15 +409,32 @@ export function ForwardMessageDialog({
     setSubmitting(true);
     setFailure(null);
     try {
-      const settlement = await forwardMessage({
+      const forwardShareUrl = typeof shareUrl === "string" && shareUrl.trim().length > 0
+        ? shareUrl.trim()
+        : undefined;
+      const forwardPayload = {
         ...snapshot.request,
         destinationConversationIds,
         ...(retryDestinationTopics != null ? { destinationTopics: retryDestinationTopics } : {}),
-      }, {
-        // Readiness can outlive this dialog. Recheck the same lifetime at the
-        // request frame; after posting, the Host still owns the durable intent.
-        isCurrent: () => isCurrent(lifetime),
-      });
+        ...(forwardShareUrl ? { shareUrl: forwardShareUrl } : {}),
+      };
+      if (typeof onForward === "function") {
+        try {
+          await onForward(forwardPayload);
+        } catch (error) {
+          if (forwardMessage == null) throw error;
+        }
+      }
+      const settlement = forwardMessage != null
+        ? await forwardMessage(forwardPayload, {
+          // Readiness can outlive this dialog. Recheck the same lifetime at the
+          // request frame; after posting, the Host still owns the durable intent.
+          isCurrent: () => isCurrent(lifetime),
+        })
+        : destinationConversationIds.map((conversationId): ForwardSettlement => ({
+          conversationId,
+          status: "sent",
+        }));
       if (!isCurrent(lifetime)) return;
       const hasUnexpectedSettlement = settlement.some((item) => !destinationConversationIds.includes(item.conversationId));
       const completed = destinationConversationIds.map((conversationId): ForwardSettlement => {
