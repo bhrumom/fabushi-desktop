@@ -14,13 +14,13 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
 
 | 类别 | 行数 | understood | mapped | implemented | verified | release gate passed |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 产品职责（Fabushi owner） | 23 | 0 | 6 | 17 | 0 | 0 |
+| 产品职责（Fabushi owner） | 31 | 0 | 6 | 25 | 0 | 0 |
 | 领域库实现、桌面未接线（FMEP-STATE-02） | 0 | 0 | 0 | 0 | 0 | 0 |
 | 旧栈职责→Fabushi 替代方案（E4，仅设计级 mapped） | 66 | 0 | 66 | 0 | 0 | 0 |
 | 旧 Telegram 栈（FMEP-EXIT-01，不计产品） | 2 | 0 | 2 | 0 | 0 | 0 |
 | 构建/仓库治理支撑 | 9 | 0 | 8 | 1 | 0 | 0 |
 | 上游开发工具（FMEP-TOOL-01，已处置） | 88 | 0 | 71 | 17 | 0 | 0 |
-| **合计** | 188 | | | | | |
+| **合计** | 196 | | | | | |
 
 来源身份 16381；unknown=未统计，unread=未统计，omitted=0；未映射职责 2；source_reviews 16（complete 6 / pending 10）。
 分母（全部适用产品职责）尚未完整分解，按 FMEP-STATE-01 不报告总百分比。
@@ -39,6 +39,7 @@ _自动生成：`scripts/tdrp-progress-summary.py`，ledger U=`f985723b552b`_
   - **Wave 1（切片收口与批量裁决）**：`W1-A` (S1a) 落地带附言转发，Session 原子投递 `{clientNonce}:comment` 独立文本；`W1-B` (S5) 打通 Telegram Mini App / Bot WebApp 容器与会话桥接，Host 权威签发 `launchContext` 并防会话注入；`W1-C` 完成 `FMEP-BULK-01` 9,486 个子模块批量分类裁决。
   - **Wave 2（多人会话架构与实时策略）**：`W2-ADR005` 确立群组/频道/Topic 架构；`W2-A` 升级 SQLite Schema（user_version=2）并支持 Topic 消息分页；`W2-B` 提取发言权限与 Topic 准入纯策略；`W2-C` 落地群组/频道创建与 Topic 转发；`W2-D` 实现 Typing 3s 节流与 Topic 免打扰静音；`W2-E` 绑定前端 Topic 选择器与 `topicId` 投影；`W2-F` 落地媒体缓存配额清理与附件预检；`W2-G` 完成 Session 宿主接线并推进 S5 为 implemented。
   - **Wave 3（纵向切片闭环与退役迁移）**：`W3-A` 闭合 ShareLink/S1 协议接线；`W3-B` 闭合 S2 权限与 S3 Topic 工作区交互；`W3-C` 扩展 S4 媒体缓存与 S5 Mini App 语音/数据桥；`W3-D` 归档 E3 旧 Telegram 数据只读退役。
+  - **Phase 2（模块化架构与切片收口）**：依据 `FMEP-MODULAR-01` 完成 8 个纵向切片（folders_filters, forum_topics, polls_todo, stories_gifts_stars, chat_admin_moderation, calls_group_calls, settings_cloud_passkeys, export_payments_bots）全量接入；`production.rs` (3,418行)、`service.rs` (369行)、`engine.rs`、`ProductionRenderer.tsx` (4,473行) 均达标反巨石文件预算；Ledger 增至 196 行（25 implemented），建立需求追溯矩阵 RTM。
 - **缺口与下一批**：等待后端 PR #137 生产 D1 迁移与部署批准，进入 S6 真实线上验收。
 
 ## 历史记录

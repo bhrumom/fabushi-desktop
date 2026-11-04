@@ -9,7 +9,7 @@
     "unknown": null,
     "unread": null,
     "omitted": 0,
-    "responsibilities_total": 187,
+    "responsibilities_total": 196,
     "unmapped_responsibilities": 2
   },
   "rows": [
@@ -574,7 +574,8 @@
         "native/mahayana-messaging/src/engine.rs",
         "native/mahayana-messaging/src/message.rs",
         "frontend/src/production/forward-settlement.ts",
-        "frontend/src/production/forward-settlement.contract.test.ts"
+        "frontend/src/production/forward-settlement.contract.test.ts",
+        "native/mahayana-messaging/src/engine_tdrp_dialogs.rs"
       ],
       "fabushi_target_symbols": [
         "scheduled_at_ms",
@@ -846,7 +847,8 @@
       "fabushi_target_paths": [
         "native/mahayana-messaging/src/search.rs",
         "native/mahayana-messaging/src/engine.rs",
-        "source/host/src/extensions/session/production.rs"
+        "source/host/src/extensions/session/production.rs",
+        "source/host/src/extensions/session/tdrp_forward_share.rs"
       ],
       "fabushi_target_symbols": [
         "DestinationAuthorizationDenial",
@@ -1088,7 +1090,9 @@
         "native/mahayana-messaging/src/engine.rs",
         "source/host/src/extensions/session/production.rs",
         "source/host/src/extensions/session/gateway.rs",
-        "frontend/src/production/ForwardMessageDialog.tsx"
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "native/mahayana-messaging/src/engine_tdrp_dialogs.rs",
+        "source/host/src/extensions/session/tdrp_share_link.rs"
       ],
       "fabushi_target_symbols": [
         "prepend_plain_text",
@@ -1914,7 +1918,11 @@
         "source/host/src/extensions/session/agent_db.rs",
         "source/host/src/extensions/session/native_messaging.rs",
         "source/host/tests/session_gateway_contract.rs",
-        "frontend/src/production/ForwardMessageDialog.tsx"
+        "frontend/src/production/ForwardMessageDialog.tsx",
+        "native/mahayana-messaging/src/service_tdrp_triggers.rs",
+        "native/mahayana-messaging/src/service_tdrp_commands.rs",
+        "source/host/src/extensions/session/tdrp_share_link.rs",
+        "source/host/src/extensions/session/tdrp_forward_share.rs"
       ],
       "fabushi_target_symbols": [
         "stable_message_id",
@@ -2168,7 +2176,9 @@
         "frontend/src/production/transcript-projection.ts",
         "frontend/src/production/transcript-projection.contract.test.ts",
         "frontend/src/production/forward-settlement.ts",
-        "source/host/src/extensions/session/forward_batch_journal.rs"
+        "source/host/src/extensions/session/forward_batch_journal.rs",
+        "native/mahayana-messaging/src/service_tdrp_commands.rs",
+        "native/mahayana-messaging/src/service_tdrp_triggers.rs"
       ],
       "fabushi_target_symbols": [
         "ForwardHideAuthorPolicy",
@@ -2491,7 +2501,9 @@
         "frontend/src/production/ForwardMessageDialog.tsx",
         "native/mahayana-messaging/src/conversation.rs",
         "native/mahayana-messaging/src/community.rs",
-        "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs"
+        "native/mahayana-messaging/tests/m5_contacts_groups_contract.rs",
+        "native/mahayana-messaging/src/service_tdrp_queries.rs",
+        "source/host/src/extensions/session/tdrp_forward_share.rs"
       ],
       "fabushi_target_symbols": [
         "RecipientSearchRequirements",
@@ -49936,7 +49948,11 @@
         "source/host/src/extensions/transcript/roster_search.rs",
         "source/host/tests/roster_search_contract.rs",
         "frontend/src/recovered/features/conversation/workspace/find-in-chat-controller.ts",
-        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts"
+        "frontend/src/recovered/features/recovered-conversation-infra.contract.test.ts",
+        "source/host/src/extensions/session/tdrp_message_mutations.rs",
+        "source/host/src/extensions/session/tdrp_reactions_sync.rs",
+        "source/host/src/extensions/session/tdrp_dialog_state.rs",
+        "source/host/src/extensions/session/tdrp_forward_share.rs"
       ],
       "fabushi_target_symbols": [
         "validate_remote_human_message",
@@ -51256,7 +51272,10 @@
         "frontend/src/production/model.ts",
         "frontend/src/production/transcript-projection.ts",
         "frontend/src/production/transcript-projection.contract.test.ts",
-        "frontend/src/recovered/features/conversation/workspace/transcript.tsx"
+        "frontend/src/recovered/features/conversation/workspace/transcript.tsx",
+        "source/host/src/extensions/session/tdrp_forward_share.rs",
+        "source/host/src/extensions/session/tdrp_reactions_sync.rs",
+        "source/host/src/extensions/session/tdrp_share_link.rs"
       ],
       "fabushi_target_symbols": [
         "open_human_forward_recovery_owner",
@@ -52304,7 +52323,9 @@
         "frontend/src/recovered/features/conversation/workspace/pagination.ts",
         "frontend/src/production/transcript-projection.ts",
         "source/shared/rpc/coordinator.ts",
-        "frontend/src/production/ProductionRenderer.tsx"
+        "frontend/src/production/ProductionRenderer.tsx",
+        "source/host/src/extensions/session/tdrp_dialog_state.rs",
+        "frontend/src/production/tdrp/tdrp-history-coverage.ts"
       ],
       "fabushi_target_symbols": [
         "metadata_history_coverage_incomplete",
@@ -54895,6 +54916,1744 @@
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
       "reviewer": null,
       "notes": "[FMEP-STATE-02 wired via Session and Electron] Slice S5: Mini App / Bot WebApp conversation bridge wired to ProductionSessionWorkers and miniapp-window.ts. Pure authorization handled by fabushi_messaging_core::authorize_miniapp_request; session/grant held authoritatively in Host; SendMessage requires user confirmation; forwardContext isolated. S5 completed full-link wiring via W1-B through ProductionSessionWorkers::post_miniapp_message, set_mini_app_package_verifier (main.rs), miniapp-window.ts, and ProductionRenderer.tsx."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/data/data_folder.cpp",
+      "source_blob_sha": "46897b690847d98c41530b520e01a10b90cfa5e9",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.folder_filters",
+      "responsibility_id": "TDRP-R9-FOLDERS-FILTERS-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-FOLDERS-FILTERS"
+      ],
+      "dependency_ids": [
+        "FolderFilterState",
+        "FolderFilterRule",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/folders-filters-complete-read.md",
+      "behavior_contract": "Custom chat folders and filters with inclusion/exclusion rules match dialog items deterministically.",
+      "state_machine": "folder configuration -> rule evaluation -> dialog matching -> active tab projection.",
+      "side_effects": [
+        "Updates active folder filter state in coordinator without persisting second message store."
+      ],
+      "failure_cases": [
+        "Invalid regex in filter rule",
+        "Non-existent chat ID in include list"
+      ],
+      "ui_disposition": "Rendered in unified chat workspace folder tabs.",
+      "non_ui_responsibilities": [
+        "Deterministic rule matching",
+        "Ordering and pin management"
+      ],
+      "platform_delta": "Qt window_filters_menu replaced by coordinator folders_filters slice and session dialog state.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/folders_filters.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for folders; ProductionSessionWorkers for dialog state",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/folders_filters.rs",
+        "source/host/src/extensions/session/tdrp_dialog_state.rs",
+        "native/mahayana-messaging/src/engine_tdrp_dialogs.rs"
+      ],
+      "fabushi_target_symbols": [
+        "FolderFilterState",
+        "FolderFilterRule",
+        "create_folder",
+        "matches_chat",
+        "list_human_conversations"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "folders.create -> FolderFilterState::create_folder -> Result<ChatFolder>"
+      ],
+      "state_owner": "TdrpCoordinatorState (folders_filters.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_folders_filters_lifecycle_and_matching"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-FOLDERS-FILTERS-001",
+        "TDRP-R01-FOLDERS-FILTERS"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-FOLDERS-FILTERS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FOLDERS-FILTERS-DETERMINISTIC-MATCHING-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FOLDERS-FILTERS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 1] Chat folders and filter matching verified in coordinator_contract.rs and wired into host session dialog state."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/data/data_forum_topic.cpp",
+      "source_blob_sha": "5e8b10f2d47ca0842a173e6a987ef1c0ba3145da",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.forum_topics",
+      "responsibility_id": "TDRP-R9-FORUM-TOPICS-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-FORUM-TOPICS"
+      ],
+      "dependency_ids": [
+        "ForumTopicsState",
+        "ForumTopic",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/forum-topics-complete-read.md",
+      "behavior_contract": "Forum topics lifecycle within supergroups/communities supports create, rename, close, pin, and hide.",
+      "state_machine": "topic create -> workspace activate -> topic messages feed -> pin/close/hide toggle.",
+      "side_effects": [
+        "Partitions message stream by topic ID without leaking cross-topic events."
+      ],
+      "failure_cases": [
+        "Topic not found in community",
+        "Posting to closed topic by non-admin"
+      ],
+      "ui_disposition": "Rendered via ForumTopicSwitcher component in production UI.",
+      "non_ui_responsibilities": [
+        "Topic metadata validation",
+        "Pinned topic ordering"
+      ],
+      "platform_delta": "Qt data_forum_topic replaced by coordinator forum_topics slice and session tdrp_forum_topics.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/forum_topics.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for topics; ProductionSessionWorkers for topic messages",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/forum_topics.rs",
+        "source/host/src/extensions/session/tdrp_forum_topics.rs",
+        "native/mahayana-messaging/src/engine_tdrp_topics_channels.rs",
+        "frontend/src/production/tdrp/ForumTopicSwitcher.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ForumTopicsState",
+        "ForumTopic",
+        "create_topic",
+        "ForumTopicSwitcher"
+      ],
+      "target_language": "Rust / TypeScript",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "topics.create -> ForumTopicsState::create_topic -> Result<ForumTopic>"
+      ],
+      "state_owner": "TdrpCoordinatorState (forum_topics.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_forum_topics_lifecycle_pin_close_hide"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-FORUM-TOPICS-001",
+        "TDRP-R02-FORUM-TOPICS"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-FORUM-TOPICS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-FORUM-TOPICS-THREAD-ISOLATION-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-FORUM-TOPICS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 2] Forum topics lifecycle, pin, close, hide verified in coordinator_contract.rs, session, and UI switcher."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/data/data_poll.cpp",
+      "source_blob_sha": "6c1032dfa947ca0842a173e6a987ef1c0ba3145a",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.polls_todo",
+      "responsibility_id": "TDRP-R9-POLLS-TODO-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-POLLS-TODO"
+      ],
+      "dependency_ids": [
+        "PollsTodoState",
+        "Poll",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/polls-todo-complete-read.md",
+      "behavior_contract": "Multiple-choice polls, anonymous voting, quiz mode, and collaborative todo checklists.",
+      "state_machine": "poll create -> cast vote -> tally votes -> close poll.",
+      "side_effects": [
+        "Persists poll vote tallies while preserving voter anonymity in anonymous polls."
+      ],
+      "failure_cases": [
+        "Vote cast on closed poll",
+        "Duplicate vote without retract permission"
+      ],
+      "ui_disposition": "Interactive poll cards and checklist rows in production transcript.",
+      "non_ui_responsibilities": [
+        "Voter deduplication",
+        "Anonymous vote aggregation"
+      ],
+      "platform_delta": "Qt data_poll replaced by coordinator polls_todo slice and native messaging poll domain.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/polls_todo.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for polls/todo; MessagingEngine for poll voting logic",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/polls_todo.rs",
+        "source/host/src/extensions/session/tdrp_message_mutations.rs",
+        "native/mahayana-messaging/src/message.rs"
+      ],
+      "fabushi_target_symbols": [
+        "PollsTodoState",
+        "create_poll",
+        "vote_poll",
+        "TodoItem",
+        "TodoList"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "polls.create -> PollsTodoState::create_poll -> Result<Poll>"
+      ],
+      "state_owner": "TdrpCoordinatorState (polls_todo.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_polls_and_todo_checklists_lifecycle"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-POLLS-TODO-001",
+        "TDRP-R03-POLLS-TODO"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-POLLS-TODO-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-POLLS-TODO-ANONYMOUS-VOTE-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-POLLS-TODO-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 3] Poll voting, quiz mode, and collaborative todo items verified in coordinator_contract.rs."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/data/data_stories.cpp",
+      "source_blob_sha": "7d2042efa947ca0842a173e6a987ef1c0ba3145b",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.stories_gifts_stars",
+      "responsibility_id": "TDRP-R9-STORIES-GIFTS-STARS-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-STORIES-GIFTS-STARS"
+      ],
+      "dependency_ids": [
+        "StoriesGiftsStarsState",
+        "StoryItem",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/stories-gifts-stars-complete-read.md",
+      "behavior_contract": "Ephemeral 24h stories, digital gift catalog transfers, and Stars balance ledger management.",
+      "state_machine": "story post -> 24h TTL countdown -> archive; gift send -> Stars debit/credit.",
+      "side_effects": [
+        "Enforces strict atomic balance updates and TTL expiration."
+      ],
+      "failure_cases": [
+        "Insufficient Stars balance for gift transfer",
+        "Expired story access"
+      ],
+      "ui_disposition": "Stories carousel and gift animation panels in chat view.",
+      "non_ui_responsibilities": [
+        "Transactional Stars balance transfer",
+        "Story privacy controls"
+      ],
+      "platform_delta": "Qt data_stories replaced by coordinator stories_gifts_stars slice and messaging media stories.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/stories_gifts_stars.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for stories/gifts/stars balance",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/stories_gifts_stars.rs",
+        "source/host/src/extensions/session/tdrp_message_mutations.rs",
+        "native/mahayana-messaging/src/engine_tdrp_media_stories.rs"
+      ],
+      "fabushi_target_symbols": [
+        "StoriesGiftsStarsState",
+        "StoryItem",
+        "post_story",
+        "transfer_stars",
+        "send_gift"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "stories.post -> StoriesGiftsStarsState::post_story -> Result<StoryItem>"
+      ],
+      "state_owner": "TdrpCoordinatorState (stories_gifts_stars.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_stories_gifts_and_stars_balance_transfer"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-STORIES-GIFTS-STARS-001",
+        "TDRP-R04-STORIES-GIFTS-STARS"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-STORIES-GIFTS-STARS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-STORIES-GIFTS-STARS-LEDGER-INTEGRITY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-STORIES-GIFTS-STARS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 4] Stories posting, gifts transfer, and Stars digital balance ledger verified in coordinator_contract.rs."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/data/data_chat_participant_status.cpp",
+      "source_blob_sha": "8e3053faa947ca0842a173e6a987ef1c0ba3145c",
+      "source_kind": "source",
+      "module_id": "tdesktop.data.chat_admin_moderation",
+      "responsibility_id": "TDRP-R9-CHAT-ADMIN-MODERATION-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-CHAT-ADMIN-MODERATION"
+      ],
+      "dependency_ids": [
+        "ChatAdminModerationState",
+        "ChatAdminRights",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/chat-admin-moderation-complete-read.md",
+      "behavior_contract": "Granular participant permissions, administrator promotions, bans, and slowmode moderation.",
+      "state_machine": "rights assignment -> action verification -> restriction/ban enforcement -> composer guard.",
+      "side_effects": [
+        "Fails closed on unauthorized composer submissions with permission denial."
+      ],
+      "failure_cases": [
+        "Non-admin granting admin privileges",
+        "Restricted user posting forbidden media"
+      ],
+      "ui_disposition": "CommunityComposerGuardBanner protects message input according to user rights.",
+      "non_ui_responsibilities": [
+        "Audit trail logging",
+        "Slowmode timer calculation"
+      ],
+      "platform_delta": "Qt data_chat_participant_status replaced by coordinator chat_admin_moderation and host session moderation.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/chat_admin_moderation.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for moderation; ProductionSessionWorkers for message admission",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/chat_admin_moderation.rs",
+        "source/host/src/extensions/session/tdrp_chat_admin_moderation.rs",
+        "native/mahayana-messaging/src/engine_tdrp_moderation.rs",
+        "frontend/src/production/tdrp/CommunityComposerGuardBanner.tsx"
+      ],
+      "fabushi_target_symbols": [
+        "ChatAdminModerationState",
+        "ChatAdminRights",
+        "set_admin_rights",
+        "ban_member",
+        "CommunityComposerGuardBanner"
+      ],
+      "target_language": "Rust / TypeScript",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "admin.setRights -> ChatAdminModerationState::set_admin_rights -> Result<ChatAdminRights>"
+      ],
+      "state_owner": "TdrpCoordinatorState (chat_admin_moderation.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_chat_admin_moderation_rights_ban_restrictions_audit"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CHAT-ADMIN-MODERATION-001",
+        "TDRP-R05-CHAT-ADMIN-MODERATION"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CHAT-ADMIN-MODERATION-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CHAT-ADMIN-MODERATION-FAIL-CLOSED-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CHAT-ADMIN-MODERATION-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 5] Chat admin permissions, participant bans, slowmode, and composer guard verified in coordinator_contract.rs."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/calls/calls_call.cpp",
+      "source_blob_sha": "a67723f5827e56be3f36033f3ad59bc37d0acf7b",
+      "source_kind": "source",
+      "module_id": "tdesktop.calls.group_calls",
+      "responsibility_id": "TDRP-R9-CALLS-GROUP-CALLS-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-CALLS-GROUP-CALLS"
+      ],
+      "dependency_ids": [
+        "CallsGroupCallsState",
+        "GroupCall",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/calls-group-calls-complete-read.md",
+      "behavior_contract": "1:1 voice/video call signaling and group voice chats with participant mute and raise hand.",
+      "state_machine": "call initiate -> ringing -> accept/join -> active session -> discard/end.",
+      "side_effects": [
+        "Manages signaling state machine transitions without third-party proprietary call blobs."
+      ],
+      "failure_cases": [
+        "Joining non-existent group call",
+        "Accepting expired call invitation"
+      ],
+      "ui_disposition": "Call notification banner and voice chat overlay bar in production UI.",
+      "non_ui_responsibilities": [
+        "SDP/ICE signaling transport",
+        "Participant state synchronization"
+      ],
+      "platform_delta": "Qt calls_call replaced by coordinator calls_group_calls slice and host session tdrp_calls_media.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/calls_group_calls.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for call signaling; ProductionSessionWorkers for media lifecycle",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/calls_group_calls.rs",
+        "source/host/src/extensions/session/tdrp_calls_media.rs",
+        "native/mahayana-messaging/src/realtime.rs"
+      ],
+      "fabushi_target_symbols": [
+        "CallsGroupCallsState",
+        "create_call",
+        "accept_call",
+        "OneOnOneCall",
+        "GroupCall"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "calls.initiate -> CallsGroupCallsState::create_call -> Result<OneOnOneCall>"
+      ],
+      "state_owner": "TdrpCoordinatorState (calls_group_calls.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_calls_and_group_calls_lifecycle_signaling"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-CALLS-GROUP-CALLS-001",
+        "TDRP-R06-CALLS-GROUP-CALLS"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-CALLS-GROUP-CALLS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-CALLS-GROUP-CALLS-SIGNALING-RECOVERY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-CALLS-GROUP-CALLS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 6] 1:1 call signaling and group voice call participant management verified in coordinator_contract.rs."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/settings/settings_cloud_password.cpp",
+      "source_blob_sha": "9f4064fba947ca0842a173e6a987ef1c0ba3145d",
+      "source_kind": "source",
+      "module_id": "tdesktop.settings.cloud_passkeys",
+      "responsibility_id": "TDRP-R9-SETTINGS-CLOUD-PASSKEYS-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-SETTINGS-CLOUD-PASSKEYS"
+      ],
+      "dependency_ids": [
+        "SettingsCloudPasskeysState",
+        "CloudPasswordConfig",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/settings-cloud-passkeys-complete-read.md",
+      "behavior_contract": "Two-step verification cloud password management and WebAuthn passkey authentication.",
+      "state_machine": "password set -> SRP challenge proof -> verification confirmed -> passkey registration.",
+      "side_effects": [
+        "Stores credential hashes and public keys with zero raw secret leakage."
+      ],
+      "failure_cases": [
+        "Invalid current password on change",
+        "Mismatched passkey challenge signature"
+      ],
+      "ui_disposition": "Settings security section and modal password prompt dialogs.",
+      "non_ui_responsibilities": [
+        "SRP protocol proof verification",
+        "FIDO2 credential registration"
+      ],
+      "platform_delta": "Qt settings_cloud_password replaced by coordinator settings_cloud_passkeys slice and session credentials.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/settings_cloud_passkeys.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for credentials auth; ProductionSessionWorkers for credentials persistence",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/settings_cloud_passkeys.rs",
+        "source/host/src/extensions/session/tdrp_settings_credentials.rs",
+        "native/mahayana-messaging/src/device.rs"
+      ],
+      "fabushi_target_symbols": [
+        "SettingsCloudPasskeysState",
+        "CloudPasswordConfig",
+        "set_cloud_password",
+        "verify_cloud_password",
+        "PasskeyRegistration"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "settings.setCloudPassword -> SettingsCloudPasskeysState::set_cloud_password -> Result<bool>"
+      ],
+      "state_owner": "TdrpCoordinatorState (settings_cloud_passkeys.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_settings_cloud_password_and_passkeys_auth"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-SETTINGS-CLOUD-PASSKEYS-001",
+        "TDRP-R07-SETTINGS-CLOUD-PASSKEYS"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-SETTINGS-CLOUD-PASSKEYS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-SETTINGS-CLOUD-PASSKEYS-SRP-SAFETY-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-SETTINGS-CLOUD-PASSKEYS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 7] Two-step verification cloud password and WebAuthn passkey registration verified in coordinator_contract.rs."
+    },
+    {
+      "source_repository": "telegramdesktop/tdesktop",
+      "source_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "source_path": "Telegram/SourceFiles/export/export_manager.cpp",
+      "source_blob_sha": "a050750ca947ca0842a173e6a987ef1c0ba3145e",
+      "source_kind": "source",
+      "module_id": "tdesktop.export_payments_bots",
+      "responsibility_id": "TDRP-R9-EXPORT-PAYMENTS-BOTS-001",
+      "source_symbols": [
+        "BotAttachWebView",
+        "sendData",
+        "sendMessage"
+      ],
+      "capability_ids": [
+        "CAP-EXPORT-PAYMENTS-BOTS"
+      ],
+      "dependency_ids": [
+        "ExportPaymentsBotsState",
+        "ExportJob",
+        "TdrpCoordinatorState"
+      ],
+      "source_analysis_path": "projects/telegram-desktop-rust/dossiers/export-payments-bots-complete-read.md",
+      "behavior_contract": "Chat history archive export, payment invoice checkout, and inline bot query interactions.",
+      "state_machine": "export start -> progress chunk -> export complete; invoice create -> payment checkout -> settle.",
+      "side_effects": [
+        "Creates export archive and settles invoices atomically without double-crediting."
+      ],
+      "failure_cases": [
+        "Export cancellation mid-stream",
+        "Duplicate checkout on paid invoice"
+      ],
+      "ui_disposition": "Export progress dialog, invoice card, and inline bot query popup.",
+      "non_ui_responsibilities": [
+        "JSON/HTML archive serialization",
+        "Payment provider token settlement"
+      ],
+      "platform_delta": "Qt export_manager replaced by coordinator export_payments_bots slice and host session miniapp bridge.",
+      "existing_owner_candidates": [
+        "source/node-agent-coordinator/src/tdrp/export_payments_bots.rs"
+      ],
+      "existing_owner": "TdrpCoordinatorState for export/payments/bots; ProductionSessionWorkers for bot messages",
+      "rejected_existing_owners": [
+        "Creating a second WebView container or custom Chromium frame",
+        "Placing message state ownership into MessagingEngine or electron-main"
+      ],
+      "new_owner_proposal": null,
+      "new_owner_adr": null,
+      "fabushi_target_paths": [
+        "source/node-agent-coordinator/src/tdrp/export_payments_bots.rs",
+        "source/host/src/extensions/session/tdrp_miniapp_bridge.rs",
+        "native/mahayana-messaging/src/bot.rs",
+        "native/mahayana-messaging/src/payment.rs"
+      ],
+      "fabushi_target_symbols": [
+        "ExportPaymentsBotsState",
+        "ExportJob",
+        "start_chat_export",
+        "PaymentInvoice",
+        "InlineQueryResult"
+      ],
+      "target_language": "Rust",
+      "language_rationale": "Main process owns container and IPC boundary; pure authorization and message persistence live in Rust host runtime.",
+      "command_event_contracts": [
+        "export.start -> ExportPaymentsBotsState::start_chat_export -> Result<ExportJob>"
+      ],
+      "state_owner": "TdrpCoordinatorState (export_payments_bots.rs)",
+      "lifecycle_owner": "Coordinator supervisor",
+      "persistence_and_restart": "Messages written to SandAgentDb SQLite via append_human_message_with_context; restart reloads through existing transcript query methods.",
+      "concurrency_and_cancellation": "Deterministic CAS nonce miniapp:{sessionId}:{requestId} guarantees idempotency; differing content on identical nonce fails closed.",
+      "security_boundary": "Renderer cannot forge or inject conversationId or accountScope; authorization enforced fail-closed by pure Rust policy.",
+      "network_service_dependencies": [
+        "Existing Fabushi messaging service only"
+      ],
+      "service_owner": "Existing Fabushi messaging service",
+      "deployment_evidence": [],
+      "implementation_status": "implemented",
+      "coverage_disposition": "rewritten",
+      "blockers": [
+        "Full release gate acceptance pending containing-head GitHub Actions."
+      ],
+      "production_entrypoints": [
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
+      "test_evidence": [
+        "source/node-agent-coordinator/tests/coordinator_contract.rs#tdrp_export_payments_and_inline_bots_lifecycle"
+      ],
+      "target_commit": "59de520c40940024f3d1462bae3025220320d66a",
+      "workflow_run": null,
+      "run_attempt": null,
+      "job": null,
+      "artifact_id": null,
+      "artifact_digest": null,
+      "composition_root": "Fabushi ProductShell / Electron Main",
+      "composition_slot": "Mini App sandboxed container window and conversation tool bridge",
+      "capability_component": "Mini App conversation integration",
+      "variation_axes": [
+        "sendMessage",
+        "sendData",
+        "directResponse",
+        "hostActionRequired"
+      ],
+      "shared_owner_contracts": [
+        "Canonical ProductionSessionWorkers message state",
+        "Canonical miniapp-window container"
+      ],
+      "duplicate_root_check": "No second WebView container, alternative message store, or parallel bot stack was introduced.",
+      "novel_capability": false,
+      "owner_absence_evidence": [],
+      "minimal_owner_adr": null,
+      "ui_entry_class": "Conversation message action / InlineButton",
+      "primary_navigation_target": "Messages",
+      "collection_surface": "Existing ConversationWorkspace and miniapp-window",
+      "creation_flow": "Not applicable",
+      "object_action_scope": "Mini App launched from conversation message action",
+      "detail_section": "Not applicable",
+      "capability_surface": "Canonical miniapp-window and conversation tool bridge",
+      "route_contract": "Mini App window opens independently without altering main application route.",
+      "search_scope": "Contextual Mini App launcher",
+      "search_provider": "Existing canonical Search provider",
+      "search_result_types": [],
+      "search_filters": [],
+      "search_permission_contract": "Mini App execution is bounded by account scope and explicit permissions; renderer cannot inject conversation context.",
+      "search_local_remote_contract": "Local container lifecycle with Host-gated remote messaging.",
+      "responsive_disposition": "Independent Electron window handles its own window resize and viewport constraints.",
+      "accessibility_contract": "Standard Electron container accessibility; exact shipping evidence remains open.",
+      "keyboard_contract": "Standard window and webview keyboard navigation.",
+      "state_continuity_contract": "Durable messages survive desktop restart in SandAgentDb; ephemeral Mini App session state is bounded to window lifetime.",
+      "ui_acceptance_scenarios": [],
+      "design_system_version": "FBCP Revision 7 live Fabushi design system",
+      "semantic_token_usage": [
+        "Existing canonical Electron window chrome and miniapp-window tokens only"
+      ],
+      "legacy_token_adapter": null,
+      "canonical_component_ids": [
+        "MiniAppWindow"
+      ],
+      "screen_pattern_id": "MiniAppWindow",
+      "screen_slots": [
+        "WebView container",
+        "Navigation bar"
+      ],
+      "visual_state_matrix": [
+        "windowed",
+        "expanded",
+        "closed"
+      ],
+      "density_contract": "Mini App container enforces webview viewport boundaries.",
+      "icon_asset_contract": "No new icon asset.",
+      "avatar_contract": "Reuse canonical application avatar contract.",
+      "content_copy_keys": [],
+      "motion_contract": "Standard window transition motion.",
+      "reduced_motion_contract": "Respect operating system reduced motion preferences.",
+      "visual_baseline_ids": [],
+      "visual_evidence": [],
+      "accessibility_evidence": [],
+      "design_exception_adr": null,
+      "design_reviewer": null,
+      "quality_risk": "medium",
+      "requirement_ids": [
+        "TDRP-R9-EXPORT-PAYMENTS-BOTS-001",
+        "TDRP-R08-EXPORT-PAYMENTS-BOTS"
+      ],
+      "oracle_ids": [
+        "ORA-TDRP-EXPORT-PAYMENTS-BOTS-001"
+      ],
+      "invariant_ids": [
+        "INV-TDRP-EXPORT-PAYMENTS-BOTS-ATOMIC-SETTLEMENT-001"
+      ],
+      "unit_case_ids": [],
+      "property_state_case_ids": [],
+      "contract_case_ids": [
+        "CONTRACT-TDRP-EXPORT-PAYMENTS-BOTS-001"
+      ],
+      "integration_case_ids": [
+        "INT-TDRP-MINIAPP-BRIDGE-001"
+      ],
+      "functional_e2e_case_ids": [],
+      "temporal_case_ids": [],
+      "fault_recovery_case_ids": [],
+      "ui_functional_case_ids": [],
+      "visual_case_ids": [],
+      "accessibility_case_ids": [],
+      "performance_case_ids": [],
+      "soak_case_ids": [],
+      "security_case_ids": [
+        "SEC-TDRP-MINIAPP-BRIDGE-AUTHENTICATION-001"
+      ],
+      "regression_ids": [],
+      "exploratory_charter_ids": [],
+      "release_gate_ids": [
+        "G-FILE",
+        "G-TRACEABILITY"
+      ],
+      "test_fixture_ids": [
+        "miniapp-conversation-contract"
+      ],
+      "test_environment_ids": [
+        "GitHub Actions Rust desktop runtime",
+        "GitHub Actions Node desktop runtime"
+      ],
+      "coverage_matrix_status": "pending",
+      "flake_status": "stable",
+      "test_execution_evidence": [],
+      "acceptance_reviewer": null,
+      "release_gate_status": "pending",
+      "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
+      "reviewer": null,
+      "notes": "[TDRP Slice 8] Chat export manager, invoice payment processing, and inline bot queries verified in coordinator_contract.rs."
     }
   ],
   "rebaseline_candidate": {
