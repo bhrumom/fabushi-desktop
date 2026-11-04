@@ -1,0 +1,162 @@
+{
+  "taskId": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 16,
+  "base_head": "eb54a5632ab820109ab456c83e5a3c3dfa2b46d2",
+  "fixed_upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "tree": "91f2b083ab2877c0a17d07868eabec362a5cfca6",
+    "changed": false
+  },
+  "build_input_audit": {
+    "artifact_id": 13121721589,
+    "digest": "sha256:7d246df47d044b89cc5eb6c9287f7ddbf5ffa3d95631be83ac18d123d4b47fdc",
+    "selected": 205,
+    "read": 203,
+    "opaque_not_read": 2,
+    "context_observations": 508,
+    "unresolved": 76,
+    "breakdown": {
+      "named": 57,
+      "short": 10,
+      "expression": 9
+    },
+    "paths": {
+      "mac_packaged": {
+        "blob": "6e9f0b5bddfc3146bbed0bcd56a465bd584b89fc",
+        "count": 4,
+        "lines": [
+          125,
+          132,
+          140,
+          215
+        ],
+        "owner": "macOS packaged workflow"
+      },
+      "centos_docker": {
+        "blob": "3fea9e6866e0ea6351f8a13ebb825ebf49cadfc2",
+        "count": 30,
+        "lines": [
+          193,
+          204,
+          215,
+          226,
+          237,
+          253,
+          264,
+          279,
+          312,
+          334,
+          349,
+          374,
+          386,
+          399,
+          502,
+          513,
+          524,
+          537,
+          548,
+          559,
+          570,
+          593,
+          608,
+          761,
+          792,
+          810,
+          826,
+          840,
+          874,
+          968
+        ],
+        "owner": "CentOS Docker build"
+      },
+      "prepare_py": {
+        "blob": "a9f3dd2d9e4020df958ab5af942376177d66c78b",
+        "count": 33,
+        "lines": [
+          579,
+          623,
+          673,
+          710,
+          757,
+          777,
+          835,
+          900,
+          958,
+          987,
+          1026,
+          1072,
+          1131,
+          1166,
+          1170,
+          1174,
+          1357,
+          1422,
+          1433,
+          1451,
+          1454,
+          1457,
+          1491,
+          1494,
+          1521,
+          1529,
+          1610,
+          1683,
+          1932,
+          1955,
+          2036,
+          2042,
+          2055
+        ],
+        "owner": "TDesktop prepare/build orchestration"
+      },
+      "snapcraft": {
+        "blob": "a181d828f25d901303f7221824ac30b0ff5e773a",
+        "count": 9,
+        "lines": [
+          138,
+          152,
+          168,
+          337,
+          352,
+          371,
+          389,
+          399,
+          446
+        ],
+        "owner": "Snapcraft packaging"
+      }
+    }
+  },
+  "recursive_git_inventory": {
+    "artifact_id": 13118749668,
+    "digest": "sha256:77501e120e4df95742c028a7b35e1e7e4f570b0a7b2a2d6842999a70be8f9d60",
+    "entries": 16381,
+    "repositories": 41,
+    "edges": 40
+  },
+  "source_reviews": {
+    "total": 6,
+    "complete": 2,
+    "pending": 4,
+    "pending_files": [
+      "history/view/controls/history_view_forward_panel.h",
+      "history/view/controls/history_view_forward_panel.cpp",
+      "chat_helpers/share_message_phrase_factory.h",
+      "chat_helpers/share_message_phrase_factory.cpp"
+    ]
+  },
+  "production_change": "Only explicit sent is success; every other runtime status is attention-required in the existing forward settlement projection.",
+  "test": {
+    "path": "frontend/src/production/forward-settlement.contract.test.ts",
+    "new_case": "unknown runtime settlement statuses fail closed without exposing unconfirmed names",
+    "execution": "pending current-H Actions"
+  },
+  "acceptance": {
+    "source_closure": false,
+    "product_acceptance": false,
+    "independent_acceptance": false,
+    "unknown": null,
+    "unread": null
+  }
+}\n

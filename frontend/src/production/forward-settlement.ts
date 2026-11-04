@@ -40,7 +40,7 @@ export function formatForwardNotice(
   roster: readonly ForwardRosterRecipient[] = [],
 ): string {
   const sentCount = settlement.filter((item) => item.status === "sent").length;
-  const failedCount = settlement.filter((item) => item.status === "failed").length;
+  // Only explicit sent is success; unknown runtime statuses fail closed.\n  const failedCount = settlement.filter((item) => item.status !== "sent").length;
   const names = recipientNamesForSettlement(settlement, roster);
 
   let summary: string;

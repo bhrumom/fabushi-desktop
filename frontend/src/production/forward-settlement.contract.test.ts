@@ -156,3 +156,15 @@ test("account scope replacement fences pre-read, late successful, and late rejec
   assert.deepEqual(lateFailure.notices, []);
   assert.deepEqual(lateFailure.rosters, []);
 });
+
+\ntest("unknown runtime settlement statuses fail closed without exposing unconfirmed names", async () => {
+  const h = harness([{ id: "c", name: "Alice" }, { id: "x", name: "Private target" }]);
+  const unknown = { conversationId: "x", status: "queued" } as unknown as ReturnType<typeof failed>;
+  await settleForwardProjection({
+    settlement: [sent("c"), unknown],
+    accountScopeGeneration: 3, isAccountScopeCurrent: h.isCurrent,
+    setNotice: h.notice, readRoster: async () => ["fresh-roster"], applyRoster: h.apply,
+  });
+  assert.deepEqual(h.notices, ["Forwarded to Alice; 1 destination still needs attention."]);
+  assert.doesNotMatch(h.notices[0] ?? "", /Private target|queued/);
+});

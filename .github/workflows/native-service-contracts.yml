@@ -793,8 +793,8 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/forward-settlement.contract.test.ts 2>&1 | tee artifacts/native-message-ui/forward-settlement.log
-          grep -Fx '# tests 5' artifacts/native-message-ui/forward-settlement.log
-          grep -Fx '# pass 5' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# tests 6' artifacts/native-message-ui/forward-settlement.log
+          grep -Fx '# pass 6' artifacts/native-message-ui/forward-settlement.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-settlement.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-settlement.log
       - name: Install locked Chromium for actual forward dialog and Settings
