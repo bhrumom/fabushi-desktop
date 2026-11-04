@@ -549,3 +549,124 @@ test("typing comment transmits formatted comment with forward request and locks 
   await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
 });
 
+test("selecting topic recipient displays topic title and transmits destinationTopics in forward request", async (t) => {
+  const f = await fixture(t);
+  const search = await f.request("search");
+  await f.call("resolve", search.id, [
+    { id: "human:forum-group", name: "Engineering Forum", topicId: "topic-42", topicTitle: "Architecture" },
+  ]);
+  const topicLabel = "Engineering Forum › Architecture";
+  await f.page.getByRole("option", { name: topicLabel, exact: true }).waitFor();
+  await f.select(topicLabel);
+  await f.submit();
+  const first = await f.request("forward");
+  assert.deepEqual(first.args.destinationConversationIds, ["human:forum-group"]);
+  assert.deepEqual(first.args.destinationTopics, { "human:forum-group": "topic-42" });
+
+  const frames = await f.call("forwardFrames");
+  assert.equal(frames.length, 1);
+  assert.deepEqual(frames[0].args.destinationTopics, { "human:forum-group": "topic-42" });
+
+  await f.call("resolve", first.id, [{ conversationId: "human:forum-group", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+});
+
+test("destroyed or closed topic recipient automatically clears selection without falling back to parent conversation", async (t) => {
+  const f = await fixture(t);
+  const search1 = await f.request("search");
+  await f.call("resolve", search1.id, [
+    { id: "topic:alpha", name: "Alpha Group", topicId: "t-100", topicTitle: "Alpha Topic" },
+    { id: "human:normal", name: "Normal Peer" },
+  ]);
+  const alphaLabel = "Alpha Group › Alpha Topic";
+  await f.page.getByRole("option", { name: alphaLabel, exact: true }).waitFor();
+  await f.page.getByRole("option", { name: "Normal Peer", exact: true }).waitFor();
+
+  await f.select(alphaLabel);
+  await f.select("Normal Peer");
+  assert.equal(await f.page.getByText("2 selected", { exact: false }).count(), 1);
+
+  // Trigger search refresh with topicClosed
+  await f.page.getByRole("searchbox").fill("alpha");
+  const search2 = await f.request("search", 2);
+  await f.call("resolve", search2.id, [
+    { id: "topic:alpha", name: "Alpha Group", topicId: "t-100", topicTitle: "Alpha Topic", topicClosed: true },
+    { id: "human:other", name: "Other Peer" },
+  ]);
+
+  // topic:alpha is closed, so it must be filtered out and removed from selected
+  await f.page.waitForFunction(() => !document.querySelector('[data-forward-recipient-index="1"]'));
+  assert.equal(await f.page.getByText("1 selected", { exact: false }).count(), 1);
+  assert.equal(await f.page.getByRole("option", { name: alphaLabel }).count(), 0);
+
+  // Submit forwards only to the remaining selected recipient without falling back to parent conversation
+  await f.submit();
+  const first = await f.request("forward");
+  assert.deepEqual(first.args.destinationConversationIds, ["human:normal"]);
+  assert.equal(first.args.destinationTopics, undefined);
+
+  await f.call("resolve", first.id, [{ conversationId: "human:normal", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+});
+
+test("topicDeleted recipient in refreshed search automatically clears selection", async (t) => {
+  const f = await fixture(t);
+  const search1 = await f.request("search");
+  await f.call("resolve", search1.id, [
+    { id: "topic:del", name: "Forum Beta", topicId: "t-200", topicTitle: "Beta Topic" },
+  ]);
+  const betaLabel = "Forum Beta › Beta Topic";
+  await f.page.getByRole("option", { name: betaLabel, exact: true }).waitFor();
+  await f.select(betaLabel);
+  assert.equal(await f.page.getByText("1 selected", { exact: false }).count(), 1);
+
+  // Trigger search refresh with topicDeleted
+  await f.page.getByRole("searchbox").fill("beta");
+  const search2 = await f.request("search", 2);
+  await f.call("resolve", search2.id, [
+    { id: "topic:del", name: "Forum Beta", topicId: "t-200", topicTitle: "Beta Topic", topicDeleted: true },
+  ]);
+
+  // Topic is deleted, so selection is cleared
+  await f.page.waitForFunction(() => document.querySelectorAll('[role="option"]').length === 0);
+  assert.equal(await f.page.getByText("No recipients selected").count(), 1);
+  assert.equal(await f.page.getByRole("button", { name: "Forward", exact: true }).isDisabled(), true);
+});
+
+test("partial retry only retains destinationTopics for unconfirmed destinations", async (t) => {
+  const f = await fixture(t);
+  const search1 = await f.request("search");
+  await f.call("resolve", search1.id, [
+    { id: "topic:first", name: "Forum A", topicId: "t-1", topicTitle: "Topic 1" },
+    { id: "topic:second", name: "Forum B", topicId: "t-2", topicTitle: "Topic 2" },
+  ]);
+  await f.select("Forum A › Topic 1");
+  await f.select("Forum B › Topic 2");
+  await f.submit();
+
+  const first = await f.request("forward");
+  assert.deepEqual(first.args.destinationTopics, {
+    "topic:first": "t-1",
+    "topic:second": "t-2",
+  });
+
+  // Fail only topic:first
+  await f.call("resolve", first.id, [
+    { conversationId: "topic:first", status: "failed", error: "Rate limit on topic:first" },
+    { conversationId: "topic:second", status: "sent" },
+  ]);
+
+  await f.page.getByRole("alert").waitFor();
+  assert.equal(await f.page.getByText("1 selected", { exact: false }).count(), 1);
+
+  // Retry
+  await f.submit();
+  const retry = await f.request("forward", 2);
+  assert.deepEqual(retry.args.destinationConversationIds, ["topic:first"]);
+  // Only the failed destination remains in destinationTopics on retry
+  assert.deepEqual(retry.args.destinationTopics, { "topic:first": "t-1" });
+
+  await f.call("resolve", retry.id, [{ conversationId: "topic:first", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+});
+

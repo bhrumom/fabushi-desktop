@@ -258,6 +258,8 @@ export interface TranscriptMessage {
   remoteMessageId?: string;
   /** Validated RFC3339/ISO read timestamp on canonical settled Human messages. */
   readAt?: string;
+  /** Topic identifier when message belongs to a forum topic or thread channel. */
+  readonly topicId?: string;
   /** General composition time; it does not by itself prove offline origin. */
   composedAtMs?: number;
   /** Explicit Host-owned Human origin, independent of a busy online queue. */
