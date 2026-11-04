@@ -1744,6 +1744,7 @@ fn publish_generated_subagents(
         .into_iter()
         .map(|(id, record)| {
             let status = match record.status {
+                mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Pending => "pending",
                 mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Running => "running",
                 mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Done => "done",
                 mahayana_host_runtime::runner::subagent_runtime::SubagentStatus::Error => "error",
