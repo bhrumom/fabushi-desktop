@@ -2062,7 +2062,7 @@
         "source/host/tests/session_gateway_contract.rs#shipping_human_forward_privacy_corruption_blocks_restart_until_exact_intent_repair",
         "frontend/src/production/forward-settlement.contract.test.ts#unknown runtime settlement statuses fail closed without exposing unconfirmed names"
       ],
-      "target_commit": null,
+      "target_commit": "21ab7870a3ba3129172942d722befb83c321f413",
       "workflow_run": null,
       "run_attempt": null,
       "job": null,
@@ -51682,3 +51682,4 @@
     }
   ]
 }
+
