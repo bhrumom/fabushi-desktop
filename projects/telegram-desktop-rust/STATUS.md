@@ -1,9 +1,17 @@
 # Telegram Desktop → Fabushi 全量等价重写 — Status
 
-Date: 2026-11-02  
+Date: 2026-11-04
 Spec: TDRP-001 Revision 10 / FMEP-001 Revision 2  
 Parent: FBCP-001 Revision 8  
 Complete: false
+
+## task20bf round17 — forwarding exact-H Actions reconciliation
+
+Requested c38e268 runs were fully read with job logs and downloaded artifacts. `41757851720` had one real failure: `forward-settlement.contract.test.ts:160` contained a literal `\\n` before `test(`, causing Node's TypeScript parser to raise `ERR_INVALID_TYPESCRIPT_SYNTAX`; the production renderer build passed. Reconciliation (Human73, forward journal13, HTTP1, sharebox1) and shipping compile (Protocol122, TCP9, Proxy4, credential1, package resource copy4) passed. `41757851849` renderer passed.
+
+The one-line syntax correction is already present in `b969b7c88c934fe0e0d382378df6fa426812edb6`; exact-H run `41758433155` passed native-message-ui, reconciliation and shipping compile. Forward settlement6/6, dialog23/23, ProductionRenderer13/13, Transcript14/14, Human73/73 and forward journal13/13 passed. `ad015021b01c723305546d862675ced83e27bb7c` then changed only the ledger. At that current head, source-review contract `41758742225` passed Node171/171, Python37/37 and schema validation with zero errors; candidate validator remains unaccepted-candidate-consistent. Rust renderer `41758742156` passed.
+
+Inventory remains 16,381 entries / 184 responsibilities / 6 source reviews (2 complete, 4 pending) / 76 unresolved refs. Unknown/unread remain null. Baseline, source closure, product acceptance and independent acceptance remain false. Four pending source reviews are the two `history_view_forward_panel` files and two `share_message_phrase_factory` files. PR #189 remains open/draft. Local uncommitted worktree state is not observable through the remote GitHub connector.
 
 ## Round31 — canonical reply identity recovery
 

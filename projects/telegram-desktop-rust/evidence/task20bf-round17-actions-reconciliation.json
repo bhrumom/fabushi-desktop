@@ -1,0 +1,493 @@
+{
+  "task_id": "bfafe567-d2b0-4f1e-85d4-74a546c04b1e",
+  "round": 17,
+  "evidence_kind": "exact-head-actions-and-source-review-reconciliation",
+  "evidence_base_head": "ad015021b01c723305546d862675ced83e27bb7c",
+  "branch": {
+    "name": "checkpoint/tdrp-forward-privacy-task20bf-r1",
+    "head_before_round_commit": "ad015021b01c723305546d862675ced83e27bb7c",
+    "head_ref_verified": true,
+    "main_head": "5528062177e3865eef60a073a066cca144f9e3e8",
+    "local_worktree_status": "not_observable_through_the_GitHub_remote_connector"
+  },
+  "pull_request": {
+    "number": 189,
+    "state": "open",
+    "draft": true,
+    "head_before_round_commit": "ad015021b01c723305546d862675ced83e27bb7c",
+    "base": "checkpoint/tdrp-stage-a-msg-mutations-7457eb1c-r1",
+    "merged": false
+  },
+  "fixed_upstream": {
+    "repository": "telegramdesktop/tdesktop",
+    "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "changed": false
+  },
+  "c38_exact_head_runs": [
+    {
+      "run_id": 41757851720,
+      "head_sha": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+      "workflow": "Native service contracts",
+      "jobs": [
+        {
+          "id": 126338106985,
+          "name": "native-message-ui",
+          "conclusion": "failure"
+        },
+        {
+          "id": 126338106888,
+          "name": "native-message-reconciliation",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338106567,
+          "name": "native-message-shipping-compile",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338106946,
+          "name": "native-message-electron",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338106986,
+          "name": "desktop-social-owner-behaviors",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338106833,
+          "name": "windows-update-publisher",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338107073,
+          "name": "retained-direct-ffi-compatibility",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338108591,
+          "name": "native-auth-and-journal",
+          "conclusion": "skipped"
+        }
+      ],
+      "native_message_ui_failure": {
+        "path": "frontend/src/production/forward-settlement.contract.test.ts",
+        "line": 160,
+        "error": "SyntaxError [ERR_INVALID_TYPESCRIPT_SYNTAX]: Expected unicode escape",
+        "actual_line_prefix": "\\\\ntest(",
+        "diagnosis": "A literal backslash-n was inserted before the test declaration; this was a test-source syntax defect, not a production renderer build failure."
+      },
+      "renderer_build": {
+        "conclusion": "success",
+        "bundle_boundary": "45 emitted text assets"
+      },
+      "reconciliation_results": {
+        "human_gateway": "73 passed, 0 failed",
+        "forward_batch_journal": "13 passed, 0 failed",
+        "forward_http": "1 passed, 0 failed",
+        "forward_sharebox": "1 passed, 0 failed",
+        "transcript_recovery": "3 passed, 0 failed",
+        "resource_upload_bounds": "3 passed, 0 failed"
+      },
+      "shipping_results": {
+        "conclusion": "success",
+        "telegram_protocol": "122 passed, 0 failed",
+        "telegram_tcp_transport": "9 passed, 0 failed",
+        "telegram_proxy_boundary": "4 passed, 0 failed",
+        "native_credential_schema": "1 passed, 0 failed",
+        "package_resource_copy": "4 passed, 0 failed",
+        "app_host_sha256": "64061e9c75cc3b8127f62647400c337590982b14198b618b4ae9628f889dbc96",
+        "app_host_size_bytes": 160462688,
+        "app_host_mode": "0755",
+        "package_hash_mismatch_negative": "expected rejection observed"
+      },
+      "artifacts": [
+        {
+          "id": 13289315886,
+          "name": "native-message-ui",
+          "sha256": "b70ae627b554680f0852d808487269b1c519e4d12b0f47c76c382a54640ec1d6",
+          "target_sha": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13289825445,
+          "name": "native-message-reconciliation",
+          "sha256": "2e001b07f1f41fc86e69c4caf537de4ddff44051d3eb2d9aa460a354f7f28722",
+          "target_sha": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13291115464,
+          "name": "native-message-shipping-compile",
+          "sha256": "73224707910b2a698a901131abad763133197fff443679aa67a38ea928f3c3f4",
+          "target_sha": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+          "downloaded_and_checksum_verified": true
+        }
+      ]
+    },
+    {
+      "run_id": 41757851849,
+      "head_sha": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+      "workflow": "Rust desktop runtime",
+      "jobs": [
+        {
+          "id": 126338107715,
+          "name": "renderer",
+          "conclusion": "success"
+        },
+        {
+          "id": 126338108992,
+          "name": "pressure-profiler",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 126338109107,
+          "name": "rust-host",
+          "conclusion": "skipped"
+        },
+        {
+          "id": 126338109156,
+          "name": "platform-worker",
+          "conclusion": "skipped"
+        }
+      ],
+      "artifacts": []
+    }
+  ],
+  "correction_and_retest": {
+    "fix_commit": "b969b7c88c934fe0e0d382378df6fa426812edb6",
+    "parent": "c38e26811940ca4c9631a6625e9a85c8c8dd2b7d",
+    "exact_diff": {
+      "path": "frontend/src/production/forward-settlement.contract.test.ts",
+      "change": "removed the literal backslash-n prefix before the unknown-runtime-status test declaration"
+    },
+    "current_head_after_fix": "ad015021b01c723305546d862675ced83e27bb7c",
+    "compare_c38_to_fix": {
+      "total_commits": 1,
+      "changed_files": [
+        "frontend/src/production/forward-settlement.contract.test.ts"
+      ]
+    },
+    "compare_fix_to_current_head": {
+      "total_commits": 1,
+      "changed_files": [
+        "projects/telegram-desktop-rust/parity-ledger.json"
+      ]
+    },
+    "product_and_test_blobs_unchanged_from_fix_to_current_head": true
+  },
+  "b969_exact_head_runs": [
+    {
+      "run_id": 41758433155,
+      "head_sha": "b969b7c88c934fe0e0d382378df6fa426812edb6",
+      "workflow": "Native service contracts",
+      "jobs": [
+        {
+          "id": 126340010683,
+          "name": "native-message-ui",
+          "conclusion": "success"
+        },
+        {
+          "id": 126340010507,
+          "name": "native-message-reconciliation",
+          "conclusion": "success"
+        },
+        {
+          "id": 126340011706,
+          "name": "native-message-shipping-compile",
+          "conclusion": "success"
+        },
+        {
+          "id": 126340010493,
+          "name": "native-message-electron",
+          "conclusion": "success"
+        },
+        {
+          "id": 126340010323,
+          "name": "desktop-social-owner-behaviors",
+          "conclusion": "success"
+        },
+        {
+          "id": 126340010732,
+          "name": "windows-update-publisher",
+          "conclusion": "success"
+        },
+        {
+          "id": 126340010450,
+          "name": "retained-direct-ffi-compatibility",
+          "conclusion": "success"
+        },
+        {
+          "id": 126340012232,
+          "name": "native-auth-and-journal",
+          "conclusion": "skipped"
+        }
+      ],
+      "forward_settlement": {
+        "tests": 6,
+        "passed": 6,
+        "failed": 0
+      },
+      "forward_dialog": {
+        "tests": 23,
+        "passed": 23,
+        "failed": 0
+      },
+      "production_renderer": {
+        "tests": 13,
+        "passed": 13,
+        "failed": 0
+      },
+      "production_transcript": {
+        "tests": 14,
+        "passed": 14,
+        "failed": 0
+      },
+      "human_cursors": {
+        "tests": 17,
+        "passed": 17,
+        "failed": 0
+      },
+      "coordinator_admission": {
+        "tests": 13,
+        "passed": 13,
+        "failed": 0
+      },
+      "network_proxy_settings": {
+        "tests": 18,
+        "passed": 18,
+        "failed": 0
+      },
+      "renderer_bundle_boundary": "45 emitted text assets",
+      "reconciliation_results": {
+        "human_gateway": "73 passed, 0 failed",
+        "forward_batch_journal": "13 passed, 0 failed",
+        "forward_http": "1 passed, 0 failed",
+        "forward_sharebox": "1 passed, 0 failed",
+        "transcript_recovery": "3 passed, 0 failed"
+      },
+      "artifacts": [
+        {
+          "id": 13289501696,
+          "name": "native-message-ui",
+          "sha256": "b29895a7838055d8f07cfa045479b37651f053c0087219a99e7c73942d93a960",
+          "target_sha": "b969b7c88c934fe0e0d382378df6fa426812edb6",
+          "downloaded_and_checksum_verified": true
+        }
+      ]
+    },
+    {
+      "run_id": 41758433539,
+      "head_sha": "b969b7c88c934fe0e0d382378df6fa426812edb6",
+      "workflow": "Rust desktop runtime",
+      "jobs": [
+        {
+          "id": 126340013165,
+          "name": "renderer",
+          "conclusion": "success"
+        }
+      ],
+      "artifacts": []
+    }
+  ],
+  "current_ad015_exact_head_runs": [
+    {
+      "run_id": 41758742225,
+      "head_sha": "ad015021b01c723305546d862675ced83e27bb7c",
+      "workflow": "TDRP source review contract",
+      "jobs": [
+        {
+          "id": 126341061754,
+          "name": "contract",
+          "conclusion": "success"
+        },
+        {
+          "id": 126341147917,
+          "name": "fixed-source-candidate",
+          "conclusion": "success"
+        }
+      ],
+      "contract_results": {
+        "node_tests": {
+          "passed": 171,
+          "failed": 0
+        },
+        "python_schema_tests": {
+          "passed": 37,
+          "failed": 0
+        },
+        "canonical_ledger_schema": {
+          "valid": true,
+          "errors": 0,
+          "source_accepted": false
+        }
+      },
+      "fixed_source_candidate": {
+        "status": "unaccepted-candidate-consistent",
+        "target_commit": "ad015021b01c723305546d862675ced83e27bb7c",
+        "source_entries_total": 16381,
+        "root_source_entries_total": 6895,
+        "responsibility_rows": 184,
+        "authored_source_review_records": 6,
+        "completed_source_review_records": 2,
+        "unknown": null,
+        "unread": null,
+        "lexical_observations": 333,
+        "text_files_read": 203,
+        "opaque_inputs_unread": 2,
+        "unresolved_ref_observations": 76,
+        "baseline_accepted": false,
+        "source_closure_ready": false,
+        "product_accepted": false,
+        "independent_acceptance": false
+      },
+      "artifacts": [
+        {
+          "id": 13289761114,
+          "name": "tdrp-source-review-contract",
+          "sha256": "5ad1864068f2337e78a8e8f532eee4b2148a04a521091de619e1cdc7084ae701",
+          "target_sha": "ad015021b01c723305546d862675ced83e27bb7c",
+          "downloaded_and_checksum_verified": true
+        },
+        {
+          "id": 13289271648,
+          "name": "tdrp-source-candidate",
+          "sha256": "52a057468c59eac4394f0e10e275c4741fbf66f399ae14a3eed13af6444a0b02",
+          "target_sha": "ad015021b01c723305546d862675ced83e27bb7c",
+          "downloaded_and_checksum_verified": true
+        }
+      ]
+    },
+    {
+      "run_id": 41758742156,
+      "head_sha": "ad015021b01c723305546d862675ced83e27bb7c",
+      "workflow": "Rust desktop runtime",
+      "jobs": [
+        {
+          "id": 126341061169,
+          "name": "renderer",
+          "conclusion": "success"
+        }
+      ],
+      "artifacts": []
+    }
+  ],
+  "source_accounting": {
+    "fixed_upstream_commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+    "recursive_inventory_entries": 16381,
+    "root_source_entries": 6895,
+    "repository_identities": 41,
+    "recursive_edges": 40,
+    "responsibilities": 184,
+    "source_reviews": {
+      "total": 6,
+      "complete": 2,
+      "pending": 4
+    },
+    "unknown": null,
+    "unread": null,
+    "lexical_observations": 333,
+    "text_files_read": 203,
+    "opaque_inputs_unread": 2,
+    "unresolved_ref_observations": 76,
+    "unresolved_ref_types": {
+      "named": 57,
+      "short": 10,
+      "expression": 9
+    },
+    "unresolved_ref_paths": [
+      "mac_packaged.yml",
+      "CentOS Dockerfile",
+      "prepare.py",
+      "snapcraft.yaml"
+    ]
+  },
+  "pending_source_reviews": [
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.h",
+      "object": "b5847bfe6e651f5e3bc52480192afd664a37c8b8",
+      "category": "mixed-ui",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending"
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/history/view/controls/history_view_forward_panel.cpp",
+      "object": "eaa0108dd32dbadc21727ed4583c329d3badc85e",
+      "category": "mixed-ui",
+      "risk": "high",
+      "review_depth": "deep",
+      "status": "pending"
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.h",
+      "object": "86865db47439dbce848fc812df2554335d3e004c",
+      "category": "mixed-ui",
+      "risk": "medium",
+      "review_depth": "deep",
+      "status": "pending"
+    },
+    {
+      "repository": "telegramdesktop/tdesktop",
+      "commit": "f985723b552b30fe1c17d377d57f44e61a15a8c4",
+      "path": "Telegram/SourceFiles/chat_helpers/share_message_phrase_factory.cpp",
+      "object": "1437bbfbd86b9d6649faae0bed7eed755e06337e",
+      "category": "mixed-ui",
+      "risk": "medium",
+      "review_depth": "deep",
+      "status": "pending"
+    }
+  ],
+  "current_owner_gap_analysis": {
+    "existing_fabushi_owner_chain": [
+      "ProductionRenderer transcript Forward action",
+      "ForwardMessageDialog",
+      "Coordinator searchHumanRecipients/forwardHumanMessage",
+      "Session gateway",
+      "ProductionSessionWorkers.forward_human_message",
+      "HumanForwardBatch",
+      "destination SandAgentDb transcript/outbox",
+      "settleForwardProjection current-account roster"
+    ],
+    "observed_ui_contract": {
+      "source_message": "ForwardMessageDialog currently receives one TranscriptMessage",
+      "recipient_projection": "searchForwardRecipients returns only id and name",
+      "settlement_projection": "generic text notice for one/two/many confirmed destinations",
+      "self_or_premium_metadata": "no explicit isSelf/isPremium flag is projected to the renderer",
+      "saved_messages_navigation": "no typed click-through to a Saved Messages session route in settleForwardProjection"
+    },
+    "pending_panel_semantics": [
+      "multi-source selection and forward draft lifecycle",
+      "source-item removal",
+      "typed destination topic/sublist lifecycle",
+      "reply/suggestion draft cleanup",
+      "delayed cloud-save and destination lifetime behavior"
+    ],
+    "pending_phrase_semantics": [
+      "self/Saved Messages distinction",
+      "premium-specific phrase suppression/behavior",
+      "one/two/many destination phrase rules",
+      "Saved Messages icon and session-window navigation"
+    ],
+    "no_new_owner_or_source_acceptance_claimed": true
+  },
+  "acceptance": {
+    "baseline_accepted": false,
+    "source_closure_ready": false,
+    "product_accepted": false,
+    "independent_acceptance": false,
+    "unknown": null,
+    "unread": null
+  },
+  "execution_constraints": {
+    "local_builds_or_tests_run": false,
+    "local_worktree_dirty_state": "not observable through GitHub remote API",
+    "acceptance_scope": "bounded GitHub Actions only; live service, signed installers, packaged UI/visual/a11y, security/performance/soak, upgrade/rollback, full Bot regression and independent ACCEPT remain open"
+  }
+}
