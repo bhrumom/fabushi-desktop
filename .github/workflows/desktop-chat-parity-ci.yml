@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - '.github/workflows/release-macos-main.yml'
       - "desktop/**"
       - "frontend/**"
       - "source/product/fabushi/**"
@@ -17,6 +18,7 @@ on:
   pull_request:
     branches: [main, refactor/grok-018-architecture-rebuild]
     paths:
+      - '.github/workflows/release-macos-main.yml'
       - "desktop/**"
       - "frontend/**"
       - "source/product/fabushi/**"

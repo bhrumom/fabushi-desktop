@@ -1,5 +1,7 @@
 name: Package macOS installer from exact source
 
+# Version-only releases also run every source gate required by immutable promotion.
+
 on:
   workflow_dispatch:
     inputs:

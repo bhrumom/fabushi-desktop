@@ -109,12 +109,13 @@ def structural():
         check(e["disposition_status"] in {"pending", "deep-read-required", "deep-read", "grouped-evidence", "not-applicable"}, "Invalid disposition status: " + path)
         applicability_assessed += e["applicability_status"] != "unknown"
         dispositioned += e["disposition_status"] not in {"pending", "deep-read-required"}
+        if e["applicability_status"] in {"product", "mixed"}:
+            if e["responsibility_status"] != "reviewed" or not e["responsibility_ids"]:
+                unreviewed_applicable += 1
         if FINAL_AC02:
             check(e["applicability_status"] != "unknown", "Final AC02 unresolved applicability: " + path)
             check(e["disposition_status"] not in {"pending", "deep-read-required"}, "Final AC02 undispositioned path: " + path)
             if e["applicability_status"] in {"product", "mixed"}:
-                if e["responsibility_status"] != "reviewed" or not e["responsibility_ids"]:
-                    unreviewed_applicable += 1
                 check(e["responsibility_status"] == "reviewed" and bool(e["responsibility_ids"]), "Final AC02 applicable path lacks reviewed responsibility mapping: " + path)
                 check(e["read_status"] == "read-complete", "Final AC02 applicable path lacks complete semantic read: " + path)
                 check(e["disposition_status"] == "deep-read", "Final AC02 applicable path lacks deep-read disposition: " + path)
@@ -224,6 +225,9 @@ def structural():
                 check(bool(resp["oracle_ids"] and resp["selected_owner"] and resp["reviewer"]), "Final AC02 responsibility review is incomplete: " + rid)
         if resp["status"]["implementation"] == "implemented":
             check(bool(resp["target"]["path"] and resp["evidence_refs"]), "Unproven implementation")
+            target_file = Path(resp["target"]["path"])
+            check(target_file.exists() and target_file.is_file(), "Missing target file: " + rid)
+            check(bool(resp["target"]["symbol"]) and resp["target"]["symbol"] in target_file.read_text(encoding="utf-8", errors="replace"), "Missing literal target symbol: " + rid)
             if resp["responsibility_kind"] == "business-runtime":
                 check(resp["target"]["language"] == "Rust", "Migrated business still in non-Rust")
         if resp["status"]["wiring"] == "wired":

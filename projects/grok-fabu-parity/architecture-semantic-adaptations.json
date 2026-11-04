@@ -1423,8 +1423,8 @@
         "source/electron-main/mcp/official-mcp.contract.test.ts",
         ".github/workflows/official-mcp-marketplace.yml"
       ],
-      "rationale": " Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation.",
-      "targetBlobSha": "c7d49ff93d1d0f3df044ae1b67457ed65f7e441c"
+      "rationale": " Official provider Add bypasses optional manual credentials and uses the existing install/native-auth/external-opener lifecycle; installed entries expose Connect for retry. Required custom/team setup and native permission, token, account and broker boundaries remain intact. Actions verifies ordering, failure propagation and manual/legacy preservation. User-authorized OpenClaw-informed catalog cards, category shortcuts and publisher metadata retain the existing callback contracts. See docs/specs/openclaw-plugin-marketplace-design.md; visual acceptance pending.",
+      "targetBlobSha": "941e9fc55d13c3b08ccbc56c1a5674d6644dc17b"
     },
     {
       "referencePath": "source/electron-main/application-menu.ts",

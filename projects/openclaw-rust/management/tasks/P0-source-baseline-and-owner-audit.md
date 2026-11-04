@@ -1,491 +1,60 @@
 # OCRM P0 — 全量 source baseline 与 existing-owner 审计
 
-Status: in-progress / global authority pending
+> 执行修订（2026-11-04）：主 Spec Revision 3（`§17 OCRM-EXEC-02` 与 `§18 OCRM-EXEC-03`）优先于历史漂移快照。当前实施轮次严格固定上游基线 `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`（tree `90c8aab39972da11cfad220361781d49e1bc6700`，共 62,130 个跟踪对象），禁止在功能实施与生产接线批次中轮询上游浮动 `main`。
+
+Status: in-progress（Wave 0 治理基线与非产品批量裁决已完成；待 exact-head Actions 权威验印与纵向切片闭合）  
 Task ID: OCRM-P0  
 Spec: [OCRM-001](../../../../docs/specs/openclaw-rust-equivalence-migration.md)  
 Project: [Source of Truth](../../SOURCE_OF_TRUTH.md)  
-Last updated: 2026-10-31（Asia/Shanghai）
+Last updated: 2026-11-04（Asia/Shanghai）
 
 ## 1. 本任务要交付什么
 
-建立可以驱动全部后续 Rust 等价实现的真实 source authority、无遗漏 inventory、逐责任 ledger/RTM、当前 owner 解析和首批可实施合同。任务结束后必须能回答任一上游文件“读到哪里、承担什么、由谁实现、还缺什么、如何验收”，不能只产生目录清单和 migration proposal。
+建立可以驱动全部后续 Rust 等价实现的真实 source authority、无遗漏 inventory、逐责任 ledger/RTM、当前 owner 解析和纵向切片实施合同。任务必须能回答任一上游文件“读到哪里、承担什么、由谁实现、还缺什么、如何验收”，不能只产生目录清单和 migration proposal。
 
-本任务不声称一轮已完成所有文件语义深读。P0 必须完成全量集合与身份校验，并为每条路径建立适用性与 disposition；对下一实施单元完成逐文件阅读、依赖/owner/oracle 合同。承载行为、高风险、公开合同、生产 producer/owner/consumer、权限安全、状态迁移、官方插件/渠道/平台和关键上游 oracle 的路径必须深读；普通文档、示例、fixture、重复或研发用途项可以用可复核成组证据处置。未知行为保持未知并升级深读，未深读路径真实保持 unread。全部源码语义阅读、Rust 实现与验收由后续任务持续闭合，最终标准不降低。
-
-完整枚举/取得来源由 `source_closure_ready` 表达；0 适用性/处置未闭合路径和 0 未评估适用责任由 OCRM-AC02/G02 final 表达；适用责任理解、映射和 disposition closure 由 `responsibility_mapping_complete` 表达，责任双向映射由 AC03 单独验收，正面谓词见主 Spec §15.1。`unread` 是深读进度维度，不是把普通非产品路径强行全文阅读的全局门槛。P0 全局未退出时，满足 §11.1 的单元及其全部相关传递依赖仍可获得 scoped authority 并推进 Rust 实现；不把该单元结论升级为全项目通过。
-
-2026-10-31 governance amendment: P0 structural may preserve honest
-unread/unclassified progress. P0 final and AC02 close disposition and
-applicability sets, not a fabricated zero-unread count; this does not promote
-source closure or any project completion flag.
+本任务不声称一轮已完成所有文件语义深读。P0 必须完成全量集合与身份校验，并为每条路径建立适用性与 disposition；对每个纵向实施切片完成逐文件深读、依赖/owner/oracle 合同。承载行为、高风险、公开合同、生产 producer/owner/consumer、权限安全、状态迁移、官方插件/渠道/平台和关键上游 oracle 的路径必须深读；普通文档、示例、fixture、重复或研发用途项按 [`docs/specs/ocrm-bulk-subtrees-disposition.md`](../../../../docs/specs/ocrm-bulk-subtrees-disposition.md)（`OCRM-BULK-01`）成组证据处置。
 
 ## 2. 前置读取与并行工作保护
 
-1. 读取 live main、实际工作 PR/head/ref/tree、根 AGENTS、OCRM Spec/SOT/module map、当前相关 owner 源码和领域合同。
-2. 读取 live `openclaw/openclaw` default branch/ref/commit/tree。Spec discovery `e8cde7518c558f1b4e44cb8139a149289b9719ad` 仅作起点；若变化，先记录 delta 与明确新 baseline，不能静默替换。
-3. 查现有 OpenClaw 任务/分支/lock，避免重复项目或覆盖另一执行者；TDRP PR #154 与 #165/#166/#167/#168 等并行工作独立保留。
-4. 目标状态只按实际合并源码判断，旧 FBCP inventory 和尚未合并 PR 的代码均需标明来源，不能冒领 main 能力。
-
-此前 live ref 只读核对曾解析到 OpenClaw `main`=`b7a537eb6833ea16960c227d5fc223fcd08ccef6`，root tree=`804b4f9c70d2a24a2575cfe68bc682f6c6c98574`；递归 tree=`truncated=false`、63,521 entries（61,281 blobs、2,240 directories）。这是历史 discovery-only rebaseline 输入，不是 Actions source authority；该 identity 与更早 candidate 的 inventory/依赖闭包不得直接复用。
-随后只读核对发现 OpenClaw `main` 再次漂移到 `68fbe4ac429cdac7a54541df40367d66defd0161`、root tree=`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`（committer=`2026-10-30T09:42:45Z`）。该 exact subject 仍是 discovery-only；compare 计数未刷新，旧 candidate 的 inventory、依赖闭包和 Actions provenance 不得复用。
-
-所有测试/构建/生成器/schema/可执行盘点验收只在 GitHub Actions。外部只做只读调查、文档/代码编辑和 Git/API 操作。
+1. 读取根 [`AGENTS.md`](../../../../AGENTS.md)、OCRM Spec/SOT/module map、当前相关 owner 源码和领域合同。
+2. 固定本轮实施上游基线 `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`（tree `90c8aab39972da11cfad220361781d49e1bc6700`），`accepted_for_this_implementation_round = true`。
+3. 严禁干扰并行 Telegram 融合工作树（`fabushi-tg-integrate`、`fabushi-w2g-s4-host-wiring`）；OpenClaw 融合统一在独立工作树 `fabushi-ocrm-integrate`（分支 `integrate/openclaw-fusion-w1`）推进。
 
 ## 3. 任务分解与交付合同
 
 | ID | 工作 | 可复核交付 |
 | --- | --- | --- |
-| OCRM-P0-01 | 精确来源/目标锁定 | repo/ref/commit/tree、目标实际 checkout、source archive/hash、上游变化 delta、工作分支 lease |
-| OCRM-P0-02 | 递归 enumerate + dependency closure | 全部 tracked blobs/symlinks/gitlinks/LFS/root/hidden/generated、包 integrity/patch/外部组件关系、truncation 完整性证明 |
-| OCRM-P0-03 | 定义并验证 file/责任/RTM schema | 主 Spec 第 6 节字段、responsibility_kind/类型合同、独立状态、维度处置、集合守恒、禁止冒领状态的正反例 |
-| OCRM-P0-04 | 创建完整 file inventory | 每个源路径一条记录，未读保留 unread；root/非运行时职责不得省略；未知数量不填 0 |
-| OCRM-P0-05 | 逐模块依赖和当前 owner resolution | OCRM-M01..M32 扩展为真实 file/symbol→behavior→owner 图；新发现能力自动加入，不能按分组遗漏 |
-| OCRM-P0-06 | 生态/平台/服务/许可证矩阵 | 全部插件/skills/provider/channel/node/CLI/部署/外部包，来源、版本、owner、权限、配置、验收 lane 与 blocker |
-| OCRM-P0-07 | 首批模块全文阅读和 dossier | 完整 read ranges、责任/状态机/错误边界、source oracle、target symbol、production call path、差异与待实现项 |
-| OCRM-P0-08 | GitHub Actions authority/coverage gate | G01 identity/closure 和 G02 structural/final 可运行且 fail-closed；final AC02 使用 `validate_p0.py <evidence-dir> --final-ac02`，global/scoped 集合明确；真实 run/attempt/job/日志/artifact ID/digest 与实际 subject target 一致 |
-| OCRM-P0-09 | 既有能力回归与首批预算定义 | current Bot/FBCP/Computer/Plugins/Automation 的必保留行为、受影响 gate；性能 workload/数值预算和测量计划 |
-| OCRM-P0-10 | 形成首批 Rust 实施任务并交接 | 每任务有 responsibility ID、被选 owner、差异实现、UI/服务/平台 consumer、测试和退出条件；不以 P0 代替项目完成 |
+| OCRM-P0-01 | 精确来源/目标锁定 (`OCRM-LOCK-01`) | `upstream.lock.json`、`inventory/index.json`、`inventory/shards/manifest.json`、`parity-ledger.json`、`requirements-traceability-matrix.json` 统一锁定 `1440bb1771372334bea23d7642bb52deb7db1845` |
+| OCRM-P0-02 | 递归 enumerate + dependency closure | 62,130 个跟踪对象（62,128 blobs、2 symlinks、0 gitlinks）与 252 个声明 manifest 输入完整登记 |
+| OCRM-P0-03 | 定义并验证 file/责任/RTM schema | Draft 2020-12 JSON Schema 校验 + `OCRM-HYGIENE-01` 字面符号与路径存在性门禁 |
+| OCRM-P0-04 | 非产品子树批量裁决 (`OCRM-BULK-01`) | 41,834 个非产品路径成组裁决（`grouped-evidence`），817 个已映射路径恢复 `read-complete` / `deep-read`，19,479 个产品源码路径标为 `deep-read-required` |
+| OCRM-P0-05 | 逐模块依赖和当前 owner resolution | 239 条职责完整绑定 Fabushi 真实目标文件与字面符号 |
+| OCRM-P0-08 | GitHub Actions authority/coverage gate | `expand_inventory.py`、`shard_inventory.py`、`validate_p0.py`、`verify_audit_integrity.py` 四处自锁缺陷修复并通过本地与 Actions 双向校验 |
+| OCRM-P0-10 | 纵向生产接线切片 (`OC-S1`..`OC-S5`) | 针对 141 项 `implemented` + `not-wired` 与 9 项 `not-started` 职责建立端到端接线批次 |
 
 ## 4. 机器产物布局
 
-以下为本任务要建立的产物，当前 Spec 发布不宣称它们已经存在：
+- [`projects/openclaw-rust/upstream.lock.json`](../../upstream.lock.json)：唯一锁定上游身份。
+- [`projects/openclaw-rust/inventory/index.json`](../../inventory/index.json) 与 `inventory/shards/part-0000..0060.jsonl.gz`：62,130 条逐路径集合、类型、适用性、处置与阅读状态。
+- [`projects/openclaw-rust/parity-ledger.json`](../../parity-ledger.json)：239 条逐责任 source/owner/implementation/wiring/acceptance。
+- [`projects/openclaw-rust/requirements-traceability-matrix.json`](../../requirements-traceability-matrix.json)：48 条 requirement/AC/oracle/test/evidence/verdict。
+- [`docs/specs/ocrm-bulk-subtrees-disposition.md`](../../../../docs/specs/ocrm-bulk-subtrees-disposition.md)：非产品子树批量分类裁决规范（`OCRM-BULK-01`）。
 
-- `projects/openclaw-rust/upstream.lock.json`：唯一 source/dependency identity。
-- `projects/openclaw-rust/inventory/index.json` 与可复核分片：完整逐路径集合、类型和阅读状态。
-- `projects/openclaw-rust/parity-ledger.json`：逐责任 source/owner/implementation/wiring/acceptance。
-- `projects/openclaw-rust/requirements-traceability-matrix.json`：requirement/AC/oracle/test/evidence/verdict。
-- `projects/openclaw-rust/dossiers/`：模块行为、完整阅读、owner 选择和兼容差异。
-- `projects/openclaw-rust/decisions/`：确需新 owner、语言/协议/平台适配与变更的 ADR。
-- `projects/openclaw-rust/evidence/`：来源和 Actions artifacts 索引；大产物留在受控证据存储，不把密钥、账号数据或构建目录提交仓库。
-- 本项目当前任务/状态记录：保存 blockers、首个 strict responsibility 与可并行单元，复用仓库普通 task 生命周期。
-
-复用现有 source-neutral authority/review/evidence 组件；必要扩展应有清晰任务，不复制一套 TDRP 源码扫描器或把 OpenClaw 条目塞入 Telegram ledger。
-
-按主 Spec §12.3 先在 Actions 生成候选机器文件，再将它们与 Spec/validator 等受验输入提交为 H、云端 read-back，随后对 H 执行 authority/coverage 验证。最终 `acceptance-receipt`、effective ledger/RTM、flags、artifact ID/digest 和 reviewer verdict 作为绑定 H 的不可变 Actions artifact/attestation 发布；不要求把 H 的结果写进 H 自身。未来证据索引提交须标明原 subject H 与新 carrier H2，并重新为 H2 取得适用证明，不自动继承历史通过。
-
-## 5. 首批阅读与接线顺序
-
-基于依赖先处理 package/schema/entrypoint/config/lifecycle，再进入当前 owner 对照与真实能力，而不是长期停留在无产品逻辑的文档计数：
-
-1. `package.json`/workspaces/locks、根 entrypoints、`packages/gateway-protocol`/`gateway-client`、实际 dispatch/roles/permissions、`src/config`/`state`/`storage`/`secrets`。
-2. `src/agents`、`packages/agent-core`/`llm-core`、session/transcript/context、provider/harness/tool/approval 与 Fabushi Runner/Inference/Session/Transcript 边界。
-3. `src/plugins`、`src/plugin-sdk`、`packages/plugin-sdk`/`plugin-package-contract`、skills、MCP/registry，先形成版本/权限/生命周期 conformance。
-4. `src/cron`/hooks/worker、memory、channels/routing 与当前 Automations/Memory/connectors 的逐责任差异；尤其验证 HostChannelDelivery default unregistered 的真实接线需求。
-5. 继续所有剩余模块、全部插件/skills、UI、平台/设备/服务、quality/build/release。按 file/symbol 稳定顺序与 dependency DAG 保留未完成 frontier。
-
-这是实施依赖顺序，不是缩小源范围或按优先级豁免低频功能。某一来源/渠道/平台阻塞时，按主 Spec §11.1 的 scoped G01/G02、完整阅读和合同条件确定其他单元能否进入实现；依赖未满足的事项可继续只读研究/合同设计。缺账号/设备可以继续有 authority 的实现和其他验证，相关真实验收仍 blocked，不能虚构通过。
-
-## 6. 本任务退出标准
+## 5. 本任务退出标准
 
 | ID | 退出标准 |
 | --- | --- |
-| OCRM-P0-AC01 | 本任务 receipt 的 upstream、subject target/ref/tree、实际 checkout 与所有机器输入 provenance 一致；baseline/subject/carrier 明确区分，上游 drift 有显式处置。 |
-| OCRM-P0-AC02 | 全量路径集合与必要依赖闭包经过 Actions 校验，无静默截断/过滤；若外部闭包未获证据，P0 整体仍 blocked，已完成子任务可保留。 |
-| OCRM-P0-AC03 | 每路径已入 inventory 且身份、类型、适用性和 disposition 状态诚实；未读项不冒领 read-complete，未知行为升级深读，全部适用性/处置未闭合及未评估集合明确。 |
-| OCRM-P0-AC04 | 下一实施单元满足主 Spec §11.1：相关文件/传递依赖已取得并完整阅读，scoped authority、类型化责任/owner/oracle 与合同经审查；不宣称其他模块同步完成。 |
-| OCRM-P0-AC05 | G02 structural 接受诚实 unread/unclassified/not-started，拒绝漏项、断引用、错误类型/维度处置、身份漂移、伪 verified/accepted；仅已声明实施或验收状态要求对应真实 target/evidence。final 模式要求 0 适用性/处置未闭合、0 未评估适用责任、0 适用 orphan/unmapped；不把普通非产品路径的 unread 伪装成深读或把它单独作为 AC02 硬门槛。 |
-| OCRM-P0-AC06 | 外部服务、账号、设备、包、许可证和平台矩阵有逐项 owner/证据/解除条件。 |
-| OCRM-P0-AC07 | 针对已提交 H 的 Actions 完整日志与不可变 receipt/artifact ID/digest 被读取，独立 reviewer 检查 P0 结论和首批任务；结论作为 H 的 receipt 发布，不以新增 carrier 提交冒领 H2 通过。 |
-| OCRM-P0-AC08 | 受验输入 H 已云端原子提交/read-back，随后完成 H 的验证及 receipt 发布；没有变更无关实现分支或他人文件；后续满足准入的任务可继续真实 Rust 实现。 |
+| OCRM-P0-AC01 | `upstream.lock.json`、`index.json`、`manifest.json`、`parity-ledger.json`、`requirements-traceability-matrix.json` 身份完全一致，无漂移污染。 |
+| OCRM-P0-AC02 | 62,130 条路径集合与依赖输入经校验无截断/过滤，`omitted_known = 0`。 |
+| OCRM-P0-AC03 | 每路径已入 inventory 且 `applicability_status` 与 `disposition_status` 诚实闭合（`applicability_assessed = 62,130`，`dispositioned = 42,651`）。 |
+| OCRM-P0-AC04 | 下一纵向切片满足主 Spec §11.1 与 §18 Phase 0 五问侦察及 `Trust Boundary Table` 准入。 |
+| OCRM-P0-AC05 | `verify_audit_integrity.py` 与 `validate_p0.py` 0 违规通过；所有 `implemented` 职责的目标文件与字面符号真实存在。 |
 
-P0-AC 全通过也只完成基线任务；可按主 Spec §15.1 为 baseline identity/source closure 提供正面证据。适用性/处置未闭合、未评估适用责任或适用 orphan/unmapped 使 `responsibility_mapping_complete` 保持 false；诚实存在的非适用 unread 不单独改变该 flag。`rust_implementation_complete`、`production_wiring_complete`、`ecosystem_compatibility_accepted`、`ui_accepted`、`release_accepted` 不因 P0 通过而改变。若 P0-AC02 受阻，项目级 closure 仍 false，满足 scoped authority 的单元按 §11.1 推进，不改变这一全局结论。
+## 6. 当前状态（2026-11-04）
 
-2026-10-31T08:42:15Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to `54a2fe137a70a5d2c0c0187ba27294c5ba74d3a0` /
-`4e8c368864db959f8a188bc23333a6d24dd221a0`, with an untruncated recursive tree
-of 63,998 entries (61,757 blobs, 2,241 directories, 0 gitlinks). The ref is
-seven commits ahead of the prior `1d2e685...` candidate and has 30 changed
-files. Root dependency/license identities remain unchanged. This is a fresh
-discovery-only subject; prior inventory, dependency closure and Actions
-provenance remain bound to their original exact subjects, and all global flags
-remain false.
-
-2026-10-31T09:14:47Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to `e0f1e0a6af388d18fcfcda210f39f5106c7f7c10` /
-`63d39e4b31fbb462aab29ff0f8b728597bb3ca20`, committed at
-`2026-10-31T09:13:56Z`. The recursive tree is untruncated with 64,003 entries
-(61,762 blobs, 2,241 directories, 0 gitlinks); root dependency/license input
-identities are unchanged. This is a fresh discovery-only subject; prior
-inventory, dependency closure, LFS/integrity and Actions provenance remain
-bound to their original subjects and all global flags remain false.
-
-The previous root dependency probe is retained at
-`dossiers/upstream-current-candidate-dependency-probe-e8dade03-20261031.md`,
-but it is bound to the superseded subject and is not current closure evidence.
-It confirms only manifest shape and root input identities; it does not satisfy
-the required recursive dependency closure, LFS/integrity, or Actions evidence
-envelope.
-
-## 7. 阻塞与支持请求
-
-使用稳定 blocker ID，记录影响范围、已知事实、根因/未知点、owner、解除条件、最后检查、既有通知 thread 和可继续任务。需要用户操作时按用户指定 Gmail 地址通知；先检索是否已发送相同未解决请求，避免重复。地址、token 和账号敏感详情不进入公开仓库。
-
-每次继续执行时检查回复和真实环境变化；已解决即恢复，未解决继续下一可行工作。缺运行器、凭据、设备、签名不是通过，也不是产品功能 N/A。失败按实际日志分清实现缺陷、测试缺陷或环境不可达，不能无限原样重跑。
-
-## 8. 本次状态
-
-P0 仍未退出：此前只读 live candidate 曾推进到 OpenClaw
-`68fbe4ac429cdac7a54541df40367d66defd0161` / tree
-`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d`；该 identity 仅保留为历史
-discovery evidence。此前 candidate 曾以 `upstream.lock.json` 的
-`10d93efc…/d33ed7c3…` 为准，但现已被后续 live candidate supersede；该段仅作
-历史记录。当前 `002f25a…/553796f…` 尚未取得针对 exact subject 的 GitHub Actions
-inventory、依赖闭包和 evidence envelope。既有 inventory/shards 仍绑定上一轮
-候选，不能编辑性重标为当前来源；对应 drift decision 见
-`decisions/2026-10-31-upstream-live-drift.md`。
-
-2026-10-31T04:20:22Z 的只读重核对确认该 candidate 的递归 tree 未截断，共
-63,880 entries（61,639 blobs、2,241 directories）；根依赖/许可证输入与上一
-candidate 相同。该事实仍不构成 Actions authority、source closure 或任何
-completion flag 的正面证据。
-
-已完成的工作包括 schema/门槛修订、live candidate 记录、若干 scoped
-node-host owner 合同与 Rust 实现切片；这些不构成 P0-AC01–AC08、全项目
-source closure 或任何 global flag 的正面证据。OCRM Actions、本机 OCRM
-验证、push 与 PR 更新仍按开发期冻结要求未执行；本文件的退出标准保持
-pending，允许满足主 Spec §11.1 的 scoped 单元继续推进。
-
-本轮新增 `dossiers/upstream-node-host-candidate-20261030.md`，仅记录历史候选
-`5f6f15fed0d6ba618cf781c9686a8b93f499564b` 的 NodeHost package/lock/workspace
-依赖前沿与待验证闭包条件；它不改变 `upstream.lock.json` 的 discovery-only
-状态，也不替代 exact-subject Actions inventory、LFS、integrity、license/
-NOTICE/SBOM 或 omitted/orphan negative evidence。
-
-随后对当前 discovery-only candidate
-`68fbe4ac429cdac7a54541df40367d66defd0161` / tree
-`a3c122b99571c0c33ff6a02ca4c4e32f05f9433d` 完成 NodeHost 关键来源的精确
-blob 读取与责任增量记录（见 `dossiers/node-host-scoped.md` §192）。该读取
-明确补充了当前 command catalog、manifest availability、optional publication
-与 invoke responder 的 mapping，但不提升 source authority、不重标旧
-inventory/closure，也不改变任何 global flag。
-
-随后 live main 漂移至 `5310270e46cf020ab1e37204075970f3b2679812` /
-`acf6bee252bf79ab46e7a4c36ce4cc23e448c885`；此前 exact blob 读取与 SecretInput
-结论仅保留为历史 discovery evidence，不能直接作为新 subject 的 source
-closure 或 implementation authority。
-
-本轮又只读核对了 Fabushi 当前 secret/redaction owner：
-`openclaw_secret_redactor` 仅提供纯脱敏函数，没有 redaction registry；
-`HostSecretsExtension` 仅负责 Box secret application/persistence，不是通用
-`SecretInput` materializer。故 NodeHost Cloudflare Access 仍需独立的注入式
-credential owner contract（成对、origin-scoped opaque refs；connection-time
-materialize；canonical redaction registration；不持久化 plaintext、不读任意
-环境变量、不进入 session/RPC），在该 owner 与真实 caller 出现前保持
-transport fail-closed；这不改变 P0 或任何 global flag。
-
-2026-10-30T10:03:53Z 的独立 `git ls-remote` 只读核对仍返回同一
-`5310270e46cf020ab1e37204075970f3b2679812`；对应 tree 仍为
-`acf6bee252bf79ab46e7a4c36ce4cc23e448c885`。该核对只刷新 identity freshness，
-不替代 exact-subject Actions inventory、依赖闭包或验收 receipt。
-
-2026-10-31 的 live-main 只读核对又发现上游推进到
-`2c157ed06dff5032da1093cbb6745efeff2b6f33` / tree
-`3fb582f6a1299daa74446ef001cb7cb4fd3c2270`；递归 tree 未截断，计数为
-63,740 entries、61,499 blobs、2,241 directories。七个已映射 NodeHost/command
-blob 身份保持不变，但该新 subject 仍仅为 discovery-only；P0 不得复用旧
-inventory/依赖闭包或将其提升为 authority。
-
-本段 exact subject 是本轮治理文件的唯一当前 discovery reference；较早段落
-保留为历史 identity 记录，不代表当前 source authority。当前 lock 状态仍为
-`p0-source-authority-rebaseline-required`，因此不得从本段 discovery identity
-提升 `baseline_identity_accepted` 或 `source_closure_ready`。
-
-2026-10-31T05:51:22Z 的最新只读核对将当前 discovery reference 更新为
-OpenClaw `bcf23b2ea0eee92c8c497c6b1c4d486588e4d5ab` / tree
-`5d9b96f3208eb2daf4c566fc60865a1850e4c77f`；递归 tree 未截断，共 63,946
-entries（61,705 blobs、2,241 directories）。它已同步写入
-`upstream.lock.json` 的 `live_candidate`，仍不构成 Actions authority、依赖
-闭包或任何 completion flag 的正面证据；以上较早 current-candidate 段落仅作
-历史记录保留。
-
-随后在 2026-10-31T02:34:32Z 重新核对到 OpenClaw
-`298546d88934bf05bc7e208d13bf6ce2c538e3f2` / tree
-`120f973ab7da856b4bc1c545c437dd94d35ef9eb`。递归 tree 未截断，计数为
-63,847 entries、61,606 blobs、2,241 directories；根输入 blob 身份与 lock
-一致。该 subject 仍 discovery-only，旧 inventory、依赖闭包和 Actions
-provenance 不得复用；P0-AC02、source closure 与所有 global flags 继续保持
-未通过/未闭合。
-
-2026-10-31T07:55:14Z 的最新只读核对将当前 discovery reference 更新为
-OpenClaw `77b08d1345a8e5734ada19dc95e77f4c5135bd0a` / tree
-`a52b727858379d14b1b1ed4bde71837326c127f7`；递归 tree 未截断，共 63,993
-entries（61,752 blobs、2,241 directories）。该 subject 已同步写入
-`upstream.lock.json` 的 `live_candidate`，仍不构成 Actions authority、依赖闭包
-或任何 completion flag 的正面证据；此前 candidate 段落仅作历史记录保留。
-
-2026-10-31T08:02:48Z 的只读远端复核再次发现 OpenClaw `main` 漂移到
-`2910c0de8d7d290f9a82ca388f2893d067c06cb1` / tree
-`42dc443420e1b5b84e481f170cd8fccfcc00d7be`；递归 tree 未截断，共 63,993
-entries（61,752 blobs、2,241 directories）。该 subject 已同步到
-`upstream.lock.json::live_candidate`，仍不构成 Actions authority、依赖闭包或
-任何 completion flag 的正面证据。
-
-2026-10-31T08:07:28Z 的只读远端复核又发现 OpenClaw `main` 漂移到
-`db59290c33e1768cce8a461e2697cff7108c5a69` / tree
-`c1e4818f8f877576c02da1573e7dc809d1fdd800`；递归 tree 未截断，仍为 63,993
-entries（61,752 blobs、2,241 directories）。相对 `2910c0de…` 的 compare 为
-2 commits ahead、8 个文件变化，根依赖输入 identities 保持不变。该 subject 已
-同步到 `upstream.lock.json::live_candidate`，仍不构成 Actions authority、依赖
-闭包或任何 completion flag 的正面证据。
-
-2026-10-31T08:09:58Z 的只读远端复核又发现 OpenClaw `main` 漂移到
-`1b870b2c78e81fded72913ecba732b84b611ca12` / tree
-`199fe97259d0226ce0e4d3dcec603252376c9205`；递归 tree 未截断，为 63,994
-entries（61,753 blobs、2,241 directories），无 gitlink。相对 `db59290c…` 的
-compare 为 2 commits ahead、7 个文件变化，其中包含 mapped session/cron
-生命周期路径；这些责任必须重新读取后才能复用。根依赖输入 identities 保持不变，
-该 subject 已同步到 `upstream.lock.json::live_candidate`，仍不构成 Actions
-authority、依赖闭包或任何 completion flag 的正面证据。
-
-2026-10-31T08:26:10Z 的最新只读复核又解析到 OpenClaw `main` 为
-`1d2e685b76b2bb7da964a2d6445cec2e07bf5883` / tree
-`a7f33a87af80c203422677be70f83aebb0857666`；递归 tree 未截断，共 63,996
-entries（61,755 blobs、2,241 directories），无 gitlink，根依赖/license
-inputs 保持不变。该 subject 已同步到 `upstream.lock.json::live_candidate`，
-仍仅为 discovery-only；既有 inventory、依赖闭包、LFS 与 Actions provenance
-不得重标复用，P0-AC02、source closure 与所有 global flags 继续未闭合。
-
-2026-10-31T09:38:43Z 的只读远端复核又发现 OpenClaw `main` 漂移到
-`d27a8c9d9fec49a81084993bf16c3fefc4efd508` / tree
-`e378a64af5f7409473636e6758cca43f4a204fcc`；递归 tree 未截断，共 64,009
-entries（61,768 blobs、2,241 directories、0 gitlinks），`package.json` blob
-已变为 `e52ea501bd0e2d749e7f4ab2efce5074b81a2a78`，其余根依赖/license 输入
-identities 保持不变。该 subject 已同步到 `upstream.lock.json::live_candidate`，
-仍仅为 discovery-only；此前 inventory、依赖闭包、LFS 与 Actions provenance
-不得重标复用，P0-AC02、source closure 与所有 global flags 继续未闭合。
-
-针对该 exact subject 的 lock-structure 只读 probe 发现：root
-`package.json` 的 77 runtime / 57 dev / 1 optional declarations 未在
-`pnpm-lock.yaml` 中形成对应应用依赖闭包；唯一 importer 只含 pnpm，lock 的
-`packages` 与 `snapshots` 各为 15 条 pnpm 平台/主包记录，15 条均有 integrity。
-该 mismatch 需要 Actions 中的完整 workspace/package provenance 和生成策略
-解释，不能以 pnpm 自身 integrity 通过替代 dependency closure；
-`dependency_closure_enumerated`、`source_closure_ready` 与 P0-AC02 继续未闭合。
-
-递归 tree 还列出 206 个位于声明 workspace pattern 下的 `package.json`
-候选，而 lock 只有一个 importer；这进一步要求对 workspace manifests 做
-逐项分类和 provenance 绑定，不能把 root-only lock 解析当作完整闭包。
-
-2026-10-31T09:47:18Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`2464bd85e0bc2927701c3147bf3dfc6993daaae3`,
-root tree=`08b1e6627c310e8640a340be49838e2936b44346`, with an untruncated
-recursive tree of 64,009 entries (61,768 blobs, 2,241 directories, 0 gitlinks).
-The commit message is `fix(test): bind SDK hosts in direct Gateway fixtures
-(#189244)`, and root dependency/license inputs remain unchanged. This is a
-fresh discovery-only subject; prior inventory, dependency closure, LFS/
-integrity and Actions provenance remain bound to their exact subjects. The
-lock was refreshed only as `live_candidate`; no authority or completion flag
-changed, and the fixed `ad8d12f...` implementation subject remains in use.
-
-The exact-subject root dependency probe for this candidate is recorded in
-`dossiers/upstream-current-candidate-dependency-probe-2464bd85-20261031.md`.
-The root input blobs are unchanged from `d27a8c9d...`, while the exact compare
-shows seven gateway-test/UI session files changed. This carries forward only
-root-input identity; it does not carry forward inventory, semantic reads,
-dependency closure, LFS/integrity, or Actions provenance.
-
-## Fixed-subject lock parser correction (2026-10-31)
-
-The fixed implementation subject's lockfile was re-read with a multi-document
-parser. Its two top-level section sets are separated by a YAML document marker:
-the first is the pnpm package-manager lock and the second is the application
-workspace lock. The application document statically contains 200 importers,
-1,844 packages, 1,846 snapshots, and 6 patched dependencies; its root
-importer matches all 134 root manifest dependency names, and all 3,396 snapshot
-dependency edges resolve after alias handling.
-
-This corrects the prior single-document parser observation; it does not close
-P0-AC02 or promote `dependency_closure_enumerated`, because workspace
-manifest/importer identity, external package archive/integrity/license
-provenance, native/peer semantics, source closure, and exact-head Actions
-evidence remain outstanding. No completion or authority flag changes from this
-correction.
-
-The committed fixed-subject inventory has a separate materialization gap:
-58,750 unique rows and zero known omissions are present, but the older shard
-rows are missing the schema-required applicability/disposition keys. This is neither a
-completed classification nor a zero-unread condition. The Actions-only shard
-materializer now supplies explicit `unknown/pending` defaults; rerunning that
-materializer against the exact subject is required before structural AC02 can
-evaluate the new fields. The development freeze does not permit hand-editing
-generated shards, so applicability/disposition closure remains false.
-
-2026-10-31T11:21:03Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`ce908375fed062dd75abab62d57fc840b96a144e`,
-tree=`f2db36d9a98e23753ce1130a84cdae7a4c57488d`, with an untruncated recursive
-tree of 64,060 entries (61,819 blobs, 2,241 directories, 0 gitlinks). The
-commit is `fix: session deletion delays unrelated agent writes (#189287)`.
-Root dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or completion
-flag changes.
-
-2026-10-31T12:13:10Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c`,
-tree=`f4e34cf339e1645079baa9c8a6bdf1b9a169fa4f`, with an untruncated recursive
-tree of 64,075 entries (61,834 blobs, 2,241 directories, 0 gitlinks). The
-commit is `perf(ui): open New Session faster on higher-latency connections (#189315)`.
-Root dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or completion
-flag changes.
-
-The exact-tree declaration frontier at `2026-10-31T12:18:40Z` enumerates 246
-dependency/build declaration inputs. Compared with the fixed-baseline manifest
-input set of 244 paths, 6 baseline paths are absent, 8 paths are new, 208
-shared blob identities changed, and 30 remained unchanged. This is recorded in
-`dossiers/upstream-current-candidate-dependency-frontier-8c69e8b7-20261031.md`
-as discovery evidence only; it does not relabel the baseline inventory or
-establish recursive dependency closure.
-
-2026-10-31T11:40:24Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`70da3265b8bf09e25acb1a14ce246982520a1140`,
-tree=`b8afd36d3c8d722dbab9a05781605fd79d2d5a50`, with an untruncated recursive
-tree of 64,067 entries (61,826 blobs, 2,241 directories, 0 gitlinks). The
-commit is `refactor(test): share scoped environment restoration (#189314)`.
-Root dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or completion
-flag changes.
-
-2026-10-31T11:19:02Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`77f272bd7e5ad7db4c96e8bc4d440d583ab17e7f`,
-tree=`a3402ffe65237a9e616e0a287d7b7119c9cd20de`, with an untruncated recursive
-tree of 64,057 entries (61,816 blobs, 2,241 directories, 0 gitlinks). The
-commit is `fix(ci): generate published-driver package declarations (#189209)`.
-Root dependency/license identities remain unchanged from the prior candidate,
-but this is a fresh discovery-only subject. Prior inventory, dependency/LFS
-closure, semantic reads, and Actions provenance remain bound to their exact
-subjects and are not reusable; no authority or completion flag changes.
-
-2026-10-31T11:24:57Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`8487c89fbedd53238f42b34bb446723a5629bb16`,
-tree=`16c359a40e19ea69591704bff7d626677673b112`, with an untruncated recursive
-tree of 64,062 entries (61,821 blobs, 2,241 directories, 0 gitlinks). The
-commit is `perf(ci): skip unrelated PR test changes on Darwin (#189294)`.
-Root dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or completion
-flag changes.
-
-2026-10-31T11:29:34Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`7293e892728aef27996d8a15626e006e2d537dcc`,
-tree=`b02727b750a5439df95f2178dd983f2a1bd79f03`, with an untruncated recursive
-tree of 64,064 entries (61,823 blobs, 2,241 directories, 0 gitlinks). The
-commit is `refactor(skills): read the review workspace from the session entry
-(#189302)`. Root dependency/license identities remain unchanged, but this is a
-fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or completion
-flag changes.
-
-2026-10-31T11:34:55Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`d04091590ac09ffb743da149ac99e147283eb730`,
-tree=`1f60bc3eeb1ab36c984d73066392d8bccbf45ed6`, with an untruncated recursive
-tree of 64,066 entries (61,825 blobs, 2,241 directories, 0 gitlinks). The
-commit is `fix: keep background process launches from stalling the Gateway
-(#189277)`. Root dependency/license identities remain unchanged, but this is a
-fresh discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or completion
-flag changes.
-
-2026-10-31T13:03:16Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`af300f447128e0bec692fa0c96d20f360ee8c8b6`,
-tree=`601cfe03da8faaac3c1d92972298ec763e4d3fca`, with an untruncated recursive
-tree of 64,102 entries (61,861 blobs, 2,241 directories, 0 gitlinks). The
-commit is `perf(ui): skip unused settings render work (#189355)`. Root
-dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/SBOM/LFS closure, notice
-audit, semantic reads, and Actions provenance are not reusable, and no
-authority or completion flag changes. Its exact diff is UI-only; the probe is
-recorded at `dossiers/upstream-current-candidate-probe-af300f44-20261031.md`.
-
-2026-10-31T12:58:01Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`a79002c971e2231807f3268eb58f20363b5482d6`,
-tree=`c42693615111af5103940392bb6e318505760f92`, with an untruncated recursive
-tree of 64,101 entries (61,860 blobs, 2,241 directories, 0 gitlinks). The
-commit is `fix(test): bind native command fixture SDK hosts (#189386)`. Root
-dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/SBOM/LFS closure, notice
-audit, semantic reads, and Actions provenance are not reusable, and no
-authority or completion flag changes. Its exact diff is test/fixture-only; the
-probe is recorded at `dossiers/upstream-current-candidate-probe-a79002c9-20261031.md`.
-
-2026-10-31T12:53:51Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`eb0183deb6891f07686a1f3cefeaf063c119aaa7`,
-tree=`6c66d83fbeba3e74a7142073a2980bd2433722a8`, with an untruncated recursive
-tree of 64,097 entries (61,856 blobs, 2,241 directories, 0 gitlinks). The
-commit is `chore: speed up state lease and preservation tests (#189366)`. Root
-dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/SBOM/LFS closure, notice
-audit, semantic reads, and Actions provenance are not reusable, and no
-authority or completion flag changes. Its exact diff is test-only; the probe is
-recorded at `dossiers/upstream-current-candidate-probe-eb0183de-20261031.md`.
-
-2026-10-31T12:42:39Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`f8e492f2c9d1cc3768c222b909a82bd3e4f97455`,
-tree=`89257a1e739896c29fbc427e43e2c59d95ab02a1`, with an untruncated recursive
-tree of 64,090 entries (61,849 blobs, 2,241 directories, 0 gitlinks). The
-commit is `test(ui): expose reconnect service worker policy (#189374)`. Root
-dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or
-completion flag changes. Its exact diff is limited to benchmark/script inputs;
-the probe is recorded at
-`dossiers/upstream-current-candidate-probe-f8e492f2-20261031.md`.
-
-2026-10-31T12:40:59Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`ed19b276e1630a14c66ddf8cc4594d2915ba8c56`,
-tree=`0f29f49072123eae942faa152907fbbebaab103a`, with an untruncated recursive
-tree of 64,090 entries (61,849 blobs, 2,241 directories, 0 gitlinks). The
-commit is `perf(test): build stock Bun image fixtures without ZIP subprocesses
-(#189359)`. Root dependency/license identities remain unchanged, but this is
-a fresh discovery-only subject; prior inventory, dependency/LFS closure,
-semantic reads, and Actions provenance are not reusable, and no authority or
-completion flag changes. Its exact diff is test-only; the probe is recorded at
-`dossiers/upstream-current-candidate-probe-ed19b276-20261031.md`.
-
-2026-10-31T12:36:43Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`dfd4904312e87674d468d89232180973859e26e0`,
-tree=`9cf481d8e97f4428d9d9e2f80f941c9cbb7a410d`, with an untruncated recursive
-tree of 64,090 entries (61,849 blobs, 2,241 directories, 0 gitlinks). The
-commit is `fix: restore spawn boundary SDK resource lifecycle (#189329)`. Root
-dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or
-completion flag changes. The probe is recorded at
-`dossiers/upstream-current-candidate-probe-dfd49043-20261031.md`.
-
-2026-10-31T12:33:09Z drift amendment: read-only GitHub checks resolved the
-current OpenClaw `main` to commit=`be8eca7f92b2d7c9acb4043debef785906af6188`,
-tree=`6b24eed3a7d79dcb099ad4c17aee7f85c0ea3842`, with an untruncated recursive
-tree of 64,088 entries (61,847 blobs, 2,241 directories, 0 gitlinks). The
-commit is `fix(ci): remove leftover internal exports (#189345)`. Root
-dependency/license identities remain unchanged, but this is a fresh
-discovery-only subject; prior inventory, dependency/LFS closure, semantic
-reads, and Actions provenance are not reusable, and no authority or
-completion flag changes. The probe is recorded at
-`dossiers/upstream-current-candidate-probe-be8eca7f-20261031.md`.
-
-## Current discovery pointer
-
-The canonical current discovery pointer is always `upstream.lock.json::live_candidate`.
-At the latest read-only reconciliation it is OpenClaw
-`94e33774c5fba3da3d3e521f47a2179d11113405` / tree
-`7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0`, observed at
-`2026-11-01T01:34:09Z`, with 64,457 untruncated recursive-tree entries
-(62,214 blobs, 2,243 directories, 0 gitlinks). This remains discovery-only;
-the fixed implementation subject, inventory, dependency closure, Actions
-provenance, and all completion flags remain unchanged. The changed source
-scope covers embedding usage decoupling; see
-`dossiers/upstream-current-candidate-probe-94e33774-20261101.md`.
-
-2026-11-01T01:34:09Z drift amendment: read-only `git ls-remote` and GitHub
-commit/tree API resolved the current OpenClaw `main` to
-`94e33774c5fba3da3d3e521f47a2179d11113405` / tree
-`7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0`; the recursive tree is untruncated
-with 64,457 entries (62,214 blobs, 2,243 directories, 0 gitlinks). The commit
-is signature-verified and its five-file delta is confined to embedding and
-usage-cost responsibilities. The current root `package.json` identity is
-`864764f48ec4f1a7946b880b10a14d96de4b6d78`. This is discovery-only evidence;
-dependency closure, LFS/integrity, semantic reads and Actions provenance remain
-bound to their exact subjects, and all P0/global flags remain false.
+- **已修复并闭环**：
+  1. 统一锁定 `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`（`accepted_for_this_implementation_round = true`），清理 42 份未引用 `upstream-*` 漂移探测报告与 4 份过时漂移 ADR。
+  2. 修复 `expand_inventory.py`、`shard_inventory.py`、`validate_p0.py`、`verify_audit_integrity.py` 四处联动自锁缺陷。
+  3. 完成 239 条 `parity-ledger.json` 职责的 `OCRM-HYGIENE-01` 规范化（修复 10 处非文件目录/占位路径与 60 处散文符号，修复 `OCRM-RESP-CRON-SESSION-REAPER-001` 源引用结构）。
+  4. 执行 `ocrm-bulk-disposition.py` 完成 62,130 条路径的确定性分类（817 `deep-read` + 41,834 `grouped-evidence` + 19,479 `deep-read-required`），`verify_audit_integrity.py` 0 违规通过。
+- **下一步**：按 `OC-S1`..`OC-S5` 纵向切片依次将 141 项 `implemented` + `not-wired` 职责与 9 项 `not-started` 职责接入宿主生产主干。

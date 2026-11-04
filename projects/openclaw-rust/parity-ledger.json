@@ -10,13 +10,13 @@
     "ui_accepted": false
   },
   "file_coverage": {
-    "applicability_assessed_paths": 0,
-    "dispositioned_paths": 0,
-    "mapped_paths": 815,
+    "applicability_assessed_paths": 62130,
+    "dispositioned_paths": 42651,
+    "mapped_paths": 817,
     "omitted_known": 0,
     "tracked_paths": 62130,
-    "unclassified_paths": 61315,
-    "unreviewed_applicable_paths": 0
+    "unclassified_paths": 61313,
+    "unreviewed_applicable_paths": 19817
   },
   "inventory_authority": {
     "manifest_source": "GitHub Actions immutable artifact candidate",
@@ -245,7 +245,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/platform_bridge.rs",
-        "symbol": "CloudWorkerPlatformBridge::new / validate"
+        "symbol": "CloudWorkerPlatformBridge"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/platform_bridge.rs::tests::rejects_an_unsupported_session_without_fallback",
@@ -360,7 +360,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/extension.rs",
-        "symbol": "CloudWorkerProvisioningExtension::status_snapshot"
+        "symbol": "CloudWorkerProvisioningExtension"
       },
       "tests": [
         "source/host/tests/cloud_workers_extension_contract.rs::owner_status_snapshot_is_the_read_projection_and_stays_fail_closed",
@@ -773,7 +773,7 @@
       "target": {
         "language": "Rust",
         "path": "source/node-agent-coordinator/src/gateway/gateway_client.rs",
-        "symbol": "native gateway/node-host boundaries"
+        "symbol": "gateway"
       },
       "tests": [
         "source/node-agent-coordinator/tests/gateway_https.rs",
@@ -966,8 +966,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/node_host",
-        "symbol": "Node Host worker/runtime contracts"
+        "path": "source/host/tests/openclaw_node_host_contract.rs",
+        "symbol": "can_reuse_node_host_device_token"
       },
       "tests": [
         "source/host/tests/openclaw_node_host_contract.rs",
@@ -1120,7 +1120,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/process/command_custody.rs",
-        "symbol": "process custody contracts"
+        "symbol": "CommandCapacityGroupConfig"
       },
       "tests": [
         "source/host/tests/process_tree_contract.rs"
@@ -1368,8 +1368,8 @@
       },
       "target": {
         "language": "repository-security",
-        "path": "security/opengrep",
-        "symbol": "locked rulepack and workflow"
+        "path": "projects/openclaw-rust/dossiers/security-opengrep-audit-20261029.md",
+        "symbol": "security/opengrep"
       },
       "tests": [
         ".github/workflows/opengrep-precise.yml",
@@ -1796,8 +1796,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/cloud_workers",
-        "symbol": "native Rust cloud-worker contract tests"
+        "path": "source/host/src/extensions/cloud_workers/mod.rs",
+        "symbol": "extension"
       },
       "tests": [
         "source/host/tests/cloud_workers_extension_contract.rs",
@@ -1923,7 +1923,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/provider_catalog.rs",
-        "symbol": "CloudWorkerCatalogParser::parse / CloudWorkerCatalogCache::resolve / CloudWorkerCatalog::select_machine"
+        "symbol": "CloudWorkerCatalogParser"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/provider_catalog.rs::tests::parses_and_sorts_a_valid_catalog",
@@ -2283,7 +2283,7 @@
       "target": {
         "language": "Rust",
         "path": "source/node-agent-coordinator/src/cloud_worker_projection.rs",
-        "symbol": "CloudWorkerCoordinatorCommand / CloudWorkerCoordinatorEvent"
+        "symbol": "CloudWorkerCoordinatorCommand"
       },
       "tests": [
         "source/node-agent-coordinator/tests/cloud_worker_projection_contract.rs",
@@ -2442,7 +2442,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/runtime_control.rs",
-        "symbol": "CloudWorkerRuntimeControlAction::admit"
+        "symbol": "CloudWorkerRuntimeControlAction"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/lease.rs::tests::ambiguous_results_enter_recovery_state",
@@ -2592,7 +2592,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/doctor.rs",
-        "symbol": "CloudWorkerDoctorRequest / CloudWorkerDoctorResult"
+        "symbol": "CloudWorkerDoctorRequest"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/doctor.rs::tests::mutations_require_acknowledgement",
@@ -2720,7 +2720,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/sandbox.rs",
-        "symbol": "CloudWorkerSandboxCapability / CloudWorkerSandboxRequest"
+        "symbol": "CloudWorkerSandboxCapability"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/sandbox.rs::tests::rejects_workspace_escape",
@@ -2851,7 +2851,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/artifact_admission.rs",
-        "symbol": "CloudWorkerArtifactAdmission / verify_artifact_bytes"
+        "symbol": "CloudWorkerArtifactAdmission"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/artifact_admission.rs::tests::rejects_digest_mismatch",
@@ -3037,7 +3037,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/node_bootstrap.rs",
-        "symbol": "CloudWorkerBootstrapRecord::pending / settle"
+        "symbol": "CloudWorkerBootstrapRecord"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/node_bootstrap.rs::tests::readiness_requires_preparation_and_enrollment",
@@ -3208,7 +3208,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/warm_image.rs",
-        "symbol": "CloudWorkerWarmImage::compare_and_apply / mark_capture_uncertain"
+        "symbol": "CloudWorkerWarmImage"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/warm_image.rs::tests::fences_generation_and_hold_lifecycle",
@@ -3390,7 +3390,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/cloud_workers/owner.rs",
-        "symbol": "CloudWorkerProvisioningOwner::admit / settle_lease / leased_capability"
+        "symbol": "CloudWorkerProvisioningOwner"
       },
       "tests": [
         "source/host/src/extensions/cloud_workers/lease.rs::tests::only_completed_results_advance_the_lifecycle",
@@ -3510,8 +3510,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "unselected pending ACP command/transport owner",
-        "symbol": "not selected; historical AvailableCommand is not current production contract"
+        "path": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+        "symbol": "AcpSessionManager"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o05_viral_turn_tainting",
@@ -3614,8 +3614,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "unselected pending ACP policy owner",
-        "symbol": "not selected; Runner lease helpers are partial evidence only"
+        "path": "source/host/src/extensions/plugin_sdk/acp_runtime.rs",
+        "symbol": "AcpSessionManager"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o11_runner_settlement_receipt",
@@ -3774,8 +3774,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb",
-        "symbol": "owner-local guarded compaction commit/replay; production ContextWindowTracker producer and next-turn consumer absent"
+        "path": "source/host/src/extensions/session/production.rs",
+        "symbol": "ProductionSessionWorkers"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o09_context_window_compaction_trigger",
@@ -4066,7 +4066,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/transcript/send_turn_dispatch.rs",
-        "symbol": "ProductionTurnDispatch::enqueue_turn_with_start, watchdog_tick, settle_and_start_next"
+        "symbol": "ProductionTurnDispatch"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o01_active_stream_conflict_rejection",
@@ -4179,8 +4179,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "unselected pending pricing/fallback owner",
-        "symbol": "not selected; TurnUsage is partial evidence only"
+        "path": "source/host/tests/openclaw_model_catalog_contract.rs",
+        "symbol": "model_catalog"
       },
       "tests": [
         "source/host/tests/openclaw_agent_turn_contract.rs::test_ocrm_agent_o07_model_catalog_pricing_calculation",
@@ -4742,7 +4742,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/runner/heartbeat.rs",
-        "symbol": "is_content_effectively_empty / strip_heartbeat_token / resolve_prompt_for_response_tool / normalize_heartbeat_response"
+        "symbol": "is_content_effectively_empty"
       },
       "tests": [
         "source/host/src/runner/heartbeat.rs::tests"
@@ -5769,7 +5769,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/plugin_sdk/channel_outbound.rs",
-        "symbol": "ChannelDraftStreamingChunking::resolve"
+        "symbol": "ChannelDraftStreamingChunking"
       },
       "tests": [
         "source/host/tests/openclaw_plugin_sdk_contract.rs::test_ocrm_plugin_sdk_channel_lifecycle_outbound_pairing"
@@ -6836,7 +6836,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/transcript/agent_lifecycle.rs",
-        "symbol": "ProductionAgentLifecycle::delete_agent_from_args"
+        "symbol": "ProductionAgentLifecycle"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_sessions_delete_guards_root_session_and_cas",
@@ -6855,7 +6855,8 @@
     },
     {
       "adr_refs": [
-        "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
+        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
+        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md"
       ],
       "behavior": "Expired cron run-session pruning (sessionRetention), unreferenced transcript cleanup, and active media task preservation.",
       "blocker_ids": [],
@@ -6891,10 +6892,6 @@
           },
           "symbol": "ensureReaperSubscription"
         }
-      ],
-      "adr_refs": [
-        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
-        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md"
       ],
       "id": "OCRM-RESP-CRON-SESSION-REAPER-001",
       "integration": {
@@ -6933,13 +6930,24 @@
       "risk": "Medium; prevents database bloat while protecting active work items",
       "selected_owner": "bounded registration/projection owner selected: ProductionSessionWorkers/SandAgentDb; reaper scheduler/archive/delete owner remains unselected",
       "source_refs": [
-        "source/host/src/extensions/transcript/automation_run_path.rs",
-        "source/host/src/extensions/transcript/automation_runtime.rs",
-        "source/host/src/extensions/session/production.rs",
-        "source/host/src/extensions/session/agent_db.rs",
-        "projects/openclaw-rust/docs/specs/cron-session-reaper.md",
-        "projects/openclaw-rust/decisions/2026-11-01-cron-session-reaper-owner-boundary.md",
-        "projects/openclaw-rust/dossiers/not-started-responsibility-frontier-20261031.md"
+        {
+          "blob_sha": "5474f33412bd9c3a808e78a42be359f976ee35b5",
+          "path": "src/cron/session-reaper.ts",
+          "range": {
+            "end_line": 163,
+            "start_line": 1
+          },
+          "symbol": "sweepCronRunSessions"
+        },
+        {
+          "blob_sha": "5cdeb385daf097dd9d7b87febdc7178dd4a91050",
+          "path": "src/cron/isolated-agent/session-cleanup.ts",
+          "range": {
+            "end_line": 58,
+            "start_line": 1
+          },
+          "symbol": "cleanupIsolatedAgentRunSession"
+        }
       ],
       "status": {
         "acceptance": "pending",
@@ -6952,7 +6960,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/transcript/automation_run_path.rs",
-        "symbol": "AutomationRunPath::fire_automation_inner and ProductionSessionWorkers::list_expired_cron_session_runs; cleanup consumer not wired"
+        "symbol": "AutomationRunPath"
       },
       "tests": [
         "projects/openclaw-rust/docs/specs/cron-session-reaper.md"
@@ -7133,7 +7141,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/device_pairing_owner.rs",
-        "symbol": "DevicePairingOwner::handle_pair_approve"
+        "symbol": "DevicePairingOwner"
       },
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o05_and_o06_pair_approve"
@@ -7229,7 +7237,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/device_pairing_owner.rs",
-        "symbol": "register_device_pairing_join_code; redeem_device_pairing_join_code; is_device_pairing_join_code"
+        "symbol": "register_device_pairing_join_code"
       },
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o12_setup_code",
@@ -7374,7 +7382,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/device_pairing_owner.rs",
-        "symbol": "DevicePairingOwner::handle_pair_list; handle_pair_revoke"
+        "symbol": "DevicePairingOwner"
       },
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o08_pair_list",
@@ -7607,7 +7615,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/device_pairing_owner.rs",
-        "symbol": "handle_pair_request; handle_pair_approve; handle_pair_revoke"
+        "symbol": "handle_pair_request"
       },
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o03_and_o04_pair_status",
@@ -7751,7 +7759,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/device_pairing_owner.rs",
-        "symbol": "DevicePairingOwner::init_schema; bump_revision"
+        "symbol": "DevicePairingOwner"
       },
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o01_request_success",
@@ -7903,7 +7911,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/device_pairing_owner.rs",
-        "symbol": "DevicePairingOwner::handle_pair_rotate_token"
+        "symbol": "DevicePairingOwner"
       },
       "tests": [
         "source/host/tests/device_pairing_contract.rs::test_ocrm_pair_o11_rotate_token_in_band_and_cross_device"
@@ -8661,7 +8669,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/local_exec/gateway_local_exec_sand_box.rs",
-        "symbol": "GatewayLocalExecManager::cancel_operation"
+        "symbol": "GatewayLocalExecManager"
       },
       "tests": [
         "source/host/tests/gateway_local_exec_sand_box_contract.rs"
@@ -9444,7 +9452,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/anthropic_inline_images.rs",
-        "symbol": "normalize_anthropic_inline_content_blocks, estimate_base64_decoded_bytes, AnthropicContentBlock"
+        "symbol": "normalize_anthropic_inline_content_blocks"
       },
       "tests": [
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_anthropic_inline_content_blocks_normalization"
@@ -10154,7 +10162,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/channel_inbound_roots.rs",
-        "symbol": "resolve_channel_inbound_attachment_roots, resolve_channel_inbound_attachment_roots_for_channel, resolve_channel_remote_inbound_attachment_roots"
+        "symbol": "resolve_channel_inbound_attachment_roots"
       },
       "tests": [
         "source/host/tests/openclaw_channel_and_local_roots_contract.rs::test_ocrm_channel_inbound_roots_fast_path_and_precedence",
@@ -10580,7 +10588,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_fetch.rs",
-        "symbol": "read_remote_media_buffer, read_remote_media_buffer_with_headers, save_response_media, save_remote_media, parse_content_disposition_file_name, redact_sensitive_text"
+        "symbol": "read_remote_media_buffer"
       },
       "tests": [
         "source/host/tests/openclaw_media_fetch_contract.rs::test_ocrm_media_fetch_content_disposition_rfc5987_and_fallbacks",
@@ -10990,7 +10998,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
-        "symbol": "assert_host_read_media_allowed, text_printable_ratio, has_single_byte_text_shape, decode_host_read_text, is_allowed_host_read_html"
+        "symbol": "assert_host_read_media_allowed"
       },
       "tests": [
         "source/host/tests/openclaw_channel_and_local_roots_contract.rs::test_ocrm_host_read_media_policy_format_admission"
@@ -11282,7 +11290,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/image_ops.rs",
-        "symbol": "build_image_resize_side_grid, is_animated_webp_buffer, is_still_png_buffer, read_image_probe_from_header, read_image_metadata_from_header, convert_bmp_to_png, prepare_attachment, normalize_anthropic_inline_image"
+        "symbol": "build_image_resize_side_grid"
       },
       "tests": [
         "source/host/tests/openclaw_image_ops_contract.rs::test_ocrm_image_ops_build_resize_side_grid",
@@ -11797,7 +11805,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/local_roots.rs",
-        "symbol": "get_default_media_local_roots, filter_shared_media_local_roots, get_session_safe_default_media_local_roots, get_agent_scoped_media_local_roots, append_local_media_parent_roots, get_agent_scoped_media_local_roots_for_sources"
+        "symbol": "get_default_media_local_roots"
       },
       "tests": [
         "source/host/tests/openclaw_channel_and_local_roots_contract.rs::test_ocrm_local_roots_defaults_and_filtering",
@@ -12718,7 +12726,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/read_capability.rs",
-        "symbol": "resolve_agent_scoped_outbound_media_access, resolve_agent_scoped_host_outbound_media_access, build_outbound_media_load_options, resolve_outbound_media_local_roots"
+        "symbol": "resolve_agent_scoped_outbound_media_access"
       },
       "tests": [
         "source/host/tests/openclaw_read_capability_contract.rs::test_ocrm_load_options_normalization_and_root_validation",
@@ -13025,7 +13033,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/remote_workspace_file.rs",
-        "symbol": "read_bounded_remote_workspace_file, build_file_revision, RemoteWorkspaceFileParams, RemoteWorkspaceFileError"
+        "symbol": "read_bounded_remote_workspace_file"
       },
       "tests": [
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_remote_workspace_file_transfer"
@@ -13431,7 +13439,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "write_playback_transcode_cache, prune_playback_transcode_cache, prune_playback_transcode_cache_to_size, prune_outbound_media, clean_old_media"
+        "symbol": "write_playback_transcode_cache"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_playback_cache_and_clean_old_media",
@@ -13552,7 +13560,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "save_media_buffer, save_media_file, save_media_source, read_media_buffer, delete_media_buffer, resolve_media_buffer_path, extract_original_filename, sanitize_filename"
+        "symbol": "save_media_buffer"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_save_and_read_buffer",
@@ -13689,7 +13697,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "resolve_media_scoped_dir, save_media_buffer, save_media_source"
+        "symbol": "resolve_media_scoped_dir"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_save_and_read_buffer",
@@ -14000,7 +14008,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_store.rs",
-        "symbol": "StoreRemoteFixtureScope, check_active_remote_fixtures_empty, expect_saved_original_filename_case"
+        "symbol": "StoreRemoteFixtureScope"
       },
       "tests": [
         "source/host/tests/openclaw_media_store_contract.rs::test_ocrm_media_store_remote_fixture_scope_and_filename_support"
@@ -14576,7 +14584,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/web_media.rs",
-        "symbol": "load_web_media, optimize_image_buffer_for_web_media, assert_no_windows_network_path, file_url_to_path, strip_legacy_media_directive_prefix"
+        "symbol": "load_web_media"
       },
       "tests": [
         "source/host/tests/openclaw_web_media_contract.rs::test_ocrm_web_media_animated_webp_preservation",
@@ -14670,7 +14678,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/content_search/memory_citations.rs",
-        "symbol": "format_citation / should_include_citations"
+        "symbol": "format_citation"
       },
       "tests": [
         "source/host/src/extensions/content_search/memory_citations.rs::tests"
@@ -14762,7 +14770,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/memory/memory_service.rs",
-        "symbol": "MemoryService::remove"
+        "symbol": "MemoryService"
       },
       "tests": [
         "source/host/tests/openclaw_memory_contract.rs::test_ocrm_mem_o08_tombstone_persistence_and_resurrection_prevention"
@@ -15439,8 +15447,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "unselected pending auth-profile lifecycle owner",
-        "symbol": "candidate rejected: agent profile/avatar file manager, not auth-profile lifecycle owner"
+        "path": "source/host/src/extensions/session/production.rs",
+        "symbol": "ProductionSessionWorkers"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o05_auth_profile_preservation"
@@ -15535,7 +15543,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/agent_session.rs",
-        "symbol": "agent_session"
+        "symbol": "SESSION_MODEL_SELECTION_KV"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o02_communication_policy"
@@ -15634,7 +15642,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/session_conversation_state.rs",
-        "symbol": "session_conversation_state"
+        "symbol": "SessionConversationStateError"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o03_conversation_turn_correlation"
@@ -15729,7 +15737,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/session_paths.rs",
-        "symbol": "resolve_public_session_route"
+        "symbol": "parse_agent_session_key"
       },
       "tests": [
         "source/host/tests/session_paths_contract.rs::public_session_commands_reject_harness_owned_namespace",
@@ -15834,7 +15842,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/session/agent_session.rs",
-        "symbol": "agent_session"
+        "symbol": "SESSION_MODEL_SELECTION_KV"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o04_model_overrides"
@@ -16006,8 +16014,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "source/host/src/extensions/session/production.rs::ProductionSessionWorkers -> source/host/src/extensions/session/agent_db.rs::SandAgentDb",
-        "symbol": "deletion fence, generation CAS, archive/receipt/media recovery, and typed provider-review admission; full detached lifecycle owner pending"
+        "path": "source/host/src/extensions/session/production.rs",
+        "symbol": "ProductionSessionWorkers"
       },
       "tests": [
         "source/host/tests/openclaw_sessions_and_config_contract.rs::test_ocrm_session_o06_work_admission_and_archive",
@@ -17431,7 +17439,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/input_files.rs",
-        "symbol": "extract_file_content_from_buffer, extract_file_content_from_source, extract_image_content_from_source, normalize_input_image_buffer, resolve_input_file_limits"
+        "symbol": "extract_file_content_from_buffer"
       },
       "tests": [
         "source/host/tests/openclaw_input_files_contract.rs::test_named_attachment_decoding_and_charsets",
@@ -17533,7 +17541,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/staged_inputs.rs",
-        "symbol": "ensure_staged_input_directory, staged_input_path_directory, is_staged_input_path, staged_input_directories_from_entries, resolve_staged_input_media_paths"
+        "symbol": "ensure_staged_input_directory"
       },
       "tests": [
         "source/host/tests/openclaw_input_files_contract.rs::test_staged_input_directory_and_ownership",
@@ -17646,7 +17654,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/pdf_extract.rs",
-        "symbol": "extract_pdf_content, validate_extraction_metadata"
+        "symbol": "extract_pdf_content"
       },
       "tests": [
         "source/host/tests/openclaw_pdf_and_parse_contract.rs::test_pdf_extract_disabled_when_no_extractor",
@@ -17766,7 +17774,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/parse_output.rs",
-        "symbol": "split_media_from_output, split_media_output, is_relative_assistant_media_reference"
+        "symbol": "split_media_from_output"
       },
       "tests": [
         "source/host/tests/openclaw_pdf_and_parse_contract.rs::test_parse_output_media_directives",
@@ -17894,7 +17902,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/video_playback_rendition.rs",
-        "symbol": "create_playback_transcode_cache_key, build_ffmpeg_playback_args"
+        "symbol": "create_playback_transcode_cache_key"
       },
       "tests": [
         "source/host/tests/openclaw_playback_transcode_contract.rs::test_playback_transcode_deterministic_cache_and_policy"
@@ -18015,7 +18023,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/host_read_media_policy.rs",
-        "symbol": "validate_provenance_row, filter_stale_provenance_rows"
+        "symbol": "validate_provenance_row"
       },
       "tests": [
         "source/host/tests/openclaw_html_provenance_contract.rs::test_html_provenance_marker_validation"
@@ -18156,7 +18164,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "is_transcript_artifact_text, resolve_audio_transcription_upload_file_name, format_echo_transcript, can_deliver_transcript_echo"
+        "symbol": "is_transcript_artifact_text"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o01_stt_transcript_artifact_rejection",
@@ -18302,7 +18310,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "normalize_attachment_path, resolve_attachment_media_kind, select_attachments"
+        "symbol": "normalize_attachment_path"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o11_attachment_path_normalization_and_guards",
@@ -18410,7 +18418,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "resolve_configured_media_entry_capabilities, resolve_effective_media_entry_capabilities, matches_media_entry_capability"
+        "symbol": "resolve_configured_media_entry_capabilities"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o14_entry_capabilities_resolution_and_matching"
@@ -18554,7 +18562,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "resolve_file_extraction_limits, sanitize_mime_type, marker_safe_local_path, resolve_file_extraction_outcome, render_file_attachment_outcome, render_media_attachment_disposition, apply_attachment_marker_budget"
+        "symbol": "resolve_file_extraction_limits"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o15_file_extraction_limits_clamping_and_defaults",
@@ -18662,7 +18670,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "render_inbound_document_context_from_items, InboundDocumentContext, InboundDocumentItem"
+        "symbol": "render_inbound_document_context_from_items"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o18_inbound_document_context_and_marker_budget"
@@ -18777,7 +18785,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "command_id, resolve_requested_local_audio_backend, record_local_audio_backend_observation, rank_local_audio_candidate, format_local_audio_selection"
+        "symbol": "command_id"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o21_local_audio_command_and_backend_detection",
@@ -18922,7 +18930,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "resolve_openai_audio_auth_model_api, resolve_media_understanding_string, coerce_openai_compatible_video_text, build_openai_compatible_video_request_body, build_audio_transcription_form_data"
+        "symbol": "resolve_openai_audio_auth_model_api"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o19_openai_audio_api_and_transcription_form",
@@ -19028,7 +19036,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "is_heic_image_input, effective_image_bytes_cap, MEDIA_UNDERSTANDING_MAX_SOURCE_PIXELS"
+        "symbol": "is_heic_image_input"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o23_image_input_normalization_and_caps"
@@ -19198,7 +19206,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "require_image_capable_model, resolve_image_tool_max_tokens, disable_reasoning_for_image_retry_payload, should_place_image_prompt_in_user_content, is_image_model_no_text_error"
+        "symbol": "require_image_capable_model"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o24_image_runtime_model_checks_and_token_resolution",
@@ -19350,7 +19358,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/attachments/media_understanding_service.rs",
-        "symbol": "resolve_default_media_model_from_registry, resolve_auto_media_key_providers_from_registry, build_media_understanding_registry, normalize_media_provider_id"
+        "symbol": "resolve_default_media_model_from_registry"
       },
       "tests": [
         "source/host/tests/openclaw_media_understanding_contract.rs::test_ocrm_media_und_o26_provider_registry_and_auto_priority_sorting"
@@ -22713,7 +22721,7 @@
       ],
       "evidence_refs": [
         "source/host/tests/openclaw_logging_contract.rs",
-        "source/host/tests/openclaw_crash_guard_media_contract.rs::test_ocrm_crash_o03_error_diagnostics_redaction",
+        "source/host/tests/openclaw_crash_guard_media_contract.rs",
         "projects/openclaw-rust/dossiers/logging-diagnostics-scoped.md",
         "source/host/src/host_diagnostics.rs"
       ],
@@ -27869,7 +27877,7 @@
       "target": {
         "language": "Rust",
         "path": "source/host/src/extensions/plugin_sdk/session_memory.rs",
-        "symbol": "VisibleTranscriptCursor and select_visible_transcript_messages"
+        "symbol": "VisibleTranscriptCursor"
       },
       "tests": [
         "source/host/tests/openclaw_plugin_sdk_core_contract.rs::test_ocrm_plugin_sdk_session_memory"
@@ -28338,8 +28346,8 @@
       },
       "target": {
         "language": "Rust",
-        "path": "unselected pending plugin bundle owner",
-        "symbol": "not selected; bundle helpers are test-only evidence"
+        "path": "source/host/tests/openclaw_plugins_contract.rs",
+        "symbol": "PluginManifest"
       },
       "tests": [
         "source/host/tests/openclaw_plugins_contract.rs::test_ocrm_plugins_bundle_manifest",

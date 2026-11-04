@@ -121,6 +121,7 @@ pub fn create_production_turn_input_projection(
         },
         ack_token: None,
         prompt_action,
+        typed_replay: None,
     })
 }
 

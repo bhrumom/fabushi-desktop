@@ -227,7 +227,7 @@ fn project_message(
             .transpose()?
             .unwrap_or_default()
     };
-    let attachments = object
+    let attachments: Vec<ReplayAttachment> = object
         .get("attachments")
         .map(|value| {
             value

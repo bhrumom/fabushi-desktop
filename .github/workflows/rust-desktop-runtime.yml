@@ -9,6 +9,7 @@ on:
       - refactor/grok-018-architecture-rebuild
       - 'ocrm/**'
     paths:
+      - '.github/workflows/release-macos-main.yml'
       - 'desktop/**'
       - 'source/**'
       - 'projects/grok-fabu-parity/architecture-manifest.json'
@@ -27,6 +28,7 @@ on:
       - 'projects/openclaw-rust/**'
   pull_request:
     paths:
+      - '.github/workflows/release-macos-main.yml'
       - 'desktop/**'
       - 'source/**'
       - 'projects/grok-fabu-parity/architecture-manifest.json'

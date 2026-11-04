@@ -2,8 +2,8 @@
 
 Status: active  
 Spec ID: OCRM-001  
-Revision: 3
-Last updated: 2026-10-31（Asia/Shanghai）
+Revision: 3  
+Last updated: 2026-11-04（Asia/Shanghai）
 Owner: Fabushi Desktop  
 Canonical target: `bhrumom/fabushi-desktop` 当前 `main` 及从它推进的已核验实现分支  
 Project: [`projects/openclaw-rust`](../../projects/openclaw-rust/SOURCE_OF_TRUTH.md)  
@@ -275,7 +275,7 @@ mixed 文件必须拆出所有不同类型的责任，不能把带业务的 UI�
 
 Actions 必须报告完整源集合、逐路径处置、责任集合与双向映射，检查 omitted/orphan/ambiguous/duplicate/unread/unmapped 等集合。所有 totals 由已锁定集合计算，禁止手填让总数“好看”。未建立递归总数时写 `unknown`/`null`，不能写 0。
 
-先按 dependency graph 定义可实施单元，单元内依稳定的 source-root/path/symbol 顺序推进。保留首个未完成的 strict responsibility 和 blocked frontier；可以并行阅读、设计和实施依赖满足的其他单元，不能跳过阻塞项后谎报连续覆盖已完成。
+先按 dependency graph 定义可实施单元，单元内按产品行为依赖与风险推进，source-root/path/symbol 仅用于追溯与去重。保留首个未完成的 strict responsibility 和 blocked frontier；可以并行阅读、设计和实施依赖满足的其他单元，不能跳过阻塞项后谎报连续覆盖已完成。
 
 ## 7. 目标架构与唯一所有权
 
@@ -449,12 +449,12 @@ bounded queues/cache/retry、backpressure、cancellation-safe async、timer/task
 
 `unit_authority_ready` 是带 `unit_id`、责任集合和传递依赖集合的单元结论，不是项目完成 flag。一个单元进入实现必须同时具备：
 
-1. 其源文件及全部影响行为、构建/运行的传递依赖和公共合同已取得并锁定内容身份；Actions 的 scoped G01 证明该依赖闭包完整，没有隐藏在单元边界外的未知依赖。
-2. 上述相关文件已完整阅读，责任类型、owner、状态/错误/权限/版本合同、source oracle 和目标接入路径已 reviewed；新 owner 的 ADR 已按规则处理。scoped G02 不能以 unread 或 unclassified 代替这些前置。
+1. 其源文件及全部影响行为、构建/运行的传递依赖和公共合同已取得并锁定内容身份；实现前以来源证据确认依赖闭包，宣称 verified 前由 Actions scoped G01 证明完整，没有隐藏在单元边界外的未知依赖。
+2. 上述相关文件已按 §17 完成必要审查，责任类型、owner、状态/错误/权限/版本合同、source oracle 和目标接入路径已 reviewed；新 owner 的 ADR 已按规则处理。scoped G02 不能以未分类或缺必需深读代替这些前置。
 3. current target 与相关并行改动已重新核对；实施不会依赖未合并或未取得来源的代码。共享合同仍在变动时锁定 revision，并把变更视为失效条件。
 4. 所需 gate/平台/服务矩阵及 blockers 明确。缺真实凭据/设备可以推进已具 authority 的实现和其他验证；相关 `verified/accepted` 仍 blocked，不能以 mock 通过替代。
 
-满足这些条件可进行单元实现、接线和单元验收；其 receipt 必须带 scoped 集合，不能宣称全项目 G01/G02/AC 或发布通过。未知依赖影响某单元时，该单元只继续研究、合同设计与解除阻塞；无依赖单元继续推进。P0 全局退出仍要求完整 inventory/dependency closure，之后也仍需完成全文件语义阅读；阶段状态、单元状态和 §15.1 项目 flags 分别报告。
+满足这些条件可进行单元实现、接线和单元验收；其 receipt 必须带 scoped 集合，不能宣称全项目 G01/G02/AC 或发布通过。未知依赖影响某单元时，该单元只继续研究、合同设计与解除阻塞；无依赖单元继续推进。P0 全局退出仍要求完整 inventory/dependency closure，之后仍需完成全量来源的必要审查与产品责任映射；阶段状态、单元状态和 §15.1 项目 flags 分别报告。
 
 ## 12. GitHub Actions 验证与证据合同
 
@@ -656,14 +656,80 @@ verification, acceptance, or global flag state.
 
 执行阶段每次更新真实责任与 evidence，最终每个适用 AC 只能 `passed`（有证据）或保持 `blocked`；具体非产品事项的 `not-applicable` 必须有源证据，不能豁免最终功能。下一项工作为 [`P0-source-baseline-and-owner-audit.md`](../../projects/openclaw-rust/management/tasks/P0-source-baseline-and-owner-audit.md)。
 
-### 17.2 2026-10-31 live-source drift amendment
+## 17. OCRM-EXEC-02 — 产品批次与风险分层执行（2026-11-02）
 
-只读 GitHub 核对显示 OpenClaw `main` 已推进到
-`8c69e8b71d3be0a8543e3480161e8e01f4fd9e5c` / tree
-`f4e34cf339e1645079baa9c8a6bdf1b9a169fa4f`，递归 tree 未截断，共 64,075
-entries（61,834 blobs、2,241 directories、0 gitlinks）。该 identity 只更新
-`upstream.lock.json::live_candidate`，仍是 discovery-only；不得复用前一
-candidate 的 inventory、dependency closure、LFS/integrity 或 Actions
-provenance，也不改变 fixed implementation subject、AC01/AC02 状态或任何
-global flag。新的 exact-subject inventory、依赖闭包和 evidence envelope
-仍需在最终解冻后的 Actions 流程中重新取得。
+本节落实用户最新要求，优先于旧版本中全文件同等深读、稳定路径顺序实施、必须等待 scoped Actions 才能开始编码等时机要求。完整 OpenClaw 产品功能、Rust 业务实现、可选互操作生态、原 Fabushi 能力和 AC01–AC24/G01–G12 不缩减；TDRP 的来源数据、验收结果或 Telegram 网络限制不直接套用到 OCRM。
+
+### 17.1 全量覆盖与必要阅读
+
+固定既有 exact upstream U，确认实际迁移分支及 current target。旧 discovery SHA 只作历史，不覆盖现有锁。只因明确批准的 rebaseline、安全修复或事实冲突改变 U，不追逐浮动 main。完整枚举 tracked/递归依赖、下载/patch、LFS、资源、工具和法律记录；每项精确 repository/commit/path/content identity 有处置，无法取得或判断则保持未知/阻塞。
+
+阅读深度按职责与风险决定：
+
+| 类型 | 最低审查合同 |
+| --- | --- |
+| 产品业务、混合 UI 业务、高风险或不确定项 | deep：实现/调用链、状态机、边界/副作用、权限、并发、失败与恢复；逐责任理解 |
+| 生成输出 | contract：输入/schema、生成器、输出与消费者合同，精确成员集合；补丁/未知差异升级 deep |
+| 成熟依赖 | contract：锁定版本、实际 API/构建可达性、配置/补丁、安全边界和许可证；高风险/修改部分 deep |
+| 文档、资源、工具、法律记录 | disposition：用途、内容/来源、消费者、保留/复用/适配或有证据不适用；不能仅凭目录或扩展名排除产品行为 |
+
+不要求每个依赖实现逐行重读。AST/搜索可定位范围但不能证明产品语义理解。测试中的独立行为 oracle 仍映射，样例/mocks 不代表生产效果。源 blob、合同及消费者未变时复用审查证据；目录整体豁免、抽样替代关键业务审查均禁止。完整来源核算不意味着上游开发流程、审查提示词和每个工具都必须复制到 Fabushi。
+
+### 17.2 单一账本与机器门的兼容迁移
+
+沿用本项目 inventory/ledger/RTM，禁止建立第二套完成真相。按既有 schema 兼容增加 category、risk、required_review_depth、review_status、rationale、evidence_refs、responsibility_ids；可共享证据，但成员必须是精确身份列表。read_status 保留字面事实，contract/disposition-complete 不改写成 read-complete。
+
+G02 final 与 responsibility_mapping_complete 的来源部分要求：完整集合中无未分类/未处置项、required review 无缺口、责任无遗漏/歧义/未映射，而非所有文本 unread=0。业务仍必须真实 Rust 实现、生产接线及对应接受证据。类别和不适用须经审查；缺功能、凭据或设备不能改成非产品处置。UI/生态/运行时等字段仅对适用责任必需，不适用记录理由，复用 §6.4.1 类型化合同。
+
+既有未合并分支上的 schema/validator 必须先检查，按一个原子批次更新 declarations、检查器、用例与文档，再启用新状态；不能先删旧 gate 或手改零计数。至少验证：缺项、重复、blob/依赖漂移、未取得来源、无证据、浅读产品/高风险、错误不适用、未映射责任都失败；有证据的 generated/dependency contract 和非产品 disposition 可通过。metadata 合法仅证明声明结构，语义和实际引用由来源证据与独立审查验证。新检查器未接入前最终对应 gate 保持未接受，不拿本次政策合并代替。
+
+### 17.3 产品闭环与实施准入
+
+工作单元是可检查的用户行为或必要公共合同，不是单个文件。相关来源身份与必要审查、owner、错误/状态/权限合同已明确即可实现；取得信息可用只读 Git/API，不必等待全局 P0 或 scoped Actions 先绿。影响本批的未知依赖先查清；未查清只做设计/解除阻塞，无依赖批次继续。scoped G01/G02 执行证据必须在宣称该批 verified 前取得。
+
+每批绑定 U、base/H、允许修改路径、需求/oracle、共享接口版本、入口→producer→owner→storage/service→consumer、错误/取消/重启路径、用例、退出条件。实现、接线与测试一起交付；单独 helper/manifest/注册成功不算闭环。
+
+优先检查当前模型/配置→推理，channel 入站→Session/Transcript→Runner→投递，cron→Automations→执行/结算，plugin/skill/MCP→权限/生命周期，memory/media/node→实际消费者。它们是依赖导向的候选批次，不宣称当前缺陷存在或限定完整范围。先读当前源码确认差异，复用已有实现；不得重造 Agent loop、session store、scheduler、Marketplace 或 OpenClaw runtime。外部渠道/Gateway/SDK/node 的授权适配范围保留。
+
+### 17.4 并行、保存与及时反馈
+
+共享身份、会话、消息/entry、配置、资源、权限、版本/错误合同先明确；独立 owner/path 可用 worker 并行，带 exact base、接口、允许文件和 diff。公共 schema、composition、锁与账本由单一集成人处理。沿现有唯一迁移线集成，不覆盖他人未提交成果，不为每个任务复制整个仓库或开重复迁移主线。
+
+允许必要 push/PR/dispatch，及时保存可恢复云端检查点；不 force push 或关闭保护。批次可验证后冻结 H，在 Actions 运行受影响编译、合同/状态机/集成；权限、secret、沙箱、并发、同步、数据迁移、取消/未知结果/恢复的关键负例尽早验证。UI 与协议兼容变更做相应定向检查。所有可执行验证仍仅 GitHub Actions，不搬到本机或 htch-runtime。
+
+复用现有 source-neutral harness 和工作流；先核查触发、paths、缓存和构件身份，不每文件/小提交全量跑。相同 H/输入的有效结果复用；只重跑失败或因源码、合同、fixture、环境变化而失效的项，旧结果不冒充新 H。CI 期间推进独立工作，失败公共合同先修复再推进其消费者。区分实现、测试/oracle、环境故障，不无解释重跑挑绿。
+
+### 17.5 最终验收与进度
+
+全范围实现闭合、关键批次失败解决后冻结最终候选，完整执行适用 G01–G12、AC01–AC24、生态真实服务/设备/平台、UI/时序/安全、性能/soak、包体安装/升级/回滚与独立 ACCEPT。批次测试通过不免除真实 provider/channel/node 验收；缺账号/签名/设备保持 blocked。证据仍遵守 §12.3 subject/carrier 区分，最终 shipping SHA 与构件 provenance 对应。
+
+每批仅更新实际变化：用户能力、owner 与接线、source review 分类及缺口、H/U、检查选择/执行结果、阻塞、云端保存和下一批。工具治理、阅读、实现、接线、验证、接受分别计数；分母未完整分解不报全产品百分比。八个全局 flags 不因文档发布或部分绿色自动变化。
+
+本次只修订主干规范和执行入口。主干尚未包含本项目机器 ledger/validator；各工作分支可能已有实现，接手者须复用并按 §17.2 同批兼容迁移。该事实不证明分支实现不存在，也不授权覆盖分支。本次政策审查采用人工差异/冲突阅读；产品测试不适用于纯文档变更。
+
+
+## 18. OCRM-EXEC-03 — 执行效率、纵向接线切片与防退化补充规范（2026-11-04）
+
+本节针对 OpenClaw 融合前期出现的“2,132 次微提交空转、上游漂移轮询失控、脚本自锁以及 141 项已实现但未接线（`implemented` + `not-wired`）”四大症结，建立与 Telegram 融合 v2（`FMEP-EXEC-03`）同构的强制工程纪律：
+
+1. **上游基线冻结（`OCRM-LOCK-01`）**：
+   - 当前实施轮次严格固定 `upstream.lock.json` 为 `openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845`（tree `90c8aab39972da11cfad220361781d49e1bc6700`，共 62,130 个跟踪对象），并将 `accepted_for_this_implementation_round` 置为 `true`。
+   - **严禁在功能实现与生产接线批次中轮询上游 `main` 或编写 `upstream-*` 漂移探测报告**。跨版本重基线仅在当前轮次纵向切片全部完成生产接线并通过契约测试后，经显式批准方可单次执行。
+2. **非产品子树批量裁决（`OCRM-BULK-01`）**：
+   - 依据 [`docs/specs/ocrm-bulk-subtrees-disposition.md`](./ocrm-bulk-subtrees-disposition.md) 与 `projects/openclaw-rust/scripts/ocrm-bulk-disposition.py`，41,834 个非产品路径（测试套件、QA 夹具、静态资源、UI 壳、构建脚本、文档与研发配置）通过确定性规则一次性标记为 `applicability_status: "non-product"`、`disposition_status: "grouped-evidence"`；817 个已映射源路径保持 `read-complete` / `deep-read`；其余 19,479 个产品源码路径作为待深读前沿按纵向切片推进。
+   - `expand_inventory.py` 跨版本复用记录时仅校验 `(path, blob_sha)` 内容恒等，严禁因 `source_commit` 变化抹除已审记录。
+3. **账本字面符号与路径卫生门禁（`OCRM-HYGIENE-01`）**：
+   - `parity-ledger.json` 中每条 `implemented` 职责的 `target.path` 必须指向仓库内真实存在的文件（禁止目录或概念短语），`target.symbol` 必须为该文件内可被字面检索到的真实 Rust 标识符（单符号，禁止散文描述或多符号拼接），`source_refs` 必须为合法 `{path, blob_sha, symbol, range}` 对象。`verify_audit_integrity.py` 与 `validate_p0.py` 对此执行 fail-closed 校验。
+4. **Phase 0 五问侦察与信任边界表（Reconnaissance Gate）**：
+   - 任何纵向切片编码前，必须先完成五问侦察（上游入口与状态机、Fabushi 现有 Owner、生产调用链缺口、信任边界与并发锁顺序、错误/取消/重启恢复语义）并输出 `Trust Boundary Table`，严禁新建平行 runtime crate。
+5. **纵向生产接线切片优先（Vertical Wiring Slices `OC-S1`..`OC-S5`）**：
+   - 当前 239 条已登记职责中已有 230 条 `implemented`，但有 **141 条处于 `implemented` + `not-wired`**（仅 89 条 `wired`），另有 **9 条核心职责处于 `not-started`**。
+   - 后续执行必须按 5 个端到端纵向切片推进，严禁只写孤立 helper 而不接入宿主生产主干：
+     - **Slice `OC-S1`（Gateway WS / HTTP / RPC Control Plane Wiring）**：打通 Gateway WebSocket 握手鉴权、OpenResponses HTTP、Chat/Node/Session 方法在 `source/host/app/src/main.rs` 与 `source/host/src/http_api/mod.rs` 的生产挂载。
+     - **Slice `OC-S2`（Agent Turn / Context Compaction / Model Pricing & Auth Profile Closure）**：闭合 9 个 `not-started` 缺口中的 Agent/Session/ACP 生产 Owner（`ProductionSessionWorkers` -> `SandAgentDb` 上下文压缩、模型定价目录、Auth Profile 轮换与 ACP 命令/策略）。
+     - **Slice `OC-S3`（Multi-Channel Inbound/Outbound & Webhook Ingress Wiring）**：将已实现的 Discord、Slack、Telegram、Feishu、Line、WhatsApp、Signal/iMessage/Matrix、BlueBubbles、GoogleChat、MSTeams 等渠道适配器与 Webhook 验签/限流/投递管线接入宿主 `ChannelRuntime` 与出站投递回路。
+     - **Slice `OC-S4`（Plugin SDK / Skills / Exec Security / Sandbox & SSRF Enforcement）**：将 Plugin SDK 表面、Bundled Plugin Manifest、Exec Approvals、Obfuscation Detector、Docker/SSH Sandbox 与 SSRF 策略接入工具调用与插件执行热路径。
+     - **Slice `OC-S5`（Cron / Subagent / Memory QMD / Media / Node Host & Companion Closure）**：将 Cron Session Reaper、Subagent Spawn Queue、Memory QMD Hybrid、Media Understanding Runner、TTS/Talk 与 Node Host 重连/Computer 动作派发接入生产调度器与协调器。
+6. **两阶段验证法（Stage A 本地快速反馈 + Stage B GitHub Actions 权威验印）**：
+   - **Stage A（日常开发与切片联调）**：允许并要求在本地运行 `python3 projects/openclaw-rust/scripts/verify_audit_integrity.py` 与受影响包的 `cargo test`（如 `cargo test --manifest-path source/host/Cargo.toml --test <contract_test>`）快速验证编译、状态机与契约测试。
+   - **Stage B（阶段封板与权威晋升）**：本地 Stage A 全绿后，在 GitHub Actions 运行 exact-head 权威工作流，凭不可变 artifact receipt 更新 RTM/Ledger 验收状态。

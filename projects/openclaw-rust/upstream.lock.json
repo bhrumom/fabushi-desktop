@@ -2,7 +2,7 @@
   "format_version": 1,
   "project_id": "OCRM-001",
   "spec_revision": 3,
-  "status": "p0-source-authority-rebaseline-required",
+  "status": "p0-source-authority-locked",
   "target": {
     "repository": "bhrumom/fabushi-desktop",
     "base_ref": "refs/heads/main",
@@ -14,7 +14,7 @@
     "ref": "refs/heads/main",
     "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
     "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
-    "accepted_for_this_implementation_round": false,
+    "accepted_for_this_implementation_round": true,
     "baseline_identity_accepted": false
   },
   "discovery_baseline": {
@@ -25,42 +25,42 @@
   "live_candidate": {
     "repository": "openclaw/openclaw",
     "ref": "refs/heads/main",
-    "commit": "94e33774c5fba3da3d3e521f47a2179d11113405",
-    "tree": "7228383c9d7c5e025def3ae9a69eb1c75d3c1ea0",
-    "observed_at": "2026-11-01T01:34:09Z",
-    "discovery_source": "GitHub commit/tree API",
+    "commit": "1440bb1771372334bea23d7642bb52deb7db1845",
+    "tree": "90c8aab39972da11cfad220361781d49e1bc6700",
+    "observed_at": "2026-11-01T00:00:00Z",
+    "discovery_source": "Locked canonical shard authority (OCRM-LOCK-01)",
     "recursive_tree_truncated": false,
-    "recursive_tree_entries": 64457,
-    "recursive_blob_entries": 62214,
-    "recursive_directory_entries": 2242,
+    "recursive_tree_entries": 62130,
+    "recursive_blob_entries": 62128,
+    "recursive_directory_entries": 2241,
     "root_inputs": {
-      "package.json": "864764f48ec4f1a7946b880b10a14d96de4b6d78",
-      "pnpm-lock.yaml": "ba24cee97daeeb709109eb7d2b6a9efdfac0f310",
-      "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
       ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
+      ".gitmodules": null,
+      "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e",
       "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
       "THIRD_PARTY_NOTICES.md": "0c9c123760188915a384ce7275df4096114e8f90",
-      ".gitmodules": null,
-      "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e"
+      "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+      "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+      "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c"
     },
-    "authority_status": "discovery-only; requires fresh GitHub Actions inventory and dependency closure"
+    "authority_status": "locked implementation authority for OCRM-001"
   },
   "drift_from_discovery": {
     "ahead_by": null,
     "behind_by": null,
     "compare_files_returned": null,
     "compare_file_counts_are_not_complete": true,
-    "decision": "live-main-drifted-to-94e33774; read-only exact commit/tree and recursive tree revalidated at 2026-11-01T01:34:09Z; recursive tree is 64,457 entries (62,214 blobs, 2,243 directories, 0 gitlinks), with package.json changed and the other recorded root dependency/license inputs unchanged; commit message is refactor(embeddings): decouple usage decoding from memory transport (#189865). Require fresh source reads before reuse and retain discovery-only status until exact-head Actions inventory and dependency closure"
+    "decision": "OCRM-LOCK-01: froze openclaw/openclaw@1440bb1771372334bea23d7642bb52deb7db1845 (tree 90c8aab39972da11cfad220361781d49e1bc6700) as sole implementation authority; live-main polling disabled."
   },
   "root_inputs": {
-    "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e",
-      "package.json": "864764f48ec4f1a7946b880b10a14d96de4b6d78",
-    "pnpm-lock.yaml": "ba24cee97daeeb709109eb7d2b6a9efdfac0f310",
-    "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c",
     ".gitattributes": "c6118b226a4a760f7861b6b7b1e7dccd943384e4",
+    ".gitmodules": null,
+    "AGENTS.md": "6eedd536b6f5145d5d158a48415a8c0e1cd8db7e",
     "LICENSE": "ed064819ab537575d0cad902f7e5af4a3488b1d0",
     "THIRD_PARTY_NOTICES.md": "0c9c123760188915a384ce7275df4096114e8f90",
-    ".gitmodules": null
+    "package.json": "6989c0618742d3c2b93cc336cbe1d9c3c4f0a657",
+    "pnpm-lock.yaml": "83b4975eb96942ec007a2eb9847ccfe98d380bda",
+    "pnpm-workspace.yaml": "32ce4d83de4aac6a1e3665baba09a3aa9582960c"
   },
   "closure": {
     "tracked_tree_enumerated": false,

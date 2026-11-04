@@ -1,0 +1,28 @@
+name: Plugin marketplace UI
+on:
+  pull_request:
+    paths: ['frontend/src/recovered/features/plugins/**', 'desktop/e2e/fixtures/plugin-marketplace.tsx', 'desktop/scripts/check-plugin-marketplace-ui.mjs', '.github/workflows/plugin-marketplace-ui.yml']
+permissions:
+  contents: read
+jobs:
+  visual:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci --prefix desktop --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+        working-directory: desktop
+      - run: node scripts/check-plugin-marketplace-ui.mjs
+        working-directory: desktop
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plugin-marketplace-ui
+          include-hidden-files: true
+          if-no-files-found: error
+          path: desktop/.tmp-plugin-ui/*.png

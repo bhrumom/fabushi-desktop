@@ -327,7 +327,9 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
     ) -> Result<Option<AutomationRecord>, String> {
         self.session
             .with_admitted_filesystem_mutation(self.agent_id, || {
-                self.store.mark_notice_raised(automation_id, notice)
+                self.store
+                    .mark_notice_raised(automation_id, notice)
+                    .map_err(|error| error.to_string())
             })
     }
 
@@ -338,7 +340,9 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
     ) -> Result<Option<AutomationRecord>, String> {
         self.session
             .with_admitted_filesystem_mutation(self.agent_id, || {
-                self.store.record_run(automation_id, fired_at_ms)
+                self.store
+                    .record_run(automation_id, fired_at_ms)
+                    .map_err(|error| error.to_string())
             })
     }
 
@@ -353,14 +357,16 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
     ) -> Result<Option<AutomationRun>, String> {
         self.session
             .with_admitted_filesystem_mutation(self.agent_id, || {
-                self.store.begin_run(
-                    automation_id,
-                    trigger,
-                    fired_at_ms,
-                    event,
-                    run_id,
-                    coalesced_run_ids,
-                )
+                self.store
+                    .begin_run(
+                        automation_id,
+                        trigger,
+                        fired_at_ms,
+                        event,
+                        run_id,
+                        coalesced_run_ids,
+                    )
+                    .map_err(|error| error.to_string())
             })
     }
 
@@ -376,6 +382,7 @@ impl AutomationRunStore for AdmittedAutomationRunStore<'_> {
             .with_admitted_filesystem_mutation(self.agent_id, || {
                 self.store
                     .finish_run(automation_id, run_id, status, finished_at_ms, detail)
+                    .map_err(|error| error.to_string())
             })
     }
 
