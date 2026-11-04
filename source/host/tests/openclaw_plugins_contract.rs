@@ -4,7 +4,7 @@ use mahayana_host_runtime::extensions::plugins::activation_planner::{
 };
 use mahayana_host_runtime::extensions::plugins::bundle_manifest::{
     encode_hex, parse_clawhub_plugin_spec, verify_archive_limits, verify_sha256_integrity,
-    ClawHubPluginSpec, PluginBundleFormat, AGENT_BUNDLE_MANIFEST_RELATIVE_PATH,
+    ClawHubPluginSpec, PluginBundleFormat, PluginManifest, AGENT_BUNDLE_MANIFEST_RELATIVE_PATH,
     CLAUDE_BUNDLE_MANIFEST_RELATIVE_PATH, CODEX_BUNDLE_MANIFEST_RELATIVE_PATH,
     CURSOR_BUNDLE_MANIFEST_RELATIVE_PATH, DEFAULT_MAX_ARCHIVE_BYTES_ZIP,
     DEFAULT_MAX_ENTRIES, DEFAULT_MAX_EXTRACTED_BYTES,
@@ -187,6 +187,17 @@ fn test_ocrm_plugins_bundle_manifest() {
     assert_eq!(outcome.text, "scoped:alpha");
     assert_eq!(outcome.home, "/tmp/virtual-home");
     assert_eq!(outcome.message, "alpha");
+
+    // 8. PluginManifest model validation (OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001)
+    let valid_manifest = PluginManifest::new("openclaw-sample-plugin", "1.2.0");
+    assert!(valid_manifest.validate().is_ok());
+
+    let mut invalid_manifest = PluginManifest::new("", "1.2.0");
+    assert!(invalid_manifest.validate().is_err());
+
+    invalid_manifest.name = "sample".to_string();
+    invalid_manifest.entry = Some("../outside/index.js".to_string());
+    assert!(invalid_manifest.validate().is_err());
 }
 
 #[test]
