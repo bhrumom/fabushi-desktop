@@ -20,3 +20,9 @@ pub mod channel_pairing;
 pub mod channel_runtime;
 pub mod session_memory;
 pub mod tool_runtime;
+
+#[path = "../../security/mod.rs"]
+pub mod security;
+
+pub use security::*;
+

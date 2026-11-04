@@ -792,6 +792,63 @@ impl BundleCommandScopeValidator {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Bundled Plugin Manifest Model & Validation (OCRM-RESP-PLUGINS-BUNDLE-MANIFEST-001)
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct PluginManifest {
+    pub name: String,
+    pub version: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub author: Option<String>,
+    #[serde(default)]
+    pub entry: Option<String>,
+    #[serde(default)]
+    pub capabilities: Vec<String>,
+    #[serde(default)]
+    pub permissions: Vec<String>,
+    #[serde(default)]
+    pub channels: Vec<String>,
+    #[serde(default)]
+    pub tools: Vec<String>,
+    #[serde(default)]
+    pub mcp_servers: Vec<String>,
+}
+
+impl PluginManifest {
+    pub fn new(name: impl Into<String>, version: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            version: version.into(),
+            ..Default::default()
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), Vec<String>> {
+        let mut errors = Vec::new();
+        if self.name.trim().is_empty() {
+            errors.push("Plugin name cannot be empty".to_string());
+        }
+        if self.version.trim().is_empty() {
+            errors.push("Plugin version cannot be empty".to_string());
+        }
+        if let Some(entry) = &self.entry {
+            if entry.contains("../") || entry.contains("..\\") {
+                errors.push(format!("Entry point cannot traverse outside plugin root: '{entry}'"));
+            }
+        }
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
+    }
+}
+
+
 
 
 
