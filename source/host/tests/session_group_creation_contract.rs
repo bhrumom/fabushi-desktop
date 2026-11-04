@@ -656,3 +656,485 @@ fn topic_destination_eligibility_fail_closed_contract() {
         "fail-closed policy must not leave any transcript rows on failed topic destinations!"
     );
 }
+
+#[test]
+fn pin_and_unpin_conversation_and_topic_messages_enforces_admin_rights() {
+    let root = temp_root("pin-unpin");
+    let alice = runtime_for_user(&root, "user-alice"); // Owner
+    let bob = runtime_for_user(&root, "user-bob");     // Member (later Admin)
+    let charlie = runtime_for_user(&root, "user-charlie"); // Regular Member
+
+    // Create group
+    dispatch_ok(
+        &alice,
+        "createGroupConversation",
+        json!({
+            "groupId": "pin-test",
+            "title": "Pin Test Group",
+            "participantIds": ["user-bob", "user-charlie"]
+        }),
+    );
+
+    // Create topic
+    dispatch_ok(
+        &alice,
+        "upsertConversationTopic",
+        json!({
+            "conversationId": "group-pin-test",
+            "topicId": "topic-dev",
+            "title": "Dev Topic"
+        }),
+    );
+
+    // Alice sends messages in main and topic
+    let msg_main = dispatch_ok(
+        &alice,
+        "sendHumanMessage",
+        json!({
+            "conversationId": "group-pin-test",
+            "text": "Main announcement",
+            "clientNonce": "alice-pin-main-1"
+        }),
+    );
+    let msg_main_id = msg_main["id"].as_str().expect("main msg id");
+
+    let msg_topic = dispatch_ok(
+        &alice,
+        "sendHumanMessage",
+        json!({
+            "conversationId": "group-pin-test",
+            "text": "Dev topic announcement",
+            "clientNonce": "alice-pin-topic-1",
+            "topicId": "topic-dev"
+        }),
+    );
+    let msg_topic_id = msg_topic["id"].as_str().expect("topic msg id");
+
+    // Regular member (Charlie) tries to pin -> fails closed
+    let err_charlie = dispatch_err(
+        &charlie,
+        "pinConversationMessage",
+        json!({
+            "conversationId": "group-pin-test",
+            "messageId": msg_main_id
+        }),
+    );
+    assert!(err_charlie.to_string().contains("pin_messages"));
+
+    // Owner (Alice) pins main message
+    let pin_main_res = dispatch_ok(
+        &alice,
+        "pinConversationMessage",
+        json!({
+            "conversationId": "group-pin-test",
+            "messageId": msg_main_id
+        }),
+    );
+    assert_eq!(pin_main_res["childScope"], "main");
+    assert_eq!(pin_main_res["pinnedBy"], "user-alice");
+    assert_eq!(pin_main_res["pinnedMessageIds"], json!([msg_main_id]));
+
+    // Alice pins topic message in topic-dev
+    let pin_topic_res = dispatch_ok(
+        &alice,
+        "pinConversationMessage",
+        json!({
+            "conversationId": "group-pin-test",
+            "messageId": msg_topic_id,
+            "topicId": "topic-dev"
+        }),
+    );
+    assert_eq!(pin_topic_res["childScope"], "topic:topic-dev");
+    assert_eq!(pin_topic_res["pinnedBy"], "user-alice");
+    assert_eq!(pin_topic_res["pinnedMessageIds"], json!([msg_topic_id]));
+
+    // Verify scope isolation via listConversationPins
+    let main_pins = dispatch_ok(
+        &alice,
+        "listConversationPins",
+        json!({ "conversationId": "group-pin-test" }),
+    );
+    assert_eq!(main_pins, json!([msg_main_id]));
+
+    let topic_pins = dispatch_ok(
+        &alice,
+        "listConversationPins",
+        json!({
+            "conversationId": "group-pin-test",
+            "topicId": "topic-dev"
+        }),
+    );
+    assert_eq!(topic_pins, json!([msg_topic_id]));
+
+    // Promote Bob to Administrator with pin_messages: true
+    let admin_bob = fabushi_messaging_core::CommunityMember {
+        actor_id: fabushi_messaging_core::ActorId::new("user-bob"),
+        status: fabushi_messaging_core::MemberStatus::Administrator,
+        admin_title: Some("Moderator".into()),
+        admin_rights: fabushi_messaging_core::AdminRights {
+            pin_messages: true,
+            ..Default::default()
+        },
+        restrictions: Default::default(),
+        joined_at_ms: 1000,
+        invited_by: None,
+    };
+    dispatch_ok(
+        &alice,
+        "upsertConversationMember",
+        json!({
+            "conversationId": "group-pin-test",
+            "member": admin_bob
+        }),
+    );
+
+    // Bob as Admin unpins topic message
+    let unpin_res = dispatch_ok(
+        &bob,
+        "unpinConversationMessage",
+        json!({
+            "conversationId": "group-pin-test",
+            "messageId": msg_topic_id,
+            "topicId": "topic-dev"
+        }),
+    );
+    assert_eq!(unpin_res["pinnedMessageIds"], json!([]));
+
+    let topic_pins_after = dispatch_ok(
+        &bob,
+        "listConversationPins",
+        json!({
+            "conversationId": "group-pin-test",
+            "topicId": "topic-dev"
+        }),
+    );
+    assert_eq!(topic_pins_after, json!([]));
+
+    // Main pin remains intact
+    let main_pins_after = dispatch_ok(
+        &bob,
+        "listConversationPins",
+        json!({ "conversationId": "group-pin-test" }),
+    );
+    assert_eq!(main_pins_after, json!([msg_main_id]));
+}
+
+#[test]
+fn topic_mute_and_mention_override_notification_evaluation() {
+    let root = temp_root("topic-mute");
+    let alice = runtime_for_user(&root, "user-alice"); // Owner / Sender
+    let bob = runtime_for_user(&root, "user-bob");     // Member / Recipient
+
+    dispatch_ok(
+        &alice,
+        "createGroupConversation",
+        json!({
+            "groupId": "mute-test",
+            "title": "Mute Test Group",
+            "participantIds": ["user-bob"]
+        }),
+    );
+
+    dispatch_ok(
+        &alice,
+        "upsertConversationTopic",
+        json!({
+            "conversationId": "group-mute-test",
+            "topicId": "topic-muted",
+            "title": "Muted Topic"
+        }),
+    );
+
+    dispatch_ok(
+        &alice,
+        "upsertConversationTopic",
+        json!({
+            "conversationId": "group-mute-test",
+            "topicId": "topic-normal",
+            "title": "Normal Topic"
+        }),
+    );
+
+    // Bob mutes topic-muted for 1 hour
+    let far_future = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64 + 3_600_000;
+    dispatch_ok(
+        &bob,
+        "setConversationTopicMute",
+        json!({
+            "conversationId": "group-mute-test",
+            "topicId": "topic-muted",
+            "mutedUntilMs": far_future
+        }),
+    );
+
+    // 1. Ordinary message in muted topic
+    let msg_muted = dispatch_ok(
+        &alice,
+        "sendHumanMessage",
+        json!({
+            "conversationId": "group-mute-test",
+            "text": "Quiet update in muted topic",
+            "clientNonce": "alice-mute-1",
+            "topicId": "topic-muted"
+        }),
+    );
+
+    // 2. Mention message in muted topic (penetrates mute)
+    let msg_mention = dispatch_ok(
+        &alice,
+        "sendHumanMessage",
+        json!({
+            "conversationId": "group-mute-test",
+            "text": "Hey @user-bob check this out!",
+            "clientNonce": "alice-mute-2",
+            "topicId": "topic-muted"
+        }),
+    );
+
+    // 3. Ordinary message in unmuted topic
+    let msg_normal = dispatch_ok(
+        &alice,
+        "sendHumanMessage",
+        json!({
+            "conversationId": "group-mute-test",
+            "text": "Normal topic update",
+            "clientNonce": "alice-mute-3",
+            "topicId": "topic-normal"
+        }),
+    );
+
+    // Bob evaluates notifications
+    let eval_muted = dispatch_ok(
+        &bob,
+        "evaluateMessageNotification",
+        json!({
+            "conversationId": "group-mute-test",
+            "messageId": msg_muted["id"]
+        }),
+    );
+    assert_eq!(eval_muted["decision"], "Suppressed");
+    assert_eq!(eval_muted["reason"], "TopicMuted");
+    assert_eq!(eval_muted["deliver"], false);
+
+    let eval_mention = dispatch_ok(
+        &bob,
+        "evaluateMessageNotification",
+        json!({
+            "conversationId": "group-mute-test",
+            "messageId": msg_mention["id"]
+        }),
+    );
+    assert_eq!(eval_mention["decision"], "Notify");
+    assert_eq!(eval_mention["deliver"], true);
+
+    let eval_normal = dispatch_ok(
+        &bob,
+        "evaluateMessageNotification",
+        json!({
+            "conversationId": "group-mute-test",
+            "messageId": msg_normal["id"]
+        }),
+    );
+    assert_eq!(eval_normal["decision"], "Notify");
+    assert_eq!(eval_normal["deliver"], true);
+}
+
+#[test]
+fn typing_publication_throttling_and_permission_enforcement() {
+    let root = temp_root("typing-pub");
+    let alice = runtime_for_user(&root, "user-alice"); // Owner
+    let bob = runtime_for_user(&root, "user-bob");     // Member
+
+    dispatch_ok(
+        &alice,
+        "createGroupConversation",
+        json!({
+            "groupId": "typing-test",
+            "title": "Typing Test Room",
+            "participantIds": ["user-bob"]
+        }),
+    );
+
+    dispatch_ok(
+        &alice,
+        "upsertConversationTopic",
+        json!({
+            "conversationId": "group-typing-test",
+            "topicId": "topic-chat",
+            "title": "Chat Topic"
+        }),
+    );
+
+    // First typing publication -> published
+    let t1 = dispatch_ok(
+        &bob,
+        "publishConversationTyping",
+        json!({
+            "conversationId": "group-typing-test",
+            "topicId": "topic-chat",
+            "action": "typing"
+        }),
+    );
+    assert_eq!(t1["decision"], "published");
+    assert_eq!(t1["actorId"], "user-bob");
+
+    // Immediate second call -> throttled
+    let t2 = dispatch_ok(
+        &bob,
+        "publishConversationTyping",
+        json!({
+            "conversationId": "group-typing-test",
+            "topicId": "topic-chat",
+            "action": "typing"
+        }),
+    );
+    assert_eq!(t2["decision"], "throttled");
+    assert_eq!(t2["actorId"], "user-bob");
+
+    // Alice closes the topic -> Bob cannot publish typing
+    dispatch_ok(
+        &alice,
+        "upsertConversationTopic",
+        json!({
+            "conversationId": "group-typing-test",
+            "topicId": "topic-chat",
+            "title": "Chat Topic",
+            "closed": true
+        }),
+    );
+    let err_closed = dispatch_err(
+        &bob,
+        "publishConversationTyping",
+        json!({
+            "conversationId": "group-typing-test",
+            "topicId": "topic-chat"
+        }),
+    );
+    assert!(err_closed.to_string().contains("TopicClosed") || err_closed.to_string().contains("closed"));
+
+    // Restrict Bob from sending messages
+    let restricted_bob = fabushi_messaging_core::CommunityMember {
+        actor_id: fabushi_messaging_core::ActorId::new("user-bob"),
+        status: fabushi_messaging_core::MemberStatus::Restricted,
+        admin_title: None,
+        admin_rights: Default::default(),
+        restrictions: fabushi_messaging_core::MemberRestrictions {
+            send_messages: true,
+            ..Default::default()
+        },
+        joined_at_ms: 1000,
+        invited_by: None,
+    };
+    dispatch_ok(
+        &alice,
+        "upsertConversationMember",
+        json!({
+            "conversationId": "group-typing-test",
+            "member": restricted_bob
+        }),
+    );
+    let err_restricted = dispatch_err(
+        &bob,
+        "publishConversationTyping",
+        json!({ "conversationId": "group-typing-test" }),
+    );
+    assert!(err_restricted.to_string().contains("SendMessagesRestricted") || err_restricted.to_string().contains("restricted"));
+}
+
+#[test]
+fn media_preflight_and_batch_limit_contract() {
+    let root = temp_root("media-preflight");
+    let alice = runtime_for_user(&root, "user-alice");
+
+    // 1. Valid attachment preflight
+    let valid = dispatch_ok(
+        &alice,
+        "validateMediaAttachmentPreflight",
+        json!({
+            "fileName": "avatar.png",
+            "mimeType": "image/png",
+            "sizeBytes": 1024,
+            "width": 256,
+            "height": 256
+        }),
+    );
+    assert_eq!(valid["valid"], true);
+    assert_eq!(valid["fileName"], "avatar.png");
+    assert_eq!(valid["sizeBytes"], 1024);
+
+    // 2. Empty filename rejected
+    let err_empty = dispatch_err(
+        &alice,
+        "validateMediaAttachmentPreflight",
+        json!({
+            "fileName": "",
+            "mimeType": "image/png",
+            "sizeBytes": 1024
+        }),
+    );
+    assert!(err_empty.to_string().contains("EmptyFileName") || err_empty.to_string().contains("empty"));
+
+    // 3. Zero-byte attachment rejected
+    let err_zero = dispatch_err(
+        &alice,
+        "validateMediaAttachmentPreflight",
+        json!({
+            "fileName": "empty.png",
+            "mimeType": "image/png",
+            "sizeBytes": 0
+        }),
+    );
+    assert!(err_zero.to_string().contains("ZeroByteAttachment") || err_zero.to_string().contains("zero"));
+
+    // 4. Over 32 MiB rejected
+    let oversized = 33 * 1024 * 1024;
+    let err_large = dispatch_err(
+        &alice,
+        "validateMediaAttachmentPreflight",
+        json!({
+            "fileName": "oversized.zip",
+            "mimeType": "application/zip",
+            "sizeBytes": oversized
+        }),
+    );
+    assert!(err_large.to_string().contains("AttachmentTooLarge") || err_large.to_string().contains("exceeds"));
+
+    // 5. sendHumanMessage with > 6 attachments fails closed
+    let direct = dispatch_ok(
+        &alice,
+        "createHumanConversation",
+        json!({
+            "peerHumanId": "user-bob",
+            "title": "Direct Media Test"
+        }),
+    );
+    let direct_id = direct["id"].as_str().expect("direct conversation id");
+
+    let seven_attachments = json!([
+        { "name": "f1.txt", "path": "/tmp/f1.txt" },
+        { "name": "f2.txt", "path": "/tmp/f2.txt" },
+        { "name": "f3.txt", "path": "/tmp/f3.txt" },
+        { "name": "f4.txt", "path": "/tmp/f4.txt" },
+        { "name": "f5.txt", "path": "/tmp/f5.txt" },
+        { "name": "f6.txt", "path": "/tmp/f6.txt" },
+        { "name": "f7.txt", "path": "/tmp/f7.txt" }
+    ]);
+    let err_batch = dispatch_err(
+        &alice,
+        "sendHumanMessage",
+        json!({
+            "conversationId": direct_id,
+            "text": "Batch of 7 attachments",
+            "clientNonce": "alice-media-batch-1",
+            "attachments": seven_attachments
+        }),
+    );
+    assert!(
+        err_batch.to_string().contains("TooManyAttachments")
+            || err_batch.to_string().contains("attachment preflight failed")
+            || err_batch.to_string().contains("exceeds maximum")
+    );
+}

@@ -54747,17 +54747,23 @@
       ],
       "service_owner": "Existing Fabushi messaging service",
       "deployment_evidence": [],
-      "implementation_status": "mapped",
+      "implementation_status": "implemented",
       "coverage_disposition": "rewritten",
       "blockers": [
-        "Transcript inline button action rendering is not yet wired in frontend transcript projection.",
-        "MiniApp SendMessage currently fails closed pending desktop user confirmation UI; SendData fails closed in human direct conversations without a Bot recipient.",
         "Full release gate acceptance pending containing-head GitHub Actions."
       ],
       "production_entrypoints": [
-        "InlineButtonAction::MiniApp -> miniapp-window launch -> preload fabushi.invoke -> MiniAppToolRouter -> gateway miniAppPostToConversation -> ProductionSessionWorkers::post_miniapp_message -> SandAgentDb"
+        "source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
       ],
-      "production_evidence": [],
+      "production_evidence": [
+        "path:source/host/src/extensions/session/production.rs#ProductionSessionWorkers::post_miniapp_message",
+        "path:source/host/src/extensions/session/gateway.rs#miniAppPostToConversation",
+        "path:source/electron-main/mcp/miniapp-tools.ts#MiniAppToolRouter",
+        "path:frontend/src/production/ProductionRenderer.tsx#InlineButtonAction"
+      ],
       "test_evidence": [
         "native/mahayana-messaging cargo test (60 passed)",
         "host session_gateway_contract cargo test (98 passed)",
@@ -54884,7 +54890,7 @@
       "release_gate_status": "pending",
       "license_and_provenance": "Behavior was reimplemented source-neutrally from accepted Telegram Bot WebApp / Mini App attachment bridge semantics using canonical Fabushi ProductionSessionWorkers and miniapp-window owners. Exact blob identity for inline_bots/bot_attach_web_view.cpp is a99e6c7ec3aae8ab2db77b74ce387f33794d584e from verified recursive inventory artifact 13118749668.",
       "reviewer": null,
-      "notes": "[FMEP-STATE-02 wired via Session and Electron] Slice S5: Mini App / Bot WebApp conversation bridge wired to ProductionSessionWorkers and miniapp-window.ts. Pure authorization handled by fabushi_messaging_core::authorize_miniapp_request; session/grant held authoritatively in Host; SendMessage requires user confirmation; forwardContext isolated. Status held at mapped pending transcript inline button UI wiring."
+      "notes": "[FMEP-STATE-02 wired via Session and Electron] Slice S5: Mini App / Bot WebApp conversation bridge wired to ProductionSessionWorkers and miniapp-window.ts. Pure authorization handled by fabushi_messaging_core::authorize_miniapp_request; session/grant held authoritatively in Host; SendMessage requires user confirmation; forwardContext isolated. S5 completed full-link wiring via W1-B through ProductionSessionWorkers::post_miniapp_message, set_mini_app_package_verifier (main.rs), miniapp-window.ts, and ProductionRenderer.tsx."
     }
   ],
   "rebaseline_candidate": {

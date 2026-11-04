@@ -402,6 +402,69 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                 .upsert_conversation_member(conversation_id, member)
                 .map_err(SessionGatewayError::internal)
         })(),
+        "pinConversationMessage" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let message_id = required_string(args, "messageId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .pin_conversation_message(conversation_id, message_id, topic_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "unpinConversationMessage" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let message_id = required_string(args, "messageId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .unpin_conversation_message(conversation_id, message_id, topic_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "listConversationPins" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            session
+                .list_conversation_pins(conversation_id, topic_id)
+                .map(|pins| Value::Array(pins.into_iter().map(Value::String).collect()))
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "setConversationTopicMute" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            let muted_until_ms = match args.get("mutedUntilMs") {
+                None | Some(Value::Null) => None,
+                _ => optional_i64(args, "mutedUntilMs"),
+            };
+            session
+                .set_conversation_topic_mute(conversation_id, topic_id, muted_until_ms)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "evaluateMessageNotification" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let message_id = required_string(args, "messageId")?;
+            session
+                .evaluate_message_notification(conversation_id, message_id)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "publishConversationTyping" => (|| {
+            let conversation_id = required_string(args, "conversationId")?;
+            let topic_id = optional_string(args, "topicId")?;
+            let action = optional_string(args, "action")?;
+            session
+                .publish_conversation_typing(conversation_id, topic_id, action)
+                .map_err(SessionGatewayError::internal)
+        })(),
+        "validateMediaAttachmentPreflight" => (|| {
+            let file_name = optional_string(args, "fileName")?.unwrap_or_default();
+            let mime_type = optional_string(args, "mimeType")?.unwrap_or_default();
+            let size_bytes = args
+                .get("sizeBytes")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| SessionGatewayError::bad("validateMediaAttachmentPreflight requires numeric sizeBytes"))?;
+            let width = args.get("width").and_then(Value::as_u64).map(|v| v as u32);
+            let height = args.get("height").and_then(Value::as_u64).map(|v| v as u32);
+            session
+                .validate_media_attachment_preflight(file_name, mime_type, size_bytes, width, height)
+                .map_err(SessionGatewayError::internal)
+        })(),
         "searchHumanRecipients" => required_string(args, "sourceConversationId").and_then(|source_conversation_id| {
             required_string(args, "sourceEntryId").and_then(|source_entry_id| {
                 let query = optional_string(args, "query")?.unwrap_or_default();

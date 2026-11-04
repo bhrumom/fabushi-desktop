@@ -3639,6 +3639,510 @@ impl ProductionSessionWorkers {
         owner.list_conversation_members().map_err(|e| e.to_string())
     }
 
+    pub fn pin_conversation_message(
+        &self,
+        conversation_id: &str,
+        message_id: &str,
+        topic_id: Option<&str>,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("pinConversationMessage requires conversationId".into());
+        }
+        let message_id = message_id.trim();
+        if message_id.is_empty() {
+            return Err("pinConversationMessage requires messageId".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        let child_scope = match topic_id.map(str::trim).filter(|s| !s.is_empty()) {
+            Some(tid) => format!("topic:{tid}"),
+            None => "main".to_string(),
+        };
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|e| e.to_string())?;
+
+        let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+        if kind == "group" || kind == "channel" {
+            let caller_member = owner
+                .get_conversation_member(local_human_id)
+                .map_err(|e| e.to_string())?
+                .ok_or_else(|| "caller is not a conversation member".to_string())?;
+            let can_pin = caller_member.status == fabushi_messaging_core::MemberStatus::Owner
+                || (caller_member.status == fabushi_messaging_core::MemberStatus::Administrator
+                    && caller_member.admin_rights.pin_messages);
+            if !can_pin {
+                return Err("caller lacks pin_messages permission".into());
+            }
+        } else {
+            let is_participant = metadata
+                .get("participantIds")
+                .and_then(serde_json::Value::as_array)
+                .map(|arr| arr.iter().any(|p| p.as_str() == Some(local_human_id)))
+                .unwrap_or(false);
+            if !is_participant {
+                return Err("caller is not a conversation participant".into());
+            }
+        }
+
+        let entries = owner.get_transcript_entries().map_err(|e| e.to_string())?;
+        let target_topic = topic_id.map(str::trim).filter(|s| !s.is_empty());
+        let exists = entries.iter().any(|entry| {
+            let entry_id = entry.get("id").and_then(serde_json::Value::as_str).unwrap_or_default();
+            if entry_id != message_id {
+                return false;
+            }
+            if let Some(target_tid) = target_topic {
+                entry.get("topicId").and_then(serde_json::Value::as_str) == Some(target_tid)
+            } else {
+                entry.get("topicId").and_then(serde_json::Value::as_str).is_none()
+            }
+        });
+        if !exists {
+            return Err(format!("message {message_id} not found in conversation transcript"));
+        }
+
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+        owner
+            .pin_conversation_message(&child_scope, message_id, now_ms, local_human_id)
+            .map_err(|e| e.to_string())?;
+        let pinned_message_ids = owner
+            .list_conversation_pins(&child_scope)
+            .map_err(|e| e.to_string())?;
+
+        Ok(serde_json::json!({
+            "conversationId": conversation_id,
+            "childScope": child_scope,
+            "messageId": message_id,
+            "pinnedBy": local_human_id,
+            "pinnedAtMs": now_ms,
+            "pinnedMessageIds": pinned_message_ids,
+        }))
+    }
+
+    pub fn unpin_conversation_message(
+        &self,
+        conversation_id: &str,
+        message_id: &str,
+        topic_id: Option<&str>,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("unpinConversationMessage requires conversationId".into());
+        }
+        let message_id = message_id.trim();
+        if message_id.is_empty() {
+            return Err("unpinConversationMessage requires messageId".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        let child_scope = match topic_id.map(str::trim).filter(|s| !s.is_empty()) {
+            Some(tid) => format!("topic:{tid}"),
+            None => "main".to_string(),
+        };
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|e| e.to_string())?;
+
+        let kind = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+        if kind == "group" || kind == "channel" {
+            let caller_member = owner
+                .get_conversation_member(local_human_id)
+                .map_err(|e| e.to_string())?
+                .ok_or_else(|| "caller is not a conversation member".to_string())?;
+            let can_pin = caller_member.status == fabushi_messaging_core::MemberStatus::Owner
+                || (caller_member.status == fabushi_messaging_core::MemberStatus::Administrator
+                    && caller_member.admin_rights.pin_messages);
+            if !can_pin {
+                return Err("caller lacks pin_messages permission".into());
+            }
+        } else {
+            let is_participant = metadata
+                .get("participantIds")
+                .and_then(serde_json::Value::as_array)
+                .map(|arr| arr.iter().any(|p| p.as_str() == Some(local_human_id)))
+                .unwrap_or(false);
+            if !is_participant {
+                return Err("caller is not a conversation participant".into());
+            }
+        }
+
+        owner
+            .unpin_conversation_message(&child_scope, message_id)
+            .map_err(|e| e.to_string())?;
+        let pinned_message_ids = owner
+            .list_conversation_pins(&child_scope)
+            .map_err(|e| e.to_string())?;
+
+        Ok(serde_json::json!({
+            "conversationId": conversation_id,
+            "childScope": child_scope,
+            "messageId": message_id,
+            "pinnedMessageIds": pinned_message_ids,
+        }))
+    }
+
+    pub fn list_conversation_pins(
+        &self,
+        conversation_id: &str,
+        topic_id: Option<&str>,
+    ) -> Result<Vec<String>, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("listConversationPins requires conversationId".into());
+        }
+        let child_scope = match topic_id.map(str::trim).filter(|s| !s.is_empty()) {
+            Some(tid) => format!("topic:{tid}"),
+            None => "main".to_string(),
+        };
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        owner.list_conversation_pins(&child_scope).map_err(|e| e.to_string())
+    }
+
+    pub fn set_conversation_topic_mute(
+        &self,
+        conversation_id: &str,
+        topic_id: Option<&str>,
+        muted_until_ms: Option<i64>,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("setConversationTopicMute requires conversationId".into());
+        }
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let mut metadata = owner.read_metadata().map_err(|e| e.to_string())?;
+
+        let mut rule: fabushi_messaging_core::ConversationNotificationRule = match metadata.get("notificationRule") {
+            Some(val) if !val.is_null() => serde_json::from_value(val.clone()).map_err(|e| e.to_string())?,
+            _ => fabushi_messaging_core::ConversationNotificationRule {
+                conversation_id: fabushi_messaging_core::ConversationId::new(conversation_id),
+                muted_until_ms: None,
+                sound: None,
+                show_preview: true,
+                notify_mentions: true,
+                importance: fabushi_messaging_core::NotificationImportance::Normal,
+                topic_muted_until_ms: std::collections::BTreeMap::new(),
+            },
+        };
+
+        if let Some(tid) = topic_id.map(str::trim).filter(|s| !s.is_empty()) {
+            let topic = owner.get_conversation_topic(tid).map_err(|e| e.to_string())?;
+            if topic.is_none() {
+                return Err(format!("topic {tid} does not exist"));
+            }
+            match muted_until_ms {
+                Some(until) => {
+                    rule.topic_muted_until_ms.insert(tid.to_string(), until);
+                }
+                None => {
+                    rule.topic_muted_until_ms.remove(tid);
+                }
+            }
+        } else {
+            rule.muted_until_ms = muted_until_ms;
+        }
+
+        let val = serde_json::to_value(&rule).map_err(|e| e.to_string())?;
+        owner.set_metadata("notificationRule", val.clone()).map_err(|e| e.to_string())?;
+        Ok(val)
+    }
+
+    pub fn evaluate_message_notification(
+        &self,
+        conversation_id: &str,
+        message_id: &str,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("evaluateMessageNotification requires conversationId".into());
+        }
+        let message_id = message_id.trim();
+        if message_id.is_empty() {
+            return Err("evaluateMessageNotification requires messageId".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|e| e.to_string())?;
+
+        let rule: fabushi_messaging_core::ConversationNotificationRule = match metadata.get("notificationRule") {
+            Some(val) if !val.is_null() => serde_json::from_value(val.clone()).map_err(|e| e.to_string())?,
+            _ => fabushi_messaging_core::ConversationNotificationRule {
+                conversation_id: fabushi_messaging_core::ConversationId::new(conversation_id),
+                muted_until_ms: None,
+                sound: None,
+                show_preview: true,
+                notify_mentions: true,
+                importance: fabushi_messaging_core::NotificationImportance::Normal,
+                topic_muted_until_ms: std::collections::BTreeMap::new(),
+            },
+        };
+
+        let entries = owner.get_transcript_entries().map_err(|e| e.to_string())?;
+        let msg = entries
+            .iter()
+            .find(|entry| entry.get("id").and_then(serde_json::Value::as_str) == Some(message_id))
+            .ok_or_else(|| format!("message {message_id} not found in conversation transcript"))?;
+
+        let sender_id = msg
+            .get("authorId")
+            .or_else(|| msg.get("senderId"))
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown");
+        let content = msg.get("content").and_then(serde_json::Value::as_str).unwrap_or_default();
+        let topic_id = msg.get("topicId").and_then(serde_json::Value::as_str).map(|s| s.to_string());
+        let silent = msg.get("silent").and_then(serde_json::Value::as_bool).unwrap_or(false);
+
+        let mention_tag = format!("@{local_human_id}");
+        let has_text_mention = content.contains(&mention_tag);
+        let has_array_mention = msg
+            .get("mentions")
+            .and_then(serde_json::Value::as_array)
+            .map(|arr| arr.iter().any(|v| v.as_str() == Some(local_human_id)))
+            .unwrap_or(false);
+        let is_mentioned = has_text_mention || has_array_mention;
+
+        let mut mentioned_actor_ids = std::collections::BTreeSet::new();
+        if is_mentioned {
+            mentioned_actor_ids.insert(fabushi_messaging_core::ActorId::new(local_human_id));
+        }
+
+        let candidate = fabushi_messaging_core::NotificationCandidate {
+            id: format!("notif-{message_id}"),
+            conversation_id: fabushi_messaging_core::ConversationId::new(conversation_id),
+            sender_id: fabushi_messaging_core::ActorId::new(sender_id),
+            title: metadata
+                .get("title")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or(conversation_id)
+                .to_string(),
+            body: content.to_string(),
+            created_at_ms: msg.get("timestamp").and_then(serde_json::Value::as_i64).unwrap_or(0),
+            mentioned_actor_ids,
+            is_call: false,
+            silent_message: silent,
+            topic_id,
+        };
+
+        let mut conversation_rules = std::collections::BTreeMap::new();
+        conversation_rules.insert(rule.conversation_id.clone(), rule);
+        let policy = fabushi_messaging_core::NotificationPolicy {
+            quiet_hours: None,
+            conversation_rules,
+        };
+
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+        let decision = policy.decide(
+            &candidate,
+            &fabushi_messaging_core::ActorId::new(local_human_id),
+            now_ms,
+            12 * 60,
+        );
+
+        if decision.deliver {
+            Ok(serde_json::json!({
+                "decision": "Notify",
+                "deliver": true,
+                "reason": serde_json::Value::Null,
+                "showPreview": decision.show_preview,
+                "sound": decision.sound,
+                "importance": decision.importance,
+                "Notify": {}
+            }))
+        } else {
+            let reason_str = match decision.reason.as_str() {
+                "topic-muted" => "TopicMuted",
+                "conversation-muted" => "ConversationMuted",
+                "quiet-hours" => "QuietHours",
+                other => other,
+            };
+            Ok(serde_json::json!({
+                "decision": "Suppressed",
+                "deliver": false,
+                "reason": reason_str,
+                "showPreview": false,
+                "sound": serde_json::Value::Null,
+                "importance": decision.importance,
+                "Suppressed": {
+                    "reason": reason_str
+                }
+            }))
+        }
+    }
+
+    pub fn publish_conversation_typing(
+        &self,
+        conversation_id: &str,
+        topic_id: Option<&str>,
+        action: Option<&str>,
+    ) -> Result<serde_json::Value, String> {
+        let conversation_id = conversation_id.trim();
+        if conversation_id.is_empty() {
+            return Err("publishConversationTyping requires conversationId".into());
+        }
+        let local_human_id = self.local_human_id()?;
+        let action_str = action.map(str::trim).filter(|s| !s.is_empty()).unwrap_or("typing");
+        let topic_id_trimmed = topic_id.map(str::trim).filter(|s| !s.is_empty());
+
+        let owner = self.open_human_conversation_db_owner(conversation_id)?;
+        let metadata = owner.read_metadata().map_err(|e| e.to_string())?;
+
+        let kind_str = metadata.get("conversationKind").and_then(serde_json::Value::as_str).unwrap_or("human");
+        let (conv_kind, member_opt, topic_opt) = if kind_str == "group" || kind_str == "channel" || topic_id_trimmed.is_some() {
+            let member = owner
+                .get_conversation_member(local_human_id)
+                .map_err(|e| e.to_string())?
+                .ok_or_else(|| "caller is not a conversation member".to_string())?;
+            let c_kind = match kind_str {
+                "channel" => fabushi_messaging_core::ConversationKind::Channel,
+                _ => fabushi_messaging_core::ConversationKind::Group,
+            };
+            let t_opt = if let Some(tid) = topic_id_trimmed {
+                let topic = owner.get_conversation_topic(tid).map_err(|e| e.to_string())?;
+                if topic.is_none() {
+                    return Err(format!("topic {tid} does not exist"));
+                }
+                topic
+            } else {
+                None
+            };
+            (c_kind, Some(member), t_opt)
+        } else {
+            let is_participant = metadata
+                .get("participantIds")
+                .and_then(serde_json::Value::as_array)
+                .map(|arr| arr.iter().any(|p| p.as_str() == Some(local_human_id)))
+                .unwrap_or(false);
+            if !is_participant {
+                return Err("caller is not a conversation participant".into());
+            }
+            (fabushi_messaging_core::ConversationKind::Direct, None, None)
+        };
+
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as i64;
+
+        if let Some(ref member) = member_opt {
+            let content_flags = fabushi_messaging_core::CommunitySendContentFlags {
+                has_media: false,
+                has_poll: false,
+                has_other: false,
+                has_inline: false,
+                has_game: false,
+            };
+            let policy_input = fabushi_messaging_core::CommunitySendPolicyInput {
+                conversation_kind: conv_kind,
+                member: Some(member),
+                slow_mode_seconds: None,
+                last_sender_message_at_ms: None,
+                now_ms,
+                target_topic: topic_opt.as_ref(),
+                topic_requested: topic_id_trimmed.is_some(),
+                content: content_flags,
+            };
+            if let Err(denial) = fabushi_messaging_core::evaluate_community_send_policy(&policy_input) {
+                return Err(format!("publishConversationTyping rejected by community send policy: {denial:?}"));
+            }
+        }
+
+        let topic_closed = topic_opt.as_ref().map(|t| t.closed).unwrap_or(false);
+        let typing_state = fabushi_messaging_core::evaluate_typing_publication(
+            fabushi_messaging_core::ConversationId::new(conversation_id),
+            conv_kind,
+            fabushi_messaging_core::ActorId::new(local_human_id),
+            true,
+            member_opt.as_ref(),
+            topic_id_trimmed.map(str::to_string),
+            topic_closed,
+            action_str,
+            now_ms,
+            Some(5_000),
+        ).map_err(|e| format!("publishConversationTyping rejected by realtime policy: {e:?}"))?;
+
+        // Throttling logic (3000ms window, 5000ms TTL)
+        let mut typing_states: Vec<fabushi_messaging_core::TypingState> = metadata
+            .get("typingStates")
+            .and_then(|v| serde_json::from_value(v.clone()).ok())
+            .unwrap_or_default();
+
+        let actor_id_str = local_human_id;
+        let existing_index = typing_states.iter().position(|s| {
+            s.actor_id.0 == actor_id_str && s.topic_id.as_deref() == topic_id_trimmed
+        });
+
+        const TYPING_TTL_MS: i64 = 5_000;
+        const TYPING_THROTTLE_WINDOW_MS: i64 = 3_000;
+
+        let (decision_str, expires_at_ms, next_allowed_at_ms) = match existing_index {
+            Some(idx) => {
+                let existing = &typing_states[idx];
+                let last_published_at_ms = existing.expires_at_ms - TYPING_TTL_MS;
+                if now_ms < last_published_at_ms + TYPING_THROTTLE_WINDOW_MS {
+                    // Throttled!
+                    let next_allowed = last_published_at_ms + TYPING_THROTTLE_WINDOW_MS;
+                    ("throttled", existing.expires_at_ms, next_allowed)
+                } else {
+                    // Allowed to re-publish!
+                    let exp = now_ms + TYPING_TTL_MS;
+                    let next_allowed = now_ms + TYPING_THROTTLE_WINDOW_MS;
+                    typing_states[idx] = typing_state;
+                    ("published", exp, next_allowed)
+                }
+            }
+            None => {
+                let exp = now_ms + TYPING_TTL_MS;
+                let next_allowed = now_ms + TYPING_THROTTLE_WINDOW_MS;
+                typing_states.push(typing_state);
+                ("published", exp, next_allowed)
+            }
+        };
+
+        if decision_str == "published" {
+            // Prune expired states
+            typing_states.retain(|s| s.expires_at_ms > now_ms);
+            let val = serde_json::to_value(&typing_states).map_err(|e| e.to_string())?;
+            owner.set_metadata("typingStates", val).map_err(|e| e.to_string())?;
+        }
+
+        Ok(serde_json::json!({
+            "decision": decision_str,
+            "actorId": local_human_id,
+            "conversationId": conversation_id,
+            "topicId": topic_id_trimmed,
+            "expiresAtMs": expires_at_ms,
+            "nextAllowedAtMs": next_allowed_at_ms,
+        }))
+    }
+
+    pub fn validate_media_attachment_preflight(
+        &self,
+        file_name: &str,
+        mime_type: &str,
+        size_bytes: u64,
+        width: Option<u32>,
+        height: Option<u32>,
+    ) -> Result<serde_json::Value, String> {
+        let trimmed_mime = mime_type.trim();
+        if trimmed_mime.is_empty() {
+            return Err("media attachment mime type cannot be empty".into());
+        }
+        fabushi_messaging_core::validate_desktop_media_attachment_meta(file_name, size_bytes, None)
+            .map_err(|e| e.to_string())?;
+
+        Ok(serde_json::json!({
+            "valid": true,
+            "fileName": file_name.trim(),
+            "mimeType": trimmed_mime,
+            "sizeBytes": size_bytes,
+            "width": width,
+            "height": height,
+        }))
+    }
+
     pub fn create_human_conversation(
         &self,
         peer_human_id: &str,
@@ -5774,6 +6278,10 @@ impl ProductionSessionWorkers {
         }
         let normalized_reply_id = Self::normalize_human_reply_identity(&existing, reply_to_id, sender_id)?;
         let normalized_reply = normalized_reply_id.as_deref();
+        if !attachments.is_empty() {
+            fabushi_messaging_core::validate_desktop_media_batch_count(attachments.len(), None)
+                .map_err(|e| format!("sendHumanMessage attachment preflight failed: {e}"))?;
+        }
         let normalized_attachments = attachments
             .iter()
             .map(|attachment| {
