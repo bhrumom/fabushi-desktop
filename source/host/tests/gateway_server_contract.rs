@@ -177,7 +177,7 @@ fn gateway_binds_node_token_to_the_addressed_node_before_dispatch() {
 
     let rejected = request(
         port,
-        "POST /api/node.invoke HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer node-token\r\nContent-Length: 18\r\nConnection: close\r\n\r\n{\"nodeId\":\"node-2\"}",
+        "POST /api/node.invoke HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer node-token\r\nContent-Length: 19\r\nConnection: close\r\n\r\n{\"nodeId\":\"node-2\"}",
     );
     assert!(rejected.starts_with("HTTP/1.1 403 Forbidden"), "{rejected}");
     assert!(rejected.contains("DEVICE_SCOPE_MISMATCH"), "{rejected}");
@@ -1370,4 +1370,94 @@ fn openclaw_gateway_role_and_scope_enforcement() {
     assert!(origin_req.starts_with("HTTP/1.1 403 Forbidden"), "{origin_req}");
 
     server.close();
+}
+
+#[test]
+fn openclaw_gateway_websocket_handshake_with_connect_params() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("ws-secret")),
+        started_at: 100,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let unauth_ws = request(
+        port,
+        "GET /ws HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
+    );
+    assert!(unauth_ws.starts_with("HTTP/1.1 401 Unauthorized"), "{unauth_ws}");
+
+    let auth_ws = request(
+        port,
+        "GET /ws?token=ws-secret&role=operator&clientId=test-client HTTP/1.1\r\nHost: 127.0.0.1\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n",
+    );
+    assert!(auth_ws.starts_with("HTTP/1.1 101 Switching Protocols"), "{auth_ws}");
+    assert!(auth_ws.contains("Upgrade: websocket"), "{auth_ws}");
+    assert!(auth_ws.contains("\"role\":\"operator\""), "{auth_ws}");
+
+    server.close();
+}
+
+#[test]
+fn openclaw_gateway_openresponses_http_endpoint_wires_to_host() {
+    let server = start_gateway_server(GatewayServerDeps {
+        api: Arc::new(TestApi),
+        events: GatewayEventHub::default(),
+        local_exec: None,
+        webauthn: None,
+        config: config(Some("open-secret")),
+        started_at: 100,
+    })
+    .expect("gateway server");
+    let port = server.port();
+
+    let body = json!({
+        "model": "gpt-4o",
+        "messages": [
+            {"role": "user", "content": "Hello open responses"}
+        ]
+    }).to_string();
+
+    let res = request(
+        port,
+        &format!(
+            "POST /v1/responses HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer open-secret\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+            body.len(),
+            body
+        ),
+    );
+    assert!(res.starts_with("HTTP/1.1 200 OK"), "{res}");
+    assert!(res.contains("\"object\":\"chat.completion\""), "{res}");
+
+    server.close();
+}
+
+#[test]
+fn openclaw_gateway_webhook_rate_limiter_enforces_budget() {
+    use mahayana_host_runtime::gateway_server::WebhookRateLimiter;
+    use std::time::Duration;
+
+    let limiter = WebhookRateLimiter::new(2, Duration::from_secs(10));
+    assert!(limiter.check_admission("client-1").is_ok());
+    assert!(limiter.check_admission("client-1").is_ok());
+    assert!(limiter.check_admission("client-1").is_err());
+    assert!(limiter.check_admission("client-2").is_ok());
+}
+
+#[test]
+fn openclaw_gateway_session_reset_service_seam_retires_placement() {
+    use mahayana_host_runtime::gateway_server::gateway_session_reset_service_seam;
+
+    let empty = gateway_session_reset_service_seam("", None);
+    assert!(empty.is_err());
+
+    let retired = gateway_session_reset_service_seam("sess-42", Some(3)).expect("retired");
+    assert_eq!(retired["sessionId"], "sess-42");
+    assert_eq!(retired["retired"], true);
+    assert_eq!(retired["expectedRevision"], 3);
+    assert_eq!(retired["status"], "placement_retired_before_mutation");
 }
