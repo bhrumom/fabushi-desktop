@@ -28,7 +28,7 @@ export interface UseTdrpHistoryCoverageOptions {
   readonly openAgentRequestGenerationRef: React.MutableRefObject<number>;
   readonly pendingTranscriptReadsRef: React.MutableRefObject<Set<TranscriptReadUpdateBuffer>>;
   readonly observeTranscriptSettlement: (agentId: string, entry: ConversationTranscriptEntry) => void;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
   readonly transcriptHistoryCursorsRef: React.MutableRefObject<Map<string, { accountSlot: string }>>;
   readonly transcriptPaginationController: any;
 }

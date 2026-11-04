@@ -3,6 +3,8 @@ import type {
   FindInChatMatch,
   FindInChatTranscriptHandle,
 } from "../../recovered/features/conversation/workspace/find-in-chat-controller";
+import type { ConversationTranscriptEntry } from "../../recovered/features/conversation/workspace/model";
+import type { CursorAuthStatus } from "../../recovered/contracts/desktop-bridge";
 import { projectHumanConversationTranscript, type RendererAgent } from "../model";
 import type { ProductionCoordinatorClient } from "../coordinator-client";
 
@@ -15,6 +17,7 @@ export interface UseTdrpHumanFindOptions {
   readonly accountScopeGenerationRef: React.MutableRefObject<number>;
   readonly humanFindGenerationRef: React.MutableRefObject<number>;
   readonly humanFindUpdateGenerationRef: React.MutableRefObject<number>;
+  readonly humanFindUpdateGeneration: number;
   readonly accountIdentityRef: React.MutableRefObject<string | null>;
   readonly selectionStore: any;
   readonly findInChatController: any;
@@ -22,7 +25,11 @@ export interface UseTdrpHumanFindOptions {
   readonly transcriptPaginationController: any;
   readonly setNotice: React.Dispatch<React.SetStateAction<string | null>>;
   readonly activeIsHuman: boolean;
-  readonly activeAgent: RendererAgent | null;
+  readonly activeAgent: RendererAgent | null | undefined;
+  readonly activeAgentId: string;
+  readonly account: CursorAuthStatus | null;
+  readonly setFindInChatOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  readonly entries: readonly ConversationTranscriptEntry[];
   readonly findInChatOpen: boolean;
   readonly findInChatSnapshot: any;
   readonly client: ProductionCoordinatorClient | null;
@@ -39,6 +46,7 @@ export function useTdrpHumanFind({
   accountScopeGenerationRef,
   humanFindGenerationRef,
   humanFindUpdateGenerationRef,
+  humanFindUpdateGeneration,
   accountIdentityRef,
   selectionStore,
   findInChatController,
@@ -47,10 +55,14 @@ export function useTdrpHumanFind({
   setNotice,
   activeIsHuman,
   activeAgent,
+  activeAgentId,
+  account,
+  setFindInChatOpen,
+  entries,
   findInChatOpen,
   findInChatSnapshot,
   client,
-  renderedAccountScopeGeneration,
+  renderedAccountScopeGeneration: _renderedAccountScopeGeneration,
   scrollToFindMatch,
 }: UseTdrpHumanFindOptions): void {
   findNavigateHandlerRef.current = (match: FindInChatMatch) => {
@@ -62,32 +74,34 @@ export function useTdrpHumanFind({
       return;
     }
     const accountSlot = transcriptAccountSlot;
-    const accountGeneration = accountScopeGenerationRef.current;
-    const searchGeneration = humanFindGenerationRef.current;
-    const query = findInChatController.getSnapshot().query.trim();
-    const isCurrent = () => {
-      const current = findInChatController.getSnapshot();
-      return accountSlot != null && accountScopeGenerationRef.current === accountGeneration
-        && accountIdentityRef.current === `logged-in:${accountSlot}`
-        && selectionStore.get().currentAgentId === conversationId
-        && humanFindGenerationRef.current === searchGeneration
-        && current.scope.accountSlot === accountSlot && current.scope.agentId === conversationId
-        && current.query.trim() === query && findInChatOpenRef.current;
-    };
     void (async () => {
       for (let page = 0; page < 32; page += 1) {
-        if (!isCurrent()) return;
+        if (
+          activeAgentIdRef.current !== conversationId
+          || transcriptAccountSlot !== accountSlot
+          || findInChatController.getSnapshot().scope.agentId !== conversationId
+        ) return;
         if (transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId) === true) return;
         const pagination = transcriptPaginationController.getSnapshot();
         if (pagination.agentId !== conversationId || pagination.accountSlot !== accountSlot || !pagination.hasOlder || pagination.olderFailure != null) return;
         await transcriptPaginationController.loadOlder();
+        if (transcriptPaginationController.getSnapshot().olderFailure != null) return;
       }
-      if (isCurrent()) transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
+      transcriptHandleRef.current?.scrollToEntryWithoutHighlight(match.entryId);
     })().catch((error: unknown) => {
-      if (!isCurrent()) return;
       setNotice(error instanceof Error ? `Human search navigation unavailable: ${error.message}` : `Human search navigation unavailable: ${String(error)}`);
     });
   };
+
+  useEffect(() => {
+    findInChatController.setScope(transcriptAccountSlot, activeAgentId.length > 0 ? activeAgentId : null);
+    if (account?.kind !== "logged-in" || activeAgentId.length === 0) setFindInChatOpen(false);
+  }, [account?.kind, activeAgentId, findInChatController, setFindInChatOpen, transcriptAccountSlot]);
+
+  useEffect(() => {
+    const query = findInChatSnapshot.query.trim();
+    if (!activeIsHuman || query.length === 0) findInChatController.replaceEntries(entries);
+  }, [activeIsHuman, entries, findInChatController, findInChatSnapshot.query]);
 
   useEffect(() => {
     const query = findInChatSnapshot.query.trim();
@@ -108,6 +122,7 @@ export function useTdrpHumanFind({
         && current.scope.accountSlot === accountSlot && current.scope.agentId === conversationId
         && current.query.trim() === query && findInChatOpenRef.current;
     };
+    // setScope can clear the controller query earlier in this same effect pass.
     if (!isCurrent()) return;
     void client.call("searchHumanMessages", {
       conversationId,
@@ -129,5 +144,5 @@ export function useTdrpHumanFind({
     return () => {
       if (humanFindGenerationRef.current === generation) humanFindGenerationRef.current += 1;
     };
-  }, [activeAgent?.id, activeAgent?.name, activeIsHuman, client, findInChatController, findInChatOpen, findInChatSnapshot.query, humanFindGenerationRef, humanFindUpdateGenerationRef, accountIdentityRef, renderedAccountScopeGeneration, selectionStore, transcriptAccountSlot, findInChatOpenRef, accountScopeGenerationRef, setNotice]);
+  }, [accountIdentityRef, accountScopeGenerationRef, activeAgent, activeIsHuman, client, findInChatController, findInChatOpen, findInChatOpenRef, findInChatSnapshot.query, humanFindGenerationRef, humanFindUpdateGeneration, humanFindUpdateGenerationRef, selectionStore, setNotice, transcriptAccountSlot]);
 }

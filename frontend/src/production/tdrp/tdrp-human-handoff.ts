@@ -5,7 +5,7 @@ import type { ProductionCoordinatorClient } from "../coordinator-client";
 
 export interface UseTdrpHumanHandoffOptions {
   readonly client: ProductionCoordinatorClient | null;
-  readonly activeAgent: RendererAgent | null;
+  readonly activeAgent: RendererAgent | null | undefined;
   readonly activeIsHuman: boolean;
   readonly humanHandoffAgentId: string;
   readonly agentsRef: React.MutableRefObject<RendererAgent[]>;

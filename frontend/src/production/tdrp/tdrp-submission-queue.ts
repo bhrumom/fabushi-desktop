@@ -23,11 +23,11 @@ export interface CreateProductionComposerSubmissionQueueOptions {
   readonly sendJournalApprovalLifecycle: any;
   readonly setPendingSendScopes: React.Dispatch<React.SetStateAction<ReadonlyMap<string, TranscriptSubmissionScope>>>;
   readonly acknowledgementController: any;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
   readonly composerSubmissionQueueRef: React.MutableRefObject<ComposerSubmissionQueue | null>;
   readonly markTranscriptSubmissionSettled: (scope: TranscriptSubmissionScope) => void;
   readonly setNotice: React.Dispatch<React.SetStateAction<string | null>>;
-  readonly entriesByAgentRef: React.MutableRefObject<Record<string, readonly ConversationTranscriptEntry[]>>;
+  readonly entriesByAgentRef: React.MutableRefObject<Record<string, ConversationTranscriptEntry[]>>;
   readonly composerDraftStore: any;
 }
 

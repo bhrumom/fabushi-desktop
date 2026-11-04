@@ -23,7 +23,7 @@ export interface SendHumanTranscriptSubmissionOptions {
   readonly stagedPaths: React.MutableRefObject<Set<string>>;
   readonly pendingTranscriptReceiptsRef: React.MutableRefObject<Set<TranscriptReadUpdateBuffer>>;
   readonly markTranscriptSubmissionSettled: (scope: TranscriptSubmissionScope) => void;
-  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, readonly ConversationTranscriptEntry[]>>>;
+  readonly setEntriesByAgent: React.Dispatch<React.SetStateAction<Record<string, ConversationTranscriptEntry[]>>>;
   readonly humanConversationsRef: React.MutableRefObject<RendererAgent[]>;
   readonly setHumanConversations: React.Dispatch<React.SetStateAction<RendererAgent[]>>;
   readonly setNotice: React.Dispatch<React.SetStateAction<string | null>>;

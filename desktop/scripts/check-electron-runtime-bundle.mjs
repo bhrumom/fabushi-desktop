@@ -35,8 +35,9 @@ vm.runInNewContext(fs.readFileSync(path.join(desktopRoot, "dist/electron-preload
     return { contextBridge: { exposeInMainWorld: (name, bridge) => exposed.push({ name, bridge }) }, ipcRenderer: { invoke: async () => ({ ok: true }) } };
   },
 }, { timeout: 1000 });
-if (exposed.length !== 1 || exposed[0].name !== "fabushi" || Object.keys(exposed[0].bridge).join() !== "invoke") {
-  throw new Error("Mini App preload must expose exactly fabushi.invoke");
+const allowedKeys = new Set(["invoke", "getLaunchContext", "conversation", "openInvoice", "startServiceCall", "submitServiceCallInput", "endServiceCall"]);
+if (exposed.length !== 1 || exposed[0].name !== "fabushi" || !Object.keys(exposed[0].bridge).every((k) => allowedKeys.has(k)) || typeof exposed[0].bridge?.invoke !== "function") {
+  throw new Error("Mini App preload must expose exactly fabushi.invoke and verified bridge extensions");
 }
 
 const coordinatorCarrierPath = path.join(
