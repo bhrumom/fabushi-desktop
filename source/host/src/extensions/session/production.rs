@@ -3954,6 +3954,24 @@ impl ProductionSessionWorkers {
                         "forward destination rejected the source message policy ({denial:?})"
                     ));
                 }
+                // If this batch has a comment, and it hasn't completed yet for this destination,
+                // dispatch the comment as an independent text message first!
+                if let Some(comment_val) = batch.context.get("comment") {
+                    if !batch.destinations[index].comment_completed {
+                        let comment_text = comment_val.get("text").and_then(serde_json::Value::as_str).unwrap_or_default();
+                        if !comment_text.is_empty() {
+                            let c_nonce = batch.destinations[index].comment_nonce.clone()
+                                .unwrap_or_else(|| format!("{}:comment", nonce));
+                            self.append_human_message_from_intent(
+                                &destination_id, comment_text, &c_nonce, None, None,
+                                &[], None, None, require_existing, false,
+                            )?;
+                        }
+                        batch.destinations[index].comment_completed = true;
+                        store_forward_batch(&owner, &batch)?;
+                    }
+                }
+
                 self.append_human_message_from_intent(
                     &destination_id, &batch.text, &nonce, None, None,
                     &batch.attachments, Some(&batch.context), None, require_existing, false,
@@ -4033,6 +4051,14 @@ impl ProductionSessionWorkers {
         Ok(())
     }
 
+    pub fn compose_share_comment(
+        &self,
+        link: &str,
+        comment: fabushi_messaging_core::FormattedText,
+    ) -> Result<fabushi_messaging_core::FormattedText, fabushi_messaging_core::TextEntityOffsetOverflow> {
+        fabushi_messaging_core::compose_share_comment(link, comment)
+    }
+
     pub fn forward_human_message(
         &self,
         source_conversation_id: &str,
@@ -4041,6 +4067,27 @@ impl ProductionSessionWorkers {
         client_nonce: &str,
         drop_sender_names: bool,
         drop_captions: bool,
+    ) -> Result<serde_json::Value, String> {
+        self.forward_human_message_with_comment(
+            source_conversation_id,
+            source_entry_id,
+            destination_conversation_ids,
+            client_nonce,
+            drop_sender_names,
+            drop_captions,
+            None,
+        )
+    }
+
+    pub fn forward_human_message_with_comment(
+        &self,
+        source_conversation_id: &str,
+        source_entry_id: &str,
+        destination_conversation_ids: &[String],
+        client_nonce: &str,
+        drop_sender_names: bool,
+        drop_captions: bool,
+        comment: Option<fabushi_messaging_core::FormattedText>,
     ) -> Result<serde_json::Value, String> {
         let client_nonce = client_nonce.trim();
         if client_nonce.is_empty() || client_nonce.len() > 200 {
@@ -4067,6 +4114,23 @@ impl ProductionSessionWorkers {
         }
         let requested_privacy = fabushi_messaging_core::ForwardPrivacy { drop_sender_names, drop_captions }.normalized();
         let (account, issuer) = self.human_forward_scope()?;
+
+        // Validate comment using pure validate_formatted_text
+        let normalized_comment = if let Some(c) = comment {
+            fabushi_messaging_core::validate_formatted_text(&c)
+                .map_err(|err| format!("forwardHumanMessage comment validation failed: {err}"))?;
+            if c.text.trim().is_empty() {
+                None
+            } else {
+                Some(c)
+            }
+        } else {
+            None
+        };
+        let comment_json = normalized_comment.as_ref().map(|c| {
+            serde_json::to_value(c).expect("FormattedText serialization")
+        });
+
         // Serialize request-ID discovery and initial source persistence by
         // account/issuer. Release this short lane before destination locks/HTTP.
         let staging = self.human_message_lock(&format!("forward-account:{account}:{issuer}"))?;
@@ -4088,6 +4152,10 @@ impl ProductionSessionWorkers {
                     != Some(privacy.drop_captions)
             {
                 return Err("forwardHumanMessage clientNonce already identifies different privacy".into());
+            }
+            let prior_comment = prior.context.get("comment");
+            if prior_comment != comment_json.as_ref() {
+                return Err("forwardHumanMessage clientNonce already identifies a different comment".into());
             }
             if !prior.contains_requested(&destinations) {
                 return Err("forwardHumanMessage request may not expand its original destination set".into());
@@ -4132,6 +4200,12 @@ impl ProductionSessionWorkers {
                 "sourceEntryId": source_entry_id,
                 "privacy": privacy_json,
             });
+            if let Some(ref c_val) = comment_json {
+                context
+                    .as_object_mut()
+                    .expect("forward context object")
+                    .insert("comment".into(), c_val.clone());
+            }
             let source_metadata = source_owner.read_metadata().ok();
             if let Some(origin) = Self::resolve_human_forward_origin(
                 &source_entry,
@@ -4144,10 +4218,16 @@ impl ProductionSessionWorkers {
                     .expect("forward context object")
                     .insert("origin".into(), origin);
             }
-            let batch = HumanForwardBatch::new(
+            let mut batch = HumanForwardBatch::new(
                 account, issuer, client_nonce.to_string(), source_conversation_id.to_string(),
                 source_entry_id.to_string(), text, attachments, context, &destinations,
             );
+            if comment_json.is_some() {
+                for target in &mut batch.destinations {
+                    target.comment_nonce = Some(format!("{}:comment", target.client_nonce));
+                    target.comment_completed = false;
+                }
+            }
             // The complete ordered batch (including destinations not yet
             // dispatched) commits atomically before the first POST.
             store_forward_batch(&source_owner, &batch)?;

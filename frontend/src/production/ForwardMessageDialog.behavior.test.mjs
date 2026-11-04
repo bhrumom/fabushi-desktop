@@ -534,3 +534,18 @@ test("late searches preserve send failure and retry destinations even when selec
   assert.deepEqual((await f.call("events")).find((e) => e.kind === "settled").recipientNames, [["human:b", "human:b"]]);
 });
 
+test("typing comment transmits formatted comment with forward request and locks on submission", async (t) => {
+  const f = await fixture(t);
+  await f.settleSearch("human:b", "Comment recipient");
+  await f.select("Comment recipient");
+  const commentInput = f.page.getByPlaceholder("Add a comment…");
+  assert.equal(await commentInput.isVisible(), true);
+  await commentInput.fill("Check out this link!");
+  await f.submit();
+  const first = await f.request("forward");
+  assert.deepEqual(first.args.comment, { text: "Check out this link!", entities: [] });
+  assert.equal(await commentInput.isDisabled(), true);
+  await f.call("resolve", first.id, [{ conversationId: "human:b", status: "sent" }]);
+  await f.page.waitForFunction(() => window.__forwardHarness.events().some((e) => e.kind === "closed"));
+});
+

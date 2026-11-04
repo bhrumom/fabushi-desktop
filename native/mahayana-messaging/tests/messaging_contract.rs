@@ -257,6 +257,155 @@ fn formatted_text_prefix_shifts_entities_by_utf16_units_atomically() {
 }
 
 #[test]
+fn compose_share_comment_shifts_entities_atomically_across_link_prefixes() {
+    // 1. ASCII link prefix + formatted comment
+    let comment = FormattedText {
+        text: "hello world".into(),
+        entities: vec![TextEntity {
+            offset_utf16: 6,
+            length_utf16: 5,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    let link = "https://fabushi.example/link";
+    let prefix = format!("{link}\n");
+    let shift = u32::try_from(prefix.encode_utf16().count()).unwrap();
+    let composed = compose_share_comment(link, comment).unwrap();
+    assert_eq!(composed.text, "https://fabushi.example/link\nhello world");
+    assert_eq!(composed.entities[0].offset_utf16, 6 + shift);
+    assert_eq!(composed.entities[0].length_utf16, 5);
+    assert_eq!(composed.entities[0].kind, TextEntityKind::Bold);
+
+    // 2. Emoji/non-BMP prefix (UTF-16 vs UTF-8 byte distinction)
+    let non_bmp_link = "🔗 https://t.me/post/42";
+    let non_bmp_prefix = format!("{non_bmp_link}\n");
+    let non_bmp_shift = u32::try_from(non_bmp_prefix.encode_utf16().count()).unwrap();
+    let cjk_comment = FormattedText {
+        text: "善友 comment".into(),
+        entities: vec![TextEntity {
+            offset_utf16: 3,
+            length_utf16: 7,
+            kind: TextEntityKind::Italic,
+        }],
+    };
+    let composed_non_bmp = compose_share_comment(non_bmp_link, cjk_comment).unwrap();
+    assert_eq!(composed_non_bmp.text, "🔗 https://t.me/post/42\n善友 comment");
+    assert_eq!(composed_non_bmp.entities[0].offset_utf16, 3 + non_bmp_shift);
+    assert_eq!(composed_non_bmp.entities[0].length_utf16, 7);
+
+    // 3. Overflow must fail atomically
+    let overflow = FormattedText {
+        text: "overflow target".into(),
+        entities: vec![TextEntity {
+            offset_utf16: u32::MAX - 5,
+            length_utf16: 2,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    let before = overflow.clone();
+    let err = compose_share_comment("https://fabushi.example/long-link", overflow);
+    assert_eq!(err, Err(TextEntityOffsetOverflow));
+    let mut mut_overflow = before.clone();
+    assert_eq!(mut_overflow.prepend_plain_text("prefix"), Err(TextEntityOffsetOverflow));
+    assert_eq!(mut_overflow, before);
+
+    // 4. Empty link preserves comment
+    let standalone = FormattedText {
+        text: "plain comment".into(),
+        entities: vec![TextEntity {
+            offset_utf16: 0,
+            length_utf16: 5,
+            kind: TextEntityKind::Spoiler,
+        }],
+    };
+    let kept = compose_share_comment("", standalone.clone()).unwrap();
+    assert_eq!(kept, standalone);
+
+    // 5. Empty comment text adopts link as plain text
+    let empty_comment = FormattedText::plain("");
+    let composed_empty = compose_share_comment("https://fabushi.example/only-link", empty_comment).unwrap();
+    assert_eq!(composed_empty.text, "https://fabushi.example/only-link");
+    assert!(composed_empty.entities.is_empty());
+}
+
+#[test]
+fn validate_formatted_text_enforces_bounds_and_overflow_safeguards() {
+    // 1. Valid ASCII text with entity inside bounds
+    let valid_ascii = FormattedText {
+        text: "hello world".into(),
+        entities: vec![TextEntity {
+            offset_utf16: 0,
+            length_utf16: 5,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    assert_eq!(validate_formatted_text(&valid_ascii), Ok(()));
+
+    // 2. Valid emoji / multi-byte UTF-8 where UTF-16 code units length != byte length
+    // "🔗" is 4 UTF-8 bytes but 2 UTF-16 code units (surrogate pair)
+    // "善" is 3 UTF-8 bytes but 1 UTF-16 code unit
+    let non_bmp = FormattedText {
+        text: "🔗 善友".into(), // UTF-16 len: 2 + 1 + 1 + 1 = 5
+        entities: vec![TextEntity {
+            offset_utf16: 3,
+            length_utf16: 2,
+            kind: TextEntityKind::Italic,
+        }],
+    };
+    assert_eq!(validate_formatted_text(&non_bmp), Ok(()));
+
+    // 3. Out of bounds entity span
+    let out_of_bounds = FormattedText {
+        text: "short".into(), // UTF-16 len: 5
+        entities: vec![TextEntity {
+            offset_utf16: 3,
+            length_utf16: 3, // end = 6 > 5
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    assert_eq!(
+        validate_formatted_text(&out_of_bounds),
+        Err(FormattedTextValidationError::SpanOutOfBounds {
+            offset: 3,
+            end: 6,
+            text_utf16_len: 5,
+        })
+    );
+
+    // 4. Offset overflow
+    let overflow = FormattedText {
+        text: "test".into(),
+        entities: vec![TextEntity {
+            offset_utf16: u32::MAX - 2,
+            length_utf16: 5,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    assert_eq!(
+        validate_formatted_text(&overflow),
+        Err(FormattedTextValidationError::OffsetOverflow)
+    );
+
+    // 5. Empty text with entities
+    let empty_with_entities = FormattedText {
+        text: "".into(),
+        entities: vec![TextEntity {
+            offset_utf16: 0,
+            length_utf16: 0,
+            kind: TextEntityKind::Bold,
+        }],
+    };
+    assert_eq!(
+        validate_formatted_text(&empty_with_entities),
+        Err(FormattedTextValidationError::EmptyTextWithEntities)
+    );
+
+    // 6. Plain text without entities
+    let plain = FormattedText::plain("pure text");
+    assert_eq!(validate_formatted_text(&plain), Ok(()));
+}
+
+#[test]
 fn forwarding_preserves_origin_and_rejects_protected_content() {
     let mut engine = MessagingEngine::new();
     engine

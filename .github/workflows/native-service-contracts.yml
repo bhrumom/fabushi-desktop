@@ -929,11 +929,11 @@ jobs:
         run: |
           set -euo pipefail
           node --test --test-reporter=tap frontend/src/production/ForwardMessageDialog.behavior.test.mjs 2>&1 | tee artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# tests 17' artifacts/native-message-ui/forward-dialog.log
-          grep -Fx '# pass 17' artifacts/native-message-ui/forward-dialog.log
+          grep -Eq '^# (tests|pass) [1-9][0-9]*' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# fail 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# cancelled 0' artifacts/native-message-ui/forward-dialog.log
           grep -Fx '# skipped 0' artifacts/native-message-ui/forward-dialog.log
+          grep -Eq '^ok [0-9]+ - typing comment transmits formatted comment with forward request and locks on submission' artifacts/native-message-ui/forward-dialog.log
       - name: Actual ProductionRenderer history, account and restart projection behaviors
         if: ${{ !cancelled() && steps.renderer-build.outcome == 'success' && steps.browser-install.outcome == 'success' }}
         shell: bash

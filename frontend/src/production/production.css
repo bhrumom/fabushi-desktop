@@ -567,8 +567,10 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
 .fabushi-forward-dialog header p,
 .fabushi-forward-dialog footer > span { color: var(--fabushi-text-secondary, var(--cursor-text-secondary)); font-size: 12px; }
 .fabushi-forward-dialog__body { display: grid; gap: 14px; min-height: 0; padding: 8px 20px 18px; }
-.fabushi-forward-dialog__search { display: grid; gap: 6px; font-size: 12px; font-weight: 600; }
-.fabushi-forward-dialog__search input {
+.fabushi-forward-dialog__search,
+.fabushi-forward-dialog__comment { display: grid; gap: 6px; font-size: 12px; font-weight: 600; }
+.fabushi-forward-dialog__search input,
+.fabushi-forward-dialog__comment input {
   width: 100%;
   min-height: 34px;
   padding: 7px 10px;
@@ -578,7 +580,8 @@ html[data-sand-high-contrast="true"] :is(button,input,textarea,select,[role="but
   border-radius: var(--fabushi-radius-control, var(--cursor-radius-base));
   outline: none;
 }
-.fabushi-forward-dialog__search input:focus-visible {
+.fabushi-forward-dialog__search input:focus-visible,
+.fabushi-forward-dialog__comment input:focus-visible {
   border-color: var(--fabushi-border-focus, var(--cursor-stroke-accent));
   box-shadow: 0 0 0 2px var(--fabushi-focus-ring, color-mix(in srgb, var(--cursor-bg-accent) 25%, transparent));
 }
