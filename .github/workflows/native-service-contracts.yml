@@ -1165,12 +1165,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --locked --manifest-path native/mahayana-messaging/Cargo.toml --lib -- --nocapture 2>&1 | tee artifacts/native-messaging-core/unit.log
+          cargo test --manifest-path native/mahayana-messaging/Cargo.toml --lib -- --nocapture 2>&1 | tee artifacts/native-messaging-core/unit.log
       - name: Execute authenticated service protocol contracts
         shell: bash
         run: |
           set -euo pipefail
-          cargo test --locked --manifest-path native/mahayana-messaging/Cargo.toml --test service_contract -- --nocapture 2>&1 | tee artifacts/native-messaging-core/service-contract.log
+          cargo test --manifest-path native/mahayana-messaging/Cargo.toml --test service_contract -- --nocapture 2>&1 | tee artifacts/native-messaging-core/service-contract.log
+      - name: Preserve generated native messaging lock for exact source review
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -f native/mahayana-messaging/Cargo.lock; then
+            cp native/mahayana-messaging/Cargo.lock artifacts/native-messaging-core/Cargo.lock
+          fi
       - name: Preserve native messaging core evidence
         if: always()
         uses: actions/upload-artifact@v4
