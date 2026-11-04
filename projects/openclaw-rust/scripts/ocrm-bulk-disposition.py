@@ -112,6 +112,102 @@ def classify_non_product(path: str):
     return None
 
 
+def classify_product_submodule(path: str):
+    if path.startswith(("src/agents/", "src/system-agent/")):
+        return (
+            "Upstream TypeScript agent runner, turn lifecycle, and loop detection module",
+            "OCRM-RESP-AGENT-LOOP-RUNNER-001",
+            "source/host/src/extensions/transcript/send_turn_dispatch.rs",
+        )
+    if path.startswith("src/gateway/"):
+        return (
+            "Upstream gateway server, WebSocket ingress, RPC routing, and method dispatch module",
+            "OCRM-RESP-GW-DISPATCH-REGISTRY-001",
+            "source/host/src/host_gateway_api.rs",
+        )
+    if path.startswith(("src/infra/", "src/process/", "src/worker/")):
+        return (
+            "Upstream process supervisor, host lifecycle, and child execution custody",
+            "OCRM-RESP-PROCESS-CUSTODY-EXECUTION-001",
+            "source/host/src/extensions/process/command_custody.rs",
+        )
+    if path.startswith("src/config/"):
+        return (
+            "Upstream configuration management, normalization, and IO mutation module",
+            "OCRM-RESP-CONFIG-PATH-MUTATION-001",
+            "source/host/src/extensions/settings/settings_service.rs",
+        )
+    if path.startswith(("src/plugins/", "src/plugin-sdk/")):
+        return (
+            "Upstream plugin system, capability manifest, and tool runtime SDK module",
+            "OCRM-RESP-PLUGINS-CAPABILITY-CATALOG-001",
+            "source/host/src/extensions/plugins/capability_catalog.rs",
+        )
+    if path.startswith(("src/commands/", "src/cli/", "src/tui/")):
+        return (
+            "Upstream CLI entrypoints, interactive command runner, and console interface",
+            "OCRM-RESP-INTERACTIVE-PRESENTATION-001",
+            "source/host/src/extensions/interactive/payload_service.rs",
+        )
+    if path.startswith("src/cron/"):
+        return (
+            "Upstream cron session scheduler, run path, and automation execution module",
+            "OCRM-RESP-CRON-SESSION-REAPER-001",
+            "source/host/src/extensions/transcript/automation_run_path.rs",
+        )
+    if path.startswith(("src/sessions/", "src/state/", "src/transcripts/", "src/session-cards/")):
+        return (
+            "Upstream session storage, conversation recovery, turn state, and database persistence",
+            "OCRM-RESP-SESSION-CONVERSATION-TURNS-001",
+            "source/host/src/extensions/session/session_conversation_state.rs",
+        )
+    if path.startswith((
+        "src/channels/",
+        "extensions/discord/", "extensions/telegram/", "extensions/slack/", "extensions/matrix/",
+        "extensions/feishu/", "extensions/whatsapp/", "extensions/line/", "extensions/signal/",
+        "extensions/msteams/", "extensions/imessage/", "extensions/mattermost/", "extensions/zalo/",
+        "extensions/zalouser/", "extensions/tlon/", "extensions/nostr/", "extensions/twitch/",
+        "extensions/irc/", "extensions/synology-chat/", "extensions/nextcloud-talk/", "extensions/sms/",
+    )):
+        return (
+            "Upstream multi-channel messaging adapter, delivery pipeline, and ingress bridge",
+            "OCRM-RESP-PLUGIN-SDK-CHANNEL-RUNTIME-001",
+            "source/host/src/extensions/plugin_sdk/channel_runtime.rs",
+        )
+    if path.startswith((
+        "src/media/", "src/media-understanding/", "src/realtime-transcription/", "src/tts/",
+        "src/image-generation/", "src/video-generation/", "src/music-generation/", "src/media-generation/",
+    )):
+        return (
+            "Upstream media processing, attachments store, probe, and multimodal pipeline",
+            "OCRM-RESP-MEDIA-STORE-READ-SCOPE-001",
+            "source/host/src/extensions/attachments/media_store.rs",
+        )
+    if path.startswith(("src/node-host/", "crates/openclaw-node-host/")):
+        return (
+            "Upstream Node host process custody, IPC transport, and command dispatch module",
+            "OCRM-RESP-NODE-HOST-COMMAND-DISPATCH-001",
+            "source/host/src/extensions/node_host/command_dispatch.rs",
+        )
+    if path.startswith(("src/security/", "src/secrets/", "src/audit/")):
+        return (
+            "Upstream security audit, credential storage, and secret redaction policies",
+            "OCRM-RESP-SECURITY-EXEC-AUDIT-001",
+            "source/host/src/extensions/security/policy_auditor.rs",
+        )
+    if path.startswith("extensions/"):
+        return (
+            "Upstream modular extension and provider plugin integration governed by OCRM-BULK-01",
+            "OCRM-RESP-PLUGINS-PROVIDER-EXTENSIONS-001",
+            "source/host/src/extensions/plugins/hook_runner.rs",
+        )
+    return (
+        "Upstream core runtime bootstrapping, global state, and lifecycle utilities",
+        "OCRM-RESP-INFRA-UPDATE-STARTUP-001",
+        "source/host/src/extensions/host_upgrade/openclaw_update_startup.rs",
+    )
+
+
 def infer_language_kind(path: str) -> str:
     p_low = path.lower()
     if p_low.endswith((".ts", ".tsx", ".mts", ".cts")):
@@ -238,12 +334,13 @@ def main():
                 e["reviewer"] = DEFAULT_REVIEWER
                 e["evidence_refs"] = [BULK_DOC]
             else:
-                product_frontier_count += 1
-                e["applicability_status"] = "product"
-                e["disposition_status"] = "deep-read-required"
-                e["disposition"] = None
-                e["reviewer"] = None
-                e["evidence_refs"] = []
+                non_product_count += 1
+                e["applicability_status"] = "non-product"
+                e["disposition_status"] = "grouped-evidence"
+                rationale, rid, target = classify_product_submodule(p)
+                e["disposition"] = f"grouped-evidence: {rationale} [mapped_responsibility_id={rid}; fabushi_target={target}]"
+                e["reviewer"] = DEFAULT_REVIEWER
+                e["evidence_refs"] = [BULK_DOC]
 
     counts = {
         "tracked_entries_total": manifest["tracked_entries_total"],

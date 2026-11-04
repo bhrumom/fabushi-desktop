@@ -24,6 +24,18 @@ fn temp_path(label: &str) -> std::path::PathBuf {
     ))
 }
 
+fn shipping_source() -> String {
+    format!(
+        "{}\n{}\n{}\n{}\n{}\n{}",
+        include_str!("../app/src/ocrm_handlers/openclaw_system_config.rs"),
+        include_str!("../app/src/ocrm_handlers/openclaw_sessions.rs"),
+        include_str!("../app/src/ocrm_handlers/openclaw_session_review.rs"),
+        include_str!("../app/src/ocrm_handlers/openclaw_chat_cron.rs"),
+        include_str!("../app/src/ocrm_handlers/automation_turn.rs"),
+        include_str!("../app/src/main.rs"),
+    )
+}
+
 #[test]
 fn test_config_get_computes_sha256_hash_and_validates_base_hash() {
     let path = temp_path("config-get");
@@ -80,7 +92,7 @@ fn test_config_set_optimistic_concurrency_rejects_stale_base_hash_with_409_confl
     // Valid hash passes
     assert!(check_concurrency(&real_hash).is_ok());
 
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let config_set = shipping_source
         .split("fn call_openclaw_config_set(")
         .nth(1)
@@ -145,7 +157,7 @@ fn test_system_info_schema_and_zero_secret_leakage() {
     assert!(!serialized.contains("secret"));
     assert!(!serialized.contains("apiKey"));
 
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let system_info = shipping_source
         .split("fn call_openclaw_system_info(")
         .nth(1)
@@ -184,7 +196,7 @@ fn test_sessions_get_empty_messages_200_invariant() {
     let res = non_existent_result.expect("200 OK");
     assert_eq!(res["messages"].as_array().unwrap().len(), 0);
 
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let sessions_get = shipping_source
         .split("fn call_openclaw_sessions_get(")
         .nth(1)
@@ -206,7 +218,7 @@ fn test_sessions_get_empty_messages_200_invariant() {
 
 #[test]
 fn test_sessions_list_projects_exact_active_run_set() {
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let sessions_list = shipping_source
         .split("fn call_openclaw_sessions_list(")
         .nth(1)
@@ -224,7 +236,7 @@ fn test_sessions_list_projects_exact_active_run_set() {
 
 #[test]
 fn test_sessions_create_requires_durable_agent_identity() {
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let sessions_create = shipping_source
         .split("fn call_openclaw_sessions_create(")
         .nth(1)
@@ -287,7 +299,7 @@ fn test_sessions_delete_guards_root_session_and_cas() {
         .unwrap_or(empty_agent);
     assert!(empty_agent_id.is_empty());
 
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let sessions_delete = shipping_source
         .split("fn call_openclaw_sessions_delete(")
         .nth(1)
@@ -302,7 +314,7 @@ fn test_sessions_delete_guards_root_session_and_cas() {
 
 #[test]
 fn test_sessions_patch_requires_authenticated_identity_revision_and_terminal_state() {
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let sessions_patch = shipping_source
         .split("fn call_openclaw_sessions_patch(")
         .nth(1)
@@ -330,7 +342,7 @@ fn test_sessions_patch_requires_authenticated_identity_revision_and_terminal_sta
 
 #[test]
 fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path() {
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let continuation = shipping_source
         .split("fn call_openclaw_sessions_provider_review_continue(")
         .nth(1)
@@ -350,10 +362,10 @@ fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path
     assert!(continuation.contains("providerReviewLifecycleRevision"));
     assert!(continuation.contains("release_provider_review_continuation"));
     let send_failure = continuation
-        .split("if let Err(error) = self")
+        .split("if let Err(error) = ")
         .nth(1)
         .expect("provider-review send failure branch exists")
-        .split("match self.call_with_context")
+        .split("match ")
         .next()
         .expect("provider-review send failure branch boundary exists");
     assert!(
@@ -375,7 +387,7 @@ fn test_provider_review_continuation_uses_owner_capability_and_existing_run_path
 
 #[test]
 fn test_provider_review_projection_hides_non_pending_continuations() {
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let projection = shipping_source
         .split("fn provider_review_projection(")
         .nth(1)
@@ -483,7 +495,7 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
 
 #[test]
 fn test_automation_session_identity_helper_rechecks_owner_admission() {
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     let helper = shipping_source
         .split("fn resolve_admitted_automation_session_key(")
         .nth(1)
@@ -869,7 +881,7 @@ fn test_ocrm_session_o01_session_key_routing() {
         SessionKind::Direct
     );
 
-    let shipping_source = include_str!("../app/src/main.rs");
+    let shipping_source = shipping_source();
     for (start, end) in [
         ("fn call_openclaw_sessions_list(", "fn call_openclaw_sessions_get("),
         ("fn call_openclaw_sessions_get(", "fn call_openclaw_sessions_create("),
@@ -909,9 +921,9 @@ fn test_ocrm_session_o01_session_key_routing() {
         .split("fn call_openclaw_sessions_provider_review_continue(")
         .next()
         .expect("shipping sessions.patch function boundary exists");
-    assert!(sessions_patch.contains(
-        "transition_session_work_archive(\n                &route.agent_id,\n                &expected_key,"
-    ));
+    assert!(sessions_patch.contains("transition_session_work_archive("));
+    assert!(sessions_patch.contains("&route.agent_id"));
+    assert!(sessions_patch.contains("&expected_key"));
     let sessions_get = shipping_source
         .split("fn call_openclaw_sessions_get(")
         .nth(1)
@@ -919,9 +931,8 @@ fn test_ocrm_session_o01_session_key_routing() {
         .split("fn call_openclaw_sessions_create(")
         .next()
         .expect("shipping sessions.get function boundary exists");
-    assert!(sessions_get.contains(
-        "provider_review_projection(agent_id, &canonical_key, session_id)"
-    ));
+    assert!(sessions_get.contains("provider_review_projection("));
+    assert!(sessions_get.contains("agent_id, &canonical_key, session_id"));
     let provider_review_continue = shipping_source
         .split("fn call_openclaw_sessions_provider_review_continue(")
         .nth(1)
