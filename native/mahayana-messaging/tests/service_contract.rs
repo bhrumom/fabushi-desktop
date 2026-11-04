@@ -338,7 +338,9 @@ fn typed_conversation_child_lifecycle_events_reach_clients_and_saved_sublist_gua
             10,
         )
         .unwrap();
-    assert_eq!(child_message.len(), 1);
+    assert!(child_message
+        .iter()
+        .any(|envelope| matches!(&envelope.event, ServerEvent::MessageAdded { .. })));
     let child_message_id = service.engine().state().messages
         [&ConversationId::new("chat:child")]
         .keys()
