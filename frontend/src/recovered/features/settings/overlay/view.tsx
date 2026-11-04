@@ -8,12 +8,12 @@ import { OverlayDialog } from "../../../ui/overlay-primitives";
 import { settingsCopy } from "./localization";
 import "./view.css";
 
-export type SettingsSectionId = "general" | "router" | "usage" | "beta" | "cloud-workers" | "pairing";
+export type SettingsSectionId = "general" | "router" | "usage" | "beta" | "cloud-workers" | "pairing" | "security";
 
 export interface SettingsSection {
   id: SettingsSectionId;
   label: string;
-  icon: "settings-gear" | "git-branch" | "chart-bars" | "cloud-download";
+  icon: "settings-gear" | "git-branch" | "chart-bars" | "cloud-download" | "shield";
 }
 
 /** Exact registry recovered from main renderer binding wDn. */
@@ -26,6 +26,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
 
 export const SETTINGS_SECTIONS_WITH_CLOUD_WORKERS: readonly SettingsSection[] = [
   ...SETTINGS_SECTIONS,
+  { id: "security", label: "Security & Privacy", icon: "shield" },
   { id: "pairing", label: "Pairing", icon: "git-branch" },
   { id: "cloud-workers", label: "Cloud Workers", icon: "cloud-download" }
 ];

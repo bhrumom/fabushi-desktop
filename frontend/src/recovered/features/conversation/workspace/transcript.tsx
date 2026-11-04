@@ -23,6 +23,7 @@ import type { TranscriptReplyPreview } from "./model";
 import type { UrlCardProvider } from "../cards/transcript-card/url-card";
 import { LinkCardView } from "../cards/transcript-card/views";
 import { projectTranscriptMessageCard } from "../message-card-seam";
+import { TdrpInteractiveMediaCard, parseTdrpInteractivePayload } from "../../../../production/tdrp/TdrpInteractiveMediaCards";
 import PermissionRequestLeaf from "../cards/permission-request/view";
 import { ToolResultCard } from "../tool-results/view";
 import type { FindInChatTranscriptHandle } from "./find-in-chat-controller";
@@ -600,12 +601,18 @@ function readRichTextDocument(document: ProseMirrorNode): ReactNode {
 }
 
 function UserMessageContent({ text, richText }: { text: string; richText?: string }) {
+  if (parseTdrpInteractivePayload(text) != null) {
+    return <div className="sand-message-prose"><TdrpInteractiveMediaCard text={text} /></div>;
+  }
   const content = richText == null || richText.length === 0 ? null : readOnlyRichTextContent(richText);
   if (content != null) return <div className="sand-message-prose">{content}</div>;
   return <div className="sand-message-prose">{text ? <p>{text}</p> : null}</div>;
 }
 
 export function AssistantMessageContent({ text, images, channel, isSourceTrusted, isStreaming = false }: { text: string; images?: readonly SendMessageTextImage[]; channel?: string | null; isSourceTrusted?: boolean; isStreaming?: boolean }) {
+  if (parseTdrpInteractivePayload(text) != null) {
+    return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}><TdrpInteractiveMediaCard text={text} /></div>;
+  }
   return <div className="sand-message-prose" data-source-trusted={isSourceTrusted || undefined}>{isStreaming && text.length === 0 ? <StreamingMessage /> : assistantContentBlocks(text).flatMap((block, index) => block.kind === "code"
     ? [<AssistantCodeBlock code={block.code} key={`code-${index}`} language={block.language} />]
     : assistantTextBlocks(block.text).map((textBlock, textIndex) => <AssistantTextBlock block={textBlock} key={`text-${index}-${textIndex}`} />))}{images == null ? null : <SendMessageTextImages images={images} />}{channel == null ? null : <span className="sand-channel-tag" title={`Sent to ${channel}`}>{channel}</span>}</div>;

@@ -32,6 +32,7 @@ import {
   type SettingsDesktopSnapshot
 } from "./desktop";
 import { GeneralSettingsPanel, RouterSettingsPanel, UpdatesSettingsPanel, UsageSettingsPanel } from "./panels";
+import { TdrpCloudSecurityPanel } from "../../../../production/tdrp/TdrpCloudSecurityPanel";
 import { SettingsModalShell, SETTINGS_SECTIONS_WITH_CLOUD_WORKERS, type SettingsSectionId } from "./view";
 import { CloudWorkerStatusPanel } from "../../../../production/cloud-worker-status-panel";
 import { DevicePairingPanel } from "./device-pairing";
@@ -293,6 +294,20 @@ export function SettingsDesktopSurface({ bridge, coordinatorClient = null, initi
             provider={routerProvider}
           />
         );
+        if (section === "security") {
+          return (
+            <TdrpCloudSecurityPanel
+              client={coordinatorClient}
+              onNotice={(notice) =>
+                publishSurfaceNotice(
+                  { kind: notice.kind, operation: "settings-security-key", message: notice.message },
+                  handleNotice,
+                  onStatus
+                )
+              }
+            />
+          );
+        }
         if (section === "cloud-workers") return <CloudWorkerStatusPanel client={coordinatorClient} />;
         if (section === "pairing") return <DevicePairingPanel client={coordinatorClient} />;
         return (

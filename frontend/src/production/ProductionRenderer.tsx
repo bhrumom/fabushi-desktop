@@ -51,6 +51,7 @@ import { ConversationPinnedBanner } from "./tdrp/ConversationPinnedBanner";
 import { ForumTopicSwitcher } from "./tdrp/ForumTopicSwitcher";
 import { CommunityComposerGuardBanner } from "./tdrp/CommunityComposerGuardBanner";
 import { TdrpForwardMessageModal } from "./tdrp/TdrpForwardMessageModal";
+import { TdrpComposerToolbar, TdrpPollAndTodoModal } from "./tdrp/TdrpPollAndTodoModal";
 import {
   type TranscriptLoadErrorState,
   type TranscriptOperationScope,
@@ -144,7 +145,7 @@ import { createCommandPaletteFileProvider } from "./command-palette-search-provi
 import { commandPaletteLinksFromConversation, createCommandPaletteLinkMetadataProvider } from "./command-palette-link-provider";
 import { commandPaletteUpdateCommand } from "./command-palette-update-command";
 import { commandPaletteRootCommands, type CommandPaletteComputerUpdateAction, type CommandPaletteInfoSection } from "./command-palette-root-commands";
-import { CoordinatorCallError, createCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
+import { CoordinatorCallError, createCoordinatorClient, setSharedCoordinatorClient, type ProductionCoordinatorClient } from "./coordinator-client";
 import { HumanCallControls } from "./human-call-media";
 import { UI_TEXT } from "./evidence";
 import { movePinnedAgent, partitionSidebarAgents } from "./sidebar-model";
@@ -642,7 +643,11 @@ export interface ProductionRendererProps {
 }
 
 export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRendererProps) {
-  const [client] = useState(() => createCoordinatorClient(coordinatorPort));
+  const [client] = useState(() => {
+    const c = createCoordinatorClient(coordinatorPort);
+    setSharedCoordinatorClient(c);
+    return c;
+  });
   const [groupMembersRoot] = useState(() => createGroupMembersRootScope(client));
   const [sharedRoomProvider] = useState(() => client == null ? null : createSharedRoomProvider(client));
   const [conversationOutlineProvider] = useState(() => createConversationOutlineProvider({
@@ -890,6 +895,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const [pendingSendScopes, setPendingSendScopes] = useState<ReadonlyMap<string, TranscriptSubmissionScope>>(() => new Map());
   const [notice, setNotice] = useState<string | null>(null);
   const [composerClearGeneration, setComposerClearGeneration] = useState(0);
+  const [tdrpModalMode, setTdrpModalMode] = useState<"poll" | "todo" | "invoice" | "bot" | null>(null);
   const [overlay, setOverlay] = useState<AuxiliaryOverlay>(null);
   const [workspaceRoute, setWorkspaceRoute] = useState<WorkspaceRoute>(null);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -4216,10 +4222,29 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           <div className="sand-chat-input-dock">
             {activeIsHuman ? null : localToolPermissionDock}
             <CommunityComposerGuardBanner composerGuard={composerGuard} />
+            <TdrpComposerToolbar
+              disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend}
+              onOpenModal={(m) => setTdrpModalMode(m)}
+            />
             <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
       </div>
+
+      <TdrpPollAndTodoModal
+        isOpen={tdrpModalMode != null}
+        initialMode={tdrpModalMode ?? "poll"}
+        conversationId={activeAgent?.id ?? ""}
+        client={client}
+        onClose={() => setTdrpModalMode(null)}
+        onInsertMessage={(formattedPayload) => {
+          if (activeAgent == null) return;
+          composerDraftStore.setDraft(activeAgent.id, { prompt: formattedPayload, attachments: [] });
+          setTimeout(() => {
+            submit();
+          }, 50);
+        }}
+      />
 
       <TdrpForwardMessageModal
         forwardTarget={forwardTarget}

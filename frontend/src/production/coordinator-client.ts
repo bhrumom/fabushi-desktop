@@ -126,6 +126,16 @@ export interface ProductionCoordinatorClient {
   dispose(): void;
 }
 
+let sharedCoordinatorClient: ProductionCoordinatorClient | null = null;
+
+export function setSharedCoordinatorClient(client: ProductionCoordinatorClient | null): void {
+  sharedCoordinatorClient = client;
+}
+
+export function getSharedCoordinatorClient(): ProductionCoordinatorClient | null {
+  return sharedCoordinatorClient;
+}
+
 export function createCoordinatorClient(portBridge: CoordinatorPortBridge): ProductionCoordinatorClient | null {
   const eventListeners = new Map<string, Set<EventListener>>();
   const transportListeners = new Set<TransportListener>();
