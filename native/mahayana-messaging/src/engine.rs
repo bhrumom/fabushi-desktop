@@ -1012,15 +1012,17 @@ impl MessagingEngine {
         };
         let mut resolved_sender: Option<ActorId> = None;
         for _ in 0..8 {
-            let (source_conv_raw, source_msg_raw) = origin.rsplit_once(':')?;
-            let source_conv_id = ConversationId(source_conv_raw.to_string());
-            let source_msg_id = MessageId(source_msg_raw.to_string());
-            let Some(source_msg) = self
+            let source_msg = self
                 .state
                 .messages
-                .get(&source_conv_id)
-                .and_then(|msgs| msgs.get(&source_msg_id))
-            else {
+                .iter()
+                .find_map(|(conv_id, msgs)| {
+                    let msg_raw = origin
+                        .strip_prefix(conv_id.0.as_str())?
+                        .strip_prefix(':')?;
+                    msgs.get(&MessageId(msg_raw.to_string()))
+                });
+            let Some(source_msg) = source_msg else {
                 break;
             };
             resolved_sender = Some(source_msg.sender_id.clone());
