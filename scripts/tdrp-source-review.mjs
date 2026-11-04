@@ -161,7 +161,7 @@ export function validateResponsibilitySources(inventory, rows) {
   return {source_identities: expected.size, responsibilities: sourcesByResponsibility.size};
 }
 
-function validateSourceReviewRecords(inventory, reviews, rows, allowPending = false) {
+export function validateSourceReviewRecords(inventory, reviews, rows, allowPending = false) {
   if (!Array.isArray(inventory) || !inventory.length || !Array.isArray(reviews)) {
     throw Error('source reviews and non-empty inventory required');
   }
