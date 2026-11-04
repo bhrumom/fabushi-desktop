@@ -3369,7 +3369,7 @@ mod tests {
         }
 
         let right_session = engine.session(&right).expect("right session");
-        let right_session = right_session.lock().await;
+        let mut right_session = right_session.lock().await;
         assert!(right_session.memory.get("profile", "name").is_none());
         assert!(right_session.workflows.is_empty());
     }

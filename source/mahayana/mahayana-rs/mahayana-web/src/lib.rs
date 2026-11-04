@@ -233,6 +233,7 @@ impl MahayanaWebRuntime {
                     client_message_id,
                     inference_provider: None,
                     hidden: false,
+                    retry_of_client_message_id: None,
                 };
                 let send_command = serde_json::to_string(&send_command).map_err(js_error)?;
                 let accepted = self.execute(&send_command)?;
@@ -376,6 +377,7 @@ impl MahayanaWebRuntime {
                 client_message_id,
                 inference_provider: _,
                 hidden,
+                retry_of_client_message_id: _,
             } => {
                 ensure_browser_conversation(&self.state.borrow().plugins, &conversation_id)?;
                 if text.trim().is_empty() {
@@ -468,6 +470,17 @@ impl MahayanaWebRuntime {
             }
             RuntimeCommand::ResolveApproval { approval_id, .. } => {
                 return Err(approval_not_found(approval_id));
+            }
+            unsupported => {
+                // Browser-local runtime does not host workspace state, capability
+                // authorization, ask-user or handoff commands; fail closed.
+                return Err(JsValue::from_str(&format!(
+                    "runtime command is unavailable in the browser-local Web runtime: {}",
+                    serde_json::to_value(&unsupported)
+                        .ok()
+                        .and_then(|value| value.get("@type").and_then(Value::as_str).map(str::to_string))
+                        .unwrap_or_else(|| "unknown".to_string())
+                )));
             }
         };
         serde_json::to_string(&json!({"ok": true, "data": response})).map_err(js_error)
