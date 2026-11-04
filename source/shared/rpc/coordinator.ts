@@ -294,7 +294,6 @@ export function parseCoordinatorTelegramAuthorizationProjection(value: unknown):
   }
   return value as unknown as TelegramAuthorizationProjection;
 }
-}
 
 export function parseCoordinatorTranscriptWindowResponse(value: unknown): CoordinatorTranscriptWindowResponse | null {
   if (!isRecord(value) || !Array.isArray(value.entries) || !value.entries.every(isTranscriptEntry) || !isRecord(value.threadCounts)) return null;
@@ -410,7 +409,6 @@ export function validateCoordinatorReply(method: string, value: unknown): unknow
   }
   if (method === "retryHumanMessage" && parseCoordinatorHumanRetryResponse(value) == null) {
     throw new Error("retryHumanMessage returned a malformed canonical Human message");
-  }
   }
   return value;
 }
