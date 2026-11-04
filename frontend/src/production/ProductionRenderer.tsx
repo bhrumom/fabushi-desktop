@@ -52,6 +52,14 @@ import { ForumTopicSwitcher } from "./tdrp/ForumTopicSwitcher";
 import { CommunityComposerGuardBanner } from "./tdrp/CommunityComposerGuardBanner";
 import { TdrpForwardMessageModal } from "./tdrp/TdrpForwardMessageModal";
 import { TdrpComposerToolbar, TdrpPollAndTodoModal } from "./tdrp/TdrpPollAndTodoModal";
+import { FabushiPrimaryNavRail, type FabushiPrimaryNavDomain } from "./tdrp/FabushiPrimaryNavRail";
+import { FabushiCollectionFilterBar } from "./tdrp/FabushiCollectionFilterBar";
+import { FabushiConversationCreationModal, type CreateConversationData } from "./tdrp/FabushiConversationCreationModal";
+import { FabushiContactsSurface, type ContactItem } from "./tdrp/FabushiContactsSurface";
+import { filterAgentsByFolder } from "./tdrp/TdrpFolderFilterBar";
+import { TdrpStoriesAndStarsBar } from "./tdrp/TdrpStoriesAndStarsBar";
+import { TdrpCallAndAdminDrawer } from "./tdrp/TdrpCallAndAdminDrawer";
+import { CreateAgentDialog } from "./tdrp/CreateAgentDialog";
 import {
   type TranscriptLoadErrorState,
   type TranscriptOperationScope,
@@ -1629,6 +1637,48 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
     ...humanConversations.map((conversation) => ({ ...conversation, isPinned: false })),
     ...agents.filter((agent) => !agent.isHidden).map((agent) => ({ ...agent, isPinned: pinnedAgentIds.includes(agent.id) }))
   ].sort((left, right) => right.updatedAt - left.updatedAt);
+  const [activeFolderId, setActiveFolderId] = useState("all");
+  const humanIdsSet = useMemo(() => new Set(humanConversations.map((c) => c.id)), [humanConversations]);
+  const unreadFolderCount = useMemo(() => visibleAgents.filter((a) => {
+    const raw = a as { unreadCount?: number; hasUnread?: boolean; isUnread?: boolean };
+    return (raw.unreadCount != null && raw.unreadCount > 0) || raw.hasUnread === true || raw.isUnread === true;
+  }).length, [visibleAgents]);
+  const humanFolderCount = useMemo(() => humanConversations.length, [humanConversations]);
+  const groupFolderCount = useMemo(() => visibleAgents.filter((a) => a.isGroup === true).length, [visibleAgents]);
+  const agentFolderCount = useMemo(() => visibleAgents.filter((a) => !humanIdsSet.has(a.id) && a.isGroup !== true).length, [humanIdsSet, visibleAgents]);
+  const folderFilteredAgents = useMemo(
+    () => filterAgentsByFolder(visibleAgents, activeFolderId, humanIdsSet),
+    [activeFolderId, humanIdsSet, visibleAgents]
+  );
+  const [activeNavDomain, setActiveNavDomain] = useState<FabushiPrimaryNavDomain>("messages");
+  const [isCreateConvModalOpen, setIsCreateConvModalOpen] = useState(false);
+  const handleCreateConversation = useCallback((data: CreateConversationData) => {
+    setIsCreateConvModalOpen(false);
+    if (client != null && data.kind !== "agent") {
+      client.call("channels.create", { title: data.title, kind: data.kind, description: data.description }).catch(() => {});
+    }
+    openNewAgentDialog();
+  }, [client]);
+  const contactsList: readonly ContactItem[] = useMemo(() => [
+    ...humanConversations.map((c) => ({
+      id: c.id,
+      name: c.name,
+      role: "联系人",
+      status: "在线",
+      avatarText: (c.name || "人")[0],
+      kind: "human" as const,
+      bio: "好友 / 联系人",
+    })),
+    ...agents.filter((a) => !a.isHidden).map((a) => ({
+      id: a.id,
+      name: a.name,
+      role: a.isGroup ? "群组" : "Agent",
+      status: a.isRunning ? "运行中" : "就绪",
+      avatarText: (a.name || "A")[0],
+      kind: (a.isGroup ? "group" : "agent") as "group" | "agent",
+      bio: a.description || "法布施智能体",
+    })),
+  ], [agents, humanConversations]);
   const pinnedAccountKey = account?.kind === "logged-in" ? account.authId ?? account.email ?? "account" : account?.kind ?? "unknown";
   const settingsNoticeSurface = overlay === "settings" || overlay === "plugins" ? overlay : "none";
   const settingsNoticeScope = `${pinnedAccountKey}:${account?.kind ?? "unknown"}:${settingsNoticeSurface}`;
@@ -1851,7 +1901,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
   const sidebarSectionsWriteFailure = useSyncExternalStore(sidebarSectionsStore.subscribe, sidebarSectionsStore.getWriteFailure, sidebarSectionsStore.getWriteFailure);
   const collapsedSectionIds = useSyncExternalStore(sidebarCollapseStore.subscribe, sidebarCollapseStore.getCollapsedSectionIds, sidebarCollapseStore.getCollapsedSectionIds);
   const sidebarSections = useMemo(() => sidebarSectionRecords?.map((section) => ({ ...section, isCollapsed: collapsedSectionIds.includes(section.id) })) ?? null, [collapsedSectionIds, sidebarSectionRecords]);
-  const projectedSidebarSections = useMemo(() => sidebarSections == null || sidebarSections.length === 0 ? undefined : projectSidebarSections({ agents: visibleAgents, pinnedIds: pinnedAgentIds, sections: sidebarSections }), [pinnedAgentIds, sidebarSections, visibleAgents]);
+  const projectedSidebarSections = useMemo(() => sidebarSections == null || sidebarSections.length === 0 ? undefined : projectSidebarSections({ agents: folderFilteredAgents, pinnedIds: pinnedAgentIds, sections: sidebarSections }), [folderFilteredAgents, pinnedAgentIds, sidebarSections]);
 
   useEffect(() => {
     if (sidebarSectionsWriteFailure != null) setNotice(sidebarSectionsWriteFailure.code);
@@ -4076,12 +4126,60 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       {account?.kind === "logged-in" && !computerInfoOpen && !computer.isOpen && computerRebuildBannerInput.kind !== "reconnecting" ? <ComputerRebuildProgressBanner input={computerRebuildBannerInput} onRestore={restoreComputerProgress} /> : null}
       {bridge == null ? null : <WindowChrome bridge={bridge} isFullscreen={windowFullscreen} isMaximized={windowMaximized} />}
       <RootShellLoading isVisible={showRootLoading} />
-      <div style={{ display: "grid", gridTemplateColumns: `${renderedSidebarWidth}px minmax(0, 1fr)`, height: "100%", minHeight: 0, width: "100%" }}>
-        <div style={{ display: "grid", gridTemplateRows: "minmax(0, 1fr) auto auto auto", minHeight: 0 }}>
-          <div style={{ display: "grid", gridTemplateRows: "auto minmax(0, 1fr)", minHeight: 0 }}>
-            {connectionController == null ? null : <CoordinatorConnectionHost controller={connectionController} />}
-            <ConversationSidebar activeAgentId={activeAgentId} agents={visibleAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={openNewAgentDialog} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
+      <div style={{ display: "grid", gridTemplateColumns: `52px ${renderedSidebarWidth}px minmax(0, 1fr)`, height: "100%", minHeight: 0, width: "100%" }}>
+        <FabushiPrimaryNavRail
+          activeDomain={activeNavDomain}
+          onSelectDomain={(domain) => {
+            setActiveNavDomain(domain);
+            if (domain === "computer") {
+              computer.open();
+            } else if (domain === "agents") {
+              setActiveFolderId("agents");
+            } else if (domain === "messages") {
+              setActiveFolderId("all");
+            }
+          }}
+          unreadMessagesCount={unreadFolderCount}
+          onOpenMarketplace={() => { setPluginQuery(""); setOverlay("plugins"); }}
+          onOpenSettings={() => { setSettingsSection("general"); setManageSharedRoomId(null); setOverlay("settings"); }}
+          userAvatarText={account?.kind === "logged-in" ? (account.email?.[0] || "F") : "F"}
+        />
+        {activeNavDomain === "contacts" ? (
+          <div style={{ gridColumn: "2 / span 2", height: "100%", width: "100%", minHeight: 0 }}>
+            <FabushiContactsSurface
+              contacts={contactsList}
+              onOpenConversation={(id) => {
+                setActiveNavDomain("messages");
+                void openAgent(id);
+              }}
+              onInitiateCall={(id, isVideo) => {
+                setActiveNavDomain("messages");
+                void openAgent(id);
+                if (client != null) {
+                  client.call("calls.initiate", { peerId: id, isVideo }).catch(() => {});
+                }
+              }}
+            />
           </div>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateRows: "minmax(0, 1fr) auto auto auto", minHeight: 0, borderRight: "1px solid var(--sand-border-weak, rgba(255, 255, 255, 0.08))" }}>
+              <div style={{ display: "grid", gridTemplateRows: "auto auto auto minmax(0, 1fr)", minHeight: 0 }}>
+                {connectionController == null ? null : <CoordinatorConnectionHost controller={connectionController} />}
+                <FabushiCollectionFilterBar
+                  activeFolderId={activeFolderId}
+                  onSelectFolder={setActiveFolderId}
+                  onOpenNewChat={() => setIsCreateConvModalOpen(true)}
+                  onOpenSearch={openSidebarSearch}
+                  unreadCount={unreadFolderCount}
+                  directCount={humanFolderCount}
+                  groupCount={groupFolderCount}
+                  agentCount={agentFolderCount}
+                  client={client}
+                />
+                <TdrpStoriesAndStarsBar client={client} />
+                <ConversationSidebar activeAgentId={activeAgentId} agents={folderFilteredAgents} isHostReachable={transport === "connected"} sections={projectedSidebarSections} sidebarLayout={renderedSidebarLayout} onResize={resizeSidebar} onResizeEnd={finishSidebarResize} onToggleSectionCollapsed={(sectionId, collapsed) => sidebarCollapseStore.setSectionCollapsed(sectionId, collapsed)} listStatus={rosterListStatus} pinnedAgentIds={pinnedAgentIds} selectedAgentIds={selectedSidebarAgentIds} onToggleAgentSelection={toggleSidebarAgentSelection} onRangeSelectAgent={rangeSelectSidebarAgent} onClearAgentSelection={clearSidebarAgentSelection} onMoveSelectedAgentsToSection={moveSelectedSidebarAgentsToSection} onMoveSelectedAgentsToNewSection={moveSelectedSidebarAgentsToNewSection} onCopyAgentId={copyAgentId} onDuplicateAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void duplicateAgent(agentId); }} onHideAgent={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void hideAgent(agentId); }} onNewChat={() => setIsCreateConvModalOpen(true)} onOpenAgent={(agentId) => void openAgent(agentId)} onOpenNetwork={agentNetworkTrigger} onOpenProfile={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) sidebarProfileAction.onSelect(agentId); }} onShowAsyncTasks={account?.kind === "logged-in" && account.isAnysphereUser === true ? (agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openAsyncTasks(agentId); } : undefined} onShowFullConversation={(agentId) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) openConversationOutline(agentId); }} onOpenSearch={sidebarSearchTrigger} onRenameAgent={(agentId, name) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void renameAgent(agentId, name); }} onReorderPinnedAgents={reorderPinnedAgents} onRequestDeleteAgent={(agent) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agent.id)) setDeleteAgent({ id: agent.id, name: agent.name, isGroup: agent.isGroup }); }} onRenameSection={renameSection} onRequestDeleteSection={requestDeleteSection} onMoveSection={moveSection} onMoveAgentToSection={moveAgentsToSection} onMoveAgentToNewSection={moveAgentsToNewSection} onSetAgentUnread={(agentId, isUnread) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) void setAgentUnread(agentId, isUnread); }} onTogglePin={(agentId, isPinned) => { if (!humanConversationsRef.current.some((conversation) => conversation.id === agentId)) toggleAgentPin(agentId, isPinned); }} />
+              </div>
           {hiddenAgents.length > 0 && visibleAgents.length > 0 ? <SandButton aria-haspopup="dialog" onClick={() => setOverlay("hidden-chats")} size="sm" variant="secondary"><span>{UI_TEXT.hiddenBots}</span><SandBadge aria-label={`${hiddenAgents.length} hidden bots`}>{hiddenAgents.length}</SandBadge></SandButton> : null}
           {/* @evidence src/app/dist/renderer/assets/index-UbX-y3il.js#byteOffset=2602084 (s0n Plugins footer button/icon/text composition) */}
           <div className="sand-agents-sidebar__plugins-entry">
@@ -4153,6 +4251,7 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
               {activeAgent.isGroup || bridge == null ? null : <SandButton aria-controls="sand-agent-runtime-details" aria-expanded={runtimeDetailPaneOpen} aria-label="Runtime details" data-testid="fabushi-runtime-details-trigger" onClick={() => { setGroupInfoPaneOpen(false); setAgentSettingsOpen(false); setRoutinesInfoPaneOpen(false); setComputerInfoOpen(false); setManageSharedRoomId(null); setChannelsInfoPaneOpen(false); setRuntimeDetailPaneOpen((open) => !open); }} size="sm" variant="secondary"><SandIcon name="sliders" size="sm" />运行时</SandButton>}
             </>}
           />}
+          <TdrpCallAndAdminDrawer activeAgent={activeAgent} client={client} />
           {findInChatOpen ? <FindInChatBar controller={findInChatController} focusNonce={findInChatFocusNonce} onClose={closeFindInChat} transcriptContainer={findTranscriptContainer} transcriptHandleRef={transcriptHandleRef} /> : null}
           <ForumTopicSwitcher
             visibleTopics={visibleTopics}
@@ -4229,6 +4328,8 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
             <ConversationComposer acceptedSendGeneration={composerClearGeneration} disabled={busy || isActiveSendPending || client == null || !composerGuard.canSend} draft={draft} editorProviders={activeIsHuman ? undefined : editorProviders} notice={notice} onChange={(value) => composerDraftStore.setDraft(activeAgent.id, value)} onClearReplyTarget={clearReplyTarget} onRemoveAttachment={removeAttachment} onStageFiles={stageFiles} onSubmit={submit} placeholder={`Message ${activeAgent.name}`} replyTarget={replyTarget} scopeKey={`${transcriptAccountSlot ?? "signed-out"}:${activeAgent.id}`} transcribeAudio={transcribeAudio} />
           </div>
         </div>}
+          </>
+        )}
       </div>
 
       <TdrpPollAndTodoModal
@@ -4257,67 +4358,20 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
         shareUrl={activeAgent != null ? ((activeAgent.raw as any)?.shareUrl ?? (activeAgent.raw as any)?.inviteLink ?? undefined) : undefined}
       />
 
-      <OverlayDialog
-        className="sand-new-agent-dialog"
-        label="Create agent"
-        onClose={() => { if (!busy) setNewAgentDialogOpen(false); }}
-        open={newAgentDialogOpen}
-      >
-        <form onSubmit={(event) => { event.preventDefault(); if (!busy) void createAgent(); }}>
-          <header>
-            <div>
-              <h2>Create agent</h2>
-              <p>Choose the agent identity before its first conversation.</p>
-            </div>
-            <AgentAvatar agentId="new-agent-avatar-preview" color={newAgentAvatarColor} shape={newAgentAvatarShape} size="xl" state="thinking" />
-          </header>
-          <div className="sand-new-agent-dialog__body">
-            <label>
-              <span>Name</span>
-              <input autoFocus maxLength={120} onChange={(event) => setNewAgentName(event.currentTarget.value)} placeholder="Agent name" value={newAgentName} />
-            </label>
-            <label>
-              <span>Description</span>
-              <textarea maxLength={500} onChange={(event) => setNewAgentDescription(event.currentTarget.value)} placeholder="What should this agent help with?" rows={3} value={newAgentDescription} />
-            </label>
-            <fieldset>
-              <legend>Avatar shape</legend>
-              <div className="sand-new-agent-dialog__shape-grid">
-                {AVATAR_SHAPES.map((shape) => <button
-                  aria-label={`Avatar shape ${shape}`}
-                  aria-pressed={newAgentAvatarShape === shape}
-                  className="sand-new-agent-dialog__shape"
-                  key={shape}
-                  onClick={() => setNewAgentAvatarShape(shape)}
-                  type="button"
-                >
-                  <AgentAvatar agentId={`new-agent-shape-${shape}`} color={newAgentAvatarColor} isStatic shape={shape} size="lg" />
-                </button>)}
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>Avatar color</legend>
-              <div className="sand-new-agent-dialog__color-grid">
-                {AVATAR_COLORS.map((color) => <button
-                  aria-label={`Avatar color ${color.label}`}
-                  aria-pressed={newAgentAvatarColor === color.id}
-                  className="sand-new-agent-dialog__color"
-                  key={color.id}
-                  onClick={() => setNewAgentAvatarColor(color.id)}
-                  style={{ background: color.value }}
-                  title={color.label}
-                  type="button"
-                />)}
-              </div>
-            </fieldset>
-            <p className="sand-new-agent-dialog__hint">You can upload or generate an image later from Agent settings.</p>
-          </div>
-          <footer>
-            <SandButton disabled={busy} onClick={() => setNewAgentDialogOpen(false)} size="sm" variant="secondary">Cancel</SandButton>
-            <SandButton disabled={busy || newAgentName.trim().length === 0} size="sm" type="submit">Create</SandButton>
-          </footer>
-        </form>
-      </OverlayDialog>
+      <CreateAgentDialog
+        isOpen={newAgentDialogOpen}
+        onClose={() => setNewAgentDialogOpen(false)}
+        busy={busy}
+        name={newAgentName}
+        onNameChange={setNewAgentName}
+        description={newAgentDescription}
+        onDescriptionChange={setNewAgentDescription}
+        avatarShape={newAgentAvatarShape}
+        onAvatarShapeChange={setNewAgentAvatarShape}
+        avatarColor={newAgentAvatarColor}
+        onAvatarColorChange={setNewAgentAvatarColor}
+        onSubmit={() => void createAgent()}
+      />
 
       {conversationOutlineAgent == null ? null : <ConversationOutlinePanel
         agentId={conversationOutlineAgent.id}
@@ -4429,66 +4483,27 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
       {overlay === "hidden-chats" ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={null}><HiddenChatsDialog hiddenAgents={hiddenAgents} isOpen onClose={() => setOverlay(null)} onOpenAgent={(id) => void openAgent(id)} onUnhide={(id) => void unhide(id)} /></Suspense></div> : null}
       {overlay === "settings" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.settings)}><SettingsOverlayErrorBoundary onClose={() => setOverlay(null)}><SettingsDesktopSurface bridge={bridge} computer={settingsComputerMount} coordinatorClient={client} initialSection={settingsSection} isOpen onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} /></SettingsOverlayErrorBoundary></Suspense></div> : null}
       {overlay === "plugins" && bridge != null ? <div style={PLUGINS_OVERLAY_FRAME_STYLE}><Suspense fallback={overlayFallback(UI_TEXT.plugins)}><PluginsDesktopSurface activeAgentId={activeIsHuman ? null : activeAgent?.id ?? null} bridge={bridge} githubAuth={pluginAuthBanner} initialQuery={pluginQuery} isOpen key={pluginQuery} onClose={() => setOverlay(null)} onNotice={publishSettingsNotice} privateSkillEnableSource={privateSkillEnableSource} privateSkillSource={pluginPrivateSkillSource} /></Suspense></div> : null}
-      {overlay === "about" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><RecoveredAboutDialog
-        bridge={bridge}
-        labels={{ copied: UI_TEXT.copied, copyVersionInfo: UI_TEXT.copyVersionInfo, copyright: UI_TEXT.copyright, title: UI_TEXT.title }}
-        onClose={() => setOverlay(null)}
-      /></div> : null}
+      {overlay === "about" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><RecoveredAboutDialog bridge={bridge} labels={{ copied: UI_TEXT.copied, copyVersionInfo: UI_TEXT.copyVersionInfo, copyright: UI_TEXT.copyright, title: UI_TEXT.title }} onClose={() => setOverlay(null)} /></div> : null}
       {deepLinkInfo != null ? <div style={OVERLAY_FRAME_STYLE}><DeepLinkInfoDialog link={deepLinkInfo} onClose={() => setDeepLinkInfo(null)} /></div> : null}
       {overlay === "feedback" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><FeedbackDialog
-        bridge={bridge}
-        conversationId={activeAgent?.id ?? null}
-        errorMessages={FEEDBACK_ERRORS}
-        labels={{
-          cancel: UI_TEXT.cancel,
-          done: "Done",
-          includeConversationId: UI_TEXT.includeConversationId,
-          introduction: UI_TEXT.feedbackIntroduction,
-          placeholder: UI_TEXT.feedbackPlaceholder,
-          send: UI_TEXT.sendFeedback,
-          sending: "Sending…",
-          sent: "Sent. Thank you!",
-          title: UI_TEXT.sendFeedback
-        }}
+        bridge={bridge} conversationId={activeAgent?.id ?? null} errorMessages={FEEDBACK_ERRORS}
+        labels={{ cancel: UI_TEXT.cancel, done: "Done", includeConversationId: UI_TEXT.includeConversationId, introduction: UI_TEXT.feedbackIntroduction, placeholder: UI_TEXT.feedbackPlaceholder, send: UI_TEXT.sendFeedback, sending: "Sending…", sent: "Sent. Thank you!", title: UI_TEXT.sendFeedback }}
         onClose={() => setOverlay(null)}
       /></div> : null}
-      {overlay === "confirm-logout" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><SignOutDialog
-        bridge={bridge}
-        cancelLabel={UI_TEXT.cancel}
-        confirmLabel={UI_TEXT.signOut}
-        description={UI_TEXT.signOutDescription}
-        onClose={() => setOverlay(null)}
-        onStatus={setAccount}
-        title={UI_TEXT.signOutTitle}
-      /></div> : null}
+      {overlay === "confirm-logout" && bridge != null ? <div style={OVERLAY_FRAME_STYLE}><SignOutDialog bridge={bridge} cancelLabel={UI_TEXT.cancel} confirmLabel={UI_TEXT.signOut} description={UI_TEXT.signOutDescription} onClose={() => setOverlay(null)} onStatus={setAccount} title={UI_TEXT.signOutTitle} /></div> : null}
       {privacyBlocked && bridge != null && account?.kind === "logged-in" ? <div style={OVERLAY_FRAME_STYLE}><PrivacyBlockedDialog
         bridge={bridge}
         onStatus={(status) => {
           setAccount(status);
           if (status.kind !== "logged-in") {
-            setPrivacyBlocked(false);
-            setRosterLoadFailed(false);
-            setRosterFailure(null);
-            rosterAttemptRef.current += 1;
-            setIsRosterRetrying(false);
+            setPrivacyBlocked(false); setRosterLoadFailed(false); setRosterFailure(null); rosterAttemptRef.current += 1; setIsRosterRetrying(false);
           }
         }}
       /></div> : null}
       <UpdateRequired bridge={bridge} labels={UPDATE_REQUIRED_LABELS} />
-      {bridge != null && account?.kind === "logged-in" ? <AccessCover
-        access={accessCoverComposition.access}
-        bridge={bridge}
-        isVisible={accessCoverComposition.isVisible}
-      /> : null}
+      {bridge != null && account?.kind === "logged-in" ? <AccessCover access={accessCoverComposition.access} bridge={bridge} isVisible={accessCoverComposition.isVisible} /> : null}
       {showSignIn && bridge != null && account != null ? <SignInLanding account={account} bridge={bridge} onStatus={applyAccountStatus} /> : null}
-      {onboardingOpen && account?.kind === "logged-in" && bridge != null ? <SignedInOnboarding
-        accountSlot={account.authId ?? account.email ?? "account"}
-        bridge={bridge}
-        client={client}
-        computerStatus={onboardingComputerStatus}
-        isAccountOnboarded={isAccountOnboarded}
-        onComplete={(agentId) => void finishOnboarding(agentId)}
-      /> : null}
+      {onboardingOpen && account?.kind === "logged-in" && bridge != null ? <SignedInOnboarding accountSlot={account.authId ?? account.email ?? "account"} bridge={bridge} client={client} computerStatus={onboardingComputerStatus} isAccountOnboarded={isAccountOnboarded} onComplete={(agentId) => void finishOnboarding(agentId)} /> : null}
       {spreadsheetViewerMount == null ? null : <SpreadsheetViewer
         isOpen={spreadsheetViewerMount.isOpen()}
         name={spreadsheetViewerMount.entry.name}
@@ -4502,31 +4517,23 @@ export function ProductionRenderer({ bridge, coordinatorPort }: ProductionRender
           opening the selected agent's routines pane. */}
       {/* onOpenRoutine={(agentId) => void openAgent(agentId)} */}
       <CommandPalette
-        agents={allConversations}
-        commands={paletteCommands}
-        routines={routineSnapshot.value}
-        routineStatus={routineSnapshot.status}
-        files={fileSnapshot.value}
-        fileStatus={fileSnapshot.status}
-        isFileSearchEnabled={fileSnapshot.status !== "unavailable"}
-        messages={messageSnapshot.value}
-        messageStatus={messageSnapshot.status}
-        isMessageSearchEnabled={messageSnapshot.status !== "unavailable"}
-        links={paletteLinks}
-        linkMetadata={linkMetadataSnapshot.value}
-        linkStatus={linkMetadataSnapshot.status}
-        isLinkSearchEnabled={linkMetadataSnapshot.status !== "unavailable"}
-        isOpen={commandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-        onOpenAgent={(agentId) => void openAgent(agentId)}
-        onOpenRoutine={openPaletteRoutine}
-        onOpenFile={openPaletteFile}
-        onOpenMessage={openPaletteMessage}
-        onOpenLink={openPaletteLink}
+        agents={allConversations} commands={paletteCommands}
+        routines={routineSnapshot.value} routineStatus={routineSnapshot.status}
+        files={fileSnapshot.value} fileStatus={fileSnapshot.status} isFileSearchEnabled={fileSnapshot.status !== "unavailable"}
+        messages={messageSnapshot.value} messageStatus={messageSnapshot.status} isMessageSearchEnabled={messageSnapshot.status !== "unavailable"}
+        links={paletteLinks} linkMetadata={linkMetadataSnapshot.value} linkStatus={linkMetadataSnapshot.status} isLinkSearchEnabled={linkMetadataSnapshot.status !== "unavailable"}
+        isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)}
+        onOpenAgent={(agentId) => void openAgent(agentId)} onOpenRoutine={openPaletteRoutine}
+        onOpenFile={openPaletteFile} onOpenMessage={openPaletteMessage} onOpenLink={openPaletteLink}
         onSearchQueryChange={updatePaletteSearchQuery}
       />
       <AgentDeleteConfirmation agent={deleteAgent} onClose={() => setDeleteAgent(null)} onConfirm={deleteAgentById} />
       <SidebarSectionDeleteConfirmation section={deleteSection} onClose={() => setDeleteSection(null)} onConfirm={deleteSectionById} />
+      <FabushiConversationCreationModal
+        isOpen={isCreateConvModalOpen}
+        onClose={() => setIsCreateConvModalOpen(false)}
+        onCreate={handleCreateConversation}
+      />
       <Suspense fallback={null}><ComputerOverlayRouteView params={{}} /></Suspense>
     </div>
   );
