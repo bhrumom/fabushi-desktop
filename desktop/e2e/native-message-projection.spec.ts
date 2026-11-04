@@ -54,7 +54,9 @@ async function loadOlder(page: Page, expectedIds = ['m1', 'm2', 'm3', 'm4', 'm5'
 async function selectForward(page: Page, entryId: string) {
   const row = messageRow(page, entryId);
   await row.scrollIntoViewIfNeeded();
-  await row.hover();
+  const actionAnchor = row.locator('.sand-message-action-anchor');
+  await expect(actionAnchor).toBeVisible();
+  await actionAnchor.hover();
   await row.getByRole('button', { name: 'More message actions', exact: true }).click();
   await page.getByRole('menu', { name: 'More message actions' }).getByRole('menuitem', { name: 'Forward', exact: true }).click();
 }
