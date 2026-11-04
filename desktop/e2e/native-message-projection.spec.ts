@@ -536,6 +536,15 @@ test("NMR-UI-01d Host canonical reply rekey preserves preview, remote identity, 
   await loadOlder(page);
 
   const localParentId = await page.evaluate(() => window.nativeMessageFixture.stageReplyParent());
+  const stagedParent = await page.evaluate((entryId) => window.nativeMessageFixture.readRow("human:a", entryId), localParentId);
+  expect(stagedParent).toMatchObject({
+    id: localParentId,
+    clientNonce: "nmr-ui-01d-parent",
+    authorKind: "human",
+    authorId: "local",
+    delivery: "pending",
+  });
+  expect(stagedParent?.remoteMessageId).toBeUndefined();
   const source = messageRow(page, localParentId);
   await expect(source).toBeVisible();
   await source.locator(".sand-message-action-anchor").hover();
@@ -549,6 +558,13 @@ test("NMR-UI-01d Host canonical reply rekey preserves preview, remote identity, 
 
   const canonicalParentId = await page.evaluate(() => window.nativeMessageFixture.settleReplyParent());
   expect(canonicalParentId).toBe("human-server-message:900");
+  const canonicalParent = await page.evaluate((entryId) => window.nativeMessageFixture.readRow("human:a", entryId), canonicalParentId);
+  expect(canonicalParent).toMatchObject({
+    id: canonicalParentId,
+    remoteMessageId: "900",
+    delivery: "sent",
+  });
+  expect(await page.evaluate((entryId) => window.nativeMessageFixture.readRow("human:a", entryId), localParentId)).toBeNull();
   await expect(messageRow(page, canonicalParentId)).toBeVisible();
   await expect(replyPill).toContainText("Old first message");
 
@@ -566,6 +582,14 @@ test("NMR-UI-01d Host canonical reply rekey preserves preview, remote identity, 
   );
   expect(request?.args.replyToId).toBe(canonicalParentId);
   expect(request?.args.text).toBe("Reply draft survives Host canonical rekey");
+  const pendingChildId = `human-message:${String(request?.args.clientNonce)}`;
+  const pendingChild = await page.evaluate((entryId) => window.nativeMessageFixture.readRow("human:a", entryId), pendingChildId);
+  expect(pendingChild).toMatchObject({
+    id: pendingChildId,
+    delivery: "pending",
+    replyToId: canonicalParentId,
+  });
+  expect(pendingChild?.remoteMessageId).toBeUndefined();
 
   const publishedId = await page.evaluate(() => window.nativeMessageFixture.publishSend());
   expect(publishedId).toBe("human-server-message:100");
@@ -579,6 +603,7 @@ test("NMR-UI-01d Host canonical reply rekey preserves preview, remote identity, 
     remoteReplyToMessageId: "900",
     delivery: "sent",
   });
+  expect(await page.evaluate((entryId) => window.nativeMessageFixture.readRow("human:a", entryId), pendingChildId)).toBeNull();
   await expect(messageRow(page, "human-server-message:100")).toContainText("Old first message");
   await expect(replyPill).toHaveCount(0);
   await expect(editor).toHaveText("");

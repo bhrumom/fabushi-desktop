@@ -7,7 +7,7 @@ import type { CoordinatorPortBridge, CursorAuthStatus, DesktopBridge, Transferre
 // Only the external desktop port and service replies are controlled by the test.
 type Row = Record<string, unknown> & { id: string };
 type Request = { requestId: string; method: string; args: Record<string, unknown> };
-type Pending = { request: Request; value: unknown; account?: string | null; settled?: boolean };
+type Pending = { request: Request; value: unknown; account?: string | null; settled?: boolean; before?: Row };
 const clone = <T,>(value: T): T => structuredClone(value);
 const accountListeners = new Set<(status: CursorAuthStatus) => void>();
 const focusListeners = new Set<(value: unknown) => void>();
@@ -25,7 +25,6 @@ const retries: Pending[] = [];
 const reactions: Pending[] = [];
 const forwards: Pending[] = [];
 const sendRosterRefreshes: Pending[] = [];
-const sendPositions = new Map<string, number>();
 let holdOlder = true;
 let holdInitial = new URLSearchParams(location.search).get('holdInitial') === '1';
 let holdNextSendRoster = false;
@@ -120,25 +119,49 @@ function receive(request: Request) {
     }
     case 'sendHumanMessage': {
       const remoteMessageId = String(100 + sends.length);
+      const clientNonce = typeof request.args.clientNonce === 'string' ? request.args.clientNonce : '';
+      const text = typeof request.args.text === 'string' ? request.args.text : '';
       const replyToId = typeof request.args.replyToId === 'string' ? request.args.replyToId : undefined;
       const parent = replyToId == null ? undefined : transcript.find((entry) => entry.id === replyToId);
       const parentRemoteId = typeof parent?.remoteMessageId === 'string' ? parent.remoteMessageId : undefined;
       const currentAccountId = account.kind === 'logged-in' ? account.authId ?? '' : '';
+      if (clientNonce.trim() !== clientNonce || clientNonce.length === 0) {
+        throw new Error('Host fixture rejected an invalid local Human client nonce');
+      }
       if (replyToId != null && (parent == null || parent.authorKind !== 'human'
         || parent.authorId !== currentAccountId || parent.delivery !== 'sent'
         || parentRemoteId == null || parent.id !== `human-server-message:${parentRemoteId}`)) {
         throw new Error('Host fixture rejected a non-canonical, unsettled or foreign reply target');
       }
-      const entry = row(`human-server-message:${remoteMessageId}`, String(request.args.text), {
+
+      const localEntryId = `human-message:${clientNonce}`;
+      if (transcript.some((candidate) => candidate.id === localEntryId)) {
+        throw new Error('Host fixture rejected a duplicate durable local Human outbox identity');
+      }
+      const pendingEntry = row(localEntryId, text, {
         authorKind: 'human',
         authorId: currentAccountId,
-        clientNonce: request.args.clientNonce,
+        clientNonce,
+        ...(typeof request.args.composedAtMs === 'number' ? { composedAtMs: request.args.composedAtMs } : {}),
+        delivery: 'pending',
+        attachments: Array.isArray(request.args.attachments) ? clone(request.args.attachments) : [],
+        ...(replyToId == null ? {} : { replyToId }),
+      });
+      transcript.push(pendingEntry);
+      rows.set(id, transcript);
+      persistRows();
+      emit({ type: 'appended', agentId: id, entry: clone(pendingEntry) });
+
+      const entry = row(`human-server-message:${remoteMessageId}`, text, {
+        authorKind: 'human',
+        authorId: currentAccountId,
+        clientNonce,
         remoteMessageId,
         delivery: 'sent',
+        ...(typeof request.args.composedAtMs === 'number' ? { composedAtMs: request.args.composedAtMs } : {}),
         ...(replyToId == null ? {} : { replyToId, remoteReplyToMessageId: parentRemoteId! }),
       });
-      sends.push({ request, value: entry, settled: false });
-      sendPositions.set(request.requestId, transcript.length);
+      sends.push({ request, value: entry, settled: false, before: clone(pendingEntry) });
       return;
     }
     case 'retryHumanMessage': {
@@ -281,7 +304,8 @@ const fixture = {
       authorKind: 'human',
       authorId: account.kind === 'logged-in' ? account.authId ?? '' : '',
       clientNonce: nonce,
-      delivery: 'sent',
+      composedAtMs: 1_700_000_000_000,
+      delivery: 'pending',
     });
     transcript.push(entry);
     rows.set(id, transcript);
@@ -296,12 +320,20 @@ const fixture = {
     const index = transcript.findIndex((entry) => entry.id === aliasId);
     if (index < 0) throw new Error('Missing local reply parent before Host canonical rekey');
     const before = clone(transcript[index]);
+    const currentAccountId = account.kind === 'logged-in' ? account.authId ?? '' : '';
+    if (before.authorKind !== 'human' || before.authorId !== currentAccountId
+      || before.clientNonce !== 'nmr-ui-01d-parent' || before.delivery !== 'pending'
+      || before.remoteMessageId != null) {
+      throw new Error('Host fixture rejected a non-pending or foreign local reply parent');
+    }
     const remoteMessageId = '900';
+    const remoteCreatedAt = '2026-11-04T00:00:00.000Z';
     const after: Row = {
       ...before,
       id: `human-server-message:${remoteMessageId}`,
       remoteMessageId,
-      remoteCreatedAt: '2026-11-04T00:00:00.000Z',
+      remoteCreatedAt,
+      timestampMs: Date.parse(remoteCreatedAt),
       delivery: 'sent',
     };
     delete after.lastDispatchError;
@@ -337,12 +369,20 @@ const fixture = {
     const pending = sends[index];
     if (pending == null) throw new Error('No pending send');
     const id = String(pending.request.args.conversationId);
-    const entry = clone(pending.value as Row);
+    const localEntryId = pending.before?.id;
+    if (localEntryId == null) throw new Error('Pending Host send omitted its local outbox identity');
     const transcript = rows.get(id) ?? [];
-    if (!transcript.some((candidate) => candidate.id === entry.id)) transcript.splice(sendPositions.get(pending.request.requestId) ?? transcript.length, 0, entry);
+    const localIndex = transcript.findIndex((candidate) => candidate.id === localEntryId);
+    if (localIndex < 0) throw new Error('Missing durable local Human outbox row before canonical settlement');
+    const before = clone(transcript[localIndex]);
+    if (before.clientNonce !== pending.request.args.clientNonce || before.delivery !== 'pending') {
+      throw new Error('Host fixture rejected a changed or already-settled local Human outbox row');
+    }
+    const entry = clone(pending.value as Row);
+    transcript[localIndex] = entry;
     rows.set(id, transcript);
     persistRows();
-    emit({ type: 'updated', agentId: id, before: { id: `pending-${pending.request.args.clientNonce}` }, entry });
+    emit({ type: 'updated', agentId: id, before, entry: clone(entry) });
     return entry.id;
   },
   peerCollision(index = 0) {

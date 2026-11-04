@@ -148,6 +148,50 @@ test("an active local Human reply selection follows Host canonical rekey and ref
   controller.dispose();
 });
 
+test("append reconciliation resolves a canonical alias while the local outbox row is retained", () => {
+  const alias = "human-message:parent-nonce";
+  const canonicalId = "human-server-message:42";
+  const controller = createReplyThreadController({
+    scope: { accountSlot: "account-a", agentId: "human:alice" },
+  });
+
+  controller.replaceEntries([localHumanParent("parent-nonce", "Pending local parent")]);
+  assert.equal(controller.selectReply(alias), true);
+  controller.appendEntries([canonicalHumanParent("parent-nonce", "42", "Canonical parent after append")]);
+
+  assert.equal(controller.resolve(alias).status, "resolved");
+  assert.equal(controller.resolve(alias).targetId, canonicalId);
+  assert.equal(controller.getSelection()?.targetId, canonicalId);
+  assert.deepEqual(controller.getSelection()?.preview, {
+    kind: "user-text",
+    text: "Canonical parent after append",
+  });
+  assert.equal(controller.projectSubmission(submission("human:alice")).replyToId, canonicalId);
+  controller.dispose();
+});
+
+test("prepend reconciliation resolves a canonical alias while the local outbox row is retained", () => {
+  const alias = "human-message:parent-nonce";
+  const canonicalId = "human-server-message:42";
+  const controller = createReplyThreadController({
+    scope: { accountSlot: "account-a", agentId: "human:alice" },
+  });
+
+  controller.replaceEntries([localHumanParent("parent-nonce", "Pending local parent")]);
+  assert.equal(controller.selectReply(alias), true);
+  controller.prependEntries([canonicalHumanParent("parent-nonce", "42", "Canonical parent after prepend")]);
+
+  assert.equal(controller.resolve(alias).status, "resolved");
+  assert.equal(controller.resolve(alias).targetId, canonicalId);
+  assert.equal(controller.getSelection()?.targetId, canonicalId);
+  assert.deepEqual(controller.getSelection()?.preview, {
+    kind: "user-text",
+    text: "Canonical parent after prepend",
+  });
+  assert.equal(controller.projectSubmission(submission("human:alice")).replyToId, canonicalId);
+  controller.dispose();
+});
+
 test("a persisted local Human reply draft restores through its unique canonical Host parent", () => {
   const alias = "human-message:parent-nonce";
   const canonicalId = "human-server-message:42";
@@ -195,6 +239,13 @@ test("historical local Human reply aliases fail closed for foreign, ambiguous an
     {
       name: "direct local alias belongs to another account",
       entries: [localHumanParent("parent-nonce", "Foreign local alias", "account-b")],
+    },
+    {
+      name: "malformed retained local alias conflicts with a canonical parent",
+      entries: [
+        localHumanParent("parent-nonce", "Foreign local alias", "account-b"),
+        canonicalHumanParent("parent-nonce", "42", "Canonical parent"),
+      ],
     },
   ];
 

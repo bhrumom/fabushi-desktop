@@ -101,7 +101,11 @@ function indexEntries(
   const aliases = new Map<string, string>();
   const ambiguousAliases = new Set<string>();
   for (const [alias, ids] of candidates) {
-    if (ids.size === 1 && !indexed.has(alias)) aliases.set(alias, [...ids][0]);
+    const nonce = alias.slice(HUMAN_LOCAL_MESSAGE_PREFIX.length);
+    const retainedLocal = indexed.get(alias);
+    const retainedLocalMatches = retainedLocal == null
+      || isValidLocalHumanReplyIntent(retainedLocal, nonce, accountSlot);
+    if (ids.size === 1 && retainedLocalMatches) aliases.set(alias, [...ids][0]);
     else ambiguousAliases.add(alias);
   }
   return { entries: indexed, aliases, ambiguousAliases };
