@@ -1055,6 +1055,18 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     })
             })
         }),
+        "retireLegacyTelegramData" => (|| {
+            let remove_immediately = optional_bool(args, "removeImmediately")?
+                .or(optional_bool(args, "remove_immediately")?)
+                .unwrap_or(false);
+            session
+                .retire_legacy_telegram_data(remove_immediately)
+                .and_then(|report| {
+                    serde_json::to_value(report)
+                        .map_err(|error| super::legacy_telegram_retirement::LegacyTelegramRetirementError::Internal(error.to_string()))
+                })
+                .map_err(|error| SessionGatewayError::bad(error.to_string()))
+        })(),
         _ => return None,
     };
     Some(result)
