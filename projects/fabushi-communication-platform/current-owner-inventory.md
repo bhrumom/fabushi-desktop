@@ -326,3 +326,28 @@ Current authority disposition for the requested six domains:
 - **CLI / Gateway (`mahayana-gateway`):** fixed macOS unfair-mutex starvation in `source/mahayana/mahayana-rs/mahayana-cli/src/bin/mahayana-gateway.rs` (`event_pump`) by polling `runtime.receive(0)` under `pump_runtime.lock()`, dropping the mutex guard immediately, and sleeping `Duration::from_millis(10)` outside the lock when `Ok(None)` is returned (`!pump_shutdown.load(Ordering::Acquire)`).
 
 No new owner is created. No legacy database, user data, Telegram FFI, provider registration or user resource was removed. The unresolved identity/resource/permission/search questions are explicit follow-up requirements, not assumed closed.
+
+### 2026-11-04 Mini App / Bot WebApp conversation bridge (slice S5)
+
+Authority and boundary for Telegram Mini App / Bot WebApp desktop integration:
+
+| Layer | Canonical owner / implementation | Boundary and authority |
+| --- | --- | --- |
+| Mini App Container | `source/electron-main/mcp/miniapp-window.ts` | Sole desktop container. Strict CSP (`fabushi-miniapp:` scheme, offline loopback proxy, no navigation/WebRTC leak). No second WebView container. |
+| Verified Package Authority | `source/host/src/extensions/mcp/installable_package.rs` (`ledger.rs`) | Canonical installed/verified package owner. `issue_miniapp_launch_session` verifies app installation and digest against this owner. No parallel package registry. |
+| Launch Session Authority | `ProductionSessionWorkers` (`issue_miniapp_launch_session`) | Host strictly verifies local Human is a conversation participant before issuing `launchSessionId`. Default permissions are empty without explicit user grant. Ephemeral memory registry fails closed on restart. |
+| Launch Context | `source/electron-main/mcp/miniapp-window.ts` (`VerifiedMiniAppLaunch.launchContext`) | Main process only; reuses existing reverified launch flow (`getInstalledMiniAppResources`) to carry Host-issued `launchContext { launchSessionId, conversationId, startParameter }`. Preload exposes read-only `getLaunchContext()`. |
+| Tool Invocation Bridge | `source/electron-main/mcp/miniapp-tools.ts` (`conversation.sendData`, `conversation.sendMessage`) | Tools route from isolated preload via `MINIAPP_TOOL_CHANNEL` to `MiniAppToolRouter`, passing Host `launchSessionId`. No guest-provided `userConfirmed` parameter is accepted or forwarded. |
+| Pure Policy Authority | `fabushi_messaging_core::authorize_miniapp_request` (`native/mahayana-messaging/src/miniapp.rs`) | Pure deterministic domain policy: checks session expiry, grant validity/expiry, permission matrix, and conversation binding against Host-held records using Host clock. |
+| Message Persistence Owner | `ProductionSessionWorkers` (`source/host/src/extensions/session/production.rs`) | Single message state owner on desktop. Messages write to SandAgentDb SQLite via `append_human_message_with_context`. Nonce `miniapp:{launchSessionId}:{requestId}` enforces CAS idempotency. SendMessage unconditionally returns UserConfirmationRequired; SendData returns NoBotRecipient in human chats. `forwardContext` is isolated (None). |
+
+Calling Chain:
+1. Message UI or Host launch API triggers launch with `conversation_id + start_parameter`.
+2. Main process reuses existing reverified launch flow (`getInstalledMiniAppResources`), verifying package archive/digest against `installable_package` owner.
+3. Host `issue_miniapp_launch_session` verifies participant membership and package record, issuing authoritative `launchSessionId`.
+4. Main process creates sandboxed `miniapp-window` with immutable `launchContext { launchSessionId, conversationId, startParameter }`.
+5. Preload exposes read-only `getLaunchContext()` and `fabushi.invoke(...)`.
+6. Mini App calls `conversation.sendMessage` / `conversation.sendData` (guest confirmation parameters ignored).
+7. `MiniAppToolRouter` validates scope and dispatches to Host gateway method `miniAppPostToConversation`.
+8. Host evaluates `fabushi_messaging_core::authorize_miniapp_request(&session, &grant, &request, host_now_ms)`.
+9. SendMessage fails closed with `UserConfirmationRequired` (no Host confirmation UI yet); SendData fails closed with `NoBotRecipient` (no Bot in human direct chat); `forwardContext` is None.

@@ -18,6 +18,7 @@ export interface MiniAppManagementPorts {
   };
   windows: {
     launch(appId: string, accountScope: string, stillCurrent: () => Promise<boolean>): Promise<void>;
+    launchInConversation?(appId: string, accountScope: string, conversationId: string, startParameter: string | undefined, stillCurrent: () => Promise<boolean>): Promise<void>;
     closeApp(appId: string): void;
     closeAll(): void;
   };
@@ -105,6 +106,25 @@ export function registerMiniAppManagement(ports: MiniAppManagementPorts): { disp
   };
   handle("sand:miniapp-install", (event, appId) => mutation(event, appId, "install"));
   handle("sand:miniapp-launch", (event, appId) => mutation(event, appId, "launch"));
+  handle("sand:miniapp-launch-in-conversation", async (event, raw) => {
+    const { account, fence, stillCurrent } = await begin(event);
+    const args = typeof raw === "object" && raw !== null ? raw as Record<string, unknown> : {};
+    const appId = identity(args.appId);
+    const conversationId = typeof args.conversationId === "string" ? args.conversationId.trim() : "";
+    if (!conversationId) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
+    const startParameter = typeof args.startParameter === "string" ? args.startParameter.trim() : undefined;
+    if (pending.has(appId)) throw new Error("MINIAPP_BUSY");
+    pending.add(appId);
+    try {
+      await fence();
+      if (ports.windows.launchInConversation) {
+        await ports.windows.launchInConversation(appId, account, conversationId, startParameter, stillCurrent);
+      } else {
+        await ports.windows.launch(appId, account, stillCurrent);
+      }
+      await fence();
+    } finally { pending.delete(appId); }
+  });
   handle("sand:miniapp-remove-code", (event, appId) => mutation(event, appId, "remove"));
   return { dispose() {
     if (disposed) return;

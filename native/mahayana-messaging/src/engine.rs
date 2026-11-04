@@ -15,8 +15,8 @@ use crate::message::{
     PendingPresenceSend, PresenceSendTrigger, ReactionSummary, SendMenuDetails,
 };
 use crate::miniapp::{
-    MiniAppGrant, MiniAppManifest, MiniAppPermission, MiniAppRequest, MiniAppResponse,
-    MiniAppSession,
+    authorize_miniapp_request, MiniAppAction, MiniAppDenial, MiniAppGrant, MiniAppManifest,
+    MiniAppPermission, MiniAppRequest, MiniAppResponse, MiniAppSession,
 };
 use crate::payment::{
     resolve_paid_restriction_from_capabilities, CustomerInfo, Invoice, Money,
@@ -3753,17 +3753,27 @@ impl MessagingEngine {
                     .mini_app_sessions
                     .get(&session_id)
                     .ok_or_else(|| EngineError::MiniAppSessionNotFound(session_id.clone()))?;
-                if let Some(permission) = request.required_permission() {
-                    if !session.granted_permissions.contains(&permission) {
+                let grant = self
+                    .state
+                    .mini_app_grants
+                    .get(&(session.mini_app_id.clone(), session.actor_id.clone()))
+                    .cloned()
+                    .unwrap_or_else(|| MiniAppGrant {
+                        mini_app_id: session.mini_app_id.clone(),
+                        actor_id: session.actor_id.clone(),
+                        permissions: session.granted_permissions.clone(),
+                        granted_at_ms: session.opened_at_ms,
+                        expires_at_ms: None,
+                    });
+                let action = match authorize_miniapp_request(session, &grant, &request, session.opened_at_ms) {
+                    Ok(action) => action,
+                    Err(MiniAppDenial::PermissionDenied { permission }) => {
                         return Err(EngineError::MiniAppPermissionDenied(permission));
                     }
-                }
-                let response = match request {
-                    MiniAppRequest::Ready
-                    | MiniAppRequest::Expand
-                    | MiniAppRequest::Close
-                    | MiniAppRequest::SetHeaderColor { .. }
-                    | MiniAppRequest::SetBackgroundColor { .. } => MiniAppResponse::Ok,
+                    Err(_) => return Err(EngineError::MiniAppHostActionRequired),
+                };
+                let response = match action {
+                    MiniAppAction::DirectResponse { response } => response,
                     _ => return Err(EngineError::MiniAppHostActionRequired),
                 };
                 Ok(vec![Event::MiniAppResponded {

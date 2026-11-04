@@ -10982,3 +10982,339 @@ fn shipping_human_history_coverage_incomplete_signal_is_exposed_until_sync_reach
     drop(runtime);
     let _ = fs::remove_dir_all(root);
 }
+
+fn create_test_miniapp_bundle(
+    app_id: &str,
+    version: &str,
+) -> (Vec<u8>, mahayana_host_runtime::extensions::mcp::installable_package::CatalogAuthorization) {
+    use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+    use ed25519_dalek::{Signer, SigningKey};
+    use sha2::{Digest, Sha256};
+    use std::io::{Cursor, Write};
+    use zip::{ZipWriter, write::SimpleFileOptions};
+
+    let key = SigningKey::from_bytes(&[7; 32]);
+    let expected = b"<!doctype html><p>offline</p>";
+    let mut hasher = Sha256::new();
+    hasher.update(expected);
+    let expected_hash = {
+        let hash = hasher.finalize();
+        let mut out = String::with_capacity(64);
+        for byte in hash {
+            use std::fmt::Write;
+            let _ = write!(&mut out, "{byte:02x}");
+        }
+        out
+    };
+
+    let mut manifest = serde_json::json!({
+        "manifestVersion": 1, "packageClass": "catalog", "appId": app_id,
+        "publisherId": "test-publisher", "version": version, "displayName": "Test App",
+        "entrypoint": "index.html", "runtime": "web", "minHostApi": 1, "offlineCore": true,
+        "requestedCapabilities": [], "networkPolicy": { "mode": "deny", "allowedOrigins": [] },
+        "files": { "index.html": { "sha256": expected_hash, "bytes": expected.len(), "mime": "text/html" } }
+    });
+
+    fn sorted(value: &serde_json::Value) -> serde_json::Value {
+        match value {
+            serde_json::Value::Object(map) => {
+                let ordered: std::collections::BTreeMap<_, _> =
+                    map.iter().map(|(k, v)| (k.clone(), sorted(v))).collect();
+                serde_json::Value::Object(ordered.into_iter().collect())
+            }
+            serde_json::Value::Array(items) => serde_json::Value::Array(items.iter().map(sorted).collect()),
+            _ => value.clone(),
+        }
+    }
+
+    let domain = b"fabushi.fabapp.manifest.v1\0";
+    let mut payload = domain.to_vec();
+    payload.extend(serde_json::to_vec(&sorted(&manifest)).unwrap());
+    manifest["signature"] = serde_json::json!({
+        "algorithm": "Ed25519", "keyId": "fixture-only",
+        "value": URL_SAFE_NO_PAD.encode(key.sign(&payload).to_bytes())
+    });
+
+    let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+    let items = vec![
+        ("manifest.json".to_string(), serde_json::to_vec(&manifest).unwrap()),
+        ("index.html".to_string(), expected.to_vec()),
+    ];
+    for (name, data) in items {
+        writer
+            .start_file(
+                name,
+                SimpleFileOptions::default()
+                    .compression_method(zip::CompressionMethod::Stored)
+                    .unix_permissions(0o644),
+            )
+            .unwrap();
+        writer.write_all(&data).unwrap();
+    }
+    let bytes = writer.finish().unwrap().into_inner();
+
+    let mut pkg_hasher = Sha256::new();
+    pkg_hasher.update(&bytes);
+    let pkg_hash = {
+        let hash = pkg_hasher.finalize();
+        let mut out = String::with_capacity(64);
+        for byte in hash {
+            use std::fmt::Write;
+            let _ = write!(&mut out, "{byte:02x}");
+        }
+        out
+    };
+
+    let policy = mahayana_host_runtime::extensions::mcp::installable_package::CatalogAuthorization {
+        app_id: app_id.into(),
+        publisher_id: "test-publisher".into(),
+        version: version.into(),
+        package_sha256: pkg_hash,
+        key_id: "fixture-only".into(),
+        public_key: key.verifying_key().to_bytes(),
+        trust_epoch: 1,
+        host_api: 1,
+        requested_capabilities: vec![],
+    };
+    (bytes, policy)
+}
+
+#[test]
+fn miniapp_post_to_conversation_contract_enforces_host_authoritative_session_and_safety_fences() {
+    let root = temp_root("miniapp-conversation-contract");
+    let agents = root.join("agents");
+    let memory = Arc::new(mahayana_host_runtime::extensions::memory::memory_service::MemoryService::new(agents.clone()));
+    let runtime = Arc::new(ProductionSessionWorkers::with_agents_root_identity_and_dependencies(
+        &agents,
+        500,
+        Some("human-local".into()),
+        Arc::new(|| None),
+        memory,
+    ));
+
+    let created = dispatch(
+        &runtime,
+        "createHumanConversation",
+        json!({
+            "localHumanId": "human-local",
+            "peerHumanId": "human-peer",
+            "title": "MiniApp Test Conversation"
+        }),
+    );
+    let conversation_id = created["id"].as_str().expect("conversation id").to_string();
+
+    // Set up ledger package verifier backed by existing installable_package owner
+    let package_db = Arc::new(std::sync::Mutex::new(rusqlite::Connection::open_in_memory().unwrap()));
+    {
+        let db = package_db.lock().unwrap();
+        mahayana_host_runtime::extensions::mcp::installable_package::ledger::initialize(&db).expect("ledger initialized");
+    }
+
+    // Dynamic scope provider: generation is NOT hardcoded!
+    let current_gen = Arc::new(std::sync::atomic::AtomicU64::new(1));
+    let gen_clone = Arc::clone(&current_gen);
+    let scope_provider: Arc<dyn Fn() -> Result<mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope, String> + Send + Sync> = Arc::new(move || {
+        Ok(mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope {
+            account_scope: "human-local".into(),
+            generation: gen_clone.load(std::sync::atomic::Ordering::SeqCst),
+        })
+    });
+    runtime.set_mini_app_package_verifier(
+        ProductionSessionWorkers::create_ledger_package_verifier(
+            Arc::clone(&package_db),
+            scope_provider,
+        ),
+    );
+
+    // 1. issueMiniAppLaunchSession on uninstalled package fails closed (Point 3)
+    let uninstalled = dispatch_production_session_gateway_call(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        &json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+        }),
+    )
+    .expect("handled call")
+    .expect_err("uninstalled package must be rejected");
+    assert!(matches!(uninstalled, SessionGatewayError::BadRequest(ref msg) if msg.contains("not installed")));
+
+    // Install real verified package into installable_package ledger owner (Point 4)
+    let (bundle_bytes, policy) = create_test_miniapp_bundle("org.fabushi.shop", "1.0.0");
+    let verified_pkg = mahayana_host_runtime::extensions::mcp::installable_package::verify_catalog_bundle(&bundle_bytes, &policy).expect("verified package");
+    let real_digest = verified_pkg.digest().to_string();
+    {
+        let mut db = package_db.lock().unwrap();
+        let scope = mahayana_host_runtime::extensions::mcp::installable_package::ledger::HostInstallScope {
+            account_scope: "human-local".into(),
+            generation: 1,
+        };
+        mahayana_host_runtime::extensions::mcp::installable_package::ledger::activate(&mut db, &scope, &scope, "op-1", verified_pkg).expect("activated");
+        mahayana_host_runtime::extensions::mcp::installable_package::ledger::verified_native_account(
+            &db, "human-local", "binding-test", 9_999_999_999_999, 1000
+        ).expect("verified native account initialized");
+    }
+
+    // 2. Digest mismatch fails closed
+    let mismatch = dispatch_production_session_gateway_call(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        &json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "version": "1.0.0",
+            "packageDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+        }),
+    )
+    .expect("handled call")
+    .expect_err("digest mismatch must be rejected");
+    assert!(matches!(mismatch, SessionGatewayError::BadRequest(ref msg) if msg.contains("digest mismatch")));
+
+    // 3. Generation mismatch (account rotated to generation 2) fails closed (Point 2)
+    current_gen.store(2, std::sync::atomic::Ordering::SeqCst);
+    let gen_mismatch = dispatch_production_session_gateway_call(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        &json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "version": "1.0.0",
+            "packageDigest": real_digest,
+        }),
+    )
+    .expect("handled call")
+    .expect_err("generation mismatch must fail closed");
+    assert!(matches!(gen_mismatch, SessionGatewayError::BadRequest(_)));
+    // Restore generation for remaining tests
+    current_gen.store(1, std::sync::atomic::Ordering::SeqCst);
+
+    // 4. issueMiniAppLaunchSession on non-participant conversation fails closed
+    let non_participant = dispatch_production_session_gateway_call(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        &json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": "foreign-conversation-id",
+        }),
+    )
+    .expect("handled call")
+    .expect_err("non-participant conversation must be rejected");
+    assert!(matches!(non_participant, SessionGatewayError::BadRequest(_)));
+
+    // 5. issueMiniAppLaunchSession succeeds for verified package + participant + matching digest
+    // Notice: without prior user grant, effective permissions are EMPTY (Point 2: no self-granting!)
+    let launch_res = dispatch(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+            "startParameter": "promo_2026",
+            "version": "1.0.0",
+            "packageDigest": real_digest,
+        }),
+    );
+    let launch_session_id = launch_res["launchSessionId"].as_str().expect("launchSessionId").to_string();
+    assert_eq!(launch_res["appId"], "org.fabushi.shop");
+    assert_eq!(launch_res["conversationId"], conversation_id);
+    assert_eq!(launch_res["startParameter"], "promo_2026");
+
+    // Calling SendMessage without explicit user grant fails with permission denied
+    let nogrant_call = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "launchSessionId": launch_session_id,
+            "requestId": "req-0",
+            "text": "Attempt without user grant",
+        }),
+    )
+    .expect("handled call")
+    .expect_err("request without user grant must fail closed");
+    assert!(matches!(nogrant_call, SessionGatewayError::BadRequest(ref msg) if msg.contains("permission denied")));
+
+    // Record explicit user grant for the app
+    let local_human = runtime.local_human_id().expect("local human");
+    runtime
+        .set_miniapp_grant(fabushi_messaging_core::MiniAppGrant {
+            mini_app_id: "org.fabushi.shop".into(),
+            actor_id: fabushi_messaging_core::ActorId::new(local_human),
+            permissions: vec![fabushi_messaging_core::MiniAppPermission::SendMessage],
+            granted_at_ms: 1000,
+            expires_at_ms: None,
+        })
+        .expect("set user grant");
+
+    // Re-issue launch session with the user grant active
+    let granted_launch = dispatch(
+        &runtime,
+        "issueMiniAppLaunchSession",
+        json!({
+            "appId": "org.fabushi.shop",
+            "conversationId": conversation_id,
+        }),
+    );
+    let granted_session_id = granted_launch["launchSessionId"].as_str().expect("session id").to_string();
+
+    // 4. Point 1: MiniApp cannot self-confirm. SendMessage ALWAYS returns UserConfirmationRequired
+    // Even if guest script passes userConfirmed: true
+    let send_attempt = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "launchSessionId": granted_session_id,
+            "requestId": "req-1",
+            "text": "Attacker trying userConfirmed: true",
+            "userConfirmed": true
+        }),
+    )
+    .expect("handled call")
+    .expect_err("SendMessage without Host confirmation UI must fail closed");
+    assert!(matches!(send_attempt, SessionGatewayError::BadRequest(ref msg) if msg.contains("user confirmation")));
+
+    // Verify that NO message was written into the transcript!
+    let transcript = runtime
+        .read_human_conversation_transcript(&conversation_id)
+        .expect("read transcript");
+    assert!(
+        transcript.is_empty(),
+        "no message must be appended when SendMessage fails closed"
+    );
+
+    // 5. Point 2: SendData in Human direct conversation fails closed (no bot recipient)
+    let send_data_denied = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "launchSessionId": granted_session_id,
+            "requestId": "req-data",
+            "data": "{\"sku\": \"42\"}",
+        }),
+    )
+    .expect("handled call")
+    .expect_err("SendData in human direct conversation must fail closed");
+    assert!(matches!(send_data_denied, SessionGatewayError::BadRequest(ref msg) if msg.contains("bot recipient")));
+
+    // 6. Point 4: In-Memory Session Invalidation across restart
+    // Clear in-memory launch sessions to simulate Host process restart
+    runtime
+        .clear_miniapp_launch_sessions_for_test()
+        .expect("cleared memory sessions");
+
+    let post_after_restart = dispatch_production_session_gateway_call(
+        &runtime,
+        "miniAppPostToConversation",
+        &json!({
+            "launchSessionId": granted_session_id,
+            "requestId": "req-restart",
+            "text": "Post after restart",
+        }),
+    )
+    .expect("handled call")
+    .expect_err("pre-restart launchSessionId must fail closed");
+    assert!(matches!(post_after_restart, SessionGatewayError::BadRequest(ref msg) if msg.contains("not found")));
+
+    runtime.shutdown();
+    drop(runtime);
+    let _ = fs::remove_dir_all(root);
+}

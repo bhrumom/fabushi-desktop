@@ -3,9 +3,10 @@ import { dirname, join } from "node:path";
 import type { ProductionServiceContext } from "../main-production-services.js";
 import { registerMiniAppManagement, type NativeMiniAppEntry } from "./miniapp-management.js";
 import { createInstalledNativeRuntime, parseNativeRuntime, type NativeRuntimeHandle } from "./miniapp-native-runtime.js";
-import { createMiniAppWindowFactory, type MiniAppIpc, type MiniAppToolBridgePorts, type MiniAppWindowFactoryPorts, type VerifiedMiniAppResource } from "./miniapp-window.js";
+import { createMiniAppWindowFactory, type MiniAppIpc, type MiniAppLaunchContext, type MiniAppToolBridgePorts, type MiniAppWindowFactoryPorts, type VerifiedMiniAppResource } from "./miniapp-window.js";
+import { createMiniAppToolRouter, MINIAPP_TOOL_CONTRACT, type MiniAppToolBackend } from "./miniapp-tools.js";
 
-type Method = "listApprovedMiniApps" | "listInstalledMiniApps" | "installApprovedMiniApp" | "getInstalledMiniAppResources" | "uninstallMiniApp";
+type Method = "listApprovedMiniApps" | "listInstalledMiniApps" | "installApprovedMiniApp" | "getInstalledMiniAppResources" | "uninstallMiniApp" | "issueMiniAppLaunchSession" | "miniAppPostToConversation";
 function record(value: unknown): Record<string, unknown> {
   if (value == null || typeof value !== "object" || Array.isArray(value)) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
   return value as Record<string, unknown>;
@@ -46,6 +47,140 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
     if (typeof leg !== "function") throw new Error("MINIAPP_UNSUPPORTED_HOST");
     return await leg(args);
   };
+
+  const launchWithContext = async (appId: string, accountScope: string, stillCurrent: () => Promise<boolean>, conversationContext?: { conversationId: string; startParameter?: string }) => {
+    if (!windows || context.native.app.commandLine.hasSwitch?.("no-sandbox") === true) throw new Error("MINIAPP_UNSUPPORTED_HOST");
+    const ticket = generation;
+    const loaded = record(await call("getInstalledMiniAppResources", { appId, operationId: randomUUID() }));
+    if (!await stillCurrent() || ticket !== generation || loaded.sameScopeHash !== accountScope) throw new Error("MINIAPP_SCOPE_CHANGED");
+    const descriptor = record(loaded.descriptor);
+    if (descriptor.appId !== appId || typeof descriptor.version !== "string" || typeof descriptor.digest !== "string" || typeof descriptor.entrypoint !== "string") throw new Error("MINIAPP_DESCRIPTOR_INVALID");
+    if (!Array.isArray(loaded.resources) || loaded.resources.length > 10_000) throw new Error("MINIAPP_DESCRIPTOR_LIMIT");
+    const resources = new Map<string, VerifiedMiniAppResource>();
+    let total = 0;
+    for (const raw of loaded.resources) {
+      const item = record(raw);
+      if (typeof item.path !== "string" || typeof item.mime !== "string" || typeof item.bytesBase64 !== "string" || item.bytesBase64.length > 350 * 1024 * 1024 || resources.has(item.path)) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
+      const bytes = Buffer.from(item.bytesBase64, "base64");
+      if (bytes.toString("base64") !== item.bytesBase64) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
+      total += bytes.length;
+      if (total > 250 * 1024 * 1024) throw new Error("MINIAPP_DESCRIPTOR_LIMIT");
+      resources.set(item.path, { bytes, mime: item.mime });
+    }
+    if (!await stillCurrent() || ticket !== generation) throw new Error("MINIAPP_SCOPE_CHANGED");
+
+    let launchContext: MiniAppLaunchContext | undefined;
+    if (conversationContext) {
+      const issued = record(await call("issueMiniAppLaunchSession", {
+        appId,
+        conversationId: conversationContext.conversationId,
+        startParameter: conversationContext.startParameter,
+        version: descriptor.version,
+        packageDigest: descriptor.digest,
+      }));
+      const launchSessionId = typeof issued.launchSessionId === "string" ? issued.launchSessionId : "";
+      if (!launchSessionId) throw new Error("MINIAPP_OPERATION_FAILED");
+      launchContext = {
+        launchSessionId,
+        conversationId: conversationContext.conversationId,
+        startParameter: conversationContext.startParameter,
+      };
+    }
+
+    const launch = {
+      appId, accountScope, accountGeneration: ticket, version: descriptor.version,
+      packageDigest: descriptor.digest, entrypoint: descriptor.entrypoint, resources,
+      ...(launchContext ? { launchContext } : {}),
+    };
+    let tools: MiniAppToolBridgePorts | undefined;
+    let runtime: NativeRuntimeHandle | undefined;
+    const primary = (context.resources as unknown as { preloadPath?: string } | undefined)?.preloadPath;
+    if (descriptor.nativeRuntime != null) {
+      const definition = parseNativeRuntime(descriptor.nativeRuntime, resources);
+      const app = context.native.app as unknown as { getPath(name: string): string };
+      const dialog = context.native.dialog as unknown as {
+        showMessageBox(options: { type: string; buttons: string[]; defaultId: number; cancelId: number; message: string; detail: string }): Promise<{ response: number }>;
+        showOpenDialog(options: { properties: string[] }): Promise<{ canceled: boolean; filePaths: string[] }>;
+      } | undefined;
+      if (!dialog?.showMessageBox || !dialog.showOpenDialog || !primary || typeof app.getPath !== "function") throw new Error("MINIAPP_UNSUPPORTED_HOST");
+      const currentScope = () => !disposed && generation === ticket && current?.accountScope === accountScope;
+      runtime = await createInstalledNativeRuntime({
+        carrierPath: join(dirname(primary), "..", "electron-main", "miniapp-native-carrier.cjs"),
+        codeRoot: join(app.getPath("userData"), "native-miniapp-runtimes"), resources, definition,
+        scope: { appId, version: descriptor.version, packageDigest: descriptor.digest, accountScope, accountGeneration: ticket },
+        current: currentScope,
+        confirm: async detail => {
+          if (!currentScope()) return false;
+          const answer = await dialog.showMessageBox({ type: "question", buttons: ["取消", "允许"], defaultId: 0, cancelId: 0, message: "小程序请求本机执行权限", detail });
+          return currentScope() && answer.response === 1;
+        },
+        pick: async mode => {
+          if (!currentScope()) return null;
+          const result = await dialog.showOpenDialog({ properties: [mode === "directory" ? "openDirectory" : "openFile"] });
+          return currentScope() && !result.canceled ? result.filePaths.slice(0, 1).map(path => ({ path, name: path, size: 0 })) : null;
+        },
+        selfUpdate: async action => {
+          if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
+          const approved = entries(await call("listApprovedMiniApps")).find(item => item.appId === appId && item.supported);
+          if (!currentScope() || !approved) throw new Error("MINIAPP_POLICY_DENIED");
+          const available = approved.packageDigest !== descriptor.digest;
+          if (action === "stage" && available) {
+            await call("installApprovedMiniApp", { appId, operationId: randomUUID() });
+            if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
+            const timer = setTimeout(() => { handles.get(appId)?.close(); handles.delete(appId); runtimes.get(appId)?.cancelAll(); runtimes.delete(appId); }, 250);
+            timer.unref();
+          }
+          return { installedVersion: descriptor.version, availableVersion: approved.version, availableDigest: approved.packageDigest, updateAvailable: available, staged: action === "stage" && available, requiresReopen: action === "stage" && available };
+        },
+      });
+      if (!await stillCurrent() || ticket !== generation) { runtime.cancelAll(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
+      runtimes.get(appId)?.cancelAll(); runtimes.set(appId, runtime);
+      tools = { appId, router: runtime.router, ipc: ipc as MiniAppIpc, preloadPath: join(dirname(primary), "preload-miniapp-tools.cjs"), cancelAll: () => runtime?.cancelAll() };
+      // Native resources never become WebView-addressable resources.
+      for (const name of [...resources.keys()]) if (name.startsWith("native/") || name === "native-runtime.json") resources.delete(name);
+    } else if (primary) {
+      // Standard web Mini App: construct Host conversation tool bridge
+      const conversationBackend: MiniAppToolBackend = {
+        capabilities: async () => ({ contract: MINIAPP_TOOL_CONTRACT, platform: "desktop", capabilities: ["offline", "conversation"], targetPools: [] }),
+        readState: async () => ({}),
+        pick: async () => null,
+        release: async () => {},
+        send: async () => { throw new Error("UNSUPPORTED"); },
+        status: async () => ({}),
+        cancel: async () => {},
+        scan: async () => ({}),
+        hotspot: async () => ({}),
+        update: async () => ({}),
+        conversation: async (action, args) => {
+          return await call("miniAppPostToConversation", {
+            launchSessionId: args.launchSessionId,
+            requestId: args.requestId,
+            request: action === "sendMessage"
+              ? { type: "sendMessage", text: args.text }
+              : { type: "sendData", data: args.data },
+          });
+        },
+      };
+      const conversationRouter = createMiniAppToolRouter({
+        backend: conversationBackend,
+        allowedAppId: appId,
+        approve: () => true,
+      });
+      tools = {
+        appId,
+        router: conversationRouter,
+        ipc: ipc as MiniAppIpc,
+        preloadPath: join(dirname(primary), "preload-miniapp-tools.cjs"),
+        cancelAll: () => {},
+      };
+    }
+    try {
+      const handle = await windows.open(launch, tools);
+      if (!await stillCurrent() || ticket !== generation) { handle.close(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
+      handles.set(appId, handle);
+    } catch (error) { runtime?.cancelAll(); runtimes.delete(appId); throw error; }
+  };
+
   const management = registerMiniAppManagement({
     ipc, trustedSender: context.getTrustedContents, accountScope: scope,
     subscribeAccount: (listener) => account.subscribe(listener),
@@ -71,78 +206,10 @@ export function registerProductionMiniApps(context: ProductionServiceContext, ip
       closeAll,
       closeApp: (appId) => { runtimes.get(appId)?.cancelAll(); runtimes.delete(appId); handles.get(appId)?.close(); handles.delete(appId); },
       launch: async (appId, accountScope, stillCurrent) => {
-        if (!windows || context.native.app.commandLine.hasSwitch?.("no-sandbox") === true) throw new Error("MINIAPP_UNSUPPORTED_HOST");
-        const ticket = generation;
-        const loaded = record(await call("getInstalledMiniAppResources", { appId, operationId: randomUUID() }));
-        if (!await stillCurrent() || ticket !== generation || loaded.sameScopeHash !== accountScope) throw new Error("MINIAPP_SCOPE_CHANGED");
-        const descriptor = record(loaded.descriptor);
-        if (descriptor.appId !== appId || typeof descriptor.version !== "string" || typeof descriptor.digest !== "string" || typeof descriptor.entrypoint !== "string") throw new Error("MINIAPP_DESCRIPTOR_INVALID");
-        if (!Array.isArray(loaded.resources) || loaded.resources.length > 10_000) throw new Error("MINIAPP_DESCRIPTOR_LIMIT");
-        const resources = new Map<string, VerifiedMiniAppResource>();
-        let total = 0;
-        for (const raw of loaded.resources) {
-          const item = record(raw);
-          if (typeof item.path !== "string" || typeof item.mime !== "string" || typeof item.bytesBase64 !== "string" || item.bytesBase64.length > 350 * 1024 * 1024 || resources.has(item.path)) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
-          const bytes = Buffer.from(item.bytesBase64, "base64");
-          if (bytes.toString("base64") !== item.bytesBase64) throw new Error("MINIAPP_DESCRIPTOR_INVALID");
-          total += bytes.length;
-          if (total > 250 * 1024 * 1024) throw new Error("MINIAPP_DESCRIPTOR_LIMIT");
-          resources.set(item.path, { bytes, mime: item.mime });
-        }
-        if (!await stillCurrent() || ticket !== generation) throw new Error("MINIAPP_SCOPE_CHANGED");
-        const launch = { appId, accountScope, accountGeneration: ticket, version: descriptor.version, packageDigest: descriptor.digest, entrypoint: descriptor.entrypoint, resources };
-        let tools: MiniAppToolBridgePorts | undefined;
-        let runtime: NativeRuntimeHandle | undefined;
-        if (descriptor.nativeRuntime != null) {
-          const definition = parseNativeRuntime(descriptor.nativeRuntime, resources);
-          const app = context.native.app as unknown as { getPath(name: string): string };
-          const dialog = context.native.dialog as unknown as {
-            showMessageBox(options: { type: string; buttons: string[]; defaultId: number; cancelId: number; message: string; detail: string }): Promise<{ response: number }>;
-            showOpenDialog(options: { properties: string[] }): Promise<{ canceled: boolean; filePaths: string[] }>;
-          } | undefined;
-          const primary = (context.resources as unknown as { preloadPath?: string } | undefined)?.preloadPath;
-          if (!dialog?.showMessageBox || !dialog.showOpenDialog || !primary || typeof app.getPath !== "function") throw new Error("MINIAPP_UNSUPPORTED_HOST");
-          const currentScope = () => !disposed && generation === ticket && current?.accountScope === accountScope;
-          runtime = await createInstalledNativeRuntime({
-            carrierPath: join(dirname(primary), "..", "electron-main", "miniapp-native-carrier.cjs"),
-            codeRoot: join(app.getPath("userData"), "native-miniapp-runtimes"), resources, definition,
-            scope: { appId, version: descriptor.version, packageDigest: descriptor.digest, accountScope, accountGeneration: ticket },
-            current: currentScope,
-            confirm: async detail => {
-              if (!currentScope()) return false;
-              const answer = await dialog.showMessageBox({ type: "question", buttons: ["取消", "允许"], defaultId: 0, cancelId: 0, message: "小程序请求本机执行权限", detail });
-              return currentScope() && answer.response === 1;
-            },
-            pick: async mode => {
-              if (!currentScope()) return null;
-              const result = await dialog.showOpenDialog({ properties: [mode === "directory" ? "openDirectory" : "openFile"] });
-              return currentScope() && !result.canceled ? result.filePaths.slice(0, 1).map(path => ({ path, name: path, size: 0 })) : null;
-            },
-            selfUpdate: async action => {
-              if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
-              const approved = entries(await call("listApprovedMiniApps")).find(item => item.appId === appId && item.supported);
-              if (!currentScope() || !approved) throw new Error("MINIAPP_POLICY_DENIED");
-              const available = approved.packageDigest !== descriptor.digest;
-              if (action === "stage" && available) {
-                await call("installApprovedMiniApp", { appId, operationId: randomUUID() });
-                if (!currentScope()) throw new Error("MINIAPP_SCOPE_CHANGED");
-                const timer = setTimeout(() => { handles.get(appId)?.close(); handles.delete(appId); runtimes.get(appId)?.cancelAll(); runtimes.delete(appId); }, 250);
-                timer.unref();
-              }
-              return { installedVersion: descriptor.version, availableVersion: approved.version, availableDigest: approved.packageDigest, updateAvailable: available, staged: action === "stage" && available, requiresReopen: action === "stage" && available };
-            },
-          });
-          if (!await stillCurrent() || ticket !== generation) { runtime.cancelAll(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
-          runtimes.get(appId)?.cancelAll(); runtimes.set(appId, runtime);
-          tools = { appId, router: runtime.router, ipc: ipc as MiniAppIpc, preloadPath: join(dirname(primary), "preload-miniapp-tools.cjs"), cancelAll: () => runtime?.cancelAll() };
-          // Native resources never become WebView-addressable resources.
-          for (const name of [...resources.keys()]) if (name.startsWith("native/") || name === "native-runtime.json") resources.delete(name);
-        }
-        try {
-          const handle = await windows.open(launch, tools);
-          if (!await stillCurrent() || ticket !== generation) { handle.close(); throw new Error("MINIAPP_SCOPE_CHANGED"); }
-          handles.set(appId, handle);
-        } catch (error) { runtime?.cancelAll(); runtimes.delete(appId); throw error; }
+        await launchWithContext(appId, accountScope, stillCurrent);
+      },
+      launchInConversation: async (appId, accountScope, conversationId, startParameter, stillCurrent) => {
+        await launchWithContext(appId, accountScope, stillCurrent, { conversationId, startParameter });
       },
     },
   });

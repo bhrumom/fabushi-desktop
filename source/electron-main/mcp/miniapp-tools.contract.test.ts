@@ -631,3 +631,135 @@ test("legacy Host environment cannot activate domain tools in an offline install
     await rm(workspace, { recursive: true, force: true });
   }
 });
+
+test("launch.getContext returns scope launchContext without leaking outside scope", async () => {
+  const { backend } = fixture();
+  const router = createMiniAppToolRouter({ backend });
+  const contextualScope: MiniAppToolScope = {
+    ...scope,
+    launchContext: { launchSessionId: "msess_42", conversationId: "conv-42", startParameter: "ref_abc" },
+  };
+  const result = await router.invoke(contextualScope, "launch.getContext", {});
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.ok && result.data, {
+    launchSessionId: "msess_42",
+    conversationId: "conv-42",
+    startParameter: "ref_abc",
+  });
+
+  const emptyScope: MiniAppToolScope = { ...scope };
+  const emptyResult = await router.invoke(emptyScope, "launch.getContext", {});
+  assert.equal(emptyResult.ok, true);
+  assert.deepEqual(emptyResult.ok && emptyResult.data, {});
+});
+
+test("conversation.sendMessage routes to backend with main-held conversationId and approved mutation", async () => {
+  let calledAction = "";
+  let calledArgs: any = null;
+  const backend: MiniAppToolBackend = {
+    capabilities: async () => ({ capabilities: ["offline", "conversation"], platform: "desktop", targetPools: [] }),
+    readState: async () => ({}),
+    pick: async () => null,
+    release: async () => {},
+    send: async () => ({ operationId: "op-1" }),
+    status: async () => ({}),
+    cancel: async () => {},
+    scan: async () => ({}),
+    hotspot: async () => ({}),
+    update: async () => ({}),
+    conversation: async (action, args) => {
+      calledAction = action;
+      calledArgs = args;
+      return { messageId: "msg-1", nonce: "miniapp:1" };
+    },
+  };
+  const router = createMiniAppToolRouter({ backend, approve: () => true });
+  const contextualScope: MiniAppToolScope = {
+    ...scope,
+    launchContext: { launchSessionId: "msess_99", conversationId: "conv-99", startParameter: "param_1" },
+  };
+
+  // MiniApp attempts to send message; guest cannot pass self-confirmation
+  const result = await router.invoke(contextualScope, "conversation.sendMessage", { text: "Hello", userConfirmed: true });
+  assert.equal(result.ok, true);
+  assert.equal(calledAction, "sendMessage");
+  assert.equal(calledArgs.launchSessionId, "msess_99");
+  assert.equal(calledArgs.conversationId, "conv-99");
+  assert.equal(calledArgs.text, "Hello");
+  assert.equal(calledArgs.startParameter, "param_1");
+  // userConfirmed must NOT be passed to backend
+  assert.equal((calledArgs as any).userConfirmed, undefined);
+
+  // SendData
+  const dataResult = await router.invoke(contextualScope, "conversation.sendData", { data: "test-data" });
+  assert.equal(dataResult.ok, true);
+  assert.equal(calledAction, "sendData");
+  assert.equal(calledArgs.launchSessionId, "msess_99");
+  assert.equal(calledArgs.conversationId, "conv-99");
+  assert.equal(calledArgs.data, "test-data");
+});
+
+test("conversation.sendMessage fails closed if scope has no conversationId", async () => {
+  const backend: MiniAppToolBackend = {
+    capabilities: async () => ({ capabilities: ["offline", "conversation"], platform: "desktop", targetPools: [] }),
+    readState: async () => ({}),
+    pick: async () => null,
+    release: async () => {},
+    send: async () => ({ operationId: "op-1" }),
+    status: async () => ({}),
+    cancel: async () => {},
+    scan: async () => ({}),
+    hotspot: async () => ({}),
+    update: async () => ({}),
+    conversation: async () => ({}),
+  };
+  const router = createMiniAppToolRouter({ backend, approve: () => true });
+  const noContextScope: MiniAppToolScope = { ...scope };
+
+  const result = await router.invoke(noContextScope, "conversation.sendMessage", { text: "Hello" });
+  assert.equal(result.ok, false);
+  assert.equal(!result.ok && result.error.code, "NO_CONVERSATION_CONTEXT");
+});
+
+test("renderer cannot inject or forge conversationId in conversation.sendMessage or conversation.sendData", async () => {
+  let backendCalled = false;
+  const backend: MiniAppToolBackend = {
+    capabilities: async () => ({ capabilities: ["offline", "conversation"], platform: "desktop", targetPools: [] }),
+    readState: async () => ({}),
+    pick: async () => null,
+    release: async () => {},
+    send: async () => ({ operationId: "op-1" }),
+    status: async () => ({}),
+    cancel: async () => {},
+    scan: async () => ({}),
+    hotspot: async () => ({}),
+    update: async () => ({}),
+    conversation: async () => {
+      backendCalled = true;
+      return {};
+    },
+  };
+  const router = createMiniAppToolRouter({ backend, approve: () => true });
+  const contextualScope: MiniAppToolScope = {
+    ...scope,
+    launchContext: { launchSessionId: "msess_legit", conversationId: "legitimate-conv-id" },
+  };
+
+  // Attempt to inject a forged conversationId
+  const result = await router.invoke(contextualScope, "conversation.sendMessage", {
+    text: "Malicious spoof attempt",
+    conversationId: "spoofed-conv-id",
+  });
+  assert.equal(result.ok, false);
+  assert.equal(!result.ok && result.error.code, "FORBIDDEN_CONVERSATION_INJECTION");
+  assert.equal(backendCalled, false);
+
+  const dataResult = await router.invoke(contextualScope, "conversation.sendData", {
+    data: "Malicious payload",
+    conversationId: "spoofed-conv-id",
+  });
+  assert.equal(dataResult.ok, false);
+  assert.equal(!dataResult.ok && dataResult.error.code, "FORBIDDEN_CONVERSATION_INJECTION");
+  assert.equal(backendCalled, false);
+});
+

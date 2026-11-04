@@ -28,7 +28,7 @@ use uuid::Uuid;
 
 use super::agent_db_transcript_pages::{HumanTranscriptPageQuery, TranscriptPageQuery, TranscriptWindowQuery};
 use super::agent_session::SandAgentSessionStore;
-use super::production::ProductionSessionWorkers;
+use super::production::{MiniAppPostError, ProductionSessionWorkers};
 use super::session_profile_files::AgentProfileUpdate;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -453,6 +453,42 @@ pub fn dispatch_production_session_gateway_call_with_content_search_and_group_ch
                     .map_err(SessionGatewayError::internal)
             })
         }),
+        "issueMiniAppLaunchSession" => (|| {
+            let app_id = required_string(args, "appId")?;
+            let conversation_id = required_string(args, "conversationId")?;
+            let start_parameter = optional_string(args, "startParameter")?;
+            let version = optional_string(args, "version")?;
+            let package_digest = optional_string(args, "packageDigest")?;
+            session
+                .issue_miniapp_launch_session(app_id, conversation_id, start_parameter, version, package_digest)
+                .map_err(|err| match err {
+                    MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
+                    _ => SessionGatewayError::bad(err.to_string()),
+                })
+        })(),
+        "miniAppPostToConversation" => (|| {
+            let launch_session_id = required_string(args, "launchSessionId")
+                .or_else(|_| required_string(args, "sessionId"))?;
+            let request_id = required_string(args, "requestId")?;
+
+            let request: fabushi_messaging_core::MiniAppRequest = if let Some(req_val) = args.get("request") {
+                serde_json::from_value(req_val.clone())
+                    .map_err(|e| SessionGatewayError::bad(format!("invalid miniapp request: {e}")))?
+            } else if let Some(text) = optional_string(args, "text")? {
+                fabushi_messaging_core::MiniAppRequest::SendMessage { text: text.to_string() }
+            } else if let Some(data) = optional_string(args, "data")? {
+                fabushi_messaging_core::MiniAppRequest::SendData { data: data.to_string() }
+            } else {
+                return Err(SessionGatewayError::bad("miniAppPostToConversation requires request or text/data"));
+            };
+
+            session
+                .post_miniapp_message(launch_session_id, request_id, &request)
+                .map_err(|err| match err {
+                    MiniAppPostError::PersistenceFailed(msg) => SessionGatewayError::internal(msg),
+                    _ => SessionGatewayError::bad(err.to_string()),
+                })
+        })(),
         "reactHumanMessage" => required_string(args, "conversationId").and_then(|conversation_id| {
             required_string(args, "entryId").and_then(|entry_id| {
                 // Emoji bytes are reaction identity; validation must not erase
