@@ -974,7 +974,7 @@ fn session_archive_transition_is_guarded_idempotent_and_blocks_active_work() {
         .transition_session_work_archive(
             "agent:agent-work:main",
             "session-1",
-            Some("revision-1"),
+            Some(&restored_revision),
             true,
             Some("gateway-operator"),
             None,
@@ -2137,8 +2137,9 @@ fn owner_commits_guarded_compaction_and_replays_from_cut_point() {
         .clear_session_deletion_pending(&current_revision, &cleared)
         .expect("clear compaction deletion fence"));
 
-    let mut missing_cut = commit;
+    let mut missing_cut = commit.clone();
     missing_cut.entry_id = "compaction-missing".into();
+    missing_cut.expected_transcript_tail_id = "compaction-1".into();
     missing_cut.first_kept_entry_id = Some("missing".into());
     missing_cut.expected_lifecycle_revision = owner
         .get_metadata("lifecycleRevision")

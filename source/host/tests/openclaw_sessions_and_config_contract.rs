@@ -435,7 +435,11 @@ fn test_session_admission_rejects_rebound_owner_identity() {
 
 #[test]
 fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
-    let owner_source = include_str!("../src/extensions/session/agent_db.rs");
+    let owner_source = format!(
+        "{}\n{}",
+        include_str!("../src/extensions/session/agent_db.rs"),
+        include_str!("../src/extensions/session/ocrm_agent_db_persisted_ops.rs"),
+    );
     assert!(owner_source.contains("fn session_work_write_is_admitted("));
     assert!(owner_source.contains("!admission.session_key.trim().is_empty()"));
     assert!(owner_source.contains("!admission.session_id.trim().is_empty()"));
@@ -448,7 +452,7 @@ fn test_direct_agent_db_metadata_writes_fail_closed_on_malformed_admission() {
         owner_source
             .matches("session_admission_identity_is_well_formed(&admission)")
             .count(),
-        8,
+        10,
         "all session-owned transaction edges must validate admission identity"
     );
     assert!(owner_source.contains("if !session_work_write_is_admitted(db)?"));
